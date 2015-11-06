@@ -18,7 +18,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -72,7 +72,7 @@ public class RubyMatchData extends RubyObject {
 
         matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
         matchDataClass.setReifiedClass(RubyMatchData.class);
-        
+
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
         matchDataClass.kindOf = new RubyModule.JavaClassKindOf(RubyMatchData.class);
 
@@ -129,7 +129,7 @@ public class RubyMatchData extends RubyObject {
         int p = value.getBegin();
         int s = p;
         int c = 0;
-        
+
         for (int i = 0; i < length; i++) {
             int q = s + pairs[i].bytePos;
             c += StringSupport.strLength(encoding, bytes, p, q);
@@ -142,7 +142,7 @@ public class RubyMatchData extends RubyObject {
         if (charOffsetUpdated) return;
 
         if (charOffsets == null || charOffsets.numRegs < 1) charOffsets = new Region(1);
-        
+
         if (encoding.maxLength() == 1) {
             charOffsets.beg[0] = begin;
             charOffsets.end[0] = end;
@@ -180,7 +180,7 @@ public class RubyMatchData extends RubyObject {
         int numRegs = regs.numRegs;
 
         if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
-        
+
         if (encoding.maxLength() == 1) {
             for (int i = 0; i < numRegs; i++) {
                 charOffsets.beg[i] = regs.beg[i];
@@ -236,7 +236,7 @@ public class RubyMatchData extends RubyObject {
 
     // rb_match_busy
     public final void use() {
-        flags |= MATCH_BUSY; 
+        flags |= MATCH_BUSY;
     }
 
     public final boolean used() {
@@ -247,11 +247,13 @@ public class RubyMatchData extends RubyObject {
         if (str == null) throw getRuntime().newTypeError("uninitialized Match");
     }
 
-    private void checkLazyRegexp() {
-        if (regexp == null) regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList)pattern.getUserObject(), pattern);
+    private RubyRegexp getRegexp() {
+        RubyRegexp regexp = this.regexp;
+        if (regexp != null) return regexp;
+        return this.regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList) pattern.getUserObject(), pattern);
     }
-    
-    private RubyString makeShared(Ruby runtime, RubyString str, int begin, int length) {
+
+    private static RubyString makeShared(Ruby runtime, RubyString str, int begin, int length) {
         return str.makeShared19(runtime, begin, length);
     }
 
@@ -272,14 +274,14 @@ public class RubyMatchData extends RubyObject {
                 if (regs.beg[i] == -1) {
                     arr.append(runtime.getNil());
                 } else {
-                    RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);                   
-                    if (isTaint()) ss.setTaint(true); 
+                    RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);
+                    if (isTaint()) ss.setTaint(true);
                     arr.append(ss);
                 }
             }
             return arr;
         }
-        
+
     }
 
     public IRubyObject group(long n) {
@@ -359,17 +361,15 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject regexp(ThreadContext context, Block block) {
+    public RubyRegexp regexp(ThreadContext context, Block block) {
         check();
-        checkLazyRegexp();
-        return regexp;
+        return getRegexp();
     }
 
     @JRubyMethod
     public IRubyObject names(ThreadContext context, Block block) {
         check();
-        checkLazyRegexp();
-        return regexp.names(context);
+        return getRegexp().names(context);
     }
 
     /** match_to_a
