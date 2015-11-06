@@ -958,12 +958,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     // MRI: rb_str_new_frozen, at least in spirit
     // also aliased to rb_str_new4
     public RubyString newFrozen() {
-        RubyClass klass;
-        RubyString str = this;
-
         if (isFrozen()) return this;
-        klass = getMetaClass();
-        str = strDup(klass.getClassRuntime());
+
+        RubyClass klass = getMetaClass();
+        RubyString str = strDup(klass.getClassRuntime());
         str.setCodeRange(getCodeRange());
         str.setFrozen(true);
         return str;
@@ -3444,7 +3442,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         // only this case affects backrefs
         if (useBackref) {
-            context.setBackRef(runtime.getNil());
+            context.setBackRef(context.nil);
         } else {
             holder[0] = context.nil;
         }
@@ -3621,20 +3619,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "scan", reads = BACKREF, writes = BACKREF)
     public IRubyObject scan19(ThreadContext context, IRubyObject pat, Block block) {
-        RubyString str = this;
+        final RubyString str = this;
 
         IRubyObject result;
         int last = -1, prev = 0;
-        int[] startp = {0};
-        byte[] pBytes = value.unsafeBytes();
-        final int len = value.realSize();
-
+        final int[] startp = {0};
 
         pat = getPatternQuoted(context, pat, true);
         mustnotBroken(context);
         if (!block.isGiven()) {
             RubyArray ary = context.runtime.newEmptyArray();
-
             while (!(result = scanOnce(context, str, pat, startp)).isNil()) {
                 last = prev;
                 prev = startp[0];
@@ -3643,6 +3637,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (last >= 0) patternSearch(context, pat, str, last, true);
             return ary;
         }
+
+        final byte[] pBytes = value.unsafeBytes();
+        final int len = value.realSize();
 
         while (!(result = scanOnce(context, str, pat, startp)).isNil()) {
             last = prev;
@@ -3663,12 +3660,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // MRI: scan_once
     private static IRubyObject scanOnce(ThreadContext context, RubyString str, IRubyObject pat, int[] startp) {
-        IRubyObject result;
-        RubyMatchData match;
-        int i;
-
         if (patternSearch(context, pat, str, startp[0], true) >= 0) {
-            match = (RubyMatchData)context.getBackRef();
+            final RubyMatchData match = (RubyMatchData) context.getBackRef();
             final int matchEnd = match.end(0);
             if (match.begin(0) == matchEnd) {
                 Encoding enc = str.getEncoding();
@@ -3688,9 +3681,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (match.numRegs() == 1) {
                 return RubyRegexp.nth_match(0, match);
             }
-            result = context.runtime.newArray(match.numRegs());
-            for (i = 1; i < match.numRegs(); i++) {
-                ((RubyArray)result).push(RubyRegexp.nth_match(i, match));
+            RubyArray result = context.runtime.newArray(match.numRegs());
+            for (int i = 1; i < match.numRegs(); i++) {
+                result.push(RubyRegexp.nth_match(i, match));
             }
 
             return result;
@@ -3705,10 +3698,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             pos = str.strseqIndex(context, (RubyString) pat, pos, true);
             if (setBackrefStr) {
                 if (pos >= 0) {
-                    IRubyObject match;
                     str = str.newFrozen();
                     setBackrefString(context, str, pos, ((RubyString) pat).size());
-                    match = context.getBackRef();
+                    IRubyObject match = context.getBackRef();
                     match.infectBy(pat);
                 }
                 else {
@@ -3717,9 +3709,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
             return pos;
         }
-        else {
-            return ((RubyRegexp)pat).search19(context, str, pos, false);
-        }
+        return ((RubyRegexp) pat).search19(context, str, pos, false);
     }
 
     // MRI: match_set_string
