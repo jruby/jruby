@@ -2559,7 +2559,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     // MRI: rb_strseq_index
-    private int strseqIndex(ThreadContext context, RubyString sub, int offset, boolean inBytes) {
+    private int strseqIndex(final RubyString sub, int offset, boolean inBytes) {
         byte[] sBytes = value.unsafeBytes();
         int s, sptr, e;
         int pos, len, slen;
@@ -3694,44 +3694,45 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     // MRI: rb_pat_search
-    private static int patternSearch(ThreadContext context, IRubyObject pat, RubyString str, int pos, boolean setBackrefStr) {
-        if (pat instanceof RubyString) {
-            pos = str.strseqIndex(context, (RubyString) pat, pos, true);
+    private static int patternSearch(ThreadContext context,
+        final IRubyObject patern, RubyString str, final int pos,
+        final boolean setBackrefStr) {
+        if (patern instanceof RubyString) {
+            int beg = str.strseqIndex((RubyString) patern, pos, true);
             if (setBackrefStr) {
-                if (pos >= 0) {
-                    str = str.newFrozen();
-                    setBackrefString(context, str, pos, ((RubyString) pat).size());
-                    IRubyObject match = context.getBackRef();
-                    match.infectBy(pat);
+                if (beg >= 0) {
+                    final int len = ((RubyString) patern).size(); // getRealSize
+                    setBackRefString(context, str, beg, len).infectBy(patern);
                 }
                 else {
                     context.setBackRef(context.nil);
                 }
             }
-            return pos;
+            return beg;
         }
-        return ((RubyRegexp) pat).search19(context, str, pos, false);
+        return ((RubyRegexp) patern).search19(context, str, pos, false);
     }
 
     // MRI: match_set_string
-    private static void setMatchString(RubyMatchData match, RubyString string, int pos, int len) {
-        match.str = string;
+    private static void setMatchString(RubyMatchData match, RubyString str, int pos, int len) {
+        match.str = str;
         match.regexp = null;
         match.begin = pos;
         match.end = pos + len;
         match.charOffsetUpdated = false;
         match.regs = null;
-        match.infectBy(string);
+        match.infectBy(str);
     }
 
     // MRI: rb_backref_set_string
-    private static void setBackrefString(ThreadContext context, RubyString string, int pos, int len) {
+    private static RubyMatchData setBackRefString(ThreadContext context, RubyString str, int pos, int len) {
         IRubyObject match = context.getBackRef();
-        if (match == null || match.isNil() || ((RubyMatchData)match).used()) {
+        if (match == null || match.isNil() || ((RubyMatchData) match).used()) {
             match = new RubyMatchData(context.runtime);
         }
-        setMatchString((RubyMatchData) match, string, pos, len);
+        setMatchString((RubyMatchData) match, str.newFrozen(), pos, len);
         context.setBackRef(match);
+        return (RubyMatchData) match;
     }
 
     @JRubyMethod(name = "start_with?")
