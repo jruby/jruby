@@ -3628,14 +3628,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         pat = getPatternQuoted(context, pat, true);
         mustnotBroken(context);
         if (!block.isGiven()) {
-            RubyArray ary = context.runtime.newEmptyArray();
+            RubyArray ary = null;
             while (!(result = scanOnce(context, str, pat, startp)).isNil()) {
                 last = prev;
                 prev = startp[0];
+                if (ary == null) ary = context.runtime.newArray(4);
                 ary.push(result);
             }
             if (last >= 0) patternSearch(context, pat, str, last, true);
-            return ary;
+            return ary == null ? context.runtime.newEmptyArray() : ary;
         }
 
         final byte[] pBytes = value.unsafeBytes();
