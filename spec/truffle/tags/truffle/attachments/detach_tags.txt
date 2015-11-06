@@ -1,2 +1,0 @@
-fails:Truffle::Attachments.attach removes a previous attachment
-fails:Truffle::Attachments.attach removes multiple previous attachments

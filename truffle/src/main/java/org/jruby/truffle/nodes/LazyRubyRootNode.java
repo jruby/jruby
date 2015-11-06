@@ -5,6 +5,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
@@ -20,6 +22,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.subsystems.AttachmentsManager;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 
@@ -54,19 +57,34 @@ public class LazyRubyRootNode extends RootNode {
         }
 
         if (callNode == null || context != cachedContext) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
+            CompilerDirectives.transferToInterpreter();
 
-            final TranslatorDriver translator = new TranslatorDriver(context);
-            final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null);
+            if (AttachmentsManager.ATTACHMENT_SOURCE == source) {
+                final SourceSection sourceSection = (SourceSection) frame.getArguments()[0];
+                final DynamicObject block = (DynamicObject) frame.getArguments()[1];
 
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+                final RootNode rootNode = new AttachmentsManager.AttachmentRootNode(RubyLanguage.class, cachedContext, sourceSection, null, block);
+                final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
-            callNode = insert(Truffle.getRuntime().createDirectCallNode(callTarget));
-            callNode.forceInlining();
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(callTarget));
+                callNode.forceInlining();
+            } else {
+                final TranslatorDriver translator = new TranslatorDriver(context);
+                final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null);
+                final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
-            mainObject = context.getCoreLibrary().getMainObject();
-            method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                    context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(callTarget));
+                callNode.forceInlining();
+
+                mainObject = context.getCoreLibrary().getMainObject();
+                method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
+                        context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
+            }
+        }
+
+        if (method == null) {
+            final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
+            return callNode.call(frame, new Object[] { callerFrame });
         }
 
         return callNode.call(frame,

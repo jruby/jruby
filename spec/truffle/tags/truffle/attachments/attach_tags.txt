@@ -1,8 +1,2 @@
 fails:Truffle::Attachments.attach allows multiple blocks to be installed on the same line and runs them in the order they were attached
 fails:Truffle::Attachments.attach allows write access to local variables in the block
-fails:Truffle::Attachments.attach runs the block before running the line
-fails:Truffle::Attachments.attach returns nil
-fails:Truffle::Attachments.attach installs a block to be run on a line
-fails:Truffle::Attachments.attach allows multiple blocks to be installed on the same line and runs them in an indeterminate order
-fails:Truffle::Attachments.attach supplies a Binding to the block
-fails:Truffle::Attachments.attach allows read access to local variables in the block
