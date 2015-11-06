@@ -137,6 +137,10 @@ public abstract class RubyGuards {
         return Layouts.STRING.isString(value);
     }
 
+    public static boolean isRope(DynamicObject value) {
+        return value.containsKey(Layouts.ROPE_IDENTIFIER);
+    }
+
     public static boolean isRubyEncoding(Object object) {
         return Layouts.ENCODING.isEncoding(object);
     }

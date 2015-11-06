@@ -74,12 +74,15 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -489,6 +492,8 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_equal", needsSelf = true)
     public static abstract class StringEqualPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private ReadHeadObjectFieldNode readRopeNode;
+
         public StringEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -519,6 +524,42 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = {
                 "string != other",
                 "isRubyString(other)",
+                "isRope(string)",
+                "isRope(other)",
+                "areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
+        })
+        public boolean ropeEqual(DynamicObject string, DynamicObject other,
+                                 @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
+                                 @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible) {
+            if (readRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
+            }
+
+            final Rope a = (Rope) readRopeNode.execute(string);
+            final Rope b = (Rope) readRopeNode.execute(other);
+
+            if (a.getEncoding() == b.getEncoding()) {
+                return a.equals(b);
+            }
+
+            if (org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeable(string), StringOperations.getCodeRangeable(other)) == null) {
+                return a.equals(b);
+            }
+
+            return false;
+        }
+
+        @Specialization(guards = {
+                "string != other",
+                "isRubyString(other)",
+                "!isRope(string)",
+                "!isRope(other)",
                 "areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
         })
         public boolean stringEqual(DynamicObject string, DynamicObject other,
