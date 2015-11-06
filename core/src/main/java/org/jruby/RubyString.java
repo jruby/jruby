@@ -3713,26 +3713,19 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return ((RubyRegexp) patern).search19(context, str, pos, false);
     }
 
-    // MRI: match_set_string
-    private static void setMatchString(RubyMatchData match, RubyString str, int pos, int len) {
-        match.str = str;
-        match.regexp = null;
-        match.begin = pos;
-        match.end = pos + len;
-        match.charOffsetUpdated = false;
-        match.regs = null;
-        match.infectBy(str);
-    }
-
     // MRI: rb_backref_set_string
     private static RubyMatchData setBackRefString(ThreadContext context, RubyString str, int pos, int len) {
-        IRubyObject match = context.getBackRef();
-        if (match == null || match.isNil() || ((RubyMatchData) match).used()) {
+        final IRubyObject m = context.getBackRef();
+        final RubyMatchData match;
+        if (m == null || m.isNil() || ((RubyMatchData) m).used()) {
             match = new RubyMatchData(context.runtime);
         }
-        setMatchString((RubyMatchData) match, str.newFrozen(), pos, len);
+        else {
+            match = (RubyMatchData) m;
+        }
+        match.initMatchData(context, str, pos, len); // MRI: match_set_string
         context.setBackRef(match);
-        return (RubyMatchData) match;
+        return match;
     }
 
     @JRubyMethod(name = "start_with?")

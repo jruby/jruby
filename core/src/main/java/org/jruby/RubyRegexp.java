@@ -1128,29 +1128,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return search19(context, str, pos, reverse, holder);
     }
 
-    static final RubyMatchData createMatchData(ThreadContext context, RubyString str, Matcher matcher, Regex pattern) {
-        Ruby runtime = context.runtime;
-        final RubyMatchData match = new RubyMatchData(runtime);
-
-        // FIXME: This is pretty gross; we should have a cleaner initialization
-        // that doesn't depend on package-visible fields and ideally is atomic,
-        // probably using an immutable structure we replace all at once.
-
-        // The region must be cloned because a subsequent match will update the
-        // region, resulting in the MatchData created here pointing at the
-        // incorrect region (capture/group).
-        Region region = matcher.getRegion(); // lazy, null when no groups defined
-        match.regs = region == null ? null : region.clone();
-        match.begin = matcher.getBegin();
-        match.end = matcher.getEnd();
-        match.pattern = pattern;
-        match.str = (RubyString)str.strDup(runtime).freeze(context);
-
-        match.infectBy(str);
-
-        return match;
-    }
-
     /**
      * MRI: rb_reg_search
      *
@@ -1269,9 +1246,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    static final RubyMatchData createMatchData19(ThreadContext context, RubyString str, Matcher matcher, Regex pattern) {
-        RubyMatchData match = createMatchData(context, str, matcher, pattern);
-        match.charOffsetUpdated = false;
+    static RubyMatchData createMatchData19(ThreadContext context, RubyString str, Matcher matcher, Regex pattern) {
+        final RubyMatchData match = new RubyMatchData(context.runtime);
+        match.initMatchData(context, str, matcher, pattern);
         return match;
     }
 

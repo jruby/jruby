@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import org.jcodings.Encoding;
+import org.joni.Matcher;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Region;
@@ -94,6 +95,47 @@ public class RubyMatchData extends RubyObject {
 
     public RubyMatchData(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
+    }
+
+    final void initMatchData(final ThreadContext context,
+        RubyString str, Matcher matcher, Regex pattern) {
+        final RubyMatchData match = this;
+
+        // FIXME: This is pretty gross; we should have a cleaner initialization
+        // that doesn't depend on package-visible fields and ideally is atomic,
+        // probably using an immutable structure we replace all at once.
+
+        // The region must be cloned because a subsequent match will update the
+        // region, resulting in the MatchData created here pointing at the
+        // incorrect region (capture/group).
+        Region region = matcher.getRegion(); // lazy, null when no groups defined
+        match.regs = region == null ? null : region.clone();
+        match.begin = matcher.getBegin();
+        match.end = matcher.getEnd();
+        match.pattern = pattern;
+
+        match.charOffsets = null;
+        match.charOffsetUpdated = false;
+
+        match.str = str.newFrozen();
+        match.infectBy(str);
+    }
+
+    final void initMatchData(final ThreadContext context,
+        RubyString str, int beg, int len) {
+        final RubyMatchData match = this;
+
+        match.regs = null;
+        match.regexp = null;
+        match.begin = beg;
+        match.end = beg + len;
+        match.pattern = null;
+
+        match.charOffsets = null;
+        match.charOffsetUpdated = false;
+
+        match.str = str.newFrozen();
+        match.infectBy(str);
     }
 
     @Override
