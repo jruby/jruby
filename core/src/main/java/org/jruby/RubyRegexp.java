@@ -66,7 +66,6 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
-import org.jruby.util.Pack;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
 import org.jruby.util.Sprintf;
@@ -716,9 +715,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     */
     @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv) {
-        IRubyObject match = context.getBackRef();
-        if (match instanceof RubyMatchData) ((RubyMatchData)match).use();
-        return match;
+        return getBackRef(context);
+    }
+
+    public static IRubyObject getBackRef(ThreadContext context) {
+        IRubyObject backref = context.getBackRef();
+        if (backref instanceof RubyMatchData) ((RubyMatchData) backref).use();
+        return backref;
     }
 
     /** rb_reg_s_last_match
@@ -1084,11 +1087,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         IRubyObject[] holder = setBackref ? null : new IRubyObject[]{context.nil};
         if (matchPos(context, _str, null, holder, pos) < 0) {
-            setBackref(context, holder, context.nil);
+            setBackRefInternal(context, holder, context.nil);
             return context.nil;
         }
 
-        IRubyObject backref = getBackref(context, holder);
+        IRubyObject backref = getBackRefInternal(context, holder);
         if (block.isGiven()) return block.yield(context, backref);
         return backref;
     }
@@ -1104,18 +1107,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     private int matchPos(ThreadContext context, IRubyObject stringlike, IRubyObject[] strp, IRubyObject[] holder, int pos) {
         if (stringlike.isNil()) {
-            setBackref(context, holder, context.nil);
+            setBackRefInternal(context, holder, context.nil);
             return -1;
         }
-        RubyString str = operandCheck(stringlike);
+        final RubyString str = operandCheck(stringlike);
         if (strp != null) strp[0] = str;
         if (pos != 0) {
             if (pos < 0) {
-                int l = str.strLength();
-                pos += l;
-                if (pos < 0) {
-                    return pos;
-                }
+                pos += str.strLength();
+                if (pos < 0) return pos;
             }
             pos = str.rbStrOffset(pos);
         }
@@ -1186,15 +1186,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         boolean tmpreg;
 
         if (pos > str.size() || pos < 0) {
-            setBackref(context, holder, context.nil);
+            setBackRefInternal(context, holder, context.nil);
             return -1;
         }
 
         reg = preparePattern(str);
-        tmpreg = reg != pattern;
-        if (!tmpreg) useCount++;
+        tmpreg = reg != this.pattern;
+        if (!tmpreg) this.useCount++;
 
-        match = getBackref(context, holder);
+        match = getBackRefInternal(context, holder);
         if (!match.isNil()) {
             if (((RubyMatchData)match).used()) {
                 match = context.nil;
@@ -1216,19 +1216,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } catch (JOniException je) {
             exception = je;
         }
-        if (!tmpreg) useCount--;
+        if (!tmpreg) this.useCount--;
         if (tmpreg) {
-            if (useCount > 0) {
+            if (this.useCount > 0) {
 //                onig_free(reg);
             }
             else {
 //                onig_free(RREGEXP(re)->ptr);
-                pattern = reg;
+                this.pattern = reg;
             }
         }
         if (result < 0) {
             if (result == -1) {
-                setBackref(context, holder, context.nil);
+                setBackRefInternal(context, holder, context.nil);
                 return result;
             }
             else {
@@ -1252,18 +1252,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         matchData.regexp = this;
         matchData.charOffsetUpdated = false;
         matchData.infectBy(this);
-        setBackref(context, holder, matchData);
+        setBackRefInternal(context, holder, matchData);
 
         return result;
     }
 
-    private IRubyObject getBackref(ThreadContext context, IRubyObject[] holder) {
-        IRubyObject match;
-        match = holder != null ? holder[0] : context.getBackRef();
-        return match;
+    private static IRubyObject getBackRefInternal(ThreadContext context, IRubyObject[] holder) {
+        return holder != null ? holder[0] : context.getBackRef();
     }
 
-    private void setBackref(ThreadContext context, IRubyObject[] holder, IRubyObject match) {
+    private static void setBackRefInternal(ThreadContext context, IRubyObject[] holder, IRubyObject match) {
         if (holder != null) {
             holder[0] = match;
         } else {

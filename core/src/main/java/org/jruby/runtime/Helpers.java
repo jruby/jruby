@@ -686,12 +686,7 @@ public class Helpers {
     }
 
     public static IRubyObject backref(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        if(backref instanceof RubyMatchData) {
-            ((RubyMatchData)backref).use();
-        }
-        return backref;
+        return RubyRegexp.getBackRef(context);
     }
 
     public static IRubyObject backrefLastMatch(ThreadContext context) {
@@ -1472,9 +1467,7 @@ public class Helpers {
     }
 
     public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-        if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
-        return backref;
+        return backref(context); // backref(context) method otherwise not used
     }
 
     public static IRubyObject preOpAsgnWithOrAnd(IRubyObject receiver, ThreadContext context, IRubyObject self, CallSite varSite) {
