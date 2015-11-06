@@ -59,6 +59,10 @@ import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
@@ -69,6 +73,8 @@ import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.ConcatRope;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
@@ -102,6 +108,8 @@ public abstract class StringNodes {
     })
     public abstract static class AddNode extends CoreMethodNode {
 
+        @Child private ReadHeadObjectFieldNode readRopeNode;
+        @Child private WriteHeadObjectFieldNode writeRopeNode;
         @Child private TaintResultNode taintResultNode;
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
@@ -112,7 +120,45 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = "isRubyString(other)")
+        @Specialization(guards = { "isRubyString(other)", "isRope(string)", "isRope(other)"})
+        public DynamicObject addRopes(DynamicObject string, DynamicObject other) {
+            if (readRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
+            }
+
+            final Rope a = (Rope) readRopeNode.execute(string);
+            final Rope b = (Rope) readRopeNode.execute(other);
+
+            final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(other), this);
+            final int codeRange = StringOperations.commonCodeRange(Layouts.STRING.getCodeRange(string), Layouts.STRING.getCodeRange(other));
+
+            final Rope concattedRope = new ConcatRope(a, b, enc);
+
+            final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                    null,
+                    codeRange,
+                    null);
+
+            if (writeRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeRopeNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER));
+            }
+
+            writeRopeNode.execute(ret, concattedRope);
+
+            if (taintResultNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+            }
+
+            taintResultNode.maybeTaint(string, ret);
+            taintResultNode.maybeTaint(other, ret);
+
+            return ret;
+        }
+
+        @Specialization(guards = { "isRubyString(other)", "!isRope(string)" })
         public DynamicObject add(DynamicObject string, DynamicObject other) {
             final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(other), this);
             final int codeRange = StringOperations.commonCodeRange(Layouts.STRING.getCodeRange(string), Layouts.STRING.getCodeRange(other));

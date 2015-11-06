@@ -29,6 +29,10 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -43,6 +47,8 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.rope.LeafRope;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
@@ -810,6 +816,34 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public DynamicObject createSimpleString() {
             return createString(new ByteList(new byte[]{'t', 'e', 's', 't'}, false));
+        }
+    }
+
+    @CoreMethod(names = "string_to_rope", onSingleton = true, required = 1)
+    public abstract static class StringToRopeNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private AllocateObjectNode allocateObjectNode;
+        @Child private WriteHeadObjectFieldNode writeRopeNode;
+
+        public StringToRopeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            writeRopeNode = WriteHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER);
+        }
+
+        @Specialization(guards = { "isRubyString(string)", "!isRope(string)" })
+        public DynamicObject stringToRope(DynamicObject string) {
+            final ByteList byteList = StringOperations.getByteList(string);
+            final Rope rope = new LeafRope(byteList.bytes(), byteList.getEncoding());
+
+            final DynamicObject ret = allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(),
+                    null,
+                    Layouts.STRING.getCodeRange(string),
+                    null);
+
+            writeRopeNode.execute(ret, rope);
+
+            return ret;
         }
     }
 
