@@ -13,6 +13,8 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.util.ByteList;
 
+import java.util.Arrays;
+
 public class ConcatRope extends Rope {
 
     private final Rope left;
@@ -73,4 +75,23 @@ public class ConcatRope extends Rope {
         return encoding;
     }
 
+    @Override
+    public int hashCode() {
+        return left.hashCode() + right.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o instanceof ConcatRope) {
+            final ConcatRope other = (ConcatRope) o;
+
+            return left.equals(other.left) && right.equals(other.right);
+        }
+
+        return false;
+    }
 }
