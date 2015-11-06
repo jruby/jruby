@@ -513,16 +513,18 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject end(ThreadContext context, IRubyObject index) {
         check();
 
-        int i = backrefNumber(index);
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
+        final int i = backrefNumber(index);
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+            throw runtime.newIndexError("index " + i + " out of matches");
+        }
 
         int e = regs == null ? end : regs.end[i];
 
-        if (e < 0) return runtime.getNil();
+        if (e < 0) return context.nil;
 
-        if (!str.singleByteOptimizable()) {
+        if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
             e = charOffsets.end[i];
         }
@@ -539,13 +541,14 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod(name = "offset")
     public IRubyObject offset19(ThreadContext context, IRubyObject index) {
-        return offsetCommon(context, backrefNumber(index), true);
-    }
-
-    private IRubyObject offsetCommon(ThreadContext context, int i, boolean is_19) {
         check();
-        Ruby runtime = context.runtime;
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+
+        final Ruby runtime = context.runtime;
+        final int i = backrefNumber(index);
+
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+            throw runtime.newIndexError("index " + i + " out of matches");
+        }
         int b, e;
         if (regs == null) {
             b = begin;
@@ -554,12 +557,15 @@ public class RubyMatchData extends RubyObject {
             b = regs.beg[i];
             e = regs.end[i];
         }
-        if (b < 0) return runtime.newArray(runtime.getNil(), runtime.getNil());
-        if (is_19 && !str.singleByteOptimizable()) {
+
+        if (b < 0) return runtime.newArray(context.nil, context.nil);
+
+        if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
             b = charOffsets.beg[i];
             e = charOffsets.end[i];
         }
+
         return runtime.newArray(RubyFixnum.newFixnum(runtime, b), RubyFixnum.newFixnum(runtime, e));
     }
 
