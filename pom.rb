@@ -56,7 +56,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'minitest.version' => '5.4.1',
               'ant.version' => '1.9.2',
               'diff-lcs.version' => '1.1.3',
-              'jffi.version' => '1.2.9',
+              'jffi.version' => '1.2.10-SNAPSHOT',
               'rake.version' => '10.1.0',
               'project.build.sourceEncoding' => 'utf-8',
               'jruby-launcher.version' => '1.1.1',

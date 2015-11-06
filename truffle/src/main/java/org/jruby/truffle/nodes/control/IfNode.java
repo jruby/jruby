@@ -11,7 +11,8 @@ package org.jruby.truffle.nodes.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
@@ -26,11 +27,7 @@ public class IfNode extends RubyNode {
     @Child private BooleanCastNode condition;
     @Child private RubyNode thenBody;
     @Child private RubyNode elseBody;
-
-    private final BranchProfile thenBranch = BranchProfile.create();
-    private final BranchProfile elseBranch = BranchProfile.create();
-
-    // private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
+    private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
     public IfNode(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode thenBody, RubyNode elseBody) {
         super(context, sourceSection);
@@ -46,13 +43,9 @@ public class IfNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        // TODO CS 20-Feb-15 - we'd like to use this but it causes problems where we do things like x = if ...
-        // if (conditionProfile.profile(condition.executeBoolean(frame))) {
-        if (condition.executeBoolean(frame)) {
-            thenBranch.enter();
+        if (conditionProfile.profile(condition.executeBoolean(frame))) {
             return thenBody.execute(frame);
         } else {
-            elseBranch.enter();
             return elseBody.execute(frame);
         }
     }

@@ -23,7 +23,6 @@ class MSpecScript
 
     # Not yet explored
     "^spec/ruby/library/continuation",
-    "^spec/ruby/library/fiber",
     "^spec/ruby/library/mathn",
     "^spec/ruby/library/readline",
     "^spec/ruby/library/syslog",
@@ -62,10 +61,12 @@ class MSpecScript
     set :xtags, (get(:xtags) || []) + ['windows']
   end
 
-  MSpec.enable_feature :encoding
+  # Enable features
   MSpec.enable_feature :fiber
+  MSpec.enable_feature :fiber_library
+  MSpec.disable_feature :continuation_library
   MSpec.disable_feature :fork
-  MSpec.enable_feature :generator
+  MSpec.enable_feature :encoding
 
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
 end

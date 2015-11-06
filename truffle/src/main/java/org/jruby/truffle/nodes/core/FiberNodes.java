@@ -153,10 +153,7 @@ public abstract class FiberNodes {
     }
 
     /**
-     * Send the Java thread that represents this fiber to sleep until it receives a resume or exit
-     * message.
-     * @param context TODO
-     * @param fiber
+     * Send the Java thread that represents this fiber to sleep until it receives a resume or exit message.
      */
     private static Object[] waitForResume(RubyContext context, final DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
@@ -188,8 +185,7 @@ public abstract class FiberNodes {
 
     /**
      * Send a resume message to a fiber by posting into its message queue. Doesn't explicitly notify the Java
-     * thread (although the queue implementation may) and doesn't wait for the message to be
-     * received.
+     * thread (although the queue implementation may) and doesn't wait for the message to be received.
      */
     private static void resume(DynamicObject fromFiber, DynamicObject fiber, boolean yield, Object... args) {
         assert RubyGuards.isRubyFiber(fromFiber);
@@ -359,6 +355,35 @@ public abstract class FiberNodes {
 
     public static class FiberExitException extends ControlFlowException {
         private static final long serialVersionUID = 1522270454305076317L;
+    }
+
+    @CoreMethod(names = "alive?")
+    public abstract static class AliveNode extends UnaryCoreMethodNode {
+
+        public AliveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean alive(DynamicObject fiber) {
+            return Layouts.FIBER.getAlive(fiber);
+        }
+
+    }
+
+    @CoreMethod(names = "current", onSingleton = true)
+    public abstract static class CurrentNode extends CoreMethodNode {
+
+        public CurrentNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject current() {
+            final DynamicObject currentThread = getContext().getThreadManager().getCurrentThread();
+            return Layouts.THREAD.getFiberManager(currentThread).getCurrentFiber();
+        }
+
     }
 
     @CoreMethod(names = "allocate", constructor = true)

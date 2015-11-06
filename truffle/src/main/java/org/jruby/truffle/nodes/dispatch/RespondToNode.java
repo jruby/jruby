@@ -11,8 +11,8 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class RespondToNode extends RubyNode {
@@ -26,7 +26,7 @@ public class RespondToNode extends RubyNode {
         super(context, sourceSection);
         this.methodName = methodName;
         this.child = child;
-        this.dispatch = new DoesRespondDispatchHeadNode(context, true, MissingBehavior.RETURN_MISSING, LexicalScope.NONE);
+        this.dispatch = new DoesRespondDispatchHeadNode(context, true);
     }
 
     public boolean executeBoolean(VirtualFrame frame) {

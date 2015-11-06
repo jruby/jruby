@@ -1210,8 +1210,7 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodNode extends CoreMethodNode {
 
-        @Child
-        NameToJavaStringNode nameToJavaStringNode;
+        @Child NameToJavaStringNode nameToJavaStringNode;
         @Child LookupMethodNode lookupMethodNode;
         @Child CallDispatchHeadNode respondToMissingNode;
 
@@ -1228,7 +1227,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject methodCached(VirtualFrame frame, Object self, DynamicObject name) {
+        public DynamicObject method(VirtualFrame frame, Object self, DynamicObject name) {
             final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
             InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
 
@@ -1237,12 +1236,10 @@ public abstract class KernelNodes {
 
                 if (respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true)) {
                     final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(frame, self, "method_missing").withName(normalizedName);
-                    final RootCallTarget callTarget = (RootCallTarget) methodMissing.getCallTarget();
-                    final RubyRootNode rootNode = (RubyRootNode) callTarget.getRootNode();
                     final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
-                    final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), normalizedName);
-                    final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody);
+                    final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
+                    final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody);
                     final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
                     final DynamicObject module = getContext().getCoreLibrary().getMetaClass(self);
@@ -1258,10 +1255,10 @@ public abstract class KernelNodes {
 
         private static class CallMethodMissingWithStaticName extends RubyNode {
 
-            private final String methodName;
+            private final DynamicObject methodName;
             @Child private CallDispatchHeadNode methodMissing;
 
-            public CallMethodMissingWithStaticName(RubyContext context, SourceSection sourceSection, String methodName) {
+            public CallMethodMissingWithStaticName(RubyContext context, SourceSection sourceSection, DynamicObject methodName) {
                 super(context, sourceSection);
                 this.methodName = methodName;
                 methodMissing = DispatchHeadNodeFactory.createMethodCall(context);
@@ -1634,8 +1631,8 @@ public abstract class KernelNodes {
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatch = new DoesRespondDispatchHeadNode(context, false, MissingBehavior.RETURN_MISSING, null);
-            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, MissingBehavior.RETURN_MISSING, null);
+            dispatch = new DoesRespondDispatchHeadNode(context, false);
+            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true);
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);

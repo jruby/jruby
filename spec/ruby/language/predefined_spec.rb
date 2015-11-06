@@ -246,8 +246,6 @@ describe "Predefined global $stdout" do
 end
 
 describe "Predefined global $!" do
-  it "needs to be reviewed for spec completeness"
-
   # See http://jira.codehaus.org/browse/JRUBY-5550
   it "remains nil after a failed core class \"checked\" coercion against a class that defines method_missing" do
     $!.should == nil
@@ -263,22 +261,135 @@ describe "Predefined global $!" do
     $!.should == nil
   end
 
+  it "should be set to the value of $! before the begin after a successful rescue" do
+    outer = StandardError.new 'outer'
+    inner = StandardError.new 'inner'
+
+    begin
+      raise outer
+    rescue
+      $!.should == outer
+
+      # nested rescue
+      begin
+        $!.should == outer
+        raise inner
+      rescue
+        $!.should == inner
+      ensure
+        $!.should == outer
+      end
+      $!.should == outer
+    end
+    $!.should == nil
+  end
+
+  it "should be set to the value of $! before the begin after a rescue which returns" do
+    def foo
+      outer = StandardError.new 'outer'
+      inner = StandardError.new 'inner'
+
+      begin
+        raise outer
+      rescue
+        $!.should == outer
+
+        # nested rescue
+        begin
+          $!.should == outer
+          raise inner
+        rescue
+          $!.should == inner
+          return
+        ensure
+          $!.should == outer
+        end
+        $!.should == outer
+      end
+      $!.should == nil
+    end
+    foo
+  end
+
+  it "should be set to the value of $! before the begin after a successful rescue within an ensure" do
+    outer = StandardError.new 'outer'
+    inner = StandardError.new 'inner'
+
+    begin
+      begin
+        raise outer
+      ensure
+        $!.should == outer
+
+        # nested rescue
+        begin
+          $!.should == outer
+          raise inner
+        rescue
+          $!.should == inner
+        ensure
+          $!.should == outer
+        end
+        $!.should == outer
+      end
+      flunk "outer should be raised after the ensure"
+    rescue
+      $!.should == outer
+    end
+    $!.should == nil
+  end
+
+  it "should be set to the new exception after a throwing rescue" do
+    outer = StandardError.new 'outer'
+    inner = StandardError.new 'inner'
+
+    begin
+      raise outer
+    rescue
+      $!.should == outer
+
+      begin
+        # nested rescue
+        begin
+          $!.should == outer
+          raise inner
+        rescue # the throwing rescue
+          $!.should == inner
+          raise inner
+        ensure
+          $!.should == inner
+        end
+      rescue # do not make the exception fail the example
+        $!.should == inner
+      end
+      $!.should == outer
+    end
+    $!.should == nil
+  end
+
   describe "in bodies without ensure" do
     it "should be cleared when an exception is rescued" do
+      e = StandardError.new 'foo'
       begin
-        raise 'foo'
+        raise e
       rescue
+        $!.should == e
       end
       $!.should == nil
     end
 
     it "should be cleared when an exception is rescued even when a non-local return is present" do
-      def foo; yield; end
+      def foo(e)
+        $!.should == e
+        yield
+      end
       def bar
+        e = StandardError.new 'foo'
         begin
-          raise
-        rescue Exception
-          foo { return }
+          raise e
+        rescue
+          $!.should == e
+          foo(e) { return }
         end
       end
 
@@ -293,37 +404,46 @@ describe "Predefined global $!" do
           begin
             raise e
           rescue TypeError
+            flunk
           end
         ensure
           $!.should == e
         end
       rescue
+        $!.should == e
       end
+      $!.should == nil
     end
 
     it "should not be cleared when an exception is rescued and rethrown" do
-      e = StandardError.new
+      e = StandardError.new 'foo'
       begin
         begin
           begin
             raise e
           rescue => e
+            $!.should == e
             raise e
           end
         ensure
           $!.should == e
         end
       rescue
+        $!.should == e
       end
+      $!.should == nil
     end
   end
 
   describe "in ensure-protected bodies" do
     it "should be cleared when an exception is rescued" do
+      e = StandardError.new 'foo'
       begin
-        raise 'foo'
+        raise e
       rescue
+        $!.should == e
       ensure
+        $!.should == nil
       end
       $!.should == nil
     end
@@ -335,12 +455,15 @@ describe "Predefined global $!" do
           begin
             raise e
           rescue TypeError
+            flunk
           ensure
+            $!.should == e
           end
         ensure
           $!.should == e
         end
       rescue
+        $!.should == e
       end
     end
 
@@ -351,13 +474,16 @@ describe "Predefined global $!" do
           begin
             raise e
           rescue => e
+            $!.should == e
             raise e
           ensure
+            $!.should == e
           end
         ensure
           $!.should == e
         end
       rescue
+        $!.should == e
       end
     end
   end

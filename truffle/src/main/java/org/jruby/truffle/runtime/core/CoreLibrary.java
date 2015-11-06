@@ -1000,18 +1000,16 @@ public class CoreLibrary {
         return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
     }
 
-    public DynamicObject typeErrorCantConvertTo(Object from, DynamicObject to, String methodUsed, Object result, Node currentNode) {
+    public DynamicObject typeErrorCantConvertTo(Object from, String toClass, String methodUsed, Object result, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isRubyClass(to);
         String fromClass = Layouts.MODULE.getFields(getLogicalClass(from)).getName();
         return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
-                fromClass, Layouts.MODULE.getFields(to).getName(), fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
+                fromClass, toClass, fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
     }
 
-    public DynamicObject typeErrorCantConvertInto(Object from, DynamicObject to, Node currentNode) {
+    public DynamicObject typeErrorCantConvertInto(Object from, String toClass, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isRubyClass(to);
-        return typeError(String.format("can't convert %s into %s", Layouts.MODULE.getFields(getLogicalClass(from)).getName(), Layouts.MODULE.getFields(to).getName()), currentNode);
+        return typeError(String.format("can't convert %s into %s", Layouts.MODULE.getFields(getLogicalClass(from)).getName(), toClass), currentNode);
     }
 
     public DynamicObject typeErrorIsNotA(String value, String expectedType, Node currentNode) {
