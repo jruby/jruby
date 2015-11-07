@@ -20,12 +20,16 @@ import java.io.IOException;
 
 public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
+    public static PolyglotEngine mostRecentPolyglot;
+
     private final PolyglotEngine engine;
     private final RubyContext context;
 
     // Run by reflection from Ruby#loadTruffle
     public JRubyTruffleImpl(Ruby runtime) {
         engine = PolyglotEngine.buildNew().globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new RubyLanguage.JRubyContextWrapper(runtime)).build();
+
+        mostRecentPolyglot = engine;
 
         try {
             context = (RubyContext) engine.eval(Source.fromText("Truffle::Primitive.context", "context").withMimeType(RubyLanguage.MIME_TYPE)).get();
