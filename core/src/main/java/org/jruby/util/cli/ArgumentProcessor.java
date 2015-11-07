@@ -711,7 +711,7 @@ public class ArgumentProcessor {
 
     public static void checkGraalVersion() {
         final String graalVersion = System.getProperty("graal.version", "unknown");
-        final String expectedGraalVersion = "0.7";
+        final String expectedGraalVersion = "0.10-dev";
 
         if (graalVersion.equals("unknown")) {
             return;

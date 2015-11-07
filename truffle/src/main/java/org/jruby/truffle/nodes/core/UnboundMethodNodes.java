@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jcodings.specific.UTF8Encoding;
@@ -178,7 +177,7 @@ public abstract class UnboundMethodNodes {
         public Object sourceLocation(DynamicObject unboundMethod) {
             SourceSection sourceSection = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
 
-            if (sourceSection instanceof NullSourceSection) {
+            if (sourceSection.getSource() == null) {
                 return nil();
             } else {
                 DynamicObject file = createString(StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));

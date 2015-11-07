@@ -303,6 +303,9 @@ project 'JRuby Integration Tests' do
 
   profile 'truffle-test-pe' do
 
+    # Don't run the unit tests.
+    properties :skipTests => 'true'
+
     plugin :antrun do
       execute_goals( 'run',
                      :id => 'rake',
@@ -321,6 +324,8 @@ project 'JRuby Integration Tests' do
 
 
   profile 'truffle-mri-tests' do
+
+    plugin :surefire, '2.15', :skipTests => true
 
     plugin :antrun do
       execute_goals('run',

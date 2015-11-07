@@ -20,7 +20,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jcodings.specific.UTF8Encoding;
@@ -284,7 +283,7 @@ public abstract class ProcNodes {
         public Object sourceLocation(DynamicObject proc) {
             SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(proc).getSourceSection();
 
-            if (sourceSection instanceof NullSourceSection) {
+            if (sourceSection.getSource() == null) {
                 return nil();
             } else {
                 DynamicObject file = createString(StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));

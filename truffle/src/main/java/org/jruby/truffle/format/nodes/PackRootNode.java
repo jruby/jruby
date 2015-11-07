@@ -14,10 +14,12 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.format.runtime.PackEncoding;
 import org.jruby.truffle.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.format.runtime.PackResult;
+import org.jruby.truffle.runtime.RubyLanguage;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 
 /**
@@ -33,7 +35,7 @@ public class PackRootNode extends RootNode {
     @CompilationFinal private int expectedLength = ArrayUtils.capacity(0, 0);
 
     public PackRootNode(String description, PackEncoding encoding, PackNode child) {
-        super(new NullSourceSection("pack", description), PackFrameDescriptor.FRAME_DESCRIPTOR);
+        super(RubyLanguage.class, SourceSection.createUnavailable("pack", description), PackFrameDescriptor.FRAME_DESCRIPTOR);
         this.description = description;
         this.encoding = encoding;
         this.child = child;

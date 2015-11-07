@@ -50,9 +50,14 @@ public abstract class BindingNodes {
                         RubyArguments.getBlock(arguments),
                         RubyArguments.getDeclarationContext(arguments),
                         RubyArguments.extractUserArguments(arguments)),
-                new FrameDescriptor(context.getCoreLibrary().getNilObject()));
+                newFrameDescriptor(context));
 
         return Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), bindingFrame);
+    }
+
+    @TruffleBoundary
+    private static FrameDescriptor newFrameDescriptor(RubyContext context) {
+        return new FrameDescriptor(context.getCoreLibrary().getNilObject());
     }
 
     public static FrameDescriptor getFrameDescriptor(DynamicObject binding) {

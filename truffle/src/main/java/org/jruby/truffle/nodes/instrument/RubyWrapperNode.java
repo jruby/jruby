@@ -10,10 +10,10 @@
 package org.jruby.truffle.nodes.instrument;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrument.EventHandlerNode;
 import com.oracle.truffle.api.instrument.KillException;
 import com.oracle.truffle.api.instrument.Probe;
-import com.oracle.truffle.api.instrument.ProbeNode;
-import com.oracle.truffle.api.instrument.ProbeNode.WrapperNode;
+import com.oracle.truffle.api.instrument.WrapperNode;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.RubyNode;
 public final class RubyWrapperNode extends RubyNode implements WrapperNode {
 
     @Child private RubyNode child;
-    @Child private ProbeNode probeNode;
+    @Child private EventHandlerNode eventHandlerNode;
 
     public RubyWrapperNode(RubyNode child) {
         super(child.getContext(), child.getSourceSection());
@@ -35,21 +35,16 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
         return "Wrapper node for Ruby";
     }
 
-    public void insertProbe(ProbeNode newProbeNode) {
-        this.probeNode = insert(newProbeNode);
+    public void insertEventHandlerNode(EventHandlerNode newProbeNode) {
+        this.eventHandlerNode = insert(newProbeNode);
     }
 
     public Probe getProbe() {
         try {
-            return probeNode.getProbe();
+            return eventHandlerNode.getProbe();
         } catch (IllegalStateException e) {
             throw new UnsupportedOperationException("A lite-Probed wrapper has no explicit Probe");
         }
-    }
-
-    @Override
-    public boolean isInstrumentable() {
-        return false;
     }
 
     public RubyNode getChild() {
@@ -58,17 +53,17 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        probeNode.enter(child, frame);
+        eventHandlerNode.enter(child, frame);
 
         Object result;
 
         try {
             result = child.execute(frame);
-            probeNode.returnValue(child, frame, result);
+            eventHandlerNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
         } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
+            eventHandlerNode.returnExceptional(child, frame, e);
             throw e;
         }
 
@@ -77,17 +72,17 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
-        probeNode.enter(child, frame);
+        eventHandlerNode.enter(child, frame);
 
         boolean result;
 
         try {
             result = child.executeBoolean(frame);
-            probeNode.returnValue(child, frame, result);
+            eventHandlerNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
         } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
+            eventHandlerNode.returnExceptional(child, frame, e);
             throw e;
         }
 
@@ -101,17 +96,17 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
 
     @Override
     public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
-        probeNode.enter(child, frame);
+        eventHandlerNode.enter(child, frame);
 
         int result;
 
         try {
             result = child.executeInteger(frame);
-            probeNode.returnValue(child, frame, result);
+            eventHandlerNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
         } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
+            eventHandlerNode.returnExceptional(child, frame, e);
             throw e;
         }
 
@@ -120,17 +115,17 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
 
     @Override
     public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
-        probeNode.enter(child, frame);
+        eventHandlerNode.enter(child, frame);
 
         long result;
 
         try {
             result = child.executeLong(frame);
-            probeNode.returnValue(child, frame, result);
+            eventHandlerNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
         } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
+            eventHandlerNode.returnExceptional(child, frame, e);
             throw e;
         }
 
@@ -139,17 +134,17 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
 
     @Override
     public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
-        probeNode.enter(child, frame);
+        eventHandlerNode.enter(child, frame);
 
         double result;
 
         try {
             result = child.executeDouble(frame);
-            probeNode.returnValue(child, frame, result);
+            eventHandlerNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
         } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
+            eventHandlerNode.returnExceptional(child, frame, e);
             throw e;
         }
 
@@ -158,15 +153,15 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        probeNode.enter(child, frame);
+        eventHandlerNode.enter(child, frame);
 
         try {
             child.executeVoid(frame);
-            probeNode.returnVoid(child, frame);
+            eventHandlerNode.returnVoid(child, frame);
         } catch (KillException e) {
             throw e;
         } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
+            eventHandlerNode.returnExceptional(child, frame, e);
             throw e;
         }
     }

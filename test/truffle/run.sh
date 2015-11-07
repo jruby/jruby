@@ -43,5 +43,5 @@ bin/jruby bin/gem install sinatra
 bin/jruby -X+T -Ilib/ruby/gems/shared/gems/rack-1.6.4/lib -Ilib/ruby/gems/shared/gems/tilt-2.0.1/lib -Ilib/ruby/gems/shared/gems/rack-protection-1.5.3/lib -Ilib/ruby/gems/shared/gems/sinatra-1.4.6/lib test/truffle/simple-sinatra-server.rb &
 test_server
 
-echo "Coverage..."
-bin/jruby -X+T -Xtruffle.coverage=true test/truffle/coverage/test.rb
+#echo "Coverage..."
+#bin/jruby -X+T -Xtruffle.coverage=true test/truffle/coverage/test.rb

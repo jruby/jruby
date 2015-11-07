@@ -1351,7 +1351,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, optional = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 2, raiseIfFrozenSelf = true, lowerFixnumParameters = 0)
     @ImportStatic(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
@@ -1400,8 +1400,7 @@ public abstract class ArrayNodes {
             }
 
         }
-
-
+        
         @Specialization
         public DynamicObject initialize(DynamicObject array, NotProvided size, NotProvided defaultValue, NotProvided block) {
             return initialize(array, 0, nil(), block);
@@ -2186,7 +2185,7 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MaxBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", "max");
+            final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "max");
 
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
@@ -2291,7 +2290,7 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MinBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", "min");
+            final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "min");
 
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");

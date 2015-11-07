@@ -13,8 +13,15 @@ project 'JRuby Truffle' do
   jar 'org.yaml:snakeyaml:1.14'
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  jar 'com.oracle:truffle:0.7'
-  jar 'com.oracle:truffle-dsl-processor:0.7', :scope => 'provided'
+  repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
+              :id => 'truffle' )
+
+  truffle_version = '56e71849d356cd689d72f49216e6716462f1c37f-SNAPSHOT'
+  jar 'com.oracle.truffle:truffle-api:' + truffle_version
+  jar 'com.oracle.truffle:truffle-debug:' + truffle_version
+  jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
+  jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
+  jar 'junit:junit', :scope => 'test'
 
   plugin( :compiler,
           'encoding' => 'utf-8',
@@ -35,7 +42,8 @@ project 'JRuby Truffle' do
                    :id => 'default-compile',
                    :phase => 'compile',
                    'annotationProcessors' => [ 'org.jruby.truffle.om.dsl.processor.OMProcessor',
-                                               'com.oracle.truffle.dsl.processor.TruffleProcessor' ],
+                                               'com.oracle.truffle.dsl.processor.TruffleProcessor',
+                                              'com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',

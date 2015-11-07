@@ -14,11 +14,12 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.interop.messages.*;
-import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -78,16 +79,16 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public IsExecutableNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(IsExecutable.create(Receiver.create()));
+            this.node = Message.IS_EXECUTABLE.createNode();
         }
 
         @Specialization
         public boolean isExecutable(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) node.executeForeign(frame, receiver);
+            return (boolean) ForeignAccess.execute(node, frame, receiver, receiver);
         }
 
     }
@@ -95,16 +96,16 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "boxed_primitive?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsBoxedPrimitiveNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public IsBoxedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(IsBoxed.create(Receiver.create()));
+            this.node = Message.IS_BOXED.createNode();
         }
 
         @Specialization
         public boolean isBoxedPrimitive(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) node.executeForeign(frame, receiver);
+            return (boolean) ForeignAccess.execute(node, frame, receiver);
         }
 
     }
@@ -112,16 +113,16 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsNullNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public IsNullNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(IsNull.create(Receiver.create()));
+            this.node = Message.IS_NULL.createNode();
         }
 
         @Specialization
         public boolean isNull(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) node.executeForeign(frame, receiver);
+            return (boolean) ForeignAccess.execute(node, frame, receiver);
         }
 
     }
@@ -129,16 +130,16 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "has_size_property?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class HasSizePropertyNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public HasSizePropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(HasSize.create(Receiver.create()));
+            this.node = Message.HAS_SIZE.createNode();
         }
 
         @Specialization
         public boolean hasSizeProperty(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) node.executeForeign(frame, receiver);
+            return (boolean) ForeignAccess.execute(node, frame, receiver);
         }
 
     }
@@ -146,21 +147,32 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "read_property", isModuleFunction = true, needsSelf = false, required = 2)
     public abstract static class ReadPropertyNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public ReadPropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(Read.create(Receiver.create(), Argument.create()));
+            this.node = Message.READ.createNode();
         }
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, int identifier) {
-            return node.executeForeign(frame, receiver, identifier);
+            return ForeignAccess.execute(node, frame, receiver, identifier);
         }
+        
+        @Specialization
+        public Object executeForeign(VirtualFrame frame, String receiver, int identifier) {
+            return receiver.charAt(identifier);
+        }
+        
+        @Specialization
+        public Object executeForeign(VirtualFrame frame, String receiver, long identifier) {
+            return receiver.charAt((int) identifier);
+        }
+
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, long identifier) {
-            return node.executeForeign(frame, receiver, identifier);
+            return ForeignAccess.execute(node, frame, receiver, (int) identifier);
         }
 
         @CompilationFinal private String identifier;
@@ -171,12 +183,12 @@ public abstract class TruffleInteropNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 this.identifier = Layouts.SYMBOL.getString(identifier).intern();
             }
-            return node.executeForeign(frame, receiver, this.identifier);
+            return ForeignAccess.execute(node, frame, receiver, this.identifier);
         }
 
-        @Specialization(guards = "isRubyString(identifier)")
-        public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
-            return node.executeForeign(frame, receiver, slowPathToString(identifier));
+        @Specialization
+        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
+            return ForeignAccess.execute(node, frame, receiver, slowPathToString(identifier));
         }
 
         @TruffleBoundary
@@ -190,21 +202,21 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "write_property", isModuleFunction = true, needsSelf = false, required = 3)
     public abstract static class WritePropertyNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public WritePropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(Write.create(Receiver.create(), Argument.create(), Argument.create()));
+            this.node = Message.WRITE.createNode();
         }
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, int identifier,  Object value) {
-            return node.executeForeign(frame, receiver, identifier, value);
+            return ForeignAccess.execute(node, frame, receiver, identifier, value);
         }
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, long identifier,  Object value) {
-            return node.executeForeign(frame, receiver, identifier, value);
+            return ForeignAccess.execute(node, frame, receiver, identifier, value);
         }
 
         @CompilationFinal private String identifier;
@@ -215,12 +227,12 @@ public abstract class TruffleInteropNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 this.identifier = Layouts.SYMBOL.getString(identifier).intern();
             }
-            return node.executeForeign(frame, receiver, this.identifier, value);
+            return ForeignAccess.execute(node, frame, receiver, this.identifier, value);
         }
 
         @Specialization(guards = "isRubyString(identifier)")
         public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier, Object value) {
-            return node.executeForeign(frame, receiver, slowPathToString(identifier), value);
+            return ForeignAccess.execute(node, frame, receiver, slowPathToString(identifier), value);
         }
 
         @TruffleBoundary
@@ -234,16 +246,16 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "unbox_value", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class UnboxValueNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public UnboxValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(Unbox.create(Receiver.create()));
+            this.node = Message.UNBOX.createNode();
         }
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
-            return node.executeForeign(frame, receiver);
+            return ForeignAccess.execute(node, frame, receiver);
         }
 
     }
@@ -251,19 +263,19 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public ExecuteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, Object[] arguments) {
+        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, Object[] args) {
             if (node == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.node = ForeignObjectAccessNode.getAccess(Execute.create(Receiver.create(), arguments.length));
+                this.node = Message.createExecute(args.length).createNode();
             }
-            return node.executeForeign(frame, receiver, arguments);
+            return ForeignAccess.execute(node, frame, receiver, args);
         }
 
     }
@@ -271,11 +283,11 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "size", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class GetSizeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public GetSizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(GetSize.create(Receiver.create()));
+            this.node = Message.GET_SIZE.createNode();
         }
 
         @Specialization
@@ -285,9 +297,42 @@ public abstract class TruffleInteropNodes {
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
-            return node.executeForeign(frame, receiver);
+            return ForeignAccess.execute(node, frame, receiver);
         }
 
     }
 
+    @CoreMethod(names = "export", isModuleFunction = true, needsSelf = false, required = 2)
+    public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
+
+        public ExportNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(name)")
+        public Object export(VirtualFrame frame, DynamicObject name, TruffleObject object) {
+            getContext().exportObject(name, object);
+            return object;
+        }
+
+        protected static String rubyStringToString(DynamicObject rubyString) {
+            return rubyString.toString();
+        }
+    }
+
+    @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
+
+
+        public ImportNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name)")
+        public Object importObject(DynamicObject name) {
+            return getContext().importObject(name);
+        }
+
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
-import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -23,15 +22,15 @@ import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
 
-public class ArrayForeignAccessFactory implements ForeignAccess.Factory10 {
+public class RubyMethodForeignAccessFactory implements ForeignAccess.Factory10 {
     private final RubyContext context;
 
-    private ArrayForeignAccessFactory(RubyContext context) {
+    private RubyMethodForeignAccessFactory(RubyContext context) {
         this.context = context;
     }
 
     public static ForeignAccess create(RubyContext context) {
-        return ForeignAccess.create(DynamicObject.class, new ArrayForeignAccessFactory(context));
+        return ForeignAccess.create(DynamicObject.class, new RubyMethodForeignAccessFactory(context));
     }
 
     @Override
@@ -51,12 +50,12 @@ public class ArrayForeignAccessFactory implements ForeignAccess.Factory10 {
 
     @Override
     public CallTarget accessHasSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyTrue(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyFalse(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
     public CallTarget accessGetSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createGetSize(context, SourceSection.createUnavailable("", ""))));
+        return null;
     }
 
     @Override
@@ -66,22 +65,22 @@ public class ArrayForeignAccessFactory implements ForeignAccess.Factory10 {
 
     @Override
     public CallTarget accessRead() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createRead(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessWrite() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createWrite(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessExecute(int i) {
         return null;
     }
 
     @Override
-    public CallTarget accessInvoke(int arity) {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, SourceSection.createUnavailable("", ""), arity)));
+    public CallTarget accessWrite() {
+        return null;
+    }
+
+    @Override
+    public CallTarget accessExecute(int i) {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecute(context, SourceSection.createUnavailable("", ""))));
+    }
+
+    @Override
+    public CallTarget accessInvoke(int i) {
+        return null;
     }
 
     @Override
@@ -90,7 +89,7 @@ public class ArrayForeignAccessFactory implements ForeignAccess.Factory10 {
     }
 
     @Override
-    public CallTarget accessMessage(Message msg) {
+    public CallTarget accessMessage(com.oracle.truffle.api.interop.Message msg) {
         return null;
     }
 

@@ -15,7 +15,6 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.source.NullSourceSection;
 
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -84,7 +83,7 @@ public abstract class RubyCallStack {
                 // Multiple top level methods (require) introduce null call nodes - ignore them
 
                 if (frameInstance.getCallNode() != null && depth >= omit) {
-                    if (!filterNullSourceSection || !(frameInstance.getCallNode().getEncapsulatingSourceSection() instanceof NullSourceSection)) {
+                    if (!filterNullSourceSection || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
                         activations.add(new Activation(frameInstance.getCallNode(),
                                 frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
                     }
@@ -106,7 +105,7 @@ public abstract class RubyCallStack {
 
             @Override
             public Node visitFrame(FrameInstance frameInstance) {
-                if (frameInstance.getCallNode().getEncapsulatingSourceSection() instanceof CoreSourceSection) {
+                if (CoreSourceSection.isCoreSourceSection(frameInstance.getCallNode().getEncapsulatingSourceSection())) {
                     return null;
                 } else {
                     return frameInstance.getCallNode();

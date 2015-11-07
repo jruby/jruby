@@ -19,10 +19,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.TimeNodes;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.nodes.core.TimeNodes;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -330,7 +331,6 @@ public abstract class TimePrimitiveNodes {
         @Specialization
         public Object timeEnvZone(DynamicObject time) {
             final DateTime dt = Layouts.TIME.getDateTime(time);
-
             final String timezone = dt.getZone().getShortName(dt.getMillis());
 
             return createString(StringOperations.encodeByteList(timezone, UTF8Encoding.INSTANCE));

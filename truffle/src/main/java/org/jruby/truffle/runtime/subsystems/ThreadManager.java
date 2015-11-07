@@ -191,7 +191,14 @@ public class ThreadManager {
 
     @TruffleBoundary
     public DynamicObject getCurrentThread() {
-        return currentThread.get();
+        DynamicObject current = currentThread.get();
+
+        if (current == null) {
+            current = rootThread;
+            currentThread.set(current);
+        }
+
+        return current;
     }
 
     public synchronized void registerThread(DynamicObject thread) {

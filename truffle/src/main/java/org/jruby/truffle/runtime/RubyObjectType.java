@@ -10,11 +10,12 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.interop.ForeignAccessFactory;
+import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.ArrayForeignAccessFactory;
 import org.jruby.truffle.runtime.core.BasicForeignAccessFactory;
 import org.jruby.truffle.runtime.core.HashForeignAccessFactory;
@@ -44,17 +45,19 @@ public class RubyObjectType extends ObjectType {
     }
 
     @Override
-    public ForeignAccessFactory getForeignAccessFactory() {
-        final RubyContext context = getContext();
-
-        if (Layouts.ARRAY.isArray(this)) {
-            return new ArrayForeignAccessFactory(context);
+    public ForeignAccess getForeignAccessFactory() {
+        if (Layouts.METHOD.isMethod(this)) {
+            return RubyMethodForeignAccessFactory.create(getContext());
+        } else if (Layouts.PROC.isProc(this)) {
+            return RubyMethodForeignAccessFactory.create(getContext());
+        } else if (Layouts.ARRAY.isArray(this)) {
+            return ArrayForeignAccessFactory.create(getContext());
         } else if (Layouts.HASH.isHash(this)) {
-            return new HashForeignAccessFactory(context);
+            return HashForeignAccessFactory.create(getContext());
         } else if (Layouts.STRING.isString(this)) {
-            return new StringForeignAccessFactory(context);
+            return StringForeignAccessFactory.create(getContext());
         } else {
-            return new BasicForeignAccessFactory(context);
+            return BasicForeignAccessFactory.create(getContext());
         }
     }
 

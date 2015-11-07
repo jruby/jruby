@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import java.util.EnumSet;
-
 import org.jruby.truffle.runtime.Options;
 
 import com.oracle.truffle.api.Assumption;
@@ -23,7 +21,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.IncompatibleLocationException;
 import com.oracle.truffle.api.object.Location;
-import com.oracle.truffle.api.object.LocationModifier;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 
@@ -70,7 +67,7 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     public void writeNewField(DynamicObject object, Object value,
             @Cached("hasField(object, value)") boolean hasField,
             @Cached("object.getShape()") Shape oldShape,
-            @Cached("transitionWithNewField(oldShape, value)") Shape newShape,
+            @Cached("transitionWithNewField(object, value)") Shape newShape,
             @Cached("getNewLocation(newShape)") Location location,
             @Cached("createAssumption()") Assumption validLocation) {
         try {
@@ -112,23 +109,8 @@ public abstract class WriteHeadObjectFieldNode extends Node {
         return getLocation(object, value) != null;
     }
 
-    protected Shape transitionWithNewField(Shape oldShape, Object value) {
-        // This duplicates quite a bit of DynamicObject.define(), but should be fixed in Truffle soon.
-        final Property oldProperty = oldShape.getProperty(name);
-        if (oldProperty != null) {
-            if (oldProperty.getFlags() == 0 && oldProperty.getLocation().canSet(null, value)) {
-                return oldShape; // already the right shape
-            } else {
-                DynamicObject copy = oldShape.getLayout().newInstance(oldShape);
-                copy.define(name, value, 0);
-                return copy.getShape();
-            }
-        } else {
-            final Location location = oldShape.allocator().locationForValue(value,
-                    EnumSet.of(LocationModifier.Final, LocationModifier.NonNull));
-            final Property newProperty = Property.create(name, location, 0);
-            return oldShape.addProperty(newProperty);
-        }
+    protected Shape transitionWithNewField(DynamicObject object, Object value) {
+        return object.getShape().defineProperty(name, value, 0);
     }
 
     protected Location getNewLocation(Shape newShape) {

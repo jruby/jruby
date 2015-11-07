@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -22,11 +23,13 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.vm.PolyglotEngine;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
+import org.jruby.truffle.JRubyTruffleImpl;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -328,7 +331,7 @@ public abstract class TrufflePrimitiveNodes {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
 
-            getContext().getCoverageTracker().install();
+            getContext().getEnv().instrumenter().install(getContext().getCoverageTracker());
             return getContext().getCoreLibrary().getNilObject();
         }
 
@@ -725,6 +728,19 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
+    @CoreMethod(names = "context", onSingleton = true)
+    public abstract static class ContextNode extends CoreMethodArrayArgumentsNode {
+
+        public ContextNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyContext context() {
+            return getContext();
+        }
+    }
+
     @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
 
@@ -752,6 +768,60 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization(guards = "isRubyString(file)")
         public boolean load(DynamicObject file, NotProvided wrap) {
             return load(file, false);
+        }
+    }
+
+    @CoreMethod(names = "run_jruby_root", onSingleton = true)
+    public abstract static class RunJRubyRootNode extends CoreMethodArrayArgumentsNode {
+
+        public RunJRubyRootNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object runJRubyRootNode() {
+            return getContext().execute(getContext().getInitialJRubyRootNode());
+        }
+    }
+
+    @CoreMethod(names = "polyglot_eval_supported", onSingleton = true)
+    public abstract static class PolyglotEvalSupportedNode extends CoreMethodArrayArgumentsNode {
+
+        public PolyglotEvalSupportedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject polyglotEvalSupported() {
+            final String[] languages = JRubyTruffleImpl.mostRecentPolyglot.getLanguages().keySet().toArray(new String[]{});
+
+            final Object[] mimeTypes = new Object[languages.length];
+
+            for (int n = 0; n < languages.length; n++) {
+                mimeTypes[n] = createString(StringOperations.encodeByteList(languages[n], UTF8Encoding.INSTANCE));
+            }
+
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), mimeTypes, mimeTypes.length);
+        }
+    }
+
+    @CoreMethod(names = "polyglot_eval", onSingleton = true, required = 2)
+    public abstract static class PolyglotEvalNode extends CoreMethodArrayArgumentsNode {
+
+        public PolyglotEvalNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = {"isRubyString(mimeType)", "isRubyString(source)"})
+        public Object polyglotEval(DynamicObject mimeType, DynamicObject source) {
+            try {
+                return JRubyTruffleImpl.mostRecentPolyglot.eval(
+                        Source.fromNamedText(source.toString(), "(eval)").withMimeType(mimeType.toString())).get();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
