@@ -362,6 +362,10 @@ public abstract class ArrayUtils {
         } else {
             int capacity = current;
 
+            if (capacity == 0) {
+                capacity = 16;
+            }
+
             while (capacity < needed) {
                 capacity *= 2;
             }
