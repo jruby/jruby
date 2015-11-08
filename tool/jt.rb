@@ -348,6 +348,8 @@ module Commands
 
   def test_pe(*args)
     file = args.pop if args.last and File.exist?(args.last)
+    args.push('-J-Djvmci.option.TruffleIterativePartialEscape=true')
+    args.push('-J-Djvmci.option.TruffleCompilationExceptionsAreThrown=true')
     run('--graal', *args, 'test/truffle/pe/pe.rb', *file)
   end
   private :test_pe
