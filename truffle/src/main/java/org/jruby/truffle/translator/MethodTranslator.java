@@ -155,7 +155,6 @@ public class MethodTranslator extends BodyTranslator {
 
         body = new RedoableNode(context, sourceSection, body);
         body = new CatchNextNode(context, sourceSection, body);
-        body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
         return body;
     }
