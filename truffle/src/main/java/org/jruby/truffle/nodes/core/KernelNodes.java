@@ -287,8 +287,9 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean blockGiven(MaterializedFrame callerFrame) {
-            return RubyArguments.getBlock(callerFrame.getArguments()) != null;
+        public boolean blockGiven(MaterializedFrame callerFrame,
+                                  @Cached("createBinaryProfile()") ConditionProfile blockProfile) {
+            return blockProfile.profile(RubyArguments.getBlock(callerFrame.getArguments()) != null);
         }
 
         @TruffleBoundary
