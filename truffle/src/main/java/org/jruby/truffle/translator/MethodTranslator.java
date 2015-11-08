@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.ast.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -106,17 +107,13 @@ public class MethodTranslator extends BodyTranslator {
                 NodeUtil.cloneNode(loadArguments));
 
         // Procs
-        final RubyNode bodyProc = wrapBody(preludeProc, body);
+        final RubyNode bodyProc = new CatchForProcNode(context, sourceSection, composeBody(preludeProc, body));
 
         final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
-        final RubyNode bodyLambda =
-                new CatchBreakAsReturnNode(context, sourceSection,
-                        new CatchReturnNode(context, sourceSection,
-                                wrapBody(preludeLambda, body),
-                                environment.getReturnID()));
+        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection, composeBody(preludeLambda, body), environment.getReturnID());
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
                 context, sourceSection,
@@ -144,7 +141,7 @@ public class MethodTranslator extends BodyTranslator {
         }
     }
 
-    private RubyNode wrapBody(RubyNode prelude, RubyNode body) {
+    private RubyNode composeBody(RubyNode prelude, RubyNode body) {
         final SourceSection sourceSection = body.getSourceSection();
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);
@@ -153,9 +150,6 @@ public class MethodTranslator extends BodyTranslator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new RedoableNode(context, sourceSection, body);
-        body = new CatchNextNode(context, sourceSection, body);
-        body = new CatchRetryAsErrorNode(context, sourceSection, body);
         return body;
     }
 
@@ -201,8 +195,7 @@ public class MethodTranslator extends BodyTranslator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
-        body = new CatchRetryAsErrorNode(context, sourceSection, body);
+        body = new CatchForMethodNode(context, sourceSection, body, environment.getReturnID());
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
         body = new ExceptionTranslatingNode(context, sourceSection, body);

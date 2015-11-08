@@ -9,20 +9,26 @@
  */
 package org.jruby.truffle.nodes.methods;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.NextException;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RedoException;
+import org.jruby.truffle.runtime.control.RetryException;
 
-public class RedoableNode extends RubyNode {
+public class CatchForProcNode extends RubyNode {
 
     @Child private RubyNode body;
 
     private final BranchProfile redoProfile = BranchProfile.create();
+    private final BranchProfile nextProfile = BranchProfile.create();
 
-    public RedoableNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
+    public CatchForProcNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
         this.body = body;
     }
@@ -36,6 +42,12 @@ public class RedoableNode extends RubyNode {
                 redoProfile.enter();
                 getContext().getSafepointManager().poll(this);
                 continue;
+            } catch (NextException e) {
+                nextProfile.enter();
+                return e.getResult();
+            } catch (RetryException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().syntaxError("Invalid retry", this));
             }
         }
     }

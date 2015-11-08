@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.methods;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -17,12 +18,11 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.control.RetryException;
 import org.jruby.truffle.runtime.control.ReturnException;
 
-/**
- * Catch a {@code return} jump at the root of a method.
- */
-public class CatchReturnNode extends RubyNode {
+public class CatchForMethodNode extends RubyNode {
 
     @Child private RubyNode body;
     private final ReturnID returnID;
@@ -30,7 +30,7 @@ public class CatchReturnNode extends RubyNode {
     private final BranchProfile returnProfile = BranchProfile.create();
     private final ConditionProfile matchingReturnProfile = ConditionProfile.createBinaryProfile();
 
-    public CatchReturnNode(RubyContext context, SourceSection sourceSection, RubyNode body, ReturnID returnID) {
+    public CatchForMethodNode(RubyContext context, SourceSection sourceSection, RubyNode body, ReturnID returnID) {
         super(context, sourceSection);
         this.body = body;
         this.returnID = returnID;
@@ -42,12 +42,14 @@ public class CatchReturnNode extends RubyNode {
             return body.execute(frame);
         } catch (ReturnException e) {
             returnProfile.enter();
-
             if (matchingReturnProfile.profile(e.getReturnID() == returnID)) {
                 return e.getValue();
             } else {
                 throw e;
             }
+        } catch (RetryException e) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().syntaxError("Invalid retry", this));
         }
     }
 
