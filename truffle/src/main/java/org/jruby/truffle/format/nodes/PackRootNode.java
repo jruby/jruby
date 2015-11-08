@@ -32,7 +32,7 @@ public class PackRootNode extends RootNode {
 
     @Child private PackNode child;
 
-    @CompilationFinal private int expectedLength = ArrayUtils.capacity(0, 0);
+    @CompilationFinal private int expectedLength = 0;
 
     public PackRootNode(String description, PackEncoding encoding, PackNode child) {
         super(RubyLanguage.class, SourceSection.createUnavailable("pack", description), PackFrameDescriptor.FRAME_DESCRIPTOR);
@@ -62,7 +62,7 @@ public class PackRootNode extends RootNode {
 
         if (outputLength > expectedLength) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            expectedLength = ArrayUtils.capacity(expectedLength, outputLength);
+            expectedLength = outputLength;
         }
 
         final byte[] output;
