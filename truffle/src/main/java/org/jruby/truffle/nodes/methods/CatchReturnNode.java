@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
@@ -26,7 +28,7 @@ public class CatchReturnNode extends RubyNode {
     private final ReturnID returnID;
 
     private final BranchProfile returnProfile = BranchProfile.create();
-    private final BranchProfile returnToOtherMethodProfile = BranchProfile.create();
+    private final ConditionProfile matchingReturnProfile = ConditionProfile.createBinaryProfile();
 
     public CatchReturnNode(RubyContext context, SourceSection sourceSection, RubyNode body, ReturnID returnID) {
         super(context, sourceSection);
@@ -41,10 +43,9 @@ public class CatchReturnNode extends RubyNode {
         } catch (ReturnException e) {
             returnProfile.enter();
 
-            if (e.getReturnID() == returnID) {
+            if (matchingReturnProfile.profile(e.getReturnID() == returnID)) {
                 return e.getValue();
             } else {
-                returnToOtherMethodProfile.enter();
                 throw e;
             }
         }
