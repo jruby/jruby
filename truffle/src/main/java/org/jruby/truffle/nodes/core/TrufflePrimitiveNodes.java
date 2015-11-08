@@ -781,4 +781,22 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
+    /*
+     * Truffle::Primitive.create_simple_string creates a string 'test' without any part of the string escaping. Useful
+     * for testing compilation of String becuase most other ways to construct a string can currently escape.
+     */
+
+    @CoreMethod(names = "create_simple_string", onSingleton = true)
+    public abstract static class CreateSimpleStringNode extends CoreMethodArrayArgumentsNode {
+
+        public CreateSimpleStringNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject createSimpleString() {
+            return createString(new ByteList(new byte[]{'t', 'e', 's', 't'}, false));
+        }
+    }
+
 }

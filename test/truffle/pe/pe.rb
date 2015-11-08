@@ -71,6 +71,7 @@ else
   require_relative 'core/hash_pe.rb'
   require_relative 'core/eval_pe.rb'
   require_relative 'core/send_pe.rb'
+  require_relative 'core/string_pe.rb'
   require_relative 'core/objectid_pe.rb'
   require_relative 'core/binding_pe.rb'
   require_relative 'core/frozen_pe.rb'
