@@ -55,7 +55,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, Type type) {
-        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
+        declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
         final Arity arityForCheck;
 
@@ -103,7 +103,7 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         final RubyNode preludeLambda = SequenceNode.sequence(context, sourceSection,
-                new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                new CheckArityNode(context, sourceSection, arityForCheck),
                 NodeUtil.cloneNode(loadArguments));
 
         // Procs
@@ -163,7 +163,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public RubyNode doCompileMethodBody(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
-        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
+        declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
 
         RubyNode body;
@@ -185,7 +185,7 @@ public class MethodTranslator extends BodyTranslator {
             prelude = loadArguments;
         } else {
             prelude = SequenceNode.sequence(context, sourceSection,
-                    new CheckArityNode(context, sourceSection, arity, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                    new CheckArityNode(context, sourceSection, arity),
                     loadArguments);
         }
 
@@ -211,15 +211,13 @@ public class MethodTranslator extends BodyTranslator {
         return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
-    private ParameterCollector declareArguments(SourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
+    private void declareArguments(SourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
         final ParameterCollector parameterCollector = new ParameterCollector();
         argsNode.accept(parameterCollector);
 
         for (String parameter : parameterCollector.getParameters()) {
             environment.declareVar(parameter);
         }
-
-        return parameterCollector;
     }
 
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {

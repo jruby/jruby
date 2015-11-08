@@ -28,18 +28,10 @@ import java.util.Map;
 public class CheckArityNode extends RubyNode {
 
     private final Arity arity;
-    private final String[] keywords;
-    private final boolean keywordsRest;
 
     public CheckArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
-        this(context, sourceSection, arity, new String[]{}, false);
-    }
-
-    public CheckArityNode(RubyContext context, SourceSection sourceSection, Arity arity, String[] keywords, boolean keywordsRest) {
         super(context, sourceSection);
         this.arity = arity;
-        this.keywords = keywords;
-        this.keywordsRest = keywordsRest;
     }
 
     @Override
@@ -65,7 +57,7 @@ public class CheckArityNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
         }
 
-        if (!keywordsRest && keywordArguments != null) {
+        if (!arity.hasKeywordsRest() && keywordArguments != null) {
             for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(keywordArguments)) {
                 if (!keywordAllowed(keyValue.getKey().toString())) {
                     CompilerDirectives.transferToInterpreter();
@@ -90,7 +82,7 @@ public class CheckArityNode extends RubyNode {
     }
 
     private boolean keywordAllowed(String keyword) {
-        for (String allowedKeyword : keywords) {
+        for (String allowedKeyword : arity.getKeywordArguments()) {
             if (keyword.equals(allowedKeyword)) {
                 return true;
             }
