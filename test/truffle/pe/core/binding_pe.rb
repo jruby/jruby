@@ -6,7 +6,7 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# TODO CS 8-Nov-15 fail due to a control flow diverge
+# TODO CS 8-Nov-15 fail due to a boundary and control flow diverge
 
 # Kernel#binding
 tagged_example "x = 14; binding.local_variable_get(:x)", 14
