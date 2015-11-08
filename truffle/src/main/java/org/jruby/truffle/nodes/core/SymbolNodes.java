@@ -148,7 +148,7 @@ public abstract class SymbolNodes {
                     new FrameDescriptor(nil()),
                     sharedMethodInfo,
                     SequenceNode.sequence(getContext(), sourceSection,
-                            new CheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE),
+                            CheckArityNode.create(getContext(), sourceSection, Arity.AT_LEAST_ONE),
                             new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol))));
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);

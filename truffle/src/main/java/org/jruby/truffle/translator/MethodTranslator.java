@@ -103,7 +103,7 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         final RubyNode preludeLambda = SequenceNode.sequence(context, sourceSection,
-                new CheckArityNode(context, sourceSection, arityForCheck),
+                CheckArityNode.create(context, sourceSection, arityForCheck),
                 NodeUtil.cloneNode(loadArguments));
 
         // Procs
@@ -185,7 +185,7 @@ public class MethodTranslator extends BodyTranslator {
             prelude = loadArguments;
         } else {
             prelude = SequenceNode.sequence(context, sourceSection,
-                    new CheckArityNode(context, sourceSection, arity),
+                    CheckArityNode.create(context, sourceSection, arity),
                     loadArguments);
         }
 

@@ -224,7 +224,7 @@ public class CoreMethodNodeManager {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
-        final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
+        final RubyNode checkArity = CheckArityNode.create(context, sourceSection, arity);
         RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
         if (method.returnsEnumeratorIfNoBlock()) {
