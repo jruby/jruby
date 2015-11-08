@@ -2338,6 +2338,7 @@ public abstract class ArrayNodes {
                 DynamicObject array,
                 DynamicObject format,
                 @Cached("privatizeByteList(format)") ByteList cachedFormat,
+                @Cached("byteListLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final PackResult result;
 
@@ -2348,7 +2349,7 @@ public abstract class ArrayNodes {
                 throw handleException(e);
             }
 
-            return finishPack(cachedFormat, result);
+            return finishPack(cachedFormatLength, result);
         }
 
         @Specialization(contains = "packCached", guards = "isRubyString(format)")
@@ -2366,7 +2367,7 @@ public abstract class ArrayNodes {
                 throw handleException(e);
             }
 
-            return finishPack(StringOperations.getByteList(format), result);
+            return finishPack(StringOperations.getByteList(format).length(), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2387,10 +2388,10 @@ public abstract class ArrayNodes {
             }
         }
 
-        private DynamicObject finishPack(ByteList format, PackResult result) {
-            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+        private DynamicObject finishPack(int formatLength, PackResult result) {
+            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength(), false));
 
-            if (format.length() == 0) {
+            if (formatLength == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {

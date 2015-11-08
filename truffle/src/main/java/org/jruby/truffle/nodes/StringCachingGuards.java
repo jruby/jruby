@@ -33,4 +33,8 @@ public abstract class StringCachingGuards {
         }
     }
 
+    public static int byteListLength(ByteList byteList) {
+        return byteList.length();
+    }
+
 }

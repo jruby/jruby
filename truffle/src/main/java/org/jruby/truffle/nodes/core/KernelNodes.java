@@ -1901,6 +1901,7 @@ public abstract class KernelNodes {
                 DynamicObject format,
                 Object[] arguments,
                 @Cached("privatizeByteList(format)") ByteList cachedFormat,
+                @Cached("byteListLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final PackResult result;
 
@@ -1911,7 +1912,7 @@ public abstract class KernelNodes {
                 throw handleException(e);
             }
 
-            return finishFormat(cachedFormat, result);
+            return finishFormat(cachedFormatLength, result);
         }
 
         @Specialization(guards = "isRubyString(format)", contains = "formatCached")
@@ -1929,7 +1930,7 @@ public abstract class KernelNodes {
                 throw handleException(e);
             }
 
-            return finishFormat(StringOperations.getByteList(format), result);
+            return finishFormat(StringOperations.getByteList(format).length(), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -1950,10 +1951,10 @@ public abstract class KernelNodes {
             }
         }
 
-        private DynamicObject finishFormat(ByteList format, PackResult result) {
-            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+        private DynamicObject finishFormat(int formatLength, PackResult result) {
+            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength(), false));
 
-            if (format.length() == 0) {
+            if (formatLength == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {
