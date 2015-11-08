@@ -14,5 +14,7 @@ module BlockGivenFixtures
 
 end
 
+# TODO CS 8-Nov-15 produces a graph that I think should reduce to a constant but doesn't
+
 tagged_example "BlockGivenFixtures.foo", false
 tagged_example "BlockGivenFixtures.foo { }", true
