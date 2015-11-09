@@ -163,16 +163,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regex;
     }
 
-    static Regex getQuotedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options) {
-        Regex regex = quotedPatternCache.get(bytes);
-        if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
-        ByteList quoted = quote(bytes, enc);
-        regex = makeRegexp(runtime, quoted, options, enc);
-        regex.setUserObject(quoted);
-        quotedPatternCache.put(bytes, regex);
-        return regex;
-    }
-
     static Regex getQuotedRegexpFromCache19(Ruby runtime, ByteList bytes, RegexpOptions options, boolean asciiOnly) {
         Regex regex = quotedPatternCache.get(bytes);
         Encoding enc = asciiOnly ? USASCIIEncoding.INSTANCE : bytes.getEncoding();
@@ -537,78 +527,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = {"quote", "escape"}, meta = true)
     public static IRubyObject quote19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        RubyString str = operandCheck(arg);
+        final RubyString str = operandCheck(arg);
         return RubyString.newStringShared(runtime, quote19(str.getByteList(), str.isAsciiOnly()));
     }
 
     /** rb_reg_quote
      *
      */
-    private static ByteList quote(ByteList bs, Encoding enc) {
-        int p = bs.getBegin();
-        int end = p + bs.getRealSize();
-        byte[]bytes = bs.getUnsafeBytes();
-
-        metaFound: do {
-            for(; p < end; p++) {
-                int c = bytes[p] & 0xff;
-                int cl = enc.length(bytes, p, end);
-                if (cl != 1) {
-                    while (cl-- > 0 && p < end) p++;
-                    p--;
-                    continue;
-                }
-                switch (c) {
-                case '[': case ']': case '{': case '}':
-                case '(': case ')': case '|': case '-':
-                case '*': case '.': case '\\':
-                case '?': case '+': case '^': case '$':
-                case ' ': case '#':
-                case '\t': case '\f': case '\n': case '\r':
-                    break metaFound;
-                }
-            }
-            return bs;
-        } while (false);
-
-        ByteList result = new ByteList(end * 2);
-        byte[]obytes = result.getUnsafeBytes();
-        int op = p - bs.getBegin();
-        System.arraycopy(bytes, bs.getBegin(), obytes, 0, op);
-
-        for(; p < end; p++) {
-            int c = bytes[p] & 0xff;
-            int cl = enc.length(bytes, p, end);
-            if (cl != 1) {
-                while (cl-- > 0 && p < end) obytes[op++] = bytes[p++];
-                p--;
-                continue;
-            }
-
-            switch (c) {
-            case '[': case ']': case '{': case '}':
-            case '(': case ')': case '|': case '-':
-            case '*': case '.': case '\\':
-            case '?': case '+': case '^': case '$':
-            case '#': obytes[op++] = '\\'; break;
-            case ' ': obytes[op++] = '\\'; obytes[op++] = ' '; continue;
-            case '\t':obytes[op++] = '\\'; obytes[op++] = 't'; continue;
-            case '\n':obytes[op++] = '\\'; obytes[op++] = 'n'; continue;
-            case '\r':obytes[op++] = '\\'; obytes[op++] = 'r'; continue;
-            case '\f':obytes[op++] = '\\'; obytes[op++] = 'f'; continue;
-            }
-            obytes[op++] = (byte)c;
-        }
-
-        result.setRealSize(op);
-        return result;
-    }
-
     private static final int QUOTED_V = 11;
     public static ByteList quote19(ByteList bs, boolean asciiOnly) {
         int p = bs.getBegin();
         int end = p + bs.getRealSize();
-        byte[]bytes = bs.getUnsafeBytes();
+        byte[] bytes = bs.getUnsafeBytes();
         Encoding enc = bs.getEncoding();
 
         metaFound: do {
@@ -1735,16 +1665,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private static RubyString operandCheck(IRubyObject str) {
-        return (RubyString)regOperand(str, true);
+        return (RubyString) regOperand(str, true);
     }
 
     // MRI: reg_operand
     private static IRubyObject regOperand(IRubyObject str, boolean check) {
-        if (str instanceof RubySymbol) {
-            return ((RubySymbol)str).to_s();
-        } else {
-            return check ? str.convertToString() : str.checkStringType();
-        }
+        if (str instanceof RubySymbol) return ((RubySymbol) str).to_s();
+        return check ? str.convertToString() : str.checkStringType();
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
