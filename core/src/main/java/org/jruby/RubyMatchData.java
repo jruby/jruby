@@ -63,7 +63,7 @@ public class RubyMatchData extends RubyObject {
     Region regs;        // captures
     int begin, end;     // begin and end are used when not groups defined
     RubyString str;     // source string
-    Regex pattern;
+    private Regex pattern;
     transient RubyRegexp regexp;
     private boolean charOffsetUpdated;
     private Region charOffsets;
@@ -293,9 +293,14 @@ public class RubyMatchData extends RubyObject {
         if (str == null) throw getRuntime().newTypeError("uninitialized Match");
     }
 
+    final Regex getPattern() {
+        return this.pattern;
+    }
+
     private RubyRegexp getRegexp() {
         RubyRegexp regexp = this.regexp;
         if (regexp != null) return regexp;
+        final Regex pattern = getPattern();
         return this.regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList) pattern.getUserObject(), pattern);
     }
 
@@ -339,7 +344,7 @@ public class RubyMatchData extends RubyObject {
     public int getNameToBackrefNumber(String name) {
         try {
             byte[] bytes = name.getBytes();
-            return pattern.nameToBackrefNumber(bytes, 0, bytes.length, regs);
+            return getPattern().nameToBackrefNumber(bytes, 0, bytes.length, regs);
         } catch (JOniException je) {
             throw getRuntime().newIndexError(je.getMessage());
         }
@@ -348,6 +353,7 @@ public class RubyMatchData extends RubyObject {
     // This returns a list of values in the order the names are defined (named capture local var
     // feature uses this).
     public IRubyObject[] getNamedBackrefValues(Ruby runtime) {
+        final Regex pattern = getPattern();
         if (pattern.numberOfNames() == 0) return NULL_ARRAY;
 
         IRubyObject[] values = new IRubyObject[pattern.numberOfNames()];
@@ -373,8 +379,9 @@ public class RubyMatchData extends RubyObject {
         result.cat((byte)'#').cat((byte)'<');
         result.append(getMetaClass().getRealClass().to_s());
 
-        NameEntry[]names = new NameEntry[regs == null ? 1 : regs.numRegs];
+        NameEntry[] names = new NameEntry[regs == null ? 1 : regs.numRegs];
 
+        final Regex pattern = getPattern();
         if (pattern.numberOfNames() > 0) {
             for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
                 NameEntry e = i.next();
@@ -440,7 +447,7 @@ public class RubyMatchData extends RubyObject {
 
     private int nameToBackrefNumber(RubyString str) {
         check();
-        return nameToBackrefNumber(getRuntime(), pattern, regs, str);
+        return nameToBackrefNumber(getRuntime(), getPattern(), regs, str);
     }
 
     private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, ByteListHolder str) {
@@ -457,7 +464,7 @@ public class RubyMatchData extends RubyObject {
 
     public final int backrefNumber(IRubyObject obj) {
         check();
-        return backrefNumber(getRuntime(), pattern, regs, obj);
+        return backrefNumber(getRuntime(), getPattern(), regs, obj);
     }
 
     public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
@@ -701,7 +708,7 @@ public class RubyMatchData extends RubyObject {
     @Override
     public RubyFixnum hash() {
         check();
-        return getRuntime().newFixnum(pattern.hashCode() ^ str.hashCode());
+        return getRuntime().newFixnum(getPattern().hashCode() ^ str.hashCode());
     }
 
     /**
