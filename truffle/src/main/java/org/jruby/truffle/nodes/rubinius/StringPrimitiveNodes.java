@@ -76,6 +76,8 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -83,6 +85,7 @@ import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.SubstringRope;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -1373,6 +1376,8 @@ public abstract class StringPrimitiveNodes {
     public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private AllocateObjectNode allocateNode;
+        @Child private ReadHeadObjectFieldNode readRopeNode;
+        @Child private WriteHeadObjectFieldNode writeRopeNode;
         @Child private TaintResultNode taintResultNode;
 
         public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1381,7 +1386,45 @@ public abstract class StringPrimitiveNodes {
 
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 
-        @Specialization(guards = { "isSingleByteOptimizable(string)", "len >= 0" })
+        @Specialization(guards = { "len >= 0" , "isSingleByteOptimizable(string)", "isRope(string)" })
+        public Object stringSubstringRope(DynamicObject string, int beg, int len,
+                                                           @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile tooLargeBeginProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile stillNegativeBeginProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile) {
+            // Taken from org.jruby.RubyString#substr19.
+            final int length = StringOperations.byteLength(string);
+            if (emptyStringProfile.profile(length == 0)) {
+                len = 0;
+            }
+
+            if (tooLargeBeginProfile.profile(beg > length)) {
+                return nil();
+            }
+
+            if (negativeBeginProfile.profile(beg < 0)) {
+                beg += length;
+
+                if (stillNegativeBeginProfile.profile(beg < 0)) {
+                    return nil();
+                }
+            }
+
+            if (tooLargeTotalProfile.profile((beg + len) > length)) {
+                len = length - beg;
+            }
+
+            if (negativeLengthProfile.profile(len <= 0)) {
+                len = 0;
+                beg = 0;
+            }
+
+            return makeRope(string, beg, len);
+        }
+
+        @Specialization(guards = { "len >= 0", "isSingleByteOptimizable(string)", "!isRope(string)"})
         public Object stringSubstringSingleByteOptimizable(DynamicObject string, int beg, int len,
                                                            @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeBeginProfile,
@@ -1420,7 +1463,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = { "!isSingleByteOptimizable(string)", "len >= 0" })
+        @Specialization(guards = { "len >= 0", "!isSingleByteOptimizable(string)" })
         public Object stringSubstring(DynamicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
 
@@ -1509,8 +1552,47 @@ public abstract class StringPrimitiveNodes {
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
                     new ByteList(StringOperations.getByteList(string), beg, len),
-                    StringSupport.CR_UNKNOWN,
+                    Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN,
                     null);
+
+            taintResultNode.maybeTaint(string, ret);
+
+            return ret;
+        }
+
+        private DynamicObject makeRope(DynamicObject string, int beg, int len) {
+            assert RubyGuards.isRubyString(string);
+
+            if (allocateNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
+            }
+
+            if (taintResultNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+            }
+
+            if (readRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
+            }
+
+            if (writeRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeRopeNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER));
+            }
+
+            // TODO (nirvdrum Nov. 9, 2015) There's probably a way to guarantee the code range value based on the parent code range.
+            final DynamicObject ret = allocateNode.allocate(
+                    Layouts.BASIC_OBJECT.getLogicalClass(string),
+                    null,
+                    Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN,
+                    null);
+
+            final Rope originalRope = (Rope) readRopeNode.execute(string);
+
+            writeRopeNode.execute(ret, new SubstringRope(originalRope, beg, len));
 
             taintResultNode.maybeTaint(string, ret);
 

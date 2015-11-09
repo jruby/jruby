@@ -183,6 +183,14 @@ public abstract class StringOperations {
         return Layouts.STRING.getByteList(object);
     }
 
+    public static int byteLength(DynamicObject object) {
+        if (RubyGuards.isRope(object)) {
+            return ((Rope) object.get(Layouts.ROPE_IDENTIFIER)).length();
+        }
+
+        return Layouts.STRING.getByteList(object).length();
+    }
+
     public static int commonCodeRange(int first, int second) {
         if (first == second) {
             return first;
