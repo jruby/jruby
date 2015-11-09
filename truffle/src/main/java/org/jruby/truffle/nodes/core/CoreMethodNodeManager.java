@@ -151,7 +151,7 @@ public class CoreMethodNodeManager {
         final int required = method.required();
         final int optional = method.optional();
         final boolean needsCallerFrame = method.needsCallerFrame();
-        final boolean alwaysInline = needsCallerFrame;
+        final boolean alwaysInline = needsCallerFrame && context.getOptions().TRUFFLE_INLINE_NEEDS_CALLER_FRAME;
 
         final Arity arity = new Arity(required, optional, method.rest());
 
