@@ -1227,7 +1227,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         matchData.regexp = this;
-        matchData.charOffsetUpdated = false;
         matchData.infectBy(this);
         setBackRefInternal(context, holder, matchData);
 

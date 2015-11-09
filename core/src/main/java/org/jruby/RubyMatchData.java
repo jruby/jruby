@@ -64,9 +64,9 @@ public class RubyMatchData extends RubyObject {
     int begin, end;     // begin and end are used when not groups defined
     RubyString str;     // source string
     Regex pattern;
-    RubyRegexp regexp;
-    boolean charOffsetUpdated;
-    Region charOffsets;
+    transient RubyRegexp regexp;
+    private boolean charOffsetUpdated;
+    private Region charOffsets;
 
     public static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
