@@ -242,11 +242,14 @@ public class Options {
     public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", TRUFFLE_DEFAULT_CACHE.load(), "eval lookup cache size");
     public static final Option<Integer> ENCODING_COMPATIBILE_QUERY_CACHE = integer(TRUFFLE, "truffle.encoding_comptabile_query.cache", TRUFFLE_DEFAULT_CACHE.load(), "Encoding.compatible? cache size");
 
-    public static final Option<Boolean> TRUFFLE_CORE_ALWAYS_CLONE = bool(TRUFFLE, "truffle.core.always_clone", true, "Always clone built-in core methods.");
-    public static final Option<Boolean> TRUFFLE_YIELD_ALWAYS_CLONE = bool(TRUFFLE, "truffle.yield.always_clone", true, "Always clone yields.");
-    public static final Option<Boolean> TRUFFLE_YIELD_ALWAYS_INLINE = bool(TRUFFLE, "truffle.yield.always_inline", true, "Always inline yields.");
-    public static final Option<Boolean> TRUFFLE_METHODMISSING_ALWAYS_CLONE = bool(TRUFFLE, "truffle.method_missing.always_clone", true, "Always clone #method_missing.");
-    public static final Option<Boolean> TRUFFLE_METHODMISSING_ALWAYS_INLINE = bool(TRUFFLE, "truffle.method_missing.always_inline", true, "Always inline #method_missing.");
+    public static final Option<Boolean> TRUFFLE_CLONE_DEFAULT = bool(TRUFFLE, "truffle.clone.default", true, "Default option for cloning.");
+    public static final Option<Boolean> TRUFFLE_INLINE_DEFAULT = bool(TRUFFLE, "truffle.inline.default", true, "Default option for inlining.");
+    public static final Option<Boolean> TRUFFLE_CORE_ALWAYS_CLONE = bool(TRUFFLE, "truffle.core.always_clone", TRUFFLE_CLONE_DEFAULT.load(), "Always clone built-in core methods.");
+    public static final Option<Boolean> TRUFFLE_INLINE_NEEDS_CALLER_FRAME = bool(TRUFFLE, "truffle.inline_needs_caller_frame", TRUFFLE_INLINE_DEFAULT.load(), "Inline methods that need their caller frame.");
+    public static final Option<Boolean> TRUFFLE_YIELD_ALWAYS_CLONE = bool(TRUFFLE, "truffle.yield.always_clone", TRUFFLE_CLONE_DEFAULT.load(), "Always clone yields.");
+    public static final Option<Boolean> TRUFFLE_YIELD_ALWAYS_INLINE = bool(TRUFFLE, "truffle.yield.always_inline", TRUFFLE_INLINE_DEFAULT.load(), "Always inline yields.");
+    public static final Option<Boolean> TRUFFLE_METHODMISSING_ALWAYS_CLONE = bool(TRUFFLE, "truffle.method_missing.always_clone", TRUFFLE_CLONE_DEFAULT.load(), "Always clone #method_missing.");
+    public static final Option<Boolean> TRUFFLE_METHODMISSING_ALWAYS_INLINE = bool(TRUFFLE, "truffle.method_missing.always_inline", TRUFFLE_INLINE_DEFAULT.load(), "Always inline #method_missing.");
 
     public static final Option<Integer> TRUFFLE_PACK_UNROLL_LIMIT = integer(TRUFFLE, "truffle.pack.unroll", 4, "If a pack expression has a loop less than this many iterations, unroll it.");
 
