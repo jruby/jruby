@@ -39,24 +39,21 @@ import java.util.Map;
 import org.jruby.RubyModule.MethodClumper;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 public class InvokerGenerator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(InvokerGenerator.class);
-
-    public static final boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     public static void main(String[] args) throws Exception {
-        FileReader fr = null;
+        final FileReader fileReader;
         try {
-            fr = new FileReader(args[0]);
-        } catch(FileNotFoundException e) {
+            fileReader = new FileReader(args[0]);
+        }
+        catch (FileNotFoundException e) {
             System.err.println(args[0] + " - not found. skip generator." );
             return;
         }
-        BufferedReader br = new BufferedReader(fr);
+        BufferedReader br = new BufferedReader(fileReader);
 
         List<String> classNames = new ArrayList<String>();
         try {
@@ -74,7 +71,7 @@ public class InvokerGenerator {
             MethodClumper clumper = new MethodClumper();
 
             try {
-                if (DEBUG) LOG.debug("generating for class {}", name);
+                if (DEBUG) System.err.println("generating for class " + name);
                 Class cls = Class.forName(name, false, InvokerGenerator.class.getClassLoader());
 
                 clumper.clump(cls);
@@ -86,8 +83,9 @@ public class InvokerGenerator {
                 for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
                     dumper.getAnnotatedMethodClass(entry.getValue());
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            }
+            catch (Exception e) {
+                e.printStackTrace(System.err);
                 throw e;
             }
         }
