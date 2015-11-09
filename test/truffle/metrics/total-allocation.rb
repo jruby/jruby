@@ -10,7 +10,7 @@
 # Calculates the total memory allocated to run a program.
 
 # For example:
-# $ bin/jruby -X+T -Xtruffle.metrics.memory_used_on_exit=true -J-verbose:gc -e 'puts 14' 2>&1 | ruby test/truffle/memory/total-allocation.rb foo
+# $ bin/jruby -X+T -Xtruffle.metrics.memory_used_on_exit=true -J-verbose:gc -e 'puts 14' 2>&1 | ruby test/truffle/metrics/total-allocation.rb foo
 
 NAME = ARGV[0]
 

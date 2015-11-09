@@ -11,7 +11,7 @@
 # Not run it fast - just run it at all.
 
 # For example:
-# $ ruby test/truffle/memory/minimum-heap.rb foo bin/jruby "-X+T -e 'puts 14'"
+# $ ruby test/truffle/metrics/minimum-heap.rb foo bin/jruby "-X+T -e 'puts 14'"
 
 NAME = ARGV[0]
 COMMAND = ARGV[1]

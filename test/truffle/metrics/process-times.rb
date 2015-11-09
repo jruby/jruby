@@ -10,7 +10,7 @@
 # Calculates where the time goes for important regions while running a program.
 
 # For example:
-# $ test/truffle/startup/jruby-timed -X+T -Xtruffle.metrics.time=true -e 'puts 14' 2>&1 | ruby test/truffle/startup/process-times.rb foo
+# $ test/truffle/startup/jruby-timed -X+T -Xtruffle.metrics.time=true -e 'puts 14' 2>&1 | ruby test/truffle/metrics/process-times.rb foo
 
 NAME = ARGV[0]
 
