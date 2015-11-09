@@ -35,10 +35,10 @@ describe Java::OrgJruby::Ruby do
       check_passed_spec @runtime.evalScriptlet("RSpec::Core::Runner.run([ 'spec/profiler/graph_profile_printer_spec.rb' ], ERR_IO, OUT_IO)")
     end
     
-    def check_passed_spec(outcome)
+    def check_passed_spec(exit_status)
       # print any errors if occured :
       @runtime.evalScriptlet("puts ERR_IO.string unless ERR_IO.string.empty?")
-      passed = (outcome.to_s.should == true.to_s)
+      passed = (exit_status == 0)
     ensure
       unless passed
         puts "spec not passed, output: \n"
