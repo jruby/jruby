@@ -688,27 +688,31 @@ public class RubyMatchData extends RubyObject {
         if (this == other) return true;
         if (!(other instanceof RubyMatchData)) return false;
 
-        RubyMatchData match = (RubyMatchData)other;
+        final RubyMatchData that = (RubyMatchData) other;
 
-        return (this.str == match.str || (this.str != null && this.str.equals(match.str))) &&
-                (this.regexp == match.regexp || (this.regexp != null && this.regexp.equals(match.regexp))) &&
-                (this.charOffsets == match.charOffsets || (this.charOffsets != null && this.charOffsets.equals(match.charOffsets))) &&
-                this.begin == match.begin &&
-                this.end == match.end &&
-                this.charOffsetUpdated == match.charOffsetUpdated;
+        return (this.str == that.str || (this.str != null && this.str.equals(that.str))) &&
+               (this.regexp == that.regexp || (this.getRegexp().equals(that.getRegexp()))) &&
+               (this.charOffsets == that.charOffsets || (this.charOffsets != null && this.charOffsets.equals(that.charOffsets))) &&
+               this.charOffsetUpdated == that.charOffsetUpdated &&
+               this.begin == that.begin && this.end == that.end;
     }
 
     @JRubyMethod(name = {"eql?", "=="}, required = 1)
     @Override
     public IRubyObject eql_p(IRubyObject obj) {
-        return getRuntime().newBoolean(equals(obj));
+        return getRuntime().newBoolean( equals(obj) );
+    }
+
+    @Override
+    public int hashCode() {
+        check();
+        return getPattern().hashCode() ^ str.hashCode();
     }
 
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-        check();
-        return getRuntime().newFixnum(getPattern().hashCode() ^ str.hashCode());
+        return getRuntime().newFixnum( hashCode() );
     }
 
     /**
