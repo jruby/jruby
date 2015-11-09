@@ -594,9 +594,8 @@ public abstract class StringNodes {
         public Object getIndex(VirtualFrame frame, DynamicObject string, int index, Object length) {
             final int stringLength = getSizeNode().executeInteger(frame, string);
             int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
-            final ByteList bytes = StringOperations.getByteList(string);
 
-            if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
+            if (normalizedIndex < 0 || normalizedIndex >= StringOperations.byteLength(string)) {
                 outOfBounds.enter();
                 return nil();
             } else {
@@ -1853,18 +1852,30 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private ReadHeadObjectFieldNode readRopeNode;
+
         public SizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public abstract int executeInteger(VirtualFrame frame, DynamicObject string);
 
-        @Specialization(guards = "isSingleByteOptimizable(string)")
+        @Specialization(guards = { "isRope(string)", "isSingleByteOptimizable(string)"})
+        public int sizeSingleByteRope(DynamicObject string) {
+            if (readRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
+            }
+
+            return ((Rope) readRopeNode.execute(string)).length();
+        }
+
+        @Specialization(guards = { "!isRope(string)", "isSingleByteOptimizable(string)" })
         public int sizeSingleByte(DynamicObject string) {
             return StringOperations.getByteList(string).getRealSize();
         }
 
-        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        @Specialization(guards = { "!isRope(string)", "!isSingleByteOptimizable(string)" })
         public int size(DynamicObject string) {
             return StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeable(string));
         }
