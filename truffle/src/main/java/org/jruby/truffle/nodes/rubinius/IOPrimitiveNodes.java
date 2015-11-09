@@ -45,7 +45,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
-import jnr.ffi.*;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -62,7 +61,6 @@ import org.jruby.truffle.runtime.sockets.FDSetFactoryFactory;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
-import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
@@ -276,7 +274,7 @@ public abstract class IOPrimitiveNodes {
             timeoutObject.setTime(new long[] { 0, 0 });
 
             final int res = nativeSockets().select(fd + 1, fdSet.getPointer(),
-                    PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeoutObject);
+                    PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER, timeoutObject);
 
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -610,8 +608,8 @@ public abstract class IOPrimitiveNodes {
                     return nativeSockets().select(
                             nfds,
                             readableSet.getPointer(),
-                            PointerNodes.NULL_POINTER,
-                            PointerNodes.NULL_POINTER,
+                            PointerPrimitiveNodes.NULL_POINTER,
+                            PointerPrimitiveNodes.NULL_POINTER,
                             timeoutToUse);
                 }
             });
@@ -659,9 +657,9 @@ public abstract class IOPrimitiveNodes {
                 private int callSelect(int nfds, FDSet writableSet) {
                     return nativeSockets().select(
                             nfds,
-                            PointerNodes.NULL_POINTER,
+                            PointerPrimitiveNodes.NULL_POINTER,
                             writableSet.getPointer(),
-                            PointerNodes.NULL_POINTER,
+                            PointerPrimitiveNodes.NULL_POINTER,
                             null);
                 }
             });
