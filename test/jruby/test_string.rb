@@ -46,7 +46,7 @@ class TestString < Test::Unit::TestCase
     str.gsub!(/\-|_/, '-')
     assert_equal ['-ty-', '-ty-'], str.scan(pat = '-ty-')
     pat[2] = 'i'
-    assert $~ # failed with a NPE or might have recycled previous $~ pattern
+    $~.inspect # failed with a NPE or might have recycled previous $~ pattern
     assert_equal /\-ty\-/, $~.regexp
     assert_equal 1, $~.size
   end
