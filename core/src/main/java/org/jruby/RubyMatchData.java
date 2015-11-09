@@ -18,7 +18,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import org.jcodings.Encoding;
+import org.joni.Matcher;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Region;
@@ -51,6 +52,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
 /**
@@ -72,7 +74,7 @@ public class RubyMatchData extends RubyObject {
 
         matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
         matchDataClass.setReifiedClass(RubyMatchData.class);
-        
+
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
         matchDataClass.kindOf = new RubyModule.JavaClassKindOf(RubyMatchData.class);
 
@@ -94,6 +96,50 @@ public class RubyMatchData extends RubyObject {
 
     public RubyMatchData(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
+    }
+
+    final void initMatchData(final ThreadContext context,
+        RubyString str, Matcher matcher, Regex pattern) {
+
+        // FIXME: This is pretty gross; we should have a cleaner initialization
+        // that doesn't depend on package-visible fields and ideally is atomic,
+        // probably using an immutable structure we replace all at once.
+
+        // The region must be cloned because a subsequent match will update the
+        // region, resulting in the MatchData created here pointing at the
+        // incorrect region (capture/group).
+        Region region = matcher.getRegion(); // lazy, null when no groups defined
+        this.regs = region == null ? null : region.clone();
+        this.begin = matcher.getBegin();
+        this.end = matcher.getEnd();
+        this.pattern = pattern;
+        this.regexp = null;
+
+        this.charOffsets = null;
+        this.charOffsetUpdated = false;
+
+        this.str = str.newFrozen();
+        this.infectBy(str);
+    }
+
+    final void initMatchData(final ThreadContext context,
+        RubyString str, int beg, RubyString pattern) {
+
+        this.regs = null;
+        this.begin = beg;
+        this.end = beg + pattern.size();
+        // TODO make pattern to avoid regexp building completely !?
+        ByteList patBytes = pattern.getByteList();
+        patBytes = RubyRegexp.quote19(patBytes, pattern.isAsciiOnly());
+        if (patBytes == pattern.getByteList()) pattern.setByteListShared();
+        this.pattern = RubyRegexp.getRegexpFromCache(context.runtime, patBytes, pattern.getEncoding(), RegexpOptions.NULL_OPTIONS);
+        this.regexp = null;
+
+        this.charOffsets = null;
+        this.charOffsetUpdated = false;
+
+        this.str = str.newFrozen();
+        this.infectBy(str);
     }
 
     @Override
@@ -129,7 +175,7 @@ public class RubyMatchData extends RubyObject {
         int p = value.getBegin();
         int s = p;
         int c = 0;
-        
+
         for (int i = 0; i < length; i++) {
             int q = s + pairs[i].bytePos;
             c += StringSupport.strLength(encoding, bytes, p, q);
@@ -142,7 +188,7 @@ public class RubyMatchData extends RubyObject {
         if (charOffsetUpdated) return;
 
         if (charOffsets == null || charOffsets.numRegs < 1) charOffsets = new Region(1);
-        
+
         if (encoding.maxLength() == 1) {
             charOffsets.beg[0] = begin;
             charOffsets.end[0] = end;
@@ -180,7 +226,7 @@ public class RubyMatchData extends RubyObject {
         int numRegs = regs.numRegs;
 
         if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
-        
+
         if (encoding.maxLength() == 1) {
             for (int i = 0; i < numRegs; i++) {
                 charOffsets.beg[i] = regs.beg[i];
@@ -236,7 +282,7 @@ public class RubyMatchData extends RubyObject {
 
     // rb_match_busy
     public final void use() {
-        flags |= MATCH_BUSY; 
+        flags |= MATCH_BUSY;
     }
 
     public final boolean used() {
@@ -247,12 +293,14 @@ public class RubyMatchData extends RubyObject {
         if (str == null) throw getRuntime().newTypeError("uninitialized Match");
     }
 
-    private void checkLazyRegexp() {
-        if (regexp == null) regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList)pattern.getUserObject(), pattern);
+    private RubyRegexp getRegexp() {
+        RubyRegexp regexp = this.regexp;
+        if (regexp != null) return regexp;
+        return this.regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList) pattern.getUserObject(), pattern);
     }
-    
-    private RubyString makeShared(Ruby runtime, RubyString str, int begin, int length) {
-        return str.makeShared19(runtime, begin, length);
+
+    private static RubyString makeShared(Ruby runtime, RubyString str, int index, int length) {
+        return str.makeShared19(runtime, index, length);
     }
 
     private RubyArray match_array(Ruby runtime, int start) {
@@ -263,8 +311,7 @@ public class RubyMatchData extends RubyObject {
                 return runtime.newArray(runtime.getNil());
             } else {
                 RubyString ss = makeShared(runtime, str, begin, end - begin);
-                if (isTaint()) ss.setTaint(true);
-                return runtime.newArray(ss);
+                return runtime.newArray( ss.infectBy(this) );
             }
         } else {
             RubyArray arr = runtime.newArray(regs.numRegs - start);
@@ -272,14 +319,13 @@ public class RubyMatchData extends RubyObject {
                 if (regs.beg[i] == -1) {
                     arr.append(runtime.getNil());
                 } else {
-                    RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);                   
-                    if (isTaint()) ss.setTaint(true); 
-                    arr.append(ss);
+                    RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);
+                    arr.append( ss.infectBy(this) );
                 }
             }
             return arr;
         }
-        
+
     }
 
     public IRubyObject group(long n) {
@@ -359,17 +405,15 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject regexp(ThreadContext context, Block block) {
+    public RubyRegexp regexp(ThreadContext context, Block block) {
         check();
-        checkLazyRegexp();
-        return regexp;
+        return getRegexp();
     }
 
     @JRubyMethod
     public IRubyObject names(ThreadContext context, Block block) {
         check();
-        checkLazyRegexp();
-        return regexp.names(context);
+        return getRegexp().names(context);
     }
 
     /** match_to_a
@@ -447,7 +491,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject op_aref19(IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
-        return result == null ? ((RubyArray)to_a()).aref19(idx) : result;
+        return result == null ? to_a().aref19(idx) : result;
     }
 
     /** match_aref
@@ -456,7 +500,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
-        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? ((RubyArray)to_a()).aref19(idx, rest) : result;
+        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref19(idx, rest) : result;
     }
 
     private IRubyObject op_arefCommon(IRubyObject idx) {
@@ -513,16 +557,18 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject end(ThreadContext context, IRubyObject index) {
         check();
 
-        int i = backrefNumber(index);
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
+        final int i = backrefNumber(index);
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+            throw runtime.newIndexError("index " + i + " out of matches");
+        }
 
         int e = regs == null ? end : regs.end[i];
 
-        if (e < 0) return runtime.getNil();
+        if (e < 0) return context.nil;
 
-        if (!str.singleByteOptimizable()) {
+        if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
             e = charOffsets.end[i];
         }
@@ -539,13 +585,14 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod(name = "offset")
     public IRubyObject offset19(ThreadContext context, IRubyObject index) {
-        return offsetCommon(context, backrefNumber(index), true);
-    }
-
-    private IRubyObject offsetCommon(ThreadContext context, int i, boolean is_19) {
         check();
-        Ruby runtime = context.runtime;
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+
+        final Ruby runtime = context.runtime;
+        final int i = backrefNumber(index);
+
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+            throw runtime.newIndexError("index " + i + " out of matches");
+        }
         int b, e;
         if (regs == null) {
             b = begin;
@@ -554,12 +601,15 @@ public class RubyMatchData extends RubyObject {
             b = regs.beg[i];
             e = regs.end[i];
         }
-        if (b < 0) return runtime.newArray(runtime.getNil(), runtime.getNil());
-        if (is_19 && !str.singleByteOptimizable()) {
+
+        if (b < 0) return runtime.newArray(context.nil, context.nil);
+
+        if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
             b = charOffsets.beg[i];
             e = charOffsets.end[i];
         }
+
         return runtime.newArray(RubyFixnum.newFixnum(runtime, b), RubyFixnum.newFixnum(runtime, e));
     }
 
@@ -569,9 +619,8 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     public IRubyObject pre_match(ThreadContext context) {
         check();
-        if (begin == -1) {
-            return context.runtime.getNil();
-        }
+        if (begin == -1) return context.nil;
+
         return makeShared(context.runtime, str, 0, begin).infectBy(this);
     }
 
@@ -581,10 +630,10 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     public IRubyObject post_match(ThreadContext context) {
         check();
-        if (begin == -1) {
-            return context.runtime.getNil();
-        }
-        return makeShared(context.runtime, str, end, str.getByteList().length() - end).infectBy(this);
+        if (begin == -1) return context.nil;
+
+        final int strLen = str.getByteList().length();
+        return makeShared(context.runtime, str, end, strLen - end).infectBy(this);
     }
 
     /** match_to_s
