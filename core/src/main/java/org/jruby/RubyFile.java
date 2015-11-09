@@ -1541,7 +1541,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (relativePath.contains(".jar!/")) {
             if (protocol.find()) {
                 preFix = protocol.group();
-                relativePath = relativePath.substring(protocol.end());
+                int extra = 0;
+                if (relativePath.contains("file://")) {
+                    extra = 2;
+                    preFix += "//";
+                }
+                relativePath = relativePath.substring(protocol.end() + extra);
             }
             int index = relativePath.indexOf("!/");
             postFix = relativePath.substring(index);
@@ -1549,8 +1554,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         else if (protocol.find()) {
             preFix = protocol.group();
-            relativePath = relativePath.substring(protocol.end());
-            return runtime.newString(preFix + canonicalizePath(relativePath));
+            int offset = protocol.end();
+            String extra = "";
+            if (relativePath.contains("file://")) {
+                if (relativePath.contains("file:///")) {
+                    offset += 2;
+                    extra = "//";
+                }
+                else {
+                    offset += 1;
+                    extra = "/";
+                }
+            }
+            relativePath = relativePath.substring(offset);
+            return runtime.newString(preFix + extra + canonicalizePath(relativePath));
         }
 
         String[] uriParts = splitURI(relativePath);
