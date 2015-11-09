@@ -3687,14 +3687,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // MRI: rb_pat_search
     private static int patternSearch(ThreadContext context,
-        final IRubyObject patern, RubyString str, final int pos,
+        final IRubyObject pattern, RubyString str, final int pos,
         final boolean setBackrefStr) {
-        if (patern instanceof RubyString) {
-            int beg = str.strseqIndex((RubyString) patern, pos, true);
+        if (pattern instanceof RubyString) {
+            final RubyString strPattern = (RubyString) pattern;
+            final int beg = str.strseqIndex(strPattern, pos, true);
             if (setBackrefStr) {
                 if (beg >= 0) {
-                    final int len = ((RubyString) patern).size(); // getRealSize
-                    setBackRefString(context, str, beg, len).infectBy(patern);
+                    setBackRefString(context, str, beg, strPattern).infectBy(pattern);
                 }
                 else {
                     context.setBackRef(context.nil);
@@ -3702,11 +3702,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
             return beg;
         }
-        return ((RubyRegexp) patern).search19(context, str, pos, false);
+        return ((RubyRegexp) pattern).search19(context, str, pos, false);
     }
 
     // MRI: rb_backref_set_string
-    private static RubyMatchData setBackRefString(ThreadContext context, RubyString str, int pos, int len) {
+    private static RubyMatchData setBackRefString(ThreadContext context, RubyString str, int pos, RubyString pattern) {
         final IRubyObject m = context.getBackRef();
         final RubyMatchData match;
         if (m == null || m.isNil() || ((RubyMatchData) m).used()) {
@@ -3715,7 +3715,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         else {
             match = (RubyMatchData) m;
         }
-        match.initMatchData(context, str, pos, len); // MRI: match_set_string
+        match.initMatchData(context, str, pos, pattern); // MRI: match_set_string
         context.setBackRef(match);
         return match;
     }

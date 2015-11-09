@@ -40,6 +40,17 @@ class TestString < Test::Unit::TestCase
     end
   end
 
+  def test_scan_string_pattern_match
+    str = 'it_aj-ty_i-ty_it'
+    str.sub!(/hello/, '')
+    str.gsub!(/\-|_/, '-')
+    assert_equal ['-ty-', '-ty-'], str.scan(pat = '-ty-')
+    pat[2] = 'i'
+    assert $~ # failed with a NPE or might have recycled previous $~ pattern
+    assert_equal /\-ty\-/, $~.regexp
+    assert_equal 1, $~.size
+  end
+
   EOL = "\r\n"
 
   def test_sub_utf8

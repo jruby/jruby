@@ -31,7 +31,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
-import org.jruby.RubyRegexp;
 
 public class RegexpSupport {
 

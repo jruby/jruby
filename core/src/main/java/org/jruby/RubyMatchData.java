@@ -52,6 +52,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
 /**
@@ -99,7 +100,6 @@ public class RubyMatchData extends RubyObject {
 
     final void initMatchData(final ThreadContext context,
         RubyString str, Matcher matcher, Regex pattern) {
-        final RubyMatchData match = this;
 
         // FIXME: This is pretty gross; we should have a cleaner initialization
         // that doesn't depend on package-visible fields and ideally is atomic,
@@ -109,33 +109,37 @@ public class RubyMatchData extends RubyObject {
         // region, resulting in the MatchData created here pointing at the
         // incorrect region (capture/group).
         Region region = matcher.getRegion(); // lazy, null when no groups defined
-        match.regs = region == null ? null : region.clone();
-        match.begin = matcher.getBegin();
-        match.end = matcher.getEnd();
-        match.pattern = pattern;
+        this.regs = region == null ? null : region.clone();
+        this.begin = matcher.getBegin();
+        this.end = matcher.getEnd();
+        this.pattern = pattern;
+        this.regexp = null;
 
-        match.charOffsets = null;
-        match.charOffsetUpdated = false;
+        this.charOffsets = null;
+        this.charOffsetUpdated = false;
 
-        match.str = str.newFrozen();
-        match.infectBy(str);
+        this.str = str.newFrozen();
+        this.infectBy(str);
     }
 
     final void initMatchData(final ThreadContext context,
-        RubyString str, int beg, int len) {
-        final RubyMatchData match = this;
+        RubyString str, int beg, RubyString pattern) {
 
-        match.regs = null;
-        match.regexp = null;
-        match.begin = beg;
-        match.end = beg + len;
-        match.pattern = null;
+        this.regs = null;
+        this.begin = beg;
+        this.end = beg + pattern.size();
+        // TODO make pattern to avoid regexp building completely !?
+        ByteList patBytes = pattern.getByteList();
+        patBytes = RubyRegexp.quote19(patBytes, pattern.isAsciiOnly());
+        if (patBytes == pattern.getByteList()) pattern.setByteListShared();
+        this.pattern = RubyRegexp.getRegexpFromCache(context.runtime, patBytes, pattern.getEncoding(), RegexpOptions.NULL_OPTIONS);
+        this.regexp = null;
 
-        match.charOffsets = null;
-        match.charOffsetUpdated = false;
+        this.charOffsets = null;
+        this.charOffsetUpdated = false;
 
-        match.str = str.newFrozen();
-        match.infectBy(str);
+        this.str = str.newFrozen();
+        this.infectBy(str);
     }
 
     @Override
