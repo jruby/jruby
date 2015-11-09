@@ -225,6 +225,9 @@ public final class Ruby implements Constantizable {
      * The logger used to log relevant bits.
      */
     private static final Logger LOG = LoggerFactory.getLogger(Ruby.class);
+    static { // enable DEBUG output
+        if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.setDebugEnable(true);
+    }
 
     /**
      * Create and initialize a new JRuby runtime. The properties of the
@@ -3021,22 +3024,22 @@ public final class Ruby implements Constantizable {
             Class contents;
             try {
                 contents = getJRubyClassLoader().loadClass(className);
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("found jitted code for " + filename + " at class: " + className);
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("found jitted code for " + filename + " at class: " + className);
                 }
                 script = (Script) contents.newInstance();
                 readStream = new ByteArrayInputStream(buffer);
             } catch (ClassNotFoundException cnfe) {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("no jitted code in classloader for file " + filename + " at class: " + className);
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("no jitted code in classloader for file " + filename + " at class: " + className);
                 }
-            } catch (InstantiationException ie) {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+            } catch (InstantiationException ex) {
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
                 }
-            } catch (IllegalAccessException iae) {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+            } catch (IllegalAccessException ex) {
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
                 }
             }
         } catch (IOException ioe) {
@@ -4023,9 +4026,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newSystemStackError(String message, StackOverflowError soe) {
-        if (getDebug().isTrue()) {
-            LOG.debug(soe.getMessage(), soe);
-        }
+        if ( getDebug().isTrue() ) LOG.debug(soe);
         return newRaiseException(getSystemStackError(), message);
     }
 
