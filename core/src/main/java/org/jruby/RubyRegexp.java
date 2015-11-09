@@ -526,9 +526,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = {"quote", "escape"}, meta = true)
     public static IRubyObject quote19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
         final RubyString str = operandCheck(arg);
-        return RubyString.newStringShared(runtime, quote19(str.getByteList(), str.isAsciiOnly()));
+        return RubyString.newStringShared(context.runtime, quote19(str));
+    }
+
+    static ByteList quote19(final RubyString str) {
+        final ByteList bytes = str.getByteList();
+        final ByteList qBytes = quote19(bytes, str.isAsciiOnly());
+        if (qBytes == bytes) str.setByteListShared();
+        return qBytes;
     }
 
     /** rb_reg_quote
@@ -840,8 +846,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private IRubyObject initializeByRegexp19(RubyRegexp regexp) {
         regexp.check();
-//        System.out.println("str: " + regexp.str + ", ENC: " + regexp.getEncoding() + ", OPT: " + regexp.getOptions());
-//        System.out.println("KCODE: " + regexp.kcode);
         // Clone and toggle flags since this is no longer a literal regular expression
         // but it did come from one.
         RegexpOptions newOptions = (RegexpOptions) regexp.getOptions().clone();

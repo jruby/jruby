@@ -129,9 +129,7 @@ public class RubyMatchData extends RubyObject {
         this.begin = beg;
         this.end = beg + pattern.size();
         // TODO make pattern to avoid regexp building completely !?
-        ByteList patBytes = pattern.getByteList();
-        patBytes = RubyRegexp.quote19(patBytes, pattern.isAsciiOnly());
-        if (patBytes == pattern.getByteList()) pattern.setByteListShared();
+        final ByteList patBytes = RubyRegexp.quote19(pattern);
         this.pattern = RubyRegexp.getRegexpFromCache(context.runtime, patBytes, pattern.getEncoding(), RegexpOptions.NULL_OPTIONS);
         this.regexp = null;
 
