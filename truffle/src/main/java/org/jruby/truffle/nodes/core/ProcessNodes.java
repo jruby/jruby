@@ -9,49 +9,34 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import jnr.ffi.LibraryLoader;
-import jnr.ffi.Struct;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.DefaultValueNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.ffi.LibCClockGetTime;
+import org.jruby.truffle.runtime.ffi.TimeSpec;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.Signal;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
+
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {
 
-    public final static class TimeSpec extends Struct {
-        public final time_t tv_sec = new time_t();
-        public final SignedLong tv_nsec = new SignedLong();
-
-        public TimeSpec(jnr.ffi.Runtime runtime) {
-            super(runtime);
-        }
-
-        public long getTVsec() {
-            return tv_sec.get();
-        }
-
-        public long getTVnsec() {
-            return tv_nsec.get();
-        }
-    }
-
-    public interface LibCClockGetTime {
-        int clock_gettime(int clock_id, TimeSpec timeSpec);
-    }
-
+    // These are just distinct values, not clock_gettime(3) values.
     public static final int CLOCK_MONOTONIC = 1;
     public static final int CLOCK_REALTIME = 2;
-    public static final int CLOCK_THREAD_CPUTIME_ID = 3; // Linux only
+    public static final int CLOCK_THREAD_CPUTIME = 3; // Linux only
+    public static final int CLOCK_MONOTONIC_RAW = 4; // Linux only
 
     @CoreMethod(names = "clock_gettime", onSingleton = true, required = 1, optional = 1)
     @NodeChildren({
@@ -59,6 +44,9 @@ public abstract class ProcessNodes {
             @NodeChild(type = RubyNode.class, value = "unit")
     })
     public abstract static class ClockGetTimeNode extends CoreMethodNode {
+
+        public static final int CLOCK_THREAD_CPUTIME_ID = 3; // Linux only
+        public static final int CLOCK_MONOTONIC_RAW_ID = 4; // Linux only
 
         private final DynamicObject floatSecondSymbol = getContext().getSymbol("float_second");
         private final DynamicObject nanosecondSymbol = getContext().getSymbol("nanosecond");
@@ -84,12 +72,21 @@ public abstract class ProcessNodes {
             return timeToUnit(time, unit);
         }
 
-        @TruffleBoundary
         @Specialization(guards = { "isThreadCPUTime(clock_id)", "isRubySymbol(unit)" })
-        protected Object clock_gettime_thread_cputime(int clock_id, DynamicObject unit,
-                @Cached("getLibCClockGetTime()") LibCClockGetTime libCClockGetTime) {
+        protected Object clock_gettime_thread_cputime(int clock_id, DynamicObject unit) {
+            return clock_gettime_clock_id(CLOCK_THREAD_CPUTIME_ID, unit);
+        }
+
+        @Specialization(guards = { "isMonotonicRaw(clock_id)", "isRubySymbol(unit)" })
+        protected Object clock_gettime_monotonic_raw(int clock_id, DynamicObject unit) {
+            return clock_gettime_clock_id(CLOCK_MONOTONIC_RAW_ID, unit);
+        }
+
+        @TruffleBoundary
+        private Object clock_gettime_clock_id(int clock_id, DynamicObject unit) {
+            final LibCClockGetTime libCClockGetTime = getContext().getLibCClockGetTime();
             TimeSpec timeSpec = new TimeSpec(jnr.ffi.Runtime.getRuntime(libCClockGetTime));
-            int r = libCClockGetTime.clock_gettime(CLOCK_THREAD_CPUTIME_ID, timeSpec);
+            int r = libCClockGetTime.clock_gettime(clock_id, timeSpec);
             if (r != 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().systemCallError("clock_gettime failed: " + r, this));
@@ -118,11 +115,11 @@ public abstract class ProcessNodes {
         }
 
         protected static boolean isThreadCPUTime(int clock_id) {
-            return clock_id == CLOCK_THREAD_CPUTIME_ID;
+            return clock_id == CLOCK_THREAD_CPUTIME;
         }
 
-        protected static LibCClockGetTime getLibCClockGetTime() {
-            return LibraryLoader.create(LibCClockGetTime.class).library("c").load();
+        protected static boolean isMonotonicRaw(int clock_id) {
+            return clock_id == CLOCK_MONOTONIC_RAW;
         }
 
     }

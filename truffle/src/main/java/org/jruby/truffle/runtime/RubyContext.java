@@ -57,6 +57,7 @@ import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.core.SymbolTable;
+import org.jruby.truffle.runtime.ffi.LibCClockGetTime;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.FeatureLoader;
 import org.jruby.truffle.runtime.loader.SourceCache;
@@ -93,6 +94,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     private final POSIX posix;
     private final NativeSockets nativeSockets;
+    private final LibCClockGetTime libCClockGetTime;
     private final MemoryManager memoryManager = Runtime.getSystemRuntime().getMemoryManager();
 
     private final CoreLibrary coreLibrary;
@@ -154,9 +156,13 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         // JRuby+Truffle uses POSIX for all IO - we need the native version
         posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
 
-        final LibraryLoader<NativeSockets> loader = LibraryLoader.create(NativeSockets.class);
-        loader.library("c");
-        nativeSockets = loader.load();
+        nativeSockets = LibraryLoader.create(NativeSockets.class).library("c").load();
+
+        if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
+            libCClockGetTime = LibraryLoader.create(LibCClockGetTime.class).library("c").load();
+        } else {
+            libCClockGetTime = null;
+        }
 
         warnings = new Warnings(this);
 
@@ -621,6 +627,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public NativeSockets getNativeSockets() {
         return nativeSockets;
+    }
+
+    public LibCClockGetTime getLibCClockGetTime() {
+        return libCClockGetTime;
     }
 
     @Override
