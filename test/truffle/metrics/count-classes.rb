@@ -10,7 +10,7 @@
 # Counts how many classes are loaded to run a program.
 
 # For example:
-# $ bin/jruby -X+T -J-XX:+TraceClassLoading -e 'puts 14' 2>&1 | ruby test/truffle/startup/count-classes.rb foo
+# $ bin/jruby -X+T -J-XX:+TraceClassLoading -e 'puts 14' 2>&1 | ruby test/truffle/metrics/count-classes.rb foo
 
 NAME = ARGV[0]
 
