@@ -10,7 +10,7 @@ module Digest
 
   NO_MESSAGE = Object.new
 
-  class Algorithm
+  class Class
 
     def self.file(file)
       digest = new
@@ -86,7 +86,7 @@ module Digest
 
   end
 
-  class MD5 < Algorithm
+  class MD5 < Class
 
     def initialize
       @digest = Truffle::Digest.md5
@@ -98,7 +98,7 @@ module Digest
 
   end
 
-  class SHA1 < Algorithm
+  class SHA1 < Class
 
     def initialize
       @digest = Truffle::Digest.sha1
@@ -110,7 +110,7 @@ module Digest
 
   end
 
-  class SHA256 < Algorithm
+  class SHA256 < Class
 
     def initialize
       @digest = Truffle::Digest.sha256
@@ -122,7 +122,7 @@ module Digest
 
   end
 
-  class SHA384 < Algorithm
+  class SHA384 < Class
 
     def initialize
       @digest = Truffle::Digest.sha384
@@ -134,7 +134,7 @@ module Digest
 
   end
 
-  class SHA512 < Algorithm
+  class SHA512 < Class
 
     def initialize
       @digest = Truffle::Digest.sha512
@@ -151,3 +151,5 @@ module Digest
   end
 
 end
+
+require 'digest/sha2'

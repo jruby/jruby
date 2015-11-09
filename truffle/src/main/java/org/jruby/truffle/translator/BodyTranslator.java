@@ -841,8 +841,6 @@ public class BodyTranslator extends Translator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
-
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         return new MethodDefinitionNode(

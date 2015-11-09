@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.ast.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -54,7 +55,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, Type type) {
-        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
+        declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
         final Arity arityForCheck;
 
@@ -102,21 +103,17 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         final RubyNode preludeLambda = SequenceNode.sequence(context, sourceSection,
-                new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                CheckArityNode.create(context, sourceSection, arityForCheck),
                 NodeUtil.cloneNode(loadArguments));
 
         // Procs
-        final RubyNode bodyProc = wrapBody(preludeProc, body);
+        final RubyNode bodyProc = new CatchForProcNode(context, sourceSection, composeBody(preludeProc, body));
 
         final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
-        final RubyNode bodyLambda =
-                new CatchBreakAsReturnNode(context, sourceSection,
-                        new CatchReturnNode(context, sourceSection,
-                                wrapBody(preludeLambda, body),
-                                environment.getReturnID()));
+        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection, composeBody(preludeLambda, body), environment.getReturnID());
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
                 context, sourceSection,
@@ -144,7 +141,7 @@ public class MethodTranslator extends BodyTranslator {
         }
     }
 
-    private RubyNode wrapBody(RubyNode prelude, RubyNode body) {
+    private RubyNode composeBody(RubyNode prelude, RubyNode body) {
         final SourceSection sourceSection = body.getSourceSection();
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);
@@ -153,10 +150,6 @@ public class MethodTranslator extends BodyTranslator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new RedoableNode(context, sourceSection, body);
-        body = new CatchNextNode(context, sourceSection, body);
-        body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
-        body = new CatchRetryAsErrorNode(context, sourceSection, body);
         return body;
     }
 
@@ -170,7 +163,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public RubyNode doCompileMethodBody(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
-        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
+        declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
 
         RubyNode body;
@@ -192,7 +185,7 @@ public class MethodTranslator extends BodyTranslator {
             prelude = loadArguments;
         } else {
             prelude = SequenceNode.sequence(context, sourceSection,
-                    new CheckArityNode(context, sourceSection, arity, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                    CheckArityNode.create(context, sourceSection, arity),
                     loadArguments);
         }
 
@@ -202,8 +195,7 @@ public class MethodTranslator extends BodyTranslator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
-        body = new CatchRetryAsErrorNode(context, sourceSection, body);
+        body = new CatchForMethodNode(context, sourceSection, body, environment.getReturnID());
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
         body = new ExceptionTranslatingNode(context, sourceSection, body);
@@ -219,15 +211,13 @@ public class MethodTranslator extends BodyTranslator {
         return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
-    private ParameterCollector declareArguments(SourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
+    private void declareArguments(SourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
         final ParameterCollector parameterCollector = new ParameterCollector();
         argsNode.accept(parameterCollector);
 
         for (String parameter : parameterCollector.getParameters()) {
             environment.declareVar(parameter);
         }
-
-        return parameterCollector;
     }
 
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {

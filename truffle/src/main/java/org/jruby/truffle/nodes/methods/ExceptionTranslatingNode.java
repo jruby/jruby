@@ -53,6 +53,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(error));
         } catch (TruffleFatalException | ThreadExitException exception) {
+            CompilerDirectives.transferToInterpreter();
             throw exception;
         } catch (ControlFlowException exception) {
             controlProfile.enter();
