@@ -68,6 +68,8 @@ import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -112,6 +114,9 @@ import static org.jruby.RubyEnumerator.SizeFn;
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
 public class RubyString extends RubyObject implements EncodingCapable, MarshalEncoding, CodeRangeable {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyString");
+    static { LOG.setDebugEnable(true); } // NOTE: disable when not needed (GH-3445)
 
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
@@ -873,20 +878,42 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         frozenCheck();
     }
 
-    public void modifyCheck(byte[] b, int len) {
-        if (value.getUnsafeBytes() != b || value.getRealSize() != len) throw getRuntime().newRuntimeError("string modified");
+    public void modifyCheck(final byte[] expBytes, final int expLen) {
+        final int len = value.getRealSize();
+        if (len != expLen || value.getUnsafeBytes() != expBytes) {
+            if (LOG.isDebugEnabled()) {
+                String bytesDiffer = value.getUnsafeBytes() != expBytes ? " internal bytes[] changed" : "";
+                String sizeChanged = "";
+                if (len != expLen) {
+                    sizeChanged = " expected size: " + expLen + " actual size: " + len;
+                }
+                LOG.debug("string "+ inspect() +" modified (share-level: "+ shareLevel +")" + bytesDiffer + sizeChanged);
+            }
+            throw getRuntime().newRuntimeError("string modified");
+        }
     }
 
-    private void modifyCheck(byte[] b, int len, Encoding enc) {
-        if (value.getUnsafeBytes() != b || value.getRealSize() != len || value.getEncoding() != enc) throw getRuntime().newRuntimeError("string modified");
+    private void modifyCheck(final byte[] expBytes, final int expLen, final Encoding expEnc) {
+        final int len = value.getRealSize();
+        if (len != expLen || value.getUnsafeBytes() != expBytes || value.getEncoding() != expEnc) {
+            if (LOG.isDebugEnabled()) {
+                String bytesDiffer = value.getUnsafeBytes() != expBytes ? " internal bytes[] changed" : "";
+                String sizeChanged = "";
+                if (len != expLen) {
+                    sizeChanged = " expected size: " + expLen + " actual size: " + len;
+                }
+                String encNotSame = "";
+                if (value.getEncoding() != expEnc) {
+                    encNotSame = " expected encoding: " + expEnc + " got: " + value.getEncoding();
+                }
+                LOG.debug("string "+ inspect() +" modified (share-level: "+ shareLevel + ")" + bytesDiffer + sizeChanged + encNotSame);
+            }
+            throw getRuntime().newRuntimeError("string modified");
+        }
     }
 
     private void frozenCheck() {
-        frozenCheck(false);
-    }
-
-    private void frozenCheck(boolean runtimeError) {
-        if (isFrozen()) throw getRuntime().newFrozenError("string", runtimeError);
+        if (isFrozen()) throw getRuntime().newFrozenError("string", false);
     }
 
     /** rb_str_modify
