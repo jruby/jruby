@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.kenai.jffi.MemoryIO;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -18,15 +19,17 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.core.PointerGuards;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 public abstract class PointerPrimitiveNodes {
+    public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
 
     /*
      * :pointer_allocate is not a real Rubinius primitive, but Rubinius provides no implementaiton
@@ -37,13 +40,16 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_allocate")
     public static abstract class PointerAllocatePrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public PointerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject pointerClass) {
-            return PointerNodes.createPointer(pointerClass, PointerNodes.NULL_POINTER);
+            return allocateObjectNode.allocate(pointerClass, NULL_POINTER);
         }
 
     }
@@ -51,8 +57,11 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_malloc")
     public static abstract class PointerMallocPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public PointerMallocPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
@@ -63,7 +72,7 @@ public abstract class PointerPrimitiveNodes {
         @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject malloc(DynamicObject pointerClass, long size) {
-            return PointerNodes.createPointer(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
+            return allocateObjectNode.allocate(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
         }
 
     }
@@ -107,8 +116,11 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_add")
     public static abstract class PointerAddPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public PointerAddPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
@@ -118,7 +130,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject add(DynamicObject a, long b) {
-            return PointerNodes.createPointer(Layouts.BASIC_OBJECT.getLogicalClass(a), getMemoryManager().newPointer(Layouts.POINTER.getPointer(a).address() + b));
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(a), getMemoryManager().newPointer(Layouts.POINTER.getPointer(a).address() + b));
         }
 
     }
@@ -209,13 +221,22 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_read_pointer")
     public static abstract class PointerReadPointerPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public PointerReadPointerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject readPointer(DynamicObject pointer) {
-            return PointerNodes.createPointer(Layouts.BASIC_OBJECT.getLogicalClass(pointer), Layouts.POINTER.getPointer(pointer).getPointer(0));
+            Pointer readPointer = Layouts.POINTER.getPointer(pointer).getPointer(0);
+
+            if (readPointer == null) {
+                readPointer = NULL_POINTER;
+            }
+
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(pointer), readPointer);
         }
 
     }
@@ -237,6 +258,8 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_get_at_offset")
     @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerGetAtOffsetPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public PointerGetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -290,12 +313,17 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "type == TYPE_PTR")
         public DynamicObject getAtOffsetPointer(DynamicObject pointer, int offset, int type) {
+            if (allocateObjectNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null));
+            }
+
             final Pointer readPointer = Layouts.POINTER.getPointer(pointer).getPointer(offset);
 
             if (readPointer == null) {
                 return nil();
             } else {
-                return PointerNodes.createPointer(Layouts.BASIC_OBJECT.getLogicalClass(pointer), readPointer);
+                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(pointer), readPointer);
             }
         }
 

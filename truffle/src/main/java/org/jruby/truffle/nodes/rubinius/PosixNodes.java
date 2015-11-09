@@ -22,12 +22,13 @@ import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.nio.charset.StandardCharsets;
 
@@ -97,13 +98,16 @@ public abstract class PosixNodes {
     @CoreMethod(names = "environ", isModuleFunction = true)
     public abstract static class EnvironNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public EnvironNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject environ() {
-            return PointerNodes.createPointer(getContext().getCoreLibrary().getRubiniusFFIPointerClass(), posix().environ());
+            return allocateObjectNode.allocate(getContext().getCoreLibrary().getRubiniusFFIPointerClass(), posix().environ());
         }
     }
 
@@ -947,7 +951,7 @@ public abstract class PosixNodes {
             return nativeSockets().getnameinfo(
                     Layouts.POINTER.getPointer(sa),
                     salen,
-                    PointerNodes.NULL_POINTER,
+                    PointerPrimitiveNodes.NULL_POINTER,
                     hostlen,
                     Layouts.POINTER.getPointer(serv),
                     servlen,
@@ -965,7 +969,7 @@ public abstract class PosixNodes {
                     salen,
                     Layouts.POINTER.getPointer(host),
                     hostlen,
-                    PointerNodes.NULL_POINTER,
+                    PointerPrimitiveNodes.NULL_POINTER,
                     servlen,
                     flags);
         }
