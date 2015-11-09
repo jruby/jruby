@@ -978,12 +978,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "=~", required = 1, writes = BACKREF, reads = BACKREF)
     @Override
     public IRubyObject op_match19(ThreadContext context, IRubyObject str) {
-        Ruby runtime = context.runtime;
-        IRubyObject[] strp = {str};
+        final IRubyObject[] strp = { str };
         int pos = matchPos(context, str, strp, null, 0);
-        if (pos < 0) return runtime.getNil();
-        pos = ((RubyString)strp[0]).subLength(pos);
-        return RubyFixnum.newFixnum(runtime, pos);
+        if (pos < 0) return context.nil;
+        pos = ((RubyString) strp[0]).subLength(pos);
+        return RubyFixnum.newFixnum(context.runtime, pos);
     }
 
     /** rb_reg_match_m
@@ -1007,17 +1006,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match19Common(context, str, RubyNumeric.num2int(pos), true, block);
     }
 
-    private IRubyObject match19Common(ThreadContext context, IRubyObject arg, int pos, boolean setBackref, Block block) {
-        if (arg.isNil()) {
-            if (setBackref) context.setBackRef(arg);
-            return arg;
-        }
-
-        RubyString _str = operandCheck(arg);
-
-        IRubyObject[] holder = setBackref ? null : new IRubyObject[]{context.nil};
-        if (matchPos(context, _str, null, holder, pos) < 0) {
-            setBackRefInternal(context, holder, context.nil);
+    private IRubyObject match19Common(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block) {
+        IRubyObject[] holder = setBackref ? null : new IRubyObject[] { context.nil };
+        if (matchPos(context, str, null, holder, pos) < 0) {
             return context.nil;
         }
 
@@ -1030,17 +1021,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      * MRI: reg_match_pos
      *
      * @param context thread context
-     * @param stringlike the stringlike to match
+     * @param arg the stringlike to match
      * @param strp an out param to hold the coerced string; ignored if null
      * @param holder an out param to hold the resulting match object; ignored if null
      * @param pos the position from which to start matching
      */
-    private int matchPos(ThreadContext context, IRubyObject stringlike, IRubyObject[] strp, IRubyObject[] holder, int pos) {
-        if (stringlike.isNil()) {
+    private int matchPos(ThreadContext context, IRubyObject arg, IRubyObject[] strp, IRubyObject[] holder, int pos) {
+        if (arg.isNil()) {
             setBackRefInternal(context, holder, context.nil);
             return -1;
         }
-        final RubyString str = operandCheck(stringlike);
+        final RubyString str = operandCheck(arg);
         if (strp != null) strp[0] = str;
         if (pos != 0) {
             if (pos < 0) {

@@ -49,6 +49,15 @@ class TestString < Test::Unit::TestCase
     $~.inspect # failed with a NPE or might have recycled previous $~ pattern
     assert_equal /\-ty\-/, $~.regexp
     assert_equal 1, $~.size
+    assert_equal str, $~.string
+    assert $~.string.frozen?
+  end
+
+  def test_regexp_match
+    ''.sub!(/foo/, '')
+    # assert ! $~.nil?
+    /bar/.match(nil)
+    assert $~.nil?
   end
 
   EOL = "\r\n"
