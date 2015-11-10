@@ -1,0 +1,2 @@
+graalvm:StringScanner#restsize Returns the length of the rest of the string
+graalvm:StringScanner#restsize is equivalent to rest.size
