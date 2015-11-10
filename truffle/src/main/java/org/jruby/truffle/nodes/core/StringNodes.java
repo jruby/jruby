@@ -881,7 +881,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject data(DynamicObject string) {
-            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), StringOperations.getByteList(string));
+            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), StringOperations.getByteList(string));
         }
     }
 

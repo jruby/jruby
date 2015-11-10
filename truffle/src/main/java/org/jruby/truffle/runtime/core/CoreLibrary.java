@@ -153,6 +153,7 @@ public class CoreLibrary {
     private final DynamicObject unboundMethodClass;
     private final DynamicObjectFactory unboundMethodFactory;
     private final DynamicObject byteArrayClass;
+    private final DynamicObjectFactory byteArrayFactory;
     private final DynamicObject fiberErrorClass;
     private final DynamicObject threadErrorClass;
     private final DynamicObject internalBufferClass;
@@ -462,7 +463,8 @@ public class CoreLibrary {
         defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
-        Layouts.CLASS.setInstanceFactoryUnsafe(byteArrayClass, Layouts.BYTE_ARRAY.createByteArrayShape(byteArrayClass, byteArrayClass));
+        byteArrayFactory = Layouts.BYTE_ARRAY.createByteArrayShape(byteArrayClass, byteArrayClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(byteArrayClass, byteArrayFactory);
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
@@ -1479,6 +1481,10 @@ public class CoreLibrary {
 
     public DynamicObject getByteArrayClass() {
         return byteArrayClass;
+    }
+
+    public DynamicObjectFactory getByteArrayFactory() {
+        return byteArrayFactory;
     }
 
     public DynamicObject getLookupTableClass() {

@@ -68,7 +68,7 @@ public abstract class IOBufferPrimitiveNodes {
             return Layouts.IO_BUFFER.createIOBuffer(
                     Layouts.CLASS.getInstanceFactory(classToAllocate),
                         true,
-                        ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
+                        ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), new ByteList(IOBUFFER_SIZE)),
                         0,
                         IOBUFFER_SIZE);
         }
