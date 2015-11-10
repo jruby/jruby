@@ -580,6 +580,16 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
+        @Specialization(guards = { "isRubyArray(readables)", "isNil(writables)", "isNil(errorables)", "isNil(noTimeout)" })
+        public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, DynamicObject noTimeout) {
+            Object result;
+            do {
+                result = select(readables, writables, errorables, Integer.MAX_VALUE);
+            } while (result == nil());
+            return result;
+        }
+
+        @TruffleBoundary
         @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
             final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
