@@ -1096,7 +1096,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 //        Region regs = null;
         ByteList strBL = str.getByteList();
         int range = strBL.begin();
-        Regex reg;
         boolean tmpreg;
 
         if (pos > str.size() || pos < 0) {
@@ -1104,13 +1103,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return -1;
         }
 
-        reg = preparePattern(str);
+        final Regex reg = preparePattern(str);
         tmpreg = reg != this.pattern;
         if (!tmpreg) this.useCount++;
 
         match = getBackRefInternal(context, holder);
-        if (!match.isNil()) {
-            if (((RubyMatchData)match).used()) {
+        if ( match instanceof RubyMatchData ) { // ! match.isNil()
+            if ( ((RubyMatchData) match).used() ) {
                 match = context.nil;
             }
 //            else {
@@ -1130,7 +1129,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } catch (JOniException je) {
             exception = je;
         }
-        if (!tmpreg) this.useCount--;
+
         if (tmpreg) {
             if (this.useCount > 0) {
 //                onig_free(reg);
@@ -1140,6 +1139,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 this.pattern = reg;
             }
         }
+        else {
+            this.useCount--;
+        }
+
         if (result < 0) {
             if (result == -1) {
                 setBackRefInternal(context, holder, context.nil);
