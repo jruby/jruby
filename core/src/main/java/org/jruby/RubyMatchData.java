@@ -128,9 +128,8 @@ public class RubyMatchData extends RubyObject {
         this.regs = null;
         this.begin = beg;
         this.end = beg + pattern.size();
-        // TODO make pattern to avoid regexp building completely !?
-        final ByteList patBytes = RubyRegexp.quote19(pattern);
-        this.pattern = RubyRegexp.getRegexpFromCache(context.runtime, patBytes, pattern.getEncoding(), RegexpOptions.NULL_OPTIONS);
+        // TODO make pattern lazy to avoid regexp building completely !?
+        this.pattern = RubyRegexp.getQuotedRegexpFromCache(context.runtime, pattern, RegexpOptions.NULL_OPTIONS);
         this.regexp = null;
 
         this.charOffsets = null;
@@ -142,14 +141,15 @@ public class RubyMatchData extends RubyObject {
 
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
-        RubyMatchData match = (RubyMatchData)clone;
-        match.regs = regs;
-        match.begin = begin;
-        match.end = end;
-        match.pattern = pattern;
-        match.regexp = regexp;
-        match.charOffsetUpdated = charOffsetUpdated;
-        match.charOffsets = charOffsets;
+        RubyMatchData match = (RubyMatchData) clone;
+        match.regs = this.regs;
+        match.begin = this.begin;
+        match.end = this.end;
+        match.pattern = this.pattern;
+        match.regexp = this.regexp;
+        match.charOffsetUpdated = this.charOffsetUpdated;
+        match.charOffsets = this.charOffsets;
+        // match.str = this.str; // uninitialized MatchData?!?
     }
 
     @Override

@@ -163,16 +163,28 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regex;
     }
 
-    static Regex getQuotedRegexpFromCache19(Ruby runtime, ByteList bytes, RegexpOptions options, boolean asciiOnly) {
+    static Regex getQuotedRegexpFromCache(Ruby runtime, RubyString str, RegexpOptions options) {
+        final ByteList bytes = str.getByteList();
         Regex regex = quotedPatternCache.get(bytes);
-        Encoding enc = asciiOnly ? USASCIIEncoding.INSTANCE : bytes.getEncoding();
+        Encoding enc = str.isAsciiOnly() ? USASCIIEncoding.INSTANCE : bytes.getEncoding();
         if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
-        ByteList quoted = quote19(bytes, asciiOnly);
+        final ByteList quoted = quote19(str);
         regex = makeRegexp(runtime, quoted, options, quoted.getEncoding());
         regex.setUserObject(quoted);
         quotedPatternCache.put(bytes, regex);
         return regex;
     }
+
+    //static Regex getQuotedRegexpFromCache(Ruby runtime, ByteList bytes, RegexpOptions options, boolean asciiOnly) {
+    //    Regex regex = quotedPatternCache.get(bytes);
+    //    Encoding enc = asciiOnly ? USASCIIEncoding.INSTANCE : bytes.getEncoding();
+    //    if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
+    //    final ByteList quoted = quote19(bytes, asciiOnly);
+    //    regex = makeRegexp(runtime, quoted, options, quoted.getEncoding());
+    //    regex.setUserObject(quoted);
+    //    quotedPatternCache.put(bytes, regex);
+    //    return regex;
+    //}
 
     private static Regex getPreprocessedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, RegexpSupport.ErrorMode mode) {
         Regex regex = preprocessedPatternCache.get(bytes);
@@ -280,7 +292,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     /** default constructor
      */
-    private RubyRegexp(Ruby runtime) {
+    RubyRegexp(Ruby runtime) {
         super(runtime, runtime.getRegexp());
         this.options = new RegexpOptions();
     }
