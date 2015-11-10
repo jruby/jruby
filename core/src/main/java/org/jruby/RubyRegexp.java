@@ -1205,9 +1205,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod
     public IRubyObject source() {
         check();
-        RubyString _str = RubyString.newStringShared(getRuntime(), this.str);
-        if (isTaint()) _str.setTaint(true);
-        return _str;
+        return RubyString.newStringShared(getRuntime(), str).infectBy(this);
     }
 
     final int length() {

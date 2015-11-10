@@ -60,6 +60,24 @@ class TestString < Test::Unit::TestCase
     assert $~.nil?
   end
 
+  def test_regexp_source_string
+    regexp = Regexp.new(str = 'StrinG')
+    assert regexp.eql?(/StrinG/)
+    str[0] = 's'
+    assert_equal 'StrinG', regexp.source
+    regexp.source.replace ''
+    assert_equal 'StrinG', regexp.source
+    assert_equal /strinG/, regexp = Regexp.new(str)
+    assert_equal 'strinG', regexp.source
+    assert_equal 'strinG', /strinG/.source
+    str.sub!('G', 'g')
+    assert_equal /string/, regexp = Regexp.new(str)
+    assert_equal 'string', regexp.source
+    regexp.source.gsub!('s', 'z')
+    assert_equal 'string', regexp.source
+    assert_equal 'string', Regexp.new('string').source
+  end
+
   EOL = "\r\n"
 
   def test_sub_utf8
