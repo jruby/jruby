@@ -1295,12 +1295,25 @@ public abstract class StringNodes {
     @CoreMethod(names = "encoding")
     public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private ReadHeadObjectFieldNode readRopeNode;
+
         public EncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @TruffleBoundary
-        @Specialization
+        @Specialization(guards = "isRope(string)")
+        public DynamicObject encodingRope(DynamicObject string) {
+            if (readRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
+            }
+
+            return EncodingNodes.getEncoding(((Rope) readRopeNode.execute(string)).getEncoding());
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "!isRope(string)")
         public DynamicObject encoding(DynamicObject string) {
             return EncodingNodes.getEncoding(StringOperations.getByteList(string).getEncoding());
         }
