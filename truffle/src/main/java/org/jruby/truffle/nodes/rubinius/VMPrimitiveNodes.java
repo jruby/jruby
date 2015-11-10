@@ -69,6 +69,7 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.Signal;
+import org.jruby.truffle.runtime.signal.SignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.io.PosixShim;
@@ -412,22 +413,38 @@ public abstract class VMPrimitiveNodes {
                 throw new UnsupportedOperationException();
             }
 
-            Signal signal = new Signal(signalName.toString());
-            SignalOperations.watchDefaultForSignal(signal);
-            return true;
+            return handleDefault(signalName);
         }
 
         @Specialization(guards = { "isRubyString(signalName)", "isNil(nil)" })
         public boolean watchSignal(DynamicObject signalName, Object nil) {
-            Signal signal = new Signal(signalName.toString());
-            SignalOperations.watchSignal(signal, SignalOperations.IGNORE_HANDLER);
-            return true;
+            return handle(signalName, SignalOperations.IGNORE_HANDLER);
         }
 
         @Specialization(guards = { "isRubyString(signalName)", "isRubyProc(proc)" })
         public boolean watchSignalProc(DynamicObject signalName, DynamicObject proc) {
+            return handle(signalName, new ProcSignalHandler(getContext(), proc));
+        }
+
+        @TruffleBoundary
+        private boolean handleDefault(DynamicObject signalName) {
             Signal signal = new Signal(signalName.toString());
-            SignalOperations.watchSignal(signal, new ProcSignalHandler(getContext(), proc));
+            try {
+                SignalOperations.watchDefaultForSignal(signal);
+            } catch (IllegalArgumentException e) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
+            return true;
+        }
+
+        @TruffleBoundary
+        private boolean handle(DynamicObject signalName, SignalHandler newHandler) {
+            final Signal signal = new Signal(signalName.toString());
+            try {
+                SignalOperations.watchSignal(signal, newHandler);
+            } catch (IllegalArgumentException e) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
             return true;
         }
 

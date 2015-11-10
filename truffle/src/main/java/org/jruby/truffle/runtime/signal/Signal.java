@@ -23,12 +23,12 @@ public class Signal {
         sunSignal = new sun.misc.Signal(name);
     }
 
-    public static void handle(final Signal signal, final SignalHandler newHandler) {
+    public static void handle(final Signal signal, final SignalHandler newHandler) throws IllegalArgumentException {
         final sun.misc.SignalHandler oldSunHandler = sun.misc.Signal.handle(signal.sunSignal, wrapHandler(signal, newHandler));
         DEFAULT_HANDLERS.putIfAbsent(signal.sunSignal, oldSunHandler);
     }
 
-    public static void handleDefault(final Signal signal) {
+    public static void handleDefault(final Signal signal) throws IllegalArgumentException {
         final sun.misc.SignalHandler defaultHandler = DEFAULT_HANDLERS.get(signal.sunSignal);
         if (defaultHandler != null) { // otherwise it is already the default signal
             sun.misc.Signal.handle(signal.sunSignal, defaultHandler);
@@ -44,7 +44,7 @@ public class Signal {
         };
     }
 
-    public static void raise(Signal signal) {
+    public static void raise(Signal signal) throws IllegalArgumentException {
         sun.misc.Signal.raise(signal.sunSignal);
     }
 

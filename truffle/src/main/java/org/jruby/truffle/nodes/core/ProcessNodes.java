@@ -137,13 +137,21 @@ public abstract class ProcessNodes {
             int self = posix().getpid();
 
             if (self == pid) {
-                Signal signal = new Signal(Layouts.SYMBOL.getString(signalName));
-
-                SignalOperations.raise(signal);
-                return 1;
+                return raise(Layouts.SYMBOL.getString(signalName));
             } else {
                 throw new UnsupportedOperationException();
             }
+        }
+
+        @TruffleBoundary
+        private int raise(String signalName) {
+            Signal signal = new Signal(signalName);
+            try {
+                SignalOperations.raise(signal);
+            } catch (IllegalArgumentException e) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
+            return 1;
         }
 
     }
