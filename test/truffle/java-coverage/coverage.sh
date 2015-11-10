@@ -14,5 +14,5 @@ export JAVA_OPTS="-javaagent:$JACOCO_AGENT=destfile=$JACOCO_LOG"
 
 rm jacoco.exec
 tool/jt.rb test
-test/truffle/run.sh
+test/truffle/integration-tests.sh
 ant -f test/truffle/java-coverage/build.xml
