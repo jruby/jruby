@@ -442,7 +442,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public final Regex preparePattern(RubyString str) {
-        check();
+        // checkEncoding does `check();` no need to here
         Encoding enc = checkEncoding(str, true);
         if (enc == pattern.getEncoding()) return pattern;
         return getPreprocessedRegexpFromCache(getRuntime(), this.str, enc, options, RegexpSupport.ErrorMode.PREPROCESS);
