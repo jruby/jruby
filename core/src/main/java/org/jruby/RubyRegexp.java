@@ -163,26 +163,28 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regex;
     }
 
-    static Regex getQuotedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options) {
+    static Regex getQuotedRegexpFromCache(Ruby runtime, RubyString str, RegexpOptions options) {
+        final ByteList bytes = str.getByteList();
         Regex regex = quotedPatternCache.get(bytes);
+        Encoding enc = str.isAsciiOnly() ? USASCIIEncoding.INSTANCE : bytes.getEncoding();
         if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
-        ByteList quoted = quote(bytes, enc);
-        regex = makeRegexp(runtime, quoted, options, enc);
-        regex.setUserObject(quoted);
-        quotedPatternCache.put(bytes, regex);
-        return regex;
-    }
-
-    static Regex getQuotedRegexpFromCache19(Ruby runtime, ByteList bytes, RegexpOptions options, boolean asciiOnly) {
-        Regex regex = quotedPatternCache.get(bytes);
-        Encoding enc = asciiOnly ? USASCIIEncoding.INSTANCE : bytes.getEncoding();
-        if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
-        ByteList quoted = quote19(bytes, asciiOnly);
+        final ByteList quoted = quote19(str);
         regex = makeRegexp(runtime, quoted, options, quoted.getEncoding());
         regex.setUserObject(quoted);
         quotedPatternCache.put(bytes, regex);
         return regex;
     }
+
+    //static Regex getQuotedRegexpFromCache(Ruby runtime, ByteList bytes, RegexpOptions options, boolean asciiOnly) {
+    //    Regex regex = quotedPatternCache.get(bytes);
+    //    Encoding enc = asciiOnly ? USASCIIEncoding.INSTANCE : bytes.getEncoding();
+    //    if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
+    //    final ByteList quoted = quote19(bytes, asciiOnly);
+    //    regex = makeRegexp(runtime, quoted, options, quoted.getEncoding());
+    //    regex.setUserObject(quoted);
+    //    quotedPatternCache.put(bytes, regex);
+    //    return regex;
+    //}
 
     private static Regex getPreprocessedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, RegexpSupport.ErrorMode mode) {
         Regex regex = preprocessedPatternCache.get(bytes);
@@ -290,7 +292,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     /** default constructor
      */
-    private RubyRegexp(Ruby runtime) {
+    RubyRegexp(Ruby runtime) {
         super(runtime, runtime.getRegexp());
         this.options = new RegexpOptions();
     }
@@ -440,7 +442,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public final Regex preparePattern(RubyString str) {
-        check();
+        // checkEncoding does `check();` no need to here
         Encoding enc = checkEncoding(str, true);
         if (enc == pattern.getEncoding()) return pattern;
         return getPreprocessedRegexpFromCache(getRuntime(), this.str, enc, options, RegexpSupport.ErrorMode.PREPROCESS);
@@ -536,79 +538,25 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = {"quote", "escape"}, meta = true)
     public static IRubyObject quote19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        RubyString str = operandCheck(arg);
-        return RubyString.newStringShared(runtime, quote19(str.getByteList(), str.isAsciiOnly()));
+        final RubyString str = operandCheck(arg);
+        return RubyString.newStringShared(context.runtime, quote19(str));
+    }
+
+    static ByteList quote19(final RubyString str) {
+        final ByteList bytes = str.getByteList();
+        final ByteList qBytes = quote19(bytes, str.isAsciiOnly());
+        if (qBytes == bytes) str.setByteListShared();
+        return qBytes;
     }
 
     /** rb_reg_quote
      *
      */
-    private static ByteList quote(ByteList bs, Encoding enc) {
-        int p = bs.getBegin();
-        int end = p + bs.getRealSize();
-        byte[]bytes = bs.getUnsafeBytes();
-
-        metaFound: do {
-            for(; p < end; p++) {
-                int c = bytes[p] & 0xff;
-                int cl = enc.length(bytes, p, end);
-                if (cl != 1) {
-                    while (cl-- > 0 && p < end) p++;
-                    p--;
-                    continue;
-                }
-                switch (c) {
-                case '[': case ']': case '{': case '}':
-                case '(': case ')': case '|': case '-':
-                case '*': case '.': case '\\':
-                case '?': case '+': case '^': case '$':
-                case ' ': case '#':
-                case '\t': case '\f': case '\n': case '\r':
-                    break metaFound;
-                }
-            }
-            return bs;
-        } while (false);
-
-        ByteList result = new ByteList(end * 2);
-        byte[]obytes = result.getUnsafeBytes();
-        int op = p - bs.getBegin();
-        System.arraycopy(bytes, bs.getBegin(), obytes, 0, op);
-
-        for(; p < end; p++) {
-            int c = bytes[p] & 0xff;
-            int cl = enc.length(bytes, p, end);
-            if (cl != 1) {
-                while (cl-- > 0 && p < end) obytes[op++] = bytes[p++];
-                p--;
-                continue;
-            }
-
-            switch (c) {
-            case '[': case ']': case '{': case '}':
-            case '(': case ')': case '|': case '-':
-            case '*': case '.': case '\\':
-            case '?': case '+': case '^': case '$':
-            case '#': obytes[op++] = '\\'; break;
-            case ' ': obytes[op++] = '\\'; obytes[op++] = ' '; continue;
-            case '\t':obytes[op++] = '\\'; obytes[op++] = 't'; continue;
-            case '\n':obytes[op++] = '\\'; obytes[op++] = 'n'; continue;
-            case '\r':obytes[op++] = '\\'; obytes[op++] = 'r'; continue;
-            case '\f':obytes[op++] = '\\'; obytes[op++] = 'f'; continue;
-            }
-            obytes[op++] = (byte)c;
-        }
-
-        result.setRealSize(op);
-        return result;
-    }
-
     private static final int QUOTED_V = 11;
     public static ByteList quote19(ByteList bs, boolean asciiOnly) {
         int p = bs.getBegin();
         int end = p + bs.getRealSize();
-        byte[]bytes = bs.getUnsafeBytes();
+        byte[] bytes = bs.getUnsafeBytes();
         Encoding enc = bs.getEncoding();
 
         metaFound: do {
@@ -910,8 +858,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private IRubyObject initializeByRegexp19(RubyRegexp regexp) {
         regexp.check();
-//        System.out.println("str: " + regexp.str + ", ENC: " + regexp.getEncoding() + ", OPT: " + regexp.getOptions());
-//        System.out.println("KCODE: " + regexp.kcode);
         // Clone and toggle flags since this is no longer a literal regular expression
         // but it did come from one.
         RegexpOptions newOptions = (RegexpOptions) regexp.getOptions().clone();
@@ -1048,12 +994,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "=~", required = 1, writes = BACKREF, reads = BACKREF)
     @Override
     public IRubyObject op_match19(ThreadContext context, IRubyObject str) {
-        Ruby runtime = context.runtime;
-        IRubyObject[] strp = {str};
+        final IRubyObject[] strp = { str };
         int pos = matchPos(context, str, strp, null, 0);
-        if (pos < 0) return runtime.getNil();
-        pos = ((RubyString)strp[0]).subLength(pos);
-        return RubyFixnum.newFixnum(runtime, pos);
+        if (pos < 0) return context.nil;
+        pos = ((RubyString) strp[0]).subLength(pos);
+        return RubyFixnum.newFixnum(context.runtime, pos);
     }
 
     /** rb_reg_match_m
@@ -1077,17 +1022,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match19Common(context, str, RubyNumeric.num2int(pos), true, block);
     }
 
-    private IRubyObject match19Common(ThreadContext context, IRubyObject arg, int pos, boolean setBackref, Block block) {
-        if (arg.isNil()) {
-            if (setBackref) context.setBackRef(arg);
-            return arg;
-        }
-
-        RubyString _str = operandCheck(arg);
-
-        IRubyObject[] holder = setBackref ? null : new IRubyObject[]{context.nil};
-        if (matchPos(context, _str, null, holder, pos) < 0) {
-            setBackRefInternal(context, holder, context.nil);
+    private IRubyObject match19Common(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block) {
+        IRubyObject[] holder = setBackref ? null : new IRubyObject[] { context.nil };
+        if (matchPos(context, str, null, holder, pos) < 0) {
             return context.nil;
         }
 
@@ -1100,17 +1037,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      * MRI: reg_match_pos
      *
      * @param context thread context
-     * @param stringlike the stringlike to match
+     * @param arg the stringlike to match
      * @param strp an out param to hold the coerced string; ignored if null
      * @param holder an out param to hold the resulting match object; ignored if null
      * @param pos the position from which to start matching
      */
-    private int matchPos(ThreadContext context, IRubyObject stringlike, IRubyObject[] strp, IRubyObject[] holder, int pos) {
-        if (stringlike.isNil()) {
+    private int matchPos(ThreadContext context, IRubyObject arg, IRubyObject[] strp, IRubyObject[] holder, int pos) {
+        if (arg.isNil()) {
             setBackRefInternal(context, holder, context.nil);
             return -1;
         }
-        final RubyString str = operandCheck(stringlike);
+        final RubyString str = operandCheck(arg);
         if (strp != null) strp[0] = str;
         if (pos != 0) {
             if (pos < 0) {
@@ -1227,7 +1164,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         matchData.regexp = this;
-        matchData.charOffsetUpdated = false;
         matchData.infectBy(this);
         setBackRefInternal(context, holder, matchData);
 
@@ -1269,9 +1205,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod
     public IRubyObject source() {
         check();
-        RubyString _str = RubyString.newStringShared(getRuntime(), this.str);
-        if (isTaint()) _str.setTaint(true);
-        return _str;
+        return RubyString.newStringShared(getRuntime(), str).infectBy(this);
     }
 
     final int length() {
@@ -1379,54 +1313,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             result.append((byte)')');
             return RubyString.newString(getRuntime(), result, getEncoding()).infectBy(this);
         } while (true);
-    }
-
-    // rb_reg_expr_str
-    private static void appendRegexpString(Ruby runtime, ByteList to, byte[]bytes, int start, int len, Encoding enc) {
-        int p = start;
-        int end = p + len;
-        boolean needEscape = false;
-        if (enc.isAsciiCompatible()) {
-            while (p < end) {
-                int c = bytes[p] & 0xff;
-                if (c == '/' || (!enc.isPrint(c) && enc.length(bytes, p, end) == 1)) {
-                    needEscape = true;
-                    break;
-                }
-                p += enc.length(bytes, p, end);
-            }
-        } else {
-            needEscape = true;
-        }
-
-        if (!needEscape) {
-            to.append(bytes, start, len);
-        } else {
-            p = start;
-            while (p < end) {
-                int c = bytes[p] & 0xff;
-                if (c == '\\') {
-                    int n = enc.length(bytes, p + 1, end) + 1;
-                    to.append(bytes, p, n);
-                    p += n;
-                    continue;
-                } else if (c == '/') {
-                    to.append((byte)'\\');
-                    to.append(bytes, p, 1);
-                } else if (enc.length(bytes, p, end) != 1) {
-                    to.append(bytes, p, enc.length(bytes, p, end));
-                    p += enc.length(bytes, p, end);
-                    continue;
-                } else if (enc.isPrint(c)) {
-                    to.append(bytes, p, 1);
-                } else if (!enc.isSpace(c)) {
-                    Sprintf.sprintf(runtime, to, "\\%03o", bytes[p] & 0377);
-                } else {
-                    to.append(bytes, p, 1);
-                }
-                p++;
-            }
-        }
     }
 
     private static String[] NO_NAMES = new String[] {}; //TODO: Perhaps we have another empty string arr
@@ -1736,16 +1622,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private static RubyString operandCheck(IRubyObject str) {
-        return (RubyString)regOperand(str, true);
+        return (RubyString) regOperand(str, true);
     }
 
     // MRI: reg_operand
     private static IRubyObject regOperand(IRubyObject str, boolean check) {
-        if (str instanceof RubySymbol) {
-            return ((RubySymbol)str).to_s();
-        } else {
-            return check ? str.convertToString() : str.checkStringType();
-        }
+        if (str instanceof RubySymbol) return ((RubySymbol) str).to_s();
+        return check ? str.convertToString() : str.checkStringType();
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

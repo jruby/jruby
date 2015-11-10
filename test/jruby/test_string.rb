@@ -46,9 +46,36 @@ class TestString < Test::Unit::TestCase
     str.gsub!(/\-|_/, '-')
     assert_equal ['-ty-', '-ty-'], str.scan(pat = '-ty-')
     pat[2] = 'i'
-    assert $~ # failed with a NPE or might have recycled previous $~ pattern
+    $~.inspect # failed with a NPE or might have recycled previous $~ pattern
     assert_equal /\-ty\-/, $~.regexp
     assert_equal 1, $~.size
+    assert_equal str, $~.string
+    assert $~.string.frozen?
+  end
+
+  def test_regexp_match
+    ''.sub!(/foo/, '')
+    # assert ! $~.nil?
+    /bar/.match(nil)
+    assert $~.nil?
+  end
+
+  def test_regexp_source_string
+    regexp = Regexp.new(str = 'StrinG')
+    assert regexp.eql?(/StrinG/)
+    str[0] = 's'
+    assert_equal 'StrinG', regexp.source
+    regexp.source.replace ''
+    assert_equal 'StrinG', regexp.source
+    assert_equal /strinG/, regexp = Regexp.new(str)
+    assert_equal 'strinG', regexp.source
+    assert_equal 'strinG', /strinG/.source
+    str.sub!('G', 'g')
+    assert_equal /string/, regexp = Regexp.new(str)
+    assert_equal 'string', regexp.source
+    regexp.source.gsub!('s', 'z')
+    assert_equal 'string', regexp.source
+    assert_equal 'string', Regexp.new('string').source
   end
 
   EOL = "\r\n"

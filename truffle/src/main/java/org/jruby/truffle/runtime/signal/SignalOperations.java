@@ -25,15 +25,15 @@ public class SignalOperations {
         }
     };
 
-    public static void watchSignal(Signal signal, SignalHandler newHandler) {
+    public static void watchSignal(Signal signal, SignalHandler newHandler) throws IllegalArgumentException {
         Signal.handle(signal, newHandler);
     }
 
-    public static void watchDefaultForSignal(Signal signal) {
+    public static void watchDefaultForSignal(Signal signal) throws IllegalArgumentException {
         Signal.handleDefault(signal);
     }
 
-    public static void raise(Signal signal) {
+    public static void raise(Signal signal) throws IllegalArgumentException {
         Signal.raise(signal);
     }
 

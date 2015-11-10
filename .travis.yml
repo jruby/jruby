@@ -74,7 +74,7 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND='ruby tool/jt.rb check_ambiguous_arguments'
       jdk: oraclejdk8
-    - env: COMMAND=test/truffle/run.sh
+    - env: COMMAND=test/truffle/integration-tests.sh
       jdk: oraclejdk8
 
 branches:
