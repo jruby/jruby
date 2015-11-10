@@ -63,6 +63,15 @@ public class ConcatRope extends Rope {
     }
 
     @Override
+    public byte[] extractRange(int offset, int length) {
+        if (offset < left.length()) {
+            return left.extractRange(offset, length);
+        }
+
+        return right.extractRange(offset - left.length(), length);
+    }
+
+    @Override
     public Encoding getEncoding() {
         if (encoding == null) {
             if (left.getEncoding() == right.getEncoding()) {

@@ -20,5 +20,7 @@ public abstract class Rope {
 
     public abstract byte[] getBytes();
 
+    public abstract byte[] extractRange(int offset, int length);
+
     public abstract Encoding getEncoding();
 }

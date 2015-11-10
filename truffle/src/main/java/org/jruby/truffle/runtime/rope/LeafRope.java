@@ -46,6 +46,15 @@ public class LeafRope extends Rope {
     }
 
     @Override
+    public byte[] extractRange(int offset, int length) {
+        final byte[] ret = new byte[length];
+
+        System.arraycopy(bytes, offset, ret, 0, length);
+
+        return ret;
+    }
+
+    @Override
     public Encoding getEncoding() {
         return encoding;
     }

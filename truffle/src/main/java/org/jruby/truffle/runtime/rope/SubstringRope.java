@@ -45,11 +45,17 @@ public class SubstringRope extends Rope {
     @Override
     public byte[] getBytes() {
         if (bytes == null) {
-            bytes = new byte[length];
-            System.arraycopy(child.getBytes(), offset, bytes, 0, length);
+            bytes = child.extractRange(offset, length);
         }
 
         return bytes;
+    }
+
+    @Override
+    public byte[] extractRange(int offset, int length) {
+        assert length <= this.length;
+
+        return child.extractRange(this.offset + offset, length);
     }
 
     @Override
