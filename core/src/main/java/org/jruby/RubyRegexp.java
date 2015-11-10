@@ -1317,54 +1317,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } while (true);
     }
 
-    // rb_reg_expr_str
-    private static void appendRegexpString(Ruby runtime, ByteList to, byte[]bytes, int start, int len, Encoding enc) {
-        int p = start;
-        int end = p + len;
-        boolean needEscape = false;
-        if (enc.isAsciiCompatible()) {
-            while (p < end) {
-                int c = bytes[p] & 0xff;
-                if (c == '/' || (!enc.isPrint(c) && enc.length(bytes, p, end) == 1)) {
-                    needEscape = true;
-                    break;
-                }
-                p += enc.length(bytes, p, end);
-            }
-        } else {
-            needEscape = true;
-        }
-
-        if (!needEscape) {
-            to.append(bytes, start, len);
-        } else {
-            p = start;
-            while (p < end) {
-                int c = bytes[p] & 0xff;
-                if (c == '\\') {
-                    int n = enc.length(bytes, p + 1, end) + 1;
-                    to.append(bytes, p, n);
-                    p += n;
-                    continue;
-                } else if (c == '/') {
-                    to.append((byte)'\\');
-                    to.append(bytes, p, 1);
-                } else if (enc.length(bytes, p, end) != 1) {
-                    to.append(bytes, p, enc.length(bytes, p, end));
-                    p += enc.length(bytes, p, end);
-                    continue;
-                } else if (enc.isPrint(c)) {
-                    to.append(bytes, p, 1);
-                } else if (!enc.isSpace(c)) {
-                    Sprintf.sprintf(runtime, to, "\\%03o", bytes[p] & 0377);
-                } else {
-                    to.append(bytes, p, 1);
-                }
-                p++;
-            }
-        }
-    }
-
     private static String[] NO_NAMES = new String[] {}; //TODO: Perhaps we have another empty string arr
     public String[] getNames() {
         int nameLength = pattern.numberOfNames();
