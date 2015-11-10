@@ -55,8 +55,8 @@ public class PsychLibrary implements Library {
         try {
             props.load(is);
         }
-        catch( IOException e ) {
-            // ignored
+        catch( Exception e ) {
+            // ignored - can be a NPE as well
         } finally {
             try {is.close();} catch (IOException ioe) {}
         }

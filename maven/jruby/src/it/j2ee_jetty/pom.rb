@@ -52,4 +52,8 @@ execute 'check download', :phase => :verify do
   unless result.match( /#{expected}/ )
     raise "missed expected string in download: #{expected}"
   end
+  expected = 'snakeyaml-1.13.0'
+  unless result.match( /#{expected}/ )
+    raise "missed expected string in download: #{expected}"
+  end
 end
