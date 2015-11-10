@@ -382,6 +382,9 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
+                    } else if (extendedOption.equals("-T")) {
+                        config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        config.setDisableGems(false);
                     } else if (extendedOption.equals("+T")) {
                         checkGraalVersion();
                         Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
