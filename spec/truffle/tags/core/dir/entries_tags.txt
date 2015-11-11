@@ -1,1 +1,2 @@
 fails:Dir.entries returns entries encoded with the specified encoding
+graalvm:Dir.entries returns entries encoded with the filesystem encoding by default
