@@ -71,10 +71,12 @@ public class TraceType {
 
         renderBacktraceJRuby(trace, buffer, false);
 
-        final int len = buffer.length();
-        if ( len > 0 && buffer.charAt(len - 1) == '\n' ) {
-            buffer.setLength(len - 1); // remove last '\n'
-        }
+        // NOTE: other logXxx method do not remove the new-line
+        // ... but if this is desired they should do so as well
+        //final int len = buffer.length();
+        //if ( len > 0 && buffer.charAt(len - 1) == '\n' ) {
+        //    buffer.setLength(len - 1); // remove last '\n'
+        //}
 
         LOG.info(buffer.toString());
     }
