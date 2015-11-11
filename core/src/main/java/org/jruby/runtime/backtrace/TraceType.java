@@ -385,8 +385,6 @@ public class TraceType {
         String type = exception.getMetaClass().getName();
 
         RubyStackTraceElement[] frames = exception.getBacktraceElements();
-        if (frames == null) frames = RubyStackTraceElement.EMPTY_ARRAY;
-
         return printBacktraceJRuby(frames, type, message, color);
     }
 
