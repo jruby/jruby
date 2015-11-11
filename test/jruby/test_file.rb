@@ -644,7 +644,7 @@ class TestFile < Test::Unit::TestCase
       assert(! File.directory?("test/jruby/test_file.rb"))
       assert(! File.directory?("dir_not_tmp"))
       result = jruby("-e 'print File.directory?(\"dir_not_tmp\");print File.directory?(\"dir_tmp\");print File.directory?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false')
-      assert(result == 'falsetruefalse')
+      assert_equal(result, 'falsetruefalse')
     ensure
       Dir.rmdir("dir_tmp")
     end
@@ -655,7 +655,7 @@ class TestFile < Test::Unit::TestCase
     assert(! File.file?('test'))
     assert(! File.file?('test_not'))
     result = jruby("-e 'print File.file?(\"test_not\");print File.file?(\"test\");print File.file?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
-    assert(result == 'falsefalsetrue')
+    assert_equal(result, 'falsefalsetrue')
   end
 
   def test_readable_query # - readable?
@@ -663,7 +663,7 @@ class TestFile < Test::Unit::TestCase
     assert(File.readable?('test'))
     assert(! File.readable?('test_not'))
     result = jruby("-e 'print File.readable?(\"test_not\");print File.readable?(\"test\");print File.readable?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
-    assert(result == 'falsetruetrue')
+    assert_equal(result, 'falsetruetrue')
   end
 
   [ :executable?, :executable_real? ].each do |method|
@@ -678,7 +678,7 @@ class TestFile < Test::Unit::TestCase
       assert(File.send(method, 'test'))
       assert(!File.send(method, 'test_not'))
       result = jruby("-e 'print File.#{method}(\"#{exec_file}\");print File.#{method}(\"test_not\");print File.#{method}(\"test\");print File.#{method}(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
-      assert(result == 'truefalsetruefalse')
+      assert_equal(result, 'truefalsetruefalse')
     end
   end
 
@@ -1390,7 +1390,8 @@ class TestFile < Test::Unit::TestCase
     postfix = '!/jruby/jruby.rb'
     ['', 'uri:jar:file:', 'jar:file:', 'file:'].each do |prefix|
       result = File.realpath("#{prefix}lib/jruby.jar#{postfix}")
-      assert_equal(File.expand_path(result), result)
+      # we do not care about slash or backslash
+      assert_equal(File.expand_path(result), result.gsub('\\', '/'))
       assert_equal(result.start_with?(prefix), true, result + " starts with "  + prefix)
       assert_equal(result.end_with?(postfix), true, result + " ends with "  + postfix)
     end

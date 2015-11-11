@@ -25,7 +25,7 @@ class TestJarredGemsWithSpacesInDirectory < Test::Unit::TestCase
   def test_jarred_gem_on_gem_path
     Gem.clear_paths
     old = ENV['GEM_PATH']
-    ENV['GEM_PATH'] = File.expand_path('../gem.jar', __FILE__)
+    p ENV['GEM_PATH'] = File.expand_path('../gem.jar', __FILE__)
     assert require('mygem')
   ensure
     ENV['GEM_PATH'] = old
