@@ -17,7 +17,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -44,8 +44,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * The executable body portion of a closure.
  */
 public abstract class BlockBody {
-    public static final String[] EMPTY_PARAMETER_LIST = new String[0];
-    
+
+    public static final String[] EMPTY_PARAMETER_LIST = org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
+
     protected final Signature signature;
 
     public BlockBody(Signature signature) {

@@ -11,7 +11,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -38,15 +38,16 @@ import org.jruby.RubyClass;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.unsafe.UnsafeHolder;
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 /**
  * This class encapculates all logic relating to the management of instance
  * variable tables in RubyBasicObject instances.
- * 
+ *
  * The logic originally lived in both RubyBasicObject and RubyClass, tightly
  * coupled to each and difficult to follow as it bounced back and forth. We
  * moved the logic here for a couple reasons:
- * 
+ *
  * <li>To have a single place from which we could follow ivar logic.</li>
  * <li>To make it easier to swap in new implementations of instance variable
  * logic as we work toward reifying ivars into fields.</li>
@@ -55,32 +56,30 @@ import org.jruby.util.unsafe.UnsafeHolder;
 public class VariableTableManager {
     /** the "real" class associated with this table */
     private final RubyClass realClass;
-    
-    /** an empty array of String */
-    private static String[] EMPTY_STRING_ARRAY = new String[0];
-    
+
     /** a map from strings to accessors for this table */
-    private Map<String, VariableAccessor> variableAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
-    
+    @SuppressWarnings("unchecked")
+    private Map<String, VariableAccessor> variableAccessors = Collections.EMPTY_MAP;
+
     /** an array of all registered variable names */
     private volatile String[] variableNames = EMPTY_STRING_ARRAY;
 
     /** whether a slot has been allocated to object_id */
     private volatile boolean hasObjectID = false;
-    
+
     /** whether objects associated with this table use fields */
     private volatile int fieldVariables = 0;
-    
+
     /** a lazy accessor for object_id */
     private final VariableAccessorField objectIdVariableAccessorField = new VariableAccessorField("object_id");
     /** a lazy accessor for FFI handle */
     private final VariableAccessorField ffiHandleVariableAccessorField = new VariableAccessorField("ffi");
     /** a lazy accessor for object group */
     private final VariableAccessorField objectGroupVariableAccessorField = new VariableAccessorField("objectspace_group");
-    
+
     /**
      * Construct a new VariableTable Manager for the given "real" class.
-     * 
+     *
      * @param realClass the "real" class associated with this table
      */
     public VariableTableManager(RubyClass realClass) {
@@ -89,26 +88,26 @@ public class VariableTableManager {
 
     /**
      * Get the map of all current variable accessors with intent to read from it.
-     * 
+     *
      * @return a map of current variable accessors
      */
     public Map<String, VariableAccessor> getVariableAccessorsForRead() {
         return variableAccessors;
     }
-    
+
     /**
      * Whether this table has been used to allocate space for an object_id.
-     * 
+     *
      * @return true if object_id has been allocated; false otherwise
      */
     public boolean hasObjectID() {
         return hasObjectID;
     }
-    
+
     /**
      * Get the object_id from a given RubyBasicObject, possibly allocating
      * space for it.
-     * 
+     *
      * @param self the object from which to get object_id
      * @return the object's object_id (possibly new)
      */
@@ -116,7 +115,7 @@ public class VariableTableManager {
         VariableAccessor objectIdAccessor = getObjectIdAccessorField().getVariableAccessorForRead();
         Long id = (Long)objectIdAccessor.get(self);
         if (id != null) return id;
-        
+
         synchronized (self) {
             objectIdAccessor = getObjectIdAccessorField().getVariableAccessorForRead();
             id = (Long)objectIdAccessor.get(self);
@@ -125,10 +124,10 @@ public class VariableTableManager {
             return initObjectId(self, getObjectIdAccessorField().getVariableAccessorForWrite(this));
         }
     }
-    
+
     /**
      * Virtual entry point for setting a variable into an object.
-     * 
+     *
      * @param self the object into which to set the value
      * @param index the index allocated for the value
      * @param value the value
@@ -140,10 +139,10 @@ public class VariableTableManager {
             StampedVariableAccessor.setVariable(self,realClass,index,value);
         }
     }
-    
+
     /**
      * Static entry point for setting a variable in an object.
-     * 
+     *
      * @param realClass the "real" class of the object
      * @param self the object into which to set the variable
      * @param index the index allocated for the variable
@@ -160,7 +159,7 @@ public class VariableTableManager {
     /**
      * Get the variable accessor for the given name with intent to use it for
      * writing.
-     * 
+     *
      * @param name the name of the variable
      * @return an accessor appropriate for writing
      */
@@ -186,7 +185,7 @@ public class VariableTableManager {
         }
         return ivarAccessor;
     }
-    
+
     public VariableAccessor getVariableAccessorForVar(String name, int index) {
         VariableAccessor ivarAccessor = variableAccessors.get(name);
         if (ivarAccessor == null) {
@@ -213,7 +212,7 @@ public class VariableTableManager {
     /**
      * Get the variable accessor for the given name with intent to use it for
      * reading.
-     * 
+     *
      * @param name the name of the variable
      * @return an accessor appropriate for reading
      */
@@ -225,7 +224,7 @@ public class VariableTableManager {
 
     /**
      * Retrieve the lazy accessor (VariableAccessorField) for object_id.
-     * 
+     *
      * @return the lazy accessor for object_id
      */
     public VariableAccessorField getObjectIdAccessorField() {
@@ -234,7 +233,7 @@ public class VariableTableManager {
 
     /**
      * Retrieve the lazy accessor (VariableAccessorField) for FFI handle.
-     * 
+     *
      * @return the lazy accessor for FFI handle
      */
     public VariableAccessorField getFFIHandleAccessorField() {
@@ -243,7 +242,7 @@ public class VariableTableManager {
 
     /**
      * Retrieve the read accessor for FFI handle.
-     * 
+     *
      * @return the read accessor for FFI handle
      */
     public VariableAccessor getFFIHandleAccessorForRead() {
@@ -252,7 +251,7 @@ public class VariableTableManager {
 
     /**
      * Retrieve the write accessor for FFI handle.
-     * 
+     *
      * @return the write accessor for FFI handle
      */
     public VariableAccessor getFFIHandleAccessorForWrite() {
@@ -261,7 +260,7 @@ public class VariableTableManager {
 
     /**
      * Retrieve the lazy accessor (VariableAccessorField) for object group.
-     * 
+     *
      * @return the lazy accessor for object group
      */
     public VariableAccessorField getObjectGroupAccessorField() {
@@ -270,7 +269,7 @@ public class VariableTableManager {
 
     /**
      * Retrieve the read accessor for object group.
-     * 
+     *
      * @return the read accessor for object group
      */
     public VariableAccessor getObjectGroupAccessorForRead() {
@@ -279,7 +278,7 @@ public class VariableTableManager {
 
     /**
      * Retrieve the write accessor for object group.
-     * 
+     *
      * @return the write accessor for object group
      */
     public VariableAccessor getObjectGroupAccessorForWrite() {
@@ -288,7 +287,7 @@ public class VariableTableManager {
 
     /**
      * Retrieve the FFI ext handle for the given object.
-     * 
+     *
      * @param self the object
      * @return the object's FFI handle
      */
@@ -298,7 +297,7 @@ public class VariableTableManager {
 
     /**
      * Set the FFI handle for the given object.
-     * 
+     *
      * @param self the object
      * @param self the object's FFI handle
      */
@@ -310,7 +309,7 @@ public class VariableTableManager {
     /**
      * Get the size of the variable table, excluding extra vars (object_id,
      * etc).
-     * 
+     *
      * @return the variable table's size, excluding extras
      */
     public int getVariableTableSize() {
@@ -320,8 +319,8 @@ public class VariableTableManager {
     /**
      * Get the size of the variable table, including extra vars (object_etc,
      * etc).
-     * 
-     * @return 
+     *
+     * @return
      */
     public int getVariableTableSizeWithExtras() {
         return variableNames.length;
@@ -329,7 +328,7 @@ public class VariableTableManager {
 
     /**
      * Get a Map representing all variables registered in the variable table.
-     * 
+     *
      * @return a map of names to accessors for all variables
      */
     public Map<String, VariableAccessor> getVariableTableCopy() {
@@ -349,11 +348,11 @@ public class VariableTableManager {
         System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
-    
+
     /**
      * Sync one this object's variables with other's - this is used to make
      * rbClone work correctly.
-     * 
+     *
      * @param self the object into which to sync variables
      * @param other the object from which to sync variables
      */
@@ -363,9 +362,9 @@ public class VariableTableManager {
 
         if (sameTable && fieldVariables == 0) {
             int idIndex = otherRealClass.getObjectIdAccessorField().getVariableAccessorForRead().getIndex();
-            
+
             Object[] otherVars = ((RubyBasicObject) other).varTable;
-            
+
             if(UnsafeHolder.U == null)
             {
                 synchronized (self) {
@@ -380,18 +379,18 @@ public class VariableTableManager {
                     // acquire exclusive write mode
                     if(!UnsafeHolder.U.compareAndSwapInt(self, RubyBasicObject.STAMP_OFFSET, oldStamp, ++oldStamp))
                         continue;
-                    
+
                     Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, RubyBasicObject.VAR_TABLE_OFFSET);
                     Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
-                    
+
                     UnsafeHolder.U.putOrderedObject(self, RubyBasicObject.VAR_TABLE_OFFSET, newTable);
-                    
+
                     // release write mode
                     self.varTableStamp = oldStamp+1;
                     break;
                 }
 
-                
+
             }
 
         } else {
@@ -409,7 +408,7 @@ public class VariableTableManager {
             }
         }
     }
-    
+
     /**
      * Returns true if object has any variables, defined as:
      * <ul>
@@ -447,12 +446,12 @@ public class VariableTableManager {
             getVariableAccessorForWrite(name).set(object, value);
         }
     }
-    
+
     public Object clearVariable(RubyBasicObject object, String name) {
         synchronized(object) {
             Object value = getVariableAccessorForRead(name).get(object);
             getVariableAccessorForWrite(name).set(object, null);
-            
+
             return value;
         }
     }
@@ -475,7 +474,7 @@ public class VariableTableManager {
      * Synchronization here ends up being a bottleneck for every object
      * created from the class that contains this VariableTableManager. See
      * GH #1400.
-     * 
+     *
      * @param objectIdAccessor The variable accessor to use for storing the
      * generated object ID
      * @return The generated object ID
@@ -483,13 +482,13 @@ public class VariableTableManager {
     private long initObjectId(RubyBasicObject self, VariableAccessor objectIdAccessor) {
         Ruby runtime = self.getRuntime();
         long id;
-        
+
         if (runtime.isObjectSpaceEnabled()) {
             id = runtime.getObjectSpace().createAndRegisterObjectId(self);
         } else {
             id = ObjectSpace.calculateObjectId(self);
         }
-        
+
         // we use a direct path here to avoid frozen checks
         setObjectId(realClass, self, objectIdAccessor.getIndex(), id);
 
@@ -498,7 +497,7 @@ public class VariableTableManager {
 
     /**
      * Update object_id with the given value.
-     * 
+     *
      * @param self the object into which to set object_id
      * @param index the index allocated to store object_id
      * @param value the value of object_id
@@ -511,7 +510,7 @@ public class VariableTableManager {
     /**
      * Make a new variable table based on the values in a current and other
      * (incoming) table, excluding object_id at specified index.
-     * 
+     *
      * @param currentTable the current table
      * @param otherTable the other (incoming) table
      * @param objectIdIdx the index of object_id to exclude
@@ -523,18 +522,18 @@ public class VariableTableManager {
         } else {
             System.arraycopy(otherTable, 0, currentTable, 0, otherTable.length);
         }
-    
+
         // null out object ID so we don't share it
         if (objectIdIdx >= 0 && objectIdIdx < currentTable.length) {
             currentTable[objectIdIdx] = null;
         }
-        
+
         return currentTable;
     }
 
     /**
      * Allocate a new VariableAccessor for the named variable.
-     * 
+     *
      * @param name the name of the variable
      * @return the new VariableAccessor
      */
@@ -559,14 +558,14 @@ public class VariableTableManager {
 
         return newVariableAccessor;
     }
-    
+
     synchronized final VariableAccessor allocateVariableAccessorForVar(String name, int index) {
         int id = realClass.id;
         String[] myVariableNames = variableNames;
 
         int newIndex = myVariableNames.length;
         String[] newVariableNames = new String[newIndex + 1];
-        
+
         fieldVariables += 1;
 
         VariableAccessor newVariableAccessor;

@@ -74,6 +74,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import java.util.Iterator;
 
@@ -1318,10 +1319,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } while (true);
     }
 
-    private static String[] NO_NAMES = new String[] {}; //TODO: Perhaps we have another empty string arr
     public String[] getNames() {
         int nameLength = pattern.numberOfNames();
-        if (nameLength == 0) return NO_NAMES;
+        if (nameLength == 0) return EMPTY_STRING_ARRAY;
 
         String[] names = new String[nameLength];
         int j = 0;

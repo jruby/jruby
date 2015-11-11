@@ -62,6 +62,8 @@ public final class StringSupport {
     private static final int OFFSET = UNSAFE != null ? ((Unsafe)UNSAFE).arrayBaseOffset(byte[].class) : 0;
     public static final int TRANS_SIZE = 256;
 
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     private static Object getUnsafe() {
         try {
             Class sunUnsafe = Class.forName("sun.misc.Unsafe");
@@ -1033,11 +1035,11 @@ public final class StringSupport {
                 if (table == null && (first || tables.del != null || stable[TRANS_SIZE])) {
                     if (cflag) {
                         ptable = tables.noDel;
-                        table = ptable != null ? ptable : new IntHash();
+                        table = ptable != null ? ptable : new IntHash<IRubyObject>();
                         tables.noDel = table;
                     }
                     else {
-                        table = new IntHash();
+                        table = new IntHash<IRubyObject>();
                         ptable = tables.del;
                         tables.del = table;
                     }
