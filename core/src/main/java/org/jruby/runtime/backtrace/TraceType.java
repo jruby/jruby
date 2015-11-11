@@ -64,13 +64,19 @@ public class TraceType {
 
     public static void logBacktrace(RubyStackTraceElement[] trace) {
         if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
-        final StringBuilder buffer = new StringBuilder(128);
+
+        final StringBuilder buffer = new StringBuilder(64 + trace.length * 48);
+
+        buffer.append("Backtrace generated:\n");
+
         renderBacktraceJRuby(trace, buffer, false);
+
         final int len = buffer.length();
         if ( len > 0 && buffer.charAt(len - 1) == '\n' ) {
             buffer.setLength(len - 1); // remove last '\n'
         }
-        LOG.info("Backtrace generated:\n{}", buffer);
+
+        LOG.info(buffer.toString());
     }
 
     public static void logException(RubyException exception) {
@@ -90,7 +96,16 @@ public class TraceType {
     }
 
     public static void logCaller(RubyArray trace) {
-        LOG.info("Caller backtrace generated:\n{}", trace);
+        StringBuilder buffer = new StringBuilder(64 + trace.size() * 48);
+
+        buffer.append("Caller backtrace generated:\n");
+
+        for (int i = 0; i < trace.size(); i++) {
+            // elements are already rendered as its an Array<RubyString>
+            buffer.append("  ").append(trace.eltInternal(i)).append('\n');
+        }
+
+        LOG.info(buffer.toString());
     }
 
     /**
@@ -101,7 +116,19 @@ public class TraceType {
     }
 
     public static void logCaller(RubyStackTraceElement[] trace) {
-        LOG.info("Caller backtrace generated:\n{}", Arrays.toString(trace));
+        if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
+
+        LOG.info( formatWithMRIBacktrace("Caller backtrace generated:\n", trace).toString() );
+    }
+
+    private static StringBuilder formatWithMRIBacktrace(final String message, RubyStackTraceElement[] trace) {
+        StringBuilder buffer = new StringBuilder(64 + trace.length * 48);
+
+        buffer.append(message);
+
+        renderBacktraceMRI(trace, "  ", buffer, false);
+
+        return buffer;
     }
 
     /**
@@ -112,7 +139,9 @@ public class TraceType {
     }
 
     public static void logWarning(RubyStackTraceElement[] trace) {
-        LOG.info("Warning backtrace generated:\n{}", Arrays.toString(trace));
+        if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
+
+        LOG.info( formatWithMRIBacktrace("Warning backtrace generated:\n", trace).toString() );
     }
 
     /**
@@ -355,18 +384,13 @@ public class TraceType {
     private static final String CLEAR_COLOR = "\033[0m";
 
     public static String printBacktraceJRuby(RubyStackTraceElement[] frames, String type, String message, boolean color) {
-        StringBuilder buffer = new StringBuilder();
-
-        // exception line
-        buffer
-                .append(type)
-                .append(": ")
-                .append(message)
-                .append('\n');
-
         if (frames == null) frames = RubyStackTraceElement.EMPTY_ARRAY;
-        renderBacktraceJRuby(frames, buffer, color);
 
+        StringBuilder buffer = new StringBuilder(64 + frames.length * 48);
+
+        buffer.append(type).append(": ").append(message).append('\n');
+
+        renderBacktraceJRuby(frames, buffer, color);
 
         return buffer.toString();
     }
@@ -433,10 +457,14 @@ public class TraceType {
     }
 
     private static void renderBacktraceMRI(RubyStackTraceElement[] trace, StringBuilder buffer, boolean color) {
+        renderBacktraceMRI(trace, "", buffer, color);
+    }
+
+    private static void renderBacktraceMRI(RubyStackTraceElement[] trace, String linePrefix, StringBuilder buffer, boolean color) {
         for (int i = 0; i < trace.length; i++) {
             RubyStackTraceElement element = trace[i];
-
             buffer
+                    .append(linePrefix)
                     .append(element.getFileName())
                     .append(':')
                     .append(element.getLineNumber())
