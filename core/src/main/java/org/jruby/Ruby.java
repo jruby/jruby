@@ -4839,7 +4839,7 @@ public final class Ruby implements Constantizable {
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
     private static final EventHook[] EMPTY_HOOKS = new EventHook[0];
-    private volatile EventHook[] eventHooks = new EventHook[0];
+    private volatile EventHook[] eventHooks = EMPTY_HOOKS;
     private boolean hasEventHooks;
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
