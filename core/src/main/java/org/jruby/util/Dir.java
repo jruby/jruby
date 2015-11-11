@@ -37,6 +37,7 @@ import jnr.posix.POSIX;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
+import static org.jruby.util.ByteList.NULL_ARRAY;
 
 /**
  * This class exists as a counterpart to the dir.c file in
@@ -59,7 +60,7 @@ public class Dir {
     public final static int FNM_NOMATCH = 1;
     public final static int FNM_ERROR   = 2;
 
-    public final static byte[] EMPTY = new byte[0];
+    public final static byte[] EMPTY = NULL_ARRAY; // new byte[0];
     public final static byte[] SLASH = new byte[]{'/'};
     public final static byte[] STAR = new byte[]{'*'};
     public final static byte[] DOUBLE_STAR = new byte[]{'*','*'};
