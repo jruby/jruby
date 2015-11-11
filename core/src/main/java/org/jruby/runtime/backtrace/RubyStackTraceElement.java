@@ -53,8 +53,8 @@ public class RubyStackTraceElement {
     public String toString() {
         return element.toString();
     }
-    
+
     public String mriStyleString() {
-        return element.getFileName() + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'";
+        return element.getFileName() + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
     }
 }
