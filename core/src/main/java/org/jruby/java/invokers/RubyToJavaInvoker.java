@@ -142,8 +142,9 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             if (varArgs != null /* && varargsMethods.size() > 0 */) {
                 varargsCallables = varArgs.toArray( createCallableArray(varArgs.size()) );
             }
-
-            cache = new NonBlockingHashMapLong<>(8);
+            // NOTE: tested (4, false); with opt_for_space: false but does not
+            // seem to give  the promised ~10% improvement in map's speed ...
+            cache = new NonBlockingHashMapLong<>(4, true); // 8 still uses MIN_SIZE_LOG == 4
         }
 
         this.javaCallable = callable;
