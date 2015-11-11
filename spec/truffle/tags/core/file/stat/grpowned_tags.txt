@@ -1,1 +1,4 @@
 fails(windows):File::Stat#grpowned? returns false if the file exist
+graalvm:File::Stat#grpowned? returns true if the file exist
+graalvm:File::Stat#grpowned? accepts an object that has a #to_path method
+graalvm:File::Stat#grpowned? takes non primary groups into account
