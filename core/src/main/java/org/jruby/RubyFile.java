@@ -513,7 +513,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return getRuntime().newString(val.toString());
     }
 
-    private static String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]+:([^:/]+:)?)?";
+    private static String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
     private static Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
 
     /* File class methods */
@@ -1661,8 +1661,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         else if (protocol.find()) {
             preFix = protocol.group();
-            relativePath = relativePath.substring(protocol.end());
-            return runtime.newString(preFix + canonicalizePath(relativePath));
+            int offset = protocol.end();
+            String extra = "";
+            if (relativePath.contains("file://")) {
+                if (relativePath.contains("file:///")) {
+                    offset += 2;
+                    extra = "//";
+                }
+                else {
+                    offset += 1;
+                    extra = "/";
+                }
+            }
+            relativePath = canonicalizePath(relativePath.substring(offset));
+            if (Platform.IS_WINDOWS && !preFix.contains("file:") && startsWithDriveLetterOnWindows(relativePath)) {
+                // this is basically for classpath:/ and uri:classloader:/
+                relativePath = relativePath.substring(2).replace("\\", "/");
+            }
+            return runtime.newString(preFix + extra + relativePath);
         }
 
         String[] uriParts = splitURI(relativePath);
