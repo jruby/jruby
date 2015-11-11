@@ -55,6 +55,10 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         return closure.getArgumentDescriptors();
     }
 
+    public void setInterpreterContext(InterpreterContext interpreterContext) {
+        this.interpreterContext = interpreterContext;
+    }
+
     public InterpreterContext ensureInstrsReady() {
         if (IRRuntimeHelpers.isDebug() && !displayedCFG) {
             LOG.info("Executing '" + closure + "' (pushScope=" + pushScope + ", reuseParentScope=" + reuseParentScope);

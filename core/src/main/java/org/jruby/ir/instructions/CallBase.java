@@ -128,6 +128,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return callSite;
     }
 
+    public void setCallSite(CallSite callSite) {
+        this.callSite = callSite;
+    }
+
     public CallType getCallType() {
         return callType;
     }
@@ -148,7 +152,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return dontInline;
     }
 
-    private static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
+    public static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
         if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);

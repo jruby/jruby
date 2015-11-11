@@ -90,6 +90,10 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         }
     }
 
+    public void setInterpreterContext(InterpreterContext context) {
+        method.setInterpreterContext(context);
+    }
+
     // FIXME: for subclasses we should override this method since it can be simple get
     // FIXME: to avoid cost of synch call in lazilyacquire we can save the ic here
     public InterpreterContext ensureInstrsReady() {

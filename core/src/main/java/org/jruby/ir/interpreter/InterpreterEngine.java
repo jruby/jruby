@@ -170,7 +170,7 @@ public class InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass);
+                            processBookKeepingOp(interpreterContext, context, instr, operation, name, args, self, block, blockType, implClass);
                         }
                         break;
                     case OTHER_OP:
@@ -325,7 +325,7 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
+    protected static void processBookKeepingOp(InterpreterContext ic, ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
                                              Block.Type blockType, RubyModule implClass) {
         switch(operation) {
@@ -349,7 +349,16 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr)instr).checkArity(context, args, blockType);
+                try {
+                    ((CheckArityInstr) instr).checkArity(context, args, blockType);
+                } catch (Exception e) {
+                    System.out.println("INSTR: " + instr);
+                    System.out.println("ic.name: " + ic.getName());
+                    System.out.println("IC INSTRS: " + ic.toStringInstrs());
+                    System.out.println("ARGS[0]" + args[0]);
+                    throw e;
+
+                }
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);

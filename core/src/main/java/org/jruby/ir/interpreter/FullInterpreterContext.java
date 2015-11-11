@@ -8,12 +8,15 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+import org.jruby.runtime.callsite.InliningCallSite;
 
 /**
  * Created by enebo on 2/27/15.
@@ -30,6 +33,13 @@ public class FullInterpreterContext extends InterpreterContext {
 
     /** What passes have been run on this scope? */
     private List<CompilerPass> executedPasses = new ArrayList<>();
+
+    public FullInterpreterContext(IRScope scope, CFG cfg, BasicBlock[] linearizedBBList) {
+        super(scope, null);
+
+        this.cfg = cfg;
+        this.linearizedBBList = linearizedBBList;
+    }
 
     // FIXME: Perhaps abstract IC into interface of base class so we do not have a null instructions field here
     public FullInterpreterContext(IRScope scope, Instr[] instructions) {
@@ -133,6 +143,23 @@ public class FullInterpreterContext extends InterpreterContext {
         instructions = linearizedInstrArray;
         temporaryVariablecount = getScope().getTemporaryVariablesCount();
 
+        // FIXME: Profiler will end up doing this but we are just hacking with magic name for now.
+        for (Instr instr: instructions) {
+            if (instr instanceof CallBase) {
+                CallBase call = (CallBase) instr;
+                String name = call.getName();
+                // Our poor man's inliner will continue to see "else" branch with the original inline.
+                // we do not want it to happen again.
+                if (name.startsWith("___inline___")) {
+                    if (call.getCallSite() instanceof InliningCallSite) {
+                        // FIXME: This is some
+                        call.setCallSite(CallBase.getCallSiteFor(call.getCallType(), call.getName(), call.isPotentiallyRefined()));
+                    } else {
+                        call.setCallSite(new InliningCallSite(call, getScope()));
+                    }
+                }
+            }
+        }
         // System.out.println("SCOPE: " + getScope().getName());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());
     }
@@ -167,6 +194,37 @@ public class FullInterpreterContext extends InterpreterContext {
 
     @Override
     public String toStringInstrs() {
-        return "\nCFG:\n" + cfg.toStringGraph() + "\nInstructions:\n" + cfg.toStringInstrs();
+        StringBuilder buf = new StringBuilder();
+        if (linearizedBBList != null) {
+            buf.append("Linearized BB:\n");
+
+            for (BasicBlock bb: linearizedBBList) {
+                buf.append(bb);
+                buf.append(bb.toStringInstrs());
+            }
+        }
+
+        buf.append("CFG:\n");
+        buf.append(cfg.toStringGraph());
+        buf.append("Instructions:\n");
+        buf.append(cfg.toStringInstrs());
+
+        return buf.toString();
+    }
+
+    public FullInterpreterContext duplicate() {
+        try {
+            CFG newCFG = cfg.clone(new SimpleCloneInfo(getScope(), false, true), getScope());
+            BasicBlock[] newLinearizedBBList = new BasicBlock[linearizedBBList.length];
+
+            for (int i = 0; i < linearizedBBList.length; i++) {
+                newLinearizedBBList[i] = newCFG.getBBForLabel(linearizedBBList[i].getLabel());
+            }
+
+            return new FullInterpreterContext(getScope(), newCFG, newLinearizedBBList);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            return null;
+        }
     }
 }

@@ -1,7 +1,6 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRMethod;
@@ -86,6 +85,10 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (ic.pushNewDynScope()) {
             context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
         }
+    }
+
+    public void setInterpreterContext(InterpreterContext interpreterContext) {
+        this.interpreterContext = interpreterContext;
     }
 
     // FIXME: for subclasses we should override this method since it can be simple get

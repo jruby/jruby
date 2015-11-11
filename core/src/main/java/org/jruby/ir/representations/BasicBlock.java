@@ -103,6 +103,8 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return instrs.isEmpty();
     }
 
+    // Adds all instrs after the found instr to a new BB and removes them from the original BB
+    // If includeSpltpointInstr is true it will include that instr in the new BB.
     public BasicBlock splitAtInstruction(Instr splitPoint, Label newLabel, boolean includeSplitPointInstr) {
         BasicBlock newBB = new BasicBlock(cfg, newLabel);
         int idx = 0;
@@ -139,6 +141,10 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
         for (Instr instr: instrs) {
             Instr newInstr = instr.clone(info);
+            if (info instanceof SimpleCloneInfo && ((SimpleCloneInfo) info).shouldCloneIPC()) {
+                newInstr.setIPC(instr.getIPC());
+                newInstr.setRPC(instr.getRPC());
+            }
 
             if (newInstr != null) {  // inliner may kill off unneeded instr
                 newBB.addInstr(newInstr);

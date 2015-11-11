@@ -3,6 +3,8 @@ package org.jruby.ir;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -124,6 +126,8 @@ public abstract class IRScope implements ParseResult {
     private IRManager manager;
 
     private TemporaryVariable yieldClosureVariable;
+
+    private Compilable compilable;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -549,7 +553,9 @@ public abstract class IRScope implements ParseResult {
      * This initializes a more complete(full) InterpreterContext which if used in mixed mode will be
      * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
      */
-    public synchronized FullInterpreterContext prepareFullBuild() {
+    public synchronized FullInterpreterContext prepareFullBuild(Compilable compilable) {
+        // FIXME: This is gross
+        this.compilable = compilable;
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
@@ -564,6 +570,12 @@ public abstract class IRScope implements ParseResult {
 
         fullInterpreterContext.generateInstructionsForIntepretation();
         return fullInterpreterContext;
+    }
+
+    // FIXME: This is awkward but we toggle fic before we create linearizedBBList and the inliningcaching
+    // callsite will arrive between those two events
+    public boolean isFullBuildComplete() {
+        return fullInterpreterContext != null && fullInterpreterContext.getInstructions() != null;
     }
 
     /** Run any necessary passes to get the IR ready for compilation */
@@ -979,9 +991,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void resetState() {
-        interpreterContext = null;
-        fullInterpreterContext = null;
-
         // reset flags
         flagsComputed = false;
         flags.add(CAN_CAPTURE_CALLERS_BINDING);
@@ -1007,9 +1016,13 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
-        // Inline
-        new CFGInliner(getCFG()).inlineMethod(method, implClass, classToken, basicBlock, call, cloneHost);
+    // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
+    public void inlineMethod(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+        IRMethod methodToInline = (IRMethod) method.getIRScope();
+
+        FullInterpreterContext newContext = fullInterpreterContext.duplicate();
+
+        new CFGInliner(newContext.getCFG()).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
 
         // Reset state
         resetState();
@@ -1018,6 +1031,13 @@ public abstract class IRScope implements ParseResult {
         for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
             pass.run(this);
         }
+
+        newContext.generateInstructionsForIntepretation();
+        this.fullInterpreterContext = newContext;
+
+        //System.out.println(fullInterpreterContext.toStringInstrs());
+        compilable.setInterpreterContext(fullInterpreterContext);
+        // Since inline is an if/else of logic in this version of inlining we will just replace the FIC.
     }
 
     /** Record a begin block.  Only eval and script body scopes support this */

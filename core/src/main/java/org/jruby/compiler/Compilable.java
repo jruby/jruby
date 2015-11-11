@@ -18,4 +18,5 @@ public interface Compilable<T> {
     public String getFile();
     public int getLine();
     public RubyModule getImplementationClass();
+    public void setInterpreterContext(InterpreterContext interpreterContext);
 }

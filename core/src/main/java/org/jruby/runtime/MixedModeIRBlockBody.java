@@ -67,6 +67,10 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         return closure.getArgumentDescriptors();
     }
 
+    public void setInterpreterContext(InterpreterContext interpreterContext) {
+        this.interpreterContext = interpreterContext;
+    }
+
     public InterpreterContext ensureInstrsReady() {
         if (IRRuntimeHelpers.isDebug() && !displayedCFG) {
             LOG.info("Executing '" + closure + "' (pushScope=" + pushScope + ", reuseParentScope=" + reuseParentScope);

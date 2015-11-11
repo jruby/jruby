@@ -10,11 +10,23 @@ import org.jruby.ir.operands.Variable;
  */
 public class SimpleCloneInfo extends CloneInfo {
     private boolean isEnsureBlock;
+    private boolean cloneIPC = false;
+
+    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock, boolean cloneIPC) {
+        this(scope, isEnsureBlock);
+
+        this.cloneIPC = cloneIPC;
+
+    }
 
     public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock) {
         super(scope);
 
         this.isEnsureBlock = isEnsureBlock;
+    }
+
+    public boolean shouldCloneIPC() {
+        return cloneIPC;
     }
 
     public boolean isEnsureBlockCloneMode() {

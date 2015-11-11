@@ -193,7 +193,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         public void run() {
             try {
-                method.completeBuild(method.getIRScope().prepareFullBuild());
+                method.completeBuild(method.getIRScope().prepareFullBuild(method));
 
                 if (config.isJitLogging()) {
                     log(method.getImplementationClass(), method.getFile(), method.getLine(),  method.getName(), "done building");
