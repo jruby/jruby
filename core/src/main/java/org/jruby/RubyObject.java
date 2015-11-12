@@ -559,7 +559,7 @@ public class RubyObject extends RubyBasicObject {
                     return obj.callMethod(context, "dig", rest);
             }
         }
-        return obj;
+        return context.nil; // can not dig further (there's still args left)
     }
 
     /**
