@@ -20,4 +20,19 @@ describe "Hash#dig" do
     lambda { { the: 'borg' }.dig() }.should raise_error(ArgumentError)
   end
 
+  it "handles type-mixed deep digging" do
+    h = {}
+    h[:foo] = [ { :bar => [ 1 ] }, [ obj = Object.new, 'str' ] ]
+    def obj.dig(*args); [ 42 ] end
+
+    h.dig(:foo, 0, :bar).should == [ 1 ]
+    h.dig(:foo, 0, :bar, 0).should == 1
+    h.dig(:foo, 0, :bar, 0, 0).should be_nil
+    h.dig(:foo, 1, 1).should == 'str'
+    h.dig(:foo, 1, 1, 0).should be_nil
+    # MRI does not recurse values returned from `obj.dig`
+    h.dig(:foo, 1, 0, 0).should == [ 42 ]
+    h.dig(:foo, 1, 0, 0, 10).should == [ 42 ]
+  end
+
 end
