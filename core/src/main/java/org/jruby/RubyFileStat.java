@@ -147,6 +147,13 @@ public class RubyFileStat extends RubyObject {
     }
     
     @JRubyMethod(name = "blksize")
+    public IRubyObject blockSize(ThreadContext context) {
+        checkInitialized();
+        if (Platform.IS_WINDOWS) return context.nil;
+        return context.runtime.newFixnum(stat.blockSize());
+    }
+
+    @Deprecated
     public RubyFixnum blksize() {
         checkInitialized();
         return getRuntime().newFixnum(stat.blockSize());
@@ -161,6 +168,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "blocks")
     public IRubyObject blocks() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return getRuntime().getNil();
         return getRuntime().newFixnum(stat.blocks());
     }
 
@@ -202,12 +210,14 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "dev_major")
     public IRubyObject devMajor() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return getRuntime().getNil();
         return getRuntime().newFixnum(stat.major(stat.dev()));
     }
 
     @JRubyMethod(name = "dev_minor")
     public IRubyObject devMinor() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return getRuntime().getNil();
         return getRuntime().newFixnum(stat.minor(stat.dev()));
     }
 
@@ -250,6 +260,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "grpowned?")
     public IRubyObject group_owned_p() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return getRuntime().getFalse();
         return getRuntime().newBoolean(stat.isGroupOwned());
     }
     
@@ -280,6 +291,7 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) {
             buf.append(": uninitialized");
         } else {
+            ThreadContext context = getRuntime().getCurrentContext();
             buf.append(' ');
             // FIXME: Obvious issue that not all platforms can display all attributes.  Ugly hacks.
             // Using generic posix library makes pushing inspect behavior into specific system impls
@@ -292,8 +304,9 @@ public class RubyFileStat extends RubyObject {
             try { buf.append("gid=").append(stat.gid()); } catch (Exception e) {} finally { buf.append(", "); }
             try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())); } catch (Exception e) {} finally { buf.append(", "); }
             buf.append("size=").append(sizeInternal()).append(", ");
-            try { buf.append("blksize=").append(stat.blockSize()); } catch (Exception e) {} finally { buf.append(", "); }
-            try { buf.append("blocks=").append(stat.blocks()); } catch (Exception e) {} finally { buf.append(", "); }
+            try {
+                buf.append("blksize=").append(blockSize(context).inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
+            try { buf.append("blocks=").append(blocks().inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
 
             buf.append("atime=").append(atime()).append(", ");
             buf.append("mtime=").append(mtime()).append(", ");
@@ -361,12 +374,14 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "rdev_major")
     public IRubyObject rdevMajor() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return getRuntime().getNil();
         return getRuntime().newFixnum(stat.major(stat.rdev()));
     }
 
     @JRubyMethod(name = "rdev_minor")
     public IRubyObject rdevMinor() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return getRuntime().getNil();
         return getRuntime().newFixnum(stat.minor(stat.rdev()));
     }
 
