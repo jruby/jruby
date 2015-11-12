@@ -52,14 +52,18 @@ public class PsychLibrary implements Library {
         // load version from properties packed with the jar
         Properties props = new Properties();
         InputStream is = runtime.getJRubyClassLoader().getResourceAsStream("META-INF/maven/org.yaml/snakeyaml/pom.properties");
-        try {
-            props.load(is);
+
+        if (is != null) {
+            try {
+                props.load(is);
+            }
+            catch( IOException e ) {
+                // ignored
+            } finally {
+                try {is.close();} catch (IOException ioe) {}
+            }
         }
-        catch( Exception e ) {
-            // ignored - can be a NPE as well
-        } finally {
-            try {is.close();} catch (IOException ioe) {}
-        }
+
         RubyString version = runtime.newString(props.getProperty("version", "0.0") + ".0");
         version.setFrozen(true);
         psych.setConstant("SNAKEYAML_VERSION", version);
