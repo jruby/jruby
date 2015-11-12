@@ -81,7 +81,6 @@ import java.util.concurrent.Callable;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.Helpers.memchr;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
@@ -4095,6 +4094,16 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             concurrentModification();
             return null; // not reached
         }
+    }
+
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        return dig(context, args, 0);
+    }
+
+    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
+        final IRubyObject val = at( args[idx++] );
+        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
     }
 
     @Override
