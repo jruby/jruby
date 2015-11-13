@@ -91,7 +91,7 @@ public class AttachmentsManager {
                 final Map<String, Object> parameters = new HashMap<>();
                 parameters.put("section", probe.getProbedSourceSection());
                 parameters.put("block", block);
-                instruments.add(context.getEnv().instrumenter().attach(probe, ATTACHMENT_SOURCE, listener, info, parameters));
+                //instruments.add(context.getEnv().instrumenter().attach(probe, ATTACHMENT_SOURCE, listener, info, parameters));
                 return;
             }
         }
