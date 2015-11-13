@@ -542,31 +542,36 @@ public class RubyStruct extends RubyObject {
         }, this);
     }
 
+    private static final byte[] STRUCT_BEG = { '#','<','s','t','r','u','c','t',' ' };
+    private static final byte[] STRUCT_END = { ':','.','.','.','>' };
+
     /** inspect_struct
     *
     */
-    private IRubyObject inspectStruct(final ThreadContext context, boolean recur) {
+    private RubyString inspectStruct(final ThreadContext context, final boolean recur) {
         final Ruby runtime = context.runtime;
-        RubyArray member = __member__();
-        RubyString buffer = RubyString.newString(runtime, new ByteList("#<struct ".getBytes()));
-        String cpath = getMetaClass().getRealClass().getName();
-        char first = cpath.charAt(0);
+        RubyString buffer = RubyString.newString(runtime, new ByteList(32));
+        buffer.cat(STRUCT_BEG);
+
+        String cname = getMetaClass().getRealClass().getName();
+        final char first = cname.charAt(0);
 
         if (recur || first != '#') {
-            buffer.cat(cpath.getBytes());
+            buffer.cat(cname.getBytes());
+        }
+        if (recur) {
+            return buffer.cat(STRUCT_END);
         }
 
-        if (recur) {
-            buffer.cat(":...>".getBytes());
-            return buffer.dup();
-        }
-        for (int i = 0,k=member.getLength(); i < k; i++) {
+        final RubyArray member = __member__();
+        for ( int i = 0; i < member.getLength(); i++ ) {
             if (i > 0) {
                 buffer.cat(',').cat(' ');
-            } else if (first != '#') {
+            }
+            else if (first != '#') {
                 buffer.cat(' ');
             }
-            RubySymbol slot = (RubySymbol)member.eltInternal(i);
+            RubySymbol slot = (RubySymbol) member.eltInternal(i);
             String name = slot.toString();
             if (IdUtil.isLocal(name) || IdUtil.isConstant(name)) {
                 buffer.cat19(RubyString.objAsString(context, slot));
@@ -578,18 +583,17 @@ public class RubyStruct extends RubyObject {
         }
 
         buffer.cat('>');
-        return buffer.dup(); // OBJ_INFECT
+        return (RubyString) buffer.infectBy(this);
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
-    public IRubyObject inspect(final ThreadContext context) {
+    public RubyString inspect(final ThreadContext context) {
         final Ruby runtime = context.runtime;
         final RubyStruct struct = this;
         // recursion guard
-        return runtime.recursiveListOperation(new Callable<IRubyObject>() {
-            public IRubyObject call() {
-                return runtime.execRecursive(new Ruby.RecursiveFunction() {
-                    @Override
+        return runtime.recursiveListOperation(new Callable<RubyString>() {
+            public RubyString call() {
+                return (RubyString) runtime.execRecursive(new Ruby.RecursiveFunction() {
                     public IRubyObject call(IRubyObject obj, boolean recur) {
                         return inspectStruct(context, recur);
                     }
