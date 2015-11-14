@@ -15,8 +15,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 @CoreClass(name = "Rubinius::AtomicReference")
 public abstract class AtomicReferenceNodes {
@@ -24,13 +28,16 @@ public abstract class AtomicReferenceNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateNode;
+
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return Layouts.ATOMIC_REFERENCE.createAtomicReference(Layouts.CLASS.getInstanceFactory(rubyClass), nil());
+            return allocateNode.allocate(rubyClass, new AtomicReference<Object>(nil()));
         }
 
     }
