@@ -400,6 +400,7 @@ public class RubyStruct extends RubyObject {
         return getRuntime().getNil();
     }
 
+    // NOTE: no longer used ... should it get deleted?
     public static RubyArray members(IRubyObject recv, Block block) {
         final Ruby runtime = recv.getRuntime();
 
@@ -758,7 +759,7 @@ public class RubyStruct extends RubyObject {
             throw runtime.newNameError("uninitialized constant " + className, className.asJavaString());
         }
 
-        final RubyArray member = members(rbClass, Block.NULL_BLOCK);
+        final RubyArray member = __member__(rbClass);
 
         final int len = input.unmarshalInt();
 
@@ -770,7 +771,7 @@ public class RubyStruct extends RubyObject {
 
         for (int i = 0; i < len; i++) {
             IRubyObject slot = input.unmarshalObject(false);
-            final IRubyObject elem = member.eltInternal(i);
+            final IRubyObject elem = member.eltInternal(i); // RubySymbol
             if ( ! elem.toString().equals( slot.toString() ) ) {
                 throw runtime.newTypeError("struct " + rbClass.getName() + " not compatible (:" + slot + " for :" + elem + ")");
             }
