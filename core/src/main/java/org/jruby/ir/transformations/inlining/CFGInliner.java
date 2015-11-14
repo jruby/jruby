@@ -310,16 +310,14 @@ public class CFGInliner {
 
     private void inlineClosureAtYieldSite(InlineCloneInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
-        BasicBlock splitBB = yieldBB.splitAtInstruction(yield, hostScope.getNewLabel(), false);
-        cfg.addBasicBlock(splitBB);
-        for (Edge<BasicBlock> e : cfg.getOutgoingEdges(yieldBB)) {
-            cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
-        }
-        cfg.removeAllOutgoingEdgesForBB(yieldBB);
+        BasicBlock afterInlineBB = yieldBB.splitAtInstruction(yield, hostScope.getNewLabel(), false);
+        BasicBlock beforeInlineBB = yieldBB;
+        connectOuterEdges(beforeInlineBB, afterInlineBB);
+        if (debug) printInlineSplitBBs(beforeInlineBB, afterInlineBB);
 
         // Allocate new inliner object to reset variable and label rename maps
         ii = ii.cloneForInliningClosure(cl);
-        ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().getSignature().arityValue());
+        ii.setupYieldArgsAndYieldResult(yield, beforeInlineBB, cl.getBlockBody().getSignature().arityValue());
 
         // 2. Merge closure cfg into the current cfg
         CFG closureCFG = cl.getCFG();
@@ -342,7 +340,7 @@ public class CFGInliner {
         for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(closureCFG.getEntryBB())) {
             BasicBlock destination = e.getDestination().getData();
             if (!destination.isExitBB() && destination != closureGEB) {
-                cfg.addEdge(yieldBB, ii.getRenamedBB(destination), CFG.EdgeType.FALL_THROUGH);
+                cfg.addEdge(beforeInlineBB, ii.getRenamedBB(destination), CFG.EdgeType.FALL_THROUGH);
             }
         }
 
@@ -357,21 +355,21 @@ public class CFGInliner {
                 // e._src has an explicit throw that returns from the closure.
                 // After inlining, if the yield instruction has a rescuer, then the
                 // throw has to be captured by the rescuer as well.
-                BasicBlock rescuerOfSplitBB = cfg.getRescuerBBFor(splitBB);
+                BasicBlock rescuerOfSplitBB = cfg.getRescuerBBFor(afterInlineBB);
                 if (rescuerOfSplitBB != null) {
                     cfg.addEdge(clonedSource, rescuerOfSplitBB, EdgeType.EXCEPTION);
                 } else {
                     cfg.addEdge(clonedSource, cfg.getExitBB(), EdgeType.EXIT);
                 }
             } else if (source != closureGEB) {
-                cfg.addEdge(clonedSource, splitBB, e.getType());
+                cfg.addEdge(clonedSource, afterInlineBB, e.getType());
             }
         }
 
         // 6. Update bb rescuer map
         // 6a. splitBB will be protected by the same bb as yieldB
-        BasicBlock yieldBBrescuer = cfg.getRescuerBBFor(yieldBB);
-        if (yieldBBrescuer != null) cfg.setRescuerBB(splitBB, yieldBBrescuer);
+        BasicBlock yieldBBrescuer = cfg.getRescuerBBFor(beforeInlineBB);
+        if (yieldBBrescuer != null) cfg.setRescuerBB(afterInlineBB, yieldBBrescuer);
 
         // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
         // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by yieldBBrescuer/yieldBBensurer

@@ -1020,6 +1020,7 @@ public abstract class IRScope implements ParseResult {
     public void inlineMethod(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
         IRMethod methodToInline = (IRMethod) method.getIRScope();
 
+        // We need fresh fic so we can modify it during inlining without making already running code explode.
         FullInterpreterContext newContext = fullInterpreterContext.duplicate();
 
         new CFGInliner(newContext.getCFG()).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
