@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.FloatNodes;
@@ -33,22 +34,36 @@ public abstract class ToIntNode extends RubyNode {
     @Child private CallDispatchHeadNode toIntNode;
     @Child private FloatNodes.ToINode floatToIntNode;
 
+    private static final ConditionProfile wasInteger = ConditionProfile.createBinaryProfile();
+    private static final ConditionProfile wasLong = ConditionProfile.createBinaryProfile();
+    private static final ConditionProfile wasLongInRange = ConditionProfile.createBinaryProfile();
+
     public ToIntNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     public int doInt(VirtualFrame frame, Object object) {
+        // TODO CS 14-Nov-15 this code is crazy - should have separate nodes for ToRubyInteger and ToJavaInt
+
         final Object integerObject = executeIntOrLong(frame, object);
 
-        if (integerObject instanceof Integer) {
+        if (wasInteger.profile(integerObject instanceof Integer)) {
             return (int) integerObject;
+        }
+
+        if (wasLong.profile(integerObject instanceof Long)) {
+            final long longValue = (long) integerObject;
+
+            if (wasLongInRange.profile(longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE)) {
+                return (int) longValue;
+            }
         }
 
         CompilerDirectives.transferToInterpreter();
         if (RubyGuards.isRubyBignum(object)) {
             throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
         } else {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException(object.getClass().toString());
         }
     }
 
