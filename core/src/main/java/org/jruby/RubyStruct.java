@@ -689,8 +689,10 @@ public class RubyStruct extends RubyObject {
             return setByName(key.asJavaString(), value);
         }
 
-        int idx = RubyNumeric.fix2int(key);
+        return aset(RubyNumeric.fix2int(key), value);
+    }
 
+    private IRubyObject aset(int idx, IRubyObject value) {
         idx = idx < 0 ? values.length + idx : idx;
 
         if (idx < 0) {
@@ -775,7 +777,7 @@ public class RubyStruct extends RubyObject {
             if ( ! elem.toString().equals( slot.toString() ) ) {
                 throw runtime.newTypeError("struct " + rbClass.getName() + " not compatible (:" + slot + " for :" + elem + ")");
             }
-            result.aset(runtime.newFixnum(i), input.unmarshalObject());
+            result.aset(i, input.unmarshalObject());
         }
         return result;
     }
