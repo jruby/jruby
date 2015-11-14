@@ -96,8 +96,8 @@ public class RubyNKF {
     private static final ByteList END_MIME_STRING = new ByteList(ByteList.plain("?="));
     private static final ByteList PACK_BASE64 = new ByteList(ByteList.plain("m"));
     private static final ByteList PACK_QENCODE = new ByteList(ByteList.plain("M"));
-    
-    public static Map<Integer, String> NKFCharsetMap = new HashMap();
+
+    public static final Map<Integer, String> NKFCharsetMap = new HashMap<Integer, String>(20, 1);
 
     public static void createNKF(Ruby runtime) {
         RubyModule nkfModule = runtime.defineModule("NKF");
