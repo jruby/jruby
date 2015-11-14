@@ -42,7 +42,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 
@@ -102,15 +101,26 @@ public class RubyNKF {
     public static void createNKF(Ruby runtime) {
         final RubyModule NKF = runtime.defineModule("NKF");
 
-        final String version = "2.0.8";
-        final String relDate = "2008-11-08";
-        NKF.defineConstant("NKF_VERSION", runtime.newString(version));
-        NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
-        NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
+        if (runtime.is1_8()) {
+            final String version = "2.0.8";
+            final String relDate = "2008-11-08";
+            NKF.defineConstant("NKF_VERSION", runtime.newString(version));
+            NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
+            NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
+        }
+        else {
+            final String version = "2.1.2";
+            final String relDate = "2011-09-08";
+            NKF.defineConstant("NKF_VERSION", runtime.newString(version));
+            NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
+            NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
+        }
 
-        for (NKFCharset nkf : NKFCharset.values()) {
-            NKF.defineConstant(nkf.name(), RubyFixnum.newFixnum(runtime, nkf.getValue()));
-            NKFCharsetMap.put(nkf.getValue(), nkf.name());
+        for ( NKFCharset charset : NKFCharset.values() ) {
+            NKFCharsetMap.put(charset.value, charset.name());
+
+            if ( ! runtime.is1_8() && charset.value > 12 ) continue;
+            NKF.defineConstant(charset.name(), charsetMappedValue(runtime, charset));
         }
 
         NKF.defineAnnotatedMethods(RubyNKF.class);
@@ -133,27 +143,43 @@ public class RubyNKF {
         }
         try {
             decoder.decode(buf);
-        } catch (CharacterCodingException e) {
-            return runtime.newFixnum(UNKNOWN.getValue());
         }
-        if (!decoder.isCharsetDetected()) {
-            return runtime.newFixnum(UNKNOWN.getValue());
+        catch (CharacterCodingException e) {
+            return charsetMappedValue(runtime, UNKNOWN);
+        }
+        if ( ! decoder.isCharsetDetected() ) {
+            return charsetMappedValue(runtime, UNKNOWN);
         }
         Charset charset = decoder.detectedCharset();
         String name = charset.name();
         if ("Shift_JIS".equals(name)) {
-            return runtime.newFixnum(SJIS.getValue());
+            return charsetMappedValue(runtime, SJIS);
         }
         if ("windows-31j".equals(name)) {
-            return runtime.newFixnum(SJIS.getValue());
+            return charsetMappedValue(runtime, SJIS);
         }
         if ("EUC-JP".equals(name)) {
-            return runtime.newFixnum(EUC.getValue());
+            return charsetMappedValue(runtime, EUC);
         }
         if ("ISO-2022-JP".equals(name)) {
-            return runtime.newFixnum(JIS.getValue());
+            return charsetMappedValue(runtime, JIS);
         }
-        return runtime.newFixnum(UNKNOWN.getValue());
+        return charsetMappedValue(runtime, UNKNOWN);
+    }
+
+    private static IRubyObject charsetMappedValue(final Ruby runtime, final NKFCharset charset) {
+        if (runtime.is1_8()) return runtime.newFixnum(charset.value);
+
+        final Encoding encoding;
+        switch (charset) {
+            case AUTO: case NOCONV: case UNKNOWN: return runtime.getNil();
+            case BINARY:
+                encoding = runtime.getEncodingService().getAscii8bitEncoding();
+                return runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
+        }
+
+        encoding = runtime.getEncodingService().getEncodingFromString(charset.getCharset());
+        return runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
     }
 
     @JRubyMethod(name = "guess1", required = 1, module = true)
@@ -192,7 +218,7 @@ public class RubyNKF {
         }
 
         ByteList bstr = str.convertToString().getByteList();
-        Converter converter = null;
+        final Converter converter;
         if (Converter.isMimeText(bstr, options)) {
             converter = new MimeConverter(context, options);
         } else {
@@ -506,7 +532,7 @@ public class RubyNKF {
             int encode = mime[2].charAt(0);
             ByteList body = new ByteList(mime[3].getBytes(), ASCIIEncoding.INSTANCE);
 
-            RubyArray array = null;
+            final RubyArray array;
             if ('B' == encode || 'b' == encode) { // BASE64
                 array = Pack.unpack(context.runtime, body, PACK_BASE64);
             } else { // Qencode
