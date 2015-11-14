@@ -140,7 +140,7 @@ public class FormatTokenizer {
             position++;
         }
 
-        if (position == start && format.charAt(position) == '*') {
+        if (format.charAt(position) == '*') {
             position++;
             return FormatDirective.PADDING_FROM_ARGUMENT;
         }
