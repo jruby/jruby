@@ -192,6 +192,12 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(BigDecimal("2"), BigDecimal("2.5").round(0, BigDecimal::ROUND_HALF_EVEN))
   end
 
+  def test_round_nan
+    nan = BigDecimal.new('NaN')
+    assert_equal nan, nan.round
+    assert_equal nan, nan.round(0)
+  end
+
   def test_big_decimal_power
     require 'bigdecimal/math'
 
