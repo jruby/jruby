@@ -100,24 +100,20 @@ public class RubyNKF {
     public static final Map<Integer, String> NKFCharsetMap = new HashMap<Integer, String>(20, 1);
 
     public static void createNKF(Ruby runtime) {
-        RubyModule nkfModule = runtime.defineModule("NKF");
+        final RubyModule NKF = runtime.defineModule("NKF");
+
+        final String version = "2.0.8";
+        final String relDate = "2008-11-08";
+        NKF.defineConstant("NKF_VERSION", runtime.newString(version));
+        NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
+        NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
 
         for (NKFCharset nkf : NKFCharset.values()) {
-            nkfModule.defineConstant(nkf.name(), RubyFixnum.newFixnum(runtime, nkf.getValue()));
+            NKF.defineConstant(nkf.name(), RubyFixnum.newFixnum(runtime, nkf.getValue()));
             NKFCharsetMap.put(nkf.getValue(), nkf.name());
         }
 
-        RubyString version = runtime.newString("2.0.7 (JRuby 2007-05-11)");
-        RubyString nkfVersion = runtime.newString("2.0.7");
-        RubyString nkfDate = runtime.newString("2007-05-11");
-
-        ThreadContext context = runtime.getCurrentContext();
-
-        version.freeze(context);
-        nkfVersion.freeze(context);
-        nkfDate.freeze(context);
-
-        nkfModule.defineAnnotatedMethods(RubyNKF.class);
+        NKF.defineAnnotatedMethods(RubyNKF.class);
     }
 
     @JRubyMethod(name = "guess", required = 1, module = true)
@@ -150,13 +146,14 @@ public class RubyNKF {
         }
         if ("windows-31j".equals(name)) {
             return runtime.newFixnum(SJIS.getValue());
-        } else if ("EUC-JP".equals(name)) {
-            return runtime.newFixnum(EUC.getValue());
-        } else if ("ISO-2022-JP".equals(name)) {
-            return runtime.newFixnum(JIS.getValue());
-        } else {
-            return runtime.newFixnum(UNKNOWN.getValue());
         }
+        if ("EUC-JP".equals(name)) {
+            return runtime.newFixnum(EUC.getValue());
+        }
+        if ("ISO-2022-JP".equals(name)) {
+            return runtime.newFixnum(JIS.getValue());
+        }
+        return runtime.newFixnum(UNKNOWN.getValue());
     }
 
     @JRubyMethod(name = "guess1", required = 1, module = true)
