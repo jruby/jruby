@@ -233,7 +233,7 @@ public class RubyStruct extends RubyObject {
                     return this;
                 }
             });
-            newStruct.addMethod(memberName + "=", new DynamicMethod(newStruct, Visibility.PUBLIC) {
+            newStruct.addMethod(memberName + '=', new DynamicMethod(newStruct, Visibility.PUBLIC) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     Arity.checkArgumentCount(context.runtime, name, args, 1, 1);
@@ -401,23 +401,29 @@ public class RubyStruct extends RubyObject {
     }
 
     public static RubyArray members(IRubyObject recv, Block block) {
-        RubyArray member = __member__((RubyClass) recv);
-        RubyArray result = recv.getRuntime().newArray(member.getLength());
+        final Ruby runtime = recv.getRuntime();
 
-        for (int i = 0,k=member.getLength(); i < k; i++) {
+        final RubyArray member = __member__((RubyClass) recv);
+        final int len = member.getLength();
+        RubyArray result = runtime.newArray(len);
+
+        for ( int i = 0; i < len; i++ ) {
             // this looks weird, but it's because they're RubySymbol and that's java.lang.String internally
-            result.append(recv.getRuntime().newString(member.eltInternal(i).asJavaString()));
+            result.append( runtime.newString(member.eltInternal(i).asJavaString()) );
         }
 
         return result;
     }
 
     public static RubyArray members19(IRubyObject recv, Block block) {
-        RubyArray member = __member__((RubyClass) recv);
-        RubyArray result = recv.getRuntime().newArray(member.getLength());
+        final Ruby runtime = recv.getRuntime();
 
-        for (int i = 0,k=member.getLength(); i < k; i++) {
-            result.append(member.eltInternal(i));
+        final RubyArray member = __member__((RubyClass) recv);
+        final int len = member.getLength();
+        RubyArray result = runtime.newArray(len);
+
+        for ( int i = 0; i < len; i++ ) {
+            result.append( member.eltInternal(i) );
         }
 
         return result;
@@ -487,16 +493,18 @@ public class RubyStruct extends RubyObject {
 
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
-        RubyStruct struct = (RubyStruct)clone;
+        RubyStruct struct = (RubyStruct) clone;
         System.arraycopy(values, 0, struct.values, 0, values.length);
     }
 
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
-        if (this == other) return getRuntime().getTrue();
-        if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
-        if (getMetaClass().getRealClass() != other.getMetaClass().getRealClass()) return getRuntime().getFalse();
+        if (this == other) return context.runtime.getTrue();
+        if (!(other instanceof RubyStruct)) return context.runtime.getFalse();
+        if (getMetaClass().getRealClass() != other.getMetaClass().getRealClass()) {
+            return context.runtime.getFalse();
+        }
 
         if (other == this) return context.runtime.getTrue();
 
@@ -519,9 +527,11 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql_p(final ThreadContext context, IRubyObject other) {
-        if (this == other) return getRuntime().getTrue();
-        if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
-        if (getMetaClass() != other.getMetaClass()) return getRuntime().getFalse();
+        if (this == other) return context.runtime.getTrue();
+        if (!(other instanceof RubyStruct)) return context.runtime.getFalse();
+        if (getMetaClass() != other.getMetaClass()) {
+            return context.runtime.getFalse();
+        }
 
         if (other == this) return context.runtime.getTrue();
 
@@ -740,7 +750,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public static RubyStruct unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        Ruby runtime = input.getRuntime();
+        final Ruby runtime = input.getRuntime();
 
         RubySymbol className = (RubySymbol) input.unmarshalObject(false);
         RubyClass rbClass = pathToClass(runtime, className.asJavaString());
@@ -748,20 +758,21 @@ public class RubyStruct extends RubyObject {
             throw runtime.newNameError("uninitialized constant " + className, className.asJavaString());
         }
 
-        RubyArray mem = members(rbClass, Block.NULL_BLOCK);
+        final RubyArray member = members(rbClass, Block.NULL_BLOCK);
 
-        int len = input.unmarshalInt();
+        final int len = input.unmarshalInt();
 
         // FIXME: This could all be more efficient, but it's how struct works
-        RubyStruct result;
+        final RubyStruct result;
         // 1.9 does not appear to call initialize (JRUBY-5875)
         result = new RubyStruct(runtime, rbClass);
         input.registerLinkTarget(result);
 
         for (int i = 0; i < len; i++) {
             IRubyObject slot = input.unmarshalObject(false);
-            if (!mem.eltInternal(i).toString().equals(slot.toString())) {
-                throw runtime.newTypeError("struct " + rbClass.getName() + " not compatible (:" + slot + " for :" + mem.eltInternal(i) + ")");
+            final IRubyObject elem = member.eltInternal(i);
+            if ( ! elem.toString().equals( slot.toString() ) ) {
+                throw runtime.newTypeError("struct " + rbClass.getName() + " not compatible (:" + slot + " for :" + elem + ")");
             }
             result.aset(runtime.newFixnum(i), input.unmarshalObject());
         }
@@ -774,13 +785,11 @@ public class RubyStruct extends RubyObject {
         return (RubyClass) runtime.getClassFromPath(path);
     }
 
-    private static ObjectAllocator STRUCT_INSTANCE_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator STRUCT_INSTANCE_ALLOCATOR = new ObjectAllocator() {
         @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+        public RubyStruct allocate(Ruby runtime, RubyClass klass) {
             RubyStruct instance = new RubyStruct(runtime, klass);
-
             instance.setMetaClass(klass);
-
             return instance;
         }
     };
