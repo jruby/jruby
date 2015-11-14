@@ -830,15 +830,16 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public IRubyObject zone() {
-        final String zone = RubyTime.zoneHelper(getEnvTimeZone(getRuntime()).toString(), dt, isTzRelative);
-        if (zone == null) return getRuntime().getNil();
-        return getRuntime().newString(zone);
+        if (isTzRelative) return getRuntime().getNil();
+        return getRuntime().newString(RubyTime.getRubyTimeZoneName(getRuntime(), dt));
     }
 
-    public static String zoneHelper(String envTZ, DateTime dt, boolean isTzRelative) {
-        if (isTzRelative) return null;
+	public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
+        return RubyTime.getRubyTimeZoneName(getEnvTimeZone(runtime).toString(), dt);
+	}
 
-        // see declaration of SHORT_TZNAME
+	public static String getRubyTimeZoneName(String envTZ, DateTime dt) {
+		// see declaration of SHORT_TZNAME
         if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
             return SHORT_STD_TZNAME.get(envTZ);
         }
@@ -868,7 +869,7 @@ public class RubyTime extends RubyObject {
         }
 
         return zone;
-    }
+	}
 
     public void setDateTime(DateTime dt) {
         this.dt = dt;

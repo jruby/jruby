@@ -185,7 +185,7 @@ public abstract class TimePrimitiveNodes {
             final boolean isdst = false;
 
             final String envTimeZoneString = readTimeZoneNode.execute(frame).toString();
-            String zoneString = org.jruby.RubyTime.zoneHelper(envTimeZoneString, dateTime, false);
+            String zoneString = org.jruby.RubyTime.getRubyTimeZoneName(envTimeZoneString, dateTime);
             Object zone;
             if (zoneString.matches(".*-\\d+")) {
                 zone = nil();
