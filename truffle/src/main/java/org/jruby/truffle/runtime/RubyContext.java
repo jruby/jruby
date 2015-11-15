@@ -710,4 +710,8 @@ public class RubyContext extends ExecutionContext {
         return initialJRubyRootNode;
     }
 
+    public DynamicObject createHandle(Object object) {
+        return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
+    }
+
 }

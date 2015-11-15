@@ -59,6 +59,7 @@ public abstract class Layouts {
     public static final EmitterLayout PSYCH_EMITTER = EmitterLayoutImpl.INSTANCE;
     public static final RandomizerLayout RANDOMIZER = RandomizerLayoutImpl.INSTANCE;
     public static final AtomicReferenceLayout ATOMIC_REFERENCE = AtomicReferenceLayoutImpl.INSTANCE;
+    public static final HandleLayout HANDLE = HandleLayoutImpl.INSTANCE;
 
     // Other standard identifiers
 
