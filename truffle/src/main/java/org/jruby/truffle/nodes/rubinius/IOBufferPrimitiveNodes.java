@@ -41,10 +41,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jruby.truffle.nodes.core.ExceptionNodes;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -59,16 +64,18 @@ public abstract class IOBufferPrimitiveNodes {
     @RubiniusPrimitive(name = "iobuffer_allocate")
     public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private AllocateObjectNode allocateNode;
+
         public IOBufferAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject classToAllocate) {
-            return Layouts.IO_BUFFER.createIOBuffer(
-                    Layouts.CLASS.getInstanceFactory(classToAllocate),
+            return allocateNode.allocate(classToAllocate,
                         true,
-                        ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
+                        ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), new ByteList(IOBUFFER_SIZE)),
                         0,
                         IOBUFFER_SIZE);
         }

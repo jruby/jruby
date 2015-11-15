@@ -9,6 +9,9 @@
  */
 package org.jruby.util;
 
+/**
+ * @deprecated no longer used, should get removed
+ */
 public class Memo<T> {
 
     private T value;

@@ -74,6 +74,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import java.util.Iterator;
 
@@ -1096,7 +1097,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 //        Region regs = null;
         ByteList strBL = str.getByteList();
         int range = strBL.begin();
-        Regex reg;
         boolean tmpreg;
 
         if (pos > str.size() || pos < 0) {
@@ -1104,13 +1104,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return -1;
         }
 
-        reg = preparePattern(str);
+        final Regex reg = preparePattern(str);
         tmpreg = reg != this.pattern;
         if (!tmpreg) this.useCount++;
 
         match = getBackRefInternal(context, holder);
-        if (!match.isNil()) {
-            if (((RubyMatchData)match).used()) {
+        if ( match instanceof RubyMatchData ) { // ! match.isNil()
+            if ( ((RubyMatchData) match).used() ) {
                 match = context.nil;
             }
 //            else {
@@ -1130,7 +1130,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } catch (JOniException je) {
             exception = je;
         }
-        if (!tmpreg) this.useCount--;
+
         if (tmpreg) {
             if (this.useCount > 0) {
 //                onig_free(reg);
@@ -1140,6 +1140,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 this.pattern = reg;
             }
         }
+        else {
+            this.useCount--;
+        }
+
         if (result < 0) {
             if (result == -1) {
                 setBackRefInternal(context, holder, context.nil);
@@ -1315,10 +1319,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } while (true);
     }
 
-    private static String[] NO_NAMES = new String[] {}; //TODO: Perhaps we have another empty string arr
     public String[] getNames() {
         int nameLength = pattern.numberOfNames();
-        if (nameLength == 0) return NO_NAMES;
+        if (nameLength == 0) return EMPTY_STRING_ARRAY;
 
         String[] names = new String[nameLength];
         int j = 0;

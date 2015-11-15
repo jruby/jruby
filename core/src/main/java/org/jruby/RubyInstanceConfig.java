@@ -30,7 +30,6 @@ package org.jruby;
 
 import jnr.posix.util.Platform;
 
-import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
@@ -45,11 +44,11 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.URLResource;
 import org.jruby.util.UriLikePathHelper;
 import org.jruby.util.cli.ArgumentProcessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import org.objectweb.asm.Opcodes;
 
 import java.io.BufferedInputStream;
@@ -238,12 +237,12 @@ public class RubyInstanceConfig {
      * previous code.
      */
     public String[] parseShebangOptions(InputStream in) {
-        BufferedReader reader = null;
-        String[] result = new String[0];
+        String[] result = EMPTY_STRING_ARRAY;
         if (in == null) return result;
 
         if (isXFlag()) eatToShebang(in);
 
+        BufferedReader reader;
         try {
             InputStreamMarkCursor cursor = new InputStreamMarkCursor(in, 8192);
             try {

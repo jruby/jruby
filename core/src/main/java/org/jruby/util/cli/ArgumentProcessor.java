@@ -49,11 +49,11 @@ import java.util.regex.Pattern;
 
 /**
  * Encapsulated logic for processing JRuby's command-line arguments.
- * 
+ *
  * This class holds the processing logic for JRuby's non-JVM command-line arguments.
  * All standard Ruby options are processed here, as well as nonstandard JRuby-
  * specific options.
- * 
+ *
  * Options passed directly to the JVM are processed separately, by either a launch
  * script or by a native executable.
  */
@@ -129,7 +129,7 @@ public class ArgumentProcessor {
                     String[] keyvalue = arg.split("=", 2);
 
                     // argv globals getService their dashes replaced with underscores
-                    String globalName = keyvalue[0].replaceAll("-", "_");
+                    String globalName = keyvalue[0].replace('-', '_');
                     config.getOptionGlobals().put(globalName, keyvalue[1]);
                 } else {
                     config.getOptionGlobals().put(arg, null);
@@ -454,17 +454,17 @@ public class ArgumentProcessor {
                     } else if (argument.startsWith("--profile")) {
                         characterIndex = argument.length();
                         int dotIndex = argument.indexOf(".");
-                        
+
                         if (dotIndex == -1) {
                             config.setProfilingMode(RubyInstanceConfig.ProfilingMode.FLAT);
-                            
+
                         } else {
                             String profilingMode = argument.substring(dotIndex + 1, argument.length());
-                            
+
                             if (profilingMode.equals("out")) {
                                 // output file for profiling results
                                 String outputFile = grabValue(getArgumentError("--profile.out requires an output file argument"));
-                                
+
                                 try {
                                     config.setProfileOutput(new ProfileOutput(new File(outputFile)));
                                 } catch (FileNotFoundException e) {
@@ -486,7 +486,7 @@ public class ArgumentProcessor {
                                 }
                             }
                         }
-                        
+
                         break FOR;
                     } else if (VERSION_FLAG.matcher(argument).matches()) {
                         config.getError().println("warning: " + argument + " ignored");

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.RubyNode;
@@ -32,8 +33,8 @@ import org.jruby.util.ByteList;
 @CoreClass(name = "Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
 
-    public static DynamicObject createByteArray(DynamicObject rubyClass, ByteList bytes) {
-        return Layouts.BYTE_ARRAY.createByteArray(Layouts.CLASS.getInstanceFactory(rubyClass), bytes);
+    public static DynamicObject createByteArray(DynamicObjectFactory factory, ByteList bytes) {
+        return Layouts.BYTE_ARRAY.createByteArray(factory, bytes);
     }
 
     @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
@@ -65,7 +66,7 @@ public abstract class ByteArrayNodes {
             final byte[] prependedBytes = new byte[newLength];
             System.arraycopy(StringOperations.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
             System.arraycopy(Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
-            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(prependedBytes));
+            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), new ByteList(prependedBytes));
         }
 
     }

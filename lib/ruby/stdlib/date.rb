@@ -882,6 +882,7 @@ class Date
   def self.rewrite_frags(elem) # :nodoc:
     elem ||= {}
     if seconds = elem[:seconds]
+      seconds += elem[:offset] unless elem[:offset].nil?
       d,   fr = seconds.divmod(86400)
       h,   fr = fr.divmod(3600)
       min, fr = fr.divmod(60)
@@ -892,7 +893,6 @@ class Date
       elem[:sec] = s
       elem[:sec_fraction] = fr
       elem.delete(:seconds)
-      elem.delete(:offset)
     end
     elem
   end

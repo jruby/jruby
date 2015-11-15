@@ -63,7 +63,7 @@ public class RubyMatchData extends RubyObject {
     Region regs;        // captures
     int begin, end;     // begin and end are used when not groups defined
     RubyString str;     // source string
-    private Regex pattern;
+    private Object pattern; // Regex or (un-quoted) RubyString
     transient RubyRegexp regexp;
     private boolean charOffsetUpdated;
     private Region charOffsets;
@@ -128,8 +128,7 @@ public class RubyMatchData extends RubyObject {
         this.regs = null;
         this.begin = beg;
         this.end = beg + pattern.size();
-        // TODO make pattern lazy to avoid regexp building completely !?
-        this.pattern = RubyRegexp.getQuotedRegexpFromCache(context.runtime, pattern, RegexpOptions.NULL_OPTIONS);
+        this.pattern = pattern.newFrozen();
         this.regexp = null;
 
         this.charOffsets = null;
@@ -287,12 +286,18 @@ public class RubyMatchData extends RubyObject {
         return (flags & MATCH_BUSY) != 0;
     }
 
-    void check() {
+    final void check() {
         if (str == null) throw getRuntime().newTypeError("uninitialized Match");
     }
 
     final Regex getPattern() {
-        return this.pattern;
+        final Object pattern = this.pattern;
+        if (pattern instanceof Regex) return (Regex) pattern;
+        if (pattern == null) throw getRuntime().newTypeError("uninitialized Match (missing pattern)");
+        // when a regexp is avoided for matching we lazyli instantiate one from the unquoted string :
+        Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(getRuntime(), (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
+        this.pattern = regexPattern;
+        return regexPattern;
     }
 
     private RubyRegexp getRegexp() {

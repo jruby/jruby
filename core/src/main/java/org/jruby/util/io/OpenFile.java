@@ -926,7 +926,7 @@ public class OpenFile implements Finalizable {
                 dname = encs.enc.getName();
             }
             else {
-                sname = dname = new byte[0];
+                sname = dname = EMPTY_BYTE_ARRAY;
             }
             readconv = EncodingUtils.econvOpenOpts(context, sname, dname, ecflags, ecopts);
             if (readconv == null)
@@ -1022,7 +1022,7 @@ public class OpenFile implements Finalizable {
     }
     public static final int IO_WBUF_CAPA_MIN = 8192;
 
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    private static final byte[] EMPTY_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // MRI: appendline
     public int appendline(ThreadContext context, int delim, ByteList[] strp, int[] lp) {

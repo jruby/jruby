@@ -115,7 +115,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    private static final byte[] EMPTY_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // string doesn't share any resources
     private static final int SHARE_LEVEL_NONE = 0;
