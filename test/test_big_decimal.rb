@@ -194,8 +194,9 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_round_nan
     nan = BigDecimal.new('NaN')
-    assert_equal nan, nan.round
-    assert_equal nan, nan.round(0)
+    assert nan.round.nan? # nothing raised
+    assert nan.round(0).nan?
+    assert nan.round(2).nan?
   end
 
   def test_big_decimal_power
@@ -239,6 +240,12 @@ class TestBigDecimal < Test::Unit::TestCase
       assert_equal BigDecimal('0.144E1'), res
     end
 
+  end
+
+  def teardown
+    BigDecimal.mode(BigDecimal::EXCEPTION_OVERFLOW, false) rescue nil
+    BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false) rescue nil
+    BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, false) rescue nil
   end
 
   def test_big_decimal_mode
