@@ -279,7 +279,7 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'T':
                     {
-                        String temp = grabOptionalValue();
+                        grabOptionalValue();
                         break FOR;
                     }
                 case 'U':
@@ -406,7 +406,7 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.startsWith("--profile")) {
                         characterIndex = argument.length();
-                        int dotIndex = argument.indexOf(".");
+                        int dotIndex = argument.indexOf('.');
 
                         if (dotIndex == -1) {
                             config.setProfilingMode(RubyInstanceConfig.ProfilingMode.FLAT);
@@ -558,7 +558,7 @@ public class ArgumentProcessor {
         // JRubyFile.create.
         String result = resolve(config.getCurrentDirectory(), scriptName);
         if (result != null) return scriptName;// use relative filename
-                result = resolve(config.getJRubyHome() + "/bin", scriptName);
+        result = resolve(config.getJRubyHome() + "/bin", scriptName);
         if (result != null) return result;
         // since the current directory is also on the classpath we
         // want to find it on filesystem first
