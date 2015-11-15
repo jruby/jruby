@@ -691,4 +691,9 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     public MemoryManager getMemoryManager() {
         return memoryManager;
     }
+
+    public DynamicObject createHandle(Object object) {
+        return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
+    }
+
 }

@@ -165,6 +165,8 @@ public class CoreLibrary {
     private final DynamicObject randomizerClass;
     private final DynamicObjectFactory randomizerFactory;
     private final DynamicObject atomicReferenceClass;
+    private final DynamicObject handleClass;
+    private final DynamicObjectFactory handleFactory;
 
     private final DynamicObject argv;
     private final DynamicObject globalVariablesObject;
@@ -434,7 +436,7 @@ public class CoreLibrary {
         truffleModule = defineModule("Truffle");
         defineModule(truffleModule, "Interop");
         defineModule(truffleModule, "Debug");
-        defineModule(truffleModule, "Primitive");
+        final DynamicObject primitiveModule = defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "Zlib");
         defineModule(truffleModule, "ObjSpace");
@@ -445,6 +447,9 @@ public class CoreLibrary {
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
         final DynamicObject psychEmitterClass = defineClass(psychModule, psychHandlerClass, "Emitter");
         Layouts.CLASS.setInstanceFactoryUnsafe(psychEmitterClass, Layouts.PSYCH_EMITTER.createEmitterShape(psychEmitterClass, psychEmitterClass));
+        handleClass = defineClass(primitiveModule, objectClass, "Handle");
+        handleFactory = Layouts.HANDLE.createHandleShape(handleClass, handleClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(handleClass, handleFactory);
 
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
         Layouts.CLASS.setInstanceFactoryUnsafe(bigDecimalClass, Layouts.BIG_DECIMAL.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
@@ -1597,6 +1602,10 @@ public class CoreLibrary {
 
     public DynamicObject getSystemExitClass() {
         return systemExitClass;
+    }
+
+    public DynamicObjectFactory getHandleFactory() {
+        return handleFactory;
     }
 
 }
