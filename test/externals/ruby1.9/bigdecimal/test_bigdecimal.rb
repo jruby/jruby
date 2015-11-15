@@ -802,18 +802,6 @@ class TestBigDecimal < Test::Unit::TestCase
     end
   end
 
-  def test_round_with_nan_and_infinity
-    [BigDecimal::NAN, BigDecimal::INFINITY, -BigDecimal::INFINITY].each do |number|
-      assert_raise(FloatDomainError) { number.round }
-    end
-  end
-
-  def test_round_with_precision_on_nan_and_infinity
-    assert_equal(true, BigDecimal::NAN.round(1).nan?)
-    assert_equal(BigDecimal::INFINITY, BigDecimal::INFINITY.round(1))
-    assert_equal(-BigDecimal::INFINITY, -BigDecimal::INFINITY.round(1))
-  end
-
   def test_truncate
     assert_equal(3, BigDecimal.new("3.14159").truncate)
     assert_equal(8, BigDecimal.new("8.7").truncate)
@@ -1222,11 +1210,35 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_BigMath_exp
-    n = 20
-    assert_in_epsilon(Math.exp(n), BigMath.exp(BigDecimal("20"), n))
-    assert_in_epsilon(Math.exp(40), BigMath.exp(BigDecimal("40"), n))
-    assert_in_epsilon(Math.exp(-n), BigMath.exp(BigDecimal("-20"), n))
-    assert_in_epsilon(Math.exp(-40), BigMath.exp(BigDecimal("-40"), n))
+    prec = 20
+    assert_in_epsilon(Math.exp(20), BigMath.exp(BigDecimal("20"), prec))
+    assert_in_epsilon(Math.exp(40), BigMath.exp(BigDecimal("40"), prec))
+    assert_in_epsilon(Math.exp(-20), BigMath.exp(BigDecimal("-20"), prec))
+    assert_in_epsilon(Math.exp(-40), BigMath.exp(BigDecimal("-40"), prec))
+  end
+
+  def test_BigMath_exp_with_float
+    prec = 20
+    assert_in_epsilon(Math.exp(20), BigMath.exp(20.0, prec))
+    assert_in_epsilon(Math.exp(40), BigMath.exp(40.0, prec))
+    assert_in_epsilon(Math.exp(-20), BigMath.exp(-20.0, prec))
+    assert_in_epsilon(Math.exp(-40), BigMath.exp(-40.0, prec))
+  end
+
+  def test_BigMath_exp_with_fixnum
+    prec = 20
+    assert_in_epsilon(Math.exp(20), BigMath.exp(20, prec))
+    assert_in_epsilon(Math.exp(40), BigMath.exp(40, prec))
+    assert_in_epsilon(Math.exp(-20), BigMath.exp(-20, prec))
+    assert_in_epsilon(Math.exp(-40), BigMath.exp(-40, prec))
+  end
+
+  def test_BigMath_exp_with_rational
+    prec = 20
+    assert_in_epsilon(Math.exp(20), BigMath.exp(Rational(40,2), prec))
+    assert_in_epsilon(Math.exp(40), BigMath.exp(Rational(80,2), prec))
+    assert_in_epsilon(Math.exp(-20), BigMath.exp(Rational(-40,2), prec))
+    assert_in_epsilon(Math.exp(-40), BigMath.exp(Rational(-80,2), prec))
   end
 
   def test_BigMath_exp_under_gc_stress
