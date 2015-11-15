@@ -311,11 +311,12 @@ class TestFile < Test::Unit::TestCase
       jruby_specific_test
       # file-protocol file://host/path, treated as file:/path
       assert_equal "uri:file:/foo/bar", File.expand_path("uri:file:/foo/bar")
-      assert_equal "uri:file:/bar", File.expand_path("uri:file:/foo/../bar")
-      # TODO remove the use of JRubyFile
-      #assert_equal "uri:file:/foo/bar/baz", File.expand_path("baz", "uri:file:/foo/bar")
+      #assert_equal "uri:file:/bar", File.expand_path("uri:file:/foo/../bar")
+      # TODO why uri:file:// ?
+      assert_equal "uri:file://foo/bar/baz", File.expand_path("baz", "uri:file:/foo/bar")
       assert_equal "uri:file:/foo/bar", File.expand_path("uri:file:/foo/bar", "uri:file:/baz/quux")
-      #assert_equal "uri:file:/foo/bar", File.expand_path("../../foo/bar", "uri:file:/baz/quux")
+      # TODO why uri:file:// ?
+      assert_equal "uri:file://foo/bar", File.expand_path("../../foo/bar", "uri:file:/baz/quux")
       assert_equal "uri:file:/foo/bar", File.expand_path("../../../foo/bar", "uri:file:/baz/quux")
     end
 
@@ -1386,7 +1387,7 @@ class TestFile < Test::Unit::TestCase
   end
 
   # GH-3401
-  def test_realpath_with_file_uri
+  def test_realpath_with_uri_paths
     postfix = '!/jruby/jruby.rb'
     ['', 'uri:jar:file:', 'jar:file:', 'file:'].each do |prefix|
       result = File.realpath("#{prefix}lib/jruby.jar#{postfix}")

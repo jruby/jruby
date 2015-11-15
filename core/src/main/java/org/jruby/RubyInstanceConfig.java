@@ -335,7 +335,7 @@ public class RubyInstanceConfig {
             } catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
         }
 
-        return newJRubyHome;
+        return newJRubyHome == null ? null : new NormalizedFile(newJRubyHome).getPath();
     }
 
     // We require the home directory to be absolute
@@ -355,13 +355,14 @@ public class RubyInstanceConfig {
         }
         // do not normalize on plain jar like pathes coming from jruby-rack
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
-            NormalizedFile f = new NormalizedFile(home);
-            if (!f.isAbsolute()) {
-                home = f.getAbsolutePath();
+            File file = new File(home);
+            if (!file.exists()) {
+                final String tmpdir = SafePropertyAccessor.getProperty("java.io.tmpdir");
+                error.println("Warning: JRuby home \"" + file + "\" does not exist, using " + tmpdir);
+                return tmpdir;
             }
-            if (!f.exists()) {
-                error.println("Warning: JRuby home \"" + f + "\" does not exist, using " + SafePropertyAccessor.getProperty("java.io.tmpdir"));
-                return System.getProperty("java.io.tmpdir");
+            if (!file.isAbsolute()) {
+                home = file.getAbsolutePath();
             }
         }
         return home;

@@ -120,17 +120,18 @@ public class ArgumentProcessor {
     }
 
     private void processArgv() {
-        List<String> arglist = new ArrayList<String>();
+        ArrayList<String> arglist = new ArrayList<String>();
         for (; argumentIndex < arguments.size(); argumentIndex++) {
             String arg = arguments.get(argumentIndex).originalValue;
             if (config.isArgvGlobalsOn() && arg.startsWith("-")) {
                 arg = arg.substring(1);
-                if (arg.indexOf('=') > 0) {
-                    String[] keyvalue = arg.split("=", 2);
-
+                int split = arg.indexOf('=');
+                if (split > 0) {
+                    final String key = arg.substring(0, split);
+                    final String val = arg.substring(split + 1);
                     // argv globals getService their dashes replaced with underscores
-                    String globalName = keyvalue[0].replace('-', '_');
-                    config.getOptionGlobals().put(globalName, keyvalue[1]);
+                    String globalName = key.replace('-', '_');
+                    config.getOptionGlobals().put(globalName, val);
                 } else {
                     config.getOptionGlobals().put(arg, null);
                 }
@@ -307,7 +308,7 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'T':
                     {
-                        String temp = grabOptionalValue();
+                        grabOptionalValue();
                         break FOR;
                     }
                 case 'U':
@@ -453,7 +454,7 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.startsWith("--profile")) {
                         characterIndex = argument.length();
-                        int dotIndex = argument.indexOf(".");
+                        int dotIndex = argument.indexOf('.');
 
                         if (dotIndex == -1) {
                             config.setProfilingMode(RubyInstanceConfig.ProfilingMode.FLAT);
@@ -644,7 +645,7 @@ public class ArgumentProcessor {
         // JRubyFile.create.
         String result = resolve(config.getCurrentDirectory(), scriptName);
         if (result != null) return scriptName;// use relative filename
-                result = resolve(config.getJRubyHome() + "/bin", scriptName);
+        result = resolve(config.getJRubyHome() + "/bin", scriptName);
         if (result != null) return result;
         // since the current directory is also on the classpath we
         // want to find it on filesystem first

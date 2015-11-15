@@ -794,6 +794,6 @@ public class ConvertBytes {
      */
     private void invalidString(String type) {
         IRubyObject s = RubyString.newString(runtime, _str).inspect();
-        throw runtime.newArgumentError("invalid value for " + type + ": " + s);
+        throw runtime.newArgumentError("invalid value for " + type + "(): " + s);
     }
 }

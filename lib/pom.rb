@@ -1,55 +1,28 @@
 class ImportedGem
-  attr_reader :name, :default_gem, :pom_version_key, :ruby_version
+  attr_reader :name, :version
 
-  def initialize( name, pom_version_key, default_gem, ruby_version = nil )
+  def initialize( name, version )
     @name = name
-    @default_gem = default_gem
-    @pom_version_key = pom_version_key
-    @ruby_version = ruby_version
-  end
-
-  def version
-    if pom_version_key =~ /.version/
-      "${#{pom_version_key}}"
-    else
-      pom_version_key
-    end
+    @version = version
   end
 end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.11', true ),
-   ImportedGem.new( 'jruby-readline', '1.0', false ),
-   ImportedGem.new( 'rake', 'rake.version', true ),
-   ImportedGem.new( 'rdoc', 'rdoc.version', true ),
-   ImportedGem.new( 'minitest', 'minitest.version', true ),
-   ImportedGem.new( 'test-unit', 'test-unit.version', true ),
-   ImportedGem.new( 'power_assert', 'power_assert.version', true ),
-   ImportedGem.new( 'psych', '2.0.15', true ),
-   ImportedGem.new( 'json', 'json.version', true ),
-   ImportedGem.new( 'jar-dependencies', '0.1.15', true ),
-   ImportedGem.new( 'racc', 'racc.version', true)
+   ImportedGem.new( 'jruby-openssl', '0.9.12' ),
+   ImportedGem.new( 'jruby-readline', '1.0' ),
+   ImportedGem.new( 'rake', '${rake.version}' ),
+   ImportedGem.new( 'rdoc', '${rdoc.version}' ),
+   ImportedGem.new( 'minitest', '${minitest.version}' ),
+   ImportedGem.new( 'test-unit', '${test-unit.version}' ),
+   ImportedGem.new( 'power_assert', '${power_assert.version}' ),
+   ImportedGem.new( 'psych', '2.0.15' ),
+   ImportedGem.new( 'json', '${json.version}' ),
+   ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
+   ImportedGem.new( 'racc', '${racc.version}')
   ]
 
 project 'JRuby Lib Setup' do
-
-  # TODO move those to method to ruby-maven
-  class ::Java::JavaIo::File
-    def to_pathname
-      to_s.gsub( /\\/, '/' )
-    end
-  end
-  class ::Java::JavaLang::String
-    def to_pathname
-      to_s.gsub( /\\/, '/' )
-    end
-  end
-  class ::String
-    def to_pathname
-      self.gsub( /\\/, '/' )
-    end
-  end
 
   version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
@@ -59,7 +32,7 @@ project 'JRuby Lib Setup' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-              'jruby.plugins.version' => '1.0.9',
+              'jruby.plugins.version' => '1.1.2',
               'gem.home' => '${basedir}/ruby/gems/shared',
               # we copy everything into the target/classes/META-INF
               # so the jar plugin just packs it - see build/resources below
@@ -81,7 +54,7 @@ project 'JRuby Lib Setup' do
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
                            :includes => [ '*' ] },
                          { :directory => '${basedir}/ruby/stdlib',
-                           :includes => [ '**/bouncycastle/**/*.jar' ] } ] )
+                           :includes => [ 'org/**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
@@ -90,8 +63,6 @@ project 'JRuby Lib Setup' do
       exclusion 'rubygems:jar-dependencies'
     end
   end
-
-  gem 'ruby-maven', '3.3.3', :scope => :provided
 
   default_gemnames = default_gems.collect { |g| g.name }
 
@@ -154,7 +125,7 @@ project 'JRuby Lib Setup' do
     end
 
     default_gems.each do |g|
-      pom_version = ctx.project.properties.get( g.pom_version_key ) || g.pom_version_key
+      pom_version = ctx.project.properties.get( g.version[2..-2] ) || g.version
       version = pom_version.sub( /-SNAPSHOT/, '' )
 
       # install the gem unless already installed
@@ -204,21 +175,19 @@ project 'JRuby Lib Setup' do
           end
         end
 
-        if g.default_gem
-          specfile_wildcard = "#{g.name}-#{version}*.gemspec"
-          specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
+        specfile_wildcard = "#{g.name}-#{version}*.gemspec"
+        specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
 
-          unless specfile
-            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
-          end
+        unless specfile
+          raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
+        end
 
-          specname = File.basename( specfile )
-          puts "copy to specifications/default: #{specname}"
+        specname = File.basename( specfile )
+        puts "copy to specifications/default: #{specname}"
 
-          spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
-          File.open( File.join( default_specs, specname ), 'w' ) do |f|
-            f.print( spec.to_ruby )
-          end
+        spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
+        File.open( File.join( default_specs, specname ), 'w' ) do |f|
+          f.print( spec.to_ruby )
         end
       end
     end
