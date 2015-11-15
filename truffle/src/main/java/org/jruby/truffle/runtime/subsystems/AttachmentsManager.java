@@ -54,10 +54,11 @@ public class AttachmentsManager {
         context.getEnv().instrumenter().install(lineToProbesMap);
     }
 
-    public synchronized void attach(String file, int line, final DynamicObject block) {
+    public synchronized Instrument attach(String file, int line, final DynamicObject block) {
         assert RubyGuards.isRubyProc(block);
 
         final String info = String.format("Truffle::Primitive.attach@%s:%d", file, line);
+
         final EvalInstrumentListener listener = new EvalInstrumentListener() {
 
             @Override
@@ -76,41 +77,19 @@ public class AttachmentsManager {
         };
 
         final Source source = context.getSourceCache().getBestSourceFuzzily(file);
-
+        
         final LineLocation lineLocation = source.createLineLocation(line);
-
-        List<Instrument> instruments = attachments.get(lineLocation);
-
-        if (instruments == null) {
-            instruments = new ArrayList<>();
-            attachments.put(lineLocation, instruments);
-        }
 
         for (Probe probe : lineToProbesMap.findProbes(lineLocation)) {
             if (probe.isTaggedAs(StandardSyntaxTag.STATEMENT)) {
                 final Map<String, Object> parameters = new HashMap<>();
                 parameters.put("section", probe.getProbedSourceSection());
                 parameters.put("block", block);
-                instruments.add(context.getEnv().instrumenter().attach(probe, ATTACHMENT_SOURCE, listener, info, parameters));
-                return;
+                return context.getEnv().instrumenter().attach(probe, ATTACHMENT_SOURCE, listener, info, parameters);
             }
         }
 
         throw new RuntimeException("couldn't find a statement!");
-    }
-
-    public synchronized void detach(String file, int line) {
-        final Source source = context.getSourceCache().getBestSourceFuzzily(file);
-
-        final LineLocation lineLocation = source.createLineLocation(line);
-
-        final List<Instrument> instruments = attachments.remove(lineLocation);
-
-        if (instruments != null) {
-            for (Instrument instrument : instruments) {
-                instrument.dispose();
-            }
-        }
     }
 
     public static class AttachmentRootNode extends RootNode {
