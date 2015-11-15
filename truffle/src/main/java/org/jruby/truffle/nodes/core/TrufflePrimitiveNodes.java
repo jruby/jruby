@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrument.Instrument;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -346,13 +347,12 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
         public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
-            getContext().getAttachmentsManager().attach(file.toString(), line, block);
-            return getContext().getCoreLibrary().getNilObject();
+            return getContext().createHandle(getContext().getAttachmentsManager().attach(file.toString(), line, block));
         }
 
     }
 
-    @CoreMethod(names = "detach", onSingleton = true, required = 2)
+    @CoreMethod(names = "detach", onSingleton = true, required = 1)
     public abstract static class DetachNode extends CoreMethodArrayArgumentsNode {
 
         public DetachNode(RubyContext context, SourceSection sourceSection) {
@@ -360,9 +360,10 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(file)")
-        public DynamicObject detach(DynamicObject file, int line) {
-            getContext().getAttachmentsManager().detach(file.toString(), line);
+        @Specialization(guards = "isHandle(handle)")
+        public DynamicObject detach(DynamicObject handle) {
+            final Instrument instrument = (Instrument) Layouts.HANDLE.getObject(handle);
+            instrument.dispose();
             return getContext().getCoreLibrary().getNilObject();
         }
 

@@ -15,30 +15,34 @@ module Truffle
 
     # Attach a block to be called each time before a given line in a given file
     # is executed, passing the binding at that point to the block.
-    # @return [nil]
+    # @return [Attachment]
     #
     # # Examples
     #
     # ```
-    # Truffle::Attachments.attach __FILE__, 21 do |binding|
+    # attachment = Truffle::Attachments.attach(__FILE__, 21) do |binding|
     #   # Double the value of local variable foo before this line runs
     #   binding.local_variable_set(:foo, binding.local_variable_get(:foo) * 2)
     # end
+    # ...
+    # attachment.detach
     # ```
     def self.attach(file, line, &block)
-      Truffle::Primitive.attach file, line, &block
+      Attachment.new(Truffle::Primitive.attach(file, line, &block))
     end
 
-    # Detach all blocks at a given line in a given file.
-    # @return [nil]
-    #
-    # # Examples
-    #
-    # ```
-    # Truffle::Attachments.detach __FILE__, 21
-    # ```
-    def self.detach(file, line)
-      Truffle::Primitive.detach file, line
+    # Represents a block which has been installed.
+    class Attachment
+
+      def initialize(handle)
+        @handle = handle
+      end
+
+      # Detach the code which was attached.
+      def detach
+        Truffle::Primitive.detach @handle
+      end
+
     end
 
   end
