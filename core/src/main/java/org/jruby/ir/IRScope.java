@@ -1023,7 +1023,7 @@ public abstract class IRScope implements ParseResult {
         // We need fresh fic so we can modify it during inlining without making already running code explode.
         FullInterpreterContext newContext = fullInterpreterContext.duplicate();
 
-        new CFGInliner(newContext.getCFG()).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+        new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
 
         // Reset state
         resetState();

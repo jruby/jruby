@@ -6,6 +6,7 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -16,11 +17,13 @@ import java.util.List;
 
 public class CFGInliner {
     private static final boolean debug = true;
+    private final FullInterpreterContext fullInterpreterContext;
     private final CFG cfg;
     private final IRScope hostScope;
 
-    public CFGInliner(CFG build) {
-        this.cfg = build;
+    public CFGInliner(FullInterpreterContext fullInterpreterContext) {
+        this.fullInterpreterContext = fullInterpreterContext;
+        this.cfg = fullInterpreterContext.getCFG();
         this.hostScope = cfg.getScope();
     }
 
@@ -254,6 +257,9 @@ public class CFGInliner {
                 cfg.setRescuerBB(xRenamed, callBBrescuer);
             }
         }
+
+        // We run this again so new inlined BBs will get assigned proper IPCs
+        fullInterpreterContext.generateInstructionsForIntepretation();
 
         // Add inline guard that verifies that the method inlined is the same
         // that gets called in future invocations.  In addition to the guard, add
