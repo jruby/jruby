@@ -290,9 +290,6 @@ public class IRClosure extends IRScope {
 
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
-//        if (getCFG() != null) {
-//            clone.setCFG(getCFG().clone(clonedII, clone));
-//        } else {
         List<Instr> newInstrs = new ArrayList<>(interpreterContext.getInstructions().length);
 
         for (Instr i: interpreterContext.getInstructions()) {
@@ -300,8 +297,6 @@ public class IRClosure extends IRScope {
         }
 
         clone.allocateInterpreterContext(newInstrs);
-
-//        }
 
         return clone;
     }

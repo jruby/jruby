@@ -23,7 +23,7 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase implements FixedArity
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
-        if (ii.canMapArgsStatically()) return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex));
+        if (ii.canMapArgsStatically() || ii.isSingleArg()) return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex));
 
         return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), -1, -1, argIndex);
     }

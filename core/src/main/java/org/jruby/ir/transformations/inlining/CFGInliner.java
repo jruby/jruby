@@ -84,7 +84,7 @@ public class CFGInliner {
     private void printInlineDebugPrologue(IRScope methodScope, CallBase call) {
         System.out.println("---------------------------------- PROLOGUE (start) --------");
         System.out.println("Looking for: " + call.getIPC() + ": " + call);
-        printInlineCFG();
+        printInlineCFG(cfg);
         System.out.println("source cfg   :" + methodScope.getCFG().toStringGraph());
         System.out.println("source instrs:" + methodScope.getCFG().toStringInstrs());
         System.out.println("---------------------------------- PROLOGUE (end) -----------");
@@ -99,18 +99,18 @@ public class CFGInliner {
     private void printInlineCannotFindCallsiteBB(CallBase call) {
         System.out.println("----------------------------------");
         System.out.println("Did not find BB with call: " + call);
-        printInlineCFG();
+        printInlineCFG(cfg);
         System.out.println("----------------------------------");
     }
 
-    private void printInlineCFG() {
-        System.out.println("cfg   :" + cfg.toStringGraph());
-        System.out.println("instrs:" + cfg.toStringInstrs());
+    private void printInlineCFG(CFG aCFG) {
+        System.out.println("cfg   :" + aCFG.toStringGraph());
+        System.out.println("instrs:" + aCFG.toStringInstrs());
     }
 
     private void printInlineEpilogue() {
         System.out.println("---------------------------------- EPILOGUE (start) --------");
-        printInlineCFG();
+        printInlineCFG(cfg);
         System.out.println("---------------------------------- EPILOGUE (end) -----------");
     }
 
@@ -120,7 +120,7 @@ public class CFGInliner {
         System.out.println(beforeBB.toStringInstrs());
         System.out.println("After:" + afterBB.getLabel());
         System.out.println(afterBB.toStringInstrs());
-        printInlineCFG();
+        printInlineCFG(cfg);
         System.out.println("---------------------------------- SPLIT BB (end) -----------");
     }
 
@@ -327,6 +327,8 @@ public class CFGInliner {
 
         // 2. Merge closure cfg into the current cfg
         CFG closureCFG = cl.getCFG();
+
+        printInlineCFG(closureCFG);
         BasicBlock closureGEB = closureCFG.getGlobalEnsureBB();
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (!b.isEntryBB() && !b.isExitBB() && b != closureGEB) cfg.addBasicBlock(b.cloneForInlining(ii));
