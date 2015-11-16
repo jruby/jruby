@@ -1,16 +1,17 @@
 class ImportedGem
-  attr_reader :name, :version
+  attr_reader :name, :version, :default_spec
 
-  def initialize( name, version )
+  def initialize( name, version, default_spec = true )
     @name = name
     @version = version
+    @default_spec = default_spec
   end
 end
 
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.12' ),
-   ImportedGem.new( 'jruby-readline', '1.0' ),
+   ImportedGem.new( 'jruby-readline', '1.0', false ),
    ImportedGem.new( 'rake', '${rake.version}' ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
    ImportedGem.new( 'minitest', '${minitest.version}' ),
@@ -175,19 +176,21 @@ project 'JRuby Lib Setup' do
           end
         end
 
-        specfile_wildcard = "#{g.name}-#{version}*.gemspec"
-        specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
+        if g.default_spec
+          specfile_wildcard = "#{g.name}-#{version}*.gemspec"
+          specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
 
-        unless specfile
-          raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
-        end
+          unless specfile
+            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
+          end
 
-        specname = File.basename( specfile )
-        puts "copy to specifications/default: #{specname}"
-
-        spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
-        File.open( File.join( default_specs, specname ), 'w' ) do |f|
-          f.print( spec.to_ruby )
+          specname = File.basename( specfile )
+          puts "copy to specifications/default: #{specname}"
+          
+          spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
+          File.open( File.join( default_specs, specname ), 'w' ) do |f|
+            f.print( spec.to_ruby )
+          end
         end
       end
     end
