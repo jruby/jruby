@@ -6,12 +6,12 @@ String log = FileUtils.fileRead( new File( basedir, "build.log" ) );
 String expected = "rake (10.1.0)";
 if ( !log.contains( expected ) )
 {
-    throw new runtimeexception( "log file does not contain '" + expected + "'" );
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
-expected = "4.1.0";
+expected = "4.1.2";
 if ( !log.contains( expected ) )
 {
-    throw new runtimeexception( "log file does not contain '" + expected + "'" );
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
 expected = "json (1.8.0 java)";
 if ( !log.contains( expected ) )
@@ -23,12 +23,12 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
-expected = "rdoc (4.1.0";
+expected = "rdoc (4.1.2";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
-expected = "gems count 12";
+expected = "gems count 10";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
@@ -49,5 +49,5 @@ if ( !log.contains( expected ) )
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
 
-String unexpected = "uri:classloader://META-INF/jruby.home";
+String unexpected = "uri:classloader:/META-INF/jruby.home";
 if ( log.contains( unexpected ) ) throw new RuntimeException( "log file does contain unexpected '" + unexpected + "'" );
