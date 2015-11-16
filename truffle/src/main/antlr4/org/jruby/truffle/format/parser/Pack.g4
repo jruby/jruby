@@ -41,7 +41,7 @@ directive : C count?                            # character
           | 'M' INT?                            # mimeString
           | 'm' count?                          # base64String
           | ('p' | 'P')                         # pointer
-          | '@' INT                             # at
+          | '@' INT?                            # at
           | 'X' count?                          # back
           | 'x' count?                          # nullByte
           | '(' directive+ ')' INT              # subSequence

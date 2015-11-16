@@ -288,7 +288,15 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitAt(PackParser.AtContext ctx) {
-        appendNode(new AtNode(context, Integer.parseInt(ctx.INT().getText())));
+        final int position;
+
+        if (ctx.INT() == null) {
+            position = 1;
+        } else {
+            position = Integer.parseInt(ctx.INT().getText());
+        }
+
+        appendNode(new AtNode(context, position));
     }
 
     @Override
