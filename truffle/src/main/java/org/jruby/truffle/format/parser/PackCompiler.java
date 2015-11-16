@@ -31,13 +31,21 @@ public class PackCompiler {
     }
 
     public CallTarget compile(String format) {
+        final PackErrorListener errorListener = new PackErrorListener(context, currentNode);
+
         final ANTLRInputStream input = new ANTLRInputStream(format.toString());
+        
         final PackLexer lexer = new PackLexer(input);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errorListener);
+
         final CommonTokenStream tokens = new CommonTokenStream(lexer);
+
         final PackParser parser = new PackParser(tokens);
+
         final PackTreeBuilder builder = new PackTreeBuilder(context);
         parser.addParseListener(builder);
-        final PackErrorListener errorListener = new PackErrorListener(context, currentNode);
+
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
