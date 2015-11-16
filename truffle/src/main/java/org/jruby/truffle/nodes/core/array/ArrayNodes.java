@@ -27,6 +27,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.format.parser.PackCompiler;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -45,7 +46,6 @@ import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.format.parser.PackParser;
 import org.jruby.truffle.format.runtime.PackResult;
 import org.jruby.truffle.format.runtime.exceptions.*;
 import org.jruby.truffle.runtime.NotProvided;
@@ -2561,12 +2561,7 @@ public abstract class ArrayNodes {
         @TruffleBoundary
         protected CallTarget compileFormat(DynamicObject format) {
             assert RubyGuards.isRubyString(format);
-            try {
-                return new PackParser(getContext()).parse(format.toString(), false);
-            } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
-            }
+            return new PackCompiler(getContext(), this).compile(format.toString());
         }
 
         protected int getCacheLimit() {

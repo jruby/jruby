@@ -50,7 +50,7 @@ public class FormatParser {
     public CallTarget parse(ByteList format) {
         final FormatTokenizer tokenizer = new FormatTokenizer(context, format);
         final PackNode body = parse(tokenizer);
-        return Truffle.getRuntime().createCallTarget(new PackRootNode(PackParser.describe(format.toString()), encoding, body));
+        return Truffle.getRuntime().createCallTarget(new PackRootNode(PackCompiler.describe(format.toString()), encoding, body));
     }
 
     public PackNode parse(FormatTokenizer tokenizer) {
