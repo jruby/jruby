@@ -183,7 +183,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitBinaryStringNullPadded(PackParser.BinaryStringNullPaddedContext ctx) {
-        binaryString((byte) 0, false, false, ctx.count());
+        binaryString((byte) 0, true, false, ctx.count());
     }
 
     @Override
@@ -376,6 +376,11 @@ public class PackTreeBuilder extends PackBaseListener {
             width = Integer.parseInt(count.INT().getText());
         } else {
             pad = false;
+
+            if (count != null && count.INT() == null) {
+                padOnNull = false;
+            }
+
             width = 1;
         }
 
