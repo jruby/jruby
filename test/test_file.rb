@@ -208,6 +208,12 @@ class TestFile < Test::Unit::TestCase
     def test_pathname_windows
       assert_equal(Pathname('foo.bar.rb').expand_path.relative_path_from(Pathname(Dir.pwd)), Pathname('foo.bar.rb'))
     end
+
+    # JRUBY-3132
+    def test_realpath_windows
+      assert_equal('C:/', File.realpath('C:/'))
+      assert_equal('C:/', File.realpath('C:\\'))
+    end
   else
     def test_expand_path
       assert_equal("/bin", File.expand_path("../../bin", "/foo/bar"))
@@ -380,6 +386,10 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_corner_case
       # this would fail on MRI 1.8.6 (MRI returns "/foo").
       assert_equal("//foo", File.expand_path("../foo", "//bar"))
+    end
+    
+    def test_realpath
+      assert_equal('/', File.realpath('/'))
     end
   end # if WINDOWS else ... end
 
