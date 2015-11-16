@@ -178,7 +178,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitBinaryStringSpacePadded(PackParser.BinaryStringSpacePaddedContext ctx) {
-        binaryString((byte) ' ', false, false, ctx.count());
+        binaryString((byte) ' ', true, false, ctx.count());
     }
 
     @Override
