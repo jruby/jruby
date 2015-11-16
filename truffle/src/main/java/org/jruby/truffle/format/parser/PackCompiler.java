@@ -34,7 +34,7 @@ public class PackCompiler {
         final PackErrorListener errorListener = new PackErrorListener(context, currentNode);
 
         final ANTLRInputStream input = new ANTLRInputStream(format.toString());
-        
+
         final PackLexer lexer = new PackLexer(input);
         lexer.removeErrorListeners();
         lexer.addErrorListener(errorListener);

@@ -65,4 +65,4 @@ NATIVE : '_' | '!' ;
 
 INT    : [0-9]+ ;
 
-WS     : [ \t\r\n]+ -> skip ;
+WS     : [ \t\n\u000b\f\r]+ -> skip ;
