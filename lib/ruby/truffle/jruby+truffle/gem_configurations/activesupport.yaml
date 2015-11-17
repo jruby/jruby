@@ -20,7 +20,7 @@
     bundler.rb: "module Bundler; def self.setup; end; end"
     # mock method_source gem
     method_source.rb: nil
-    exlude_tests.rb:  |
+    exclude_tests.rb:  |
                       {
                           FileStoreTest:      :test_two_classes_autoloading,
                           KernelTest: [:test_silence_stream,
