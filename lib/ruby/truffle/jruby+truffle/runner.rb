@@ -206,7 +206,7 @@ class JRubyTruffleRunner
       if candidates.size == 1
         gem_name, _ = candidates.first.split('.')
 
-        default_configuration_file_path = File.dirname(__FILE__) + "/../gem_configurations/#{gem_name}.yaml"
+        default_configuration_file_path = File.dirname(__FILE__) + "gem_configurations/#{gem_name}.yaml"
         if File.exist?(default_configuration_file_path)
           puts "Copying default #{LOCAL_CONFIG_FILE} for #{gem_name}."
           FileUtils.cp default_configuration_file_path, LOCAL_CONFIG_FILE
@@ -358,7 +358,7 @@ class JRubyTruffleRunner
   end
 
   def subcommand_readme(vm_options, rest)
-    readme_path = File.join File.dirname(__FILE__), '..', 'README.md'
+    readme_path = File.join File.dirname(__FILE__), 'README.md'
     puts File.read(readme_path)
   end
 
