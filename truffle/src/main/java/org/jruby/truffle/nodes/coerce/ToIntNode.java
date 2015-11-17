@@ -34,9 +34,9 @@ public abstract class ToIntNode extends RubyNode {
     @Child private CallDispatchHeadNode toIntNode;
     @Child private FloatNodes.ToINode floatToIntNode;
 
-    private static final ConditionProfile wasInteger = ConditionProfile.createBinaryProfile();
-    private static final ConditionProfile wasLong = ConditionProfile.createBinaryProfile();
-    private static final ConditionProfile wasLongInRange = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile wasInteger = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile wasLong = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile wasLongInRange = ConditionProfile.createBinaryProfile();
 
     public ToIntNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
