@@ -102,7 +102,7 @@
     -->
     <rdoc.version>4.1.2</rdoc.version>
     <rake.version>10.1.0</rake.version>
-    <jar-dependencies.version>0.2.3</jar-dependencies.version>
+    <jar-dependencies.version>0.2.6</jar-dependencies.version>
 
   </properties>
 

@@ -183,7 +183,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>yecht</artifactId>
-      <version>1.1-SNAPSHOT</version>
+      <version>1.1</version>
       <classifier>jruby</classifier>
       <type>jar</type>
     </dependency>

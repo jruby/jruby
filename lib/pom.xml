@@ -56,7 +56,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jar-dependencies</artifactId>
-      <version>0.2.3</version>
+      <version>0.2.6</version>
       <type>gem</type>
     </dependency>
   </dependencies>
