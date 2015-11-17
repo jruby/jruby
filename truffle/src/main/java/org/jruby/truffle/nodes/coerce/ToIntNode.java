@@ -26,6 +26,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -54,7 +55,7 @@ public abstract class ToIntNode extends RubyNode {
         if (wasLong.profile(integerObject instanceof Long)) {
             final long longValue = (long) integerObject;
 
-            if (wasLongInRange.profile(longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE)) {
+            if (wasLongInRange.profile(CoreLibrary.fitsIntoInteger(longValue))) {
                 return (int) longValue;
             }
         }
