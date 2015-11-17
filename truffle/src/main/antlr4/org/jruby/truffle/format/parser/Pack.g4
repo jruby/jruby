@@ -65,4 +65,5 @@ NATIVE : '_' | '!' ;
 
 INT    : [0-9]+ ;
 
-WS     : [ \t\n\u000b\f\r\u0000]+ -> skip ;
+WS      : [ \t\n\u000b\f\r\u0000]+ -> skip ;
+COMMENT : '#' .*? (('\r'? '\n') | EOF) -> skip ;
