@@ -543,15 +543,16 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(names = "memory_barrier", isModuleFunction = true)
-    public abstract static class MemoryBarrierPrimitiveNode extends CoreMethodNode {
 
-        public MemoryBarrierPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+    @CoreMethod(names = "full_memory_barrier", isModuleFunction = true)
+    public abstract static class FullMemoryBarrierPrimitiveNode extends CoreMethodNode {
+
+        public FullMemoryBarrierPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public Object memoryBarrier() {
+        public Object fullMemoryBarrier() {
             if (UnsafeHolder.SUPPORTS_FENCES) {
                 UnsafeHolder.fullFence();
             } else {
