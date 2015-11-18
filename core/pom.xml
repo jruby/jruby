@@ -268,6 +268,7 @@ DO NOT MODIFIY - GENERATED CODE
       <artifactId>slf4j-api</artifactId>
       <version>1.7.12</version>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
