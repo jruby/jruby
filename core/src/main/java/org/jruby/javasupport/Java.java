@@ -879,10 +879,28 @@ public class Java implements Library {
             clazz = runtime.getJavaSupport().loadJavaClass(className);
         }
         catch (ExceptionInInitializerError ex) {
-            throw runtime.newNameError("cannot initialize Java class " + className, className, ex, false);
+            throw runtime.newNameError("cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex, false);
+        }
+        catch (UnsupportedClassVersionError ex) { // LinkageError
+            String type = ex.getClass().getName();
+            String msg = ex.getLocalizedMessage();
+            if ( msg != null ) {
+                final String unMajorMinorVersion = "nsupported major.minor version";
+                // e.g. "com/sample/FooBar : Unsupported major.minor version 52.0"
+                int idx = msg.indexOf(unMajorMinorVersion);
+                if (idx > 0) {
+                    idx += unMajorMinorVersion.length();
+                    idx = mapMajorMinorClassVersionToJavaVersion(msg, idx);
+                    if ( idx > 0 ) msg = "needs Java " + idx + " (" + type + ": " + msg + ')';
+                    else msg = '(' + type + ": " + msg + ')';
+                }
+            }
+            else msg = '(' + type + ')';
+            // cannot link Java class com.sample.FooBar needs Java 8 (java.lang.UnsupportedClassVersionError: com/sample/FooBar : Unsupported major.minor version 52.0)
+            throw runtime.newNameError("cannot link Java class " + className + ' ' + msg, className, ex, false);
         }
         catch (LinkageError ex) {
-            throw runtime.newNameError("cannot link Java class " + className, className, ex, false);
+            throw runtime.newNameError("cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex, false);
         }
         catch (SecurityException ex) {
             throw runtime.newSecurityError(ex.getLocalizedMessage());
@@ -893,6 +911,16 @@ public class Java implements Library {
             return getProxyClass(runtime, JavaClass.get(runtime, clazz));
         }
         return getProxyClass(runtime, clazz);
+    }
+
+    private static int mapMajorMinorClassVersionToJavaVersion(String msg, final int offset) {
+        int end;
+        if ( ( end = msg.indexOf('.', offset) ) == -1 ) end = msg.length();
+        msg = msg.substring(offset, end).trim(); // handle " 52.0"
+        try { // Java SE 6.0 = 50, Java SE 7 = 51, Java SE 8 = 52
+            return Integer.parseInt(msg) - 50 + 6;
+        }
+        catch (RuntimeException ignore) { return 0; }
     }
 
     public static IRubyObject get_proxy_or_package_under_package(final ThreadContext context,

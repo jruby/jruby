@@ -168,7 +168,7 @@ module Rubinius
   end
 
   def self.memory_barrier
-    Truffle::Primitive.memory_barrier
+    Truffle::Primitive.full_memory_barrier
   end
 
 end

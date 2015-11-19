@@ -49,11 +49,13 @@ class JRubyTruffleRunner
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
             truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, '.jruby+truffle_bundle'],
             interpreter_path:    ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", assign_new_value,
-                                  '../jruby/bin/jruby'],
+                                  File.expand_path(File.join(File.dirname(__FILE__), '../../../../../jruby/bin/jruby'))],
             graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
-            mock_load_path:      ['--mock-load-path PATH', 'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
+            mock_load_path:      ['--mock-load-path PATH',
+                                  'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
                                   assign_new_value, 'mocks'],
-            use_fs_core:         ['--[no-]use-fs-core', 'use core from the filesystem rather than the JAR', assign_new_value, true],
+            use_fs_core:         ['--[no-]use-fs-core', 'use core from the filesystem rather than the JAR',
+                                  assign_new_value, true],
             bundle_cmd:          ['--bundle-cmd CMD', 'command to run for bundle', assign_new_value, 'bundle']
         },
         setup:  {
@@ -135,7 +137,8 @@ class JRubyTruffleRunner
 
   def initialize(argv = ARGV)
     construct_default_options
-    load_local_yaml_configuration
+    load_gem_configuration
+    load_local_configuration
     build_option_parsers
 
     vm_options, argv_after_vm_options = collect_vm_options argv
@@ -198,24 +201,28 @@ class JRubyTruffleRunner
     [vm_options, other_options]
   end
 
-  def load_local_yaml_configuration
-    yaml_path = File.join Dir.pwd, LOCAL_CONFIG_FILE
+  def load_gem_configuration
+    candidates = Dir['*.gemspec'] # TODO pwd?
 
-    unless File.exist? yaml_path
-      candidates = Dir['*.gemspec']
-      if candidates.size == 1
-        gem_name, _ = candidates.first.split('.')
-
-        default_configuration_file_path = File.dirname(__FILE__) + "/../gem_configurations/#{gem_name}.yaml"
-        if File.exist?(default_configuration_file_path)
-          puts "Copying default #{LOCAL_CONFIG_FILE} for #{gem_name}."
-          FileUtils.cp default_configuration_file_path, LOCAL_CONFIG_FILE
-        end
-      end
+    if candidates.size == 1
+      gem_name, _ = candidates.first.split('.')
+      yaml_path   = File.dirname(__FILE__) + "/gem_configurations/#{gem_name}.yaml"
+      File.exist? yaml_path
     end
 
-    yaml_data = YAML.load_file(yaml_path) if File.exist?(yaml_path)
-    @options  = deep_merge @options, yaml_data
+    apply_yaml_to_configuration(yaml_path)
+  end
+
+  def load_local_configuration
+    yaml_path = File.join Dir.pwd, LOCAL_CONFIG_FILE
+    apply_yaml_to_configuration(yaml_path)
+  end
+
+  def apply_yaml_to_configuration(yaml_path)
+    if File.exist?(yaml_path)
+      yaml_data = YAML.load_file(yaml_path)
+      @options  = deep_merge @options, yaml_data
+    end
   end
 
   def construct_default_options
@@ -271,8 +278,8 @@ class JRubyTruffleRunner
   end
 
   def subcommand_setup(vm_options, rest)
-    bundle_cmd       = @options[:global][:bundle_cmd].split(' ')
-    bundle_path      = File.expand_path(@options[:global][:truffle_bundle_path])
+    bundle_cmd  = @options[:global][:bundle_cmd].split(' ')
+    bundle_path = File.expand_path(@options[:global][:truffle_bundle_path])
 
     if bundle_cmd == ['bundle']
       bundle_installed = execute_cmd 'command -v bundle 2>/dev/null 1>&2', fail: false
@@ -307,7 +314,7 @@ class JRubyTruffleRunner
   end
 
   def subcommand_run(vm_options, rest)
-    jruby_path = Pathname("#{@options[:global][:interpreter_path]}/../..")
+    jruby_path = Pathname("#{@options[:global][:interpreter_path]}/../..").expand_path
 
     unless jruby_path.absolute?
       jruby_path = jruby_path.relative_path_from(Pathname('.'))
@@ -358,7 +365,7 @@ class JRubyTruffleRunner
   end
 
   def subcommand_readme(vm_options, rest)
-    readme_path = File.join File.dirname(__FILE__), '..', 'README.md'
+    readme_path = File.join File.dirname(__FILE__), 'README.md'
     puts File.read(readme_path)
   end
 

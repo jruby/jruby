@@ -42,7 +42,6 @@ import org.jruby.util.GetResources;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
-import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.UriLikePathHelper;
 import org.jruby.util.cli.ArgumentProcessor;
@@ -328,14 +327,13 @@ public class RubyInstanceConfig {
         // We will cannonicalize on windows so that jruby.home is also C:.
         // assume all those uri-like pathnames are already in absolute form
         if (Platform.IS_WINDOWS && !RubyFile.PROTOCOL_PATTERN.matcher(newJRubyHome).matches()) {
-            File file = new File(newJRubyHome);
-
             try {
-                newJRubyHome = file.getCanonicalPath();
-            } catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
+                newJRubyHome = new File(newJRubyHome).getCanonicalPath();
+            }
+            catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
         }
 
-        return newJRubyHome;
+        return newJRubyHome == null ? null : JRubyFile.normalizeSeps(newJRubyHome);
     }
 
     // We require the home directory to be absolute
@@ -355,13 +353,14 @@ public class RubyInstanceConfig {
         }
         // do not normalize on plain jar like pathes coming from jruby-rack
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
-            NormalizedFile f = new NormalizedFile(home);
-            if (!f.isAbsolute()) {
-                home = f.getAbsolutePath();
+            File file = new File(home);
+            if (!file.exists()) {
+                final String tmpdir = SafePropertyAccessor.getProperty("java.io.tmpdir");
+                error.println("Warning: JRuby home \"" + file + "\" does not exist, using " + tmpdir);
+                return tmpdir;
             }
-            if (!f.exists()) {
-                error.println("Warning: JRuby home \"" + f + "\" does not exist, using " + SafePropertyAccessor.getProperty("java.io.tmpdir"));
-                return System.getProperty("java.io.tmpdir");
+            if (!file.isAbsolute()) {
+                home = file.getAbsolutePath();
             }
         }
         return home;

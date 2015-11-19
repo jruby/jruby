@@ -720,7 +720,7 @@ public class RubyDir extends RubyObject {
         String dir = path;
         String[] pathParts = RubyFile.splitURI(path);
         if (pathParts != null) {
-            if (pathParts[0].startsWith("file:") && pathParts[1].length() > 0 && pathParts[1].indexOf("!/") == -1) {
+            if (pathParts[0].startsWith("file:") && pathParts[1].length() > 0 && pathParts[1].indexOf(".jar!/") == -1) {
                 dir = pathParts[1];
             } else {
                 throw runtime.newErrnoENOTDIRError(dir);

@@ -140,7 +140,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             }
 
             if (varArgs != null /* && varargsMethods.size() > 0 */) {
-                varargsCallables = varArgs.toArray( createCallableArray(varArgs.size()) );
+                varargsCallables = (T[]) varArgs.toArray( createCallableArray(varArgs.size()) );
             }
             // NOTE: tested (4, false); with opt_for_space: false but does not
             // seem to give  the promised ~10% improvement in map's speed ...
