@@ -441,7 +441,19 @@ class TestFile < Test::Unit::TestCase
     def test_realpath
       assert_equal('/', File.realpath('/'))
     end
-  end # if windows
+  end # if WINDOWS else ... end
+
+  def test_paths_do_not_get_normalized_on_non_windows
+    # Linux doesn't mind '\' in file/dir names :
+    Dir.mkdir backslash = '_back\\slash'
+    path = File.expand_path backslash
+    assert path.end_with?(backslash), "path: #{path.inspect} does not end with: #{backslash.inspect}"
+    path = File.realpath path
+    assert path.end_with?(backslash), "path: #{path.inspect} does not end with: #{backslash.inspect}"
+    File.realpath backslash
+  ensure
+    Dir.rmdir '_back\\slash' rescue nil
+  end unless WINDOWS
 
   def test_dirname
     assert_equal(".", File.dirname(""))
