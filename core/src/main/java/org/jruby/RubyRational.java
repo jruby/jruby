@@ -232,7 +232,7 @@ public class RubyRational extends RubyNumeric {
             num = f_negate(context, num);
             den = f_negate(context, den);
         } else if (res == RubyFixnum.zero(runtime)) {
-            throw runtime.newZeroDivisionError();            
+            throw runtime.newZeroDivisionError();
         }
 
         IRubyObject gcd = f_gcd(context, num, den);
@@ -245,7 +245,7 @@ public class RubyRational extends RubyNumeric {
 
         return new RubyRational(context.runtime, clazz, num, den);
     }
-    
+
     /** nurat_s_canonicalize_internal_no_reduce
      * 
      */

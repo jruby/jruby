@@ -438,7 +438,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public RubyTime succ() {
-        return newTime(getRuntime(),dt.plusSeconds(1));
+        return newTime(getRuntime(), dt.plusSeconds(1));
     }
 
     @JRubyMethod(name = {"gmtime", "utc"})
@@ -894,7 +894,7 @@ public class RubyTime extends RubyObject {
     @Override
     public RubyFixnum hash() {
     	// modified to match how hash is calculated in 1.8.2
-        return getRuntime().newFixnum((int)(((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1);
+        return getRuntime().newFixnum((int) (((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1);
     }
 
     @JRubyMethod(name = "_dump", optional = 1)
