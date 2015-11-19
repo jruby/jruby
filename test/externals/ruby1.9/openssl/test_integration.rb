@@ -8,7 +8,7 @@ require 'net/https'
 class TestIntegration < Test::Unit::TestCase
   CACERT_FILE = File.join(File.dirname(__FILE__), "fixture", "cacert.pem");
   NEGATIVE_SERIAL_CERT_FILE = File.join(File.dirname(__FILE__), "fixture", "negative_serial_cert.pem");
-  
+
   def path(file)
     File.expand_path(file, File.dirname(__FILE__))
   end
@@ -29,7 +29,9 @@ class TestIntegration < Test::Unit::TestCase
   # Warning - this test actually uses the internet connection.
   # If there is no connection, it will fail.
   def test_ca_path_name
-    skip("pending")
+
+    skip("FIXME: failing since ~ 16.11 due JRuby-0penSSL https://github.com/jruby/jruby-openssl/issues/77")
+    
     uri = URI.parse('https://www.amazon.com')
     http = Net::HTTP.new(uri.host, uri.port)
     http.verify_mode = OpenSSL::SSL::VERIFY_PEER
@@ -43,7 +45,9 @@ class TestIntegration < Test::Unit::TestCase
   # Warning - this test actually uses the internet connection.
   # If there is no connection, it will fail.
   def test_ssl_verify
-    skip("pending")
+
+    skip("FIXME: failing since ~ 16.11 due JRuby-0penSSL https://github.com/jruby/jruby-openssl/issues/77")
+
     uri = URI.parse('https://www.amazon.com/')
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
@@ -115,7 +119,7 @@ class TestIntegration < Test::Unit::TestCase
     key = "KEYKEYKE"
     alg = "des"
     str = "string abc foo bar baxz"
-        
+
     cipher = OpenSSL::Cipher::Cipher.new(alg)
     cipher.encrypt
     cipher.key = key
@@ -123,16 +127,16 @@ class TestIntegration < Test::Unit::TestCase
     cipher.padding = 32
     cipher.key = key
     cipher.iv = iv
-    
+
     encrypted = cipher.update(str)
     encrypted << cipher.final
- 
+
     assert_equal "\253\305\306\372;\374\235\302\357/\006\360\355XO\232\312S\356* #\227\217", encrypted
   end
-  
+
   # jruby/jruby#823
   def test_negative_serial_number
-    cert_armor_regex = 
+    cert_armor_regex =
     /(-----BEGIN (X509 )?CERTIFICATE-----.+?-----END (X509 )?CERTIFICATE-----)/m
 
     assert_nothing_raised do
