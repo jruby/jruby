@@ -29,6 +29,7 @@ class TestIntegration < Test::Unit::TestCase
   # Warning - this test actually uses the internet connection.
   # If there is no connection, it will fail.
   def test_ca_path_name
+    skip("pending")
     uri = URI.parse('https://www.amazon.com')
     http = Net::HTTP.new(uri.host, uri.port)
     http.verify_mode = OpenSSL::SSL::VERIFY_PEER
@@ -42,6 +43,7 @@ class TestIntegration < Test::Unit::TestCase
   # Warning - this test actually uses the internet connection.
   # If there is no connection, it will fail.
   def test_ssl_verify
+    skip("pending")
     uri = URI.parse('https://www.amazon.com/')
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
