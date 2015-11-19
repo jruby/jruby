@@ -46,7 +46,6 @@ import org.jruby.util.FileResource;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
-import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.URLResource;
 import org.jruby.util.cli.ArgumentProcessor;
@@ -352,14 +351,13 @@ public class RubyInstanceConfig {
         // We will cannonicalize on windows so that jruby.home is also C:.
         // assume all those uri-like pathnames are already in absolute form
         if (Platform.IS_WINDOWS && !RubyFile.PROTOCOL_PATTERN.matcher(newJRubyHome).matches()) {
-            File file = new File(newJRubyHome);
-
             try {
-                newJRubyHome = file.getCanonicalPath();
-            } catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
+                newJRubyHome = new File(newJRubyHome).getCanonicalPath();
+            }
+            catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
         }
 
-        return newJRubyHome == null ? null : new NormalizedFile(newJRubyHome).getPath();
+        return newJRubyHome == null ? null : JRubyFile.normalizeSeps(newJRubyHome);
     }
 
     // We require the home directory to be absolute
