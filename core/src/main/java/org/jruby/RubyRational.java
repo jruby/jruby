@@ -150,8 +150,13 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_new
      * 
      */
-    private static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
+    static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
         return canonicalizeInternal(context, context.runtime.getRational(), x, y);
+    }
+
+    public static IRubyObject newRationalCanonicalize(ThreadContext context, long x, long y) {
+        Ruby runtime = context.runtime;
+        return canonicalizeInternal(context, runtime.getRational(), runtime.newFixnum(x), runtime.newFixnum(y));
     }
     
     /** f_rational_new2

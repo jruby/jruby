@@ -37,6 +37,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -56,6 +60,7 @@ import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -79,6 +84,9 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 @JRubyClass(name="Time", include="Comparable")
 public class RubyTime extends RubyObject {
     public static final String UTC = "UTC";
+    public static final BigDecimal ONE_MILLION_BD = new BigDecimal(1000000);
+    public static final BigInteger ONE_MILLION_BI = BigInteger.valueOf(1000000);
+    public static final BigDecimal ONE_THOUSAND_BD = new BigDecimal(1000);
     private DateTime dt;
     private long nsec;
 
@@ -744,8 +752,10 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_r(ThreadContext context) {
-        IRubyObject rational = to_f().to_r(context);
-        return rational;
+        return RubyRational.newRationalCanonicalize(
+                context,
+                getTimeInMillis() * 1000000 + nsec,
+                1000000000);
     }
 
     @JRubyMethod(name = {"usec", "tv_usec"})
@@ -1020,41 +1030,64 @@ public class RubyTime extends RubyObject {
             time = new RubyTime(runtime, (RubyClass) recv, other.dt);
             time.setNSec(other.getNSec());
         } else {
-            time = new RubyTime(runtime, (RubyClass) recv,
-                    new DateTime(0L, getLocalTimeZone(runtime)));
-
-            long seconds = RubyNumeric.num2long(arg);
-            long millisecs = 0;
-            long nanosecs = 0;
+            long nanosecs;
+            long millisecs;
 
             // In the case of two arguments, MRI will discard the portion of
             // the first argument after a decimal point (i.e., "floor").
             // However in the case of a single argument, any portion after
             // the decimal point is honored.
             if (arg instanceof RubyFloat || arg instanceof RubyRational) {
-                double dbl = RubyNumeric.num2dbl(arg);
                 long nano;
 
-                nano = Math.round((dbl - seconds) * 1000000000);
+                if (arg instanceof RubyFloat) {
+                    // use integral and decimal forms to calculate nanos
+                    long seconds = RubyNumeric.num2long(arg);
+                    double dbl = RubyNumeric.num2dbl(arg);
 
-                if (dbl < 0 && nano != 0) {
-                    nano += 1000000000;
+                    nano = (long)((dbl - seconds) * 1000000000);
+
+                    if (dbl < 0 && nano != 0) {
+                        nano += 1000000000;
+                    }
+
+                    millisecs = seconds * 1000 + nano / 1000000;
+                    nanosecs = nano % 1000000;
+                } else {
+                    // use Rational numerator and denominator to calculate nanos
+                    RubyRational rational = (RubyRational) arg;
+
+                    // These could have rounding errors if numerator or denominator are not integral and < long. Can they be?
+                    long numerator = rational.numerator(context).convertToInteger().getLongValue();
+                    long denominator = rational.denominator(context).convertToInteger().getLongValue();
+
+                    BigDecimal accurateSeconds = new BigDecimal(numerator).divide(new BigDecimal(denominator));
+                    BigDecimal accurateMillis = accurateSeconds.multiply(ONE_THOUSAND_BD);
+                    BigInteger integralMillis = accurateMillis.toBigInteger();
+                    BigInteger remainingNanos = accurateMillis.multiply(ONE_MILLION_BD).toBigInteger().subtract(integralMillis.multiply(ONE_MILLION_BI));
+
+                    millisecs = integralMillis.longValue();
+                    nanosecs = remainingNanos.longValue();
                 }
-                millisecs = nano / 1000000;
-                nanosecs = nano % 1000000;
+            } else {
+                nanosecs = 0;
+                millisecs = RubyNumeric.num2long(arg) * 1000;
             }
+
+            try {
+                time = new RubyTime(runtime, (RubyClass) recv,
+                        new DateTime(millisecs, getLocalTimeZone(runtime)));
+            }
+            // joda-time 2.5 can throw this exception - seen locally
+            catch(ArithmeticException e1) {
+                throw runtime.newRangeError(e1.getMessage());
+            }
+            // joda-time 2.5 can throw this exception - seen on travis
+            catch(IllegalFieldValueException e2) {
+                throw runtime.newRangeError(e2.getMessage());
+            }
+
             time.setNSec(nanosecs);
-	    try {
-		time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
-	    }
-	    // joda-time 2.5 can throw this exception - seen locally
-	    catch(ArithmeticException e1) {
-		throw runtime.newRangeError(e1.getMessage());
-	    }
-	    // joda-time 2.5 can throw this exception - seen on travis
-	    catch(IllegalFieldValueException e2) {
-		throw runtime.newRangeError(e2.getMessage());
-	    }
         }
 
         time.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, time);
