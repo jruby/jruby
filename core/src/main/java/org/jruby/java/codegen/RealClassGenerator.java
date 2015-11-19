@@ -59,9 +59,9 @@ public class RealClassGenerator {
     public static Class createOldStyleImplClass(Class[] superTypes, RubyClass rubyClass, Ruby ruby, String name, ClassDefiningClassLoader classLoader) {
         String[] superTypeNames = new String[superTypes.length];
         Map<String, List<Method>> simpleToAll = buildSimpleToAllMap(superTypes, superTypeNames);
-        
+
         Class newClass = defineOldStyleImplClass(ruby, name, superTypeNames, simpleToAll, classLoader);
-        
+
         return newClass;
     }
 
@@ -73,11 +73,11 @@ public class RealClassGenerator {
 
         return newClass;
     }
-    
+
     /**
      * This variation on defineImplClass uses all the classic type coercion logic
      * for passing args and returning results.
-     * 
+     *
      * @param ruby
      * @param name
      * @param superTypeNames
@@ -125,12 +125,13 @@ public class RealClassGenerator {
 
                 // for each simple method name, implement the complex methods, calling the simple version
                 for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
-                    String simpleName = entry.getKey();
-                    Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
+                    final String simpleName = entry.getKey();
+                    final List<Method> methods = entry.getValue();
+                    Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, methods);
 
                     Set<String> implementedNames = new HashSet<String>();
 
-                    for (Method method : entry.getValue()) {
+                    for (Method method : methods) {
                         Class[] paramTypes = method.getParameterTypes();
                         Class returnType = method.getReturnType();
 
@@ -256,7 +257,7 @@ public class RealClassGenerator {
                 try {fos.close();} catch (Exception e) {}
             }
         }
-        
+
         return newClass;
     }
 
@@ -285,7 +286,7 @@ public class RealClassGenerator {
             String[] plusIRubyObject = new String[superTypeNames.length + 1];
             plusIRubyObject[0] = p(IRubyObject.class);
             System.arraycopy(superTypeNames, 0, plusIRubyObject, 1, superTypeNames.length);
-            
+
             cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(superClass), plusIRubyObject);
         }
         cw.visitSource(pathName + ".gen", null);
@@ -345,15 +346,18 @@ public class RealClassGenerator {
         }
 
         int cacheSize = 0;
-        
+
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
-            String simpleName = entry.getKey();
-            Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
+            final String simpleName = entry.getKey();
+            final List<Method> methods = entry.getValue();
+            Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, methods);
 
-            Set<String> implementedNames = new HashSet<String>();
+            final int totalMethods = methods.size();
+            Set<String> implementedNames = new HashSet<String>(totalMethods, 1);
 
-            for (Method method : entry.getValue()) {
+            for (int i = 0; i < totalMethods; i++) {
+                final Method method = methods.get(i);
                 Class[] paramTypes = method.getParameterTypes();
                 Class returnType = method.getReturnType();
 
@@ -398,7 +402,7 @@ public class RealClassGenerator {
                     mv.line(5);
 
                     int cacheIndex = cacheSize++;
-                    
+
                     // prepare temp locals
                     mv.aload(0);
                     mv.invokeinterface(p(IRubyObject.class), "getRuntime", sig(Ruby.class));
@@ -413,7 +417,7 @@ public class RealClassGenerator {
                     }
                     mv.invokevirtual(p(RuntimeCache.class), "searchWithCache",
                             sig(DynamicMethod.class, params(IRubyObject.class, int.class, String.class, nameSet.size())));
-                    
+
                     // get current context
                     mv.aload(rubyIndex);
                     mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
