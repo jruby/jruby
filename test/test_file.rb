@@ -136,12 +136,12 @@ class TestFile < Test::Unit::TestCase
     end
 
 	def test_windows_network_path
-	
+
 		assert_equal("\\\\network\\share", File.dirname("\\\\network\\share\\file.bat"))
 		assert_equal("\\\\network\\share", File.dirname("\\\\network\\share"))
 		assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$\\boot.bat"))
 		assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$"))
-	
+
 	end
 
     def test_expand_path_windows
@@ -265,7 +265,7 @@ class TestFile < Test::Unit::TestCase
       assert_equal "file:/foo/bar", File.expand_path("../../foo/bar", "file:/baz/quux")
       assert_equal "file:/foo/bar", File.expand_path("../../../foo/bar", "file:/baz/quux")
     end
-    
+
     def test_expand_path_with_jar_prefix
       jruby_specific_test
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar")
@@ -275,7 +275,7 @@ class TestFile < Test::Unit::TestCase
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("../../foo/bar", "file:/my.jar!/baz/quux")
       #assert_equal "file:/my.jar!/foo/bar", File.expand_path("../../../foo/bar", "file:/my.jar!/baz/quux")
     end
-    
+
     def test_expand_path_with_jar_file_prefix
       jruby_specific_test
       assert_equal "jar:file:/my.jar!/foo/bar", File.expand_path("jar:file:/my.jar!/foo/bar")
@@ -381,7 +381,19 @@ class TestFile < Test::Unit::TestCase
       # this would fail on MRI 1.8.6 (MRI returns "/foo").
       assert_equal("//foo", File.expand_path("../foo", "//bar"))
     end
-  end # if windows
+  end # if WINDOWS else ... end
+
+  def test_paths_do_not_get_normalized_on_non_windows
+    # Linux doesn't mind '\' in file/dir names :
+    Dir.mkdir backslash = '_back\\slash'
+    path = File.expand_path backslash
+    assert path.end_with?(backslash), "path: #{path.inspect} does not end with: #{backslash.inspect}"
+    path = File.realpath path
+    assert path.end_with?(backslash), "path: #{path.inspect} does not end with: #{backslash.inspect}"
+    File.realpath backslash
+  ensure
+    Dir.rmdir '_back\\slash' rescue nil
+  end unless WINDOWS
 
   def test_dirname
     assert_equal(".", File.dirname(""))
@@ -663,7 +675,7 @@ class TestFile < Test::Unit::TestCase
         assert require('foo')
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
       end
-      
+
       with_load_path("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!") do
         assert require('abc/foo')
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
@@ -1257,7 +1269,7 @@ class TestFile < Test::Unit::TestCase
     File.open('file:test/dir with spaces/test_jar.jar!/abc/foo.rb'){}
     File.open('jar:file:test/dir with spaces/test_jar.jar!/abc/foo.rb'){}
   end
-  
+
   # JRUBY-3634: File.read or File.open with a url to a file resource fails with StringIndexOutOfBounds exception
   def test_file_url
     path = File.expand_path(__FILE__)
