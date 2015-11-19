@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,13 +43,26 @@ public class RealClassGenerator {
     private static final boolean DEBUG = false;
 
     private static Map<String, List<Method>> buildSimpleToAllMap(Class[] interfaces, String[] superTypeNames) throws SecurityException {
-        Map<String, List<Method>> simpleToAll = new HashMap<String, List<Method>>();
+        Map<String, List<Method>> simpleToAll = new LinkedHashMap<String, List<Method>>();
+        // we're use the map's order to work-around bug when there's too getters for a property :
+        // getFoo and isFoo in which case we make sure getFoo will come after isFoo in the map
+        // so that the installed "foo" alias always triggers getFoo regardless of getMethods order
         for (int i = 0; i < interfaces.length; i++) {
             superTypeNames[i] = p(interfaces[i]);
-            for (Method method : interfaces[i].getMethods()) {
-                List<Method> methods = simpleToAll.get(method.getName());
+            for ( Method method : interfaces[i].getMethods() ) {
+                final String name = method.getName();
+                List<Method> methods = simpleToAll.get(name);
                 if (methods == null) {
-                    simpleToAll.put(method.getName(), methods = new ArrayList<Method>());
+                    simpleToAll.put(name, methods = new ArrayList<Method>(6));
+
+                    if ( name.startsWith("is") && name.length() > 2 ) {
+                        final String getName = "get" + name.substring(2);
+                        List<Method> getMethods = simpleToAll.get(getName);
+                        if ( getMethods != null ) { // remove and re-add so that getFoo is after isFoo
+                            simpleToAll.remove(getName);
+                            simpleToAll.put(getName, getMethods);
+                        }
+                    }
                 }
                 methods.add(method);
             }
