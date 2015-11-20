@@ -723,7 +723,7 @@ describe "Class\#to_java" do
     end
 
     it "returns reified class for reified used classes" do
-      rubycls = Class.new
+      rubycls = Class.new; require 'jruby/core_ext'
       rubycls.become_java!
       rubycls.to_java(cls).should == JRuby.reference(rubycls).reified_class
     end
