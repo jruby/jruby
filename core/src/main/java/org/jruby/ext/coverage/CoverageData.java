@@ -42,6 +42,10 @@ public class CoverageData {
         return coverage != null;
     }
 
+    public Map<String, int[]> getCoverage() {
+      return this.coverage;
+    }
+
     public synchronized void setCoverageEnabled(Ruby runtime, boolean enabled) {
         if (enabled) {
             coverage = new HashMap<String, int[]>();
