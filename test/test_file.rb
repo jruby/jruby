@@ -213,7 +213,7 @@ class TestFile < Test::Unit::TestCase
     def test_realpath_windows
       assert_equal('C:/', File.realpath('C:/'))
       assert_equal('C:/', File.realpath('C:\\'))
-    end
+    end if RUBY_VERSION > '1.9'
   else
     def test_expand_path
       assert_equal("/bin", File.expand_path("../../bin", "/foo/bar"))
@@ -387,10 +387,10 @@ class TestFile < Test::Unit::TestCase
       # this would fail on MRI 1.8.6 (MRI returns "/foo").
       assert_equal("//foo", File.expand_path("../foo", "//bar"))
     end
-    
+
     def test_realpath
       assert_equal('/', File.realpath('/'))
-    end
+    end if RUBY_VERSION > '1.9'
   end # if WINDOWS else ... end
 
   def test_paths_do_not_get_normalized_on_non_windows
@@ -398,6 +398,7 @@ class TestFile < Test::Unit::TestCase
     Dir.mkdir backslash = '_back\\slash'
     path = File.expand_path backslash
     assert path.end_with?(backslash), "path: #{path.inspect} does not end with: #{backslash.inspect}"
+    return if RUBY_VERSION < '1.9'
     path = File.realpath path
     assert path.end_with?(backslash), "path: #{path.inspect} does not end with: #{backslash.inspect}"
     File.realpath backslash
