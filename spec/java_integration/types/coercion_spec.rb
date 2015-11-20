@@ -207,6 +207,16 @@ describe "Java Object-typed methods" do
     CoreTypeMethods.getObjectType(true).should == "class java.lang.Boolean"
     CoreTypeMethods.getObjectType(1 << 128).should == "class java.math.BigInteger"
   end
+
+  it "passes coerced to_java values - keeping the Java type" do
+    CoreTypeMethods.getObjectType('foo'.to_java).should == "class java.lang.String"
+    CoreTypeMethods.getObjectType(0.to_java).should == "class java.lang.Long"
+    CoreTypeMethods.getObjectType(1.to_java(:int)).should == "class java.lang.Integer"
+    CoreTypeMethods.getObjectType(1.to_java(:byte)).should == "class java.lang.Byte"
+    CoreTypeMethods.getObjectType(0.1.to_java(:double)).should == "class java.lang.Double"
+    CoreTypeMethods.getObjectType(0.1.to_java('java.lang.Float')).should == "class java.lang.Float"
+    CoreTypeMethods.getObjectType(false.to_java).should == "class java.lang.Boolean"
+  end
 end
 
 describe "Java String and primitive-typed fields" do
