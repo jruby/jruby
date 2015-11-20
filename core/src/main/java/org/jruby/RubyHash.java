@@ -1015,7 +1015,7 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            if (!key.isFrozen()) key = runtime.freezeAndDedupString(key);
+            if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
             internalPut(key, value, false);
         }
     }
@@ -1026,7 +1026,7 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            if (!key.isFrozen()) key = runtime.freezeAndDedupString(key);
+            if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
             internalPutSmall(key, value, false);
         }
     }

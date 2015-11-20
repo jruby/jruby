@@ -15,6 +15,8 @@ import org.jruby.util.ByteList;
  * This is not an immutable literal because I can gsub!,
  * for example, and modify the contents of the string.
  * This is not like a Java string.
+ *
+ * TODO: This really should be ImmutableLiteral so it can constant propagate, etc.
  */
 public class FrozenString extends StringLiteral {
     /**
