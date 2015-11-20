@@ -58,8 +58,21 @@ public class CoverageModule {
             throw runtime.newRuntimeError("coverage measurement is not enabled");
         }
         
-        Map<String, int[]> coverage = runtime.getCoverageData().resetCoverage(runtime);
+        return convertCoverageToRuby(context, runtime, runtime.getCoverageData().resetCoverage(runtime));
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject peekResult(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+
+        if (!runtime.getCoverageData().isCoverageEnabled()) {
+            throw runtime.newRuntimeError("coverage measurement is not enabled");
+        }
         
+        return convertCoverageToRuby(context, runtime, runtime.getCoverageData().getCoverage());
+    }
+
+    private static IRubyObject convertCoverageToRuby(ThreadContext context, Ruby runtime, Map<String, int[]> coverage) {
         // populate a Ruby Hash with coverage data
         RubyHash covHash = RubyHash.newHash(runtime);
         for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
