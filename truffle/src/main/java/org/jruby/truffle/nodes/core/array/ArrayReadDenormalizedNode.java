@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core.array;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -34,6 +33,7 @@ public abstract class ArrayReadDenormalizedNode extends RubyNode {
 
     public ArrayReadDenormalizedNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
+        readNode = ArrayReadNormalizedNodeGen.create(getContext(), getSourceSection(), null, null);
     }
 
     public abstract Object executeRead(VirtualFrame frame, DynamicObject array, int index);
@@ -41,11 +41,6 @@ public abstract class ArrayReadDenormalizedNode extends RubyNode {
     @Specialization(guards = "isRubyArray(array)")
     public Object read(VirtualFrame frame, DynamicObject array, int index,
             @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
-        if (readNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
-        }
-
         final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
         return readNode.executeRead(frame, array, normalizedIndex);
