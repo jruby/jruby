@@ -80,6 +80,12 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     }
 
     @TruffleBoundary
+    @Specialization(guards = "object.updateShape()")
+    public void updateShape(DynamicObject object, Object value) {
+        execute(object, value);
+    }
+
+    @TruffleBoundary
     @Specialization
     public void writeUncached(DynamicObject object, Object value) {
         object.updateShape();
