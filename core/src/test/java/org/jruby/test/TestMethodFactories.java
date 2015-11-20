@@ -29,8 +29,10 @@ package org.jruby.test;
 
 
 import org.jruby.Ruby;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -75,5 +77,28 @@ public class TestMethodFactories extends TestRubyBase {
         public static IRubyObject four_arg_method(IRubyObject self, IRubyObject[] obj) {
             return self.getRuntime().getTrue();
         }
+    }
+
+    public static class GH3463Module {
+        @JRubyMethod(module = true)
+        public static IRubyObject a_module_method(IRubyObject self) {
+            return self;
+        }
+    }
+
+    // Module methods define a second copy on singleton with proper implClass
+    // jruby/jruby#3463
+    public void testModuleMethodOwner() {
+        RubyModule mod = runtime.defineModule("GH3463Module");
+
+        mod.defineAnnotatedMethods(GH3463Module.class);
+
+        DynamicMethod method = mod.getSingletonClass().searchMethod("a_module_method");
+
+        assertEquals(mod.getSingletonClass(), method.getImplementationClass());
+
+        RubyMethod rubyMethod = (RubyMethod)mod.method(runtime.newSymbol("a_module_method"));
+
+        assertEquals(mod.getSingletonClass(), rubyMethod.owner(runtime.getCurrentContext()));
     }
 }

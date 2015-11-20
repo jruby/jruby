@@ -3734,6 +3734,7 @@ public class RubyModule extends RubyObject {
                 singletonClass = module.getSingletonClass();
                 // module/singleton methods are all defined public
                 DynamicMethod moduleMethod = dynamicMethod.dup();
+                moduleMethod.setImplementationClass(singletonClass);
                 moduleMethod.setVisibility(PUBLIC);
 
                 if (jrubyMethod.name().length == 0) {
