@@ -387,7 +387,6 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                         config.setDisableGems(false);
                     } else if (extendedOption.equals("+T")) {
-                        checkGraalVersion();
                         Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         config.setDisableGems(true);
@@ -710,18 +709,6 @@ public class ArgumentProcessor {
     private void logScriptResolutionFailure(String path) {
         if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
             config.getError().println("Searched: " + path);
-        }
-    }
-
-    public static void checkGraalVersion() {
-        final String graalVersion = System.getProperty("graal.version", "unknown");
-        final String expectedGraalVersion = "0.7";
-
-        if (graalVersion.equals("unknown")) {
-            return;
-        } else if (!graalVersion.equals(expectedGraalVersion)) {
-            throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion +
-                    " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
         }
     }
 
