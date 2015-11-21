@@ -76,6 +76,9 @@ public class JRubyUtilLibrary implements Library {
     @JRubyMethod(name = "objectspace=", module = true)
     public static IRubyObject setObjectSpaceEnabled(IRubyObject recv, IRubyObject arg) {
         Ruby runtime = recv.getRuntime();
+        if (arg.isTrue()) {
+            runtime.getWarnings().warn("ObjectSpace impacts performance. See http://wiki.jruby.org/PerformanceTuning#dont-enable-objectspace");
+        }
         runtime.setObjectSpaceEnabled(arg.isTrue());
         return runtime.getNil();
     }
