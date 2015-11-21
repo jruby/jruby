@@ -1932,6 +1932,16 @@ public class RubyHash extends RubyObject implements Map {
         return ifNone;
     }
 
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        return dig(context, args, 0);
+    }
+
+    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
+        final IRubyObject val = op_aref( context, args[idx++] );
+        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
+    }
+
     private static class VisitorIOException extends RuntimeException {
         VisitorIOException(Throwable cause) {
             super(cause);

@@ -537,6 +537,31 @@ public class RubyObject extends RubyBasicObject {
         return str;
     }
 
+    // MRI: rb_obj_dig
+    static IRubyObject dig(ThreadContext context, IRubyObject obj, IRubyObject[] args, int idx) {
+        if ( obj.isNil() ) return context.nil;
+        if ( obj instanceof RubyArray ) {
+            return ((RubyArray) obj).dig(context, args, idx);
+        }
+        if ( obj instanceof RubyHash ) {
+            return ((RubyHash) obj).dig(context, args, idx);
+        }
+        if ( obj.respondsTo("dig") ) {
+            final int len = args.length - idx;
+            switch ( len ) {
+                case 1:
+                    return obj.callMethod(context, "dig", args[idx]);
+                case 2:
+                    return obj.callMethod(context, "dig", new IRubyObject[] { args[idx], args[idx+1] });
+                default:
+                    IRubyObject[] rest = new IRubyObject[len];
+                    System.arraycopy(args, idx, rest, 0, len);
+                    return obj.callMethod(context, "dig", rest);
+            }
+        }
+        return context.nil; // can not dig further (there's still args left)
+    }
+
     /**
      * Tries to support Java serialization of Ruby objects. This is
      * still experimental and might not work.

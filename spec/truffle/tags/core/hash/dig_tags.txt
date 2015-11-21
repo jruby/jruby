@@ -1,0 +1,4 @@
+fails:Hash#dig returns [] with one arg
+fails:Hash#dig does recurse
+fails:Hash#dig raises without args
+fails:Hash#dig handles type-mixed deep digging
