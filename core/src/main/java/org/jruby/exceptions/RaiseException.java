@@ -229,6 +229,7 @@ public class RaiseException extends JumpException {
                 exception.prepareBacktrace(context, nativeException);
             } else {
                 exception.forceBacktrace(backtrace);
+                if ( backtrace.isNil() ) return;
             }
 
             // call Throwable.setStackTrace so that when RaiseException appears nested inside another exception,

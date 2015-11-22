@@ -33,6 +33,22 @@ public class TestRaiseException extends TestRubyBase {
         assertEquals( count + 1, runtime.getBacktraceCount() );
     }
 
+    public void testJavaGeneratedNilBacktrace() {
+        final int count = runtime.getBacktraceCount();
+        IRubyObject backtrace = runtime.getNil();
+
+        final RubyClass RuntimeError = runtime.getRuntimeError();
+        RaiseException re = new RaiseException(runtime, RuntimeError, "", backtrace, false);
+        backtrace = re.getException().backtrace();
+        assertNil( backtrace );
+
+        assertEquals( count, runtime.getBacktraceCount() );
+    }
+
+    private void assertNil(IRubyObject val) {
+        assertTrue("expected: " + val.inspect() + " to be nil", val.isNil());
+    }
+
     private void assertNotNil(IRubyObject val) {
         assertFalse("expected: " + val.inspect() + " to not be nil", val.isNil());
     }
