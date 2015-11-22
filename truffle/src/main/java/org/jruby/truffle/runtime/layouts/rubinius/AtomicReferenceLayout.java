@@ -26,7 +26,7 @@ public interface AtomicReferenceLayout extends BasicObjectLayout {
 
     Object getValue(DynamicObject object);
     void setValue(DynamicObject object, Object value);
-    boolean compareAndSetValue(DynamicObject object, Object expected_value, Object value);
+    boolean compareAndSetValue(DynamicObject object, Object expectedValue, Object value);
     Object getAndSetValue(DynamicObject object, Object value);
 
 }

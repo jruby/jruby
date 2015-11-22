@@ -77,8 +77,8 @@ public abstract class AtomicReferenceNodes {
         }
 
         @Specialization
-        public boolean compareAndSet(DynamicObject self, Object expected_value, Object value) {
-            return Layouts.ATOMIC_REFERENCE.compareAndSetValue(self, expected_value, value);
+        public boolean compareAndSet(DynamicObject self, Object expectedValue, Object value) {
+            return Layouts.ATOMIC_REFERENCE.compareAndSetValue(self, expectedValue, value);
         }
     }
 
