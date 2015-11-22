@@ -6,6 +6,7 @@ package org.jruby.exceptions;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.test.TestRubyBase;
 
@@ -30,6 +31,8 @@ public class TestRaiseException extends TestRubyBase {
         assertNotNil( backtrace );
         assertTrue( ((RubyArray) backtrace).isEmpty() );
 
+        assertNotSame( RubyStackTraceElement.EMPTY_ARRAY, re.getException().getBacktraceElements() );
+
         assertEquals( count + 1, runtime.getBacktraceCount() );
     }
 
@@ -41,6 +44,9 @@ public class TestRaiseException extends TestRubyBase {
         RaiseException re = new RaiseException(runtime, RuntimeError, "", backtrace, false);
         backtrace = re.getException().backtrace();
         assertNil( backtrace );
+
+        assertNil( re.getException().getBacktrace() );
+        assertSame( RubyStackTraceElement.EMPTY_ARRAY, re.getException().getBacktraceElements() );
 
         assertEquals( count, runtime.getBacktraceCount() );
     }

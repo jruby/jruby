@@ -83,12 +83,16 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod
     public IRubyObject backtrace() {
-        IRubyObject bt = getBacktrace();
-        return bt;
+        return getBacktrace();
     }
 
     @JRubyMethod(required = 1)
     public IRubyObject set_backtrace(IRubyObject obj) {
+        setBacktrace(obj);
+        return backtrace();
+    }
+
+    private void setBacktrace(IRubyObject obj) {
         if (obj.isNil()) {
             backtrace = null;
         } else if (isArrayOfStrings(obj)) {
@@ -98,8 +102,6 @@ public class RubyException extends RubyObject {
         } else {
             throw getRuntime().newTypeError("backtrace must be Array of String or a single String");
         }
-
-        return backtrace();
     }
 
     @JRubyMethod(omit = true)
@@ -240,7 +242,7 @@ public class RubyException extends RubyObject {
 
     public void forceBacktrace(IRubyObject backtrace) {
         backtraceData = (backtrace != null && backtrace.isNil()) ? null : BacktraceData.EMPTY;
-        set_backtrace(backtrace);
+        setBacktrace(backtrace);
     }
 
     public IRubyObject getBacktrace() {
