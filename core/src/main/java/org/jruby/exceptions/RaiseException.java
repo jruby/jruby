@@ -213,7 +213,7 @@ public class RaiseException extends JumpException {
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         return context.exceptionRequiresBacktrace ||
                 (debugMode != null && debugMode.isTrue()) ||
-                !exception.kind_of_p(context, context.runtime.getStandardError()).isTrue();
+                ! context.runtime.getStandardError().isInstance(exception);
     }
 
     private void preRaise(ThreadContext context, IRubyObject backtrace) {
