@@ -9,20 +9,29 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.ByteList;
+
+import java.io.IOException;
 
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
@@ -335,4 +344,53 @@ public abstract class TruffleInteropNodes {
         }
 
     }
+
+    @CoreMethod(names = "eval", isModuleFunction = true, needsSelf = false, required = 2)
+    @ImportStatic(StringCachingGuards.class)
+    public abstract static class EvalNode extends CoreMethodArrayArgumentsNode {
+
+        public EvalNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = {
+                "isRubyString(mimeType)",
+                "isRubyString(source)",
+                "byteListsEqual(mimeType, cachedMimeType)",
+                "byteListsEqual(source, cachedSource)"
+        }, limit = "getCacheLimit()")
+        public Object evalCached(
+                VirtualFrame frame,
+                DynamicObject mimeType,
+                DynamicObject source,
+                @Cached("privatizeByteList(mimeType)") ByteList cachedMimeType,
+                @Cached("privatizeByteList(source)") ByteList cachedSource,
+                @Cached("create(parse(mimeType, source))") DirectCallNode callNode
+        ) {
+            return callNode.call(frame, new Object[]{});
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = {"isRubyString(mimeType)", "isRubyString(source)"}, contains = "evalCached")
+        public Object evalUncached(VirtualFrame frame, DynamicObject mimeType, DynamicObject source) {
+            return parse(mimeType, source).call();
+        }
+
+        protected CallTarget parse(DynamicObject mimeType, DynamicObject source) {
+            final String mimeTypeString = mimeType.toString();
+            final Source sourceObject = Source.fromText(source.toString(), "(eval)").withMimeType(mimeTypeString);
+
+            try {
+                return getContext().getEnv().parse(sourceObject);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().EVAL_CACHE;
+        }
+
+    }
+
 }
