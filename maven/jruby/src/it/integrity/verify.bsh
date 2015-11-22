@@ -67,5 +67,5 @@ if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not 
 expected = "maven/jruby/target/it/integrity/target/classes/hello.rb";
 if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
 
-expected = "uri:classloader:/META-INF/jruby.home";
+expected = "uri:classloader://META-INF/jruby.home";
 if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
