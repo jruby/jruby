@@ -1787,6 +1787,16 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
+    @JRubyMethod(name = "fetch_values", rest = true)
+    public RubyArray fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
+        RubyArray result = RubyArray.newArray(getRuntime(), args.length);
+
+        for (int i = 0; i < args.length; i++) {
+            result.append(fetch(context, args[i], block));
+        }
+        return result;
+    }
+
     @JRubyMethod(name = "assoc")
     public IRubyObject assoc(final ThreadContext context, final IRubyObject obj) {
         try {
