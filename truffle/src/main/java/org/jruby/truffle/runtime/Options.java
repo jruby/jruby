@@ -14,6 +14,7 @@ public class Options {
     // Features
 
     public final boolean COVERAGE = org.jruby.util.cli.Options.TRUFFLE_COVERAGE.load();
+    public final boolean COVERAGE_GLOBAL = org.jruby.util.cli.Options.TRUFFLE_COVERAGE_GLOBAL.load();
 
     // Resources
 

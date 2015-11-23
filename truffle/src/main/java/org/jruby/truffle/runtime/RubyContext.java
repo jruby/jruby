@@ -148,8 +148,12 @@ public class RubyContext extends ExecutionContext {
 
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
-        if (options.COVERAGE) {
+        if (options.COVERAGE || options.COVERAGE_GLOBAL) {
             coverageTracker = new CoverageTracker();
+
+            if (options.COVERAGE_GLOBAL) {
+                env.instrumenter().install(coverageTracker);
+            }
         } else {
             coverageTracker = null;
         }
@@ -665,6 +669,10 @@ public class RubyContext extends ExecutionContext {
         }
 
         threadManager.shutdown();
+
+        if (options.COVERAGE_GLOBAL) {
+            coverageTracker.print(System.out);
+        }
     }
 
     public PrintStream getDebugStandardOut() {
