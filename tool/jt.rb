@@ -550,4 +550,7 @@ class JT
   end
 end
 
+# tool/jruby_eclipse only works on release currently
+ENV.delete("JRUBY_ECLIPSE") unless Utilities.graal_version
+
 JT.new.main(ARGV)
