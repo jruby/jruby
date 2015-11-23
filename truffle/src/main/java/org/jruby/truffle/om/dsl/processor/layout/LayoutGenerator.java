@@ -641,7 +641,7 @@ public class LayoutGenerator {
                 stream.println("    ");
             }
 
-            assert !(property.hasSetter() && property.hasUnsafeSetter());
+            // assert !(property.hasSetter() && property.hasUnsafeSetter());
 
             if (property.hasSetter() || property.hasUnsafeSetter()) {
                 addUncheckedCastWarning(stream, property);
