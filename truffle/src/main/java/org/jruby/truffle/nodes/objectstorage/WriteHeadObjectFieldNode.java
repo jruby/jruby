@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.objectstorage;
 import org.jruby.truffle.runtime.Options;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -79,14 +80,18 @@ public abstract class WriteHeadObjectFieldNode extends Node {
         }
     }
 
-    @TruffleBoundary
-    @Specialization(guards = "object.updateShape()")
+    @Specialization(guards = "updateShape(object)")
     public void updateShape(DynamicObject object, Object value) {
         execute(object, value);
     }
 
+    protected boolean updateShape(DynamicObject object) {
+        CompilerDirectives.transferToInterpreter();
+        return object.updateShape();
+    }
+
     @TruffleBoundary
-    @Specialization
+    @Specialization(contains = { "writeExistingField", "writeNewField", "updateShape" })
     public void writeUncached(DynamicObject object, Object value) {
         object.updateShape();
         final Shape shape = object.getShape();
