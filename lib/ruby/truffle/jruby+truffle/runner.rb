@@ -28,7 +28,10 @@ class JRubyTruffleRunner
     merge_hash         = -> ((k, v), old) { old.merge k => v }
     apply_pattern      = -> (pattern, old) do
       Dir.glob(pattern) do |file|
-        next if @options[:run][:exclude_pattern].any? { |p| /#{p}/ =~ file }
+        if @options[:run][:exclude_pattern].any? { |p| /#{p}/ =~ file }
+          puts "skipped: #{file}" if @options[:global][:verbose]
+          next
+        end
         @options[:run][:require] << File.expand_path(file)
       end
       old
