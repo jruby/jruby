@@ -151,6 +151,16 @@ public class RubyObjectSpace {
             for (IRubyObject arg : modules) {
                 block.yield(context, arg);
             }
+        } else if (args[0].getClass() == MetaClass.class) {
+            // each_object(Cls.singleton_class) is basically a walk of Cls and all descendants of Cls.
+            // In other words, this is walking all instances of Cls's singleton class and its subclasses.
+            IRubyObject attached = ((MetaClass)args[0]).getAttached();
+            block.yield(context, attached);
+            if (attached instanceof RubyClass) {
+                for (RubyClass child : ((RubyClass)attached).subclasses(true)) {
+                    block.yield(context, child);
+                }
+            }
         } else {
             if (!runtime.isObjectSpaceEnabled()) {
                 throw runtime.newRuntimeError("ObjectSpace is disabled; each_object will only work with Class, pass -X+O to enable");
