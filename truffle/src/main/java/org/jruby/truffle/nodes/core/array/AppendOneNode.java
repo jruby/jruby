@@ -151,7 +151,9 @@ public abstract class AppendOneNode extends RubyNode {
     public void appendOneGeneralizeGeneric(DynamicObject array, ArrayMirror storeMirror, Object value) {
         final int oldSize = Layouts.ARRAY.getSize(array);
         final int newSize = oldSize + 1;
-        Object[] newStore = storeMirror.getBoxedCopy(ArrayUtils.capacity(storeMirror.getLength(), newSize));
+        final int oldCapacity = storeMirror.getLength();
+        final int newCapacity = newSize > oldCapacity ? ArrayUtils.capacity(storeMirror.getLength(), newSize) : oldCapacity;
+        Object[] newStore = storeMirror.getBoxedCopy(newCapacity);
         newStore[oldSize] = value;
         Layouts.ARRAY.setStore(array, newStore);
         Layouts.ARRAY.setSize(array, newSize);

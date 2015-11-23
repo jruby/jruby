@@ -357,6 +357,8 @@ public abstract class ArrayUtils {
     }
 
     public static int capacity(int current, int needed) {
+        assert current < needed;
+
         if (needed < 16) {
             return 16;
         } else {
