@@ -65,7 +65,7 @@ if ( !file.exists() )
     throw new RuntimeException( "file '" + file + "' does not exists" );
 }
 
-expected = "uri:classloader:/META-INF/jruby.home";
+expected = "uri:classloader://META-INF/jruby.home";
 if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
 
 expected = "jruby home is a file: falsefalse";

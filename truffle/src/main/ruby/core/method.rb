@@ -11,7 +11,7 @@ class Method
   def inspect
     file, line = source_location
 
-    if file and line
+    if file && line
       "#<#{self.class}: #{receiver.class}(#{owner})##{name} #{file}:#{line}>"
     else
       "#<#{self.class}: #{receiver.class}(#{owner})##{name}>"

@@ -703,13 +703,15 @@ public class RubyHash extends RubyObject implements Map {
                 throw context.runtime.newArgumentError(args.length, 1);
         }
     }
+
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context) {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return getRuntime().getNil();
+            return context.nil;
         }
         return ifNone;
     }
+
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context, IRubyObject arg) {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
@@ -1533,16 +1535,15 @@ public class RubyHash extends RubyObject implements Map {
 
         RubyHashEntry entry = head.nextAdded;
         if (entry != head) {
-            RubyArray result = RubyArray.newArray(getRuntime(), entry.key, entry.value);
+            RubyArray result = RubyArray.newArray(context.runtime, entry.key, entry.value);
             internalDeleteEntry(entry);
             return result;
         }
 
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return Helpers.invoke(context, ifNone, "call", this, getRuntime().getNil());
-        } else {
-            return ifNone;
+            return this.callMethod(context, "default", context.nil);
         }
+        return ifNone;
     }
 
     public final boolean fastDelete(IRubyObject key) {

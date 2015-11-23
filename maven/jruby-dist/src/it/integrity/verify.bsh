@@ -49,5 +49,5 @@ if ( !log.contains( expected ) )
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
 
-String unexpected = "uri:classloader:/META-INF/jruby.home";
+String unexpected = "uri:classloader://META-INF/jruby.home";
 if ( log.contains( unexpected ) ) throw new RuntimeException( "log file does contain unexpected '" + unexpected + "'" );
