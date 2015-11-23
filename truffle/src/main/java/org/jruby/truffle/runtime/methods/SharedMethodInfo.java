@@ -68,6 +68,10 @@ public class SharedMethodInfo {
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
+        if (argumentDescriptors == null) {
+            return new ArgumentDescriptor[] {};
+        }
+
         return Arrays.copyOf(argumentDescriptors, argumentDescriptors.length);
     }
 
