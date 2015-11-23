@@ -364,17 +364,12 @@ public abstract class ArrayUtils {
         if (needed < INITIAL_CAPACITY) {
             return INITIAL_CAPACITY;
         } else {
-            int capacity = current;
-
-            if (capacity == 0) {
-                capacity = INITIAL_CAPACITY;
+            final int newCapacity = current << 1;
+            if (newCapacity >= needed) {
+                return newCapacity;
+            } else {
+                return needed;
             }
-
-            while (capacity < needed) {
-                capacity *= 2;
-            }
-
-            return capacity;
         }
     }
 
