@@ -333,6 +333,7 @@ module Commands
 
     case path
     when nil
+      test_tck
       test_specs('run')
       test_mri
     when 'pe' then test_pe(*rest)
