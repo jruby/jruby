@@ -356,16 +356,18 @@ public abstract class ArrayUtils {
         return longs;
     }
 
+    private static final int INITIAL_CAPACITY = 16;
+
     public static int capacity(int current, int needed) {
         assert current < needed;
 
-        if (needed < 16) {
-            return 16;
+        if (needed < INITIAL_CAPACITY) {
+            return INITIAL_CAPACITY;
         } else {
             int capacity = current;
 
             if (capacity == 0) {
-                capacity = 16;
+                capacity = INITIAL_CAPACITY;
             }
 
             while (capacity < needed) {
