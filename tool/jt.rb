@@ -228,11 +228,12 @@ module Commands
   end
 
   def build(project = nil)
+    opts = %w[-DskipTests]
     case project
     when 'truffle'
-      mvn '-pl', 'truffle', 'package'
+      mvn *opts, '-pl', 'truffle', 'package'
     when nil
-      mvn 'package'
+      mvn *opts, 'package'
     else
       raise ArgumentError, project
     end
