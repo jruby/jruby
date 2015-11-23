@@ -197,6 +197,7 @@ module Commands
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
     puts 'jt test                                        run all mri tests and specs'
+    puts 'jt test tck                                    run the Truffle Compatibility Kit tests'
     puts 'jt test mri                                    run mri tests'
     puts 'jt test specs                                  run all specs'
     puts 'jt test specs fast                             run all specs except sub-processes, GC, sleep, ...'
@@ -335,6 +336,7 @@ module Commands
       test_mri
     when 'pe' then test_pe(*rest)
     when 'specs' then test_specs('run', *rest)
+    when 'tck' then test_tck
     when 'mri' then test_mri(*rest)
     else
       if File.expand_path(path).start_with?("#{JRUBY_DIR}/test")
@@ -393,6 +395,11 @@ module Commands
     mspec env_vars, command, *options, *args
   end
   private :test_specs
+
+  def test_tck
+    mvn 'test'
+  end
+  private :test_tck
 
   def tag(path, *args)
     return tag_all(*args) if path == 'all'
