@@ -1430,12 +1430,12 @@ public class BodyTranslator extends Translator {
 
         final boolean inCore = rhs.getSourceSection().getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/");
         if (!inCore && READ_ONLY_GLOBAL_VARIABLES.contains(name)) {
-            return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
+            return addNewlineIfNeeded(node, new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs));
         }
 
         if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
-            return new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs, true);
+            return addNewlineIfNeeded(node, new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs, true));
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             if (environment.getNeverAssignInParentScope()) {
                 environment.declareVar(name);
@@ -1468,10 +1468,10 @@ public class BodyTranslator extends Translator {
                 assignment = GetFromThreadLocalNodeGen.create(context, sourceSection, assignment);
             }
 
-            return assignment;
+            return addNewlineIfNeeded(node, assignment);
         } else {
             final LiteralNode globalVariablesObjectNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
-            return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
+            return addNewlineIfNeeded(node, new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true));
 
         }
     }
