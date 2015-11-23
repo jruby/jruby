@@ -372,7 +372,7 @@ public abstract class TruffleInteropNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(mimeType)", "isRubyString(source)"}, contains = "evalCached")
-        public Object evalUncached(VirtualFrame frame, DynamicObject mimeType, DynamicObject source) {
+        public Object evalUncached(DynamicObject mimeType, DynamicObject source) {
             return parse(mimeType, source).call();
         }
 
