@@ -85,7 +85,6 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -284,6 +283,7 @@ public class BodyTranslator extends Translator {
         }
 
         final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), fixedArgsNode, null);
+        copyNewline(node, callNode);
         boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
         final RubyNode actualCall = translateCallNode(callNode, isAccessorOnSelf, false);
 
@@ -1071,6 +1071,7 @@ public class BodyTranslator extends Translator {
         string.addAll(node);
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), string);
         final org.jruby.ast.Node callNode = new org.jruby.ast.FCallNode(node.getPosition(), "`", argsNode, null);
+        copyNewline(node, callNode);
         final RubyNode ret = callNode.accept(this);
         return addNewlineIfNeeded(node, ret);
     }
@@ -1197,7 +1198,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitFCallNode(org.jruby.ast.FCallNode node) {
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), node.getArgsNode(), node.getIterNode());
-
+        copyNewline(node, callNode);
         return translateCallNode(callNode, true, false);
     }
 
@@ -1345,6 +1346,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.IterNode block = new org.jruby.ast.IterNode(node.getPosition(), blockArgs, node.getScope(), bodyWithTempAssign);
 
         final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, "each", null, block);
+        copyNewline(node, callNode);
 
         translatingForStatement = true;
         final RubyNode translated = callNode.accept(this);
@@ -1855,6 +1857,7 @@ public class BodyTranslator extends Translator {
 
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), new org.jruby.ast.GlobalVarNode(node.getPosition(), "$_"));
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getRegexpNode(), "=~", argsNode, null);
+        copyNewline(node, callNode);
         final RubyNode ret = callNode.accept(this);
         return addNewlineIfNeeded(node, ret);
     }
@@ -1889,6 +1892,7 @@ public class BodyTranslator extends Translator {
 
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
+        copyNewline(node, callNode);
         final RubyNode ret = callNode.accept(this);
         return addNewlineIfNeeded(node, ret);
     }
@@ -1899,6 +1903,7 @@ public class BodyTranslator extends Translator {
 
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
+        copyNewline(node, callNode);
         final RubyNode ret = callNode.accept(this);
         return addNewlineIfNeeded(node, ret);
     }
@@ -2353,6 +2358,8 @@ public class BodyTranslator extends Translator {
             operation = new org.jruby.ast.CallNode(node.getPosition(), arrayRead, node.getOperatorName(), buildArrayNode(node.getPosition(), operand), null);
         }
 
+        copyNewline(node, operation);
+
         final org.jruby.ast.Node arrayWrite = new org.jruby.ast.CallNode(node.getPosition(), readArrayFromTemp, "[]=", buildArrayNode(node.getPosition(), index, operation), null);
 
         final org.jruby.ast.BlockNode block = new org.jruby.ast.BlockNode(node.getPosition());
@@ -2655,6 +2662,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitUntilNode(org.jruby.ast.UntilNode node) {
         org.jruby.ast.WhileNode whileNode = new org.jruby.ast.WhileNode(node.getPosition(), node.getConditionNode(), node.getBodyNode(), node.evaluateAtStart());
+        copyNewline(node, whileNode);
         final RubyNode ret = translateWhileNode(whileNode, true);
         return addNewlineIfNeeded(node, ret);
     }
@@ -2669,6 +2677,7 @@ public class BodyTranslator extends Translator {
 
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), null, null);
+        copyNewline(node, callNode);
         final RubyNode ret = translateCallNode(callNode, true, true);
         return addNewlineIfNeeded(node, ret);
     }
@@ -2865,6 +2874,12 @@ public class BodyTranslator extends Translator {
             return addNewlineIfNeeded(node, ret);
         } else {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private void copyNewline(org.jruby.ast.Node from, org.jruby.ast.Node to) {
+        if (from.isNewline()) {
+            to.setNewline();
         }
     }
 
