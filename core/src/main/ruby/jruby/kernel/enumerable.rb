@@ -4,11 +4,6 @@ module Enumerable
 
     state = nil
 
-    if block && !no_filter
-      initial_state = filter.dup
-      state = initial_state
-    end
-
     Enumerator.new do |yielder|
       ary = nil
       each do |*elt|
@@ -17,11 +12,7 @@ module Enumerable
         end
 
         if block
-          if no_filter
-            state = block.call elt
-          else
-            state = block.call elt, initial_state
-          end
+          state = block.call elt
         else
           state = (filter === elt)
         end
