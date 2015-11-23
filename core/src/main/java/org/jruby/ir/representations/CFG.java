@@ -517,7 +517,7 @@ public class CFG {
         }
     }
 
-    private void optimize(List<BasicBlock> returnBBs) {
+    public void optimize(List<BasicBlock> returnBBs) {
         // Propagate returns backwards where possible.
         // If:
         // - there is an edge from BB: x -> r, and

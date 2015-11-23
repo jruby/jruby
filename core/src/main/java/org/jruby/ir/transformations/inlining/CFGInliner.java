@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CFGInliner {
-    private static final boolean debug = true;
+    private static final boolean debug = false;
     private final FullInterpreterContext fullInterpreterContext;
     private final CFG cfg;
     private final IRScope hostScope;
@@ -294,6 +294,7 @@ public class CFGInliner {
             inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
         }
 
+        // FIXME: If we keep track of returnBB's we can call fulle cfg.optimize
         // Optimize cfg by merging straight-line bbs
         cfg.collapseStraightLineBBs();
 
@@ -328,7 +329,6 @@ public class CFGInliner {
         // 2. Merge closure cfg into the current cfg
         CFG closureCFG = cl.getCFG();
 
-        printInlineCFG(closureCFG);
         BasicBlock closureGEB = closureCFG.getGlobalEnsureBB();
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (!b.isEntryBB() && !b.isExitBB() && b != closureGEB) cfg.addBasicBlock(b.cloneForInlining(ii));
