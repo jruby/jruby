@@ -36,23 +36,23 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-api</artifactId>
-      <version>07c98b5a949641810cf0c9824e45e8cfdb363ddb-SNAPSHOT</version>
+      <version>a6a1efa177d2aba0b726e024755ec571b601b4d2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-debug</artifactId>
-      <version>07c98b5a949641810cf0c9824e45e8cfdb363ddb-SNAPSHOT</version>
+      <version>a6a1efa177d2aba0b726e024755ec571b601b4d2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>07c98b5a949641810cf0c9824e45e8cfdb363ddb-SNAPSHOT</version>
+      <version>a6a1efa177d2aba0b726e024755ec571b601b4d2-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-tck</artifactId>
-      <version>07c98b5a949641810cf0c9824e45e8cfdb363ddb-SNAPSHOT</version>
+      <version>a6a1efa177d2aba0b726e024755ec571b601b4d2-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
