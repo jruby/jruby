@@ -101,7 +101,7 @@ class TestObjectSpace < Test::Unit::TestCase
     d = Class.new(b)
 
     classes = ObjectSpace.each_object(a.singleton_class).to_a
-    assert_equal(classes.sort_by(&:name), [a, b, c, d])
+    assert_equal(classes.sort_by(&:name), [a, b, c, d].sort_by(&:name))
   ensure
     JRuby.objectspace = old_objectspace
   end
