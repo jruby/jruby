@@ -225,6 +225,7 @@ class JRubyTruffleRunner
     if yaml_path && File.exist?(yaml_path)
       yaml_data = YAML.load_file(yaml_path)
       @options  = deep_merge @options, yaml_data
+      puts "loading #{yaml_path}"
     end
   end
 
