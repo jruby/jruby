@@ -51,22 +51,7 @@ public abstract class IsFrozenNode extends RubyNode {
         return true;
     }
 
-    @Specialization(guards = "isNil(nil)")
-    public boolean isFrozen(Object nil) {
-        return true;
-    }
-
-    @Specialization(guards = "isRubyBignum(object)")
-    public boolean isFrozenBignum(DynamicObject object) {
-        return true;
-    }
-
-    @Specialization(guards = "isRubySymbol(symbol)")
-    public boolean isFrozenSymbol(DynamicObject symbol) {
-        return true;
-    }
-
-    @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
+    @Specialization
     protected boolean isFrozen(DynamicObject object,
             @Cached("createReadFrozenNode()") ReadHeadObjectFieldNode readFrozenNode) {
         try {
