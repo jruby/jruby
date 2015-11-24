@@ -4,5 +4,5 @@ fails:Regexp with character classes matches Unicode letter characters with [[:al
 fails:Regexp with character classes matches Unicode letter characters with [[:graph:]]
 fails:Regexp with character classes matches unicode Han properties
 fails:Regexp with character classes matches unicode Hiragana properties
-fails:Regexp with character classes matches unicode Katakana properties 
+fails:Regexp with character classes matches unicode Katakana properties
 fails:Regexp with character classes matches unicode Hangul properties
