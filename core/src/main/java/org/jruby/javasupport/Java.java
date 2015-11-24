@@ -766,7 +766,7 @@ public class Java implements Library {
         return packageModule;
     }
 
-    private static final Pattern CAMEL_CASE_PACKAGE_SPLITTER = Pattern.compile("([a-z][0-9]*)([A-Z])");
+    private static final Pattern CAMEL_CASE_PACKAGE_SPLITTER = Pattern.compile("([a-z0-9_]+)([A-Z])");
 
     private static RubyModule getPackageModule(final Ruby runtime, final String name) {
         final RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
