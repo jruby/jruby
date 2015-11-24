@@ -204,14 +204,14 @@ public class LayoutParser {
 
         // assert !(isFactoryGetter & isObjectTypeGetter);
 
-        if (isFactoryGetter) {
-            // assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
-        } else if (isObjectTypeGetter) {
-            // assert methodElement.getParameters().get(0).getSimpleName().toString().equals("objectType");
-        } else {
-            // assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
-            // assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
-        }
+        //if (isFactoryGetter) {
+        //     assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
+        //} else if (isObjectTypeGetter) {
+        //     assert methodElement.getParameters().get(0).getSimpleName().toString().equals("objectType");
+        //} else {
+        //     assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+        //     assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+        //}
 
         final String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
         final PropertyBuilder property = getProperty(name);
@@ -236,12 +236,12 @@ public class LayoutParser {
 
         // assert !(isFactorySetter && isUnsafeSetter);
 
-        if (isFactorySetter) {
-            // assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
-        } else {
-            // assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
-            // assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
-        }
+        //if (isFactorySetter) {
+        //    assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
+        //} else {
+        //    assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+        //    assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+        //}
 
         String name = titleToCamel(methodElement.getSimpleName().toString().substring("set".length()));
 

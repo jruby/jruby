@@ -36,9 +36,9 @@ public class PropertyModel {
         // assert name != null;
         // assert type != null;
 
-        if (hasFactoryGetter || hasFactorySetter || hasObjectTypeGetter) {
-            // assert isShapeProperty;
-        }
+        //if (hasFactoryGetter || hasFactorySetter || hasObjectTypeGetter) {
+        //    assert isShapeProperty;
+        //}
 
         // assert !(volatileSemantics && isShapeProperty);
         // assert !(volatileSemantics && hasUnsafeSetter);
