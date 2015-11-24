@@ -759,15 +759,11 @@ public abstract class KernelNodes {
 
         public KernelFreezeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            freezeNode = FreezeNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
         public Object freeze(Object self) {
-            if (freezeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                freezeNode = insert(FreezeNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
-            }
-
             return freezeNode.executeFreeze(self);
         }
 
