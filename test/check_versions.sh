@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Checks that the artefacts produced by the JRuby build system have the correct
-# names and versions.
+# names and versions, and have reasonable sizes.
 
 jar_version=`cat VERSION`
 gem_version=${jar_version/-/.}
@@ -68,7 +68,7 @@ check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 8
 check maven/jruby-complete/target/jruby-complete-$jar_version.jar 27
 check maven/jruby/target/jruby-$jar_version.jar 9
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 45 jruby-$jar_version
-check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.tar.gz 19 jruby-$jar_version
+check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.tar.gz 20 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 14 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 45 jruby-$jar_version
 check core/target/jruby-core-$jar_version.jar 9
