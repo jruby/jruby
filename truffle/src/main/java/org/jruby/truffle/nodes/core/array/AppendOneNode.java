@@ -37,28 +37,28 @@ public abstract class AppendOneNode extends RubyNode {
 
     // TODO CS 12-May-15 differentiate between null and empty but possibly having enough space
 
-    @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
+    @Specialization(guards = "isEmptyArray(array)")
     public DynamicObject appendOneEmpty(DynamicObject array, int value) {
         Layouts.ARRAY.setStore(array, new int[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
+    @Specialization(guards = "isEmptyArray(array)")
     public DynamicObject appendOneEmpty(DynamicObject array, long value) {
         Layouts.ARRAY.setStore(array, new long[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
+    @Specialization(guards = "isEmptyArray(array)")
     public DynamicObject appendOneEmpty(DynamicObject array, double value) {
         Layouts.ARRAY.setStore(array, new double[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
+    @Specialization(guards = "isEmptyArray(array)")
     public DynamicObject appendOneEmpty(DynamicObject array, Object value) {
         Layouts.ARRAY.setStore(array, new Object[]{value});
         Layouts.ARRAY.setSize(array, 1);
@@ -67,28 +67,28 @@ public abstract class AppendOneNode extends RubyNode {
 
     // Append of the correct type
 
-    @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
+    @Specialization(guards = "isIntArray(array)")
     public DynamicObject appendOneSameType(DynamicObject array, int value,
                                    @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
+    @Specialization(guards = "isLongArray(array)")
     public DynamicObject appendOneSameType(DynamicObject array, long value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
+    @Specialization(guards = "isDoubleArray(array)")
     public DynamicObject appendOneSameType(DynamicObject array, double value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
+    @Specialization(guards = "isObjectArray(array)")
     public DynamicObject appendOneSameType(DynamicObject array, Object value,
                                   @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
@@ -114,7 +114,7 @@ public abstract class AppendOneNode extends RubyNode {
 
     // Append forcing a generalization from int[] to long[]
 
-    @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
+    @Specialization(guards = "isIntArray(array)")
     public DynamicObject appendOneLongIntoInteger(DynamicObject array, long value) {
         final int oldSize = Layouts.ARRAY.getSize(array);
         final int newSize = oldSize + 1;
@@ -130,19 +130,19 @@ public abstract class AppendOneNode extends RubyNode {
 
     // Append forcing a generalization to Object[]
 
-    @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)", "!isInteger(value)", "!isLong(value)"})
+    @Specialization(guards = { "isIntArray(array)", "!isInteger(value)", "!isLong(value)" })
     public DynamicObject appendOneGeneralizeInteger(DynamicObject array, Object value) {
         appendOneGeneralizeGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), value);
         return array;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)", "!isInteger(value)", "!isLong(value)"})
+    @Specialization(guards = { "isLongArray(array)", "!isInteger(value)", "!isLong(value)" })
     public DynamicObject appendOneGeneralizeLong(DynamicObject array, Object value) {
         appendOneGeneralizeGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), value);
         return array;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)", "!isDouble(value)"})
+    @Specialization(guards = { "isDoubleArray(array)", "!isDouble(value)" })
     public DynamicObject appendOneGeneralizeDouble(DynamicObject array, Object value) {
         appendOneGeneralizeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), value);
         return array;
