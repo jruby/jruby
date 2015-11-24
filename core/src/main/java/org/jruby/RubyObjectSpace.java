@@ -158,7 +158,11 @@ public class RubyObjectSpace {
             block.yield(context, attached);
             if (attached instanceof RubyClass) {
                 for (RubyClass child : ((RubyClass)attached).subclasses(true)) {
-                    block.yield(context, child);
+                    if (child instanceof IncludedModule || child.isSingleton()) {
+                        // do nothing for included wrappers or singleton classes
+                    } else {
+                        block.yield(context, child);
+                    }
                 }
             }
         } else {
