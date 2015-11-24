@@ -41,7 +41,7 @@ public class SharedMethodInfo {
         this.arity = arity;
         this.name = name;
         this.isBlock = isBlock;
-        this.argumentDescriptors = argumentDescriptors;
+        this.argumentDescriptors = argumentDescriptors == null ? new ArgumentDescriptor[] {} : argumentDescriptors;
         this.alwaysClone = alwaysClone;
         this.alwaysInline = alwaysInline;
         this.needsCallerFrame = needsCallerFrame;
@@ -68,10 +68,6 @@ public class SharedMethodInfo {
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
-        if (argumentDescriptors == null) {
-            return new ArgumentDescriptor[] {};
-        }
-
         return Arrays.copyOf(argumentDescriptors, argumentDescriptors.length);
     }
 
