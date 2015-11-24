@@ -273,6 +273,7 @@ require_relative 'core/truffle/attachments'
 require_relative 'core/truffle/debug'
 require_relative 'core/truffle/runtime'
 require_relative 'core/truffle/truffle'
+require_relative 'core/truffle/interop'
 
 # Start running Ruby code outside classes
 
