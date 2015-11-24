@@ -114,15 +114,19 @@ class JRubyTruffleRunner
     run_help = <<-TXT.gsub(/^ {6}/, '')
 
       Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [ruby-options]
+      Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [prepended-ruby-options] -- [appended-ruby-options]
+      Usage: #{EXECUTABLE} [options] run [subcommand-options] -S GEM_EXECUTABLE -- [ruby-options] -- [gem-executable-options]
+      Usage: #{EXECUTABLE} [options] run [subcommand-options] -S GEM_EXECUTABLE -- [gem-executable-options]
+      ('--' divides different kind of options)
 
       Runs file, -e expr, etc in setup environment on #{BRANDING}
-      (options after -- are interpreted by ruby not by this tool)
+
       Examples: #{EXECUTABLE} run -- a_file.rb
                 #{EXECUTABLE} run -- -S irb
                 #{EXECUTABLE} run -- -e 'puts :v'
-                #{EXECUTABLE} --verbose run -- -Itest test/a_test_file_test.rb
-
-      JVM options can be specified with a -J prefix.
+                #{EXECUTABLE} run -- -I test test/a_test_file_test.rb
+                #{EXECUTABLE} run -- -J-Xmx2G -- -I test test/a_test_file_test.rb
+                #{EXECUTABLE} --verbose run -S rspec -- -J-Xmx2G -- spec/some_spec.rb --format progress
 
     TXT
 
@@ -144,8 +148,7 @@ class JRubyTruffleRunner
     load_local_configuration
     build_option_parsers
 
-    vm_options, argv_after_vm_options = collect_vm_options argv
-    subcommand, *argv_after_global    = @option_parsers[:global].order argv_after_vm_options
+    subcommand, *argv_after_global = @option_parsers[:global].order argv
 
     if subcommand.nil?
       print_options
@@ -161,7 +164,7 @@ class JRubyTruffleRunner
     print_options
     help subcommand if @options[subcommand][:help] && subcommand != :readme
 
-    send "subcommand_#{subcommand}", vm_options, argv_after_subcommand
+    send "subcommand_#{subcommand}", argv_after_subcommand
   end
 
   def print_options
@@ -192,16 +195,6 @@ class JRubyTruffleRunner
     end
 
     @option_parsers.each { |key, option_parser| option_parser.banner = HELP[key] }
-  end
-
-  def collect_vm_options(argv)
-    vm_options    = []
-    other_options = argv.reject do |arg|
-      vm = arg.start_with? '-J'
-      vm_options.push arg if vm
-      vm
-    end
-    [vm_options, other_options]
   end
 
   def load_gem_configuration
@@ -281,7 +274,8 @@ class JRubyTruffleRunner
     end
   end
 
-  def subcommand_setup(vm_options, rest)
+  # TODO (pitr 24-Nov-2015): use correct gem and bundler commands, do not pick them up from PATH
+  def subcommand_setup(rest)
     bundle_cmd  = @options[:global][:bundle_cmd].split(' ')
     bundle_path = File.expand_path(@options[:global][:truffle_bundle_path])
 
@@ -317,8 +311,15 @@ class JRubyTruffleRunner
     end
   end
 
-  def subcommand_run(vm_options, rest)
+  def subcommand_run(rest)
     jruby_path = Pathname("#{@options[:global][:interpreter_path]}/../..").expand_path
+
+    ruby_options, rest = if rest.include?('--')
+                           split = rest.index('--')
+                           [rest[0...split], rest[(split+1)..-1]]
+                         else
+                           [[], rest]
+                         end
 
     unless jruby_path.absolute?
       jruby_path = jruby_path.relative_path_from(Pathname('.'))
@@ -340,11 +341,16 @@ class JRubyTruffleRunner
 
     core_load_path = "#{jruby_path}/truffle/src/main/ruby"
 
+    truffle_options = [
+        ('-X+T'),
+        ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core]),
+        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception] && !@options[:run][:test]),
+        (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug])
+    ]
+
     cmd_options = [
-        *(['-X+T', *vm_options] unless @options[:run][:test]),
-        *(["-Xtruffle.core.load_path=#{core_load_path}"] if !@options[:run][:test] && @options[:global][:use_fs_core]),
-        (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
-        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
+        *(truffle_options unless @options[:run][:test]),
+        *ruby_options,
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
         *@options[:run][:load_path].flat_map { |v| ['-I', v] },
         *@options[:run][:require].flat_map { |v| ['-r', v] }
@@ -364,11 +370,11 @@ class JRubyTruffleRunner
     exit $?.exitstatus
   end
 
-  def subcommand_clean(vm_options, rest)
+  def subcommand_clean(rest)
     FileUtils.rm_rf @options[:global][:truffle_bundle_path]
   end
 
-  def subcommand_readme(vm_options, rest)
+  def subcommand_readme(rest)
     readme_path = File.join File.dirname(__FILE__), 'README.md'
     puts File.read(readme_path)
   end
