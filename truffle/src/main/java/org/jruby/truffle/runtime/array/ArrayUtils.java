@@ -373,6 +373,14 @@ public abstract class ArrayUtils {
         }
     }
 
+    public static int capacityForOneMore(int current) {
+        if (current < INITIAL_CAPACITY) {
+            return INITIAL_CAPACITY;
+        } else {
+            return current << 1;
+        }
+    }
+
     public static void arraycopy(Object[] src, int srcPos, Object[] dest, int destPos, int length) {
         System.arraycopy(src, srcPos, dest, destPos, length);
     }

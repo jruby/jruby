@@ -102,7 +102,7 @@ public abstract class AppendOneNode extends RubyNode {
         final ArrayMirror newStoreMirror;
 
         if (extendProfile.profile(newSize > storeMirror.getLength())) {
-            newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacity(storeMirror.getLength(), newSize));
+            newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacityForOneMore(storeMirror.getLength()));
         } else {
             newStoreMirror = storeMirror;
         }
@@ -152,7 +152,7 @@ public abstract class AppendOneNode extends RubyNode {
         final int oldSize = Layouts.ARRAY.getSize(array);
         final int newSize = oldSize + 1;
         final int oldCapacity = storeMirror.getLength();
-        final int newCapacity = newSize > oldCapacity ? ArrayUtils.capacity(storeMirror.getLength(), newSize) : oldCapacity;
+        final int newCapacity = newSize > oldCapacity ? ArrayUtils.capacityForOneMore(storeMirror.getLength()) : oldCapacity;
         Object[] newStore = storeMirror.getBoxedCopy(newCapacity);
         newStore[oldSize] = value;
         Layouts.ARRAY.setStore(array, newStore);
