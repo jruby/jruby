@@ -38,28 +38,28 @@ public abstract class AppendOneNode extends RubyNode {
     // TODO CS 12-May-15 differentiate between null and empty but possibly having enough space
 
     @Specialization(guards = "isEmptyArray(array)")
-    public DynamicObject appendOneEmptyInt(DynamicObject array, int value) {
+    public DynamicObject appendOneEmpty(DynamicObject array, int value) {
         Layouts.ARRAY.setStore(array, new int[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
     @Specialization(guards = "isEmptyArray(array)")
-    public DynamicObject appendOneEmptyLong(DynamicObject array, long value) {
+    public DynamicObject appendOneEmpty(DynamicObject array, long value) {
         Layouts.ARRAY.setStore(array, new long[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
     @Specialization(guards = "isEmptyArray(array)")
-    public DynamicObject appendOneEmptyDouble(DynamicObject array, double value) {
+    public DynamicObject appendOneEmpty(DynamicObject array, double value) {
         Layouts.ARRAY.setStore(array, new double[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
     @Specialization(guards = "isEmptyArray(array)")
-    public DynamicObject appendOneEmptyObject(DynamicObject array, Object value) {
+    public DynamicObject appendOneEmpty(DynamicObject array, Object value) {
         Layouts.ARRAY.setStore(array, new Object[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
@@ -67,28 +67,28 @@ public abstract class AppendOneNode extends RubyNode {
 
     // Append of the correct type
 
-    @Specialization(guards = "isIntArray(array)", contains = "appendOneEmptyInt")
+    @Specialization(guards = "isIntArray(array)")
     public DynamicObject appendOneSameType(DynamicObject array, int value,
                                    @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
-    @Specialization(guards = "isLongArray(array)", contains = "appendOneEmptyLong")
+    @Specialization(guards = "isLongArray(array)")
     public DynamicObject appendOneSameType(DynamicObject array, long value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
-    @Specialization(guards = "isDoubleArray(array)", contains = "appendOneEmptyDouble")
+    @Specialization(guards = "isDoubleArray(array)")
     public DynamicObject appendOneSameType(DynamicObject array, double value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
-    @Specialization(guards = "isObjectArray(array)", contains = "appendOneEmptyObject")
+    @Specialization(guards = "isObjectArray(array)")
     public DynamicObject appendOneSameType(DynamicObject array, Object value,
                                   @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
