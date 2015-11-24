@@ -107,13 +107,13 @@ public class MethodTranslator extends BodyTranslator {
                 NodeUtil.cloneNode(loadArguments));
 
         // Procs
-        final RubyNode bodyProc = new CatchForProcNode(context, sourceSection, composeBody(preludeProc, (RubyNode) body.deepCopy()));
+        final RubyNode bodyProc = new CatchForProcNode(context, sourceSection, composeBody(preludeProc, NodeUtil.cloneNode(body)));
 
         final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
-        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection, composeBody(preludeLambda, (RubyNode) body.deepCopy()), environment.getReturnID());
+        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection, composeBody(preludeLambda, body /* no copy, last usage */), environment.getReturnID());
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
                 context, sourceSection,
