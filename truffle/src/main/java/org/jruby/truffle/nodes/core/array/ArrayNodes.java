@@ -4207,7 +4207,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isIntArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,
+                @Cached("createBinaryProfile()") ConditionProfile sameLengthProfile) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final int[] b = (int[]) Layouts.ARRAY.getStore(other);
@@ -4216,9 +4217,7 @@ public abstract class ArrayNodes {
             final int zippedLength = Layouts.ARRAY.getSize(array);
             final Object[] zipped = new Object[zippedLength];
 
-            final boolean areSameLength = bLength == zippedLength;
-
-            if (areSameLength) {
+            if (sameLengthProfile.profile(zippedLength == bLength)) {
                 for (int n = 0; n < zippedLength; n++) {
                     zipped[n] = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{a[n], b[n]}, 2);
                 }
@@ -4236,7 +4235,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isObjectArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,
+                @Cached("createBinaryProfile()") ConditionProfile sameLengthProfile) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final Object[] b = (Object[]) Layouts.ARRAY.getStore(other);
@@ -4245,9 +4245,7 @@ public abstract class ArrayNodes {
             final int zippedLength = Layouts.ARRAY.getSize(array);
             final Object[] zipped = new Object[zippedLength];
 
-            final boolean areSameLength = bLength == zippedLength;
-
-            if (areSameLength) {
+            if (sameLengthProfile.profile(zippedLength == bLength)) {
                 for (int n = 0; n < zippedLength; n++) {
                     zipped[n] = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{a[n], b[n]}, 2);
                 }
