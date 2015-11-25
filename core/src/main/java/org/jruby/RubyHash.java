@@ -46,8 +46,10 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -898,6 +900,37 @@ public class RubyHash extends RubyObject implements Map {
         } catch (NegativeArraySizeException nase) {
             throw concurrentModification();
         }
+    }
+
+    @JRubyMethod(name = "to_proc")
+    public RubyProc to_proc(ThreadContext context) {
+        final BlockBody body = new BlockBody(Signature.ONE_ARGUMENT) {
+            @Override
+            protected IRubyObject doYield(ThreadContext context, IRubyObject key, Block block) {
+                return op_aref(context, key);
+            }
+
+            @Override
+            protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block) {
+                return op_aref(context, args[0]);
+            }
+
+            @Override
+            public String getFile() { return null; }
+
+            @Override
+            public int getLine() { return -1; }
+
+            @Override
+            public StaticScope getStaticScope() {
+                return getRuntime().getStaticScopeFactory().getDummyScope();
+            }
+
+            @Override
+            public void setStaticScope(StaticScope newScope) { /* noop */ }
+        };
+
+        return RubyProc.newProc(context.runtime, new Block(body, context.currentBinding()), Block.Type.PROC);
     }
 
     /** rb_hash_to_s & to_s_hash
