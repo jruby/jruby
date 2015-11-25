@@ -32,12 +32,13 @@ import org.jruby.runtime.opto.ConstantCache;
  */
 public class BodyInterpreterEngine extends InterpreterEngine {
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -213,7 +214,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, blockArg, blockType);
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg) {
+        return interpret(context, block, self, interpreterContext, implClass, name, blockArg);
     }
 }

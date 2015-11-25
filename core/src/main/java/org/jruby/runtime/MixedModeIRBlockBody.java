@@ -133,7 +133,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         this.evalType.set(EvalType.NONE);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), blockArg, block.type);
+            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
             // IMPORTANT: Do not clear eval-type in case this is reused in bindings!

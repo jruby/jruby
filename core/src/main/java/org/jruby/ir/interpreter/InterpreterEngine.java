@@ -71,39 +71,39 @@ import java.util.Stack;
  */
 public class InterpreterEngine {
 
-    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, Block blockArg, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, IRubyObject.NULL_ARRAY, blockArg, blockType);
+                                 String name, Block blockArg) {
+        return interpret(context, block, self, interpreterContext, implClass, name, IRubyObject.NULL_ARRAY, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject arg1, Block blockArg, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1}, blockArg, blockType);
+                                 String name, IRubyObject arg1, Block blockArg) {
+        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject arg1, IRubyObject arg2, Block blockArg, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2}, blockArg, blockType);
+                                 String name, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
+        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg, blockType);
+                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
+        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg, blockType);
+                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
+        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                          InterpreterContext interpreterContext, RubyModule implClass,
-                                         String name, IRubyObject[] args, Block blockArg, Block.Type blockType) {
+                                         String name, IRubyObject[] args, Block blockArg) {
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
         double[]  floats    = interpreterContext.allocateTemporaryFloatVariables();
@@ -112,6 +112,7 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
 

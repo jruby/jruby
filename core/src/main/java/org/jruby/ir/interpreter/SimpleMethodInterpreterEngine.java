@@ -68,18 +68,19 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
         put(Operation.CONST_MISSING, true);
     }};
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg) {
         // Just use any interp since it will contain no recvs
-        return interpret(context, self, interpreterContext, implClass, name, (IRubyObject) null, blockArg, blockType);
+        return interpret(context, block, self, interpreterContext, implClass, name, (IRubyObject) null, blockArg);
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, Block blockArg, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -268,12 +269,13 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, Block blockArg, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -469,12 +471,13 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -671,12 +674,13 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -874,12 +878,13 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
