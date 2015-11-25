@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -40,17 +39,17 @@ public abstract class LookupMethodNode extends RubyNode {
         metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
     }
 
-    public abstract InternalMethod executeLookupMethod(VirtualFrame frame, Object self, String name);
+    public abstract InternalMethod executeLookupMethod(Object self, String name);
 
     @Specialization(
             guards = {
-                    "metaClass(frame, self) == selfMetaClass",
+                    "metaClass(self) == selfMetaClass",
                     "name == cachedName"
             },
             assumptions = "getUnmodifiedAssumption(selfMetaClass)",
             limit = "getCacheLimit()")
-    protected InternalMethod lookupMethodCached(VirtualFrame frame, Object self, String name,
-            @Cached("metaClass(frame, self)") DynamicObject selfMetaClass,
+    protected InternalMethod lookupMethodCached(Object self, String name,
+            @Cached("metaClass(self)") DynamicObject selfMetaClass,
             @Cached("name") String cachedName,
             @Cached("doLookup(selfMetaClass, name)") InternalMethod method) {
         return method;
@@ -61,13 +60,13 @@ public abstract class LookupMethodNode extends RubyNode {
     }
 
     @Specialization
-    protected InternalMethod lookupMethodUncached(VirtualFrame frame, Object self, String name) {
-        final DynamicObject selfMetaClass = metaClass(frame, self);
+    protected InternalMethod lookupMethodUncached(Object self, String name) {
+        final DynamicObject selfMetaClass = metaClass(self);
         return doLookup(selfMetaClass, name);
     }
 
-    protected DynamicObject metaClass(VirtualFrame frame, Object object) {
-        return metaClassNode.executeMetaClass(frame, object);
+    protected DynamicObject metaClass(Object object) {
+        return metaClassNode.executeMetaClass(object);
     }
 
     protected InternalMethod doLookup(DynamicObject selfMetaClass, String name) {

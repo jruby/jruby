@@ -58,7 +58,7 @@ public abstract class LookupSuperMethodNode extends RubyNode {
     protected InternalMethod lookupSuperMethodCachedDynamicObject(VirtualFrame frame, DynamicObject self,
             @Cached("getCurrentMethod(frame)") InternalMethod currentMethod,
             @Cached("self.getShape()") Shape cachedShape,
-            @Cached("metaClass(frame, self)") DynamicObject selfMetaClass,
+            @Cached("metaClass(self)") DynamicObject selfMetaClass,
             @Cached("doLookup(currentMethod, selfMetaClass)") InternalMethod superMethod) {
         return superMethod;
     }
@@ -73,7 +73,7 @@ public abstract class LookupSuperMethodNode extends RubyNode {
     protected InternalMethod lookupSuperMethodCachedPrimitive(VirtualFrame frame, Object self,
             @Cached("getCurrentMethod(frame)") InternalMethod currentMethod,
             @Cached("self.getClass()") Class<?> cachedClass,
-            @Cached("metaClass(frame, self)") DynamicObject selfMetaClass,
+            @Cached("metaClass(self)") DynamicObject selfMetaClass,
             @Cached("doLookup(currentMethod, selfMetaClass)") InternalMethod superMethod) {
         return superMethod;
     }
@@ -81,7 +81,7 @@ public abstract class LookupSuperMethodNode extends RubyNode {
     @Specialization
     protected InternalMethod lookupSuperMethodUncached(VirtualFrame frame, Object self) {
         final InternalMethod currentMethod = getCurrentMethod(frame);
-        final DynamicObject selfMetaClass = metaClass(frame, self);
+        final DynamicObject selfMetaClass = metaClass(self);
         return doLookup(currentMethod, selfMetaClass);
     }
 
@@ -93,8 +93,8 @@ public abstract class LookupSuperMethodNode extends RubyNode {
         return RubyArguments.getMethod(frame.getArguments());
     }
 
-    protected DynamicObject metaClass(VirtualFrame frame, Object object) {
-        return metaClassNode.executeMetaClass(frame, object);
+    protected DynamicObject metaClass(Object object) {
+        return metaClassNode.executeMetaClass(object);
     }
 
     protected InternalMethod doLookup(InternalMethod currentMethod, DynamicObject selfMetaClass) {

@@ -102,8 +102,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "!isDynamicObject(instance)")
-        public boolean containsInstance(VirtualFrame frame, DynamicObject module, Object instance) {
-            return includes(metaClassNode.executeMetaClass(frame, instance), module);
+        public boolean containsInstance(DynamicObject module, Object instance) {
+            return includes(metaClassNode.executeMetaClass(instance), module);
         }
 
         @TruffleBoundary

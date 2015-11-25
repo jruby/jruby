@@ -1083,7 +1083,7 @@ public abstract class KernelNodes {
             metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
-        public abstract boolean executeIsA(VirtualFrame frame, Object self, DynamicObject rubyClass);
+        public abstract boolean executeIsA(Object self, DynamicObject rubyClass);
 
         @Specialization(guards = { "isNil(nil)", "!isRubyModule(nil)" })
         public boolean isANil(DynamicObject self, Object nil) {
@@ -1092,12 +1092,11 @@ public abstract class KernelNodes {
 
         @Specialization(
                 limit = "getCacheLimit()",
-                guards = { "isRubyModule(module)", "getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule" },
+                guards = { "isRubyModule(module)", "getMetaClass(self) == cachedMetaClass", "module == cachedModule" },
                 assumptions = "getUnmodifiedAssumption(cachedModule)")
-        public boolean isACached(VirtualFrame frame,
-                                 Object self,
+        public boolean isACached(Object self,
                                  DynamicObject module,
-                                 @Cached("getMetaClass(frame, self)") DynamicObject cachedMetaClass,
+                                 @Cached("getMetaClass(self)") DynamicObject cachedMetaClass,
                                  @Cached("module") DynamicObject cachedModule,
                                  @Cached("isA(cachedMetaClass, cachedModule)") boolean result) {
             return result;
@@ -1108,12 +1107,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "isRubyModule(module)")
-        public boolean isAUncached(VirtualFrame frame, Object self, DynamicObject module) {
-            return isA(getMetaClass(frame, self), module);
+        public boolean isAUncached(Object self, DynamicObject module) {
+            return isA(getMetaClass(self), module);
         }
 
         @Specialization(guards = "!isRubyModule(module)")
-        public boolean isATypeError(VirtualFrame frame, Object self, Object module) {
+        public boolean isATypeError(Object self, Object module) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("class or module required", this));
         }
@@ -1123,8 +1122,8 @@ public abstract class KernelNodes {
             return ModuleOperations.assignableTo(metaClass, module);
         }
 
-        protected DynamicObject getMetaClass(VirtualFrame frame, Object object) {
-            return metaClassNode.executeMetaClass(frame, object);
+        protected DynamicObject getMetaClass(Object object) {
+            return metaClassNode.executeMetaClass(object);
         }
 
         protected int getCacheLimit() {
@@ -1226,13 +1225,13 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject method(VirtualFrame frame, Object self, DynamicObject name) {
             final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
-            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
+            InternalMethod method = lookupMethodNode.executeLookupMethod(self, normalizedName);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
 
                 if (respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true)) {
-                    final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(frame, self, "method_missing").withName(normalizedName);
+                    final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(self, "method_missing").withName(normalizedName);
                     final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
                     final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
@@ -1292,9 +1291,9 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "regular")
-        public DynamicObject methodsRegular(VirtualFrame frame, Object self, boolean regular,
+        public DynamicObject methodsRegular(Object self, boolean regular,
                                             @Cached("createMetaClassNode()") MetaClassNode metaClassNode) {
-            final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+            final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), regular, MethodFilter.PUBLIC_PROTECTED).toArray();
@@ -1350,8 +1349,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject privateMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+        public DynamicObject privateMethods(Object self, boolean includeAncestors) {
+            DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PRIVATE).toArray();
@@ -1397,8 +1396,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject protectedMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+        public DynamicObject protectedMethods(Object self, boolean includeAncestors) {
+            final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PROTECTED).toArray();
@@ -1427,8 +1426,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject publicMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+        public DynamicObject publicMethods(Object self, boolean includeAncestors) {
+            final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PUBLIC).toArray();
@@ -1761,8 +1760,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+        public DynamicObject singletonMethods(Object self, boolean includeAncestors) {
+            final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             if (!Layouts.CLASS.getIsSingleton(metaClass)) {
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);

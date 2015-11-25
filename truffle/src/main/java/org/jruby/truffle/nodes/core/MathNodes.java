@@ -363,7 +363,7 @@ public abstract class MathNodes {
 
         @Fallback
         public DynamicObject frexp(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return frexp(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -521,7 +521,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return function(
                         floatANode.callFloat(frame, a, "to_f", null),
                         integerBNode.callLongFixnum(frame, b, "to_int", null));
@@ -578,7 +578,7 @@ public abstract class MathNodes {
 
         @Fallback
         public DynamicObject lgamma(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return lgamma(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -617,7 +617,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(VirtualFrame frame, Object a, NotProvided b) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return doFunction(floatANode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -795,7 +795,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return doFunction(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -906,7 +906,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeIsA(frame, b, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeIsA(b, getContext().getCoreLibrary().getNumericClass())) {
                 return doFunction(
                         floatANode.callFloat(frame, a, "to_f", null),
                         floatBNode.callFloat(frame, b, "to_f", null));

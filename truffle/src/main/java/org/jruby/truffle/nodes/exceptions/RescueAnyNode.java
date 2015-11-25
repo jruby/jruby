@@ -31,7 +31,7 @@ public class RescueAnyNode extends RescueNode {
 
     @Override
     public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
-        return isANode.executeIsA(frame, exception, getContext().getCoreLibrary().getStandardErrorClass());
+        return isANode.executeIsA(exception, getContext().getCoreLibrary().getStandardErrorClass());
     }
 
 }

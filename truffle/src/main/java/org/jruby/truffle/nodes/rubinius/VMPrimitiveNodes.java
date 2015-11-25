@@ -239,8 +239,8 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyModule(rubyClass)")
-        public boolean vmObjectKindOf(VirtualFrame frame, Object object, DynamicObject rubyClass) {
-            return isANode.executeIsA(frame, object, rubyClass);
+        public boolean vmObjectKindOf(Object object, DynamicObject rubyClass) {
+            return isANode.executeIsA(object, rubyClass);
         }
 
     }

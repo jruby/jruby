@@ -81,8 +81,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public DynamicObject bind(VirtualFrame frame, DynamicObject unboundMethod, Object object) {
-            final DynamicObject objectMetaClass = metaClass(frame, object);
+        public DynamicObject bind(DynamicObject unboundMethod, Object object) {
+            final DynamicObject objectMetaClass = metaClass(object);
 
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(Layouts.UNBOUND_METHOD.getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
@@ -99,8 +99,8 @@ public abstract class UnboundMethodNodes {
             return Layouts.METHOD.createMethod(getContext().getCoreLibrary().getMethodFactory(), object, Layouts.UNBOUND_METHOD.getMethod(unboundMethod));
         }
 
-        protected DynamicObject metaClass(VirtualFrame frame, Object object) {
-            return metaClassNode.executeMetaClass(frame, object);
+        protected DynamicObject metaClass(Object object) {
+            return metaClassNode.executeMetaClass(object);
         }
 
     }
