@@ -20,13 +20,13 @@ public abstract class ContextAwareBlockBody extends BlockBody {
         this(scope, Signature.from(arity));
     }
 
-    protected Frame pre(ThreadContext context, Block b) {
-        return context.preYieldSpecificBlock(b.getBinding(), scope);
+    protected Frame pre(ThreadContext context, Block block) {
+        return context.preYieldSpecificBlock(block.getBinding(), scope);
     }
 
-    protected void post(ThreadContext context, Block b, Visibility vis, Frame lastFrame) {
-        b.getBinding().getFrame().setVisibility(vis);
-        context.postYield(b.getBinding(), lastFrame);
+    protected void post(ThreadContext context, Block block, Visibility vis, Frame lastFrame) {
+        block.getBinding().getFrame().setVisibility(vis);
+        context.postYield(block.getBinding(), lastFrame);
     }
 
     public StaticScope getStaticScope() {

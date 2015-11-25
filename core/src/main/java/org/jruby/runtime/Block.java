@@ -78,6 +78,10 @@ public final class Block {
     
     /** What block to use for determining escape; defaults to this */
     private Block escapeBlock = this;
+
+    private EvalType evalType;
+
+    private boolean hasExplicitCallProtocol = false;
     
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
@@ -95,6 +99,7 @@ public final class Block {
     }
 
     public void setEvalType(EvalType evalType) {
+        this.evalType = evalType;
         body.setEvalType(evalType);
     }
 
@@ -102,15 +107,15 @@ public final class Block {
         return body.call(context, args, this);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return body.call(context, args, this, block);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockArg) {
+        return body.call(context, args, this, blockArg);
     }
 
     public IRubyObject call(ThreadContext context) {
         return body.call(context, this);
     }
-    public IRubyObject call(ThreadContext context, Block block) {
-        return body.call(context, this, block);
+    public IRubyObject call(ThreadContext context, Block blockArg) {
+        return body.call(context, this, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context) {
         return body.yieldSpecific(context, this);
@@ -118,8 +123,8 @@ public final class Block {
     public IRubyObject call(ThreadContext context, IRubyObject arg0) {
         return body.call(context, arg0, this);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block block) {
-        return body.call(context, arg0, this, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockArg) {
+        return body.call(context, arg0, this, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0) {
         return body.yieldSpecific(context, arg0, this);
@@ -127,8 +132,8 @@ public final class Block {
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         return body.call(context, arg0, arg1, this);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return body.call(context, arg0, arg1, this, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
+        return body.call(context, arg0, arg1, this, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         return body.yieldSpecific(context, arg0, arg1, this);
@@ -136,8 +141,8 @@ public final class Block {
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return body.call(context, arg0, arg1, arg2, this);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return body.call(context, arg0, arg1, arg2, this, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
+        return body.call(context, arg0, arg1, arg2, this, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return body.yieldSpecific(context, arg0, arg1, arg2, this);

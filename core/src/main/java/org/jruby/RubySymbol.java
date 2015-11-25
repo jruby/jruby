@@ -469,50 +469,49 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
         final CallSite site = new FunctionalCachingCallSite(symbol);
         BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL) {
-            private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block block) {
+            private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
                 if (array.isEmpty()) {
                     throw context.runtime.newArgumentError("no receiver given");
                 }
 
                 IRubyObject self = array.shift(context);
 
-                return site.call(context, self, self, array.toJavaArray(), block);
+                return site.call(context, self, self, array.toJavaArray(), blockArg);
             }
 
             @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Block block) {
-                RubyProc.prepareArgs(context, b.type, block.getBody(), args);
-                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), block);
+            public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block, Block blockArg) {
+                RubyProc.prepareArgs(context, block.type, blockArg.getBody(), args);
+                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), blockArg);
             }
 
             @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject value,
-                    Block b, Block block) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), block);
+            public IRubyObject yield(ThreadContext context, IRubyObject value, Block block, Block blockArg) {
+                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), blockArg);
             }
 
             @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject value, Block b) {
+            protected IRubyObject doYield(ThreadContext context, IRubyObject value, Block block) {
                 return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
             }
 
             @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b) {
+            protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block) {
                 return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
             }
 
             @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Block b) {
+            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Block block) {
                 return site.call(context, arg0, arg0);
             }
 
             @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block b) {
+            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
                 return site.call(context, arg0, arg0, arg1);
             }
 
             @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block b) {
+            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
                 return site.call(context, arg0, arg0, arg1, arg2);
             }
 

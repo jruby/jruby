@@ -31,8 +31,8 @@ public class CompiledIRBlockBody extends IRBlockBody {
         return closure.getArgumentDescriptors();
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Block block) {
-        Binding binding = b.getBinding();
+    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block, Block blockArg) {
+        Binding binding = block.getBinding();
 
         // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
         // Do not use 'closure.getStaticScope()' -- that returns the original copy of the static scope.
@@ -67,7 +67,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         if (usesKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
         try {
-            return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, block, binding.getMethod(), b.type);
+            return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, blockArg, binding.getMethod(), block.type);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached
