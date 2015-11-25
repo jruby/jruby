@@ -78,7 +78,8 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         return null;
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {
+    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Type type, Block block) {
+        Binding binding = b.getBinding();
         if (callCount >= 0) promoteToFullBuild(context);
 
         // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.

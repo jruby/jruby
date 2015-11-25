@@ -61,115 +61,115 @@ public abstract class BlockBody {
         System.err.println("setEvalType unimplemented in " + this.getClass().getName());
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block b, Block.Type type) {
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, binding, type);
+        return yield(context, args, null, b, type);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block b,
             Block.Type type, Block block) {
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, binding, type, block);
+        return yield(context, args, null, b, type, block);
     }
 
-    public final IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
-        return doYield(context, value, binding, type);
+    public final IRubyObject yield(ThreadContext context, IRubyObject value, Block b, Block.Type type) {
+        return doYield(context, value, b, type);
     }
 
     public final IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                   Binding binding, Block.Type type) {
+                                   Block b, Block.Type type) {
         IRubyObject[] preppedValue = RubyProc.prepareArgs(context, type, this, args);
-        return doYield(context, preppedValue, self, binding, type);
+        return doYield(context, preppedValue, self, b, type);
     }
 
     /**
      * Subclass specific yield implementation.
      * <p>
-     * Should not be called directly. Gets called by {@link #yield(ThreadContext, IRubyObject, Binding, Block.Type)}
+     * Should not be called directly. Gets called by {@link #yield(ThreadContext, IRubyObject, Block, Block.Type)}
      * after ensuring that any common yield logic is taken care of.
      */
-    protected abstract IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
+    protected abstract IRubyObject doYield(ThreadContext context, IRubyObject value, Block b, Block.Type type);
 
     /**
      * Subclass specific yield implementation.
      * <p>
-     * Should not be called directly. Gets called by {@link #yield(ThreadContext, org.jruby.runtime.builtin.IRubyObject[], org.jruby.runtime.builtin.IRubyObject, Binding, org.jruby.runtime.Block.Type)}
+     * Should not be called directly. Gets called by {@link #yield(ThreadContext, org.jruby.runtime.builtin.IRubyObject[], org.jruby.runtime.builtin.IRubyObject, Block, org.jruby.runtime.Block.Type)}
      * after ensuring that all common yield logic is taken care of.
      */
     protected abstract IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                           Binding binding, Block.Type type);
+                                           Block b, Block.Type type);
 
     // FIXME: This should be unified with the final versions above
     // Here to allow incremental replacement. Overriden by subclasses which support it.
     public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                             Binding binding, Block.Type type, Block block) {
-        return yield(context, args, self, binding, type);
+                             Block b, Block.Type type, Block block) {
+        return yield(context, args, self, b, type);
     }
 
     // FIXME: This should be unified with the final versions above
     // Here to allow incremental replacement. Overriden by subclasses which support it.
     public IRubyObject yield(ThreadContext context, IRubyObject value,
-            Binding binding, Block.Type type, Block block) {
-        return yield(context, value, binding, type);
+            Block b, Block.Type type, Block block) {
+        return yield(context, value, b, type);
     }
 
-    public IRubyObject call(ThreadContext context, Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, Block b, Block.Type type) {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, binding, type);
+        return yield(context, args, null, b, type);
     }
-    public IRubyObject call(ThreadContext context, Binding binding,
+    public IRubyObject call(ThreadContext context, Block b,
             Block.Type type, Block unusedBlock) {
-        return call(context, binding, type);
+        return call(context, b, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
-        return yield(context, null, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, Block b, Block.Type type) {
+        return yield(context, null, b, type);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block b, Block.Type type) {
         IRubyObject[] args = new IRubyObject[] {arg0};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, binding, type);
+        return yield(context, args, null, b, type);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block b,
             Block.Type type, Block unusedBlock) {
-        return call(context, arg0, binding, type);
+        return call(context, arg0, b, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        return yield(context, arg0, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Block b, Block.Type type) {
+        return yield(context, arg0, b, type);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block b, Block.Type type) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, binding, type);
+        return yield(context, args, null, b, type);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block b,
             Block.Type type, Block unusedBlock) {
-        return call(context, arg0, arg1, binding, type);
+        return call(context, arg0, arg1, b, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1 }, null, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block b, Block.Type type) {
+        return yield(context, new IRubyObject[] { arg0, arg1 }, null, b, type);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block b, Block.Type type) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, binding, type);
+        return yield(context, args, null, b, type);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block b,
             Block.Type type, Block unusedBlock) {
-        return call(context, arg0, arg1, arg2, binding, type);
+        return call(context, arg0, arg1, arg2, b, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block b, Block.Type type) {
+        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, b, type);
     }
 
 
