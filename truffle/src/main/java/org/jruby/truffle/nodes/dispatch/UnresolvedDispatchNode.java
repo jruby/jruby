@@ -58,6 +58,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final Object[] argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
+        // Make sure to have an up-to-date Shape.
+        if (receiverObject instanceof DynamicObject) {
+            ((DynamicObject) receiverObject).updateShape();
+        }
+
         final DispatchNode dispatch = atomic(new Callable<DispatchNode>() {
             @Override
             public DispatchNode call() throws Exception {
@@ -159,9 +164,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else {
             callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
         }
-
-        // Make sure to have an up-to-date Shape.
-        ((DynamicObject) receiverObject).updateShape();
 
         final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
 
