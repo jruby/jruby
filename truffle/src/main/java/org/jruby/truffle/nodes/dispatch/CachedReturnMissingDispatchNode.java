@@ -10,63 +10,39 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.Shape;
+
+import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNode;
+import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
 
-public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
+public class CachedReturnMissingDispatchNode extends CachedDispatchNode {
 
-    private final Shape expectedShape;
+    private final DynamicObject expectedClass;
     private final Assumption unmodifiedAssumption;
-    private final InternalMethod method;
 
-    @Child private DirectCallNode callNode;
+    @Child private MetaClassWithShapeCacheNode metaClassNode;
 
-    public CachedBoxedMethodMissingDispatchNode(
+    public CachedReturnMissingDispatchNode(
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            Shape expectedShape,
             DynamicObject expectedClass,
-            InternalMethod method,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, dispatchAction);
 
-        this.expectedShape = expectedShape;
+        this.expectedClass = expectedClass;
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
-        this.method = method;
-        this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-
-        /*
-         * The way that #method_missing is used is usually as an indirection to call some other method, and
-         * possibly to modify the arguments. In both cases, but especially the latter, it makes a lot of sense
-         * to manually clone the call target and to inline it.
-         */
-
-        if (callNode.isCallTargetCloningAllowed()
-                && (getContext().getOptions().METHODMISSING_ALWAYS_CLONE || method.getSharedMethodInfo().shouldAlwaysClone())) {
-            insert(callNode);
-            callNode.cloneCallTarget();
-        }
-
-        if (callNode.isInlinable() && getContext().getOptions().METHODMISSING_ALWAYS_INLINE) {
-            insert(callNode);
-            callNode.forceInlining();
-        }
+        this.metaClassNode = MetaClassWithShapeCacheNodeGen.create(context, getSourceSection(), null);
     }
 
     @Override
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof DynamicObject) &&
-                ((DynamicObject) receiver).getShape() == expectedShape;
+                metaClassNode.executeMetaClass(receiver) == expectedClass;
     }
 
     @Override
@@ -101,13 +77,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
         switch (getDispatchAction()) {
             case CALL_METHOD:
-                // When calling #method_missing we need to prepend the symbol
-
-                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
-                modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
-                ArrayUtils.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
-
-                return call(callNode, frame, method, receiverObject, blockObject, modifiedArgumentsObjects);
+                return MISSING;
 
             case RESPOND_TO_METHOD:
                 return false;

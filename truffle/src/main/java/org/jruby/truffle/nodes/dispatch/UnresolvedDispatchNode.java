@@ -197,13 +197,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object methodName,
             Object receiverObject) {
-        // TODO (eregon, 26 Aug. 2015): should handle primitive types as well
-        final Shape shape = (receiverObject instanceof DynamicObject) ? ((DynamicObject) receiverObject).getShape() : null;
-
         switch (missingBehavior) {
             case RETURN_MISSING: {
-                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first, shape,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), getDispatchAction());
+                return new CachedReturnMissingDispatchNode(getContext(), methodName, first, getContext().getCoreLibrary().getMetaClass(receiverObject),
+                        getDispatchAction());
             }
 
             case CALL_METHOD_MISSING: {
@@ -214,8 +211,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                             receiverObject.toString() + " didn't have a #method_missing", this));
                 }
 
-                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first, shape,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, getDispatchAction());
+                return new CachedMethodMissingDispatchNode(getContext(), methodName, first, getContext().getCoreLibrary().getMetaClass(receiverObject),
+                        method, getDispatchAction());
             }
 
             default: {
