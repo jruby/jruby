@@ -46,7 +46,7 @@ public abstract class TimePrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
         @Child private ReadTimeZoneNode readTimeZoneNode;
-        
+
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
@@ -58,7 +58,7 @@ public abstract class TimePrimitiveNodes {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
             return allocateObjectNode.allocate(timeClass, now((DynamicObject) readTimeZoneNode.execute(frame)), nil());
         }
-        
+
         @TruffleBoundary
         private DateTime now(DynamicObject timeZone) {
             assert RubyGuards.isRubyString(timeZone);
@@ -198,7 +198,7 @@ public abstract class TimePrimitiveNodes {
                 zone = createString(StringOperations.encodeByteList(zoneString, UTF8Encoding.INSTANCE));
             }
 
-            final Object[] decomposed = new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
+            final Object[] decomposed = new Object[]{ sec, min, hour, day, month, year, wday, yday, isdst, zone };
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), decomposed, decomposed.length);
         }
 
@@ -235,18 +235,18 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public DynamicObject timeSFromArray(VirtualFrame frame, DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
-                int nsec, int isdst, boolean fromutc, Object utcoffset) {
+                                            int nsec, int isdst, boolean fromutc, Object utcoffset) {
             return buildTime(frame, timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization(guards = "!isInteger(sec) || !isInteger(nsec)")
         public DynamicObject timeSFromArrayFallback(VirtualFrame frame, DynamicObject timeClass, Object sec, int min, int hour, int mday, int month, int year,
-                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
+                                                    Object nsec, int isdst, boolean fromutc, Object utcoffset) {
             return null; // Primitive failure
         }
 
         private DynamicObject buildTime(VirtualFrame frame, DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
-                                       int nsec, int isdst, boolean fromutc, Object utcoffset) {
+                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
             CompilerDirectives.transferToInterpreter();
 
             if (sec < 0 || sec > 59 ||
@@ -465,7 +465,6 @@ public abstract class TimePrimitiveNodes {
             }
         }
 
-
     }
 
     @RubiniusPrimitive(name = "time_utc_offset")
@@ -478,6 +477,7 @@ public abstract class TimePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public Object timeUTCOffset(DynamicObject time) {
+
             Object offset = Layouts.TIME.getOffset(time);
             if (offset != nil()) {
                 return offset;
