@@ -32,6 +32,7 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.RubyDateFormatter;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -401,7 +402,7 @@ public abstract class TimePrimitiveNodes {
         );
 
         private DateTimeZone parseTimeZoneString(String zone) {
-            String upZone = zone.toUpperCase();
+            String upZone = zone.toUpperCase(Locale.ENGLISH);
 
             Matcher tzMatcher = TZ_PATTERN.matcher(zone);
             if (tzMatcher.matches()) {
