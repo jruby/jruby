@@ -95,7 +95,6 @@ public final class Block {
     }
 
     public void setEvalType(EvalType evalType) {
-        this.evalType = evalType;
         body.setEvalType(evalType);
     }
 
