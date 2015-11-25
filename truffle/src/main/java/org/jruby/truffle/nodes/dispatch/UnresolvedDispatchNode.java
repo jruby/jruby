@@ -160,6 +160,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
         }
 
+        // Make sure to have an up-to-date Shape.
+        ((DynamicObject) receiverObject).updateShape();
+
         final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
 
         if (method == null) {

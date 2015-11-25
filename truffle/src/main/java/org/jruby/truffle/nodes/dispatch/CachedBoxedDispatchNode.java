@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     private final Shape expectedShape;
+    private final Assumption validShape;
     private final Assumption unmodifiedAssumption;
 
     private final InternalMethod method;
@@ -39,6 +40,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         super(context, cachedName, next, dispatchAction);
 
         this.expectedShape = expectedShape;
+        this.validShape = expectedShape.getValidAssumption();
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
         this.method = method;
@@ -72,6 +74,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         // Check the class has not been modified
 
         try {
+            validShape.check();
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
