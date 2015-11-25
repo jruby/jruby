@@ -35,30 +35,28 @@ public abstract class AppendOneNode extends RubyNode {
 
     // Append into an empty array
 
-    // TODO CS 12-May-15 differentiate between null and empty but possibly having enough space
-
-    @Specialization(guards = "isEmptyArray(array)")
+    @Specialization(guards = "isNullArray(array)")
     public DynamicObject appendOneEmpty(DynamicObject array, int value) {
         Layouts.ARRAY.setStore(array, new int[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
-    @Specialization(guards = "isEmptyArray(array)")
+    @Specialization(guards = "isNullArray(array)")
     public DynamicObject appendOneEmpty(DynamicObject array, long value) {
         Layouts.ARRAY.setStore(array, new long[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
-    @Specialization(guards = "isEmptyArray(array)")
+    @Specialization(guards = "isNullArray(array)")
     public DynamicObject appendOneEmpty(DynamicObject array, double value) {
         Layouts.ARRAY.setStore(array, new double[]{value});
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
-    @Specialization(guards = "isEmptyArray(array)")
+    @Specialization(guards = "isNullArray(array)")
     public DynamicObject appendOneEmpty(DynamicObject array, Object value) {
         Layouts.ARRAY.setStore(array, new Object[]{value});
         Layouts.ARRAY.setSize(array, 1);
