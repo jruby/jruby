@@ -15,12 +15,12 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.objects.MetaClassNode;
-import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
+import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNode;
+import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -34,11 +34,11 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 @NodeChild("self")
 public abstract class LookupSuperMethodNode extends RubyNode {
 
-    @Child MetaClassNode metaClassNode;
+    @Child MetaClassWithShapeCacheNode metaClassNode;
 
     public LookupSuperMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+        metaClassNode = MetaClassWithShapeCacheNodeGen.create(context, sourceSection, null);
     }
 
     public abstract InternalMethod executeLookupSuperMethod(VirtualFrame frame, Object self);
@@ -51,28 +51,12 @@ public abstract class LookupSuperMethodNode extends RubyNode {
 
     @Specialization(guards = {
             "getCurrentMethod(frame) == currentMethod",
-            "self.getShape() == cachedShape"
+            "metaClass(self) == selfMetaClass"
     },
             assumptions = "getUnmodifiedAssumption(selfMetaClass)",
             limit = "getCacheLimit()")
     protected InternalMethod lookupSuperMethodCachedDynamicObject(VirtualFrame frame, DynamicObject self,
             @Cached("getCurrentMethod(frame)") InternalMethod currentMethod,
-            @Cached("self.getShape()") Shape cachedShape,
-            @Cached("metaClass(self)") DynamicObject selfMetaClass,
-            @Cached("doLookup(currentMethod, selfMetaClass)") InternalMethod superMethod) {
-        return superMethod;
-    }
-
-    @Specialization(guards = {
-            "getCurrentMethod(frame) == currentMethod",
-            "!isDynamicObject(self)",
-            "self.getClass() == cachedClass"
-    },
-            assumptions = "getUnmodifiedAssumption(selfMetaClass)",
-            limit = "getCacheLimit()")
-    protected InternalMethod lookupSuperMethodCachedPrimitive(VirtualFrame frame, Object self,
-            @Cached("getCurrentMethod(frame)") InternalMethod currentMethod,
-            @Cached("self.getClass()") Class<?> cachedClass,
             @Cached("metaClass(self)") DynamicObject selfMetaClass,
             @Cached("doLookup(currentMethod, selfMetaClass)") InternalMethod superMethod) {
         return superMethod;
