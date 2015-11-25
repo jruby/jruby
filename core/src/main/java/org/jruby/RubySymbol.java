@@ -480,40 +480,39 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             }
 
             @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                     Block b, Type type, Block block) {
-                RubyProc.prepareArgs(context, type, block.getBody(), args);
+            public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Block block) {
+                RubyProc.prepareArgs(context, b.type, block.getBody(), args);
                 return yieldInner(context, context.runtime.newArrayNoCopyLight(args), block);
             }
 
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value,
-                    Block b, Block.Type type, Block block) {
+                    Block b, Block block) {
                 return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), block);
             }
 
             @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject value, Block b, Type type) {
+            protected IRubyObject doYield(ThreadContext context, IRubyObject value, Block b) {
                 return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
             }
 
             @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Type type) {
+            protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b) {
                 return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
             }
 
             @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Block b, Block.Type type) {
+            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Block b) {
                 return site.call(context, arg0, arg0);
             }
 
             @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block b, Block.Type type) {
+            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block b) {
                 return site.call(context, arg0, arg0, arg1);
             }
 
             @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block b, Block.Type type) {
+            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block b) {
                 return site.call(context, arg0, arg0, arg1, arg2);
             }
 

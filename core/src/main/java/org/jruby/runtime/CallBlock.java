@@ -58,34 +58,32 @@ public class CallBlock extends BlockBody {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block b, Block.Type type) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block b) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block b,
-            Block.Type type, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block b, Block block) {
         return callback.call(context, args, block);
     }
 
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context, Block b, Block.Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, Block b) {
         return callback.call(context, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Block b, Block.Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Block b) {
         return callback.call(context, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Block b, Block.Type type) {
+    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Block b) {
         return callback.call(context, new IRubyObject[]{value}, Block.NULL_BLOCK);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                  Block b, Block.Type type) {
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
 

@@ -9,7 +9,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
@@ -78,7 +77,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         return null;
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Type type, Block block) {
+    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Block block) {
         Binding binding = b.getBinding();
         if (callCount >= 0) promoteToFullBuild(context);
 
@@ -107,7 +106,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         DynamicScope actualScope = binding.getDynamicScope();
         if (ic.pushNewDynScope()) {
             actualScope = DynamicScope.newDynamicScope(getStaticScope(), actualScope, this.evalType.get());
-            if (type == Type.LAMBDA) actualScope.setLambda(true);
+            if (b.type == Block.Type.LAMBDA) actualScope.setLambda(true);
             context.pushScope(actualScope);
         } else if (ic.reuseParentDynScope()) {
             // Reuse! We can avoid the push only if surrounding vars aren't referenced!
@@ -116,7 +115,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         this.evalType.set(EvalType.NONE);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), block, type);
+            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), block, b.type);
         }
         finally {
             // IMPORTANT: Do not clear eval-type in case this is reused in bindings!

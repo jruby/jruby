@@ -4,7 +4,6 @@ import org.jruby.EvalType;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.invoke.MethodHandle;
@@ -32,7 +31,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         return closure.getArgumentDescriptors();
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Type type, Block block) {
+    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Block block) {
         Binding binding = b.getBinding();
 
         // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
@@ -68,7 +67,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         if (usesKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
         try {
-            return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, block, binding.getMethod(), type);
+            return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, block, binding.getMethod(), b.type);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached
