@@ -1241,4 +1241,22 @@ public class RubyNumeric extends RubyObject {
     public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
         return str2fnumCommon(runtime, arg, strict, biteListCaller19);
     }
+
+    /** num_negative_p
+     *
+     */
+    @JRubyMethod(name = "negative?")
+    public IRubyObject isNegative(ThreadContext context) {
+        IRubyObject zero = convertToNum(0, context.runtime);
+        return callMethod(context, "<", zero);
+
+    }
+    /** num_positive_p
+     *
+     */
+    @JRubyMethod(name = "positive?")
+    public IRubyObject isPositive(ThreadContext context) {
+        IRubyObject zero = convertToNum(0, context.runtime);
+        return callMethod(context, ">", zero);
+    }
 }
