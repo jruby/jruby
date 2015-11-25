@@ -73,37 +73,37 @@ public class InterpreterEngine {
 
     public IRubyObject interpret(ThreadContext context, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, Block block, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, IRubyObject.NULL_ARRAY , block, blockType);
+                                 String name, Block blockArg, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, IRubyObject.NULL_ARRAY, blockArg, blockType);
     }
 
     public IRubyObject interpret(ThreadContext context, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject arg1, Block block, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1}, block, blockType);
+                                 String name, IRubyObject arg1, Block blockArg, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1}, blockArg, blockType);
     }
 
     public IRubyObject interpret(ThreadContext context, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject arg1, IRubyObject arg2, Block block, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2}, block, blockType);
+                                 String name, IRubyObject arg1, IRubyObject arg2, Block blockArg, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2}, blockArg, blockType);
     }
 
     public IRubyObject interpret(ThreadContext context, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, block, blockType);
+                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg, blockType);
     }
 
     public IRubyObject interpret(ThreadContext context, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block block, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, block, blockType);
+                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg, blockType);
     }
 
     public IRubyObject interpret(ThreadContext context, IRubyObject self,
                                          InterpreterContext interpreterContext, RubyModule implClass,
-                                         String name, IRubyObject[] args, Block block, Block.Type blockType) {
+                                         String name, IRubyObject[] args, Block blockArg, Block.Type blockType) {
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
         double[]  floats    = interpreterContext.allocateTemporaryFloatVariables();
@@ -148,7 +148,7 @@ public class InterpreterEngine {
                         interpretFloatOp((AluInstr) instr, operation, floats, booleans);
                         break;
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
+                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -170,7 +170,7 @@ public class InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass);
+                            processBookKeepingOp(context, instr, operation, name, args, self, blockArg, blockType, implClass);
                         }
                         break;
                     case OTHER_OP:
@@ -236,7 +236,7 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
+    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
 
@@ -257,7 +257,7 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), exception);
                 return;
             case LOAD_IMPLICIT_CLOSURE:
-                setResult(temp, currDynScope, instr.getResult(), block);
+                setResult(temp, currDynScope, instr.getResult(), blockArg);
                 return;
             default:
                 result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
@@ -326,13 +326,13 @@ public class InterpreterEngine {
     }
 
     protected static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
-                                             String name, IRubyObject[] args, IRubyObject self, Block block,
+                                             String name, IRubyObject[] args, IRubyObject self, Block blockArg,
                                              Block.Type blockType, RubyModule implClass) {
         switch(operation) {
             case LABEL:
                 break;
             case PUSH_FRAME:
-                context.preMethodFrameOnly(implClass, name, self, block);
+                context.preMethodFrameOnly(implClass, name, self, blockArg);
                 // Only the top-level script scope has PRIVATE visibility.
                 // This is already handled as part of Interpreter.execute above.
                 // Everything else is PUBLIC by default.

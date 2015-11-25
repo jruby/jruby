@@ -32,7 +32,7 @@ import org.jruby.runtime.opto.ConstantCache;
 public class StartupInterpreterEngine extends InterpreterEngine {
     public IRubyObject interpret(ThreadContext context, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject[] args, Block block, Block.Type blockType) {
+                                 String name, IRubyObject[] args, Block blockArg, Block.Type blockType) {
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
         int       n         = instrs.length;
@@ -70,7 +70,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             try {
                 switch (operation.opClass) {
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
+                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -108,7 +108,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 rescuePCs.pop();
                                 break;
                             default:
-                                processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass);
+                                processBookKeepingOp(context, instr, operation, name, args, self, blockArg, blockType, implClass);
                         }
                         break;
                     case OTHER_OP:

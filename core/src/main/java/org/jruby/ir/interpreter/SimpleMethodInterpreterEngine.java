@@ -68,13 +68,13 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
         put(Operation.CONST_MISSING, true);
     }};
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg, Block.Type blockType) {
         // Just use any interp since it will contain no recvs
-        return interpret(context, self, interpreterContext, implClass, name, (IRubyObject) null, block, blockType);
+        return interpret(context, self, interpreterContext, implClass, name, (IRubyObject) null, blockArg, blockType);
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, Block blockArg, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -120,7 +120,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -195,7 +195,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),
@@ -268,7 +268,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, Block blockArg, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -321,7 +321,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -396,7 +396,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),
@@ -469,7 +469,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -523,7 +523,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -598,7 +598,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),
@@ -671,7 +671,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -726,7 +726,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -801,7 +801,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),
@@ -874,7 +874,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -921,7 +921,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -996,7 +996,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),

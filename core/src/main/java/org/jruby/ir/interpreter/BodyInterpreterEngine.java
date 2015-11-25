@@ -32,7 +32,7 @@ import org.jruby.runtime.opto.ConstantCache;
  */
 public class BodyInterpreterEngine extends InterpreterEngine {
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -78,7 +78,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -155,7 +155,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case RECV_RUBY_EXC: // NO INTERP
                         setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), IRRuntimeHelpers.unwrapRubyException(exception));
@@ -213,7 +213,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, block, blockType);
+    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, blockArg, blockType);
     }
 }
