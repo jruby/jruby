@@ -31,7 +31,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         return closure.getArgumentDescriptors();
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block, Block blockArg) {
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         Binding binding = block.getBinding();
 
         // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.

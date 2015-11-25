@@ -1,7 +1,6 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
@@ -77,7 +76,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         return null;
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block, Block blockArg) {
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         Binding binding = block.getBinding();
         if (callCount >= 0) promoteToFullBuild(context);
 

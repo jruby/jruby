@@ -63,12 +63,12 @@ public class CallBlock19 extends BlockBody {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block, Block blockArg) {
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         return callback.call(context, args, blockArg);
     }
 
@@ -78,22 +78,22 @@ public class CallBlock19 extends BlockBody {
     }
 
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Block block) {
+    public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
         return callback.call(context, new IRubyObject[] {arg0}, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+    public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
         return callback.call(context, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+    public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return callback.call(context, new IRubyObject[] {arg0, arg1, arg2}, Block.NULL_BLOCK);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Block block) {
+    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
         return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
     }
 
@@ -106,7 +106,7 @@ public class CallBlock19 extends BlockBody {
      * @return
      */
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block) {
+    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
     

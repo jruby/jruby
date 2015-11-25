@@ -89,14 +89,14 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         return closure.getName();
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block, Block blockArg) {
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         Binding binding = block.getBinding();
         if (callCount >= 0) promoteToFullBuild(context);
 
         CompiledIRBlockBody jittedBody = this.jittedBody;
 
         if (jittedBody != null) {
-            return jittedBody.commonYieldPath(context, args, self, block, blockArg);
+            return jittedBody.commonYieldPath(context, block, args, self, blockArg);
         }
 
         // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
