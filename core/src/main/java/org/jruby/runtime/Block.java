@@ -78,10 +78,6 @@ public final class Block {
     
     /** What block to use for determining escape; defaults to this */
     private Block escapeBlock = this;
-
-    private EvalType evalType;
-
-    private boolean hasExplicitCallProtocol = false;
     
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
