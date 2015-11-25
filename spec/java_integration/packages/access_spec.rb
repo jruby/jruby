@@ -44,6 +44,12 @@ describe "java package" do
   it "supports const_get with inherit argument" do
     expect(java.util.const_get("Arrays", false)).to respond_to :asList
   end
+
+  it "can be accessed using Java module and CamelCase" do
+    expect(Java::JavaLang).to eq(java.lang)
+    expect(Java::ComBlahV8Something).to eq(com.blah.v8.something)
+    expect(Java::X_Y_).to eq(Java::x_.y_)
+  end
 end
 
 # for DefaultPackageClass

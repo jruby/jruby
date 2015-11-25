@@ -8,7 +8,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
@@ -90,13 +89,14 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         return closure.getName();
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {
+    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Block block) {
+        Binding binding = b.getBinding();
         if (callCount >= 0) promoteToFullBuild(context);
 
         CompiledIRBlockBody jittedBody = this.jittedBody;
 
         if (jittedBody != null) {
-            return jittedBody.commonYieldPath(context, args, self, binding, type, block);
+            return jittedBody.commonYieldPath(context, args, self, b, block);
         }
 
         // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
@@ -124,7 +124,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         DynamicScope actualScope = binding.getDynamicScope();
         if (ic.pushNewDynScope()) {
             actualScope = DynamicScope.newDynamicScope(getStaticScope(), actualScope, this.evalType.get());
-            if (type == Type.LAMBDA) actualScope.setLambda(true);
+            if (b.type == Block.Type.LAMBDA) actualScope.setLambda(true);
             context.pushScope(actualScope);
         } else if (ic.reuseParentDynScope()) {
             // Reuse! We can avoid the push only if surrounding vars aren't referenced!
@@ -133,7 +133,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         this.evalType.set(EvalType.NONE);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), block, type);
+            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), block, b.type);
         }
         finally {
             // IMPORTANT: Do not clear eval-type in case this is reused in bindings!

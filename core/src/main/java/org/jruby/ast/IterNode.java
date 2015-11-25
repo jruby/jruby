@@ -66,7 +66,7 @@ public class IterNode extends Node implements DefNode {
         super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
-        this.bodyNode = body;
+        this.bodyNode = body == null ? NilImplicitNode.NIL : body;
         this.scope = scope;
     }
 
