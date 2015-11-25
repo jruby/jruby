@@ -131,13 +131,13 @@ public class RaiseException extends JumpException {
         preRaise(context, backtrace);
     }
 
-    public RaiseException(RubyException exception, boolean isNativeException) {
+    public RaiseException(RubyException exception, boolean nativeException) {
         super(exception.message.toString());
         if (DEBUG) {
             Thread.dumpStack();
         }
-        this.nativeException = isNativeException;
-        setException(exception, isNativeException);
+        this.nativeException = nativeException;
+        setException(exception, nativeException);
         preRaise(exception.getRuntime().getCurrentContext());
     }
 
