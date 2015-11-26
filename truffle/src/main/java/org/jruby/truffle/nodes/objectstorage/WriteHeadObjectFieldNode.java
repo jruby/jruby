@@ -27,6 +27,8 @@ import com.oracle.truffle.api.object.Shape;
 
 public abstract class WriteHeadObjectFieldNode extends Node {
 
+    protected static final int CACHE_LIMIT = Options.FIELD_LOOKUP_CACHE;
+
     private final Object name;
 
     public WriteHeadObjectFieldNode(Object name) {
@@ -44,11 +46,11 @@ public abstract class WriteHeadObjectFieldNode extends Node {
                     "location != null",
                     "object.getShape() == cachedShape"
             },
-            assumptions = { "newArray(cachedShape.getValidAssumption(), validLocation)" },
-            limit = "getCacheLimit()")
+            assumptions = { "cachedShape.getValidAssumption()", "validLocation" },
+            limit = "CACHE_LIMIT")
     public void writeExistingField(DynamicObject object, Object value,
-            @Cached("object.getShape()") Shape cachedShape,
             @Cached("getLocation(object, value)") Location location,
+            @Cached("object.getShape()") Shape cachedShape,
             @Cached("createAssumption()") Assumption validLocation) {
         try {
             location.set(object, value, cachedShape);
@@ -61,18 +63,18 @@ public abstract class WriteHeadObjectFieldNode extends Node {
 
     @Specialization(
             guards = {
-                    "!hasField",
+                    "location == null",
                     "object.getShape() == oldShape" },
-            assumptions = { "newArray(oldShape.getValidAssumption(), newShape.getValidAssumption(), validLocation)" },
-            limit = "getCacheLimit()")
+            assumptions = { "oldShape.getValidAssumption()", "newShape.getValidAssumption()", "validLocation" },
+            limit = "CACHE_LIMIT")
     public void writeNewField(DynamicObject object, Object value,
-            @Cached("hasField(object, value)") boolean hasField,
+            @Cached("getLocation(object, value)") Location location,
             @Cached("object.getShape()") Shape oldShape,
-            @Cached("transitionWithNewField(object, value)") Shape newShape,
-            @Cached("getNewLocation(newShape)") Location location,
+            @Cached("defineProperty(oldShape, value)") Shape newShape,
+            @Cached("getNewLocation(newShape)") Location newLocation,
             @Cached("createAssumption()") Assumption validLocation) {
         try {
-            location.set(object, value, oldShape, newShape);
+            newLocation.set(object, value, oldShape, newShape);
         } catch (IncompatibleLocationException e) {
             // remove this entry
             validLocation.invalidate();
@@ -85,11 +87,6 @@ public abstract class WriteHeadObjectFieldNode extends Node {
         execute(object, value);
     }
 
-    protected boolean updateShape(DynamicObject object) {
-        CompilerDirectives.transferToInterpreter();
-        return object.updateShape();
-    }
-
     @TruffleBoundary
     @Specialization(contains = { "writeExistingField", "writeNewField", "updateShape" })
     public void writeUncached(DynamicObject object, Object value) {
@@ -97,7 +94,6 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     }
 
     protected Location getLocation(DynamicObject object, Object value) {
-        object.updateShape();
         final Shape oldShape = object.getShape();
         final Property property = oldShape.getProperty(name);
 
@@ -108,34 +104,21 @@ public abstract class WriteHeadObjectFieldNode extends Node {
         }
     }
 
-    protected boolean hasField(DynamicObject object, Object value) {
-        return getLocation(object, value) != null;
-    }
-
-    protected Shape transitionWithNewField(DynamicObject object, Object value) {
-        return object.getShape().defineProperty(name, value, 0);
+    protected Shape defineProperty(Shape oldShape, Object value) {
+        return oldShape.defineProperty(name, value, 0);
     }
 
     protected Location getNewLocation(Shape newShape) {
         return newShape.getProperty(name).getLocation();
     }
 
+    protected boolean updateShape(DynamicObject object) {
+        CompilerDirectives.transferToInterpreter();
+        return object.updateShape();
+    }
+
     protected Assumption createAssumption() {
-        return Truffle.getRuntime().createAssumption();
-    }
-
-    protected int getCacheLimit() {
-        return Options.FIELD_LOOKUP_CACHE;
-    }
-
-    // workaround for DSL bug
-    protected Assumption[] newArray(Assumption a1, Assumption a2, Assumption a3) {
-        return new Assumption[] { a1, a2, a3 };
-    }
-
-    // workaround for DSL bug
-    protected Assumption[] newArray(Assumption a1, Assumption a2) {
-        return new Assumption[] { a1, a2 };
+        return Truffle.getRuntime().createAssumption("object location is valid");
     }
 
 }
