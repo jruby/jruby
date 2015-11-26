@@ -93,15 +93,7 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     @TruffleBoundary
     @Specialization(contains = { "writeExistingField", "writeNewField", "updateShape" })
     public void writeUncached(DynamicObject object, Object value) {
-        object.updateShape();
-        final Shape shape = object.getShape();
-        final Property property = shape.getProperty(name);
-
-        if (property == null) {
-            object.define(name, value, 0);
-        } else {
-            property.setGeneric(object, value, shape);
-        }
+        object.define(name, value, 0);
     }
 
     protected Location getLocation(DynamicObject object, Object value) {
