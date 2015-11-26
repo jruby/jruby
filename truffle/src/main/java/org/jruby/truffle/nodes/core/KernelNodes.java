@@ -1550,14 +1550,6 @@ public abstract class KernelNodes {
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
             }
 
-            // TODO CS 19-May-15 securerandom will use openssl if it's there, but we've only shimmed it
-
-            if (feature.equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
-                    .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
-                Layouts.MODULE.getFields(getContext().getCoreLibrary().getObjectClass()).removeConstant(getContext(), this, "OpenSSL");
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
-            }
-
             try {
                 return getContext().getFeatureLoader().require(feature, this);
             } catch (IOException e) {
