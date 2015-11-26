@@ -286,15 +286,13 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     public void setConstantInternal(RubyContext context, Node currentNode, String name, Object value, boolean autoload) {
         checkFrozen(context, currentNode);
+        // TODO(CS): warn when redefining a constant
+        // TODO (nirvdrum 18-Feb-15): But don't warn when redefining an autoloaded constant.
 
-        RubyConstant previous = constants.get(name);
-        if (previous == null) {
-            constants.put(name, new RubyConstant(rubyModuleObject, value, false, autoload));
-        } else {
-            // TODO(CS): warn when redefining a constant
-            // TODO (nirvdrum 18-Feb-15): But don't warn when redefining an autoloaded constant.
-            constants.put(name, new RubyConstant(rubyModuleObject, value, previous.isPrivate(), autoload));
-        }
+        final RubyConstant previous = constants.get(name);
+        final boolean isPrivate = previous != null && previous.isPrivate();
+
+        constants.put(name, new RubyConstant(rubyModuleObject, value, isPrivate, autoload));
 
         newLexicalVersion();
     }
