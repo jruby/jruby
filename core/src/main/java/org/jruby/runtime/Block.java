@@ -99,56 +99,56 @@ public final class Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return body.call(context, args, this);
+        return body.call(context, this, args);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return body.call(context, args, this, block);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockArg) {
+        return body.call(context, this, args, blockArg);
     }
 
     public IRubyObject call(ThreadContext context) {
         return body.call(context, this);
     }
-    public IRubyObject call(ThreadContext context, Block block) {
-        return body.call(context, this, block);
+    public IRubyObject call(ThreadContext context, Block blockArg) {
+        return body.call(context, this, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context) {
         return body.yieldSpecific(context, this);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0) {
-        return body.call(context, arg0, this);
+        return body.call(context, this, arg0);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block block) {
-        return body.call(context, arg0, this, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockArg) {
+        return body.call(context, this, arg0, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0) {
-        return body.yieldSpecific(context, arg0, this);
+        return body.yieldSpecific(context, this, arg0);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return body.call(context, arg0, arg1, this);
+        return body.call(context, this, arg0, arg1);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return body.call(context, arg0, arg1, this, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
+        return body.call(context, this, arg0, arg1, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return body.yieldSpecific(context, arg0, arg1, this);
+        return body.yieldSpecific(context, this, arg0, arg1);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return body.call(context, arg0, arg1, arg2, this);
+        return body.call(context, this, arg0, arg1, arg2);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return body.call(context, arg0, arg1, arg2, this, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
+        return body.call(context, this, arg0, arg1, arg2, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return body.yieldSpecific(context, arg0, arg1, arg2, this);
+        return body.yieldSpecific(context, this, arg0, arg1, arg2);
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return body.yield(context, value, this);
+        return body.yield(context, this, value);
     }
 
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        return body.yield(context, new IRubyObject[] { value }, self, this);
+        return body.yield(context, this, new IRubyObject[] { value }, self);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
@@ -158,7 +158,7 @@ public final class Block {
         } else {
             args = value.convertToArray().toJavaArray();
         }
-        return body.yield(context, args, self, this);
+        return body.yield(context, this, args, self);
     }
 
     public Block cloneBlock() {

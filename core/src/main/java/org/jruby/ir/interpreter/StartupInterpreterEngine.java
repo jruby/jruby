@@ -30,14 +30,15 @@ import org.jruby.runtime.opto.ConstantCache;
  * This interpreter is meant to interpret the instructions generated directly from IRBuild.
  */
 public class StartupInterpreterEngine extends InterpreterEngine {
-    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, IRubyObject[] args, Block block, Block.Type blockType) {
+                                 String name, IRubyObject[] args, Block blockArg) {
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
 
@@ -70,7 +71,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             try {
                 switch (operation.opClass) {
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
+                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -94,7 +95,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         break;
                     case BOOK_KEEPING_OP:
                         switch (operation) {
-                            case PUSH_BINDING:
+                            case PUSH_METHOD_BINDING:
                                 // IMPORTANT: Preserve this update of currDynScope.
                                 // This affects execution of all instructions in this scope
                                 // which will now use the updated value of currDynScope.
@@ -108,7 +109,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 rescuePCs.pop();
                                 break;
                             default:
-                                processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass);
+                                processBookKeepingOp(context, instr, operation, name, args, self, blockArg, blockType, implClass);
                         }
                         break;
                     case OTHER_OP:

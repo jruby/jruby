@@ -89,14 +89,14 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         return closure.getName();
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Block b, Block block) {
-        Binding binding = b.getBinding();
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+        Binding binding = block.getBinding();
         if (callCount >= 0) promoteToFullBuild(context);
 
         CompiledIRBlockBody jittedBody = this.jittedBody;
 
         if (jittedBody != null) {
-            return jittedBody.commonYieldPath(context, args, self, b, block);
+            return jittedBody.commonYieldPath(context, block, args, self, blockArg);
         }
 
         // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
@@ -124,7 +124,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         DynamicScope actualScope = binding.getDynamicScope();
         if (ic.pushNewDynScope()) {
             actualScope = DynamicScope.newDynamicScope(getStaticScope(), actualScope, this.evalType.get());
-            if (b.type == Block.Type.LAMBDA) actualScope.setLambda(true);
+            if (block.type == Block.Type.LAMBDA) actualScope.setLambda(true);
             context.pushScope(actualScope);
         } else if (ic.reuseParentDynScope()) {
             // Reuse! We can avoid the push only if surrounding vars aren't referenced!
@@ -133,7 +133,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         this.evalType.set(EvalType.NONE);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), block, b.type);
+            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
             // IMPORTANT: Do not clear eval-type in case this is reused in bindings!

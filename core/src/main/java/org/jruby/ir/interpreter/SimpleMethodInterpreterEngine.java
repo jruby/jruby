@@ -44,9 +44,9 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
         put(Operation.RECV_SELF, true);
         put(Operation.RECV_JRUBY_EXC, true);
         put(Operation.THROW, true);
-        put(Operation.PUSH_FRAME, true);
-        put(Operation.POP_FRAME, true);
-        put(Operation.PUSH_BINDING, true);
+        put(Operation.PUSH_METHOD_FRAME, true);
+        put(Operation.POP_METHOD_FRAME, true);
+        put(Operation.PUSH_METHOD_BINDING, true);
         put(Operation.POP_BINDING, true);
         put(Operation.NORESULT_CALL_1O, true);
         put(Operation.SEARCH_CONST, true);
@@ -68,18 +68,19 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
         put(Operation.CONST_MISSING, true);
     }};
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg) {
         // Just use any interp since it will contain no recvs
-        return interpret(context, self, interpreterContext, implClass, name, (IRubyObject) null, block, blockType);
+        return interpret(context, block, self, interpreterContext, implClass, name, (IRubyObject) null, blockArg);
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -119,17 +120,17 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case THROW:
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
-                    case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                    case PUSH_METHOD_FRAME:
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
                         context.setCurrentVisibility(Visibility.PUBLIC);
                         break;
-                    case POP_FRAME:
+                    case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -195,7 +196,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),
@@ -268,12 +269,13 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -320,17 +322,17 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case THROW:
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
-                    case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                    case PUSH_METHOD_FRAME:
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
                         context.setCurrentVisibility(Visibility.PUBLIC);
                         break;
-                    case POP_FRAME:
+                    case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -396,7 +398,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),
@@ -469,12 +471,13 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -522,17 +525,17 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case THROW:
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
-                    case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                    case PUSH_METHOD_FRAME:
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
                         context.setCurrentVisibility(Visibility.PUBLIC);
                         break;
-                    case POP_FRAME:
+                    case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -598,7 +601,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),
@@ -671,12 +674,13 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -725,17 +729,17 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case THROW:
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
-                    case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                    case PUSH_METHOD_FRAME:
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
                         context.setCurrentVisibility(Visibility.PUBLIC);
                         break;
-                    case POP_FRAME:
+                    case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -801,7 +805,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),
@@ -874,12 +878,13 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
         int ipc = 0;
         Object exception = null;
+        Block.Type blockType = block == null ? null : block.type;
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -920,17 +925,17 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case THROW:
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
-                    case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                    case PUSH_METHOD_FRAME:
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
                         context.setCurrentVisibility(Visibility.PUBLIC);
                         break;
-                    case POP_FRAME:
+                    case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -996,7 +1001,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case COPY: // NO INTERP
                         setResult(temp, currDynScope, ((CopyInstr) instr).getResult(),

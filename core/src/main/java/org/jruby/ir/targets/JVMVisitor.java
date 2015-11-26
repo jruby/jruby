@@ -1389,7 +1389,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void PopFrameInstr(PopFrameInstr popframeinstr) {
+    public void PopFrameInstr(PopMethodFrameInstr popframeinstr) {
         jvmMethod().loadContext();
         jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void postMethodFrameOnly()"));
     }
@@ -1404,7 +1404,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void PushBindingInstr(PushBindingInstr pushbindinginstr) {
+    public void PushBindingInstr(PushMethodBindingInstr pushbindinginstr) {
         jvmMethod().loadContext();
         jvmMethod().loadStaticScope();
         jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
@@ -1422,7 +1422,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void PushFrameInstr(PushFrameInstr pushframeinstr) {
+    public void PushFrameInstr(PushMethodFrameInstr pushframeinstr) {
         jvmMethod().loadContext();
         jvmMethod().loadFrameClass();
         jvmMethod().loadFrameName();

@@ -6,10 +6,10 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
-public class PushFrameInstr extends NoOperandInstr implements FixedArityInstr {
+public class PushMethodFrameInstr extends NoOperandInstr implements FixedArityInstr {
     private final String frameName;
-    public PushFrameInstr(String frameName) {
-        super(Operation.PUSH_FRAME);
+    public PushMethodFrameInstr(String frameName) {
+        super(Operation.PUSH_METHOD_FRAME);
 
         this.frameName = frameName;
     }
@@ -23,8 +23,8 @@ public class PushFrameInstr extends NoOperandInstr implements FixedArityInstr {
         return ii instanceof SimpleCloneInfo ? this : NopInstr.NOP;  // FIXME: Is this correct?
     }
 
-    public static PushFrameInstr decode(IRReaderDecoder d) {
-        return new PushFrameInstr(d.decodeString());
+    public static PushMethodFrameInstr decode(IRReaderDecoder d) {
+        return new PushMethodFrameInstr(d.decodeString());
     }
 
     @Override

@@ -6,9 +6,9 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
-public class PopFrameInstr extends NoOperandInstr implements FixedArityInstr {
-    public PopFrameInstr() {
-        super(Operation.POP_FRAME);
+public class PopMethodFrameInstr extends NoOperandInstr implements FixedArityInstr {
+    public PopMethodFrameInstr() {
+        super(Operation.POP_METHOD_FRAME);
     }
 
     @Override
@@ -16,8 +16,8 @@ public class PopFrameInstr extends NoOperandInstr implements FixedArityInstr {
         return ii instanceof SimpleCloneInfo ? this : NopInstr.NOP;  // FIXME: Is this correct
     }
 
-    public static PopFrameInstr decode(IRReaderDecoder d) {
-        return new PopFrameInstr();
+    public static PopMethodFrameInstr decode(IRReaderDecoder d) {
+        return new PopMethodFrameInstr();
     }
 
     @Override
