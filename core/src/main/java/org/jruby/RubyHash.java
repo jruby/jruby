@@ -904,57 +904,25 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc(ThreadContext context) {
-        final BlockBody body = new BlockBody(Signature.ONE_ARGUMENT) {
-            @Override
-            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject key) {
-                // NOTE: the way currently RubyProc works this version is never dispatched!
-                return op_aref(context, key);
-            }
-
-            @Override
-            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-                // NOTE: at this point we get the args normalized into [ one ]
-                // signature.checkArity(context.runtime, args);
-                return op_aref(context, args[0]);
-            }
-
-            @Override
-            public String getFile() { return null; }
-
-            @Override
-            public int getLine() { return -1; }
-
-            @Override
-            public StaticScope getStaticScope() {
-                return getRuntime().getStaticScopeFactory().getDummyScope();
-            }
-
-            @Override
-            public void setStaticScope(StaticScope newScope) { /* noop */ }
-        };
-
-        return new StrictProc(context.runtime, new Block(body, context.currentBinding()));
+        return new HashProc(context.runtime);
     }
 
-    // TODO this is a hack due the impossibility of validating arguments for a non-lambda
-    private static class StrictProc extends RubyProc {
+    private class HashProc extends RubyProc {
 
-        StrictProc(final Ruby runtime, final Block block) {
+        HashProc(final Ruby runtime) {
             super(runtime, runtime.getProc(), Block.Type.PROC);
-            // setup :
-            //block.getBinding().setFile(block.getBody().getFile());
-            //block.getBinding().setLine(block.getBody().getLine());
-            //
-            this.block = block;
-            block.type = Block.Type.PROC;
-            block.setProcObject(this);
         }
 
         @Override
         public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
             // validate args like a lambda :
-            getBlock().getBody().getSignature().checkArity(context.runtime, args);
-            return call(context, args, null, blockCallArg);
+            Signature.ONE_ARGUMENT.checkArity(context.runtime, args);
+            return op_aref(context, args[0]);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
+            return call19(context, args, passedBlock);
         }
 
     }
