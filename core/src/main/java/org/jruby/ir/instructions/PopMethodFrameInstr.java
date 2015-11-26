@@ -22,6 +22,6 @@ public class PopMethodFrameInstr extends NoOperandInstr implements FixedArityIns
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.PopFrameInstr(this);
+        visitor.PopMethodFrameInstr(this);
     }
 }

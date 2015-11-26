@@ -29,6 +29,6 @@ public class PushMethodFrameInstr extends NoOperandInstr implements FixedArityIn
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.PushFrameInstr(this);
+        visitor.PushMethodFrameInstr(this);
     }
 }
