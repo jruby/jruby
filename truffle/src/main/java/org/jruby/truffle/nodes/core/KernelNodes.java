@@ -1531,22 +1531,17 @@ public abstract class KernelNodes {
             final String feature = featureString.toString();
 
             // Pysch loads either the jar or the so - we need to intercept
-
-            if (feature.equals("psych.so") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
-                    .getEncapsulatingSourceSection().getSource().getName().endsWith("psych.rb")) {
+            if (feature.equals("psych.so") && callerIs("psych.rb")) {
                 try {
                     getContext().getFeatureLoader().require("truffle/psych.rb", this);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-
                 return true;
             }
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
-
-            if (feature.equals("strscan") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
-                    .getEncapsulatingSourceSection().getSource().getName().endsWith("erb.rb")) {
+            if (feature.equals("strscan") && callerIs("erb.rb")) {
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
             }
 
@@ -1555,6 +1550,11 @@ public abstract class KernelNodes {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        private boolean callerIs(String caller) {
+            return RubyCallStack.getCallerFrame(getContext()).getCallNode()
+                    .getEncapsulatingSourceSection().getSource().getName().endsWith(caller);
         }
     }
 
