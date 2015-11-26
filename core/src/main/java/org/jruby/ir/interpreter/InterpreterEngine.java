@@ -332,14 +332,14 @@ public class InterpreterEngine {
         switch(operation) {
             case LABEL:
                 break;
-            case PUSH_FRAME:
+            case PUSH_METHOD_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, blockArg);
                 // Only the top-level script scope has PRIVATE visibility.
                 // This is already handled as part of Interpreter.execute above.
                 // Everything else is PUBLIC by default.
                 context.setCurrentVisibility(Visibility.PUBLIC);
                 break;
-            case POP_FRAME:
+            case POP_METHOD_FRAME:
                 context.popFrame();
                 break;
             case POP_BINDING:
