@@ -907,11 +907,14 @@ public class RubyHash extends RubyObject implements Map {
         final BlockBody body = new BlockBody(Signature.ONE_ARGUMENT) {
             @Override
             protected IRubyObject doYield(ThreadContext context, IRubyObject key, Block block) {
+                // NOTE: the way currently RubyProc works this version is never dispatched!
                 return op_aref(context, key);
             }
 
             @Override
             protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block) {
+                // NOTE: at this point we get the args normalized into [ one ]
+                // signature.checkArity(context.runtime, args);
                 return op_aref(context, args[0]);
             }
 
@@ -929,8 +932,31 @@ public class RubyHash extends RubyObject implements Map {
             @Override
             public void setStaticScope(StaticScope newScope) { /* noop */ }
         };
+        
+        return new StrictProc(context.runtime, new Block(body, context.currentBinding()));
+    }
 
-        return RubyProc.newProc(context.runtime, new Block(body, context.currentBinding()), Block.Type.PROC);
+    // TODO this is a hack due the impossibility of validating arguments for a non-lambda
+    private static class StrictProc extends RubyProc {
+
+        StrictProc(final Ruby runtime, final Block block) {
+            super(runtime, runtime.getProc(), Block.Type.PROC);
+            // setup :
+            //block.getBinding().setFile(block.getBody().getFile());
+            //block.getBinding().setLine(block.getBody().getLine());
+            //
+            this.block = block;
+            block.type = Block.Type.PROC;
+            block.setProcObject(this);
+        }
+
+        @Override
+        public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
+            // validate args like a lambda :
+            getBlock().getBody().getSignature().checkArity(context.runtime, args);
+            return call(context, args, null, blockCallArg);
+        }
+
     }
 
     /** rb_hash_to_s & to_s_hash
