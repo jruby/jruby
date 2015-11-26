@@ -556,7 +556,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
             }
 
-            if (alreadyLoaded.profile(Layouts.MODULE.getFields(module).getConstants().get(name) != null)) {
+            if (alreadyLoaded.profile(Layouts.MODULE.getFields(module).getConstant(name) != null)) {
                 return nil();
             }
 
@@ -834,14 +834,14 @@ public abstract class ModuleNodes {
 
             final List<DynamicObject> constantsArray = new ArrayList<>();
 
-            final Map<String, RubyConstant> constants;
+            final Iterable<Entry<String, RubyConstant>> constants;
             if (inherit) {
                 constants = ModuleOperations.getAllConstants(module);
             } else {
                 constants = Layouts.MODULE.getFields(module).getConstants();
             }
 
-            for (Entry<String, RubyConstant> constant : constants.entrySet()) {
+            for (Entry<String, RubyConstant> constant : constants) {
                 if (!constant.getValue().isPrivate()) {
                     constantsArray.add(getSymbol(constant.getKey()));
                 }

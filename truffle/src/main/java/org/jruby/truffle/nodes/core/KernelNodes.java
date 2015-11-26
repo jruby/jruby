@@ -1554,7 +1554,7 @@ public abstract class KernelNodes {
 
             if (feature.equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
-                Layouts.MODULE.getFields(getContext().getCoreLibrary().getObjectClass()).getConstants().remove("OpenSSL");
+                Layouts.MODULE.getFields(getContext().getCoreLibrary().getObjectClass()).removeConstant(getContext(), this, "OpenSSL");
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
             }
 

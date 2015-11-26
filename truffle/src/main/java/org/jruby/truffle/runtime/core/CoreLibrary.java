@@ -1470,7 +1470,7 @@ public class CoreLibrary {
     }
 
     public DynamicObject getENV() {
-        return (DynamicObject) Layouts.MODULE.getFields(objectClass).getConstants().get("ENV").getValue();
+        return (DynamicObject) Layouts.MODULE.getFields(objectClass).getConstant("ENV").getValue();
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

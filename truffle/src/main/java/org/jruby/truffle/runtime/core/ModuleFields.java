@@ -36,6 +36,7 @@ import org.jruby.truffle.runtime.object.ObjectGraphNode;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ModuleFields implements ModuleChain, ObjectGraphNode {
@@ -503,8 +504,12 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return unmodifiedAssumption.getAssumption();
     }
 
-    public Map<String, RubyConstant> getConstants() {
-        return constants;
+    public Iterable<Entry<String, RubyConstant>> getConstants() {
+        return constants.entrySet();
+    }
+
+    public RubyConstant getConstant(String name) {
+        return constants.get(name);
     }
 
     public Map<String, InternalMethod> getMethods() {

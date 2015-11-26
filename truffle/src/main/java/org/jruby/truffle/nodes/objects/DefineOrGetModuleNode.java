@@ -77,13 +77,13 @@ public class DefineOrGetModuleNode extends RubyNode {
 
     @TruffleBoundary
     protected RubyConstant lookupForExistingModule(DynamicObject lexicalParent) {
-        RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstants().get(name);
+        RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstant(name);
 
         final DynamicObject objectClass = getContext().getCoreLibrary().getObjectClass();
 
         if (constant == null && lexicalParent == objectClass) {
             for (DynamicObject included : Layouts.MODULE.getFields(objectClass).prependedAndIncludedModules()) {
-                constant = Layouts.MODULE.getFields(included).getConstants().get(name);
+                constant = Layouts.MODULE.getFields(included).getConstant(name);
                 if (constant != null) {
                     break;
                 }
