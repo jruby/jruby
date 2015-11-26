@@ -578,7 +578,7 @@ public class RubyContext extends ExecutionContext {
         return safepointManager;
     }
 
-    public Random getRandom() {
+    public ThreadLocalRandom getRandom() {
         return ThreadLocalRandom.current();
     }
 

@@ -1489,7 +1489,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "max != 0")
         public long randNonZero(long max) {
-            return getContext().getRandom().nextLong() % max;
+            return getContext().getRandom().nextLong(max);
         }
 
     }
