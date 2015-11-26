@@ -88,7 +88,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                     case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.

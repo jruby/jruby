@@ -46,7 +46,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
         put(Operation.THROW, true);
         put(Operation.PUSH_METHOD_FRAME, true);
         put(Operation.POP_METHOD_FRAME, true);
-        put(Operation.PUSH_BINDING, true);
+        put(Operation.PUSH_METHOD_BINDING, true);
         put(Operation.POP_BINDING, true);
         put(Operation.NORESULT_CALL_1O, true);
         put(Operation.SEARCH_CONST, true);
@@ -130,7 +130,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -332,7 +332,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -535,7 +535,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -739,7 +739,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -935,7 +935,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                     case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.

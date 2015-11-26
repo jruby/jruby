@@ -72,7 +72,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 BasicBlock entryBB = cfg.getEntryBB();
                 // Push
                 if (requireFrame) entryBB.addInstr(new PushMethodFrameInstr(scope.getName()));
-                if (requireBinding) entryBB.addInstr(new PushBindingInstr());
+                if (requireBinding) entryBB.addInstr(new PushMethodBindingInstr());
 
                 // SSS FIXME: We are doing this conservatively.
                 // Only scopes that have unrescued exceptions need a GEB.

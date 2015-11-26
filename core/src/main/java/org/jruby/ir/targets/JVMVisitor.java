@@ -1404,7 +1404,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void PushBindingInstr(PushBindingInstr pushbindinginstr) {
+    public void PushBindingInstr(PushMethodBindingInstr pushbindinginstr) {
         jvmMethod().loadContext();
         jvmMethod().loadStaticScope();
         jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));

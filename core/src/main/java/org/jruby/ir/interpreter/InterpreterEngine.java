@@ -11,7 +11,6 @@ import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
@@ -62,8 +61,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
-
-import java.util.Stack;
 
 /**
  * Base full interpreter.  Subclasses can use utility methods here and override what they want.  This method requires
@@ -164,7 +161,7 @@ public class InterpreterEngine {
                         }
                         break;
                     case BOOK_KEEPING_OP:
-                        if (operation == Operation.PUSH_BINDING) {
+                        if (operation == Operation.PUSH_METHOD_BINDING) {
                             // IMPORTANT: Preserve this update of currDynScope.
                             // This affects execution of all instructions in this scope
                             // which will now use the updated value of currDynScope.

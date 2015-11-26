@@ -95,7 +95,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         break;
                     case BOOK_KEEPING_OP:
                         switch (operation) {
-                            case PUSH_BINDING:
+                            case PUSH_METHOD_BINDING:
                                 // IMPORTANT: Preserve this update of currDynScope.
                                 // This affects execution of all instructions in this scope
                                 // which will now use the updated value of currDynScope.

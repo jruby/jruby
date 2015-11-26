@@ -252,7 +252,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case POP_BINDING: return PopBindingInstr.decode(this);
             case POP_METHOD_FRAME: return PopMethodFrameInstr.decode(this);
             case PROCESS_MODULE_BODY: return ProcessModuleBodyInstr.decode(this);
-            case PUSH_BINDING: return PushBindingInstr.decode(this);
+            case PUSH_METHOD_BINDING: return PushMethodBindingInstr.decode(this);
             case PUSH_METHOD_FRAME: return PushMethodFrameInstr.decode(this);
             case PUT_CONST: return PutConstInstr.decode(this);
             case PUT_CVAR: return PutClassVariableInstr.decode(this);

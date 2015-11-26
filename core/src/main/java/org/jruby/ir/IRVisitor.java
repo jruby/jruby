@@ -92,7 +92,7 @@ public abstract class IRVisitor {
     public void PutConstInstr(PutConstInstr putconstinstr) { error(putconstinstr); }
     public void PutFieldInstr(PutFieldInstr putfieldinstr) { error(putfieldinstr); }
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) { error(putglobalvarinstr); }
-    public void PushBindingInstr(PushBindingInstr pushbindinginstr) { error(pushbindinginstr); }
+    public void PushBindingInstr(PushMethodBindingInstr pushbindinginstr) { error(pushbindinginstr); }
     public void PushFrameInstr(PushMethodFrameInstr pushframeinstr) { error(pushframeinstr); }
     public void RaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseargumenterrorinstr) { error(raiseargumenterrorinstr); }
     public void RaiseRequiredKeywordArgumentErrorInstr(RaiseRequiredKeywordArgumentError instr) { error(instr); }
