@@ -906,13 +906,13 @@ public class RubyHash extends RubyObject implements Map {
     public RubyProc to_proc(ThreadContext context) {
         final BlockBody body = new BlockBody(Signature.ONE_ARGUMENT) {
             @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject key, Block block) {
+            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject key) {
                 // NOTE: the way currently RubyProc works this version is never dispatched!
                 return op_aref(context, key);
             }
 
             @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Block block) {
+            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
                 // NOTE: at this point we get the args normalized into [ one ]
                 // signature.checkArity(context.runtime, args);
                 return op_aref(context, args[0]);
@@ -932,7 +932,7 @@ public class RubyHash extends RubyObject implements Map {
             @Override
             public void setStaticScope(StaticScope newScope) { /* noop */ }
         };
-        
+
         return new StrictProc(context.runtime, new Block(body, context.currentBinding()));
     }
 
