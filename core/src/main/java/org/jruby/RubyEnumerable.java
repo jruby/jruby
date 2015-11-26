@@ -539,6 +539,15 @@ public class RubyEnumerable {
 
     @JRubyMethod
     public static IRubyObject grep(ThreadContext context, IRubyObject self, final IRubyObject pattern, final Block block) {
+        return grep(context, self, pattern, block, true);
+    }
+
+    @JRubyMethod(name = "grep_v")
+    public static IRubyObject inverseGrep(ThreadContext context, IRubyObject self, final IRubyObject pattern, final Block block) {
+        return grep(context, self, pattern, block, false);
+    }
+
+    private static IRubyObject grep(ThreadContext context, IRubyObject self, final IRubyObject pattern, final Block block, final boolean isPresent) {
         final Ruby runtime = context.runtime;
         final RubyArray result = runtime.newArray();
 
@@ -546,7 +555,7 @@ public class RubyEnumerable {
             callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(ctx, largs);
-                    if (pattern.callMethod(ctx, "===", larg).isTrue()) {
+                    if (pattern.callMethod(ctx, "===", larg).isTrue() == isPresent) {
                         IRubyObject value = block.yield(ctx, larg);
                         synchronized (result) {
                             result.append(value);
@@ -559,7 +568,7 @@ public class RubyEnumerable {
             callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(ctx, largs);
-                    if (pattern.callMethod(ctx, "===", larg).isTrue()) {
+                    if (pattern.callMethod(ctx, "===", larg).isTrue() == isPresent ) {
                         synchronized (result) {
                             result.append(larg);
                         }
@@ -571,7 +580,6 @@ public class RubyEnumerable {
 
         return result;
     }
-
     public static IRubyObject detectCommon(ThreadContext context, IRubyObject self, final Block block) {
         return detectCommon(context, self, null, block);
     }
