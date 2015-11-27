@@ -245,6 +245,16 @@ describe "Kernel#sprintf" do
     sprintf("%010.0f", -123.5).should == "-000000124"
   end
 
+  it "passes some tests for infinite and nan" do
+    sprintf("%f", Float::INFINITY).should == "Inf"
+    sprintf("%f", -Float::INFINITY).should == "-Inf"
+    sprintf("%f", Float::NAN).should == "NaN"
+
+    sprintf("%10f", Float::INFINITY).should == "       Inf"
+    sprintf("%10f", -Float::INFINITY).should == "      -Inf"
+    sprintf("%10f", Float::NAN).should == "       NaN"
+  end
+
   it "passes kstephens's tests" do
     sprintf("%*1$.*2$3$d", 10, 5, 1).should == "     00001"
     sprintf("%b", 0).should == "0"
