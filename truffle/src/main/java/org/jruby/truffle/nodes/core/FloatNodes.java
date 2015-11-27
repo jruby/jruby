@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
@@ -720,17 +721,18 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"})
-    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = { "java_to_s" }, visibility = Visibility.PRIVATE)
+    public abstract static class JavaToSNode extends CoreMethodArrayArgumentsNode {
 
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
+        public JavaToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject toS(double value) {
-            return create7BitString(StringOperations.encodeByteList(Double.toString(value), USASCIIEncoding.INSTANCE));
+        public DynamicObject javaToS(double value) {
+            return create7BitString(
+                    StringOperations.encodeByteList(String.format("%.15g", value), USASCIIEncoding.INSTANCE));
         }
 
     }
