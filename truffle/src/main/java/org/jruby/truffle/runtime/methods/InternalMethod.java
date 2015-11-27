@@ -82,10 +82,6 @@ public class InternalMethod implements ObjectGraphNode {
         return undefined;
     }
 
-    public DynamicObject getProc() {
-        return proc;
-    }
-
     public CallTarget getCallTarget(){
         return callTarget;
     }
@@ -157,6 +153,10 @@ public class InternalMethod implements ObjectGraphNode {
 
         if (declaringModule  != null) {
             adjacent.add(declaringModule);
+        }
+
+        if (proc != null) {
+            adjacent.add(proc);
         }
 
         return adjacent;
