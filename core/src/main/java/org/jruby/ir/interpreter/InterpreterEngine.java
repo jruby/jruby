@@ -325,6 +325,7 @@ public class InterpreterEngine {
     protected static void processBookKeepingOp(ThreadContext context, Block block, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block blockArg,
                                              RubyModule implClass) {
+        Block.Type blockType = block == null ? null : block.type;
         switch(operation) {
             case LABEL:
                 break;
@@ -346,7 +347,7 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr)instr).checkArity(context, args, block.type);
+                ((CheckArityInstr)instr).checkArity(context, args, blockType);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);
@@ -398,6 +399,7 @@ public class InterpreterEngine {
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
                                          StaticScope currScope, Object[] temp, IRubyObject self,
                                          double[] floats, long[] fixnums, boolean[] booleans) {
+        Block.Type blockType = block == null ? null : block.type;
         Object result;
         switch(operation) {
             case RECV_SELF:
@@ -446,12 +448,12 @@ public class InterpreterEngine {
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, block.type));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
                 break;
             }
 
             case CHECK_FOR_LJE:
-                ((CheckForLJEInstr) instr).check(context, currDynScope, block.type);
+                ((CheckForLJEInstr) instr).check(context, currDynScope, blockType);
                 break;
 
             case BOX_FLOAT: {
