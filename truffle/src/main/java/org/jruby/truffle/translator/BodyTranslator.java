@@ -34,16 +34,7 @@ import org.jruby.truffle.nodes.coerce.ToProcNodeGen;
 import org.jruby.truffle.nodes.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
-import org.jruby.truffle.nodes.control.AndNode;
-import org.jruby.truffle.nodes.control.BreakNode;
 import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.control.IfNode;
-import org.jruby.truffle.nodes.control.NextNode;
-import org.jruby.truffle.nodes.control.OrNode;
-import org.jruby.truffle.nodes.control.RedoNode;
-import org.jruby.truffle.nodes.control.RetryNode;
-import org.jruby.truffle.nodes.control.ReturnNode;
-import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.AliasMethodNodeFactory;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.UndefMethodNodeFactory;
@@ -58,17 +49,15 @@ import org.jruby.truffle.nodes.debug.AssertNotCompiledNodeGen;
 import org.jruby.truffle.nodes.defined.DefinedNode;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.dispatch.RubyCallNode;
-import org.jruby.truffle.nodes.exceptions.EnsureNode;
 import org.jruby.truffle.nodes.exceptions.*;
-import org.jruby.truffle.nodes.exceptions.RescueNode;
 import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
+import org.jruby.truffle.nodes.literal.FloatLiteralNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;
 import org.jruby.truffle.nodes.locals.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
@@ -1250,7 +1239,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitFloatNode(org.jruby.ast.FloatNode node) {
-        final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), node.getValue());
+        final RubyNode ret = new FloatLiteralNode(context, translate(node.getPosition()), node.getValue());
         return addNewlineIfNeeded(node, ret);
     }
 
