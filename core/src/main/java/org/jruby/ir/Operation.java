@@ -207,6 +207,9 @@ public enum Operation {
     PUSH_METHOD_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PUSH_METHOD_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_METHOD_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    PUSH_BLOCK_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    PUSH_BLOCK_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    POP_BLOCK_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     TOGGLE_BACKTRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
 
