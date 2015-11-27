@@ -621,6 +621,17 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
             adjacent.add(lexicalParent);
         }
 
+        for (DynamicObject module : prependedAndIncludedModules()) {
+            adjacent.add(module);
+        }
+
+        if (Layouts.CLASS.isClass(rubyModuleObject)) {
+            DynamicObject superClass = ClassNodes.getSuperClass(rubyModuleObject);
+            if (superClass != null) {
+                adjacent.add(superClass);
+            }
+        }
+
         for (RubyConstant constant : constants.values()) {
             final Object value = constant.getValue();
 

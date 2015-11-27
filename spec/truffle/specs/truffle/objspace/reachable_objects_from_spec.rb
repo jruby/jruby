@@ -5,8 +5,18 @@ require 'objspace'
 describe "ObjectSpace.reachable_objects_from" do
   it "enumerates objects directly reachable from a given object" do
     ObjectSpace.reachable_objects_from(nil).should == [NilClass]
-    ObjectSpace.reachable_objects_from(['a', 'b', 'c']).should == [Array, 'a', 'b', 'c']
+    ObjectSpace.reachable_objects_from(['a', 'b', 'c']).should include(Array, 'a', 'b', 'c')
     ObjectSpace.reachable_objects_from(Object.new).should == [Object]
+  end
+
+  it "finds the superclass and included/prepended modules of a class" do
+    superclass = Class.new
+    klass = Class.new(superclass)
+    included = Module.new
+    klass.include included
+    prepended = Module.new
+    klass.prepend prepended
+    ObjectSpace.reachable_objects_from(klass).should include(prepended, included, superclass)
   end
 
   it "finds a variable captured by a block captured by #define_method" do
