@@ -109,7 +109,6 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
-        Block.Type blockType = block == null ? null : block.type;
 
         if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
 
@@ -153,7 +152,7 @@ public class InterpreterEngine {
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
-                        return processReturnOp(context, instr, operation, currDynScope, temp, self, blockType, currScope);
+                        return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
                     case BRANCH_OP:
                         switch (operation) {
                             case JUMP: ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC(); break;
@@ -168,11 +167,11 @@ public class InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, blockArg, blockType, implClass);
+                            processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass);
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, instr, operation, currDynScope, currScope, temp, self, blockType, floats, fixnums, booleans);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, floats, fixnums, booleans);
                         break;
                 }
             } catch (Throwable t) {
@@ -323,9 +322,9 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
+    protected static void processBookKeepingOp(ThreadContext context, Block block, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block blockArg,
-                                             Block.Type blockType, RubyModule implClass) {
+                                             RubyModule implClass) {
         switch(operation) {
             case LABEL:
                 break;
@@ -347,7 +346,7 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr)instr).checkArity(context, args, blockType);
+                ((CheckArityInstr)instr).checkArity(context, args, block.type);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);
@@ -369,9 +368,9 @@ public class InterpreterEngine {
         }
     }
 
-    protected static IRubyObject processReturnOp(ThreadContext context, Instr instr, Operation operation,
+    protected static IRubyObject processReturnOp(ThreadContext context, Block block, Instr instr, Operation operation,
                                                  DynamicScope currDynScope, Object[] temp, IRubyObject self,
-                                                 Block.Type blockType, StaticScope currScope) {
+                                                 StaticScope currScope) {
         switch(operation) {
             // --------- Return flavored instructions --------
             case RETURN: {
@@ -385,19 +384,19 @@ public class InterpreterEngine {
                 // This assumes that scopes with break instr. have a frame / dynamic scope
                 // pushed so that we can get to its static scope. For-loops now always have
                 // a dyn-scope pushed onto stack which makes this work in all scenarios.
-                return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, blockType);
+                return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, block.type);
             }
             case NONLOCAL_RETURN: {
                 NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
                 IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
-                return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, rv);
+                return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, block.type, rv);
             }
         }
         return null;
     }
 
-    protected static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope,
-                                         StaticScope currScope, Object[] temp, IRubyObject self, Block.Type blockType,
+    protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
+                                         StaticScope currScope, Object[] temp, IRubyObject self,
                                          double[] floats, long[] fixnums, boolean[] booleans) {
         Object result;
         switch(operation) {
@@ -447,12 +446,12 @@ public class InterpreterEngine {
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block.type));
                 break;
             }
 
             case CHECK_FOR_LJE:
-                ((CheckForLJEInstr) instr).check(context, currDynScope, blockType);
+                ((CheckForLJEInstr) instr).check(context, currDynScope, block.type);
                 break;
 
             case BOX_FLOAT: {
