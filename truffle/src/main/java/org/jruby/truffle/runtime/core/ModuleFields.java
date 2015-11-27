@@ -636,9 +636,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
 
         for (InternalMethod method : methods.values()) {
-            if (method.getProc() != null) {
-                adjacent.add(method.getProc());
-            }
+            adjacent.addAll(method.getAdjacentObjects());
         }
 
         return adjacent;
