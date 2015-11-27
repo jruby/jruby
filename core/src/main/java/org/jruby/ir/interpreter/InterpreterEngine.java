@@ -16,6 +16,8 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
+import org.jruby.ir.instructions.PopBlockFrameInstr;
+import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
@@ -53,7 +55,9 @@ import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.EvalType;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -166,8 +170,16 @@ public class InterpreterEngine {
                             // which will now use the updated value of currDynScope.
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
+                        } else if (operation == Operation.PUSH_BLOCK_BINDING) {
+                            DynamicScope newScope = block.getBinding().getDynamicScope();
+                            if (interpreterContext.pushNewDynScope()) {
+                                context.pushScope(block.allocScope(newScope));
+                            } else if (interpreterContext.reuseParentDynScope()) {
+                                // Reuse! We can avoid the push only if surrounding vars aren't referenced!
+                                context.pushScope(newScope);
+                            }
                         } else {
-                            processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass);
+                            processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
                         }
                         break;
                     case OTHER_OP:
@@ -323,11 +335,20 @@ public class InterpreterEngine {
     }
 
     protected static void processBookKeepingOp(ThreadContext context, Block block, Instr instr, Operation operation,
-                                             String name, IRubyObject[] args, IRubyObject self, Block blockArg,
-                                             RubyModule implClass) {
+                                             String name, IRubyObject[] args, IRubyObject self, Block blockArg, RubyModule implClass,
+                                             DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
+        Frame f;
         Block.Type blockType = block == null ? null : block.type;
         switch(operation) {
             case LABEL:
+                break;
+            case PUSH_BLOCK_FRAME:
+                f = context.preYieldNoScope(block.getBinding());
+                setResult(temp, currDynScope, ((PushBlockFrameInstr)instr).getResult(), f);
+                break;
+            case POP_BLOCK_FRAME:
+                f = (Frame)retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp);
+                context.postYieldNoScope(f);
                 break;
             case PUSH_METHOD_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, blockArg);

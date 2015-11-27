@@ -10,6 +10,8 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
+import org.jruby.ir.instructions.PopBlockFrameInstr;
+import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
@@ -20,6 +22,7 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -58,6 +61,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
             ipc++;
 
             try {
+                Frame f;
                 switch (operation) {
                     case RETURN:
                         return (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);
@@ -76,6 +80,14 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                         break;
                     case THROW:
                         instr.interpret(context, currScope, currDynScope, self, temp);
+                        break;
+                    case PUSH_BLOCK_FRAME:
+                        f = context.preYieldNoScope(block.getBinding());
+                        setResult(temp, currDynScope, ((PushBlockFrameInstr)instr).getResult(), f);
+                        break;
+                    case POP_BLOCK_FRAME:
+                        f = (Frame)retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp);
+                        context.postYieldNoScope(f);
                         break;
                     case PUSH_METHOD_FRAME:
                         context.preMethodFrameOnly(implClass, name, self, blockArg);
