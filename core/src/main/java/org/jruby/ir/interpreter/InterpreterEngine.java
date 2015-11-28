@@ -337,8 +337,8 @@ public class InterpreterEngine {
     protected static void processBookKeepingOp(ThreadContext context, Block block, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block blockArg, RubyModule implClass,
                                              DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
-        Frame f;
         Block.Type blockType = block == null ? null : block.type;
+        Frame f;
         switch(operation) {
             case LABEL:
                 break;
@@ -393,6 +393,7 @@ public class InterpreterEngine {
     protected static IRubyObject processReturnOp(ThreadContext context, Block block, Instr instr, Operation operation,
                                                  DynamicScope currDynScope, Object[] temp, IRubyObject self,
                                                  StaticScope currScope) {
+        Block.Type blockType = block == null ? null : block.type;
         switch(operation) {
             // --------- Return flavored instructions --------
             case RETURN: {
@@ -406,12 +407,12 @@ public class InterpreterEngine {
                 // This assumes that scopes with break instr. have a frame / dynamic scope
                 // pushed so that we can get to its static scope. For-loops now always have
                 // a dyn-scope pushed onto stack which makes this work in all scenarios.
-                return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, block.type);
+                return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, blockType);
             }
             case NONLOCAL_RETURN: {
                 NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
                 IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
-                return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, block.type, rv);
+                return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, rv);
             }
         }
         return null;

@@ -44,6 +44,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
+        Block.Type blockType = block == null ? null : block.type;
 
         // Init profiling this scope
         boolean debug = IRRuntimeHelpers.isDebug();
@@ -68,7 +69,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                     case NONLOCAL_RETURN: {
                         NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
                         IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
-                        return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, block.type, rv);
+                        return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, rv);
                     }
                     case LINE_NUM:
                         context.setLine(((LineNumberInstr) instr).lineNumber);
@@ -182,7 +183,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                     case RUNTIME_HELPER: { // NO INTERP
                         RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                         setResult(temp, currDynScope, rhc.getResult(),
-                                rhc.callHelper(context, currScope, currDynScope, self, temp, block.type));
+                                rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
                         break;
                     }
                     case GET_FIELD: { // NO INTERP
