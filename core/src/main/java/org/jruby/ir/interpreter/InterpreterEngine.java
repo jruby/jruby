@@ -102,6 +102,18 @@ public class InterpreterEngine {
         return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
     }
 
+    private DynamicScope getBlockScope(ThreadContext context, Block block, InterpreterContext interpreterContext) {
+        DynamicScope newScope = block.getBinding().getDynamicScope();
+        if (interpreterContext.pushNewDynScope()) {
+            context.pushScope(block.allocScope(newScope));
+        } else if (interpreterContext.reuseParentDynScope()) {
+            // Reuse! We can avoid the push only if surrounding vars aren't referenced!
+            context.pushScope(newScope);
+        }
+
+        return newScope;
+    }
+
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                          InterpreterContext interpreterContext, RubyModule implClass,
                                          String name, IRubyObject[] args, Block blockArg) {
@@ -171,13 +183,7 @@ public class InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else if (operation == Operation.PUSH_BLOCK_BINDING) {
-                            DynamicScope newScope = block.getBinding().getDynamicScope();
-                            if (interpreterContext.pushNewDynScope()) {
-                                context.pushScope(block.allocScope(newScope));
-                            } else if (interpreterContext.reuseParentDynScope()) {
-                                // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-                                context.pushScope(newScope);
-                            }
+                            currDynScope = getBlockScope(context, block, interpreterContext);
                         } else {
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
                         }
