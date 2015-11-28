@@ -21,9 +21,11 @@ import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
+import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
+import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
 import org.jruby.ir.instructions.TraceInstr;
@@ -57,8 +59,8 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.EvalType;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -345,8 +347,17 @@ public class InterpreterEngine {
                                              DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
         Block.Type blockType = block == null ? null : block.type;
         Frame f;
+        Visibility viz;
         switch(operation) {
             case LABEL:
+                break;
+            case SAVE_BINDING_VIZ:
+                viz = block.getBinding().getVisibility();
+                setResult(temp, currDynScope, ((SaveBindingVisibilityInstr)instr).getResult(), viz);
+                break;
+            case RESTORE_BINDING_VIZ:
+                viz = (Visibility)retrieveOp(((RestoreBindingVisibilityInstr)instr).getVisibility(), context, self, currDynScope, currScope, temp);
+                block.getBinding().setVisibility(viz);
                 break;
             case PUSH_BLOCK_FRAME:
                 f = context.preYieldNoScope(block.getBinding());

@@ -211,6 +211,8 @@ public enum Operation {
     PUSH_BLOCK_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_BLOCK_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    SAVE_BINDING_VIZ(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    RESTORE_BINDING_VIZ(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     TOGGLE_BACKTRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
 
     public final OpClass opClass;
