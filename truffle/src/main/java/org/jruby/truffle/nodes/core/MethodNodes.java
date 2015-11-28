@@ -91,7 +91,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "call", needsBlock = true, rest = true)
+    @CoreMethod(names = { "call", "[]" }, needsBlock = true, rest = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child ProcOrNullNode procOrNullNode;
