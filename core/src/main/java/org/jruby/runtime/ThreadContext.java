@@ -207,14 +207,6 @@ public final class ThreadContext {
         return errorInfo;
     }
 
-    /**
-     * Returns the lastCallStatus.
-     * @return LastCallStatus
-     */
-    public void setLastCallStatus(CallType callType) {
-        lastCallType = callType;
-    }
-
     public CallType getLastCallType() {
         return lastCallType;
     }
@@ -758,16 +750,11 @@ public final class ThreadContext {
 
     private Frame pushFrameForBlock(Binding binding) {
         Frame lastFrame = getNextFrame();
-        Frame f = pushFrame(binding.getFrame());
-        f.setVisibility(binding.getVisibility());
 
-        return lastFrame;
-    }
+        Frame bindingFrame = binding.getFrame();
+        bindingFrame.setVisibility(binding.getVisibility());
+        pushFrame(bindingFrame);
 
-    private Frame pushFrameForEval(Binding binding) {
-        Frame lastFrame = getNextFrame();
-        Frame f = pushFrame(binding.getFrame());
-        f.setVisibility(binding.getVisibility());
         return lastFrame;
     }
 
@@ -895,23 +882,10 @@ public final class ThreadContext {
         setWithinTrace(false);
     }
 
-    public Frame preForBlock(Binding binding) {
-        Frame lastFrame = preYieldNoScope(binding);
-        pushScope(binding.getDynamicScope());
-        return lastFrame;
-    }
-
     public Frame preYieldSpecificBlock(Binding binding, StaticScope scope) {
         Frame lastFrame = preYieldNoScope(binding);
         // new scope for this invocation of the block, based on parent scope
         pushScope(DynamicScope.newDynamicScope(scope, binding.getDynamicScope()));
-        return lastFrame;
-    }
-
-    public Frame preYieldLightBlock(Binding binding, DynamicScope emptyScope) {
-        Frame lastFrame = preYieldNoScope(binding);
-        // just push the same empty scope, since we won't use one
-        pushScope(emptyScope);
         return lastFrame;
     }
 
@@ -928,7 +902,7 @@ public final class ThreadContext {
     }
 
     public Frame preEvalWithBinding(Binding binding) {
-        return pushFrameForEval(binding);
+        return pushFrameForBlock(binding);
     }
 
     public void postEvalWithBinding(Binding binding, Frame lastFrame) {
@@ -936,11 +910,6 @@ public final class ThreadContext {
     }
 
     public void postYield(Binding binding, Frame lastFrame) {
-        popScope();
-        popFrameReal(lastFrame);
-    }
-
-    public void postYieldLight(Binding binding, Frame lastFrame) {
         popScope();
         popFrameReal(lastFrame);
     }
