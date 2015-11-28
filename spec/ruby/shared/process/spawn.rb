@@ -381,6 +381,14 @@ describe :process_spawn, shared: true do
     @name.should have_data("glark")
   end
 
+  it "redirects STDERR to child STDOUT if :err => [:child, :out]" do
+    File.open(@name, 'w') do |file|
+      lambda do
+        Process.wait @object.spawn(ruby_cmd("STDERR.print :glark"), :out => file, :err => [:child, :out])
+      end.should output_to_fd("glark", file)
+    end
+  end
+
   it "redirects both STDERR and STDOUT to the given file descriptior" do
     File.open(@name, 'w') do |file|
       lambda do

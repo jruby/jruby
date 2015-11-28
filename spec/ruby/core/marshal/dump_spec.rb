@@ -1,7 +1,6 @@
 # -*- encoding: us-ascii -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/marshal_data', __FILE__)
-require File.expand_path('../fixtures/marshal_data19', __FILE__)
 
 describe "Marshal.dump" do
   it "dumps nil" do
