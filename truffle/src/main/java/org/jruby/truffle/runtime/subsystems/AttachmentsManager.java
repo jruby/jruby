@@ -28,6 +28,7 @@ import com.oracle.truffle.tools.LineToProbesMap;
 
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BindingNodes;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -125,7 +126,7 @@ public class AttachmentsManager {
                 }
             }
 
-            callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(block), Layouts.PROC.getDeclarationFrame(block), null, Layouts.PROC.getSelf(block), Layouts.PROC.getBlock(block), DeclarationContext.BLOCK, new Object[]{binding}));
+            callNode.call(frame, ProcNodes.packArguments(block, new Object[] { binding }));
 
             return null;
         }
