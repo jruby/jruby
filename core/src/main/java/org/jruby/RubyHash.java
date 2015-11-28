@@ -925,6 +925,11 @@ public class RubyHash extends RubyObject implements Map {
             return call19(context, args, passedBlock);
         }
 
+        @Override
+        public RubyFixnum arity() {
+            return RubyFixnum.newFixnum(getRuntime(), Signature.ONE_ARGUMENT.arityValue());
+        }
+
     }
 
     /** rb_hash_to_s & to_s_hash
