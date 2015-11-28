@@ -76,11 +76,6 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/truffle/integration-tests.sh
       jdk: oraclejdk8
-    - env: PHASE='-Pmain'
-      sudo: required
-      dist: trusty
-      group: edge
-      jdk: oraclejdk9
 
 branches:
   only:
