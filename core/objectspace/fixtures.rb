@@ -60,6 +60,11 @@ module ObjectSpaceFixtures
     end
   end
 
+  o = ObjectToBeFound.new(:captured_by_define_method)
+  define_method :capturing_method do
+    o
+  end
+
   SECOND_LEVEL_CONSTANT = ObjectToBeFound.new(:second_level_constant)
 
 end

@@ -21,6 +21,15 @@ describe "Time.at" do
       t = c.at(0)
       t.should be_an_instance_of(c)
     end
+
+    it "roundtrips a Rational produced by #to_r" do
+      t = Time.now()
+      t2 = Time.at(t.to_r)
+
+      t2.should == t
+      t2.usec.should == t.usec
+      t2.nsec.should == t.nsec
+    end
   end
 
   describe "passed Time" do

@@ -76,4 +76,8 @@ describe "Module#remove_const" do
   it "is a private method" do
     Module.private_methods.should include(:remove_const)
   end
+
+  it "returns nil when removing autoloaded constant" do
+    ConstantSpecs.send(:remove_const, :AutoloadedConstant).should be_nil
+  end
 end

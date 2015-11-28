@@ -16,11 +16,6 @@ describe :kernel_method, shared: true do
   end
 
   it "returns a method object if we repond_to_missing? method" do
-    class KernelSpecs::Foo;
-      def respond_to_missing?(method, priv=false)
-        method == :we_handle_this
-      end
-    end
     m = KernelSpecs::RespondViaMissing.new.send(@method, :handled_publicly)
     m.should be_an_instance_of Method
     m.call(42).should == "Done handled_publicly([42])"
