@@ -108,6 +108,11 @@ public final class Block {
         return newScope;
     }
 
+    public EvalType getEvalType() {
+        // SSS FIXME: This is smelly
+        return body instanceof IRBlockBody ? ((IRBlockBody)body).getEvalType() : null;
+    }
+
     public void setEvalType(EvalType evalType) {
         body.setEvalType(evalType);
     }

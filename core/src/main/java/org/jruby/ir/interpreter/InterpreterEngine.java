@@ -58,6 +58,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.EvalType;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
@@ -186,6 +187,15 @@ public class InterpreterEngine {
                             context.pushScope(currDynScope);
                         } else if (operation == Operation.PUSH_BLOCK_BINDING) {
                             currDynScope = getBlockScope(context, block, interpreterContext);
+                        } else if (operation == Operation.UPDATE_BLOCK_STATE) {
+                            if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
+                                // Update self to the binding's self
+                                Binding b = block.getBinding();
+                                self = b.getSelf();
+                                b.getFrame().setSelf(self);
+                            }
+                            // Clear block's eval type
+                            block.setEvalType(EvalType.NONE);
                         } else {
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
                         }

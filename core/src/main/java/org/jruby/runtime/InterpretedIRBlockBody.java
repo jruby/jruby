@@ -98,7 +98,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
         // SSS FIXME: Why is self null in non-binding-eval contexts?
         if (self == null || getEvalType() == EvalType.BINDING_EVAL) {
-            useBindingSelf(binding);
+            self = useBindingSelf(binding);
         }
 
         // Clear evaltype now that it has been set on dyn-scope

@@ -14,6 +14,7 @@ import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
@@ -448,6 +449,14 @@ public class IRRuntimeHelpers {
         Block b = (Block)blk;
         IRubyObject yieldVal = (IRubyObject)yieldArg;
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
+    }
+
+    private boolean blockHasExplicitCallProtocol(Block block) {
+        if (block.getBody() instanceof IRBlockBody) {
+            return ((IRBlockBody)block.getBody()).getScope().getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
+        } else {
+            return false;
+        }
     }
 
     public static IRubyObject yieldSpecific(ThreadContext context, Object blk) {
