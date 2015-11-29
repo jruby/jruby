@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.nodes.literal;
 
+import java.util.Arrays;
+
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -40,7 +42,8 @@ public class StringLiteralNode extends RubyNode {
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        final ByteList byteList = new ByteList(bytes, encoding, true /* do copy */);
+        final byte[] copy = Arrays.copyOf(bytes, bytes.length);
+        final ByteList byteList = new ByteList(copy, encoding, false);
         return allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(), byteList, codeRange, null);
     }
 

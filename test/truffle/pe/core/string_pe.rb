@@ -7,3 +7,5 @@
 # GNU Lesser General Public License version 2.1
 
 example "'abc'.length", 3
+
+example "'abc' == 'abc'", true
