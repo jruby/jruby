@@ -539,13 +539,12 @@ public abstract class StringPrimitiveNodes {
                 return true;
             }
 
-            if (differentHashCodeProfile.profile(a.hashCode() != 0 && b.hashCode() != 0 && a.hashCode() != b.hashCode())) {
-                return false;
-            }
-
             if (differentSizeProfile.profile(a.realSize() != b.realSize())) {
                 return false;
             }
+
+            // We could use the ByteList.hash values here as a quick != check if they are both nonzero,
+            // but we would need to access the field directly as calling hashCode() could cause a traversal.
 
             final byte[] stringBytes = a.unsafeBytes();
             final byte[] otherBytes = b.unsafeBytes();
