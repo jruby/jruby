@@ -16,7 +16,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -51,12 +51,12 @@ import org.jruby.util.func.Function1;
 public class RubyObjectSpace {
 
     /** Create the ObjectSpace module and add it to the Ruby runtime.
-     * 
+     *
      */
     public static RubyModule createObjectSpaceModule(Ruby runtime) {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
         runtime.setObjectSpaceModule(objectSpaceModule);
-        
+
         objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
 
         if (runtime.is2_0()) {
@@ -120,7 +120,7 @@ public class RubyObjectSpace {
             }
         }
     }
-    
+
     public static IRubyObject each_objectInternal(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         RubyModule tmpClass;
         if (args.length == 0) {
@@ -160,7 +160,11 @@ public class RubyObjectSpace {
             block.yield(context, attached);
             if (attached instanceof RubyClass) {
                 for (RubyClass child : ((RubyClass)attached).subclasses(true)) {
-                    block.yield(context, child);
+                    if (child instanceof IncludedModuleWrapper || child.isSingleton()) {
+                        // do nothing for included wrappers or singleton classes
+                    } else {
+                        block.yield(context, child);
+                    }
                 }
             }
         } else {
