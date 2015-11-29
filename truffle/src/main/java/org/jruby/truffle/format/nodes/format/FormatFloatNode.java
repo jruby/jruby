@@ -66,27 +66,49 @@ public abstract class FormatFloatNode extends PackNode {
 
             builder.append("%");
 
-            if (spacePadding != FormatDirective.DEFAULT) {
-                builder.append(" ");
-                builder.append(spacePadding);
+            if (Double.isInfinite(value)) {
 
-                if (zeroPadding != FormatDirective.DEFAULT) {
-                    builder.append(".");
+                if (spacePadding != FormatDirective.DEFAULT) {
+                    builder.append(" ");
+                    builder.append(spacePadding + 5);
+                }
+
+                if (zeroPadding != FormatDirective.DEFAULT && zeroPadding != 0) {
+                    builder.append("0");
+                    builder.append(zeroPadding + 5);
+                }
+
+                builder.append(format);
+
+                final String infinityString = String.format(builder.toString(), value);
+                final String shortenInfinityString = infinityString.substring(0, infinityString.length() - 5);
+                return new ByteList(shortenInfinityString.getBytes(StandardCharsets.US_ASCII));
+
+            } else {
+
+                if (spacePadding != FormatDirective.DEFAULT) {
+                    builder.append(" ");
+                    builder.append(spacePadding);
+
+                    if (zeroPadding != FormatDirective.DEFAULT) {
+                        builder.append(".");
+                        builder.append(zeroPadding);
+                    }
+                } else if (zeroPadding != FormatDirective.DEFAULT && zeroPadding != 0) {
+                    builder.append("0");
                     builder.append(zeroPadding);
                 }
-            } else if (zeroPadding != FormatDirective.DEFAULT && zeroPadding != 0) {
-                builder.append("0");
-                builder.append(zeroPadding);
+
+                if (precision != FormatDirective.DEFAULT) {
+                    builder.append(".");
+                    builder.append(precision);
+                }
+
+                builder.append(format);
+
+                return new ByteList(String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII));
             }
 
-            if (precision != FormatDirective.DEFAULT) {
-                builder.append(".");
-                builder.append(precision);
-            }
-
-            builder.append(format);
-
-            return new ByteList(String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII));
         }
     }
 

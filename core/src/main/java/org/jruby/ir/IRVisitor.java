@@ -86,14 +86,17 @@ public abstract class IRVisitor {
     public void OneOperandArgNoBlockCallInstr(OneOperandArgNoBlockCallInstr oneOperandArgNoBlockCallInstr) { error(oneOperandArgNoBlockCallInstr); }
     public void OptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optargmultipleasgninstr) { error(optargmultipleasgninstr); }
     public void PopBindingInstr(PopBindingInstr popbindinginstr) { error(popbindinginstr); }
-    public void PopFrameInstr(PopFrameInstr popframeinstr) { error(popframeinstr); }
+    public void PopBlockFrameInstr(PopBlockFrameInstr instr) { error(instr); }
+    public void PopMethodFrameInstr(PopMethodFrameInstr instr) { error(instr); }
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) { error(processmodulebodyinstr); }
     public void PutClassVariableInstr(PutClassVariableInstr putclassvariableinstr) { error(putclassvariableinstr); }
     public void PutConstInstr(PutConstInstr putconstinstr) { error(putconstinstr); }
     public void PutFieldInstr(PutFieldInstr putfieldinstr) { error(putfieldinstr); }
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) { error(putglobalvarinstr); }
-    public void PushBindingInstr(PushBindingInstr pushbindinginstr) { error(pushbindinginstr); }
-    public void PushFrameInstr(PushFrameInstr pushframeinstr) { error(pushframeinstr); }
+    public void PushBlockBindingInstr(PushBlockBindingInstr instr) { error(instr); }
+    public void PushBlockFrameInstr(PushBlockFrameInstr instr) { error(instr); }
+    public void PushMethodBindingInstr(PushMethodBindingInstr instr) { error(instr); }
+    public void PushMethodFrameInstr(PushMethodFrameInstr instr) { error(instr); }
     public void RaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseargumenterrorinstr) { error(raiseargumenterrorinstr); }
     public void RaiseRequiredKeywordArgumentErrorInstr(RaiseRequiredKeywordArgumentError instr) { error(instr); }
     public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) { error(reifyclosureinstr); }
@@ -109,8 +112,10 @@ public abstract class IRVisitor {
     public void ReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr reqdargmultipleasgninstr) { error(reqdargmultipleasgninstr); }
     public void RescueEQQInstr(RescueEQQInstr rescueeqqinstr) { error(rescueeqqinstr); }
     public void RestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restargmultipleasgninstr) { error(restargmultipleasgninstr); }
+    public void RestoreBindingVisibilityInstr(RestoreBindingVisibilityInstr instr) { error(instr); }
     public void ReturnInstr(ReturnInstr returninstr) { error(returninstr); }
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
+    public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) { error(instr); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }
     public void SetCapturedVarInstr(SetCapturedVarInstr instr) { error(instr); }
     public void StoreLocalVarInstr(StoreLocalVarInstr storelocalvarinstr) { error(storelocalvarinstr); }

@@ -6,7 +6,6 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -43,25 +42,24 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, args, null, binding, type);
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
+        return yield(context, block, args, null);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
-                            Block.Type type, Block block) {
-        return yield(context, args, null, binding, type, block);
+    public IRubyObject call(ThreadContext context, Block b, IRubyObject[] args, Block blockArg) {
+        return yield(context, b, args, null, blockArg);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
         threadCheck(context);
         
         return yield(context, new IRubyObject[] { value });
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type) {
+    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         threadCheck(context);
         
         return yield(context, args);

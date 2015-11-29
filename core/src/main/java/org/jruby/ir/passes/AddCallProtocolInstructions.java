@@ -71,8 +71,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
             if (requireBinding || requireFrame) {
                 BasicBlock entryBB = cfg.getEntryBB();
                 // Push
-                if (requireFrame) entryBB.addInstr(new PushFrameInstr(scope.getName()));
-                if (requireBinding) entryBB.addInstr(new PushBindingInstr());
+                if (requireFrame) entryBB.addInstr(new PushMethodFrameInstr(scope.getName()));
+                if (requireBinding) entryBB.addInstr(new PushMethodBindingInstr());
 
                 // SSS FIXME: We are doing this conservatively.
                 // Only scopes that have unrescued exceptions need a GEB.
@@ -105,7 +105,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                             // Add before the break/return
                             instrs.previous();
                             if (requireBinding) instrs.add(new PopBindingInstr());
-                            if (requireFrame) instrs.add(new PopFrameInstr());
+                            if (requireFrame) instrs.add(new PopMethodFrameInstr());
                             break;
                         }
                     }
@@ -119,7 +119,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                             instrs.previous();
                         }
                         if (requireBinding) instrs.add(new PopBindingInstr());
-                        if (requireFrame) instrs.add(new PopFrameInstr());
+                        if (requireFrame) instrs.add(new PopMethodFrameInstr());
                     }
 
                     if (bb == geb) {
@@ -130,7 +130,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                             instrs.previous();
                         }
                         if (requireBinding) instrs.add(new PopBindingInstr());
-                        if (requireFrame) instrs.add(new PopFrameInstr());
+                        if (requireFrame) instrs.add(new PopMethodFrameInstr());
                     }
                 }
             }

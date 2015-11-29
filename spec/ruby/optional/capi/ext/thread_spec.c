@@ -1,10 +1,10 @@
-#include <math.h>
-#include <errno.h>
-#include <unistd.h>
-
 #include "ruby.h"
 #include "ruby/thread.h"
 #include "rubyspec.h"
+
+#include <math.h>
+#include <errno.h>
+#include <unistd.h>
 
 #ifdef __cplusplus
 extern "C" {

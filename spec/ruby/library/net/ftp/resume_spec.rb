@@ -1,5 +1,5 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
-require 'net/ftp'
+require File.expand_path('../spec_helper', __FILE__)
 
 describe "Net::FTP#resume" do
   it "returns true when self is set to resume uploads/downloads" do

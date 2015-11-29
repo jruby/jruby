@@ -7,7 +7,7 @@ describe :net_ftp_puttextfile, shared: true do
     @remote_tmp_file = tmp("textfile", false)
 
     @ftp = Net::FTP.new
-    @ftp.connect("localhost", 9921)
+    @ftp.connect(@server.hostname, @server.server_port)
     @ftp.binary = @binary_mode
   end
 

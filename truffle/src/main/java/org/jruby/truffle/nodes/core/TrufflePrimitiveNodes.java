@@ -29,6 +29,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -544,7 +546,6 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-
     @CoreMethod(names = "full_memory_barrier", isModuleFunction = true)
     public abstract static class FullMemoryBarrierPrimitiveNode extends CoreMethodNode {
 
@@ -743,30 +744,36 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private CallDispatchHeadNode pathCall;
+
         public LoadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            pathCall = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
-        public boolean load(DynamicObject file, boolean wrap) {
+        public boolean load(VirtualFrame frame, DynamicObject file, boolean wrap) {
             if (wrap) {
                 throw new UnsupportedOperationException();
             }
 
             try {
-                getContext().loadFile(file.toString(), this);
+                getContext().loadFile(StringOperations.getString(getContext(), file), this);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+                final DynamicObject rubyException = getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this);
+                pathCall.call(frame, rubyException, "path=", null, file);
+
+                throw new RaiseException(rubyException);
             }
 
             return true;
         }
 
         @Specialization(guards = "isRubyString(file)")
-        public boolean load(DynamicObject file, NotProvided wrap) {
-            return load(file, false);
+        public boolean load(VirtualFrame frame, DynamicObject file, NotProvided wrap) {
+            return load(frame, file, false);
         }
     }
 

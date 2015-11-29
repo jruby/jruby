@@ -1,13 +1,1 @@
-fails:Float#to_s emits a trailing '.0' for the mantissa in e format
-fails:Float#to_s uses non-e format for a positive value with fractional part having 5 significant figures
-fails:Float#to_s uses non-e format for a negative value with fractional part having 5 significant figures
-fails:Float#to_s uses e format for a positive value with fractional part having 6 significant figures
-fails:Float#to_s uses e format for a negative value with fractional part having 6 significant figures
-fails:Float#to_s uses non-e format for a positive value with whole part having 15 significant figures
-fails:Float#to_s uses non-e format for a negative value with whole part having 15 significant figures
-fails:Float#to_s uses non-e format for a positive value with whole part having 16 significant figures
-fails:Float#to_s uses non-e format for a negative value with whole part having 16 significant figures
-fails:Float#to_s uses e format for a positive value with whole part having 18 significant figures
-fails:Float#to_s uses e format for a negative value with whole part having 18 significant figures
-fails:Float#to_s uses non-e format for a positive value with whole part having 17 significant figures
-fails:Float#to_s uses non-e format for a negative value with whole part having 17 significant figures
+fails:Float#to_s outputs the minimal, unique form necessary to recreate the value

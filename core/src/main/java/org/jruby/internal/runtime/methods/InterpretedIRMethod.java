@@ -115,11 +115,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, args, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, args, block);
             } else {
                 try {
                     pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, args, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, args, block);
                 } finally {
                     post(ic, context);
                 }
@@ -144,11 +144,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, block);
             } else {
                 try {
                     pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, block);
                 } finally {
                     post(ic, context);
                 }
@@ -172,11 +172,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, arg1, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, block);
             } else {
                 try {
                     pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, arg1, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, block);
                 } finally {
                     post(ic, context);
                 }
@@ -200,11 +200,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
             } else {
                 try {
                     pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
                 } finally {
                     post(ic, context);
                 }
@@ -228,11 +228,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, arg3, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
             } else {
                 try {
                     pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, arg3, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
                 } finally {
                     post(ic, context);
                 }

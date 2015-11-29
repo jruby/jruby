@@ -1,5 +1,5 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
-require 'net/ftp'
+require File.expand_path('../spec_helper', __FILE__)
 
 describe "Net::FTP#set_socket" do
   # TODO: I won't spec this method, as it is not used
