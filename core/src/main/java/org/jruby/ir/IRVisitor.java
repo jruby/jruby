@@ -125,6 +125,7 @@ public abstract class IRVisitor {
     public void ToAryInstr(ToAryInstr toaryinstr) { error(toaryinstr); }
     public void UndefMethodInstr(UndefMethodInstr undefmethodinstr) { error(undefmethodinstr); }
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) { error(unresolvedsuperinstr); }
+    public void UpdateBlockExecutionStateInstr (UpdateBlockExecutionStateInstr instr) { error(instr); }
     public void YieldInstr(YieldInstr yieldinstr) { error(yieldinstr); }
     public void ZeroOperandArgNoBlockCallInstr(ZeroOperandArgNoBlockCallInstr zeroOperandArgNoBlockCallInstr) { error(zeroOperandArgNoBlockCallInstr); }
     public void ZSuperInstr(ZSuperInstr zsuperinstr) { error(zsuperinstr); }

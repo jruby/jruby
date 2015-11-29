@@ -213,7 +213,8 @@ public enum Operation {
     POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     SAVE_BINDING_VIZ(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     RESTORE_BINDING_VIZ(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    TOGGLE_BACKTRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
+    TOGGLE_BACKTRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    UPDATE_BLOCK_STATE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
 
     public final OpClass opClass;
     private int flags;
