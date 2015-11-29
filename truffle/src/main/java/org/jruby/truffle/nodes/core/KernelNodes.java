@@ -1599,7 +1599,7 @@ public abstract class KernelNodes {
 
                 if (sourcePath == null) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", this));
+                    throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", featureString, this));
                 }
 
                 featurePath = dirname(sourcePath) + "/" + featureString;

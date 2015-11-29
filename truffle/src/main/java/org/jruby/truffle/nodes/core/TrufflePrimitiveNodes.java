@@ -744,16 +744,13 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode pathCall;
-
         public LoadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            pathCall = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
-        public boolean load(VirtualFrame frame, DynamicObject file, boolean wrap) {
+        public boolean load(DynamicObject file, boolean wrap) {
             if (wrap) {
                 throw new UnsupportedOperationException();
             }
@@ -762,18 +759,15 @@ public abstract class TrufflePrimitiveNodes {
                 getContext().loadFile(StringOperations.getString(getContext(), file), this);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
-                final DynamicObject rubyException = getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this);
-                pathCall.call(frame, rubyException, "path=", null, file);
-
-                throw new RaiseException(rubyException);
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
             }
 
             return true;
         }
 
         @Specialization(guards = "isRubyString(file)")
-        public boolean load(VirtualFrame frame, DynamicObject file, NotProvided wrap) {
-            return load(frame, file, false);
+        public boolean load(DynamicObject file, NotProvided wrap) {
+            return load(file, false);
         }
     }
 
