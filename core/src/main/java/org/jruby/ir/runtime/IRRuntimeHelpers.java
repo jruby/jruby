@@ -451,14 +451,6 @@ public class IRRuntimeHelpers {
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
-    private boolean blockHasExplicitCallProtocol(Block block) {
-        if (block.getBody() instanceof IRBlockBody) {
-            return ((IRBlockBody)block.getBody()).getScope().getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
-        } else {
-            return false;
-        }
-    }
-
     public static IRubyObject yieldSpecific(ThreadContext context, Object blk) {
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
