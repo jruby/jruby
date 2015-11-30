@@ -693,9 +693,9 @@ public class BodyTranslator extends Translator {
 
             final String tempName = environment.allocateLocalTemp("case");
 
-            final RubyNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
+            final ReadLocalNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
 
-            final RubyNode assignTemp = ((ReadNode) readTemp).makeWriteNode(node.getCaseNode().accept(this));
+            final RubyNode assignTemp = readTemp.makeWriteNode(node.getCaseNode().accept(this));
 
             /*
              * Build an if expression from the whens and else. Work backwards because the first if
@@ -1441,7 +1441,7 @@ public class BodyTranslator extends Translator {
                 environment.declareVar(name);
             }
 
-            RubyNode localVarNode = environment.findLocalVarNode(node.getName(), sourceSection);
+            ReadLocalNode localVarNode = environment.findLocalVarNode(node.getName(), sourceSection);
 
             if (localVarNode == null) {
                 if (environment.hasOwnScopeForAssignments()) {
@@ -1462,7 +1462,7 @@ public class BodyTranslator extends Translator {
                 }
             }
 
-            RubyNode assignment = ((ReadNode) localVarNode).makeWriteNode(rhs);
+            RubyNode assignment = localVarNode.makeWriteNode(rhs);
 
             if (name.equals("$_")) {
                 assignment = GetFromThreadLocalNodeGen.create(context, sourceSection, assignment);
@@ -1780,7 +1780,7 @@ public class BodyTranslator extends Translator {
             environment.declareVar(node.getName());
         }
 
-        RubyNode lhs = environment.findLocalVarNode(node.getName(), sourceSection);
+        ReadLocalNode lhs = environment.findLocalVarNode(node.getName(), sourceSection);
 
         if (lhs == null) {
             if (environment.hasOwnScopeForAssignments()) {
@@ -1820,7 +1820,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        final RubyNode ret = ((ReadNode) lhs).makeWriteNode(rhs);
+        final RubyNode ret = lhs.makeWriteNode(rhs);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1971,8 +1971,8 @@ public class BodyTranslator extends Translator {
 
             for (int n = 0; n < assignedValuesCount; n++) {
                 final String tempName = environment.allocateLocalTemp("multi");
-                final RubyNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
-                final RubyNode assignTemp = ((ReadNode) NodeUtil.cloneNode(readTemp)).makeWriteNode(rhsValues[n]);
+                final ReadLocalNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
+                final RubyNode assignTemp = readTemp.makeWriteNode(rhsValues[n]);
                 final RubyNode assignFinalValue = translateDummyAssignment(preArray.get(n), NodeUtil.cloneNode(readTemp));
 
                 sequence[n] = assignTemp;
@@ -2018,7 +2018,7 @@ public class BodyTranslator extends Translator {
              */
 
             final String tempRHSName = environment.allocateLocalTemp("rhs");
-            final RubyNode writeTempRHS = ((ReadNode) environment.findLocalVarNode(tempRHSName, sourceSection)).makeWriteNode(rhsTranslated);
+            final RubyNode writeTempRHS = environment.findLocalVarNode(tempRHSName, sourceSection).makeWriteNode(rhsTranslated);
             sequence.add(writeTempRHS);
 
             /*
@@ -2034,7 +2034,7 @@ public class BodyTranslator extends Translator {
 
             final RubyNode splatCastNode = SplatCastNodeGen.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, environment.findLocalVarNode(tempRHSName, sourceSection));
 
-            final RubyNode writeTemp = ((ReadNode) environment.findLocalVarNode(tempName, sourceSection)).makeWriteNode(splatCastNode);
+            final RubyNode writeTemp = environment.findLocalVarNode(tempName, sourceSection).makeWriteNode(splatCastNode);
 
             sequence.add(writeTemp);
 
@@ -2113,7 +2113,7 @@ public class BodyTranslator extends Translator {
 
             final RubyNode splatCastNode = SplatCastNodeGen.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, rhsTranslated);
 
-            final RubyNode writeTemp = ((ReadNode) environment.findLocalVarNode(tempName, sourceSection)).makeWriteNode(splatCastNode);
+            final RubyNode writeTemp = environment.findLocalVarNode(tempName, sourceSection).makeWriteNode(splatCastNode);
 
             sequence.add(writeTemp);
 
