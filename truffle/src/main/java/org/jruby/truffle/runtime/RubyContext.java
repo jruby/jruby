@@ -449,6 +449,7 @@ public class RubyContext extends ExecutionContext {
         return newTupleNode.call(frame, getCoreLibrary().getTupleClass(), "create", null, values);
     }
 
+    @TruffleBoundary
     public IRubyObject toJRuby(Object object) {
         if (object == getCoreLibrary().getNilObject()) {
             return runtime.getNil();
@@ -463,11 +464,13 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
+    @TruffleBoundary
     public IRubyObject toJRubyEncoding(DynamicObject encoding) {
         assert RubyGuards.isRubyEncoding(encoding);
         return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(Layouts.ENCODING.getName(encoding)));
     }
 
+    @TruffleBoundary
     public org.jruby.RubyString toJRubyString(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
@@ -482,6 +485,7 @@ public class RubyContext extends ExecutionContext {
         return jrubyString;
     }
 
+    @TruffleBoundary
     public Object toTruffle(IRubyObject object) {
         if (object instanceof RubyNil) {
             return getCoreLibrary().getNilObject();
@@ -507,6 +511,7 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
+    @TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyArray array) {
         final Object[] store = new Object[array.size()];
 
@@ -517,6 +522,7 @@ public class RubyContext extends ExecutionContext {
         return Layouts.ARRAY.createArray(coreLibrary.getArrayFactory(), store, store.length);
     }
 
+    @TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyString jrubyString) {
         final DynamicObject truffleString = StringOperations.createString(this, jrubyString.getByteList().dup());
 
@@ -527,6 +533,7 @@ public class RubyContext extends ExecutionContext {
         return truffleString;
     }
 
+    @TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
