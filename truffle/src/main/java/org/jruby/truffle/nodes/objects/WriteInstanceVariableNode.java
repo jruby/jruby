@@ -30,14 +30,12 @@ public class WriteInstanceVariableNode extends RubyNode {
     @Child private RubyNode receiver;
     @Child private RubyNode rhs;
     @Child private WriteHeadObjectFieldNode writeNode;
-    private final boolean isGlobal;
 
-    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
+    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs) {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;
         writeNode = WriteHeadObjectFieldNodeGen.create(name);
-        this.isGlobal = isGlobal;
     }
 
     @Override

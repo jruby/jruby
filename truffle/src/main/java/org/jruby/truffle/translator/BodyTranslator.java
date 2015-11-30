@@ -1435,7 +1435,7 @@ public class BodyTranslator extends Translator {
 
         if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
-            return new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs, true);
+            return new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs);
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             if (environment.getNeverAssignInParentScope()) {
                 environment.declareVar(name);
@@ -1471,7 +1471,7 @@ public class BodyTranslator extends Translator {
             return assignment;
         } else {
             final LiteralNode globalVariablesObjectNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
-            return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
+            return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs);
 
         }
     }
@@ -1635,12 +1635,12 @@ public class BodyTranslator extends Translator {
             // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
             if (name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
                 // Cast int-fitting longs back to int
-                ret = new WriteInstanceVariableNode(context, sourceSection, name, self, IntegerCastNodeGen.create(context, sourceSection, rhs), false);
+                ret = new WriteInstanceVariableNode(context, sourceSection, name, self, IntegerCastNodeGen.create(context, sourceSection, rhs));
                 return addNewlineIfNeeded(node, ret);
             }
         }
 
-        ret = new WriteInstanceVariableNode(context, sourceSection, name, self, rhs, false);
+        ret = new WriteInstanceVariableNode(context, sourceSection, name, self, rhs);
         return addNewlineIfNeeded(node, ret);
     }
 
