@@ -367,10 +367,6 @@ public final class Ruby implements Constantizable {
         return globalRuntime != null;
     }
 
-    public static boolean isSubstrateVM() {
-        return false;
-    }
-
     /**
      * Set the global runtime to the given runtime only if it has no been set.
      *

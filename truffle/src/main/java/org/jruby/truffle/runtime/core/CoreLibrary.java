@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.java.JavaInterop;
@@ -191,7 +192,7 @@ public class CoreLibrary {
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
 
-    private static final TruffleObject systemObject = JavaInterop.asTruffleObject(System.class);
+    private static final Object systemObject = TruffleOptions.AOT ? null : JavaInterop.asTruffleObject(System.class);
 
     public String getCoreLoadPath() {
         String path = context.getOptions().CORE_LOAD_PATH;
