@@ -105,6 +105,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger("RubyThread");
 
+    private volatile IRubyObject threadName;
+
     /** The thread-like think that is actually executing */
     private volatile ThreadLike threadImpl;
 
@@ -692,6 +694,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    @JRubyMethod(name = "name=", required = 1)
+    public IRubyObject setName(ThreadContext context, IRubyObject name) {
+        this.threadName = name;
+        return threadName;
+    }
+
+    @JRubyMethod(name = "name")
+    public IRubyObject getName(ThreadContext context) {
+        return this.threadName;
+    }
+
     private boolean pendingInterruptInclude(IRubyObject err) {
         Iterator<IRubyObject> iterator = pendingInterruptQueue.iterator();
         while (iterator.hasNext()) {
@@ -1007,6 +1020,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         String cname = getMetaClass().getRealClass().getName();
         part.append("#<").append(cname).append(":");
         part.append(identityString());
+        if (threadName != null) {
+            part.append('@');
+            part.append(threadName.asJavaString());
+        }
         part.append(' ');
         part.append(status.toString().toLowerCase());
         part.append('>');
