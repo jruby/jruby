@@ -1470,8 +1470,7 @@ public class BodyTranslator extends Translator {
 
             return assignment;
         } else {
-            final LiteralNode globalVariablesObjectNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
-            return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs);
+            return new WriteGlobalVariableNode(context, sourceSection, name, rhs);
 
         }
     }
@@ -1511,8 +1510,7 @@ public class BodyTranslator extends Translator {
             // Instead, it reads the backtrace field of the thread-local $! value.
             ret = new ReadLastBacktraceNode(context, sourceSection);
         } else {
-            final LiteralNode globalVariablesObjectNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
-            ret = new ReadInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, true);
+            ret = new ReadGlobalVariableNode(context, sourceSection, name);
         }
 
         return addNewlineIfNeeded(node, ret);

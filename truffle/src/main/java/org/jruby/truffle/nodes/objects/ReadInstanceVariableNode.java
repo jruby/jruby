@@ -30,7 +30,6 @@ public class ReadInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private ReadHeadObjectFieldNode readNode;
-    private final boolean isGlobal;
 
     private final BranchProfile primitiveProfile = BranchProfile.create();
 
@@ -38,7 +37,6 @@ public class ReadInstanceVariableNode extends RubyNode {
         super(context, sourceSection);
         this.receiver = receiver;
         readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
-        this.isGlobal = isGlobal;
     }
 
     @Override
@@ -98,16 +96,6 @@ public class ReadInstanceVariableNode extends RubyNode {
     @Override
     public Object isDefined(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
-
-        if (isGlobal) {
-            final DynamicObject receiverValue = (DynamicObject) receiver.execute(frame);
-
-            if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(receiverValue) != nil()) {
-                return create7BitString(StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE));
-            } else {
-                return nil();
-            }
-        }
 
         final Object receiverObject = receiver.execute(frame);
 
