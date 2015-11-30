@@ -4,6 +4,7 @@ import org.jruby.RubyModule;
 import org.jruby.EvalType;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -63,6 +64,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         if (interpreterContext == null) {
             interpreterContext = closure.getInterpreterContext();
         }
+        hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         return interpreterContext;
     }
 
@@ -74,6 +76,11 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     @Override
     public String getName() {
         return null;
+    }
+
+    @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        return Interpreter.INTERPRET_BLOCK(context, block, self, interpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {

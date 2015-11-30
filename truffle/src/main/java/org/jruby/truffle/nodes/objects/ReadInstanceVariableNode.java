@@ -24,14 +24,12 @@ import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.translator.ReadNode;
 import org.jruby.util.StringSupport;
 
-public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
+public class ReadInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private ReadHeadObjectFieldNode readNode;
-    private final boolean isGlobal;
 
     private final BranchProfile primitiveProfile = BranchProfile.create();
 
@@ -39,7 +37,6 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         super(context, sourceSection);
         this.receiver = receiver;
         readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
-        this.isGlobal = isGlobal;
     }
 
     @Override
@@ -98,27 +95,12 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        if (isGlobal) {
-            final DynamicObject receiverValue = (DynamicObject) receiver.execute(frame);
-
-            if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(receiverValue) != nil()) {
-                return create7BitString(StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE));
-            } else {
-                return nil();
-            }
-        }
-
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof DynamicObject) {
             final DynamicObject receiverRubyObject = (DynamicObject) receiverObject;
 
-            final Shape layout = receiverRubyObject.getShape();
-            final Property storageLocation = layout.getProperty(readNode.getName());
-
-            if (storageLocation != null) {
+            if (receiverRubyObject.getShape().hasProperty(readNode.getName())) {
                 return create7BitString(StringOperations.encodeByteList("instance-variable", UTF8Encoding.INSTANCE));
             } else {
                 return nil();
@@ -128,8 +110,4 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         }
     }
 
-    @Override
-    public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteInstanceVariableNode(getContext(), getSourceSection(), (String) readNode.getName(), receiver, rhs, isGlobal);
-    }
 }

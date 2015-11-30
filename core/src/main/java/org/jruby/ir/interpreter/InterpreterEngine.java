@@ -17,6 +17,7 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PopBlockFrameInstr;
+import org.jruby.ir.instructions.PrepareBlockArgsInstr;
 import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
@@ -179,15 +180,18 @@ public class InterpreterEngine {
                         }
                         break;
                     case BOOK_KEEPING_OP:
-                        if (operation == Operation.PUSH_METHOD_BINDING) {
+                        switch (operation) {
+                        case PUSH_METHOD_BINDING:
                             // IMPORTANT: Preserve this update of currDynScope.
                             // This affects execution of all instructions in this scope
                             // which will now use the updated value of currDynScope.
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
-                        } else if (operation == Operation.PUSH_BLOCK_BINDING) {
+                            break;
+                        case PUSH_BLOCK_BINDING:
                             currDynScope = getBlockScope(context, block, interpreterContext);
-                        } else if (operation == Operation.UPDATE_BLOCK_STATE) {
+                            break;
+                        case UPDATE_BLOCK_STATE:
                             if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
                                 // Update self to the binding's self
                                 Binding b = block.getBinding();
@@ -196,8 +200,15 @@ public class InterpreterEngine {
                             }
                             // Clear block's eval type
                             block.setEvalType(EvalType.NONE);
-                        } else {
+                            break;
+                        case PREPARE_SINGLE_BLOCK_ARG:
+                        case PREPARE_FIXED_BLOCK_ARGS:
+                        case PREPARE_BLOCK_ARGS:
+                            args = ((PrepareBlockArgsInstr)instr).prepareBlockArgs(context, block, args);
+                            break;
+                        default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
+                            break;
                         }
                         break;
                     case OTHER_OP:

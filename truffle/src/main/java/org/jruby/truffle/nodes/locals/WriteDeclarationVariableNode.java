@@ -19,10 +19,9 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.translator.WriteNode;
 import org.jruby.util.StringSupport;
 
-public class WriteDeclarationVariableNode extends RubyNode implements WriteNode {
+public class WriteDeclarationVariableNode extends RubyNode {
 
     @Child private RubyNode valueNode;
     @Child private WriteFrameSlotNode writeFrameSlotNode;
@@ -41,11 +40,6 @@ public class WriteDeclarationVariableNode extends RubyNode implements WriteNode 
     public Object execute(VirtualFrame frame) {
         final MaterializedFrame declarationFrame = RubyArguments.getDeclarationFrame(frame, frameDepth);
         return writeFrameSlotNode.executeWrite(declarationFrame, valueNode.execute(frame));
-    }
-
-    @Override
-    public RubyNode makeReadNode() {
-        return new ReadDeclarationVariableNode(getContext(), getSourceSection(), frameDepth, writeFrameSlotNode.getFrameSlot());
     }
 
     @Override

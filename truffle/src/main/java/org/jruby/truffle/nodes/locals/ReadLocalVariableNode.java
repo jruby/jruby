@@ -18,11 +18,10 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.translator.ReadNode;
 import org.jruby.truffle.translator.Translator;
 import org.jruby.util.StringSupport;
 
-public class ReadLocalVariableNode extends RubyNode implements ReadNode {
+public class ReadLocalVariableNode extends ReadLocalNode {
 
     @Child private ReadFrameSlotNode readFrameSlotNode;
 

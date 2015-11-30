@@ -12,6 +12,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final int lineNumber;
     protected final IRClosure closure;
     protected ThreadLocal<EvalType> evalType;
+    protected boolean hasCallProtocolIR;
 
     public IRBlockBody(IRScope closure, Signature signature) {
         super(closure.getStaticScope(), signature);
@@ -28,6 +29,11 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     public void setEvalType(EvalType evalType) {
         this.evalType.set(evalType);
+    }
+
+    @Override
+    public boolean hasCallProtocolIR() {
+        return hasCallProtocolIR;
     }
 
     @Override

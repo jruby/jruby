@@ -61,6 +61,14 @@ public abstract class BlockBody {
         System.err.println("setEvalType unimplemented in " + this.getClass().getName());
     }
 
+    public boolean hasCallProtocolIR() {
+        return false;
+    }
+
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        throw new RuntimeException("yieldDirect not implemented in base class. We should never get here.");
+    }
+
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
         args = prepareArgumentsForCall(context, args, block.type);
 
@@ -74,12 +82,20 @@ public abstract class BlockBody {
     }
 
     public final IRubyObject yield(ThreadContext context, Block block, IRubyObject value) {
-        return doYield(context, block, value);
+        if (hasCallProtocolIR()) {
+            return yieldDirect(context, block, new IRubyObject[] { value }, null);
+        } else {
+            return doYield(context, block, value);
+        }
     }
 
     public final IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        IRubyObject[] preppedValue = RubyProc.prepareArgs(context, block.type, this, args);
-        return doYield(context, block, preppedValue, self);
+        if (hasCallProtocolIR()) {
+            return yieldDirect(context, block, args, self);
+        } else {
+            IRubyObject[] preppedValue = RubyProc.prepareArgs(context, block.type, this, args);
+            return doYield(context, block, preppedValue, self);
+        }
     }
 
     /**
@@ -116,12 +132,17 @@ public abstract class BlockBody {
 
         return yield(context, block, args, null);
     }
+
     public IRubyObject call(ThreadContext context, Block block, Block unusedBlock) {
         return call(context, block);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block) {
-        return yield(context, block, null);
+        if (hasCallProtocolIR()) {
+            return yieldDirect(context, block, null, null);
+        } else {
+            return yield(context, block, null);
+        }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0) {
         IRubyObject[] args = new IRubyObject[] {arg0};

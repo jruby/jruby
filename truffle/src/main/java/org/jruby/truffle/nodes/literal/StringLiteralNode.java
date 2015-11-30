@@ -9,9 +9,14 @@
  */
 package org.jruby.truffle.nodes.literal;
 
+import java.util.Arrays;
+
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
@@ -20,22 +25,26 @@ import org.jruby.util.ByteList;
 
 public class StringLiteralNode extends RubyNode {
 
-    private final ByteList bytes;
+    private @CompilationFinal byte[] bytes; // deeply immutable
+    private final Encoding encoding;
     private final int codeRange;
 
     @Child private AllocateObjectNode allocateObjectNode;
 
-    public StringLiteralNode(RubyContext context, SourceSection sourceSection, ByteList bytes, int codeRange) {
+    public StringLiteralNode(RubyContext context, SourceSection sourceSection, ByteList byteList, int codeRange) {
         super(context, sourceSection);
-        assert bytes != null;
-        this.bytes = bytes;
+        assert byteList != null;
+        this.bytes = byteList.bytes();
+        this.encoding = byteList.getEncoding();
         this.codeRange = codeRange;
         allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, false, null, null);
     }
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        return allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(), bytes.dup(), codeRange, null);
+        final byte[] copy = Arrays.copyOf(bytes, bytes.length);
+        final ByteList byteList = new ByteList(copy, encoding, false);
+        return allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(), byteList, codeRange, null);
     }
 
 }
