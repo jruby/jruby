@@ -95,17 +95,12 @@ public class ReadInstanceVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof DynamicObject) {
             final DynamicObject receiverRubyObject = (DynamicObject) receiverObject;
 
-            final Shape layout = receiverRubyObject.getShape();
-            final Property storageLocation = layout.getProperty(readNode.getName());
-
-            if (storageLocation != null) {
+            if (receiverRubyObject.getShape().hasProperty(readNode.getName())) {
                 return create7BitString(StringOperations.encodeByteList("instance-variable", UTF8Encoding.INSTANCE));
             } else {
                 return nil();
