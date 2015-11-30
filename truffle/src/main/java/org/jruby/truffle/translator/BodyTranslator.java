@@ -1996,7 +1996,7 @@ public class BodyTranslator extends Translator {
              *
              * If x is an array, then it's
              *
-             * a[0] = x[0] etc
+             * a = x[0] etc
              *
              * If x isn't an array then it's
              *
@@ -2071,27 +2071,11 @@ public class BodyTranslator extends Translator {
              *
              * a = *b
              */
+            final SplatCastNode rhsSplatCast = SplatCastNodeGen.create(context, sourceSection,
+                    translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL,
+                    false, rhsTranslated);
 
-            final RubyNode restTranslated = (node.getRest().accept(this)).getNonProxyNode();
-
-            /*
-             * Sometimes rest is a corrupt write with no RHS, like in other multiple assignments,
-             * and sometimes it is already a read.
-             */
-
-            ReadNode restRead;
-
-            if (restTranslated instanceof ReadNode) {
-                restRead = (ReadNode) restTranslated;
-            } else if (restTranslated instanceof WriteNode) {
-                restRead = (ReadNode) ((WriteNode) restTranslated).makeReadNode();
-            } else {
-                throw new RuntimeException("Unknown form of multiple assignment " + node + " at " + node.getPosition());
-            }
-
-            final SplatCastNode rhsSplatCast = SplatCastNodeGen.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, rhsTranslated);
-
-            result = restRead.makeWriteNode(rhsSplatCast);
+            result = translateDummyAssignment(node.getRest(), rhsSplatCast);
         } else if (node.getPre() == null
                 && node.getPost() == null
                 && node.getRest() != null
@@ -2104,25 +2088,7 @@ public class BodyTranslator extends Translator {
              *
              * a = [b, c]
              */
-
-            final RubyNode restTranslated = (node.getRest().accept(this)).getNonProxyNode();
-
-            /*
-             * Sometimes rest is a corrupt write with no RHS, like in other multiple assignments,
-             * and sometimes it is already a read.
-             */
-
-            ReadNode restRead;
-
-            if (restTranslated instanceof ReadNode) {
-                restRead = (ReadNode) restTranslated;
-            } else if (restTranslated instanceof WriteNode) {
-                restRead = (ReadNode) ((WriteNode) restTranslated).makeReadNode();
-            } else {
-                throw new RuntimeException("Unknown form of multiple assignment " + node + " at " + node.getPosition());
-            }
-
-            result = restRead.makeWriteNode(rhsTranslated);
+            result = translateDummyAssignment(node.getRest(), rhsTranslated);
         } else if (node.getPre() == null && node.getRest() != null && node.getPost() != null) {
             /*
              * Something like

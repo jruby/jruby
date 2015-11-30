@@ -27,7 +27,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.ReadNode;
 import org.jruby.util.StringSupport;
 
-public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
+public class ReadInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private ReadHeadObjectFieldNode readNode;
@@ -128,8 +128,4 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         }
     }
 
-    @Override
-    public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteInstanceVariableNode(getContext(), getSourceSection(), (String) readNode.getName(), receiver, rhs, isGlobal);
-    }
 }
