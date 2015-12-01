@@ -29,6 +29,8 @@ public class Profiler {
     public static final int UNASSIGNED_VERSION = -1;
     private static final int PROFILE_PERIOD = 20000;
 
+    // Structure on what a callsite is.  It lives in an IC. It will be some form of call (CallBase).
+    // It might have been called count times.
     public static class IRCallSite {
         InterpreterContext ic;
         CallBase call; // callsite
@@ -44,7 +46,7 @@ public class Profiler {
         }
 
         public int hashCode() {
-            return (int)this.call.callSiteId;
+            return (int) call.callSiteId;
         }
 
         public void update(CallBase call, InterpreterContext ic) {
@@ -53,6 +55,10 @@ public class Profiler {
         }
     }
 
+    // ENEBO: I believe this need not retain IRCallSite as it involves a copy constructor to work. CallsitePofile
+    // is-a IRCallSite with extra info on which types are calling it.
+
+    // For an individual callsite how many methods is this callsite calling?
     private static class CallSiteProfile {
         IRCallSite cs;
         HashMap<IRScope, Counter> counters;
@@ -71,7 +77,7 @@ public class Profiler {
 
     // How many code modifications happens during this period?
     private static int codeModificationsCount = 0;
-
+    // If we have enough periods without changes occurring we start getting serious about compiling.
     private static int periodsWithoutChanges = 0;
     private static int versionCount = 1;
 
@@ -98,10 +104,12 @@ public class Profiler {
     }
 
     private static void analyzeProfile() {
+        // Don't bother doing any analysis until we see the system start to settle down from lots of modifications.
+        if (isStillBootstrapping()) return;
+
         versionCount++;
 
         System.out.println("CMC: " + codeModificationsCount + ", NMWNM: " + periodsWithoutChanges);
-        if (isStillBootstrapping()) return;
 
 //         System.out.println("-------------------start analysis-----------------------");
 
@@ -320,20 +328,28 @@ public class Profiler {
         int scopeVersion = ic.getVersion();
         if (scopeVersion == UNASSIGNED_VERSION) ic.setVersion(versionCount);
 
+        // ENEBO: This sets the stage for keep track of interesting callsites within a method which only full/JITed
+        // methods are actually interested in.  I think startupIC should just keep track of times a method has been
+        // called post bootstrapping to cause full and then something like this should exist in JIT/Full for potential
+        // to inline.
+
+        // FIXME: I think there is a bug here.  If we call IR -> native -> IR then this may still be set and it will
+        // be inaccurate to record this save callsite info with the currently executing scope.
         if (callerSite.call != null) {
-            Long id = callerSite.call.callSiteId;
-            CallSiteProfile csp = callProfile.get(id);
-            if (csp == null) {
+            Long id = callerSite.call.callSiteId;         // we find id to look up callsite in global table (global to flush?)
+            CallSiteProfile csp = callProfile.get(id);    // get saved profile
+            if (csp == null) {                            // of make one
                 csp = new CallSiteProfile(callerSite);
                 callProfile.put(id, csp);
             }
 
-            Counter csCount = csp.counters.get(scope);
-            if (csCount == null) {
+            // ENEBO: How do we clean out counters if we never inline
+            Counter csCount = csp.counters.get(scope);    // store which method is getting called (local to site)
+            if (csCount == null) {                        // make new counter
                 csCount = new Counter();
                 csp.counters.put(scope, csCount);
             }
-            csCount.count++;
+            csCount.count++;                              // this particular method was called one more time
         }
 
         return scopeVersion;
