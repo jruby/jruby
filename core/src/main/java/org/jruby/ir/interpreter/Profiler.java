@@ -19,8 +19,9 @@ import java.util.*;
 
 /**
  * Definitions in profiler:
- *   instruction tick - called for every significant instr in the system.  Significant currently means instrs which
- *      are ideally recognized as part of bootstrapping.
+ *   modification tick - called for every instr in the system which changes the structure of the program (e.g. def,
+ *   class, alias, undef...).  Purpose is to detect when things are settling down (most programs are not endlessly
+ *   modifying their applications).
  *   clock tick - hotness profiler granularity (currently denoted as # of thread_poll instrs).
  *   period - how long between attempts to analyze collected stats (PROFILE_PERIOD).  This is number of clock ticks.
  */
@@ -66,8 +67,11 @@ public class Profiler {
 
     private static int inlineCount = 0;
     private static int globalClockCount = 0;
+
+    // How many code modifications happens during this period?
     private static int codeModificationsCount = 0;
-    private static int numCyclesWithNoModifications = 0;
+
+    private static int periodsWithoutChanges = 0;
     private static int versionCount = 1;
 
     private static HashMap<IRScope, Integer> scopeVersionMap = new HashMap<>();
@@ -77,28 +81,27 @@ public class Profiler {
 
     private static final int NUMBER_OF_NON_MODIFYING_EXECUTIONS = 3;
 
-    /*
-     * Have we seen enough new method churn to start looking for hot methods?  We defer
-     * looking for hot methods too quickly by examining rate of change of new methods
-     * coming in.   Note: We should consider whether we want to plug this so we can play
-     * with different mechanisms.
+    /**
+     * Have we seen enough new modification churn to start looking for hot methods/closures?
+     * We defer looking for hot methods too quickly by examining rate of change of new methods
+     * coming in.
      */
     private static boolean isStillBootstrapping() {
         if (codeModificationsCount == 0) {
-            numCyclesWithNoModifications++;
+            periodsWithoutChanges++;
         } else {
-            numCyclesWithNoModifications = 0;
+            periodsWithoutChanges = 0;
         }
 
         codeModificationsCount = 0;
 
-        return numCyclesWithNoModifications < NUMBER_OF_NON_MODIFYING_EXECUTIONS;
+        return periodsWithoutChanges < NUMBER_OF_NON_MODIFYING_EXECUTIONS;
     }
 
     private static void analyzeProfile() {
         versionCount++;
 
-        System.out.println("CMC: " + codeModificationsCount + ", NMWNM: " + numCyclesWithNoModifications);
+        System.out.println("CMC: " + codeModificationsCount + ", NMWNM: " + periodsWithoutChanges);
         if (isStillBootstrapping()) return;
 
 //         System.out.println("-------------------start analysis-----------------------");
@@ -335,7 +338,8 @@ public class Profiler {
         return scopeVersion;
     }
 
-    // We do not pass profiling instructions through call so we temporarily tuck away last IR executed call in Profiler.
+    // We do not pass profiling instructions through call so we temporarily tuck away last IR executed
+    // call in Profiler.
     public static void markCallAboutToBeCalled(CallBase call, IRScope scope) {
         callerSite.call = call;
         callerSite.scope = scope;
@@ -346,7 +350,8 @@ public class Profiler {
         if (globalClockCount++ % PROFILE_PERIOD == 0) analyzeProfile();
     }
 
-    public static void instrTick(Operation operation) {
+    public static void modificationTick(Operation operation) {
+        // FIXME: We seem to only call this from OP_MOD so this check is only here for robustness?
         if (operation.modifiesCode()) codeModificationsCount++;
         /*
         Counter cnt = opStats.get(operation);
