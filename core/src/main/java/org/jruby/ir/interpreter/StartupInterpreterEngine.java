@@ -58,11 +58,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
             Operation operation = instr.getOperation();
             if (debug) {
-<<<<<<< HEAD
                 Interpreter.LOG.info("I: {" + ipc + "} ", instr + (rescuePCs != null ? "; <#RPCs=" + rescuePCs.size() + ">" : ""));
-=======
-                Interpreter.LOG.info("I: {" + ipc + "} ", instr + "; <#RPCs=" + (rescuePCs == null ? 0 : rescuePCs.size()) + ">");
->>>>>>> master
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);
@@ -112,11 +108,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 rescuePCs.pop();
                                 break;
                             default:
-<<<<<<< HEAD
-                                processBookKeepingOp(interpreterContext, context, instr, operation, name, args, self, block, blockType, implClass);
-=======
-                                processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
->>>>>>> master
+                                processBookKeepingOp(interpreterContext, context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
                         }
                         break;
                     case OTHER_OP:
