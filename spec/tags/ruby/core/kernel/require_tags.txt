@@ -8,3 +8,4 @@ fails:Kernel#require (path resolution) does not load a bare filename unless the 
 fails:Kernel.require (path resolution) does not load a bare filename unless the current working directory is in $LOAD_PATH
 fails:Kernel#require (path resolution) does not load a relative path unless the current working directory is in $LOAD_PATH
 fails:Kernel.require (path resolution) does not load a relative path unless the current working directory is in $LOAD_PATH
+fails:Kernel.require (concurrently) allows a 2nd require if the 1st raised an exception

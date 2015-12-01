@@ -1389,7 +1389,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void PopFrameInstr(PopFrameInstr popframeinstr) {
+    public void PopMethodFrameInstr(PopMethodFrameInstr popframeinstr) {
         jvmMethod().loadContext();
         jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void postMethodFrameOnly()"));
     }
@@ -1404,7 +1404,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void PushBindingInstr(PushBindingInstr pushbindinginstr) {
+    public void PushMethodBindingInstr(PushMethodBindingInstr pushbindinginstr) {
         jvmMethod().loadContext();
         jvmMethod().loadStaticScope();
         jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
@@ -1422,7 +1422,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void PushFrameInstr(PushFrameInstr pushframeinstr) {
+    public void PushMethodFrameInstr(PushMethodFrameInstr pushframeinstr) {
         jvmMethod().loadContext();
         jvmMethod().loadFrameClass();
         jvmMethod().loadFrameName();
@@ -1623,7 +1623,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
         switch (runtimehelpercall.getHelperMethod()) {
-            case HANDLE_PROPAGATE_BREAK:
+            case HANDLE_PROPAGATED_BREAK:
                 jvmMethod().loadContext();
                 jvmLoadLocal(DYNAMIC_SCOPE);
                 visit(runtimehelpercall.getArgs()[0]);

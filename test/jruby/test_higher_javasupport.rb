@@ -1359,6 +1359,16 @@ CLASSDEF
     end
   end
 
+  # GH-3262
+  def test_indexed_bean_style_accessors_are_not_aliased
+    # ArgumentError: wrong number of arguments (0 for 1)
+    assert java.lang.Character.name
+    java.lang.Character.getName(42) # nothing raised
+    assert_raises(ArgumentError) do
+      java.lang.Character.name(42) # `getName(int)' NOT mapped to `name(i)'
+    end
+  end
+
   def test_no_warnings_on_concurrent_package_const_initialization
     output = with_stderr_captured do
       threads = (0..10).map do # smt not yet initialized :

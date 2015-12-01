@@ -55,7 +55,7 @@ project 'JRuby Dist' do
                                 '../../lib/*.jar' ) ]
 
       (jruby_home + gem_home + lib_dir).each do |f|
-        file = f.sub /.jar$/, '' 
+        file = f.sub /.jar$/, ''
         unless File.exists?( file + '.pack.gz' )
           puts "pack200 #{f.sub(/.*jruby.home./, '').sub(/.*rubygems-provided./, '')}"
           system('pack200', "#{file}.pack.gz", "#{file}.jar")
@@ -69,29 +69,6 @@ project 'JRuby Dist' do
         unless f.match /.(bat|exe|dll)$/
           puts f
           File.chmod( 0755, f ) rescue nil
-        end
-      end
-    end
-
-    execute :fix_permissions do |ctx|
-      gems = File.join( ctx.project.build.directory.to_pathname, 'rubygems-provided' )
-      ( Dir[ File.join( gems, '**/*' ) ] + Dir[ File.join( gems, '**/.*' ) ] ).each do |f|
-        File.chmod( 0644, f ) rescue nil if File.file?( f )
-      end
-      Dir[ File.join( gems, '**/maven-home/bin/mvn' ) ].each do |f|
-        File.chmod( 0755, f ) rescue nil if File.file?( f )
-      end
-    end
-
-    execute :dump_full_specs_of_ruby_maven do |ctx|
-      rubygems =  File.join( ctx.project.build.directory.to_pathname, 'rubygems-provided' )
-      gems =  File.join( rubygems, 'cache/*gem' )
-      default_specs = File.join( rubygems, 'specifications/default' )
-      FileUtils.mkdir_p( default_specs )
-      Dir[gems].each do |gem|
-        spec = Gem::Package.new( gem ).spec
-        File.open( File.join( default_specs, File.basename( gem ) + 'spec' ), 'w' ) do |f|
-          f.print( spec.to_ruby )
         end
       end
     end
@@ -127,9 +104,9 @@ project 'JRuby Dist' do
         require 'fileutils'
 
         revision = `git log -1 --format="%H"`.chomp
-      
+
         basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
-        
+
         FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
           [ 'tar', 'zip' ].each do |format|
             puts "create #{basefile}.#{format}"
@@ -145,7 +122,7 @@ project 'JRuby Dist' do
                       :artifacts => [ { :file => '${project.build.directory}/${project.build.finalName}-src.zip',
                                         :type => 'zip',
                                         :classifier => 'src' } ] )
-        
+
       end
       plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
         execute_goals( :artifacts, :algorithms => ['SHA256' ] )

@@ -4751,6 +4751,10 @@ public final class Ruby implements Constantizable {
             deduped = string.strDup(this);
             deduped.setFrozen(true);
             dedupMap.put(string, new WeakReference<RubyString>(deduped));
+        } else if (deduped.getEncoding() != string.getEncoding()) {
+            // if encodings don't match, new string loses; can't dedup
+            deduped = string.strDup(this);
+            deduped.setFrozen(true);
         }
         return deduped;
     }

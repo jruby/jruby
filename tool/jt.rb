@@ -172,11 +172,12 @@ module Commands
   include ShellUtils
 
   def help
-    puts 'jt build                                       build'
-    puts 'jt build truffle                               build only the Truffle part, assumes the rest is up-to-date'
+    puts 'jt build [options]                             build'
+    puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
+    puts 'jt rebuild [options]                           clean and build'
+    puts '    --no-tests       don\'t run JUnit unit tests'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
-    puts 'jt rebuild                                     clean and build'
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --asm           show assembly (implies --graal)'
@@ -207,7 +208,6 @@ module Commands
     puts 'jt findbugs                                    run findbugs'
     puts 'jt findbugs report                             run findbugs and generate an HTML report'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
-    puts 'jt install-tool                                install the jruby+truffle tool for working with Ruby gems'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -218,15 +218,22 @@ module Commands
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
   end
 
-  def build(project = nil)
-    case project
-    when 'truffle'
-      mvn '-pl', 'truffle', 'package'
-    when nil
-      mvn 'package'
-    else
-      raise ArgumentError, project
+  def build(*args)
+    mvn_args = []
+
+    if args.delete 'truffle'
+      mvn_args += ['-pl', 'truffle', 'package']
     end
+
+    if args.delete '--no-tests'
+      mvn_args << '-DskipTests'
+    end
+
+    unless args.empty?
+      raise ArgumentError, args.inspect
+    end
+
+    mvn *mvn_args
   end
 
   def clean
@@ -237,9 +244,9 @@ module Commands
     run(*%w[-S irb], *args)
   end
 
-  def rebuild
+  def rebuild(*args)
     clean
-    build
+    build *args
   end
 
   def run(*args)
@@ -491,21 +498,6 @@ module Commands
     end
   end
 
-  def install_tool
-    Dir.chdir(JRUBY_DIR) do
-      Dir.chdir('tool/truffle/jruby_truffle_runner') do
-        raw_sh('gem', 'build', 'jruby+truffle_runner.gemspec')
-        raw_sh('gem', 'install', 'jruby+truffle_runner-0.0.1.gem')
-
-        begin
-          system('rbenv', 'rehash')
-        rescue
-        end
-      end
-    end
-  end
-
-  alias_method :"install-tool", :install_tool
 end
 
 class JT
@@ -519,13 +511,14 @@ class JT
       exit
     end
 
-    case args.first
-    when "rebuild"
-      send(args.shift)
-    when "build"
-      command = [args.shift]
-      command << args.shift if args.first == "truffle"
-      send(*command)
+    if ['build', 'rebuild'].include? args.first
+      build_args = [args.shift]
+
+      while ['truffle', '--no-tests'].include? args.first
+        build_args << args.shift
+      end
+
+      send(*build_args)
     end
 
     return if args.empty?

@@ -67,6 +67,7 @@ build jruby-complete.jar
 <arg value='test/test_ivar_table_integrity.rb'/>
 <arg value='test/test_io.rb'/>
 <arg value='test/test_load.rb'/>
+<arg value='test/test_load_gem_extensions.rb'/>
 <arg value='test/test_method.rb'/>
 <arg value='test/test_method_cache.rb'/>
 <arg value='test/test_method_override_and_caching.rb'/>
@@ -393,7 +394,6 @@ build jruby-complete.jar
 <arg value='test/externals/ruby1.9/psych/test_document.rb'/>
 <arg value='test/externals/ruby1.9/psych/test_emitter.rb'/>
 <arg value='test/externals/ruby1.9/psych/test_encoding.rb'/>
-<arg value='test/externals/ruby1.9/psych/test_engine_manager.rb'/>
 <arg value='test/externals/ruby1.9/psych/test_exception.rb'/>
 <arg value='test/externals/ruby1.9/psych/test_hash.rb'/>
 <arg value='test/externals/ruby1.9/psych/test_json_tree.rb'/>

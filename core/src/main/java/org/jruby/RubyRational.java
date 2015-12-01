@@ -150,8 +150,13 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_new
      * 
      */
-    private static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
+    static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
         return canonicalizeInternal(context, context.runtime.getRational(), x, y);
+    }
+
+    public static IRubyObject newRationalCanonicalize(ThreadContext context, long x, long y) {
+        Ruby runtime = context.runtime;
+        return canonicalizeInternal(context, runtime.getRational(), runtime.newFixnum(x), runtime.newFixnum(y));
     }
     
     /** f_rational_new2
@@ -227,7 +232,7 @@ public class RubyRational extends RubyNumeric {
             num = f_negate(context, num);
             den = f_negate(context, den);
         } else if (res == RubyFixnum.zero(runtime)) {
-            throw runtime.newZeroDivisionError();            
+            throw runtime.newZeroDivisionError();
         }
 
         IRubyObject gcd = f_gcd(context, num, den);
@@ -240,7 +245,7 @@ public class RubyRational extends RubyNumeric {
 
         return new RubyRational(context.runtime, clazz, num, den);
     }
-    
+
     /** nurat_s_canonicalize_internal_no_reduce
      * 
      */

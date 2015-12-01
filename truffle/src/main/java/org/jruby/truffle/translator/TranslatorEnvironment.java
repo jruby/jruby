@@ -12,8 +12,10 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
+import org.jruby.truffle.nodes.locals.ReadLocalNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ReturnID;
@@ -130,8 +132,8 @@ public class TranslatorEnvironment {
         return null;
     }
 
-    public RubyNode findOrAddLocalVarNodeDangerous(String name, SourceSection sourceSection) {
-        RubyNode localVar = findLocalVarNode(name, sourceSection);
+    public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, SourceSection sourceSection) {
+        ReadLocalNode localVar = findLocalVarNode(name, sourceSection);
 
         if (localVar == null) {
             declareVar(name);
@@ -141,7 +143,7 @@ public class TranslatorEnvironment {
         return localVar;
     }
 
-    public RubyNode findLocalVarNode(String name, SourceSection sourceSection) {
+    public ReadLocalNode findLocalVarNode(String name, SourceSection sourceSection) {
         TranslatorEnvironment current = this;
         int level = -1;
         try {

@@ -58,6 +58,8 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.methods.LookupMethodNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
 import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
@@ -975,16 +977,48 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        protected static final int LIMIT = Options.FIELD_LOOKUP_CACHE;
+
         @CreateCast("name")
-        public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        public RubyNode coerceToSymbolOrString(RubyNode name) {
+            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization(
+                guards = { "isRubySymbol(name)", "name == cachedName" },
+                limit = "LIMIT")
+        public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
+                @Cached("name") DynamicObject cachedName,
+                @Cached("createReadFieldNode(checkName(symbolToString(cachedName)))") ReadHeadObjectFieldNode readHeadObjectFieldNode) {
+            return readHeadObjectFieldNode.execute(object);
+        }
+
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object instanceVariableGetSymbol(DynamicObject object, DynamicObject name) {
+            return ivarGet(object, symbolToString(name));
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object instanceVariableGet(DynamicObject object, String name) {
-            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
-            return object.get(ivar, nil());
+        @Specialization(guards = "isRubyString(name)")
+        public Object instanceVariableGetString(DynamicObject object, DynamicObject name) {
+            return ivarGet(object, name.toString());
+        }
+
+        @TruffleBoundary
+        private Object ivarGet(DynamicObject object, String name) {
+            return object.get(checkName(name), nil());
+        }
+
+        protected String symbolToString(DynamicObject name) {
+            return Layouts.SYMBOL.getString(name);
+        }
+
+        protected String checkName(String name) {
+            return RubyContext.checkInstanceVariableName(getContext(), name, this);
+        }
+
+        protected ReadHeadObjectFieldNode createReadFieldNode(String name) {
+            return ReadHeadObjectFieldNodeGen.create(name, nil());
         }
 
     }

@@ -1,7 +1,5 @@
 ---
 :global:
-  # default ../jruby/bin/ruby won't work since activesupport is one more dir deeper
-  :interpreter_path: '../../jruby/bin/jruby'
   :graal_path: '../../graalvm-jdk1.8.0/bin/java'
 :setup:
   :file:
@@ -9,6 +7,35 @@
               require 'minitest'
               # mock load_plugins as it loads rubygems
               def Minitest.load_plugins
+              end
+
+              require 'active_support/testing/isolation'
+
+              module ActiveSupport
+                module Testing
+                  module Isolation
+
+                    def run
+                      with_info_handler do
+                        time_it do
+                          capture_exceptions do
+                            before_setup; setup; after_setup
+
+                            skip 'isolation not supported'
+                          end
+
+                          %w{ before_teardown teardown after_teardown }.each do |hook|
+                            capture_exceptions do
+                              self.send hook
+                            end
+                          end
+                        end
+                      end
+
+                      return self # per contract
+                    end
+                  end
+                end
               end
 
               # Work around a bug in ActiveSupport whereby it tries to pass an env hash with Symbol keys. This only
@@ -20,12 +47,12 @@
     bundler.rb: "module Bundler; def self.setup; end; end"
     # mock method_source gem
     method_source.rb: nil
-    exlude_tests.rb:  |
+    exclude_tests.rb:  |
                       {
-                          FileStoreTest:      :test_two_classes_autoloading,
-                          KernelTest: [:test_silence_stream,
-                                       :test_quietly,
-                                       :test_capture],
+                          FileStoreTest: :test_two_classes_autoloading,
+                          KernelTest:    [:test_silence_stream,
+                                          :test_quietly,
+                                          :test_capture],
                       }.each do |mod_name, tests|
                         unless Object.const_defined? mod_name
                           warn "#{mod_name} not found"
@@ -47,8 +74,8 @@
     - db
 :run:
   :require:
+    - rubygems
     - shims
     - date
     - bigdecimal
-    - rubygems
     - pathname

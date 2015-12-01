@@ -440,6 +440,9 @@ class TestBignum < Test::Unit::TestCase
   def test_pow
     assert_equal(1.0, T32 ** 0.0)
     assert_equal(1.0 / T32, T32 ** -1)
+    assert_equal(1, (T31 ** T31).infinite?)
+    assert_equal(1, (T31 ** T32).infinite?)
+    assert_equal(1, (T32 ** T31).infinite?)
     assert_equal(1, (T32 ** T32).infinite?)
     assert_equal(1, (T32 ** (2**30-1)).infinite?)
 

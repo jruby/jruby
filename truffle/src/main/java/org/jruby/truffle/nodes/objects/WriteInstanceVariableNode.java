@@ -23,22 +23,19 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.translator.WriteNode;
 import org.jruby.util.StringSupport;
 
-public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
+public class WriteInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private RubyNode rhs;
     @Child private WriteHeadObjectFieldNode writeNode;
-    private final boolean isGlobal;
 
-    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
+    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs) {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;
         writeNode = WriteHeadObjectFieldNodeGen.create(name);
-        this.isGlobal = isGlobal;
     }
 
     @Override
@@ -114,11 +111,6 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
         }
 
         return value;
-    }
-
-    @Override
-    public RubyNode makeReadNode() {
-        return new ReadInstanceVariableNode(getContext(), getSourceSection(), (String) writeNode.getName(), receiver, isGlobal);
     }
 
     @Override

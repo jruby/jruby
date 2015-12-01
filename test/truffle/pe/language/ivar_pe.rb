@@ -23,6 +23,10 @@ module IVarFixtures
       @b = b
       self
     end
+
+    def ivar_get_a
+      instance_variable_get :@a
+    end
   end
 end
 
@@ -31,3 +35,5 @@ example "IVarFixtures::Foo.new(1,2).b", 2
 
 example "IVarFixtures::Foo.new(1,2).reset_b(42).b", 42
 example "IVarFixtures::Foo.new(1,2).reset_b([]).b.empty?", true
+
+example "IVarFixtures::Foo.new(1,2).ivar_get_a", 1

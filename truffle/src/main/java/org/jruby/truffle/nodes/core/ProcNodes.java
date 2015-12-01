@@ -52,7 +52,8 @@ public abstract class ProcNodes {
         return RubyArguments.pack(
                 Layouts.PROC.getMethod(proc),
                 Layouts.PROC.getDeclarationFrame(proc),
-                null, Layouts.PROC.getSelf(proc),
+                null,
+                Layouts.PROC.getSelf(proc),
                 Layouts.PROC.getBlock(proc),
                 DeclarationContext.BLOCK,
                 args);
@@ -62,15 +63,6 @@ public abstract class ProcNodes {
         assert RubyGuards.isRubyProc(proc);
 
         return Layouts.PROC.getCallTargetForType(proc).call(packArguments(proc, args));
-    }
-
-    public static DynamicObject createRubyProc(DynamicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
-                                               CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                               Object self, DynamicObject block) {
-        return createRubyProc(Layouts.CLASS.getInstanceFactory(procClass),
-                type, sharedMethodInfo, callTargetForProcs,
-                callTargetForLambdas, declarationFrame, method,
-                self, block);
     }
 
     public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,

@@ -39,9 +39,13 @@
 package org.jruby.truffle.nodes.ext.psych;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
@@ -50,6 +54,8 @@ import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.RubyEncoding;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.coerce.ToStrNode;
+import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
@@ -58,11 +64,9 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.adapaters.InputStreamAdapter;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
@@ -117,28 +121,29 @@ public abstract class PsychParserNodes {
     @CoreMethod(names = "parse", required = 1, optional = 1)
     public abstract static class ParseNode extends CoreMethodArrayArgumentsNode {
 
+        @Node.Child private ToStrNode toStrNode;
+
         public ParseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toStrNode = ToStrNodeGen.create(getContext(), getSourceSection(), null);
         }
 
         @Specialization
-        public Object parse(DynamicObject parserObject, DynamicObject yaml, NotProvided path) {
-            return doParse(parserObject, yaml, nil());
+        public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, NotProvided path) {
+            return parse(frame, parserObject, yaml, nil());
         }
 
         @Specialization
-        public Object parse(DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
-            return doParse(parserObject, yaml, path);
+        public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
+            return doParse(parserObject, yaml, path, readerFor(frame, yaml));
         }
 
-        @CompilerDirectives.TruffleBoundary
-        private Object doParse(DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
+        @TruffleBoundary
+        private Object doParse(DynamicObject parserObject, DynamicObject yaml, DynamicObject path, StreamReader streamReader) {
             boolean tainted = (boolean) ruby("yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
 
-            Parser parser = null;
-
+            Parser parser = new ParserImpl(streamReader);
             try {
-                parser = new ParserImpl(readerFor(yaml));
                 Layouts.PSYCH_PARSER.setParser(parserObject, parser);
 
                 if (isNil(path) && (boolean) ruby("yaml.respond_to? :path", "yaml", yaml)) {
@@ -200,30 +205,9 @@ public abstract class PsychParserNodes {
             return parserObject;
         }
 
-        private StreamReader readerFor(DynamicObject yaml) {
-            if (RubyGuards.isRubyString(yaml)) {
-                ByteList byteList = StringOperations.getByteList(yaml);
-                Encoding enc = byteList.getEncoding();
-
-                // if not unicode, transcode to UTF8
-                if (!(enc instanceof UnicodeEncoding)) {
-                    byteList = EncodingUtils.strConvEnc(getContext().getRuntime().getCurrentContext(), byteList, enc, UTF8Encoding.INSTANCE);
-                    enc = UTF8Encoding.INSTANCE;
-                }
-
-                ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-
-                Charset charset = enc.getCharset();
-
-                assert charset != null : "charset for encoding " + enc + " should not be null";
-
-                InputStreamReader isr = new InputStreamReader(bais, charset);
-
-                return new StreamReader(isr);
-            }
-
+        private StreamReader readerFor(VirtualFrame frame, DynamicObject yaml) {
             // fall back on IOInputStream, using default charset
-            if ((boolean) ruby("yaml.respond_to? :read", "yaml", yaml)) {
+            if (!RubyGuards.isRubyString(yaml) && (boolean) ruby("yaml.respond_to? :read", "yaml", yaml)) {
                 //final boolean isIO = (boolean) ruby("yaml.is_a? IO", "yaml", yaml);
                 //Encoding enc = isIO
                 //        ? UTF8Encoding.INSTANCE // ((RubyIO)yaml).getReadEncoding()
@@ -231,11 +215,26 @@ public abstract class PsychParserNodes {
                 final Encoding enc = UTF8Encoding.INSTANCE;
                 Charset charset = enc.getCharset();
                 return new StreamReader(new InputStreamReader(new InputStreamAdapter(getContext(), yaml), charset));
-            } else {
-                // TODO CS 28-Sep-15 implement this code path
-                throw new UnsupportedOperationException();
-                //throw runtime.newTypeError(yaml, runtime.getIO());
             }
+
+            ByteList byteList = StringOperations.getByteList(toStrNode.coerceObject(frame, yaml));
+            Encoding enc = byteList.getEncoding();
+
+            // if not unicode, transcode to UTF8
+            if (!(enc instanceof UnicodeEncoding)) {
+                byteList = EncodingUtils.strConvEnc(getContext().getRuntime().getCurrentContext(), byteList, enc, UTF8Encoding.INSTANCE);
+                enc = UTF8Encoding.INSTANCE;
+            }
+
+            ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
+
+            Charset charset = enc.getCharset();
+
+            assert charset != null : "charset for encoding " + enc + " should not be null";
+
+            InputStreamReader isr = new InputStreamReader(bais, charset);
+
+            return new StreamReader(isr);
         }
 
         private void handleDocumentStart(DocumentStartEvent dse, boolean tainted, Object handler) {

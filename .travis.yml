@@ -76,6 +76,12 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/truffle/integration-tests.sh
       jdk: oraclejdk8
+    # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
+    #- env: PHASE='-Pmain'
+    #  sudo: required
+    #  dist: trusty
+    #  group: edge
+    #  jdk: oraclejdk9
 
 branches:
   only:
