@@ -406,16 +406,7 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                try {
-                    ((CheckArityInstr) instr).checkArity(context, args, blockType);
-                } catch (Exception e) {
-                    System.out.println("INSTR: " + instr);
-                    System.out.println("ic.name: " + ic.getName());
-                    System.out.println("IC INSTRS: " + ic.toStringInstrs());
-                    System.out.println("ARGS[0]" + args[0]);
-                    throw e;
-
-                }
+                ((CheckArityInstr) instr).checkArity(context, args, blockType);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);
