@@ -34,6 +34,11 @@ public class InterpreterContext {
     private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
     public final InterpreterEngine engine;
 
+    // Which version of this method does this information represent (currently unused but intended for comparison
+    // of a profiled optimization against a different version)
+    // ENEBO: I would just delete this as it is dead but I am trying to preserve as much of original profiler as possible.
+    private int version = Profiler.UNASSIGNED_VERSION;
+
     private IRScope scope;
 
     public InterpreterContext(IRScope scope, List<Instr> instructions) {
@@ -200,5 +205,13 @@ public class InterpreterContext {
         }*/
 
         return b.toString();
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public int getVersion() {
+        return version;
     }
 }

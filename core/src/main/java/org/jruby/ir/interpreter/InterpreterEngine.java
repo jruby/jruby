@@ -140,7 +140,7 @@ public class InterpreterEngine {
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
-        Integer scopeVersion = profile ? Profiler.initProfiling(interpreterContext.getScope()) : 0;
+        if (profile) Profiler.initProfiling(interpreterContext);
 
         // Enter the looooop!
         while (ipc < n) {
@@ -163,7 +163,7 @@ public class InterpreterEngine {
                         receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
-                        if (profile) Profiler.markCallAboutToBeCalled((CallBase) instr, interpreterContext.getScope());
+                        if (profile) Profiler.markCallAboutToBeCalled((CallBase) instr, interpreterContext);
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:

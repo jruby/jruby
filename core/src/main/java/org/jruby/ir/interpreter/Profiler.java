@@ -26,10 +26,11 @@ import java.util.*;
  *   period - how long between attempts to analyze collected stats (PROFILE_PERIOD).  This is number of clock ticks.
  */
 public class Profiler {
+    public static final int UNASSIGNED_VERSION = -1;
     private static final int PROFILE_PERIOD = 20000;
 
     public static class IRCallSite {
-        IRScope scope; // where call resides in
+        InterpreterContext ic;
         CallBase call; // callsite
         long count;   // how many times call has occurred
         MixedModeIRMethod tgtM;
@@ -37,7 +38,7 @@ public class Profiler {
         public IRCallSite() {}
 
         public IRCallSite(IRCallSite cs) {
-            this.scope = cs.scope;
+            this.ic = cs.ic;
             this.call  = cs.call;
             this.count = 0;
         }
@@ -46,9 +47,9 @@ public class Profiler {
             return (int)this.call.callSiteId;
         }
 
-        public void update(Instr call, IRScope scope) {
-            this.scope = scope;
-            this.call = (CallBase)call;
+        public void update(CallBase call, InterpreterContext ic) {
+            this.ic = ic;
+            this.call = call;
         }
     }
 
@@ -74,7 +75,6 @@ public class Profiler {
     private static int periodsWithoutChanges = 0;
     private static int versionCount = 1;
 
-    private static HashMap<IRScope, Integer> scopeVersionMap = new HashMap<>();
     private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<>();
     private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<>();
     private static HashMap<Operation, Counter> opStats = new HashMap<>();
@@ -163,7 +163,7 @@ public class Profiler {
         double freq = 0.0;
         int i = 0;
         boolean noInlining = true;
-        Set<IRScope> inlinedScopes = new HashSet<>();
+        Set<InterpreterContext> inlinedScopes = new HashSet<>();
         for (IRCallSite ircs: callSites) {
             double contrib = (ircs.count*100.0)/total;
 
@@ -177,15 +177,20 @@ public class Profiler {
             if (i == 100 || freq > 99.0) break;
 
             System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
-            " in scope " + ircs.scope + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
+            " in scope " + ircs.ic.getScope() + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
             // Now inline here!
             CallBase call = ircs.call;
 
-            IRScope hs = ircs.scope;
-            boolean isHotClosure = hs instanceof IRClosure;
-            IRScope hc = isHotClosure ? hs : null;
-            hs = isHotClosure ? hs.getLexicalParent() : hs;
+            InterpreterContext hs = ircs.ic;
+            boolean isHotClosure = hs.getScope() instanceof IRClosure;
+            IRScope hc = isHotClosure ? hs.getScope() : null;
+            // This has couple of assumptions in it:
+            // 1. nothing hot could ever not exist in a non-fully built parent scope so FIC is available.
+            // 2. if we ever have three ICs (startup, full, profiled) [or more than three] then we can:
+            //    a. use full and ignore profiled
+            //    b. use profiled (or last profiled in case more multiple profiled versions)
+            hs = isHotClosure ? hs.getScope().getLexicalParent().getFullInterpreterContext() : hs;
 
             IRScope tgtMethod = ircs.tgtM.getIRScope();
 
@@ -210,7 +215,7 @@ public class Profiler {
             if (inlineCall) {
                 noInlining = false;
                 long start = new java.util.Date().getTime();
-                hs.inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
+                hs.getScope()inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
                 inlinedScopes.add(hs);
                 long end = new java.util.Date().getTime();
                 // System.out.println("Inlined " + tgtMethod + " in " + hs +
@@ -224,9 +229,8 @@ public class Profiler {
 */
         }
 
-        for (IRScope x: inlinedScopes) {
-            // Update version count for inlined scopes
-            scopeVersionMap.put(x, versionCount);
+        for (InterpreterContext x: inlinedScopes) {
+            x.setVersion(versionCount); // Update version count for inlined scopes
             // System.out.println("Updating version of " + x + " to " + versionCount);
             //System.out.println("--- pre-inline-instrs ---");
             //System.out.println(x.getCFG().toStringInstrs());
@@ -304,7 +308,8 @@ public class Profiler {
         }
     }
 
-    public static int initProfiling(IRScope scope) {
+    public static int initProfiling(InterpreterContext ic) {
+        IRScope scope = ic.getScope();
         /* SSS: Not being used currently
         scopeClockCount = scopeThreadPollCounts.get(scope);
         if (scopeClockCount == null) {
@@ -313,11 +318,8 @@ public class Profiler {
         }
         */
 
-        Integer scopeVersion = scopeVersionMap.get(scope);
-        if (scopeVersion == null) {
-            scopeVersionMap.put(scope, versionCount);
-            scopeVersion = new Integer(versionCount);
-        }
+        int scopeVersion = ic.getVersion();
+        if (scopeVersion == UNASSIGNED_VERSION) ic.setVersion(versionCount);
 
         if (callerSite.call != null) {
             Long id = callerSite.call.callSiteId;
@@ -340,9 +342,9 @@ public class Profiler {
 
     // We do not pass profiling instructions through call so we temporarily tuck away last IR executed
     // call in Profiler.
-    public static void markCallAboutToBeCalled(CallBase call, IRScope scope) {
+    public static void markCallAboutToBeCalled(CallBase call, InterpreterContext ic) {
         callerSite.call = call;
-        callerSite.scope = scope;
+        callerSite.ic = ic;
     }
 
     public static void clockTick() {
