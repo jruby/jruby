@@ -107,7 +107,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         }
                         break;
                     case MOD_OP:
-                        if (profile) Profiler.modificationTick(operation);
+                        if (profile) Profiler.modificationTick();
                         setResult(temp, currDynScope, instr, instr.interpret(context, currScope, currDynScope, self, temp));
                         break;
                     case OTHER_OP:

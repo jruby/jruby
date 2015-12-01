@@ -351,7 +351,7 @@ public class Profiler {
         if (globalClockCount++ % PROFILE_PERIOD == 0) analyzeProfile();
     }
 
-    public static void modificationTick(Operation operation) {
+    public static void modificationTick() {
         codeModificationsCount++;
     }
 }
