@@ -6,11 +6,11 @@ class TestObjectSpace < Test::Unit::TestCase
     @objectspace = JRuby.objectspace
     JRuby.objectspace = true
   end
-  
+
   def teardown
     JRuby.objectspace = @objectspace
   end
-  
+
   def test_id2ref
     # Normal objects
     o1 = "hey"
@@ -42,14 +42,14 @@ class TestObjectSpace < Test::Unit::TestCase
     assert_equal(true, ObjectSpace._id2ref(2))
     assert_equal(nil, ObjectSpace._id2ref(4))
   end
-  
+
   def test_jruby_objectspace
     JRuby.objectspace = false
     assert_equal(false, JRuby.objectspace)
     JRuby.objectspace = true
     assert_equal(true, JRuby.objectspace)
   end
-  
+
   # JRUBY-4330
   def test_object_id_same_with_objectspace
     obj = "wahoo"
@@ -101,7 +101,7 @@ class TestObjectSpace < Test::Unit::TestCase
     d = Class.new(b)
 
     classes = ObjectSpace.each_object(a.singleton_class).to_a
-    assert_equal(classes.sort_by(&:name), [a, b, c, d].sort_by(&:name))
+    assert_equal(classes.sort_by(&:object_id), [a, b, c, d].sort_by(&:object_id))
   ensure
     JRuby.objectspace = old_objectspace
   end
