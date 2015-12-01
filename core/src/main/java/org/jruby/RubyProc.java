@@ -212,7 +212,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s19() {
         StringBuilder sb = new StringBuilder(32);
-        sb.append("#<Proc:0x").append(Integer.toString(block.hashCode(), 16));
+        sb.append("#<Proc:0x").append(Integer.toString(System.identityHashCode(block), 16));
 
         String file = block.getBody().getFile();
         if (file != null) sb.append('@').append(file).append(':').append(block.getBody().getLine() + 1);
