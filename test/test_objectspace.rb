@@ -104,5 +104,6 @@ class TestObjectSpace < Test::Unit::TestCase
     assert_equal(classes.sort_by(&:object_id), [a, b, c, d].sort_by(&:object_id))
   ensure
     JRuby.objectspace = old_objectspace
-  end
+  end if RUBY_VERSION > '1.9'
+
 end
