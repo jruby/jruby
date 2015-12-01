@@ -366,27 +366,20 @@ public class InterpreterEngine {
     protected static void processBookKeepingOp(InterpreterContext ic, ThreadContext context, Block block, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block blockArg, RubyModule implClass,
                                              DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
-        Block.Type blockType = block == null ? null : block.type;
-        Frame f;
-        Visibility viz;
         switch(operation) {
             case LABEL:
                 break;
             case SAVE_BINDING_VIZ:
-                viz = block.getBinding().getVisibility();
-                setResult(temp, currDynScope, ((SaveBindingVisibilityInstr)instr).getResult(), viz);
+                setResult(temp, currDynScope, ((SaveBindingVisibilityInstr) instr).getResult(), block.getBinding().getVisibility());
                 break;
             case RESTORE_BINDING_VIZ:
-                viz = (Visibility)retrieveOp(((RestoreBindingVisibilityInstr)instr).getVisibility(), context, self, currDynScope, currScope, temp);
-                block.getBinding().setVisibility(viz);
+                block.getBinding().setVisibility((Visibility) retrieveOp(((RestoreBindingVisibilityInstr) instr).getVisibility(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_BLOCK_FRAME:
-                f = context.preYieldNoScope(block.getBinding());
-                setResult(temp, currDynScope, ((PushBlockFrameInstr)instr).getResult(), f);
+                setResult(temp, currDynScope, ((PushBlockFrameInstr) instr).getResult(), context.preYieldNoScope(block.getBinding()));
                 break;
             case POP_BLOCK_FRAME:
-                f = (Frame)retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp);
-                context.postYieldNoScope(f);
+                context.postYieldNoScope((Frame) retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_METHOD_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, blockArg);
@@ -406,7 +399,7 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr) instr).checkArity(context, args, blockType);
+                ((CheckArityInstr) instr).checkArity(context, args, block == null ? null : block.type);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);
