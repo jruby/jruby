@@ -50,7 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public final class Block {
+public class Block {
     public enum Type {
         NORMAL(false), PROC(false), LAMBDA(true), THREAD(false);
 
