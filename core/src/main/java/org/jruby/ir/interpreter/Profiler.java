@@ -1,12 +1,11 @@
 package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.compiler.Compilable;
 import org.jruby.ir.Counter;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
@@ -32,17 +31,17 @@ public class Profiler {
     // Structure on what a callsite is.  It lives in an IC. It will be some form of call (CallBase).
     // It might have been called count times.
     public static class IRCallSite {
-        InterpreterContext ic;
-        CallBase call; // callsite
-        long count;   // how many times call has occurred
-        MixedModeIRMethod tgtM;
+        InterpreterContext ic;  // ic where this call site lives
+        CallBase call;          // which instr is at this callsite
+        long count;             // how many times callsite has been executed
+        Compilable liveMethod;  // winner winner chicken dinner we think we have monomorphic target method to inline.
 
         public IRCallSite() {}
 
         public IRCallSite(IRCallSite cs) {
-            this.ic = cs.ic;
-            this.call  = cs.call;
-            this.count = 0;
+            ic = cs.ic;
+            call  = cs.call;
+            count = 0;
         }
 
         public int hashCode() {
@@ -66,6 +65,22 @@ public class Profiler {
         public CallSiteProfile(IRCallSite cs) {
             this.cs = new IRCallSite(cs);
             this.counters = new HashMap<>();
+        }
+
+        /**
+         * Recalculate total number of times this callsite has been hit and also return
+         * whether this happens to be a monomorphic site.
+         */
+        public boolean retallyCallCount() {
+            long count = 0;
+
+            for (IRScope s: counters.keySet()) {
+                count += counters.get(s).count;
+            }
+
+            cs.count = count;
+
+            return counters.size() == 1;
         }
     }
 
@@ -104,54 +119,35 @@ public class Profiler {
     }
 
     private static void analyzeProfile() {
+        //System.out.println("MOD COUNT: " + codeModificationsCount + ", Periods wo change: " + periodsWithoutChanges);
         // Don't bother doing any analysis until we see the system start to settle down from lots of modifications.
         if (isStillBootstrapping()) return;
 
         versionCount++;
 
-        System.out.println("CMC: " + codeModificationsCount + ", NMWNM: " + periodsWithoutChanges);
-
 //         System.out.println("-------------------start analysis-----------------------");
 
-        final HashMap<IRScope, Long> scopeCounts = new HashMap<>();
         final ArrayList<IRCallSite> callSites = new ArrayList<>();
-        HashMap<IRCallSite, Long> callSiteCounts = new HashMap<>();
-        // System.out.println("# call sites: " + callProfile.keySet().size());
-        long total = 0;
-        for (Long id: callProfile.keySet()) {
-            Long c;
 
+        long total = 0;   // Total number of times
+        for (Long id: callProfile.keySet()) {
             CallSiteProfile csp = callProfile.get(id);
             IRCallSite      cs  = csp.cs;
 
-            Set<IRScope> calledScopes = csp.counters.keySet();
-            cs.count = 0;
-            for (IRScope s: calledScopes) {
-                c = scopeCounts.get(s);
-                if (c == null) {
-                    c = new Long(0);
-                    scopeCounts.put(s, c);
-                }
-
-                long x = csp.counters.get(s).count;
-                c += x;
-                cs.count += x;
-            }
+            boolean monomorphic = csp.retallyCallCount();
+//            System.out.println("CS CALL COUNT: " + cs.count + ", MONO: " + monomorphic + ", NUMBER OF CS TYPES: " + csp.counters.size());
 
             CallBase call = cs.call;
-            if (calledScopes.size() == 1 && !call.inliningBlocked()) {
+            if (monomorphic && !call.inliningBlocked()) {
                 CallSite runtimeCS = call.getCallSite();
-                if (runtimeCS != null && (runtimeCS instanceof CachingCallSite)) {
+                if (runtimeCS != null && runtimeCS instanceof CachingCallSite) {
                     CachingCallSite ccs = (CachingCallSite)runtimeCS;
                     CacheEntry ce = ccs.getCache();
 
-                    if (!(ce.method instanceof MixedModeIRMethod)) {
-                        // System.out.println("NOT IR-M!");
-                        continue;
-                    } else {
-                        callSites.add(cs);
-                        cs.tgtM = (MixedModeIRMethod)ce.method;
-                    }
+                    if (!(ce.method instanceof Compilable)) continue;
+
+                    callSites.add(cs);
+                    cs.liveMethod = (Compilable) ce.method;
                 }
             }
 
@@ -199,7 +195,7 @@ public class Profiler {
             //    b. use profiled (or last profiled in case more multiple profiled versions)
             hs = isHotClosure ? hs.getScope().getLexicalParent().getFullInterpreterContext() : hs;
 
-            IRScope tgtMethod = ircs.tgtM.getIRScope();
+            IRScope tgtMethod = ircs.liveMethod.getIRScope();
 
             Instr[] instrs = tgtMethod.getInterpreterContext().getInstructions();
             // Dont inline large methods -- 500 is arbitrary
@@ -210,7 +206,7 @@ public class Profiler {
                 continue;
             }
 
-            RubyModule implClass = ircs.tgtM.getImplementationClass();
+            RubyModule implClass = ircs.liveMethod.getImplementationClass();
             int classToken = implClass.getGeneration();
             String n = tgtMethod.getName();
             boolean inlineCall = true;
@@ -218,13 +214,13 @@ public class Profiler {
                 Operand clArg = call.getClosureArg(null);
                 inlineCall = (clArg instanceof WrappedIRClosure) && (((WrappedIRClosure)clArg).getClosure() == hc);
             }
-/*
+
             if (inlineCall) {
-                noInlining = false;
-                long start = new java.util.Date().getTime();
-                hs.getScope()inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
-                inlinedScopes.add(hs);
-                long end = new java.util.Date().getTime();
+                //noInlining = false;
+                //long start = new java.util.Date().getTime();
+                //hs.getScope().inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
+                //inlinedScopes.add(hs);
+                //long end = new java.util.Date().getTime();
                 // System.out.println("Inlined " + tgtMethod + " in " + hs +
                 //     " @ instr " + call + " in time (ms): "
                 //     + (end-start) + " # instrs: " + instrs.length);
@@ -233,7 +229,7 @@ public class Profiler {
             } else {
                 //System.out.println("--no inlining--");
             }
-*/
+
         }
 
         for (InterpreterContext x: inlinedScopes) {
@@ -358,8 +354,7 @@ public class Profiler {
     // We do not pass profiling instructions through call so we temporarily tuck away last IR executed
     // call in Profiler.
     public static void markCallAboutToBeCalled(CallBase call, InterpreterContext ic) {
-        callerSite.call = call;
-        callerSite.ic = ic;
+        callerSite.update(call, ic);
     }
 
     public static void clockTick() {
