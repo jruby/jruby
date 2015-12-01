@@ -39,11 +39,13 @@
 package org.jruby.truffle.nodes.ext.psych;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
@@ -128,22 +130,20 @@ public abstract class PsychParserNodes {
 
         @Specialization
         public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, NotProvided path) {
-            return doParse(frame, parserObject, yaml, nil());
+            return parse(frame, parserObject, yaml, nil());
         }
 
         @Specialization
         public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
-            return doParse(frame, parserObject, yaml, path);
+            return doParse(parserObject, yaml, path, readerFor(frame, yaml));
         }
 
-        @CompilerDirectives.TruffleBoundary
-        private Object doParse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
+        @TruffleBoundary
+        private Object doParse(DynamicObject parserObject, DynamicObject yaml, DynamicObject path, StreamReader streamReader) {
             boolean tainted = (boolean) ruby("yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
 
-            Parser parser = null;
-
+            Parser parser = new ParserImpl(streamReader);
             try {
-                parser = new ParserImpl(readerFor(frame, yaml));
                 Layouts.PSYCH_PARSER.setParser(parserObject, parser);
 
                 if (isNil(path) && (boolean) ruby("yaml.respond_to? :path", "yaml", yaml)) {
