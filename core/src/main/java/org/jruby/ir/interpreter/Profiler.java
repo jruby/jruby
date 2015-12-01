@@ -77,7 +77,6 @@ public class Profiler {
 
     private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<>();
     private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<>();
-    private static HashMap<Operation, Counter> opStats = new HashMap<>();
 
     private static final int NUMBER_OF_NON_MODIFYING_EXECUTIONS = 3;
 
@@ -353,15 +352,6 @@ public class Profiler {
     }
 
     public static void modificationTick(Operation operation) {
-        // FIXME: We seem to only call this from OP_MOD so this check is only here for robustness?
-        if (operation.modifiesCode()) codeModificationsCount++;
-        /*
-        Counter cnt = opStats.get(operation);
-        if (cnt == null) {
-            cnt = new Counter();
-            opStats.put(operation, cnt);
-        }
-        cnt.count++;
-        */
+        codeModificationsCount++;
     }
 }
