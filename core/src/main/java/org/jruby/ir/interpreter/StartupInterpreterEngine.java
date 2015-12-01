@@ -5,6 +5,7 @@ import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
@@ -50,21 +51,15 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
-        Integer scopeVersion = profile ? Profiler.initProfiling(interpreterContext.getScope()) : 0;
+        if (profile) Profiler.initProfiling(interpreterContext);
 
         // Enter the looooop!
         while (ipc < n) {
             Instr instr = instrs[ipc];
 
             Operation operation = instr.getOperation();
-            if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} ", instr + (rescuePCs != null ? "; <#RPCs=" + rescuePCs.size() + ">" : ""));
-                Interpreter.interpInstrsCount++;
-            } else if (profile) {
-                Profiler.instrTick(operation);
-                Interpreter.interpInstrsCount++;
-            }
-
+            if (debug) Interpreter.LOG.info("I: {" + ipc + "} ", instr + "; <#RPCs=" + rescuePCs.size() + ">");
+            Interpreter.interpInstrsCount++;
             ipc++;
 
             try {
@@ -73,7 +68,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
-                        if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
+                        if (profile) Profiler.markCallAboutToBeCalled(((CallBase) instr), interpreterContext);
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
@@ -110,6 +105,10 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                             default:
                                 processBookKeepingOp(interpreterContext, context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
                         }
+                        break;
+                    case MOD_OP:
+                        if (profile) Profiler.modificationTick();
+                        setResult(temp, currDynScope, instr, instr.interpret(context, currScope, currDynScope, self, temp));
                         break;
                     case OTHER_OP:
                         processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self);

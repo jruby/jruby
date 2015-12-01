@@ -145,7 +145,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     public void blockInlining() {
-        dontInline = true;
+        dontInline = false;
     }
 
     public boolean inliningBlocked() {
