@@ -15,10 +15,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeGen;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
 import org.jruby.truffle.nodes.conversion.ToSymbolNodeGen;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -32,7 +34,7 @@ public class UncachedDispatchNode extends DispatchNode {
     private final boolean ignoreVisibility;
     private final MissingBehavior missingBehavior;
 
-    @Child private IndirectCallNode callNode;
+    @Child private IndirectCallNode indirectCallNode;
     @Child private ToSymbolNode toSymbolNode;
     @Child private ToJavaStringNode toJavaStringNode;
     @Child private MetaClassNode metaClassNode;
@@ -41,12 +43,13 @@ public class UncachedDispatchNode extends DispatchNode {
 
     public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, MissingBehavior missingBehavior) {
         super(context, dispatchAction);
+
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
-        callNode = Truffle.getRuntime().createIndirectCallNode();
-        toSymbolNode = ToSymbolNodeGen.create(context, null, null);
-        toJavaStringNode = ToJavaStringNodeGen.create(context, null, null);
-        metaClassNode = MetaClassNodeGen.create(context, null, null);
+        this.indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
+        this.toSymbolNode = ToSymbolNodeGen.create(context, null, null);
+        this.toJavaStringNode = ToJavaStringNodeGen.create(context, null, null);
+        this.metaClassNode = MetaClassNodeGen.create(context, null, null);
     }
 
     @Override
@@ -59,26 +62,17 @@ public class UncachedDispatchNode extends DispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object name,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
         final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
 
-        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name),
-                ignoreVisibility);
+        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name), ignoreVisibility);
 
         if (method != null) {
             if (dispatchAction == DispatchAction.CALL_METHOD) {
-                return callNode.call(
-                        frame,
-                        method.getCallTarget(),
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                (DynamicObject) blockObject,
-                                (Object[]) argumentsObjects));
+                return call(frame, method, receiverObject, blockObject, argumentsObjects);
             } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return true;
             } else {
@@ -105,28 +99,30 @@ public class UncachedDispatchNode extends DispatchNode {
         }
 
         if (dispatchAction == DispatchAction.CALL_METHOD) {
-            final Object[] argumentsObjectsArray = (Object[]) argumentsObjects;
-
-            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
-
+            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
             modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, name);
+            ArrayUtils.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
 
-            ArrayUtils.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
-
-            return callNode.call(
-                    frame,
-                    missingMethod.getCallTarget(),
-                    RubyArguments.pack(
-                            missingMethod,
-                            missingMethod.getDeclarationFrame(),
-                            receiverObject,
-                            (DynamicObject) blockObject,
-                            modifiedArgumentsObjects));
+            return call(frame, missingMethod, receiverObject, blockObject, modifiedArgumentsObjects);
         } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
             return false;
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private Object call(VirtualFrame frame, InternalMethod method, Object receiverObject, DynamicObject blockObject, Object[] argumentsObjects) {
+        return indirectCallNode.call(
+                frame,
+                method.getCallTarget(),
+                RubyArguments.pack(
+                        method,
+                        null,
+                        null,
+                        receiverObject,
+                        blockObject,
+                        DeclarationContext.METHOD,
+                        argumentsObjects));
     }
 
 }

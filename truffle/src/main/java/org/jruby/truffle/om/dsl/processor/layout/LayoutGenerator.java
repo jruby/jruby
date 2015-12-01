@@ -189,6 +189,10 @@ public class LayoutGenerator {
                         modifiers.add("LocationModifier.NonNull");
                     }
 
+                    if (property.isFinal()) {
+                        modifiers.add("LocationModifier.Final");
+                    }
+
                     final String modifiersExpression;
 
                     if (modifiers.isEmpty()) {
@@ -245,6 +249,10 @@ public class LayoutGenerator {
                 modifiers.add("LocationModifier.NonNull");
             }
 
+            if (property.isFinal()) {
+                modifiers.add("LocationModifier.Final");
+            }
+
             final String modifiersExpression;
 
             if (modifiers.isEmpty()) {
@@ -262,7 +270,7 @@ public class LayoutGenerator {
                 }
 
                 modifiersExpressionBuilder.append(")");
-                modifiersExpression  = modifiersExpressionBuilder.toString();
+                modifiersExpression = modifiersExpressionBuilder.toString();
             }
 
             final String locationType;
@@ -590,6 +598,7 @@ public class LayoutGenerator {
             }
 
             if (property.hasGetter()) {
+                addUncheckedCastWarning(stream, property);
                 stream.println("    @Override");
                 stream.printf("    public %s %s(DynamicObject object) {%n", property.getType(), NameUtils.asGetter(property.getName()));
                 stream.printf("        assert is%s(object);%n", layout.getName());
@@ -631,6 +640,7 @@ public class LayoutGenerator {
             assert !(property.hasSetter() && property.hasUnsafeSetter());
 
             if (property.hasSetter() || property.hasUnsafeSetter()) {
+                addUncheckedCastWarning(stream, property);
                 if (property.isShapeProperty()) {
                     stream.println("    @TruffleBoundary");
                 }
@@ -683,6 +693,76 @@ public class LayoutGenerator {
                 stream.println("    }");
                 stream.println("    ");
             }
+
+            if (property.hasCompareAndSet()) {
+                addUncheckedCastWarning(stream, property);
+
+                stream.println("    @Override");
+                stream.printf("    public boolean %s(DynamicObject object, %s expected_value, %s value) {%n",
+                        NameUtils.asCompareAndSet(property.getName()),
+                        property.getType(),
+                        property.getType());
+
+                stream.printf("        assert is%s(object);%n", layout.getName());
+                stream.printf("        assert object.getShape().hasProperty(%s_IDENTIFIER);%n",
+                        NameUtils.identifierToConstant(property.getName()));
+                if (!property.getType().getKind().isPrimitive() && !property.isNullable()) {
+                    stream.println("        assert value != null;");
+                }
+
+                if (property.getType().getKind() == TypeKind.INT) {
+                    stream.printf(
+                            "        return ((AtomicInteger) %s_PROPERTY.get(object, true)).compareAndSet(expected_value, value);%n",
+                            NameUtils.identifierToConstant(property.getName()));
+                } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
+                    stream.printf(
+                            "        return ((AtomicBoolean) %s_PROPERTY.get(object, true)).compareAndSet(expected_value, value);%n",
+                            NameUtils.identifierToConstant(property.getName()));
+                } else {
+                    stream.printf(
+                            "        return ((AtomicReference<%s>) %s_PROPERTY.get(object, true)).compareAndSet(expected_value, value);%n",
+                            property.getType(),
+                            NameUtils.identifierToConstant(property.getName()));
+                }
+
+                stream.println("    }");
+                stream.println("    ");
+            }
+
+            if (property.hasGetAndSet()) {
+                addUncheckedCastWarning(stream, property);
+
+                stream.println("    @Override");
+                stream.printf("    public %s %s(DynamicObject object, %s value) {%n",
+                        property.getType(),
+                        NameUtils.asGetAndSet(property.getName()),
+                        property.getType());
+
+                stream.printf("        assert is%s(object);%n", layout.getName());
+                stream.printf("        assert object.getShape().hasProperty(%s_IDENTIFIER);%n",
+                        NameUtils.identifierToConstant(property.getName()));
+                if (!property.getType().getKind().isPrimitive() && !property.isNullable()) {
+                    stream.println("        assert value != null;");
+                }
+
+                if (property.getType().getKind() == TypeKind.INT) {
+                    stream.printf(
+                            "        return ((AtomicInteger) %s_PROPERTY.get(object, true)).getAndSet(value);%n",
+                            NameUtils.identifierToConstant(property.getName()));
+                } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
+                    stream.printf(
+                            "        return ((AtomicBoolean) %s_PROPERTY.get(object, true)).getAndSet(value);%n",
+                            NameUtils.identifierToConstant(property.getName()));
+                } else {
+                    stream.printf(
+                            "        return ((AtomicReference<%s>) %s_PROPERTY.get(object, true)).getAndSet(value);%n",
+                            property.getType(),
+                            NameUtils.identifierToConstant(property.getName()));
+                }
+
+                stream.println("    }");
+                stream.println("    ");
+            }
         }
 
         if (layout.hasShapeProperties() && (layout.getSuperLayout() == null || !layout.getSuperLayout().hasShapeProperties())) {
@@ -694,6 +774,13 @@ public class LayoutGenerator {
         }
 
         stream.println("}");
+    }
+
+    private void addUncheckedCastWarning(final PrintStream stream, PropertyModel property) {
+        if (property.getType().toString().indexOf('<') != -1 ||
+                (property.isVolatile() && !property.getType().getKind().isPrimitive())) {
+            stream.println("    @SuppressWarnings(\"unchecked\")");
+        }
     }
 
     private void iterateProperties(List<PropertyModel> properties, PropertyIteratorAction action) {

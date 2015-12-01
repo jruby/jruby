@@ -11,21 +11,22 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.RubyString;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
@@ -66,6 +67,11 @@ public abstract class FloatNodes {
             return a + Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
+        // TODO (pitr 14-Sep-2015): all coerces should be replaced with a CallDispatchHeadNodes to speed up things like `5 + rational`
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object addCoerced(VirtualFrame frame, double a, DynamicObject b) {
+            return ruby(frame, "redo_coerced :+, b", "b", b);
+        }
     }
 
     @CoreMethod(names = "-", required = 1)
@@ -172,7 +178,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = {"/", "__slash__"}, required = 1)
+    @CoreMethod(names = { "/", "__slash__" }, required = 1)
     public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode redoCoercedNode;
@@ -200,7 +206,7 @@ public abstract class FloatNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)",
-                "!isRubyBignum(b)"})
+                "!isRubyBignum(b)" })
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -215,7 +221,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "%", required = 1)
     public abstract static class ModNode extends CoreMethodArrayArgumentsNode {
 
-        private ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -247,6 +253,11 @@ public abstract class FloatNodes {
             return mod(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object modCoerced(VirtualFrame frame, double a, DynamicObject b) {
+            return ruby(frame, "redo_coerced :mod, b", "b", b);
+        }
+
     }
 
     @CoreMethod(names = "divmod", required = 1)
@@ -272,6 +283,11 @@ public abstract class FloatNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public DynamicObject divMod(double a, DynamicObject b) {
             return divModNode.execute(a, Layouts.BIGNUM.getValue(b));
+        }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object divModCoerced(VirtualFrame frame, double a, DynamicObject b) {
+            return ruby(frame, "redo_coerced :divmod, b", "b", b);
         }
 
     }
@@ -302,7 +318,7 @@ public abstract class FloatNodes {
                 "!isRubyBignum(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isDouble(b)"})
+                "!isDouble(b)" })
         public Object lessCoerced(VirtualFrame frame, double a, Object b) {
             return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
@@ -334,7 +350,7 @@ public abstract class FloatNodes {
                 "!isRubyBignum(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isDouble(b)"})
+                "!isDouble(b)" })
         public Object lessEqualCoerced(VirtualFrame frame, double a, Object b) {
             return ruby(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
@@ -357,7 +373,6 @@ public abstract class FloatNodes {
             return false;
         }
     }
-
 
     @CoreMethod(names = { "==", "===" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
@@ -411,12 +426,12 @@ public abstract class FloatNodes {
             return nil();
         }
 
-        @Specialization(guards = {"!isNaN(a)"})
+        @Specialization(guards = { "!isNaN(a)" })
         public int compare(double a, long b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = {"isInfinity(a)", "isRubyBignum(b)"})
+        @Specialization(guards = { "isInfinity(a)", "isRubyBignum(b)" })
         public int compareInfinity(double a, DynamicObject b) {
             if (a < 0) {
                 return -1;
@@ -425,17 +440,17 @@ public abstract class FloatNodes {
             }
         }
 
-        @Specialization(guards = {"!isNaN(a)", "!isInfinity(a)", "isRubyBignum(b)"})
+        @Specialization(guards = { "!isNaN(a)", "!isInfinity(a)", "isRubyBignum(b)" })
         public int compareBignum(double a, DynamicObject b) {
             return Double.compare(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
-        @Specialization(guards = {"!isNaN(a)", "!isNaN(b)"})
+        @Specialization(guards = { "!isNaN(a)", "!isNaN(b)" })
         public int compare(double a, double b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = {"!isNaN(a)", "!isRubyBignum(b)"})
+        @Specialization(guards = { "!isNaN(a)", "!isRubyBignum(b)" })
         public DynamicObject compare(double a, DynamicObject b) {
             return nil();
         }
@@ -468,7 +483,7 @@ public abstract class FloatNodes {
                 "!isRubyBignum(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isDouble(b)"})
+                "!isDouble(b)" })
         public Object greaterEqualCoerced(VirtualFrame frame, double a, Object b) {
             return ruby(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
@@ -501,7 +516,7 @@ public abstract class FloatNodes {
                 "!isRubyBignum(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isDouble(b)"})
+                "!isDouble(b)" })
         public Object greaterCoerced(VirtualFrame frame, double a, Object b) {
             return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
@@ -596,16 +611,35 @@ public abstract class FloatNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile greaterZero = BranchProfile.create();
-        private final BranchProfile lessZero = BranchProfile.create();
-
         public RoundNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
+        @Specialization(guards = "doubleInLongRange(n)")
+        public long roundFittingLong(double n, NotProvided ndigits,
+                                     @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
+            long l = (long) n;
+            if (positiveProfile.profile(n >= 0.0)) {
+                if (n - l >= 0.5) {
+                    l++;
+                }
+                return l;
+            } else {
+                if (l - n >= 0.5) {
+                    l--;
+                }
+                return l;
+            }
+        }
+
+        protected boolean doubleInLongRange(double n) {
+            return Long.MIN_VALUE < n && n < Long.MAX_VALUE;
+        }
+
         @Specialization
-        public Object round(double n, NotProvided ndigits) {
+        public Object round(double n, NotProvided ndigits,
+                            @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
@@ -620,17 +654,13 @@ public abstract class FloatNodes {
 
             double f = n;
 
-            if (f > 0.0) {
-                greaterZero.enter();
-
+            if (positiveProfile.profile(f >= 0.0)) {
                 f = Math.floor(f);
 
                 if (n - f >= 0.5) {
                     f += 1.0;
                 }
-            } else if (f < 0.0) {
-                lessZero.enter();
-
+            } else {
                 f = Math.ceil(f);
 
                 if (f - n >= 0.5) {
@@ -691,17 +721,18 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"})
-    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = { "java_to_s" }, visibility = Visibility.PRIVATE)
+    public abstract static class JavaToSNode extends CoreMethodArrayArgumentsNode {
 
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
+        public JavaToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject toS(double value) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Double.toString(value), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
+        public DynamicObject javaToS(double value) {
+            return create7BitString(
+                    StringOperations.encodeByteList(String.format("%.15g", value), USASCIIEncoding.INSTANCE));
         }
 
     }

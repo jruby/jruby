@@ -703,13 +703,15 @@ public class RubyHash extends RubyObject implements Map {
                 throw context.runtime.newArgumentError(args.length, 1);
         }
     }
+
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context) {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return getRuntime().getNil();
+            return context.nil;
         }
         return ifNone;
     }
+
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context, IRubyObject arg) {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
@@ -1015,7 +1017,7 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            if (!key.isFrozen()) key = runtime.freezeAndDedupString(key);
+            if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
             internalPut(key, value, false);
         }
     }
@@ -1026,7 +1028,7 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            if (!key.isFrozen()) key = runtime.freezeAndDedupString(key);
+            if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
             internalPutSmall(key, value, false);
         }
     }
@@ -1180,7 +1182,7 @@ public class RubyHash extends RubyObject implements Map {
         if (value == null) {
             if (block.isGiven()) return block.yield(context, key);
 
-            throw runtime.newKeyError("key not found: " + key);
+            throw runtime.newKeyError("key not found: :" + key);
         }
 
         return value;
@@ -1317,7 +1319,7 @@ public class RubyHash extends RubyObject implements Map {
             iteratorVisitAll(new Visitor() {
                 @Override
                 public void visit(IRubyObject key, IRubyObject value) {
-                    block.yieldSpecific(context, key, value);
+                    block.yieldArray(context, context.runtime.newArray(key, value), null);
                 }
             });
         } else {
@@ -1326,7 +1328,7 @@ public class RubyHash extends RubyObject implements Map {
             iteratorVisitAll(new Visitor() {
                 @Override
                 public void visit(IRubyObject key, IRubyObject value) {
-                    block.yield(context, RubyArray.newArray(runtime, key, value));
+                    block.yieldArray(context, RubyArray.newArray(runtime, key, value), null);
                 }
             });
         }
@@ -1425,7 +1427,7 @@ public class RubyHash extends RubyObject implements Map {
         iteratorVisitAll(new Visitor() {
             @Override
             public void visit(IRubyObject key, IRubyObject value) {
-                if (!block.yieldSpecific(context, key, value).isTrue()) {
+                if (!block.yieldArray(context, context.runtime.newArray(key, value), null).isTrue()) {
                     modified[0] = true;
                     remove(key);
                 }
@@ -1533,16 +1535,15 @@ public class RubyHash extends RubyObject implements Map {
 
         RubyHashEntry entry = head.nextAdded;
         if (entry != head) {
-            RubyArray result = RubyArray.newArray(getRuntime(), entry.key, entry.value);
+            RubyArray result = RubyArray.newArray(context.runtime, entry.key, entry.value);
             internalDeleteEntry(entry);
             return result;
         }
 
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return Helpers.invoke(context, ifNone, "call", this, getRuntime().getNil());
-        } else {
-            return ifNone;
+            return this.callMethod(context, "default", context.nil);
         }
+        return ifNone;
     }
 
     public final boolean fastDelete(IRubyObject key) {
@@ -1891,7 +1892,7 @@ public class RubyHash extends RubyObject implements Map {
         iteratorEntry();
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
-                if (block.yieldSpecific(context, entry.key, entry.value).isTrue())
+                if (block.yieldArray(context, context.runtime.newArray(entry.key, entry.value), null).isTrue())
                     return context.getRuntime().getTrue();
             }
             return context.getRuntime().getFalse();
@@ -2041,7 +2042,7 @@ public class RubyHash extends RubyObject implements Map {
     public boolean equals(Object other) {
         if (!(other instanceof RubyHash)) return false;
         if (this == other) return true;
-        return op_equal(getRuntime().getCurrentContext(), (RubyHash)other).isTrue() ? true : false;
+        return op_equal(getRuntime().getCurrentContext(), (RubyHash)other).isTrue();
     }
 
     @Override

@@ -18,7 +18,6 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.OptionalKeywordArgMissingNode;
@@ -34,6 +33,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.StringSupport;
@@ -81,31 +81,26 @@ public class RubyCallNode extends RubyNode {
         super(context, section);
 
         this.methodName = methodName;
-
         this.receiver = receiver;
-
+        this.arguments = arguments;
         if (block == null) {
             this.block = null;
         } else {
             this.block = ProcOrNullNodeGen.create(context, section, block);
         }
 
-        this.arguments = arguments;
         this.isSplatted = isSplatted;
         this.isVCall = isVCall;
-
-        dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility);
-        respondToMissing = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
-        respondToMissingCast = BooleanCastNodeGen.create(context, section, null);
-
         this.ignoreVisibility = ignoreVisibility;
+
+        this.dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility);
 
         /*
          * TODO CS 19-Mar-15 we currently can't swap an @Children array out
          * so we just allocate a lot up-front. In a future version of Truffle
          * @Children might not need to be final, which would fix this.
          */
-        keywordOptimizedArguments = new RubyNode[arguments.length + 32];
+        this.keywordOptimizedArguments = new RubyNode[arguments.length + 32];
     }
 
     @Override
@@ -364,8 +359,7 @@ public class RubyCallNode extends RubyNode {
 
         final RubyContext context = getContext();
 
-        Object receiverObject;
-
+        final Object receiverObject;
         try {
             /*
              * TODO(CS): Getting a node via an accessor like this doesn't work with Truffle at the
@@ -386,9 +380,8 @@ public class RubyCallNode extends RubyNode {
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (method == null) {
-            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(methodName, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false);
-
-            if (r != DispatchNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
+            final Object r = respondToMissing(frame, receiverObject);
+            if (r != DispatchNode.MISSING && !castRespondToMissingToBoolean(frame, r)) {
                 return nil();
             }
         } else if (method.isUndefined()) {
@@ -397,7 +390,24 @@ public class RubyCallNode extends RubyNode {
             return nil();
         }
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("method", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        return create7BitString(StringOperations.encodeByteList("method", UTF8Encoding.INSTANCE));
+    }
+
+    private Object respondToMissing(VirtualFrame frame, Object receiverObject) {
+        if (respondToMissing == null) {
+            CompilerDirectives.transferToInterpreter();
+            respondToMissing = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
+        }
+        final DynamicObject method = getContext().getSymbol(methodName);
+        return respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, method, false);
+    }
+
+    private boolean castRespondToMissingToBoolean(VirtualFrame frame, final Object r) {
+        if (respondToMissingCast == null) {
+            CompilerDirectives.transferToInterpreter();
+            respondToMissingCast = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
+        }
+        return respondToMissingCast.executeBoolean(frame, r);
     }
 
     public String getName() {

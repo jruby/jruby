@@ -1680,13 +1680,15 @@ public class RubyKernel {
                     runtime.getPosix().exec(progStr, argv);
                 } else {
                     // TODO: other logic surrounding this call? In jnr-posix?
-                    ArrayList envStrings = new ArrayList();
-                    for (Map.Entry<String, String> envEntry : ((Map<String, String>)runtime.getENV()).entrySet()) {
-                        envStrings.add(envEntry.getKey() + "=" + envEntry.getValue());
+                    @SuppressWarnings("unchecked")
+                    final Map<String, String> ENV = (Map<String, String>) runtime.getENV();
+                    ArrayList<String> envStrings = new ArrayList<String>(ENV.size() + 1);
+                    for ( Map.Entry<String, String> envEntry : ENV.entrySet() ) {
+                        envStrings.add( envEntry.getKey() + '=' + envEntry.getValue() );
                     }
                     envStrings.add(null);
 
-                    runtime.getPosix().execve(progStr, argv, (String[]) envStrings.toArray(new String[0]));
+                    runtime.getPosix().execve(progStr, argv, envStrings.toArray(new String[envStrings.size()]));
                 }
 
                 // Only here because native exec could not exec (always -1)

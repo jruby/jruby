@@ -20,9 +20,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.tools.LineToProbesMap;
+
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -47,13 +48,11 @@ public class AttachmentsManager {
     }
 
     public synchronized void attach(String file, int line, final DynamicObject block) {
-        assert RubyGuards.isRubyProc(block);
-
         final Instrument instrument = Instrument.create(new StandardInstrumentListener() {
 
             @Override
             public void enter(Probe probe, Node node, VirtualFrame frame) {
-                final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
+                final DynamicObject binding = BindingNodes.createBinding(context, frame.materialize());
                 ProcNodes.rootCall(block, binding);
             }
 

@@ -15,6 +15,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
@@ -28,11 +30,13 @@ public abstract class IntegerNodes {
     @CoreMethod(names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class DownToNode extends YieldingCoreMethodNode {
 
+        @Child private CallDispatchHeadNode downtoInternalCall;
+
         public DownToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object downto(VirtualFrame frame, int from, int to, DynamicObject block) {
             int count = 0;
 
@@ -53,7 +57,12 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
+        public Object downto(VirtualFrame frame, int from, double to, DynamicObject block) {
+            return downto(frame, from, (int) Math.ceil(to), block);
+        }
+
+        @Specialization
         public Object downto(VirtualFrame frame, long from, long to, DynamicObject block) {
             // TODO BJF 22-Apr-2015 how to handle reportLoopCount(long)
             int count = 0;
@@ -75,9 +84,19 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization(guards = "isRubyProc(block)")
-        public Object downto(VirtualFrame frame, int from, double to, DynamicObject block) {
-            return downto(frame, from, (int) Math.ceil(to), block);
+        @Specialization
+        public Object downto(VirtualFrame frame, long from, double to, DynamicObject block) {
+            return downto(frame, from, (long) Math.ceil(to), block);
+        }
+
+        @Specialization(guards = "isDynamicObject(from) || isDynamicObject(to)")
+        public Object downto(VirtualFrame frame, Object from, Object to, DynamicObject block) {
+            if (downtoInternalCall == null) {
+                CompilerDirectives.transferToInterpreter();
+                downtoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return downtoInternalCall.call(frame, from, "downto_internal", block, to);
         }
 
     }
@@ -147,7 +166,7 @@ public abstract class IntegerNodes {
 
         @Specialization(guards = "isRubyBignum(n)")
         public Object times(VirtualFrame frame, DynamicObject n, DynamicObject block,
-                @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
+                            @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
 
             for (BigInteger i = BigInteger.ZERO; i.compareTo(Layouts.BIGNUM.getValue(n)) < 0; i = i.add(BigInteger.ONE)) {
                 yield(frame, block, fixnumOrBignumNode.fixnumOrBignum(i));
@@ -158,7 +177,7 @@ public abstract class IntegerNodes {
 
     }
 
-    @CoreMethod(names = {"to_i", "to_int"})
+    @CoreMethod(names = { "to_i", "to_int" })
     public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
@@ -185,11 +204,13 @@ public abstract class IntegerNodes {
     @CoreMethod(names = "upto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
+        @Child private CallDispatchHeadNode uptoInternalCall;
+
         public UpToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object upto(VirtualFrame frame, int from, int to, DynamicObject block) {
             int count = 0;
 
@@ -210,12 +231,12 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object upto(VirtualFrame frame, int from, double to, DynamicObject block) {
             return upto(frame, from, (int) Math.floor(to), block);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object upto(VirtualFrame frame, long from, long to, DynamicObject block) {
             int count = 0;
 
@@ -234,6 +255,21 @@ public abstract class IntegerNodes {
             }
 
             return nil();
+        }
+
+        @Specialization
+        public Object upto(VirtualFrame frame, long from, double to, DynamicObject block) {
+            return upto(frame, from, (long) Math.ceil(to), block);
+        }
+
+        @Specialization(guards = "isDynamicObject(from) || isDynamicObject(to)")
+        public Object upto(VirtualFrame frame, Object from, Object to, DynamicObject block) {
+            if (uptoInternalCall == null) {
+                CompilerDirectives.transferToInterpreter();
+                uptoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return uptoInternalCall.call(frame, from, "upto_internal", block, to);
         }
 
     }

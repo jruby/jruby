@@ -14,29 +14,28 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.translator.WriteNode;
 import org.jruby.util.StringSupport;
 
-public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
+public class WriteInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private RubyNode rhs;
     @Child private WriteHeadObjectFieldNode writeNode;
-    private final boolean isGlobal;
 
-    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
+    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs) {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;
-        writeNode = new WriteHeadObjectFieldNode(name);
-        this.isGlobal = isGlobal;
+        writeNode = WriteHeadObjectFieldNodeGen.create(name);
     }
 
     @Override
@@ -115,13 +114,8 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     }
 
     @Override
-    public RubyNode makeReadNode() {
-        return new ReadInstanceVariableNode(getContext(), getSourceSection(), (String) writeNode.getName(), receiver, isGlobal);
-    }
-
-    @Override
     public Object isDefined(VirtualFrame frame) {
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("assignment", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        return create7BitString(StringOperations.encodeByteList("assignment", UTF8Encoding.INSTANCE));
     }
 
 }

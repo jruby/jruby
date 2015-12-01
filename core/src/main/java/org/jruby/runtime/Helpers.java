@@ -51,6 +51,7 @@ import org.jcodings.unicode.UnicodeEncoding;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.CodegenUtils.sig;
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import org.jruby.util.JavaNameMangler;
 
@@ -686,12 +687,7 @@ public class Helpers {
     }
 
     public static IRubyObject backref(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        if(backref instanceof RubyMatchData) {
-            ((RubyMatchData)backref).use();
-        }
-        return backref;
+        return RubyRegexp.getBackRef(context);
     }
 
     public static IRubyObject backrefLastMatch(ThreadContext context) {
@@ -1472,9 +1468,7 @@ public class Helpers {
     }
 
     public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-        if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
-        return backref;
+        return backref(context); // backref(context) method otherwise not used
     }
 
     public static IRubyObject preOpAsgnWithOrAnd(IRubyObject receiver, ThreadContext context, IRubyObject self, CallSite varSite) {
@@ -1835,7 +1829,7 @@ public class Helpers {
 
     private static String[][] decodeScopeDescriptor(String scopeString) {
         String[] scopeElements = scopeString.split(",");
-        String[] scopeNames = scopeElements[1].length() == 0 ? new String[0] : getScopeNames(scopeElements[1]);
+        String[] scopeNames = scopeElements[1].length() == 0 ? EMPTY_STRING_ARRAY : getScopeNames(scopeElements[1]);
         return new String[][] {scopeElements, scopeNames};
     }
 

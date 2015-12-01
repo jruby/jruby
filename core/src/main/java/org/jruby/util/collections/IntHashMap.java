@@ -397,6 +397,19 @@ public class IntHashMap<V> {
 	    }
     }
 
+    @Override
+    public Object clone() {
+        IntHashMap<V> newMap = new IntHashMap<>(table.length, loadFactor);
+        for (int i = 0; i < table.length; i++) {
+            Entry<V> entry = table[i];
+            while (entry != null) {
+                newMap.put(entry.getKey(), entry.getValue());
+                entry = entry.next;
+            }
+        }
+        return newMap;
+    }
+
     @SuppressWarnings("unchecked")
     public static <U> IntHashMap<U> nullMap() { return NullMap.INSTANCE; }
 

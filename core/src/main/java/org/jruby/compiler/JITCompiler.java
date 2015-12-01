@@ -37,9 +37,12 @@ import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
+import org.jruby.runtime.CompiledIRBlockBody;
+import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
@@ -54,6 +57,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -147,7 +151,9 @@ public class JITCompiler implements JITCompilerMBean {
 
     public Runnable getTaskFor(ThreadContext context, Compilable method) {
         if (method instanceof MixedModeIRMethod) {
-            return new JITTask((MixedModeIRMethod) method, method.getClassName(context));
+            return new MethodJITTask((MixedModeIRMethod) method, method.getClassName(context));
+        } else if (method instanceof MixedModeIRBlockBody) {
+            return new BlockJITTask((MixedModeIRBlockBody) method, method.getClassName(context));
         }
 
         return new FullBuildTask(method);
@@ -204,12 +210,12 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
-    private class JITTask implements Runnable {
+    private class MethodJITTask implements Runnable {
         private final String className;
         private final MixedModeIRMethod method;
         private final String methodName;
 
-        public JITTask(MixedModeIRMethod method, String className) {
+        public MethodJITTask(MixedModeIRMethod method, String className) {
             this.method = method;
             this.className = className;
             this.methodName = method.getName();
@@ -241,7 +247,7 @@ public class JITCompiler implements JITCompilerMBean {
 
                 String key = SexpMaker.sha1(method.getIRScope());
                 JVMVisitor visitor = new JVMVisitor();
-                JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, visitor);
+                MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
 
                 JVMVisitorMethodContext context = new JVMVisitorMethodContext();
                 generator.compile(context);
@@ -317,6 +323,68 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
+    private class BlockJITTask implements Runnable {
+        private final String className;
+        private final MixedModeIRBlockBody body;
+        private final String methodName;
+
+        public BlockJITTask(MixedModeIRBlockBody body, String className) {
+            this.body = body;
+            this.className = className;
+            this.methodName = body.getName();
+        }
+
+        public void run() {
+            try {
+                String key = SexpMaker.sha1(body.getIRScope());
+                JVMVisitor visitor = new JVMVisitor();
+                BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, runtime, body, visitor);
+
+                JVMVisitorMethodContext context = new JVMVisitorMethodContext();
+                generator.compile(context);
+
+                // FIXME: reinstate active bytecode size check
+                // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
+                // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
+                // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
+                // mechanism of getting all body sizes.
+                Class sourceClass = visitor.defineFromBytecode(body.getIRScope(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
+
+                if (sourceClass == null) {
+                    // class could not be found nor generated; give up on JIT and bail out
+                    counts.failCount.incrementAndGet();
+                    return;
+                } else {
+                    generator.updateCounters(counts);
+                }
+
+                // successfully got back a jitted body
+
+                if (config.isJitLogging()) {
+                    log(body.getImplementationClass(), body.getFile(), body.getLine(), className + "." + methodName, "done jitting");
+                }
+
+                String jittedName = context.getJittedName();
+
+                // blocks only have variable-arity
+                body.completeBuild(
+                        new CompiledIRBlockBody(
+                                PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
+                                body.getIRScope(),
+                                ((IRClosure) body.getIRScope()).getSignature().encode()));
+            } catch (Throwable t) {
+                if (config.isJitLogging()) {
+                    log(body.getImplementationClass(), body.getFile(), body.getLine(), className + "." + methodName, "Could not compile; passes run: " + body.getIRScope().getExecutedPasses(), t.getMessage());
+                    if (config.isJitLoggingVerbose()) {
+                        t.printStackTrace();
+                    }
+                }
+
+                counts.failCount.incrementAndGet();
+            }
+        }
+    }
+
     public static String getHashForString(String str) {
         return getHashForBytes(RubyEncoding.encodeUTF8(str));
     }
@@ -335,8 +403,8 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
-    public static class JITClassGenerator {
-        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, MixedModeIRMethod method, JVMVisitor visitor) {
+    public static class MethodJITClassGenerator {
+        public MethodJITClassGenerator(String className, String methodName, String key, Ruby ruby, MixedModeIRMethod method, JVMVisitor visitor) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
             if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
                 // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
@@ -422,6 +490,93 @@ public class JITCompiler implements JITCompilerMBean {
         private String name;
     }
 
+    public static class BlockJITClassGenerator {
+        public BlockJITClassGenerator(String className, String methodName, String key, Ruby ruby, MixedModeIRBlockBody body, JVMVisitor visitor) {
+            this.packageName = JITCompiler.RUBY_JIT_PREFIX;
+            if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
+                // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
+                // so we force the class name to be unique to this runtime.
+
+                // Also, invokedynamic forces us to make jitted bytecode unique to each runtime, since the call sites cache
+                // at class level rather than at our runtime level. This makes it impossible to share jitted bytecode
+                // across runtimes.
+
+                digestString = key + Math.abs(ruby.hashCode());
+            } else {
+                digestString = key;
+            }
+            this.className = packageName + "/" + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
+            this.name = this.className.replaceAll("/", ".");
+            this.methodName = methodName;
+            this.body = body;
+            this.visitor = visitor;
+        }
+
+        @SuppressWarnings("unchecked")
+        protected void compile(JVMVisitorMethodContext context) {
+            if (bytecode != null) return;
+
+            // Time the compilation
+            long start = System.nanoTime();
+
+            InterpreterContext ic = body.ensureInstrsReady();
+
+            int insnCount = ic.getInstructions().length;
+            if (insnCount > Options.JIT_MAXSIZE.load()) {
+                // methods with more than our limit of basic blocks are likely too large to JIT, so bail out
+                throw new NotCompilableException("Could not compile " + body + "; instruction count " + insnCount + " exceeds threshold of " + Options.JIT_MAXSIZE.load());
+            }
+
+            // This may not be ok since we'll end up running passes specific to JIT
+            // CON FIXME: Really should clone scope before passes in any case
+            bytecode = visitor.compileToBytecode(body.getIRScope(), context);
+
+            compileTime = System.nanoTime() - start;
+        }
+
+        void updateCounters(JITCounts counts) {
+            counts.compiledCount.incrementAndGet();
+            counts.compileTime.addAndGet(compileTime);
+            counts.codeSize.addAndGet(bytecode.length);
+            counts.averageCompileTime.set(counts.compileTime.get() / counts.compiledCount.get());
+            counts.averageCodeSize.set(counts.codeSize.get() / counts.compiledCount.get());
+            synchronized (counts) {
+                if (counts.largestCodeSize.get() < bytecode.length) {
+                    counts.largestCodeSize.set(bytecode.length);
+                }
+            }
+        }
+
+        // FIXME: Does anything call this?  If so we should document it.
+        public void generate() {
+            compile(new JVMVisitorMethodContext());
+        }
+
+        public byte[] bytecode() {
+            return bytecode;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return "{} at " + body.getFile() + ":" + body.getLine();
+        }
+
+        private final String packageName;
+        private final String className;
+        private final String methodName;
+        private final String digestString;
+        private final MixedModeIRBlockBody body;
+        private final JVMVisitor visitor;
+
+        private byte[] bytecode;
+        private long compileTime;
+        private String name;
+    }
+
     static void log(RubyModule implementationClass, String file, int line, String name, String message, String... reason) {
         boolean isBlock = implementationClass == null;
         String className = isBlock ? "<block>" : implementationClass.getBaseName();
@@ -429,7 +584,8 @@ public class JITCompiler implements JITCompilerMBean {
 
         name = isBlock ? "" : "." + name;
 
-        StringBuilder builder = new StringBuilder(message + ":" + className + name + " at " + file + ":" + line);
+        StringBuilder builder = new StringBuilder(32);
+        builder.append(message).append(':').append(className).append(name).append(" at ").append(file).append(':').append(line);
 
         if (reason.length > 0) {
             builder.append(" because of: \"");

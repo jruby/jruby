@@ -17,30 +17,26 @@ import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.translator.ReadNode;
 import org.jruby.util.StringSupport;
 
-public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
+public class ReadInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private ReadHeadObjectFieldNode readNode;
-    private final boolean isGlobal;
 
     private final BranchProfile primitiveProfile = BranchProfile.create();
 
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = receiver;
-        readNode = ReadHeadObjectFieldNodeGen.create(context, sourceSection, name, nil(), null);
-        this.isGlobal = isGlobal;
+        readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
     }
 
     @Override
@@ -99,28 +95,13 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        if (isGlobal) {
-            final DynamicObject receiverValue = (DynamicObject) receiver.execute(frame);
-
-            if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(receiverValue) != nil()) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
-            } else {
-                return nil();
-            }
-        }
-
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof DynamicObject) {
             final DynamicObject receiverRubyObject = (DynamicObject) receiverObject;
 
-            final Shape layout = receiverRubyObject.getShape();
-            final Property storageLocation = layout.getProperty(readNode.getName());
-
-            if (storageLocation != null) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("instance-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+            if (receiverRubyObject.getShape().hasProperty(readNode.getName())) {
+                return create7BitString(StringOperations.encodeByteList("instance-variable", UTF8Encoding.INSTANCE));
             } else {
                 return nil();
             }
@@ -129,8 +110,4 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         }
     }
 
-    @Override
-    public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteInstanceVariableNode(getContext(), getSourceSection(), (String) readNode.getName(), receiver, rhs, isGlobal);
-    }
 }

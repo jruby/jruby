@@ -19,7 +19,6 @@ public interface IOBufferLayout extends BasicObjectLayout {
     String WRITE_SYNCED_IDENTIFIER = "@write_synced";
     String STORAGE_IDENTIFIER = "@storage";
     String USED_IDENTIFIER = "@used";
-    String START_IDENTIFIER = "@start";
     String TOTAL_IDENTIFIER = "@total";
 
     DynamicObjectFactory createIOBufferShape(DynamicObject logicalClass,
@@ -29,7 +28,6 @@ public interface IOBufferLayout extends BasicObjectLayout {
                                  boolean writeSynced,
                                  DynamicObject storage,
                                  int used,
-                                 int start,
                                  int total);
 
     boolean getWriteSynced(DynamicObject object);
@@ -40,9 +38,6 @@ public interface IOBufferLayout extends BasicObjectLayout {
 
     int getUsed(DynamicObject object);
     void setUsed(DynamicObject object, int value);
-
-    int getStart(DynamicObject object);
-    void setStart(DynamicObject object, int value);
 
     int getTotal(DynamicObject object);
     void setTotal(DynamicObject object, int value);

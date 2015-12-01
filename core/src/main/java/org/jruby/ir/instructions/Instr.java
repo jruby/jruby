@@ -16,6 +16,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,7 @@ import java.util.Map;
 // Ex: v = BOXED_FIXNUM(n)
 //     v = HAS_TYPE(Fixnum)
 public abstract class Instr {
-    public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
+    public static final Operand[] EMPTY_OPERANDS = new Operand[0];
 
     private int ipc; // Interpreter-only: instruction pointer
     private int rpc; // Interpreter-only: rescue pointer
@@ -49,9 +50,8 @@ public abstract class Instr {
         this.operation = operation;
     }
 
-    private static String[] EMPTY_STRINGS = new String[0];
     public String[] toStringNonOperandArgs() {
-        return EMPTY_STRINGS;
+        return EMPTY_STRING_ARRAY;
     }
 
     public void encode(IRWriterEncoder e) {

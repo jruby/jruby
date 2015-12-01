@@ -472,7 +472,7 @@ public final class Ruby implements Constantizable {
         context.preEvalScriptlet(scope);
 
         try {
-            return Interpreter.getInstance().execute(this, rootNode, context.getFrameSelf());
+            return interpreter.execute(this, rootNode, context.getFrameSelf());
         } finally {
             context.postEvalScriptlet();
         }
@@ -544,13 +544,12 @@ public final class Ruby implements Constantizable {
             if (script == null) {
                 throw new MainExitException(1, "error: .class file specified is not a compiled JRuby script");
             }
+            script.setFileName(filename);
             runInterpreter(script);
             return;
         }
 
-        Main.printTruffleTimeMetric("before-parse-initial");
         ParseResult parseResult = parseFromMain(filename, inputStream);
-        Main.printTruffleTimeMetric("after-parse-initial");
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
@@ -835,7 +834,7 @@ public final class Ruby implements Constantizable {
             throw new UnsupportedOperationException();
         }
 
-        return Interpreter.getInstance().execute(this, parseResult, self);
+        return interpreter.execute(this, parseResult, self);
    }
 
     public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
@@ -844,12 +843,13 @@ public final class Ruby implements Constantizable {
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
             assert self == getTopSelf();
+            final TruffleContextInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
-            getTruffleContext().execute((RootNode) rootNode);
+            truffleContext.execute((RootNode) rootNode);
             Main.printTruffleTimeMetric("after-run");
             return getNil();
         } else {
-            return Interpreter.getInstance().execute(this, rootNode, self);
+            return interpreter.execute(this, rootNode, self);
         }
     }
 
@@ -918,14 +918,6 @@ public final class Ruby implements Constantizable {
         Main.printTruffleTimeMetric("after-load-truffle-context");
 
         return truffleContext;
-    }
-
-    public void shutdownTruffleContextIfRunning() {
-        synchronized (truffleContextMonitor) {
-            if (truffleContext != null) {
-                truffleContext.shutdown();
-            }
-        }
     }
 
     /**
@@ -1672,7 +1664,7 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Create module Errno's Variables.  We have this method since Errno does not have it's
+     * Create module Errno's Variables.  We have this method since Errno does not have its
      * own java class.
      */
     private void initErrno() {
@@ -2864,7 +2856,7 @@ public final class Ruby implements Constantizable {
 
             IRubyObject cc = c.getConstant(str);
             if(!(cc instanceof RubyModule)) {
-                throw newTypeError("" + path + " does not refer to class/module");
+                throw newTypeError(path + " does not refer to class/module");
             }
             c = (RubyModule)cc;
         }
@@ -4759,6 +4751,10 @@ public final class Ruby implements Constantizable {
             deduped = string.strDup(this);
             deduped.setFrozen(true);
             dedupMap.put(string, new WeakReference<RubyString>(deduped));
+        } else if (deduped.getEncoding() != string.getEncoding()) {
+            // if encodings don't match, new string loses; can't dedup
+            deduped = string.strDup(this);
+            deduped.setFrozen(true);
         }
         return deduped;
     }
@@ -4847,7 +4843,7 @@ public final class Ruby implements Constantizable {
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
     private static final EventHook[] EMPTY_HOOKS = new EventHook[0];
-    private volatile EventHook[] eventHooks = new EventHook[0];
+    private volatile EventHook[] eventHooks = EMPTY_HOOKS;
     private boolean hasEventHooks;
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
@@ -5136,6 +5132,8 @@ public final class Ruby implements Constantizable {
     private final org.jruby.management.Runtime runtimeBean;
 
     private final FilenoUtil filenoUtil = new FilenoUtil();
+
+    private Interpreter interpreter = new Interpreter();
 
     /**
      * A representation of this runtime as a JIT-optimizable constant. Used for e.g. invokedynamic binding of runtime

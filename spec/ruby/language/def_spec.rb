@@ -188,7 +188,7 @@ describe "An instance method with a default argument" do
   end
 
   ruby_version_is "2.2" do
-    it "does not call a method with the same name as the local" do
+    it "shadows an existing method with the same name as the local" do
       def bar
         1
       end
@@ -196,6 +196,17 @@ describe "An instance method with a default argument" do
         bar
       end
       foo.should == nil
+      foo(2).should == 2
+    end
+
+    it "calls a method with the same name as the local when explicitly using ()" do
+      def bar
+        1
+      end
+      def foo(bar = bar())
+        bar
+      end
+      foo.should == 1
       foo(2).should == 2
     end
   end
@@ -464,6 +475,43 @@ describe "A nested method definition" do
     lambda { other.a_singleton_method }.should raise_error(NoMethodError)
   end
 
+  it "creates a method in the surrounding context when evaluated in a def expr.method" do
+    class DefSpecNested
+      TARGET = Object.new
+      def TARGET.defs_method
+        def inherited_method;self;end
+      end
+    end
+
+    DefSpecNested::TARGET.defs_method
+    DefSpecNested.should have_instance_method :inherited_method
+    DefSpecNested::TARGET.should_not have_method :inherited_method
+
+    obj = DefSpecNested.new
+    obj.inherited_method.should == obj
+  end
+
+  # See http://yugui.jp/articles/846#label-3
+  it "inside an instance_eval creates a singleton method" do
+    class DefSpecNested
+      OBJ = Object.new
+      OBJ.instance_eval do
+        def create_method_in_instance_eval(a = (def arg_method; end))
+          def body_method; end
+        end
+      end
+    end
+
+    obj = DefSpecNested::OBJ
+    obj.create_method_in_instance_eval
+
+    obj.should have_method :arg_method
+    obj.should have_method :body_method
+
+    DefSpecNested.should_not have_instance_method :arg_method
+    DefSpecNested.should_not have_instance_method :body_method
+  end
+
   it "defines methods as public by default" do
     cls = Class.new do
       def do_def
@@ -511,6 +559,73 @@ describe "A method definition inside an instance_eval" do
 
     DefSpecNested.an_instance_eval_class_method.should == DefSpecNested
     lambda { Object.an_instance_eval_class_method }.should raise_error(NoMethodError)
+  end
+  
+  it "creates a class method when the receiver is an anonymous class" do
+    m = Class.new
+    m.instance_eval do
+      def klass_method
+        :test
+      end
+    end
+    
+    m.klass_method.should == :test
+    lambda { Object.klass_method }.should raise_error(NoMethodError)
+  end
+  
+  it "creates a class method when instance_eval is within class" do
+    m = Class.new do
+      instance_eval do
+        def klass_method
+          :test
+        end          
+      end
+    end
+    
+    m.klass_method.should == :test
+    lambda { Object.klass_method }.should raise_error(NoMethodError)
+  end
+end
+
+describe "A method definition inside an instance_exec" do
+  it "creates a class method when the receiver is a class" do
+    DefSpecNested.instance_exec(1) do |param|
+      @stuff = param
+      
+      def an_instance_exec_class_method; @stuff; end
+    end
+
+    DefSpecNested.an_instance_exec_class_method.should == 1
+    lambda { Object.an_instance_exec_class_method }.should raise_error(NoMethodError)
+  end
+  
+  it "creates a class method when the receiver is an anonymous class" do    
+    m = Class.new
+    m.instance_exec(1) do |param|
+      @stuff = param
+      
+      def klass_method
+        @stuff
+      end
+    end
+    
+    m.klass_method.should == 1
+    lambda { Object.klass_method }.should raise_error(NoMethodError)
+  end
+  
+  it "creates a class method when instance_exec is within class" do
+    m = Class.new do
+      instance_exec(2) do |param|
+        @stuff = param
+        
+        def klass_method
+          @stuff
+        end          
+      end
+    end
+    
+    m.klass_method.should == 2
+    lambda { Object.klass_method }.should raise_error(NoMethodError)
   end
 end
 

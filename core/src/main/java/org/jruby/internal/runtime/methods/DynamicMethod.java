@@ -239,7 +239,7 @@ public abstract class DynamicMethod {
      * @return true if the call would not violate visibility; false otherwise
      */
     public boolean isCallableFrom(IRubyObject caller, CallType callType) {
-        switch (Visibility.values()[visibility]) {
+        switch (Visibility.getValues()[visibility]) {
         case PUBLIC:
             return true;
         case PRIVATE:
@@ -322,7 +322,7 @@ public abstract class DynamicMethod {
      * @return The visibility of this method
      */
     public Visibility getVisibility() {
-        return Visibility.values()[visibility];
+        return Visibility.getValues()[visibility];
     }
 
     /**
@@ -446,7 +446,7 @@ public abstract class DynamicMethod {
 
         @Override
         public String toString() {
-            return "" + (statik?"static ":"") + nativeReturn.getSimpleName() + " " + nativeTarget.getSimpleName() + "." + nativeName + CodegenUtils.prettyShortParams(nativeSignature);
+            return (statik ? "static " :"") + nativeReturn.getSimpleName() + ' ' + nativeTarget.getSimpleName() + '.' + nativeName + CodegenUtils.prettyShortParams(nativeSignature);
         }
     }
 

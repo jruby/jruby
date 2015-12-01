@@ -14,7 +14,7 @@ module Digest
     Truffle::Digest.bubblebabble(StringValue(message))
   end
 
-  class Algorithm
+  class Class
 
     def self.bubblebabble(message)
       digest = new

@@ -110,7 +110,7 @@ public abstract class ObjectIDOperations {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static long verySlowGetObjectID(DynamicObject object) {
+    public static long verySlowGetObjectID(RubyContext context, DynamicObject object) {
         // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
         Property property = object.getShape().getProperty(Layouts.OBJECT_ID_IDENTIFIER);
 
@@ -118,7 +118,7 @@ public abstract class ObjectIDOperations {
             return (long) property.get(object, false);
         }
 
-        final long objectID = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getContext().getNextObjectID();
+        final long objectID = context.getNextObjectID();
         object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
         return objectID;
     }

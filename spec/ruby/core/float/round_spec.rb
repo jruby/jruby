@@ -2,11 +2,14 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Float#round" do
   it "returns the nearest Integer" do
-    5.5.round.should  eql( 6 )
-    0.4.round.should  eql( 0 )
-    -2.8.round.should eql( -3)
-    0.0.round.should  eql( 0 )
-    0.49999999999999994.round.should eql(0) # see http://jira.codehaus.org/browse/JRUBY-5048
+    5.5.round.should == 6
+    0.4.round.should == 0
+    0.6.round.should == 1
+    -1.4.round.should == -1
+    -2.8.round.should == -3
+    0.0.round.should == 0
+    0.49999999999999994.round.should == 0 # see http://jira.codehaus.org/browse/JRUBY-5048
+    -0.49999999999999994.round.should == 0
   end
 
   it "raises FloatDomainError for exceptional values" do

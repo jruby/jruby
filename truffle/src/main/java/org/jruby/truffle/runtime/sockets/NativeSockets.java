@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.sockets;
 
 import jnr.ffi.Pointer;
+import jnr.posix.Timeval;
 
 public interface NativeSockets {
 
@@ -86,7 +87,7 @@ public interface NativeSockets {
      *        fd_set *restrict errorfds, struct timeval *restrict timeout);
      */
 
-    int select(int nfds, Pointer readfds, Pointer writefds, Pointer errorfds, Pointer timeout);
+    int select(int nfds, Pointer readfds, Pointer writefds, Pointer errorfds, Timeval timeout);
 
     /*
      * int

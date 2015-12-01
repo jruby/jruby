@@ -22,7 +22,7 @@ import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
 
 public class RuntimeHelperCall extends NOperandResultBaseInstr {
     public enum Methods {
-        HANDLE_PROPAGATE_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
+        HANDLE_PROPAGATED_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
         IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, RESTORE_EXCEPTION_VAR;
@@ -104,7 +104,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         Object arg1 = operands[0].retrieve(context, self, currScope, currDynScope, temp);
 
         switch (helperMethod) {
-            case HANDLE_PROPAGATE_BREAK:
+            case HANDLE_PROPAGATED_BREAK:
                 return IRRuntimeHelpers.handlePropagatedBreak(context, currDynScope, arg1, blockType);
             case HANDLE_NONLOCAL_RETURN:
                 return IRRuntimeHelpers.handleNonlocalReturn(scope, currDynScope, arg1, blockType);

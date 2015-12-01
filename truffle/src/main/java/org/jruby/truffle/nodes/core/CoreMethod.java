@@ -46,6 +46,8 @@ public @interface CoreMethod {
      */
     boolean isModuleFunction() default false;
 
+    boolean needsCallerFrame() default false;
+
     // arguments specification
     /** Whether <code>self</code> is passed as first argument to specializations. */
     boolean needsSelf() default true;

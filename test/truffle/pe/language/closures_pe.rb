@@ -14,4 +14,4 @@ module ClosureFixtures
 
 end
 
-example "x = 14; ClosureFixtures.yielder { x } + 2"
+example "x = 14; ClosureFixtures.yielder { x } + 2", 16

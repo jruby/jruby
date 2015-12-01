@@ -15,7 +15,7 @@ public class BacktraceElement {
 
     @Override
     public String toString() {
-        return method + " at " + filename + ":" + line;
+        return method + " at " + filename + ':' + line;
     }
 
     @Override

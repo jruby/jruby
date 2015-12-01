@@ -1,5 +1,5 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
-require 'net/ftp'
+require File.expand_path('../spec_helper', __FILE__)
 require File.expand_path('../fixtures/server', __FILE__)
 
 describe "Net::FTP#system" do
@@ -8,7 +8,7 @@ describe "Net::FTP#system" do
     @server.serve_once
 
     @ftp = Net::FTP.new
-    @ftp.connect("localhost", 9921)
+    @ftp.connect(@server.hostname, @server.server_port)
   end
 
   after :each do
@@ -19,11 +19,11 @@ describe "Net::FTP#system" do
 
   it "sends the SYST command to the server" do
     @ftp.system
-    @ftp.last_response.should == "215 FTP Dummy Server (SYST)\n"
+    @ftp.last_response.should =~ /\A215 FTP Dummy Server \(SYST\)\Z/
   end
 
   it "returns the received information" do
-    @ftp.system.should == "FTP Dummy Server (SYST)\n"
+    @ftp.system.should =~ /\AFTP Dummy Server \(SYST\)\Z/
   end
 
   it "raises a Net::FTPPermError when the response code is 500" do

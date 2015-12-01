@@ -3,11 +3,11 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe "Socket::TCPServer.accept_nonblock" do
   before :each do
-    @server =  TCPServer.new("127.0.0.1", SocketSpecs.port)
+    @server = TCPServer.new("127.0.0.1", SocketSpecs.port)
   end
 
   after :each do
-    @server.close
+    @server.close unless @server.closed?
   end
 
   it "accepts non blocking connections" do
@@ -27,5 +27,10 @@ describe "Socket::TCPServer.accept_nonblock" do
 
     c.close
     s.close
+  end
+
+  it "raises an IOError if the socket is closed" do
+    @server.close
+    lambda { @server.accept }.should raise_error(IOError)
   end
 end

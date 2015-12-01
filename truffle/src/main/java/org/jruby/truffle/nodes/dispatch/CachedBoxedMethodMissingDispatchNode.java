@@ -13,13 +13,9 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
-
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -32,7 +28,6 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
     private final InternalMethod method;
 
     @Child private DirectCallNode callNode;
-    @Child private IndirectCallNode indirectCallNode;
 
     public CachedBoxedMethodMissingDispatchNode(
             RubyContext context,
@@ -41,36 +36,29 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             Shape expectedShape,
             DynamicObject expectedClass,
             InternalMethod method,
-            boolean indirect,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
+        super(context, cachedName, next, dispatchAction);
 
-        assert RubyGuards.isRubyClass(expectedClass);
         this.expectedShape = expectedShape;
-        unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
+        this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.method = method;
+        this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-        if (indirect) {
-            indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-        } else {
-            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        /*
+         * The way that #method_missing is used is usually as an indirection to call some other method, and
+         * possibly to modify the arguments. In both cases, but especially the latter, it makes a lot of sense
+         * to manually clone the call target and to inline it.
+         */
 
-            /*
-             * The way that #method_missing is used is usually as an indirection to call some other method, and
-             * possibly to modify the arguments. In both cases, but especially the latter, it makes a lot of sense
-             * to manually clone the call target and to inline it.
-             */
+        if (callNode.isCallTargetCloningAllowed()
+                && (getContext().getOptions().METHODMISSING_ALWAYS_CLONE || method.getSharedMethodInfo().shouldAlwaysClone())) {
+            insert(callNode);
+            callNode.cloneCallTarget();
+        }
 
-            if (callNode.isCallTargetCloningAllowed()
-                    && (getContext().getOptions().METHODMISSING_ALWAYS_CLONE || method.getSharedMethodInfo().shouldAlwaysClone())) {
-                insert(callNode);
-                callNode.cloneCallTarget();
-            }
-
-            if (callNode.isInlinable() && getContext().getOptions().METHODMISSING_ALWAYS_INLINE) {
-                insert(callNode);
-                callNode.forceInlining();
-            }
+        if (callNode.isInlinable() && getContext().getOptions().METHODMISSING_ALWAYS_INLINE) {
+            insert(callNode);
+            callNode.forceInlining();
         }
     }
 
@@ -86,8 +74,8 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
@@ -106,41 +94,20 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (DynamicObject) blockObject,
+                    blockObject,
                     argumentsObjects,
                     "class modified");
         }
 
         switch (getDispatchAction()) {
-            case CALL_METHOD: {
+            case CALL_METHOD:
                 // When calling #method_missing we need to prepend the symbol
 
-                final Object[] argumentsObjectsArray = (Object[]) argumentsObjects;
-                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
+                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
                 modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
-                ArrayUtils.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+                ArrayUtils.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
 
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            method.getCallTarget(),
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject,
-                                    (DynamicObject) blockObject,
-                                    modifiedArgumentsObjects));
-                } else {
-                    return callNode.call(
-                            frame,
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject,
-                                    (DynamicObject) blockObject,
-                                    modifiedArgumentsObjects));
-                }
-            }
+                return call(callNode, frame, method, receiverObject, blockObject, modifiedArgumentsObjects);
 
             case RESPOND_TO_METHOD:
                 return false;

@@ -37,15 +37,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.jcodings.specific.USASCIIEncoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -58,18 +49,29 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
-import org.jruby.runtime.Helpers;
 import org.jruby.util.TypeConverter;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /** The Time class.
@@ -79,6 +81,9 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 @JRubyClass(name="Time", include="Comparable")
 public class RubyTime extends RubyObject {
     public static final String UTC = "UTC";
+    public static final BigDecimal ONE_MILLION_BD = new BigDecimal(1000000);
+    public static final BigInteger ONE_MILLION_BI = BigInteger.valueOf(1000000);
+    public static final BigDecimal ONE_THOUSAND_BD = new BigDecimal(1000);
     private DateTime dt;
     private long nsec;
 
@@ -433,7 +438,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public RubyTime succ() {
-        return newTime(getRuntime(),dt.plusSeconds(1));
+        return newTime(getRuntime(), dt.plusSeconds(1));
     }
 
     @JRubyMethod(name = {"gmtime", "utc"})
@@ -744,8 +749,10 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_r(ThreadContext context) {
-        IRubyObject rational = to_f().to_r(context);
-        return rational;
+        return RubyRational.newRationalCanonicalize(
+                context,
+                getTimeInMillis() * 1000000 + nsec,
+                1000000000);
     }
 
     @JRubyMethod(name = {"usec", "tv_usec"})
@@ -830,15 +837,16 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public IRubyObject zone() {
-        final String zone = RubyTime.zoneHelper(getEnvTimeZone(getRuntime()).toString(), dt, isTzRelative);
-        if (zone == null) return getRuntime().getNil();
-        return getRuntime().newString(zone);
+        if (isTzRelative) return getRuntime().getNil();
+        return getRuntime().newString(RubyTime.getRubyTimeZoneName(getRuntime(), dt));
     }
 
-    public static String zoneHelper(String envTZ, DateTime dt, boolean isTzRelative) {
-        if (isTzRelative) return null;
+	public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
+        return RubyTime.getRubyTimeZoneName(getEnvTimeZone(runtime).toString(), dt);
+	}
 
-        // see declaration of SHORT_TZNAME
+	public static String getRubyTimeZoneName(String envTZ, DateTime dt) {
+		// see declaration of SHORT_TZNAME
         if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
             return SHORT_STD_TZNAME.get(envTZ);
         }
@@ -868,7 +876,7 @@ public class RubyTime extends RubyObject {
         }
 
         return zone;
-    }
+	}
 
     public void setDateTime(DateTime dt) {
         this.dt = dt;
@@ -886,7 +894,7 @@ public class RubyTime extends RubyObject {
     @Override
     public RubyFixnum hash() {
     	// modified to match how hash is calculated in 1.8.2
-        return getRuntime().newFixnum((int)(((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1);
+        return getRuntime().newFixnum((int) (((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1);
     }
 
     @JRubyMethod(name = "_dump", optional = 1)
@@ -1019,41 +1027,64 @@ public class RubyTime extends RubyObject {
             time = new RubyTime(runtime, (RubyClass) recv, other.dt);
             time.setNSec(other.getNSec());
         } else {
-            time = new RubyTime(runtime, (RubyClass) recv,
-                    new DateTime(0L, getLocalTimeZone(runtime)));
-
-            long seconds = RubyNumeric.num2long(arg);
-            long millisecs = 0;
-            long nanosecs = 0;
+            long nanosecs;
+            long millisecs;
 
             // In the case of two arguments, MRI will discard the portion of
             // the first argument after a decimal point (i.e., "floor").
             // However in the case of a single argument, any portion after
             // the decimal point is honored.
             if (arg instanceof RubyFloat || arg instanceof RubyRational) {
-                double dbl = RubyNumeric.num2dbl(arg);
                 long nano;
 
-                nano = Math.round((dbl - seconds) * 1000000000);
+                if (arg instanceof RubyFloat) {
+                    // use integral and decimal forms to calculate nanos
+                    long seconds = RubyNumeric.num2long(arg);
+                    double dbl = RubyNumeric.num2dbl(arg);
 
-                if (dbl < 0 && nano != 0) {
-                    nano += 1000000000;
+                    nano = (long)((dbl - seconds) * 1000000000);
+
+                    if (dbl < 0 && nano != 0) {
+                        nano += 1000000000;
+                    }
+
+                    millisecs = seconds * 1000 + nano / 1000000;
+                    nanosecs = nano % 1000000;
+                } else {
+                    // use Rational numerator and denominator to calculate nanos
+                    RubyRational rational = (RubyRational) arg;
+
+                    // These could have rounding errors if numerator or denominator are not integral and < long. Can they be?
+                    long numerator = rational.numerator(context).convertToInteger().getLongValue();
+                    long denominator = rational.denominator(context).convertToInteger().getLongValue();
+
+                    BigDecimal accurateSeconds = new BigDecimal(numerator).divide(new BigDecimal(denominator));
+                    BigDecimal accurateMillis = accurateSeconds.multiply(ONE_THOUSAND_BD);
+                    BigInteger integralMillis = accurateMillis.toBigInteger();
+                    BigInteger remainingNanos = accurateMillis.multiply(ONE_MILLION_BD).toBigInteger().subtract(integralMillis.multiply(ONE_MILLION_BI));
+
+                    millisecs = integralMillis.longValue();
+                    nanosecs = remainingNanos.longValue();
                 }
-                millisecs = nano / 1000000;
-                nanosecs = nano % 1000000;
+            } else {
+                nanosecs = 0;
+                millisecs = RubyNumeric.num2long(arg) * 1000;
             }
+
+            try {
+                time = new RubyTime(runtime, (RubyClass) recv,
+                        new DateTime(millisecs, getLocalTimeZone(runtime)));
+            }
+            // joda-time 2.5 can throw this exception - seen locally
+            catch(ArithmeticException e1) {
+                throw runtime.newRangeError(e1.getMessage());
+            }
+            // joda-time 2.5 can throw this exception - seen on travis
+            catch(IllegalFieldValueException e2) {
+                throw runtime.newRangeError(e2.getMessage());
+            }
+
             time.setNSec(nanosecs);
-	    try {
-		time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
-	    }
-	    // joda-time 2.5 can throw this exception - seen locally
-	    catch(ArithmeticException e1) {
-		throw runtime.newRangeError(e1.getMessage());
-	    }
-	    // joda-time 2.5 can throw this exception - seen on travis
-	    catch(IllegalFieldValueException e2) {
-		throw runtime.newRangeError(e2.getMessage());
-	    }
         }
 
         time.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, time);

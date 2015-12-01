@@ -15,14 +15,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.posix.FileStat;
-
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
@@ -166,14 +166,14 @@ public abstract class StatPrimitiveNodes {
 
         public StatStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int stat(DynamicObject rubyStat, DynamicObject path) {
             final FileStat stat = posix().allocateStat();
-            final ByteList byteList = Layouts.STRING.getByteList(path);
+            final ByteList byteList = StringOperations.getByteList(path);
             final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
             final int code = posix().stat(pathString, stat);
 
@@ -198,7 +198,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatFStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -223,7 +223,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatLStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -252,7 +252,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readStatNode = ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), STAT_IDENTIFIER, null, null);
+            readStatNode = ReadHeadObjectFieldNodeGen.create(STAT_IDENTIFIER, null);
         }
 
         public FileStat getStat(DynamicObject rubyStat) {

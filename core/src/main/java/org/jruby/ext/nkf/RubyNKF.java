@@ -42,7 +42,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 
@@ -96,28 +95,35 @@ public class RubyNKF {
     private static final ByteList END_MIME_STRING = new ByteList(ByteList.plain("?="));
     private static final ByteList PACK_BASE64 = new ByteList(ByteList.plain("m"));
     private static final ByteList PACK_QENCODE = new ByteList(ByteList.plain("M"));
-    
-    public static Map<Integer, String> NKFCharsetMap = new HashMap();
+
+    public static final Map<Integer, String> NKFCharsetMap = new HashMap<Integer, String>(20, 1);
 
     public static void createNKF(Ruby runtime) {
-        RubyModule nkfModule = runtime.defineModule("NKF");
+        final RubyModule NKF = runtime.defineModule("NKF");
 
-        for (NKFCharset nkf : NKFCharset.values()) {
-            nkfModule.defineConstant(nkf.name(), RubyFixnum.newFixnum(runtime, nkf.getValue()));
-            NKFCharsetMap.put(nkf.getValue(), nkf.name());
+        if (runtime.is1_8()) {
+            final String version = "2.0.8";
+            final String relDate = "2008-11-08";
+            NKF.defineConstant("NKF_VERSION", runtime.newString(version));
+            NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
+            NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
+        }
+        else {
+            final String version = "2.1.2";
+            final String relDate = "2011-09-08";
+            NKF.defineConstant("NKF_VERSION", runtime.newString(version));
+            NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
+            NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
         }
 
-        RubyString version = runtime.newString("2.0.7 (JRuby 2007-05-11)");
-        RubyString nkfVersion = runtime.newString("2.0.7");
-        RubyString nkfDate = runtime.newString("2007-05-11");
+        for ( NKFCharset charset : NKFCharset.values() ) {
+            NKFCharsetMap.put(charset.value, charset.name());
 
-        ThreadContext context = runtime.getCurrentContext();
+            if ( ! runtime.is1_8() && charset.value > 12 ) continue;
+            NKF.defineConstant(charset.name(), charsetMappedValue(runtime, charset));
+        }
 
-        version.freeze(context);
-        nkfVersion.freeze(context);
-        nkfDate.freeze(context);
-
-        nkfModule.defineAnnotatedMethods(RubyNKF.class);
+        NKF.defineAnnotatedMethods(RubyNKF.class);
     }
 
     @JRubyMethod(name = "guess", required = 1, module = true)
@@ -137,26 +143,43 @@ public class RubyNKF {
         }
         try {
             decoder.decode(buf);
-        } catch (CharacterCodingException e) {
-            return runtime.newFixnum(UNKNOWN.getValue());
         }
-        if (!decoder.isCharsetDetected()) {
-            return runtime.newFixnum(UNKNOWN.getValue());
+        catch (CharacterCodingException e) {
+            return charsetMappedValue(runtime, UNKNOWN);
+        }
+        if ( ! decoder.isCharsetDetected() ) {
+            return charsetMappedValue(runtime, UNKNOWN);
         }
         Charset charset = decoder.detectedCharset();
         String name = charset.name();
         if ("Shift_JIS".equals(name)) {
-            return runtime.newFixnum(SJIS.getValue());
+            return charsetMappedValue(runtime, SJIS);
         }
         if ("windows-31j".equals(name)) {
-            return runtime.newFixnum(SJIS.getValue());
-        } else if ("EUC-JP".equals(name)) {
-            return runtime.newFixnum(EUC.getValue());
-        } else if ("ISO-2022-JP".equals(name)) {
-            return runtime.newFixnum(JIS.getValue());
-        } else {
-            return runtime.newFixnum(UNKNOWN.getValue());
+            return charsetMappedValue(runtime, SJIS);
         }
+        if ("EUC-JP".equals(name)) {
+            return charsetMappedValue(runtime, EUC);
+        }
+        if ("ISO-2022-JP".equals(name)) {
+            return charsetMappedValue(runtime, JIS);
+        }
+        return charsetMappedValue(runtime, UNKNOWN);
+    }
+
+    private static IRubyObject charsetMappedValue(final Ruby runtime, final NKFCharset charset) {
+        if (runtime.is1_8()) return runtime.newFixnum(charset.value);
+
+        final Encoding encoding;
+        switch (charset) {
+            case AUTO: case NOCONV: case UNKNOWN: return runtime.getNil();
+            case BINARY:
+                encoding = runtime.getEncodingService().getAscii8bitEncoding();
+                return runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
+        }
+
+        encoding = runtime.getEncodingService().getEncodingFromString(charset.getCharset());
+        return runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
     }
 
     @JRubyMethod(name = "guess1", required = 1, module = true)
@@ -195,7 +218,7 @@ public class RubyNKF {
         }
 
         ByteList bstr = str.convertToString().getByteList();
-        Converter converter = null;
+        final Converter converter;
         if (Converter.isMimeText(bstr, options)) {
             converter = new MimeConverter(context, options);
         } else {
@@ -509,7 +532,7 @@ public class RubyNKF {
             int encode = mime[2].charAt(0);
             ByteList body = new ByteList(mime[3].getBytes(), ASCIIEncoding.INSTANCE);
 
-            RubyArray array = null;
+            final RubyArray array;
             if ('B' == encode || 'b' == encode) { // BASE64
                 array = Pack.unpack(context.runtime, body, PACK_BASE64);
             } else { // Qencode

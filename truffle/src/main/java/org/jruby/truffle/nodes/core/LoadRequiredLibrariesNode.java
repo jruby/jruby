@@ -9,15 +9,16 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -36,13 +37,17 @@ public class LoadRequiredLibrariesNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         Object self = RubyArguments.getSelf(frame.getArguments());
-        Collection<String> requiredLibraries = getContext().getRuntime().getInstanceConfig().getRequiredLibraries();
 
-        for (String requiredLibrary : requiredLibraries) {
-            requireNode.call(frame, self, "require", null, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(requiredLibrary, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        for (String requiredLibrary : getRequiredLibraries()) {
+            requireNode.call(frame, self, "require", null, createString(StringOperations.encodeByteList(requiredLibrary, UTF8Encoding.INSTANCE)));
         }
 
         return nil();
+    }
+
+    @TruffleBoundary
+    private Collection<String> getRequiredLibraries() {
+        return getContext().getRuntime().getInstanceConfig().getRequiredLibraries();
     }
 
 }

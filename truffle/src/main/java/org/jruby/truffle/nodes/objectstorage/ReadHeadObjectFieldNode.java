@@ -9,30 +9,20 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
-
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.oracle.truffle.api.object.BooleanLocation;
-import com.oracle.truffle.api.object.DoubleLocation;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.IntLocation;
-import com.oracle.truffle.api.object.LongLocation;
-import com.oracle.truffle.api.object.Property;
-import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.object.*;
 
-@NodeChild("receiver")
-public abstract class ReadHeadObjectFieldNode extends RubyNode {
+import org.jruby.truffle.runtime.Options;
+
+public abstract class ReadHeadObjectFieldNode extends Node {
     private final Object defaultValue;
     protected final Object name;
 
-    public ReadHeadObjectFieldNode(RubyContext context, SourceSection sourceSection, Object name, Object defaultValue) {
-        super(context, sourceSection);
+    public ReadHeadObjectFieldNode(Object name, Object defaultValue) {
         this.name = name;
         this.defaultValue = defaultValue;
     }
@@ -148,7 +138,7 @@ public abstract class ReadHeadObjectFieldNode extends RubyNode {
     }
 
     protected int getCacheLimit() {
-        return getContext().getOptions().FIELD_LOOKUP_CACHE;
+        return Options.FIELD_LOOKUP_CACHE;
     }
 
 }

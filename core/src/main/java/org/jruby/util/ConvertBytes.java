@@ -21,9 +21,10 @@ public class ConvertBytes {
     private final boolean is19;
 
     public ConvertBytes(Ruby runtime, ByteList _str, int base, boolean badcheck) {
-        this(runtime, _str, base, badcheck, false);
+        this(runtime, _str, base, badcheck, true);
     }
 
+    @Deprecated
     public ConvertBytes(Ruby runtime, ByteList _str, int base, boolean badcheck, boolean is19) {
         this.runtime = runtime;
         this._str = _str;
@@ -229,12 +230,13 @@ public class ConvertBytes {
     /** rb_cstr_to_inum
      *
      */
+    @Deprecated
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
+        return new ConvertBytes(runtime, str, base, badcheck, false).byteListToInum();
     }
 
     public static RubyInteger byteListToInum19(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, base, badcheck, true).byteListToInum();
+        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
     }
 
     private final static byte[] conv_digit = new byte[128];
@@ -792,6 +794,6 @@ public class ConvertBytes {
      */
     private void invalidString(String type) {
         IRubyObject s = RubyString.newString(runtime, _str).inspect();
-        throw runtime.newArgumentError("invalid value for " + type + ": " + s);
+        throw runtime.newArgumentError("invalid value for " + type + "(): " + s);
     }
 }

@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../../fixtures/thread_runner', __FILE__)
 
 describe "IO.select" do
   before :each do
@@ -11,11 +10,8 @@ describe "IO.select" do
     @wr.close unless @wr.closed?
   end
 
-  it "blocks for duration of timeout if there are no objects ready for I/O" do
-    timeout = 0.5
-    start = Time.now
-    IO.select [@rd], nil, nil, timeout
-    (Time.now - start).should be_close(timeout, 2.0)
+  it "blocks for duration of timeout and returns nil if there are no objects ready for I/O" do
+    IO.select([@rd], nil, nil, 0.001).should == nil
   end
 
   it "returns immediately all objects that are ready for I/O when timeout is 0" do
@@ -30,8 +26,11 @@ describe "IO.select" do
   end
 
   it "returns supplied objects when they are ready for I/O" do
-    t = Thread.new { sleep 0.5; @wr.write "be ready" }
-    t.abort_on_exception = true
+    main = Thread.current
+    t = Thread.new {
+      Thread.pass until main.status == "sleep"
+      @wr.write "be ready"
+    }
     result = IO.select [@rd], nil, nil, nil
     result.should == [[@rd], [], []]
     t.join
@@ -94,19 +93,14 @@ describe "IO.select" do
 end
 
 describe "IO.select when passed nil for timeout" do
-  it "sleeps forever" do
-    t = ThreadRunner.new do
+  it "sleeps forever and sets the thread status to 'sleep'" do
+    t = Thread.new do
       IO.select(nil, nil, nil, nil)
     end
 
-    t.status.should == :killed
-  end
-
-  it "sets the thread's status to 'sleep'" do
-    t = ThreadRunner.new do
-      IO.select(nil, nil, nil, nil)
-    end
-
-    t.thread_status.should == "sleep"
+    Thread.pass while t.status && t.status != "sleep"
+    t.status.should == "sleep"
+    t.kill
+    t.join
   end
 end

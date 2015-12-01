@@ -8,7 +8,7 @@ sudo: false
 
 before_script:
   - export MAVEN_SKIP_RC=true
-  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
+  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=512m"
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
@@ -54,7 +54,7 @@ matrix:
     - env: PHASE='-Pjruby-jars'
       jdk: openjdk7
     - env: PHASE='-Pmain'
-      jdk: oraclejdk7
+      jdk: oraclejdk8
     - env: PHASE='-Pcomplete'
       jdk: oraclejdk8
     - env: PHASE='-Posgi'
@@ -74,18 +74,20 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND='ruby tool/jt.rb check_ambiguous_arguments'
       jdk: oraclejdk8
-    - env: COMMAND=test/truffle/run.sh
+    - env: COMMAND=test/truffle/integration-tests.sh
       jdk: oraclejdk8
-  fast_finish: true
-  allow_failures:
-    - env: COMMAND=test/truffle/run.sh
-    - env: PHASE='-Ptruffle-mri-tests'
-
+    # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
+    #- env: PHASE='-Pmain'
+    #  sudo: required
+    #  dist: trusty
+    #  group: edge
+    #  jdk: oraclejdk9
 
 branches:
   only:
     - master
     - jruby-1_7
+    - truffle-head
     - /^test-.*$/
     - /^ha-feature/
 

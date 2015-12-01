@@ -22,7 +22,6 @@ import java.util.List;
 public class ParameterCollector extends AbstractNodeVisitor<Object> {
 
     private final List<String> parameters = new ArrayList<>();
-    private final List<String> keywords = new ArrayList<>();
 
     public List<String> getParameters() {
         return new ArrayList<>(parameters);
@@ -36,12 +35,6 @@ public class ParameterCollector extends AbstractNodeVisitor<Object> {
     @Override
     public Object visitArgsNode(ArgsNode node) {
         visitChildren(node);
-        return null;
-    }
-
-    @Override
-    public Object visitKeywordArgNode(KeywordArgNode node) {
-        keywords.add(((INameNode) node.childNodes().get(0)).getName());
         return null;
     }
 
@@ -120,10 +113,6 @@ public class ParameterCollector extends AbstractNodeVisitor<Object> {
     public Object visitKeywordRestArgNode(KeywordRestArgNode node) {
         parameters.add(node.getName());
         return null;
-    }
-
-    public String[] getKeywords() {
-        return keywords.toArray(new String[keywords.size()]);
     }
 
 }

@@ -12,12 +12,16 @@ describe "The private keyword" do
     lambda { b.bar }.should raise_error(NoMethodError)
   end
 
+  # def expr.meth() methods are always public
+  it "has no effect on def expr.meth() methods" do
+    Private::B.public_defs_method.should == 0
+  end
+
   it "is overridden when a new class is opened" do
     c = Private::B::C.new
     c.methods.should include(:baz)
     c.baz
     Private::B.public_class_method1.should == 1
-    Private::B.public_class_method2.should == 2
     lambda { Private::B.private_class_method1 }.should raise_error(NoMethodError)
   end
 

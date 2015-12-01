@@ -879,7 +879,7 @@ public class EncodingUtils {
                 if ((ecflags & EConvFlags.INVALID_MASK) != 0 && explicitlyInvalidReplace) {
                     IRubyObject rep = context.nil;
                     if (!ecopts.isNil()) {
-                        rep = ((RubyHash)ecopts).op_aref(context, runtime.newString("replace"));
+                        rep = ((RubyHash)ecopts).op_aref(context, runtime.newSymbol("replace"));
                     }
                     dest = ((RubyString)str).scrub(context, rep, Block.NULL_BLOCK);
                     if (dest.isNil()) dest = str;
@@ -1232,11 +1232,10 @@ public class EncodingUtils {
 
     // make_econv_exception
     public static RaiseException makeEconvException(Ruby runtime, EConv ec) {
-        String mesg;
-        RaiseException exc;
+        final StringBuilder mesg = new StringBuilder(); RaiseException exc;
 
-        if (ec.lastError.getResult() == EConvResult.InvalidByteSequence ||
-                ec.lastError.getResult() == EConvResult.IncompleteInput) {
+        final EConvResult result = ec.lastError.getResult();
+        if (result == EConvResult.InvalidByteSequence || result == EConvResult.IncompleteInput) {
             byte[] errBytes = ec.lastError.getErrorBytes();
             int errBytesP = ec.lastError.getErrorBytesP();
             int errorLen = ec.lastError.getErrorBytesLength();
@@ -1245,48 +1244,47 @@ public class EncodingUtils {
             RubyString dumped = (RubyString)bytes.dump();
             int readagainLen = ec.lastError.getReadAgainLength();
             IRubyObject bytes2 = runtime.getNil();
-            IRubyObject dumped2;
-            int idx;
-            if (ec.lastError.getResult() == EConvResult.IncompleteInput) {
-                mesg = "incomplete " + dumped + " on " + new String(ec.lastError.getSource());
+            if (result == EConvResult.IncompleteInput) {
+                mesg.append("incomplete ").append(dumped).append(" on ").append(new String(ec.lastError.getSource()));
             } else if (readagainLen != 0) {
                 bytes2 = RubyString.newString(runtime, new ByteList(errBytes, errorLen + errBytesP, ec.lastError.getReadAgainLength()));
-                dumped2 = ((RubyString)bytes2).dump();
-                mesg = dumped + " followed by " + dumped2 + " on " + new String(ec.lastError.getSource());
+                IRubyObject dumped2 = ((RubyString) bytes2).dump();
+                mesg.append(dumped).append(" followed by ").append(dumped2).append(" on ").append( new String(ec.lastError.getSource()) );
             } else {
-                mesg = dumped + " on " + new String(ec.lastError.getSource());
+                mesg.append(dumped).append(" on ").append( new String(ec.lastError.getSource()) );
             }
 
-            exc = runtime.newInvalidByteSequenceError(mesg);
+            exc = runtime.newInvalidByteSequenceError(mesg.toString());
             exc.getException().setInternalVariable("error_bytes", bytes);
             exc.getException().setInternalVariable("readagain_bytes", bytes2);
-            exc.getException().setInternalVariable("incomplete_input", ec.lastError.getResult() == EConvResult.IncompleteInput ? runtime.getTrue() : runtime.getFalse());
+            exc.getException().setInternalVariable("incomplete_input", result == EConvResult.IncompleteInput ? runtime.getTrue() : runtime.getFalse());
 
             return makeEConvExceptionSetEncs(exc, runtime, ec);
-        } else if (ec.lastError.getResult() == EConvResult.UndefinedConversion) {
+        }
+        else if (result == EConvResult.UndefinedConversion) {
             byte[] errBytes = ec.lastError.getErrorBytes();
             int errBytesP = ec.lastError.getErrorBytesP();
             int errorLen = ec.lastError.getErrorBytesLength();
-            ByteList _bytes = new ByteList(errBytes, errBytesP, errorLen - errBytesP);
-            RubyString bytes = RubyString.newString(runtime, _bytes);
-            if (Arrays.equals(ec.lastError.getSource(), "UTF-8".getBytes())) {
+            final byte[] errSource = ec.lastError.getSource();
+            if (Arrays.equals(errSource, "UTF-8".getBytes())) {
                 // prepare dumped form
             }
-            RubyString dumped = (RubyString)bytes.dump();
 
-            if (Arrays.equals(ec.lastError.getSource(), ec.source) &&
-                    Arrays.equals(ec.lastError.getDestination(), ec.destination)) {
-                mesg = dumped + " from " + new String(ec.lastError.getSource()) + " to " + new String(ec.lastError.getDestination());
+            RubyString bytes = RubyString.newString(runtime, new ByteList(errBytes, errBytesP, errorLen - errBytesP));
+            RubyString dumped = (RubyString) bytes.dump();
+
+            if (Arrays.equals(errSource, ec.source) &&  Arrays.equals(ec.lastError.getDestination(), ec.destination)) {
+                mesg.append(dumped).append(" from ").append( new String(errSource) ).append(" to ").append( new String(ec.lastError.getDestination()) );
             } else {
-                mesg = dumped + " to " + new String(ec.lastError.getDestination()) + " in conversion from " + new String(ec.source);
+                mesg.append(dumped).append(" to ").append( new String(ec.lastError.getDestination()) ).append(" in conversion from ").append( new String(ec.source) );
                 for (int i = 0; i < ec.numTranscoders; i++) {
-                    mesg += " to " + new String(ec.elements[i].transcoding.transcoder.getDestination());
+                    mesg.append(" to ").append( new String(ec.elements[i].transcoding.transcoder.getDestination()) );
                 }
             }
 
-            exc = runtime.newUndefinedConversionError(mesg);
+            exc = runtime.newUndefinedConversionError(mesg.toString());
 
-            EncodingDB.Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(ec.lastError.getSource());
+            EncodingDB.Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(errSource);
             if (entry != null) {
                 bytes.setEncoding(entry.getEncoding());
                 exc.getException().setInternalVariable("error_char", bytes);

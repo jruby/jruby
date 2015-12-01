@@ -16,6 +16,9 @@ module Private
     end
 
     private
+
+    def self.public_defs_method; 0; end
+
     class C
       def baz
         "baz"
@@ -27,7 +30,6 @@ module Private
       private
       def private_class_method1; 1; end
     end
-    def self.public_class_method2; 2; end
 
     def bar
       "bar"

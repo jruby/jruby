@@ -22,24 +22,46 @@ describe "The yield call" do
   end
 
   describe "taking a single argument" do
-    it "raises a LocalJumpError when the method is not passed a block" do
-      lambda { @y.s(1) }.should raise_error(LocalJumpError)
+    describe "when no block is given" do
+      it "raises a LocalJumpError" do
+        lambda { @y.s(1) }.should raise_error(LocalJumpError)
+      end
     end
 
-    it "passes an empty Array when the argument is an empty Array" do
-      @y.s([]) { |*a| a }.should == [[]]
+    describe "yielding to a literal block" do
+      it "passes an empty Array when the argument is an empty Array" do
+        @y.s([]) { |*a| a }.should == [[]]
+      end
+
+      it "passes nil as a value" do
+        @y.s(nil) { |*a| a }.should == [nil]
+      end
+
+      it "passes a single value" do
+        @y.s(1) { |*a| a }.should == [1]
+      end
+
+      it "passes a single, multi-value Array" do
+        @y.s([1, 2, 3]) { |*a| a }.should == [[1, 2, 3]]
+      end
     end
 
-    it "passes nil as a value" do
-      @y.s(nil) { |*a| a }.should == [nil]
-    end
+    describe "yielding to a lambda" do
+      it "passes an empty Array when the argument is an empty Array" do
+        @y.s([], &lambda { |*a| a }).should == [[]]
+      end
 
-    it "passes a single value" do
-      @y.s(1) { |*a| a }.should == [1]
-    end
+      it "passes nil as a value" do
+        @y.s(nil, &lambda { |*a| a }).should == [nil]
+      end
 
-    it "passes a single, multi-value Array" do
-      @y.s([1, 2, 3]) { |*a| a }.should == [[1, 2, 3]]
+      it "passes a single value" do
+        @y.s(1, &lambda { |*a| a }).should == [1]
+      end
+
+      it "passes a single, multi-value Array" do
+        @y.s([1, 2, 3], &lambda { |*a| a }).should == [[1, 2, 3]]
+      end
     end
   end
 

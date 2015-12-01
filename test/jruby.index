@@ -96,7 +96,7 @@ jruby/test_rexml_document
 jruby/test_openssl_stub
 jruby/test_missing_jruby_home
 jruby/test_ast_inspector
-jruby/test_jarred_gems_with_spaces_in_directory
+jruby/test_jarred_gems
 jruby/test_kernel
 jruby/test_dir_with_plusses
 jruby/test_jar_file

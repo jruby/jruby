@@ -211,13 +211,14 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s19() {
-        StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16));
-        String file = block.getBody().getFile();
+        StringBuilder sb = new StringBuilder(32);
+        sb.append("#<Proc:0x").append(Integer.toString(block.hashCode(), 16));
 
+        String file = block.getBody().getFile();
         if (file != null) sb.append('@').append(file).append(':').append(block.getBody().getLine() + 1);
 
         if (isLambda()) sb.append(" (lambda)");
-        sb.append(">");
+        sb.append('>');
 
         IRubyObject string = RubyString.newString(getRuntime(), sb.toString());
 
@@ -264,7 +265,16 @@ public class RubyProc extends RubyObject implements DataType {
         // for procs and blocks, single array passed to multi-arg must be spread
         if ((signature != Signature.ONE_ARGUMENT &&  required != 0 && (isFixed || signature != Signature.OPTIONAL) || restKwargs) &&
                 actual == 1 && args[0].respondsTo("to_ary")) {
-            args = args[0].convertToArray().toJavaArray();
+            IRubyObject newAry = Helpers.aryToAry(args[0]);
+
+            // This is very common to yield in *IRBlockBody.  When we tackle call protocol for blocks this will combine.
+            if (newAry.isNil()) {
+                args = new IRubyObject[] { args[0] };
+            } else if (newAry instanceof RubyArray){
+                args = ((RubyArray) newAry).toJavaArray();
+            } else {
+                throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
+            }
             actual = args.length;
         }
 

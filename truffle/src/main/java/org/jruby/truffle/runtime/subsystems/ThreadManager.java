@@ -12,6 +12,8 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import jnr.posix.DefaultNativeTimeval;
+import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.FiberNodes;
@@ -39,24 +41,27 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         this.context = context;
-        this.rootThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass());
-        Layouts.THREAD.setName(rootThread, "main");
+        this.rootThread = ThreadNodes.createRubyThread(context, context.getCoreLibrary().getThreadClass());
+        Layouts.THREAD.setNameUnsafe(rootThread, "main");
     }
 
     public void initialize() {
-        ThreadNodes.start(rootThread);
-        FiberNodes.start(Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
+        ThreadNodes.start(context, rootThread);
+        FiberNodes.start(context, Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
     }
 
     public DynamicObject getRootThread() {
         return rootThread;
     }
 
-
-    public static interface BlockingAction<T> {
-        public static boolean SUCCESS = true;
+    public interface BlockingAction<T> {
+        boolean SUCCESS = true;
 
         T block() throws InterruptedException;
+    }
+
+    public interface BlockingTimeoutAction<T> {
+        T block(Timeval timeoutToUse) throws InterruptedException;
     }
 
     /**
@@ -90,6 +95,95 @@ public class ThreadManager {
         return result;
     }
 
+    @TruffleBoundary
+    public <T> T runUntilSuccessKeepRunStatus(Node currentNode, BlockingAction<T> action) {
+        T result = null;
+
+        do {
+            try {
+                result = action.block();
+            } catch (InterruptedException e) {
+                // We were interrupted, possibly by the SafepointManager.
+                context.getSafepointManager().poll(currentNode);
+            }
+        } while (result == null);
+
+        return result;
+    }
+
+    public interface ResultOrTimeout<T> {
+    }
+
+    public static class ResultWithinTime<T> implements ResultOrTimeout<T> {
+
+        private final T value;
+
+        public ResultWithinTime(T value) {
+            this.value = value;
+        }
+
+        public T getValue() {
+            return value;
+        }
+
+    }
+
+    public static class TimedOut<T> implements ResultOrTimeout<T> {
+    }
+
+    public <T> ResultOrTimeout<T> runUntilTimeout(Node currentNode, int timeoutMicros, final BlockingTimeoutAction<T> action) {
+        final Timeval timeoutToUse = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
+
+        if (timeoutMicros == 0) {
+            timeoutToUse.setTime(new long[]{0, 0});
+
+            return new ResultWithinTime<>(runUntilResult(currentNode, new BlockingAction<T>() {
+
+                @Override
+                public T block() throws InterruptedException {
+                    return action.block(timeoutToUse);
+                }
+
+            }));
+        } else {
+            final int pollTime = 500_000_000;
+            final long requestedTimeoutAt = System.nanoTime() + timeoutMicros * 1_000L;
+
+            return runUntilResult(currentNode, new BlockingAction<ResultOrTimeout<T>>() {
+
+                @Override
+                public ResultOrTimeout<T> block() throws InterruptedException {
+                    final long timeUntilRequestedTimeout = requestedTimeoutAt - System.nanoTime();
+
+                    if (timeUntilRequestedTimeout <= 0) {
+                        return new TimedOut<>();
+                    }
+
+                    final boolean timeoutForPoll = pollTime <= timeUntilRequestedTimeout;
+                    final long effectiveTimeout = Math.min(pollTime, timeUntilRequestedTimeout);
+                    final long effectiveTimeoutMicros = effectiveTimeout / 1_000;
+                    timeoutToUse.setTime(new long[] {
+                            effectiveTimeoutMicros / 1_000_000,
+                            effectiveTimeoutMicros % 1_000_000
+                    });
+
+                    final T result = action.block(timeoutToUse);
+
+                    if (result == null) {
+                        if (timeoutForPoll && (requestedTimeoutAt - System.nanoTime()) > 0) {
+                            throw new InterruptedException();
+                        } else {
+                            return new TimedOut<>();
+                        }
+                    }
+
+                    return new ResultWithinTime<>(result);
+                }
+
+            });
+        }
+    }
+
     public void initializeCurrentThread(DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
         currentThread.set(thread);
@@ -112,6 +206,7 @@ public class ThreadManager {
         currentThread.set(null);
     }
 
+    @TruffleBoundary
     public void shutdown() {
         try {
             if (runningRubyThreads.size() > 1) {
@@ -119,15 +214,17 @@ public class ThreadManager {
             }
         } finally {
             Layouts.THREAD.getFiberManager(rootThread).shutdown();
-            FiberNodes.cleanup(Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
-            ThreadNodes.cleanup(rootThread);
+            FiberNodes.cleanup(context, Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
+            ThreadNodes.cleanup(context, rootThread);
         }
     }
 
+    @TruffleBoundary
     public DynamicObject[] getThreads() {
         return runningRubyThreads.toArray(new DynamicObject[runningRubyThreads.size()]);
     }
 
+    @TruffleBoundary
     private void killOtherThreads() {
         while (true) {
             try {
@@ -135,7 +232,7 @@ public class ThreadManager {
                     @Override
                     public synchronized void run(DynamicObject thread, Node currentNode) {
                         if (thread != rootThread && Thread.currentThread() == Layouts.THREAD.getThread(thread)) {
-                            ThreadNodes.shutdown(thread);
+                            ThreadNodes.shutdown(context, thread, currentNode);
                         }
                     }
                 });

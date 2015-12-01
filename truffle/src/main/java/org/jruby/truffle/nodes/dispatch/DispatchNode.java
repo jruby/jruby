@@ -45,8 +45,8 @@ public abstract class DispatchNode extends RubyNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects);
+            DynamicObject blockObject,
+            Object[] argumentsObjects);
 
     @TruffleBoundary
     protected InternalMethod lookup(
@@ -54,34 +54,23 @@ public abstract class DispatchNode extends RubyNode {
             Object receiver,
             String name,
             boolean ignoreVisibility) {
-        assert callerClass == null || RubyGuards.isRubyClass(callerClass);
+        assert ignoreVisibility || RubyGuards.isRubyClass(callerClass);
 
-        InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
+        final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
-
         if (method == null) {
             return null;
         }
 
         // Check for methods that are explicitly undefined
-
         if (method.isUndefined()) {
             return null;
         }
 
         // Check visibility
-
         if (!ignoreVisibility && !method.isVisibleTo(this, callerClass)) {
-            final DispatchAction dispatchAction = getHeadNode().getDispatchAction();
-
-            if (dispatchAction == DispatchAction.CALL_METHOD) {
-                throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, getContext().getCoreLibrary().getLogicalClass(receiver), this));
-            } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-                return null;
-            } else {
-                throw new UnsupportedOperationException();
-            }
+            return null;
         }
 
         return method;
@@ -92,7 +81,7 @@ public abstract class DispatchNode extends RubyNode {
             Object receiverObject,
             Object methodName,
             DynamicObject blockObject,
-            Object argumentsObjects,
+            Object[] argumentsObjects,
             String reason) {
         final DispatchHeadNode head = getHeadNode();
         head.reset(reason);

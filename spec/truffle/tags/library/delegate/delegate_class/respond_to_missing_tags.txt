@@ -1,1 +1,0 @@
-fails:DelegateClass#respond_to_missing? is used for respond_to? behavior of late-bound delegated methods

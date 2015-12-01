@@ -41,6 +41,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.RubyNil;
@@ -156,17 +157,27 @@ public class TypeConverter {
      * are stored internally as raw bytes from whatever encoding they were originally sourced from.
      * When methods are stored they must also get stored in this same raw fashion so that if we
      * use symbols to look up methods or make symbols from these method names they will match up.
+     *
+     * For 2.2 compatibility, we also force all incoming identifiers to get anchored as hard-referenced symbols.
      */
-    public static String convertToIdentifier(IRubyObject obj) {
-        // Assume Symbol already returns ISO8859-1/raw bytes from asJavaString()
-        // Assume all other objects cannot participate in providing raw bytes since we cannot
-        // grab it's string representation without calling a method which properly encodes
-        // the string.
-        if (obj instanceof RubyString) {
-            return new String(ByteList.plain(((RubyString) obj).getByteList()), RubyEncoding.ISO).intern();
+    public static RubySymbol checkID(IRubyObject obj) {
+        if (obj instanceof RubySymbol || obj instanceof RubyString) {
+            return RubySymbol.newHardSymbol(obj.getRuntime(), obj);
         }
         
-        return obj.asJavaString().intern();
+        return RubySymbol.newHardSymbol(obj.getRuntime(), obj.asJavaString());
+    }
+
+    /**
+     * Convert the supplied object into an internal identifier String.  Basically, symbols
+     * are stored internally as raw bytes from whatever encoding they were originally sourced from.
+     * When methods are stored they must also get stored in this same raw fashion so that if we
+     * use symbols to look up methods or make symbols from these method names they will match up.
+     *
+     * For 2.2 compatibility, we also force all incoming identifiers to get anchored as hard-referenced symbols.
+     */
+    public static RubySymbol checkID(Ruby runtime, String name) {
+        return RubySymbol.newHardSymbol(runtime, name.intern());
     }
 
     /**
@@ -390,5 +401,17 @@ public class TypeConverter {
         if (val.isNil()) return val;
         if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
         return val;
+    }
+
+    @Deprecated
+    public static String convertToIdentifier(IRubyObject obj) {
+        // Assume Symbol already returns ISO8859-1/raw bytes from asJavaString()
+        // Assume all other objects cannot participate in providing raw bytes since we cannot
+        // grab it's string representation without calling a method which properly encodes
+        // the string.
+        if (obj instanceof RubyString) {
+            return new String(ByteList.plain(((RubyString) obj).getByteList()), RubyEncoding.ISO).intern();
+        }
+        return obj.asJavaString().intern();
     }
 }

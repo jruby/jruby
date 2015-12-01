@@ -62,6 +62,8 @@ public final class StringSupport {
     private static final int OFFSET = UNSAFE != null ? ((Unsafe)UNSAFE).arrayBaseOffset(byte[].class) : 0;
     public static final int TRANS_SIZE = 256;
 
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     private static Object getUnsafe() {
         try {
             Class sunUnsafe = Class.forName("sun.misc.Unsafe");
@@ -379,6 +381,13 @@ public final class StringSupport {
         if (p >= end) throw runtime.newArgumentError("empty string");
         int cl = preciseLength(enc, bytes, p, end);
         if (cl <= 0) throw runtime.newArgumentError("invalid byte sequence in " + enc);
+        return enc.mbcToCode(bytes, p, end);
+    }
+
+    public static int codePoint(Encoding enc, byte[] bytes, int p, int end) {
+        if (p >= end) throw new IllegalArgumentException("empty string");
+        int cl = preciseLength(enc, bytes, p, end);
+        if (cl <= 0) throw new IllegalArgumentException("invalid byte sequence in " + enc);
         return enc.mbcToCode(bytes, p, end);
     }
 
@@ -1026,11 +1035,11 @@ public final class StringSupport {
                 if (table == null && (first || tables.del != null || stable[TRANS_SIZE])) {
                     if (cflag) {
                         ptable = tables.noDel;
-                        table = ptable != null ? ptable : new IntHash();
+                        table = ptable != null ? ptable : new IntHash<IRubyObject>();
                         tables.noDel = table;
                     }
                     else {
-                        table = new IntHash();
+                        table = new IntHash<IRubyObject>();
                         ptable = tables.del;
                         tables.del = table;
                     }
@@ -1739,7 +1748,7 @@ public final class StringSupport {
         boolean cflag = false;
         int[] l = {0};
 
-        if (self.getByteList().getRealSize() > 1 &&
+        if (srcStr.getByteList().getRealSize() > 1 &&
                 EncodingUtils.encAscget(trSrc.buf, trSrc.p, trSrc.pend, l, enc) == '^' &&
                 trSrc.p + 1 < trSrc.pend){
             cflag = true;
@@ -2188,5 +2197,82 @@ public final class StringSupport {
                 return y - ys;
         }
         return -1;
+    }
+
+    public static boolean singleByteDowncase(byte[] bytes, int s, int end) {
+        boolean modify = false;
+
+        while (s < end) {
+            int c = bytes[s] & 0xff;
+            if (ASCIIEncoding.INSTANCE.isUpper(c)) {
+                bytes[s] = AsciiTables.ToLowerCaseTable[c];
+                modify = true;
+            }
+            s++;
+        }
+
+        return modify;
+    }
+
+    public static boolean multiByteDowncase(Encoding enc, byte[] bytes, int s, int end) {
+        boolean modify = false;
+        int c;
+        while (s < end) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+                if (ASCIIEncoding.INSTANCE.isUpper(c)) {
+                    bytes[s] = AsciiTables.ToLowerCaseTable[c];
+                    modify = true;
+                }
+                s++;
+            } else {
+                c = codePoint(enc, bytes, s, end);
+                if (enc.isUpper(c)) {
+                    enc.codeToMbc(toLower(enc, c), bytes, s);
+                    modify = true;
+                }
+                s += codeLength(enc, c);
+            }
+        }
+
+        return modify;
+    }
+
+    public static boolean singleByteUpcase(byte[] bytes, int s, int end) {
+        boolean modify = false;
+
+        while (s < end) {
+            int c = bytes[s] & 0xff;
+            if (ASCIIEncoding.INSTANCE.isLower(c)) {
+                bytes[s] = AsciiTables.ToUpperCaseTable[c];
+                modify = true;
+            }
+            s++;
+        }
+
+        return modify;
+    }
+
+    public static boolean multiByteUpcase(Encoding enc, byte[] bytes, int s, int end) {
+        boolean modify = false;
+        int c;
+
+        while (s < end) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+                if (ASCIIEncoding.INSTANCE.isLower(c)) {
+                    bytes[s] = AsciiTables.ToUpperCaseTable[c];
+                    modify = true;
+                }
+                s++;
+            } else {
+                c = codePoint(enc, bytes, s, end);
+                if (enc.isLower(c)) {
+                    enc.codeToMbc(toUpper(enc, c), bytes, s);
+                    modify = true;
+                }
+                s += codeLength(enc, c);
+            }
+        }
+
+        return modify;
     }
 }

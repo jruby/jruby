@@ -10,12 +10,13 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.joni.Region;
 import org.joni.exception.ValueException;
@@ -34,7 +35,6 @@ import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
@@ -49,42 +49,43 @@ public abstract class MatchDataNodes {
         return ArrayUtils.extractRange(Layouts.MATCH_DATA.getValues(matchData), 1, Layouts.MATCH_DATA.getValues(matchData).length);
     }
 
-    public static Object begin(DynamicObject matchData, int index) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        final int b = (Layouts.MATCH_DATA.getRegion(matchData) == null) ? Layouts.MATCH_DATA.getBegin(matchData) : Layouts.MATCH_DATA.getRegion(matchData).beg[index];
+    public static Object begin(RubyContext context, DynamicObject matchData, int index) {
+        // Taken from org.jruby.RubyMatchData
+        int b = Layouts.MATCH_DATA.getRegion(matchData).beg[index];
 
         if (b < 0) {
-            return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(matchData)).getContext().getCoreLibrary().getNilObject();
+            return context.getCoreLibrary().getNilObject();
         }
 
-        updateCharOffset(matchData);
+        if (!StringGuards.isSingleByteOptimizable(Layouts.MATCH_DATA.getSource(matchData))) {
+            b = getCharOffsets(matchData).beg[index];
+        }
 
-        return Layouts.MATCH_DATA.getCharOffsets(matchData).beg[index];
+        return b;
     }
 
-    public static Object end(DynamicObject matchData, int index) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        int e = (Layouts.MATCH_DATA.getRegion(matchData) == null) ? Layouts.MATCH_DATA.getEnd(matchData) : Layouts.MATCH_DATA.getRegion(matchData).end[index];
+    public static Object end(RubyContext context, DynamicObject matchData, int index) {
+        // Taken from org.jruby.RubyMatchData
+        int e = Layouts.MATCH_DATA.getRegion(matchData).end[index];
 
         if (e < 0) {
-            return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(matchData)).getContext().getCoreLibrary().getNilObject();
+            return context.getCoreLibrary().getNilObject();
         }
 
-        final CodeRangeable sourceWrapped = StringOperations.getCodeRangeable(Layouts.MATCH_DATA.getSource(matchData));
-        if (!StringSupport.isSingleByteOptimizable(sourceWrapped, sourceWrapped.getByteList().getEncoding())) {
-            updateCharOffset(matchData);
-            e = Layouts.MATCH_DATA.getCharOffsets(matchData).end[index];
+        if (!StringGuards.isSingleByteOptimizable(Layouts.MATCH_DATA.getSource(matchData))) {
+            e = getCharOffsets(matchData).end[index];
         }
 
         return e;
     }
 
-    public static void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
+    private static void updatePairs(ByteList source, Encoding encoding, Pair[] pairs) {
+        // Taken from org.jruby.RubyMatchData
         Arrays.sort(pairs);
 
         int length = pairs.length;
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
+        byte[]bytes = source.getUnsafeBytes();
+        int p = source.getBegin();
         int s = p;
         int c = 0;
 
@@ -96,103 +97,69 @@ public abstract class MatchDataNodes {
         }
     }
 
-    public static void updateCharOffsetOnlyOneReg(DynamicObject matchData, ByteList value, Encoding encoding) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
-
-        if (Layouts.MATCH_DATA.getCharOffsets(matchData) == null || Layouts.MATCH_DATA.getCharOffsets(matchData).numRegs < 1)
-            Layouts.MATCH_DATA.setCharOffsets(matchData, new Region(1));
-
-        if (encoding.maxLength() == 1) {
-            Layouts.MATCH_DATA.getCharOffsets(matchData).beg[0] = Layouts.MATCH_DATA.getBegin(matchData);
-            Layouts.MATCH_DATA.getCharOffsets(matchData).end[0] = Layouts.MATCH_DATA.getEnd(matchData);
-            Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
-            return;
-        }
-
-        Pair[] pairs = new Pair[2];
-        if (Layouts.MATCH_DATA.getBegin(matchData) >= 0) {
-            pairs[0] = new Pair();
-            pairs[0].bytePos = Layouts.MATCH_DATA.getBegin(matchData);
-            pairs[1] = new Pair();
-            pairs[1].bytePos = Layouts.MATCH_DATA.getEnd(matchData);
-        }
-
-        updatePairs(value, encoding, pairs);
-
-        if (Layouts.MATCH_DATA.getBegin(matchData) < 0) {
-            Layouts.MATCH_DATA.getCharOffsets(matchData).beg[0] = Layouts.MATCH_DATA.getCharOffsets(matchData).end[0] = -1;
-            return;
-        }
-        Pair key = new Pair();
-        key.bytePos = Layouts.MATCH_DATA.getBegin(matchData);
-        Layouts.MATCH_DATA.getCharOffsets(matchData).beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-        key.bytePos = Layouts.MATCH_DATA.getEnd(matchData);
-        Layouts.MATCH_DATA.getCharOffsets(matchData).end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-
-        Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
-    }
-
-    public static void updateCharOffsetManyRegs(DynamicObject matchData, ByteList value, Encoding encoding) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
-
+    private static Region getCharOffsetsManyRegs(DynamicObject matchData, ByteList source, Encoding encoding) {
+        // Taken from org.jruby.RubyMatchData
         final Region regs = Layouts.MATCH_DATA.getRegion(matchData);
         int numRegs = regs.numRegs;
 
-        if (Layouts.MATCH_DATA.getCharOffsets(matchData) == null || Layouts.MATCH_DATA.getCharOffsets(matchData).numRegs < numRegs)
-            Layouts.MATCH_DATA.setCharOffsets(matchData, new Region(numRegs));
+        final Region charOffsets = new Region(numRegs);
 
         if (encoding.maxLength() == 1) {
             for (int i = 0; i < numRegs; i++) {
-                Layouts.MATCH_DATA.getCharOffsets(matchData).beg[i] = regs.beg[i];
-                Layouts.MATCH_DATA.getCharOffsets(matchData).end[i] = regs.end[i];
+                charOffsets.beg[i] = regs.beg[i];
+                charOffsets.end[i] = regs.end[i];
             }
-            Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
-            return;
+            return charOffsets;
         }
 
         Pair[] pairs = new Pair[numRegs * 2];
-        for (int i = 0; i < pairs.length; i++) pairs[i] = new Pair();
+        for (int i = 0; i < pairs.length; i++) {
+            pairs[i] = new Pair();
+        }
 
         int numPos = 0;
         for (int i = 0; i < numRegs; i++) {
-            if (regs.beg[i] < 0) continue;
+            if (regs.beg[i] < 0) {
+                continue;
+            }
             pairs[numPos++].bytePos = regs.beg[i];
             pairs[numPos++].bytePos = regs.end[i];
         }
 
-        updatePairs(value, encoding, pairs);
+        updatePairs(source, encoding, pairs);
 
         Pair key = new Pair();
         for (int i = 0; i < regs.numRegs; i++) {
             if (regs.beg[i] < 0) {
-                Layouts.MATCH_DATA.getCharOffsets(matchData).beg[i] = Layouts.MATCH_DATA.getCharOffsets(matchData).end[i] = -1;
+                charOffsets.beg[i] = charOffsets.end[i] = -1;
                 continue;
             }
             key.bytePos = regs.beg[i];
-            Layouts.MATCH_DATA.getCharOffsets(matchData).beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            charOffsets.beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
             key.bytePos = regs.end[i];
-            Layouts.MATCH_DATA.getCharOffsets(matchData).end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            charOffsets.end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
         }
 
-        Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
+        return charOffsets;
     }
 
-    public static void updateCharOffset(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
-
-        ByteList value = Layouts.STRING.getByteList(Layouts.MATCH_DATA.getSource(matchData));
-        Encoding enc = value.getEncoding();
-
-        if (Layouts.MATCH_DATA.getRegion(matchData) == null) {
-            updateCharOffsetOnlyOneReg(matchData, value, enc);
+    public static Region getCharOffsets(DynamicObject matchData) {
+        // Taken from org.jruby.RubyMatchData
+        Region charOffsets = Layouts.MATCH_DATA.getCharOffsets(matchData);
+        if (charOffsets != null) {
+            return charOffsets;
         } else {
-            updateCharOffsetManyRegs(matchData, value, enc);
+            return createCharOffsets(matchData);
         }
+    }
 
-        Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
+    @TruffleBoundary
+    private static Region createCharOffsets(DynamicObject matchData) {
+        final ByteList source = StringOperations.getByteList(Layouts.MATCH_DATA.getSource(matchData));
+        final Encoding enc = source.getEncoding();
+        final Region charOffsets = getCharOffsetsManyRegs(matchData, source, enc);
+        Layouts.MATCH_DATA.setCharOffsets(matchData, charOffsets);
+        return charOffsets;
     }
 
     @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnumParameters = 0, taintFromSelf = true)
@@ -204,11 +171,10 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, NotProvided length) {
-            CompilerDirectives.transferToInterpreter();
-
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
 
             if ((normalizedIndex < 0) || (normalizedIndex >= values.length)) {
@@ -218,20 +184,19 @@ public abstract class MatchDataNodes {
             }
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, int length) {
-            CompilerDirectives.transferToInterpreter();
             // TODO BJF 15-May-2015 Need to handle negative indexes and lengths and out of bounds
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, length);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubySymbol(index)")
         public Object getIndexSymbol(DynamicObject matchData, DynamicObject index, NotProvided length) {
-            CompilerDirectives.transferToInterpreter();
-
             try {
                 ByteList value = Layouts.SYMBOL.getByteList(index);
                 final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
@@ -245,12 +210,11 @@ public abstract class MatchDataNodes {
             }
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(index)")
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
-            CompilerDirectives.transferToInterpreter();
-
             try {
-                ByteList value = Layouts.STRING.getByteList(index);
+                ByteList value = StringOperations.getByteList(index);
                 final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
@@ -275,9 +239,10 @@ public abstract class MatchDataNodes {
             return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(DynamicObject matchData, DynamicObject range, NotProvided len) {
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range));
             final int end = ArrayOperations.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range));
             final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end : end + 1);
@@ -292,25 +257,23 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "begin", required = 1, lowerFixnumParameters = 1)
     public abstract static class BeginNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile badIndexProfile = ConditionProfile.createBinaryProfile();
-
         public BeginNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "inBounds(matchData, index)")
         public Object begin(DynamicObject matchData, int index) {
-            CompilerDirectives.transferToInterpreter();
+            return MatchDataNodes.begin(getContext(), matchData, index);
+        }
 
-            if (badIndexProfile.profile((index < 0) || (index >= Layouts.MATCH_DATA.getRegion(matchData).numRegs))) {
-                CompilerDirectives.transferToInterpreter();
+        @TruffleBoundary
+        @Specialization(guards = "!inBounds(matchData, index)")
+        public Object beginError(DynamicObject matchData, int index) {
+            throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+        }
 
-                throw new RaiseException(
-                        getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
-
-            } else {
-                return MatchDataNodes.begin(matchData, index);
-            }
+        protected boolean inBounds(DynamicObject matchData, int index) {
+            return index >= 0 && index < Layouts.MATCH_DATA.getRegion(matchData).numRegs;
         }
     }
 
@@ -322,10 +285,9 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
-            CompilerDirectives.transferToInterpreter();
-
             Object[] objects = getCaptures(matchData);
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
@@ -334,25 +296,23 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "end", required = 1, lowerFixnumParameters = 1)
     public abstract static class EndNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile badIndexProfile = ConditionProfile.createBinaryProfile();
-
         public EndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "inBounds(matchData, index)")
         public Object end(DynamicObject matchData, int index) {
-            CompilerDirectives.transferToInterpreter();
+            return MatchDataNodes.end(getContext(), matchData, index);
+        }
 
-            if (badIndexProfile.profile((index < 0) || (index >= Layouts.MATCH_DATA.getRegion(matchData).numRegs))) {
-                CompilerDirectives.transferToInterpreter();
+        @TruffleBoundary
+        @Specialization(guards = "!inBounds(matchData, index)")
+        public Object endError(DynamicObject matchData, int index) {
+            throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+        }
 
-                throw new RaiseException(
-                        getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
-
-            } else {
-                return MatchDataNodes.end(matchData, index);
-            }
+        protected boolean inBounds(DynamicObject matchData, int index) {
+            return index >= 0 && index < Layouts.MATCH_DATA.getRegion(matchData).numRegs;
         }
     }
 
@@ -388,7 +348,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(names = {"length", "size"})
+    @CoreMethod(names = { "length", "size" })
     public abstract static class LengthNode extends CoreMethodArrayArgumentsNode {
 
         public LengthNode(RubyContext context, SourceSection sourceSection) {
@@ -397,7 +357,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public int length(DynamicObject matchData) {
-            return Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length).length;
+            return Layouts.MATCH_DATA.getValues(matchData).length;
         }
 
     }
@@ -412,6 +372,7 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object preMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPre(matchData));
@@ -429,6 +390,7 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object postMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPost(matchData));
@@ -445,9 +407,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
-            CompilerDirectives.transferToInterpreter();
-
-            Object[] objects = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            Object[] objects = ArrayUtils.copy(Layouts.MATCH_DATA.getValues(matchData));
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
@@ -459,12 +419,11 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
-            CompilerDirectives.transferToInterpreter();
-
-            final ByteList bytes = Layouts.STRING.getByteList(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
+            final ByteList bytes = StringOperations.getByteList(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
+            return createString(bytes);
         }
     }
 
@@ -475,10 +434,27 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject regexp(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getRegexp(matchData);
         }
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        // MatchData can be allocated in MRI but it does not seem to be any useful
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+        }
+
     }
 
     @RubiniusOnly
@@ -489,6 +465,7 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject rubiniusSource(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getSource(matchData);

@@ -14,9 +14,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -43,17 +43,17 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     @TruffleBoundary
     private Object readMatchReference() {
-        DynamicObject receiver = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
-        final Object match = receiver.get("$~", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(receiver)).getContext().getCoreLibrary().getNilObject());
+        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        final Object match = threadLocals.get("$~", nil());
 
-        if (match == null || match == nil()) {
+        if (match == nil()) {
             return nil();
         }
 
         final DynamicObject matchData = (DynamicObject) match;
 
         if (index > 0) {
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
 
             if (index >= values.length) {
                 return nil();
@@ -67,7 +67,7 @@ public class ReadMatchReferenceNode extends RubyNode {
         } else if (index == GLOBAL) {
             return Layouts.MATCH_DATA.getGlobal(matchData);
         } else if (index == HIGHEST) {
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
 
             for (int n = values.length - 1; n >= 0; n--)
                 if (values[n] != nil()) {
@@ -83,7 +83,7 @@ public class ReadMatchReferenceNode extends RubyNode {
     @Override
     public Object isDefined(VirtualFrame frame) {
         if (execute(frame) != nil()) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+            return create7BitString(StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE));
         } else {
             return nil();
         }

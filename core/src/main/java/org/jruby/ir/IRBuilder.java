@@ -177,6 +177,7 @@ public class IRBuilder {
         Label    end;
         Label    dummyRescueBlockLabel;
         Variable savedGlobalException;
+        boolean needsBacktrace;
 
         // Label of block that will rescue exceptions raised by ensure code
         Label    bodyRescuer;
@@ -201,6 +202,7 @@ public class IRBuilder {
             innermostLoop = l;
             matchingRescueNode = n;
             this.bodyRescuer = bodyRescuer;
+            needsBacktrace = true;
         }
 
         public void addInstr(Instr i) {
@@ -231,6 +233,8 @@ public class IRBuilder {
 
             // $! should be restored before the ensure block is run
             if (savedGlobalException != null) {
+                // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
+                if (!needsBacktrace) builder.addInstr(builder.manager.needsBacktrace(true));
                 builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
             }
 
@@ -970,7 +974,7 @@ public class IRBuilder {
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)
-        addInstr(new RuntimeHelperCall(callResult, HANDLE_PROPAGATE_BREAK, new Operand[]{exc} ));
+        addInstr(new RuntimeHelperCall(callResult, HANDLE_PROPAGATED_BREAK, new Operand[]{exc} ));
 
         // End
         addInstr(new LabelInstr(rEndLabel));
@@ -1360,7 +1364,6 @@ public class IRBuilder {
     }
 
     public Operand buildGetDefinition(Node node) {
-        // FIXME: Do we still have MASGN and MASGN19?
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
         case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
@@ -1680,7 +1683,7 @@ public class IRBuilder {
 
     // Called by defineMethod but called on a new builder so things like ensure block info recording
     // do not get confused.
-    protected InterpreterContext defineMethodInner(MethodDefNode defNode, IRScope parent) {
+    protected InterpreterContext defineMethodInner(DefNode defNode, IRScope parent) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
         }
@@ -2246,18 +2249,20 @@ public class IRBuilder {
         activeRescuers.push(ebi.dummyRescueBlockLabel);
 
         // Generate IR for code being protected
+        Variable ensureExprValue = createTemporaryVariable();
         Operand rv = ensureBodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) ensureBodyNode, ebi) : build(ensureBodyNode);
 
         // End of protected region
         addInstr(new ExceptionRegionEndMarkerInstr());
         activeRescuers.pop();
 
-        // Clone the ensure body and jump to the end.
-        // Don't bother if the protected body ended in a return
-        // OR if we are really processing a rescue node
-        //
-        // SSS FIXME: How can ensureBodyNode be anything but a RescueNode (if non-null)
-        if (ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
+        // Is this a begin..(rescue..)?ensure..end node that actually computes a value?
+        // (vs. returning from protected body)
+        boolean isEnsureExpr = ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode);
+
+        // Clone the ensure body and jump to the end
+        if (isEnsureExpr) {
+            addInstr(new CopyInstr(ensureExprValue, rv));
             ebi.cloneIntoHostScope(this);
             addInstr(new JumpInstr(ebi.end));
         }
@@ -2293,7 +2298,7 @@ public class IRBuilder {
         // End label for the exception region
         addInstr(new LabelInstr(ebi.end));
 
-        return rv;
+        return isEnsureExpr ? ensureExprValue : rv;
     }
 
     public Operand buildEvStr(EvStrNode node) {
@@ -2311,6 +2316,18 @@ public class IRBuilder {
         Variable  callResult   = createTemporaryVariable();
 
         determineIfMaybeUsingMethod(fcallNode.getName(), args);
+
+        // We will stuff away the iters AST source into the closure in the hope we can convert
+        // this closure to a method.
+        if (fcallNode.getName().equals("define_method") && block instanceof WrappedIRClosure) {
+            IRClosure closure = ((WrappedIRClosure) block).getClosure();
+
+            // To convert to a method we need its variable scoping to appear like a normal method.
+            if (!closure.getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) &&
+                    fcallNode.getIterNode() instanceof IterNode) {
+                closure.setSource((IterNode) fcallNode.getIterNode());
+            }
+        }
 
         CallInstr callInstr    = CallInstr.create(scope, CallType.FUNCTIONAL, callResult, fcallNode.getName(), buildSelf(), args, block);
         receiveBreakException(block, callInstr);
@@ -2517,7 +2534,14 @@ public class IRBuilder {
                 addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat}));
                 continue;
             } else {
-                keyOperand = buildWithOrder(key, hasAssignments);
+                // TODO: This isn't super pretty. If AST were aware of literal hash string keys being "special"
+                // it could have an appropriate AST node for frozen string and this code would just go away.
+                if (key instanceof StrNode) {
+                    StrNode strKey = (StrNode)key;
+                    keyOperand = new FrozenString(strKey.getValue(), strKey.getCodeRange());
+                } else {
+                    keyOperand = buildWithOrder(key, hasAssignments);
+                }
             }
 
             args.add(new KeyValuePair<>(keyOperand, buildWithOrder(pair.getValue(), hasAssignments)));
@@ -3037,17 +3061,31 @@ public class IRBuilder {
         return buildEnsureInternal(node, null);
     }
 
+    private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
+                rescueNode.getElseNode() != null) return false;
+
+        // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
+        // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
+        // effecting or being able to access $!.
+        return rescueNode.getRescueNode().getBodyNode() instanceof SideEffectFree;
+    }
+
     private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure) {
+        boolean needsBacktrace = !canBacktraceBeRemoved(rescueNode);
+
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
         Label rBeginLabel = getNewLabel();
         Label rEndLabel   = ensure.end;
         Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
+        ensure.needsBacktrace = needsBacktrace;
 
         addInstr(new LabelInstr(rBeginLabel));
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
         activeRescuers.push(rescueLabel);
+        addInstr(manager.needsBacktrace(needsBacktrace));
 
         // Body
         Operand tmp = manager.getNil();  // default return value if for some strange reason, we neither have the body node or the else node!
@@ -3105,6 +3143,10 @@ public class IRBuilder {
         // Start of rescue logic
         addInstr(new LabelInstr(rescueLabel));
 
+        // This is optimized no backtrace path so we need to reenable backtraces since we are
+        // exiting that region.
+        if (!needsBacktrace) addInstr(manager.needsBacktrace(true));
+
         // Save off exception & exception comparison type
         Variable exc = addResultInstr(new ReceiveRubyExceptionInstr(createTemporaryVariable()));
 
@@ -3140,20 +3182,7 @@ public class IRBuilder {
                 outputExceptionCheck(build(exceptionList), exc, caughtLabel);
             }
         } else {
-            // SSS FIXME:
-            // rescue => e AND rescue implicitly EQQ the exception object with StandardError
-            // We generate explicit IR for this test here.  But, this can lead to inconsistent
-            // behavior (when compared to MRI) in certain scenarios.  See example:
-            //
-            //   self.class.const_set(:StandardError, 1)
-            //   begin; raise TypeError.new; rescue; puts "AHA"; end
-            //
-            // MRI rescues the error, but we will raise an exception because of reassignment
-            // of StandardError.  I am ignoring this for now and treating this as undefined behavior.
-            //
-            // Solution: Create a 'StandardError' operand type to eliminate this.
-            Variable v = addResultInstr(new InheritanceSearchConstInstr(createTemporaryVariable(), new ObjectClass(), "StandardError", false));
-            outputExceptionCheck(v, exc, caughtLabel);
+            outputExceptionCheck(manager.getStandardError(), exc, caughtLabel);
         }
 
         // Uncaught exception -- build other rescue nodes or rethrow!
@@ -3289,7 +3318,7 @@ public class IRBuilder {
 
     public Operand buildStr(StrNode strNode) {
         if (strNode instanceof FileNode) {
-            return new Filename(strNode.getValue());
+            return new Filename();
         }
         return copyAndReturnValue(new StringLiteral(strNode.getValue(), strNode.getCodeRange()));
     }

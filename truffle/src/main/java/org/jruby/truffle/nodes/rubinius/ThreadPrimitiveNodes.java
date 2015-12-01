@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -37,9 +38,15 @@ public class ThreadPrimitiveNodes {
 
         @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
         public DynamicObject raise(DynamicObject thread, final DynamicObject exception) {
-            final Thread javaThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(thread).getCurrentFiber()));
+            raiseInThread(getContext(), thread, exception, this);
+            return nil();
+        }
 
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(javaThread, this, new SafepointAction() {
+        @TruffleBoundary
+        public static void raiseInThread(RubyContext context, DynamicObject rubyThread, final DynamicObject exception, Node currentNode) {
+            final Thread javaThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber()));
+
+            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new SafepointAction() {
                 @Override
                 public void run(DynamicObject currentThread, Node currentNode) {
                     if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
@@ -49,7 +56,6 @@ public class ThreadPrimitiveNodes {
                     throw new RaiseException(exception);
                 }
             });
-            return nil();
         }
 
     }

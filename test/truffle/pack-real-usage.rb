@@ -4,9 +4,11 @@
 
 Infinity = Float::INFINITY
 NaN = Float::NAN
+
 def assert_equal(one, two)
   raise "Expected: `#{one.b}` Actual: `#{two}`" if one.b != two
 end
+
 assert_equal("z",([] << 122).pack('C*'))
 assert_equal("\x12",([] << 18).pack('C*'))
 assert_equal("\x04",([] << 4).pack('C*'))
@@ -3610,7 +3612,7 @@ assert_equal_u("≉",[8777].pack('U'))
 assert_equal_u("♮",[9838].pack('U'))
 assert_equal_u("♮",[9838].pack('U'))
 assert_equal_u("ℕ",[8469].pack('U'))
-#assert_equal_u(" ",[160].pack('U'))
+assert_equal_u(" ",[160].pack('U'))
 assert_equal_u("≎",[8782, 824].pack('U'))
 assert_equal_u("≏",[8783, 824].pack('U'))
 assert_equal_u("⩃",[10819].pack('U'))
@@ -3688,7 +3690,7 @@ assert_equal_u("⋬",[8940].pack('U'))
 assert_equal_u("≪",[8810, 824].pack('U'))
 assert_equal_u("∤",[8740].pack('U'))
 assert_equal_u("⁠",[8288].pack('U'))
-#assert_equal_u(" ",[160].pack('U'))
+assert_equal_u(" ",[160].pack('U'))
 assert_equal_u("ℕ",[8469].pack('U'))
 assert_equal_u("𝕟",[120159].pack('U'))
 assert_equal_u("⫬",[10988].pack('U'))
@@ -4669,12 +4671,6 @@ def assert_equal(one, two)
   raise "Expected: `#{one}` Actual: `#{two}`" if one != two
 end
 
-    assert_equal "\000\000", [0].pack('n')
-    assert_equal "\000\001", [1].pack('n')
-    assert_equal "\000\002", [2].pack('n')
-    assert_equal "\000\003", [3].pack('n')
-
-
-
-    
-puts "Done"
+assert_equal "\000\000", [0].pack('n')
+assert_equal "\000\001", [1].pack('n')
+assert_equal "\000\003", [3].pack('n')

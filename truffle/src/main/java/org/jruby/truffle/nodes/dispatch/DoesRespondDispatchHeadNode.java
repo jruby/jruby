@@ -10,13 +10,13 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.runtime.LexicalScope;
+
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DoesRespondDispatchHeadNode extends DispatchHeadNode {
 
-    public DoesRespondDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
-        super(context, ignoreVisibility, indirect, missingBehavior, DispatchAction.RESPOND_TO_METHOD);
+    public DoesRespondDispatchHeadNode(RubyContext context, boolean ignoreVisibility) {
+        super(context, ignoreVisibility, MissingBehavior.RETURN_MISSING, DispatchAction.RESPOND_TO_METHOD);
     }
 
     /**

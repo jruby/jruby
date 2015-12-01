@@ -36,12 +36,11 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.BlockBody;
 
 /**
  * Represents a block.  
  */
-public class IterNode extends Node {
+public class IterNode extends Node implements DefNode {
     private final Node varNode;
     private final Node bodyNode;
     
@@ -67,7 +66,7 @@ public class IterNode extends Node {
         super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
-        this.bodyNode = body;
+        this.bodyNode = body == null ? NilImplicitNode.NIL : body;
         this.scope = scope;
     }
 
@@ -81,6 +80,11 @@ public class IterNode extends Node {
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitIterNode(this);
+    }
+
+    @Override
+    public ArgsNode getArgsNode() {
+        return (ArgsNode) varNode;
     }
 
     public StaticScope getScope() {

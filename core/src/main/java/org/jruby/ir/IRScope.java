@@ -341,12 +341,12 @@ public abstract class IRScope implements ParseResult {
         this.name = name;
     }
 
+    public void setFileName(String filename) {
+        getTopLevelScope().setFileName(filename);
+    }
+
     public String getFileName() {
-        IRScope current = this;
-
-        for (; current != null && !current.isScriptScope(); current = current.getLexicalParent()) {}
-
-        return current.getFileName();
+        return getTopLevelScope().getFileName();
     }
 
     public int getLineNumber() {
@@ -511,7 +511,7 @@ public abstract class IRScope implements ParseResult {
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
         interpreterContext = new InterpreterContext(this, instructions);
 
-        if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info("" + interpreterContext);
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 
         return interpreterContext;
     }

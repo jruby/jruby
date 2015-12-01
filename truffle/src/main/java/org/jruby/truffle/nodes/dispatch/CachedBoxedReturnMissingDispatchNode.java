@@ -14,8 +14,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
-
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -30,12 +28,11 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
             DispatchNode next,
             Shape expectedShape,
             DynamicObject expectedClass,
-            boolean indirect,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
-        assert RubyGuards.isRubyClass(expectedClass);
+        super(context, cachedName, next, dispatchAction);
+
         this.expectedShape = expectedShape;
-        unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
+        this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
     }
 
@@ -51,8 +48,8 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
@@ -71,7 +68,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (DynamicObject) blockObject,
+                    blockObject,
                     argumentsObjects,
                     "class modified");
         }

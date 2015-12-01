@@ -55,7 +55,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             definingModule = ModuleNodes.createRubyModule(getContext(), getContext().getCoreLibrary().getModuleClass(), lexicalParent, name, this);
         } else {
             Object module = constant.getValue();
-            if (!(RubyGuards.isRubyModule(module)) || !(RubyGuards.isRubyModule(Layouts.MODULE.getFields((DynamicObject) module).rubyModuleObject) && !RubyGuards.isRubyClass(Layouts.MODULE.getFields((DynamicObject) module).rubyModuleObject))) {
+            if (!RubyGuards.isRubyModule(module) || RubyGuards.isRubyClass(module)) {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(name, "module", this));
             }
             definingModule = (DynamicObject) module;
@@ -105,7 +105,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
             // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
             // call or the recursive execute call.
-            Layouts.MODULE.getFields(lexicalParent).removeConstant(this, name);
+            Layouts.MODULE.getFields(lexicalParent).removeConstant(getContext(), this, name);
 
             requireNode.require((DynamicObject) constant.getValue());
 

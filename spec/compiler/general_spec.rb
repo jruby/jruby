@@ -80,7 +80,7 @@ module JITSpecUtils
   end
 
   def compile_run(src, filename, line)
-    cls = compile_to_method(src, filename, line)
+    cls = compile_to_method(src, filename, line - 1) # compiler expects zero-based lines
 
     cls.call(
         JRuby.runtime.current_context,
@@ -1057,6 +1057,13 @@ modes.each do |mode|
            end
            foo rescue $!') do |x|
         expect(x.message).to eq("ok")
+      end
+    end
+
+    it "returns a proper __FILE__ and __LINE__" do
+      run('[__FILE__, __LINE__]', 'foobar.rb', 1) do |x, y|
+        expect(x).to eq('foobar.rb')
+        expect(y).to eq(1)
       end
     end
   end

@@ -127,7 +127,6 @@ public class RubyBigDecimal extends RubyNumeric {
     private static final double SQRT_10 = 3.162277660168379332;
 
     public static RubyClass createBigDecimal(Ruby runtime) {
-        try {
         RubyClass bigDecimal = runtime.defineClass("BigDecimal", runtime.getNumeric(), ALLOCATOR);
 
         runtime.getKernel().defineAnnotatedMethods(BigDecimalKernelMethods.class);
@@ -146,11 +145,6 @@ public class RubyBigDecimal extends RubyNumeric {
         bigDecimal.defineConstant("INFINITY", newInfinity(runtime, 1));
 
         return bigDecimal;
-        } catch (Exception e) {
-            System.out.println("E:" + e);
-            e.printStackTrace();
-        }
-        return null;
     }
 
     private boolean isNaN;
@@ -1321,10 +1315,10 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject inspect(ThreadContext context) {
         StringBuilder val = new StringBuilder("#<BigDecimal:");
 
-        val.append(Integer.toHexString(System.identityHashCode(this))).append(",");
-        val.append("'").append(callMethod(context, "to_s")).append("'").append(",");
-        val.append(getSignificantDigits().length()).append("(");
-        val.append(((getAllDigits().length() / 4) + 1) * 4).append(")").append(">");
+        val.append( Integer.toHexString(System.identityHashCode(this)) ).append(',');
+        val.append('\'').append( callMethod(context, "to_s") ).append('\'').append(',');
+        val.append( getSignificantDigits().length() ).append('(');
+        val.append( ((getAllDigits().length() / 4) + 1) * 4 ).append(')').append('>');
 
         return getRuntime().newString(val.toString());
     }
@@ -1348,25 +1342,21 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "round", optional = 2)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        int scale = args.length > 0 ? num2int(args[0]) : 0;
+        final int scale = args.length > 0 ? num2int(args[0]) : 0;
 
         // Special treatment for BigDecimal::NAN and BigDecimal::INFINITY
         //
         // If round is called without any argument, we should raise a
         // FloatDomainError. Otherwise, we don't have to call round ;
         // we can simply return the number itself.
-        if (scale == 0 && (isNaN() || isInfinity())) {
+        if (scale == 0 && isInfinity()) {
             StringBuilder message = new StringBuilder("Computation results to ");
-            message.append("'").append(callMethod(context, "to_s")).append("'");
+            message.append('\'').append(callMethod(context, "to_s")).append('\'');
 
-            // To be consistent with MRI's output
-            if (isNaN()) message.append("(Not a Number)");
-
-            throw getRuntime().newFloatDomainError(message.toString());
+            throw context.runtime.newFloatDomainError(message.toString());
         } else {
-            if (isNaN()) {
-                return newNaN(context.runtime);
-            } else if (isInfinity()) {
+            if (isNaN()) return newNaN(context.runtime);
+            if (isInfinity()) {
                 return newInfinity(context.runtime, infinitySign);
             }
         }
@@ -1381,15 +1371,12 @@ public class RubyBigDecimal extends RubyNumeric {
           // ...round to that digit
           BigDecimal rounded = normalized.setScale(0, mode);
           // ...and shift the result back to the left (multiply by 10**(abs(scale)))
-          bigDecimal = new RubyBigDecimal(getRuntime(), rounded.movePointLeft(scale));
+          bigDecimal = new RubyBigDecimal(context.runtime, rounded.movePointLeft(scale));
         } else {
-          bigDecimal = new RubyBigDecimal(getRuntime(), value.setScale(scale, mode));
+          bigDecimal = new RubyBigDecimal(context.runtime, value.setScale(scale, mode));
         }
-        if (args.length == 0) {
-            return bigDecimal.to_int();
-        } else {
-            return bigDecimal;
-        }
+        
+        return args.length == 0 ? bigDecimal.to_int() : bigDecimal;
     }
 
     public IRubyObject round(ThreadContext context, IRubyObject scale, IRubyObject mode) {

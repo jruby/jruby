@@ -73,7 +73,7 @@ public class StaticScope implements Serializable {
     // Next CRef down the lexical structure
     private StaticScope previousCRefScope = null;
 
-    // Our name holder (offsets are assigned as variables are added
+    // Our name holder (offsets are assigned as variables are added)
     private String[] variableNames;
 
     // Arity of this scope if there is one
@@ -235,6 +235,7 @@ public class StaticScope implements Serializable {
 
     public void setVariables(String[] names) {
         assert names != null : "names is not null";
+        assert namesAreInterned(names);
 
         variableNames = new String[names.length];
         System.arraycopy(names, 0, variableNames, 0, names.length);
@@ -501,6 +502,7 @@ public class StaticScope implements Serializable {
     }
 
     private void growVariableNames(String name) {
+        assert name == name.intern();
         String[] newVariableNames = new String[variableNames.length + 1];
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
         variableNames = newVariableNames;

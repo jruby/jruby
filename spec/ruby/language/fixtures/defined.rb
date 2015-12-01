@@ -54,6 +54,11 @@ module DefinedSpecs
       defined? x
     end
 
+    def local_variable_defined_nil
+      x = nil
+      defined? x
+    end
+
     def instance_variable_undefined
       defined? @instance_variable_undefined
     end
@@ -66,6 +71,11 @@ module DefinedSpecs
     def instance_variable_defined
       @instance_variable_defined = 1
       defined? @instance_variable_defined
+    end
+
+    def instance_variable_defined_nil
+      @instance_variable_defined_nil = nil
+      defined? @instance_variable_defined_nil
     end
 
     def global_variable_undefined

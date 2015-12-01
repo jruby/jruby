@@ -9,25 +9,25 @@
  */
 package org.jruby.truffle.nodes.yield;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotKind;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
+
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class YieldDispatchHeadNode extends Node {
 
     @Child CallBlockNode callBlockNode;
 
     public YieldDispatchHeadNode(RubyContext context) {
-        callBlockNode = CallBlockNodeGen.create(context, null, null, null, null, null);
+        this(context, DeclarationContext.BLOCK);
+    }
+
+    public YieldDispatchHeadNode(RubyContext context, DeclarationContext declarationContext) {
+        callBlockNode = CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null);
     }
 
     public Object dispatch(VirtualFrame frame, DynamicObject block, Object... argumentsObjects) {
@@ -43,30 +43,7 @@ public class YieldDispatchHeadNode extends Node {
 
     public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, DynamicObject block, Object self, Object... argumentsObjects) {
         assert block == null || RubyGuards.isRubyProc(block);
-
-        // TODO: assumes this also changes the default definee.
-
-        Frame frame = Layouts.PROC.getDeclarationFrame(block);
-
-        if (frame != null) {
-            FrameSlot slot = getVisibilitySlot(frame);
-            Object oldVisibility = frame.getValue(slot);
-
-            try {
-                frame.setObject(slot, Visibility.PUBLIC);
-
-                return callBlockNode.executeCallBlock(currentFrame, block, self, Layouts.PROC.getBlock(block), argumentsObjects);
-            } finally {
-                frame.setObject(slot, oldVisibility);
-            }
-        } else {
-            return callBlockNode.executeCallBlock(currentFrame, block, self, Layouts.PROC.getBlock(block), argumentsObjects);
-        }
-    }
-
-    @TruffleBoundary
-    private FrameSlot getVisibilitySlot(Frame frame) {
-        return frame.getFrameDescriptor().findOrAddFrameSlot(ModuleNodes.VISIBILITY_FRAME_SLOT_ID, "dynamic visibility for def", FrameSlotKind.Object);
+        return callBlockNode.executeCallBlock(currentFrame, block, self, Layouts.PROC.getBlock(block), argumentsObjects);
     }
 
 }

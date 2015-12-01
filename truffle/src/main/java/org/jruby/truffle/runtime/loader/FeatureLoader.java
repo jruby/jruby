@@ -13,7 +13,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -21,8 +20,8 @@ import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +35,20 @@ public class FeatureLoader {
 
     public FeatureLoader(RubyContext context) {
         this.context = context;
+    }
+
+    private enum RequireResult {
+        REQUIRED(true, true),
+        ALREADY_REQUIRED(true, false),
+        FAILED(false, false);
+
+        public final boolean success;
+        public final boolean firstRequire;
+
+        RequireResult(boolean success, boolean firstRequire) {
+            this.success = success;
+            this.firstRequire = firstRequire;
+        }
     }
 
     public boolean require(String feature, Node currentNode) throws IOException {
@@ -53,8 +66,10 @@ public class FeatureLoader {
             if (isAbsolutePath(feature)) {
                 // Try as a full path
 
-                if (tryToRequireFileInPath(null, feature, currentNode)) {
-                    return true;
+                final RequireResult result = tryToRequireFileInPath(null, feature, currentNode);
+
+                if (result.success) {
+                    return result.firstRequire;
                 }
             } else {
                 // Try each load path in turn
@@ -65,8 +80,10 @@ public class FeatureLoader {
                         loadPath = expandPath(context, loadPath);
                     }
 
-                    if (tryToRequireFileInPath(loadPath, feature, currentNode)) {
-                        return true;
+                    final RequireResult result = tryToRequireFileInPath(loadPath, feature, currentNode);
+
+                    if (result.success) {
+                        return result.firstRequire;
                     }
                 }
             }
@@ -74,28 +91,26 @@ public class FeatureLoader {
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         } finally {
             if (dataConstantBefore == null) {
-                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(currentNode, "DATA");
+                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(context, currentNode, "DATA");
             } else {
-                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", dataConstantBefore.getValue());
+                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, currentNode, "DATA", dataConstantBefore.getValue());
             }
         }
     }
 
-    private boolean tryToRequireFileInPath(String path, String feature, Node currentNode) throws IOException {
+    private RequireResult tryToRequireFileInPath(String path, String feature, Node currentNode) throws IOException {
         String fullPath = new File(path, feature).getPath();
 
-        if (tryToRequireFile(feature, fullPath, currentNode)) {
-            return true;
+        final RequireResult firstAttempt = tryToRequireFile(fullPath + ".rb", currentNode);
+
+        if (firstAttempt.success) {
+            return firstAttempt;
         }
 
-        if (tryToRequireFile(feature, fullPath + ".rb", currentNode)) {
-            return true;
-        }
-
-        return false;
+        return tryToRequireFile(fullPath, currentNode);
     }
 
-    private boolean tryToRequireFile(String feature, String path, Node currentNode) throws IOException {
+    private RequireResult tryToRequireFile(String path, Node currentNode) throws IOException {
         // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
         path = path.replace('\\', '/');
         final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
@@ -107,8 +122,8 @@ public class FeatureLoader {
 
             assert file.isAbsolute();
 
-            if (!file.isAbsolute() || !file.isFile()) {
-                return false;
+            if (!file.isFile()) {
+                return RequireResult.FAILED;
             }
 
             expandedPath = new File(expandPath(context, path)).getCanonicalPath();
@@ -118,12 +133,12 @@ public class FeatureLoader {
 
         for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
             if (loaded.toString().equals(expandedPath)) {
-                return true;
+                return RequireResult.ALREADY_REQUIRED;
             }
         }
 
         // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
-        final DynamicObject pathString = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(expandedPath, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeByteList(expandedPath, UTF8Encoding.INSTANCE));
         ArrayOperations.append(loadedFeatures, pathString);
         try {
             context.loadFile(expandedPath, currentNode);
@@ -141,10 +156,10 @@ public class FeatureLoader {
             }
             throw e;
         } catch (IOException e) {
-            return false;
+            return RequireResult.FAILED;
         }
 
-        return true;
+        return RequireResult.REQUIRED;
     }
 
     public void setMainScriptSource(Source source) {
@@ -169,11 +184,11 @@ public class FeatureLoader {
     public static String expandPath(RubyContext context, String fileName) {
         // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
         if (context.isRunningOnWindows()) {
-            final org.jruby.RubyString path = context.toJRubyString(Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist(fileName, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+            final org.jruby.RubyString path = context.toJRubyString(StringOperations.createString(context, StringOperations.encodeByteList(fileName, UTF8Encoding.INSTANCE)));
             final org.jruby.RubyString expanded = (org.jruby.RubyString) org.jruby.RubyFile.expand_path19(
                     context.getRuntime().getCurrentContext(),
                     null,
-                    new org.jruby.runtime.builtin.IRubyObject[] { path });
+                    new org.jruby.runtime.builtin.IRubyObject[]{ path });
 
             return expanded.asJavaString();
         } else {

@@ -14,7 +14,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  * @author enebo
  */
-public class RationalNode extends NumericNode {
+public class RationalNode extends NumericNode implements SideEffectFree {
     private final long numerator;
     private final long denominator;
 

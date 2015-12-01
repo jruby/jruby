@@ -30,8 +30,8 @@ module SuperFixtures
   INSTANCE = Child.new
 end
 
-example "SuperFixtures::INSTANCE.call_super(42)"
-example "SuperFixtures::INSTANCE.call_zsuper(24)"
+example "SuperFixtures::INSTANCE.call_super(42)", 84
+example "SuperFixtures::INSTANCE.call_zsuper(24)", 72
 
-example "SuperFixtures::Child.new.call_super(42)"
-example "SuperFixtures::Child.new.call_zsuper(24)"
+example "SuperFixtures::Child.new.call_super(42)", 84
+example "SuperFixtures::Child.new.call_zsuper(24)", 72

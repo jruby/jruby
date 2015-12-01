@@ -79,6 +79,22 @@
               </arguments>
             </configuration>
           </execution>
+	  <execution>
+	    <id>check jruby-home</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+	    <configuration>
+	      <arguments>
+		<argument>-classpath</argument>
+		<classpath/>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<argument>p JRuby.runtime.jruby_home</argument>
+              </arguments>
+            </configuration>
+          </execution>
           <execution>
             <id>count installed gems</id>
             <phase>test</phase>
@@ -214,6 +230,49 @@
                 <argument>-S</argument>
                 <argument>generate_dir_info</argument>
                 <argument>bin</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>-S icecream - GH-3186</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <workingDirectory>${basedir}</workingDirectory>
+              <executable>java</executable>
+              <environmentVariables>
+                <PATH>${env.PATH}:somebin</PATH>
+              </environmentVariables>
+              <arguments>
+                <argument>-classpath</argument>
+                <classpath/>
+                <argument>org.jruby.Main</argument>
+                <argument>-S</argument>
+                <argument>icecream</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>META-INF/jruby.home is not a file - GH-3342</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <workingDirectory>${basedir}</workingDirectory>
+              <executable>java</executable>
+              <arguments>
+                <argument>-classpath</argument>
+                <classpath/>
+                <argument>org.jruby.Main</argument>
+                <argument>-e</argument>
+                <argument>
+                  puts "jruby home is a file: " +
+                  File.file?("uri:classloader:/META-INF/jruby.home").to_s +
+                  File.file?("uri:classloader:/META-INF/jruby.home/").to_s
+                </argument>
               </arguments>
             </configuration>
           </execution>

@@ -22,6 +22,7 @@
 	<configuration>
 	  <executable>java</executable>
 	  <environmentVariables>
+            <JRUBY_HOME>${basedir}</JRUBY_HOME>
 	    <PATH>${basedir}</PATH>
 	    <HOME>${basedir}</HOME>
 	    <GEM_PATH>${basedir}</GEM_PATH>
@@ -80,6 +81,22 @@
 	      </arguments>
 	    </configuration>
 	  </execution>
+	  <execution>
+	    <id>check jruby-home</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+	    <configuration>
+	      <arguments>
+		<argument>-classpath</argument>
+		<classpath/>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<argument>p JRuby.runtime.jruby_home</argument>
+              </arguments>
+            </configuration>
+          </execution>
 	  <execution>
 	    <id>count installed gems</id>
 	    <phase>test</phase>

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -30,7 +31,6 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -40,7 +40,9 @@ import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
+import org.jruby.truffle.nodes.coerce.NameToJavaStringNode;
 import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
+import org.jruby.truffle.nodes.coerce.NameToSymbolOrStringNodeGen;
 import org.jruby.truffle.nodes.coerce.ToPathNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
@@ -48,33 +50,42 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.nodes.core.ProcNodes.ProcNewNode;
 import org.jruby.truffle.nodes.core.ProcNodesFactory.ProcNewNodeFactory;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.methods.LookupMethodNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
 import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodesFactory;
-import org.jruby.truffle.pack.parser.FormatParser;
-import org.jruby.truffle.pack.runtime.PackResult;
-import org.jruby.truffle.pack.runtime.exceptions.*;
+import org.jruby.truffle.format.parser.FormatParser;
+import org.jruby.truffle.format.runtime.PackResult;
+import org.jruby.truffle.format.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.runtime.loader.FeatureLoader;
+import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
-import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -125,7 +136,7 @@ public abstract class KernelNodes {
 
             try {
                 // We need to run via bash to get the variable and other expansion we expect
-                process = Runtime.getRuntime().exec(new String[]{"bash", "-c", command.toString()}, envp.toArray(new String[envp.size()]));
+                process = Runtime.getRuntime().exec(new String[]{ "bash", "-c", command.toString() }, envp.toArray(new String[envp.size()]));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -148,7 +159,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(resultBuilder.toString(), Layouts.ENCODING.getEncoding(EncodingNodes.getEncoding("UTF-8"))), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(resultBuilder.toString(), EncodingOperations.getEncoding(EncodingNodes.getEncoding("UTF-8"))));
         }
 
     }
@@ -231,14 +242,14 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"<=>"}, required = 1)
+    @CoreMethod(names = { "<=>" }, required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         @Child private SameOrEqualNode equalNode;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{ null, null });
         }
 
         @Specialization
@@ -252,32 +263,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "abort", isModuleFunction = true, optional = 1)
-    public abstract static class AbortNode extends CoreMethodArrayArgumentsNode {
-
-        public AbortNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(message)")
-        public DynamicObject abort(DynamicObject message) {
-            System.err.println(message.toString());
-            return abort();
-        }
-
-        @Specialization
-        public DynamicObject abort(NotProvided message) {
-            return abort();
-        }
-
-        @TruffleBoundary
-        private DynamicObject abort() {
-            getContext().innerShutdown(false);
-            throw new MainExitException(1, true);
-        }
-    }
-
     @CoreMethod(names = "binding", isModuleFunction = true)
     public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
 
@@ -289,15 +274,14 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
-
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
-            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(callerFrame.getArguments()), callerFrame);
+            return BindingNodes.createBinding(getContext(), callerFrame);
         }
     }
 
-    @CoreMethod(names = "block_given?", isModuleFunction = true)
+    @CoreMethod(names = "block_given?", isModuleFunction = true, needsCallerFrame = true)
     public abstract static class BlockGivenNode extends CoreMethodArrayArgumentsNode {
 
         public BlockGivenNode(RubyContext context, SourceSection sourceSection) {
@@ -305,9 +289,16 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean blockGiven() {
+        public boolean blockGiven(MaterializedFrame callerFrame) {
+            return RubyArguments.getBlock(callerFrame.getArguments()) != null;
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public boolean blockGiven(NotProvided noCallerFrame) {
             return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
+
     }
 
     @CoreMethod(names = "__callee__", needsSelf = false)
@@ -325,7 +316,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = {0, 1})
+    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = { 0, 1 })
     public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
 
         public CallerLocationsNode(RubyContext context, SourceSection sourceSection) {
@@ -359,7 +350,7 @@ public abstract class KernelNodes {
 
             for (int n = 0; n < locationsCount; n++) {
                 Activation activation = backtrace.getActivations().get(n);
-                locations[n] = ThreadBacktraceLocationNodes.createRubyThreadBacktraceLocation(threadBacktraceLocationClass, activation);
+                locations[n] = ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocation(Layouts.CLASS.getInstanceFactory(threadBacktraceLocationClass), activation);
             }
 
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), locations, locations.length);
@@ -442,7 +433,7 @@ public abstract class KernelNodes {
 
             // Copy the singleton class if any.
             if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self))) {
-                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(Layouts.BASIC_OBJECT.getMetaClass(self));
+                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(newObject)).initCopy(Layouts.BASIC_OBJECT.getMetaClass(self));
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
@@ -497,7 +488,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @CreateCast("source") public RubyNode coerceSourceToString(RubyNode source) {
+        @CreateCast("source")
+        public RubyNode coerceSourceToString(RubyNode source) {
             return ToStrNodeGen.create(getContext(), getSourceSection(), source);
         }
 
@@ -545,32 +537,35 @@ public abstract class KernelNodes {
         ) {
             final DynamicObject callerBinding = getCallerBinding(frame);
 
-            final Object callerSelf = Layouts.BINDING.getSelf(callerBinding);
             final MaterializedFrame parentFrame = Layouts.BINDING.getFrame(callerBinding);
+            final Object callerSelf = RubyArguments.getSelf(frame.getArguments());
 
             final InternalMethod method = new InternalMethod(
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
-                    getContext().getCoreLibrary().getObjectClass(),
+                    RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule(),
                     Visibility.PUBLIC,
-                    false,
-                    cachedCallTarget,
-                    parentFrame);
+                    cachedCallTarget);
 
             return callNode.call(frame, RubyArguments.pack(
                     method,
                     parentFrame,
+                    null,
                     callerSelf,
                     null,
-                    new Object[]{}));
+                    RubyArguments.getDeclarationContext(parentFrame.getArguments()),
+                    new Object[] {}));
         }
 
         @Specialization(guards = {
                 "isRubyString(source)"
         }, contains = "evalNoBindingCached")
-        public Object evalNoBindingUncached(VirtualFrame frame, DynamicObject source, NotProvided binding,
+        public Object evalNoBindingUncached(VirtualFrame frame, DynamicObject source, NotProvided noBinding,
                                             NotProvided filename, NotProvided lineNumber) {
-            return getContext().eval(Layouts.STRING.getByteList(source), getCallerBinding(frame), true, this);
+            final DynamicObject binding = getCallerBinding(frame);
+            final MaterializedFrame topFrame = Layouts.BINDING.getFrame(binding);
+            RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame.getArguments()));
+            return doEval(source, binding, "(eval)", true);
         }
 
         @Specialization(guards = {
@@ -578,7 +573,7 @@ public abstract class KernelNodes {
                 "isNil(noBinding)",
                 "isRubyString(filename)"
         })
-        public Object evalNilBinding(VirtualFrame frame, DynamicObject source, Object noBinding,
+        public Object evalNilBinding(VirtualFrame frame, DynamicObject source, DynamicObject noBinding,
                                      DynamicObject filename, int lineNumber) {
             return evalNoBindingUncached(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
         }
@@ -589,36 +584,63 @@ public abstract class KernelNodes {
         })
         public Object evalBinding(DynamicObject source, DynamicObject binding, NotProvided filename,
                                   NotProvided lineNumber) {
-            return getContext().eval(Layouts.STRING.getByteList(source), binding, false, this);
+            return doEval(source, binding, "(eval)", false);
+        }
+
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "isRubyBinding(binding)",
+                "isNil(noFilename)",
+                "isNil(noLineNumber)"
+        })
+        public Object evalBinding(DynamicObject source, DynamicObject binding, DynamicObject noFilename, DynamicObject noLineNumber) {
+            return evalBinding(source, binding, NotProvided.INSTANCE, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization(guards = {
                 "isRubyString(source)",
                 "isRubyBinding(binding)",
-                "isRubyString(filename)"})
+                "isRubyString(filename)" })
         public Object evalBindingFilename(DynamicObject source, DynamicObject binding, DynamicObject filename,
                                           NotProvided lineNumber) {
-            return getContext().eval(Layouts.STRING.getByteList(source), binding, false, filename.toString(), this);
+            return evalBindingFilenameLine(source, binding, filename, 0);
+        }
+
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "isRubyBinding(binding)",
+                "isRubyString(filename)",
+                "isNil(noLineNumber)"
+        })
+        public Object evalBindingFilename(DynamicObject source, DynamicObject binding, DynamicObject filename, DynamicObject noLineNumber) {
+            return evalBindingFilename(source, binding, filename, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization(guards = {
                 "isRubyString(source)",
                 "isRubyBinding(binding)",
-                "isRubyString(filename)"})
+                "isRubyString(filename)" })
         public Object evalBindingFilenameLine(DynamicObject source, DynamicObject binding, DynamicObject filename,
                                               int lineNumber) {
-            return getContext().eval(Layouts.STRING.getByteList(source), binding, false, filename.toString(), this);
+            return doEval(source, binding, filename.toString(), false);
         }
 
         @TruffleBoundary
         @Specialization(guards = {
                 "isRubyString(source)",
-                "!isRubyBinding(badBinding)"})
+                "!isRubyBinding(badBinding)" })
         public Object evalBadBinding(DynamicObject source, DynamicObject badBinding, NotProvided filename,
                                      NotProvided lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
+        }
+
+        @TruffleBoundary
+        private Object doEval(DynamicObject source, DynamicObject binding, String filename, boolean ownScopeForAssignments) {
+            final Object result = getContext().eval(ParserContext.EVAL, StringOperations.getByteList(source), binding, ownScopeForAssignments, filename, this);
+            assert result != null;
+            return result;
         }
 
         protected RootNodeWrapper compileSource(VirtualFrame frame, DynamicObject sourceText) {
@@ -631,12 +653,7 @@ public abstract class KernelNodes {
 
             final TranslatorDriver translator = new TranslatorDriver(getContext());
 
-            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.EVAL, parentFrame, true, this, new NodeWrapper() {
-                @Override
-                public RubyNode wrap(RubyNode node) {
-                    return node; // return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PRIVATE, "simple eval", node);
-                }
-            }));
+            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, ParserContext.EVAL, parentFrame, true, this));
         }
 
         protected boolean parseDependsOnDeclarationFrame(RootNodeWrapper rootNode) {
@@ -710,60 +727,12 @@ public abstract class KernelNodes {
                 }
             });
 
+            /*
+             * We really do want to just exit here as opposed to throwing a MainExitException and tidying up, as we're
+             * pretending that we did exec and so replaced this process with a new one.
+             */
+
             System.exit(exitCode);
-        }
-
-    }
-
-    @CoreMethod(names = "exit", isModuleFunction = true, optional = 1, lowerFixnumParameters = 0)
-    public abstract static class ExitNode extends CoreMethodArrayArgumentsNode {
-
-        public ExitNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object exit(NotProvided exitCode) {
-            return exit(0);
-        }
-
-        @Specialization
-        public Object exit(int exitCode) {
-            CompilerDirectives.transferToInterpreter();
-
-            getContext().shutdown();
-            System.exit(exitCode);
-            return null;
-        }
-
-        @Specialization
-        public Object exit(boolean status) {
-            CompilerDirectives.transferToInterpreter();
-
-            getContext().shutdown();
-            System.exit(status ? 0 : -1);
-            return null;
-        }
-
-    }
-
-    @CoreMethod(names = "exit!", isModuleFunction = true, optional = 1)
-    public abstract static class ExitBangNode extends CoreMethodArrayArgumentsNode {
-
-        public ExitBangNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public DynamicObject exit(NotProvided exitCode) {
-            return exit(1);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject exit(int exitCode) {
-            getContext().innerShutdown(false);
-            throw new MainExitException(exitCode, true);
         }
 
     }
@@ -851,11 +820,11 @@ public abstract class KernelNodes {
                 }
             });
 
-            final DynamicObject rubyLine = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(line, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject rubyLine = createString(StringOperations.encodeByteList(line, UTF8Encoding.INSTANCE));
 
             // Set the local variable $_ in the caller
 
-            final Frame caller = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+            final Frame caller = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
 
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
@@ -973,77 +942,147 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "instance_variable_defined?", required = 1)
-    public abstract static class InstanceVariableDefinedNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class InstanceVariableDefinedNode extends CoreMethodNode {
 
         public InstanceVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public boolean isInstanceVariableDefinedString(DynamicObject object, DynamicObject name) {
-            return object.getShape().hasProperty(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public boolean isInstanceVariableDefinedSymbol(DynamicObject object, DynamicObject name) {
-            return object.getShape().hasProperty(RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this));
+        @Specialization
+        public boolean isInstanceVariableDefined(DynamicObject object, String name) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            return object.getShape().hasProperty(ivar);
         }
 
     }
 
     @CoreMethod(names = "instance_variable_get", required = 1)
-    public abstract static class InstanceVariableGetNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class InstanceVariableGetNode extends CoreMethodNode {
 
         public InstanceVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        protected static final int LIMIT = Options.FIELD_LOOKUP_CACHE;
+
+        @CreateCast("name")
+        public RubyNode coerceToSymbolOrString(RubyNode name) {
+            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization(
+                guards = { "isRubySymbol(name)", "name == cachedName" },
+                limit = "LIMIT")
+        public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
+                @Cached("name") DynamicObject cachedName,
+                @Cached("createReadFieldNode(checkName(symbolToString(cachedName)))") ReadHeadObjectFieldNode readHeadObjectFieldNode) {
+            return readHeadObjectFieldNode.execute(object);
+        }
+
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object instanceVariableGetSymbol(DynamicObject object, DynamicObject name) {
+            return ivarGet(object, symbolToString(name));
+        }
+
         @TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public Object instanceVariableGetString(DynamicObject object, DynamicObject name) {
-            return instanceVariableGet(object, name.toString());
+            return ivarGet(object, name.toString());
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public Object instanceVariableGetSymbol(DynamicObject object, DynamicObject name) {
-            return instanceVariableGet(object, Layouts.SYMBOL.getString(name));
+        private Object ivarGet(DynamicObject object, String name) {
+            return object.get(checkName(name), nil());
         }
 
-        private Object instanceVariableGet(DynamicObject object, String name) {
-            return object.get(RubyContext.checkInstanceVariableName(getContext(), name, this), nil());
+        protected String symbolToString(DynamicObject name) {
+            return Layouts.SYMBOL.getString(name);
+        }
+
+        protected String checkName(String name) {
+            return RubyContext.checkInstanceVariableName(getContext(), name, this);
+        }
+
+        protected ReadHeadObjectFieldNode createReadFieldNode(String name) {
+            return ReadHeadObjectFieldNodeGen.create(name, nil());
         }
 
     }
 
     @CoreMethod(names = { "instance_variable_set", "__instance_variable_set__" }, raiseIfFrozenSelf = true, required = 2)
-    public abstract static class InstanceVariableSetNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "value")
+    })
+    public abstract static class InstanceVariableSetNode extends CoreMethodNode {
 
         public InstanceVariableSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
         // TODO CS 4-Mar-15 this badly needs to be cached
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public Object instanceVariableSetString(DynamicObject object, DynamicObject name, Object value) {
-            object.define(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value, 0);
-            return value;
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public Object instanceVariableSetSymbol(DynamicObject object, DynamicObject name, Object value) {
-            object.define(RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this), value, 0);
+        @Specialization
+        public Object instanceVariableSet(DynamicObject object, String name, Object value) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            object.define(ivar, value, 0);
             return value;
         }
 
     }
 
-    @CoreMethod(names = {"instance_variables", "__instance_variables__"})
+    @CoreMethod(names = "remove_instance_variable", raiseIfFrozenSelf = true, required = 1)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class RemoveInstanceVariableNode extends CoreMethodNode {
+
+        public RemoveInstanceVariableNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public Object removeInstanceVariable(DynamicObject object, String name) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            final Object value = object.get(ivar, nil());
+            if (!object.delete(name)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorInstanceVariableNotDefined(name, this));
+            }
+            return value;
+        }
+
+    }
+
+    @CoreMethod(names = { "instance_variables", "__instance_variables__" })
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
         public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
@@ -1071,7 +1110,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"is_a?", "kind_of?"}, required = 1)
+    @CoreMethod(names = { "is_a?", "kind_of?" }, required = 1)
     public abstract static class IsANode extends CoreMethodArrayArgumentsNode {
 
         @Child MetaClassNode metaClassNode;
@@ -1083,14 +1122,14 @@ public abstract class KernelNodes {
 
         public abstract boolean executeIsA(VirtualFrame frame, Object self, DynamicObject rubyClass);
 
-        @Specialization(guards = {"isNil(nil)", "!isRubyModule(nil)"})
+        @Specialization(guards = { "isNil(nil)", "!isRubyModule(nil)" })
         public boolean isANil(DynamicObject self, Object nil) {
             return false;
         }
 
         @Specialization(
                 limit = "getCacheLimit()",
-                guards = {"isRubyModule(module)", "getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule"},
+                guards = { "isRubyModule(module)", "getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule" },
                 assumptions = "getUnmodifiedAssumption(cachedModule)")
         public boolean isACached(VirtualFrame frame,
                                  Object self,
@@ -1151,7 +1190,7 @@ public abstract class KernelNodes {
             return lambda(parentBlock);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject lambda(DynamicObject block) {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcFactory(),
@@ -1166,35 +1205,6 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
-    public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
-
-        public LoadNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(file)")
-        public boolean load(DynamicObject file, boolean wrap) {
-            if (wrap) {
-                throw new UnsupportedOperationException();
-            }
-
-            try {
-                getContext().loadFile(file.toString(), this);
-            } catch (IOException e) {
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
-            }
-
-            return true;
-        }
-
-        @Specialization(guards = "isRubyString(file)")
-        public boolean load(DynamicObject file, NotProvided wrap) {
-            return load(file, false);
-        }
-    }
-
     @CoreMethod(names = "local_variables", needsSelf = false)
     public abstract static class LocalVariablesNode extends CoreMethodArrayArgumentsNode {
 
@@ -1202,19 +1212,11 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject localVariables() {
-            CompilerDirectives.transferToInterpreter();
-
-            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-
-            for (Object name : RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
-                if (name instanceof String) {
-                    ArrayOperations.append(array, getSymbol((String) name));
-                }
-            }
-
-            return array;
+            final Frame frame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+            return BindingNodes.LocalVariablesNode.listLocalVariables(getContext(), frame);
         }
 
     }
@@ -1242,29 +1244,70 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodNode extends CoreMethodNode {
 
+        @Child NameToJavaStringNode nameToJavaStringNode;
         @Child LookupMethodNode lookupMethodNode;
+        @Child CallDispatchHeadNode respondToMissingNode;
 
         public MethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            nameToJavaStringNode = NameToJavaStringNodeGen.create(getContext(), getSourceSection(), null);
             lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, null, null);
+            respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
         }
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public DynamicObject methodCached(VirtualFrame frame, Object self, String name) {
-            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, name);
+        public DynamicObject method(VirtualFrame frame, Object self, DynamicObject name) {
+            final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
+            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(
-                        name, getContext().getCoreLibrary().getLogicalClass(self), this));
+
+                if (respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true)) {
+                    final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(frame, self, "method_missing").withName(normalizedName);
+                    final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
+
+                    final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
+                    final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody);
+                    final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
+
+                    final DynamicObject module = getContext().getCoreLibrary().getMetaClass(self);
+                    method = new InternalMethod(info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(
+                            normalizedName, getContext().getCoreLibrary().getLogicalClass(self), this));
+                }
             }
 
             return Layouts.METHOD.createMethod(getContext().getCoreLibrary().getMethodFactory(), self, method);
+        }
+
+        private static class CallMethodMissingWithStaticName extends RubyNode {
+
+            private final DynamicObject methodName;
+            @Child private CallDispatchHeadNode methodMissing;
+
+            public CallMethodMissingWithStaticName(RubyContext context, SourceSection sourceSection, DynamicObject methodName) {
+                super(context, sourceSection);
+                this.methodName = methodName;
+                methodMissing = DispatchHeadNodeFactory.createMethodCall(context);
+            }
+
+            @Override
+            public Object execute(VirtualFrame frame) {
+                final Object[] originalUserArguments = RubyArguments.extractUserArguments(frame.getArguments());
+                final Object[] newUserArguments = new Object[originalUserArguments.length + 1];
+
+                newUserArguments[0] = methodName;
+                System.arraycopy(originalUserArguments, 0, newUserArguments, 1, originalUserArguments.length);
+
+                return methodMissing.call(frame, RubyArguments.getSelf(frame.getArguments()), "method_missing", RubyArguments.getBlock(frame.getArguments()), newUserArguments);
+            }
         }
 
     }
@@ -1287,17 +1330,17 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "regular")
         public DynamicObject methodsRegular(VirtualFrame frame, Object self, boolean regular,
-                @Cached("createMetaClassNode()") MetaClassNode metaClassNode) {
+                                            @Cached("createMetaClassNode()") MetaClassNode metaClassNode) {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray();
+            Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), regular, MethodFilter.PUBLIC_PROTECTED).toArray();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
         @Specialization(guards = "!regular")
         public DynamicObject methodsSingleton(VirtualFrame frame, Object self, boolean regular,
-                @Cached("createSingletonMethodsNode()") SingletonMethodsNode singletonMethodsNode) {
+                                              @Cached("createSingletonMethodsNode()") SingletonMethodsNode singletonMethodsNode) {
             return singletonMethodsNode.executeSingletonMethods(frame, self, false);
         }
 
@@ -1348,7 +1391,7 @@ public abstract class KernelNodes {
             DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray();
+            Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PRIVATE).toArray();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
@@ -1395,7 +1438,7 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray();
+            Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PROTECTED).toArray();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
@@ -1425,7 +1468,7 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray();
+            Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PUBLIC).toArray();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
@@ -1440,7 +1483,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, false,
-                    false,
                     MissingBehavior.CALL_METHOD_MISSING);
         }
 
@@ -1449,7 +1491,7 @@ public abstract class KernelNodes {
             return send(frame, self, name, args, (DynamicObject) null);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
             return dispatchNode.call(frame, self, name, block, args);
         }
@@ -1521,10 +1563,23 @@ public abstract class KernelNodes {
             return ToPathNodeGen.create(getContext(), getSourceSection(), feature);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(featureString)")
         public boolean require(DynamicObject featureString) {
-            CompilerDirectives.transferToInterpreter();
             final String feature = featureString.toString();
+
+            // Pysch loads either the jar or the so - we need to intercept
+
+            if (feature.equals("psych.so") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
+                    .getEncapsulatingSourceSection().getSource().getName().endsWith("psych.rb")) {
+                try {
+                    getContext().getFeatureLoader().require("truffle/psych.rb", this);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return true;
+            }
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
 
@@ -1542,12 +1597,10 @@ public abstract class KernelNodes {
             }
 
             try {
-                getContext().getFeatureLoader().require(feature, this);
+                return getContext().getFeatureLoader().require(feature, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
-            return true;
         }
     }
 
@@ -1612,8 +1665,8 @@ public abstract class KernelNodes {
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
-            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
+            dispatch = new DoesRespondDispatchHeadNode(context, false);
+            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true);
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);
@@ -1695,16 +1748,12 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isNil(nil)")
         public DynamicObject setTraceFunc(Object nil) {
-            CompilerDirectives.transferToInterpreter();
-
             getContext().getTraceManager().setTraceFunc(null);
             return nil();
         }
 
         @Specialization(guards = "isRubyProc(traceFunc)")
         public DynamicObject setTraceFunc(DynamicObject traceFunc) {
-            CompilerDirectives.transferToInterpreter();
-
             getContext().getTraceManager().setTraceFunc(traceFunc);
             return traceFunc;
         }
@@ -1721,8 +1770,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject singletonClass(VirtualFrame frame, Object self) {
-            return singletonClassNode.executeSingletonClass(frame, self);
+        public DynamicObject singletonClass(Object self) {
+            return singletonClassNode.executeSingletonClass(self);
         }
 
     }
@@ -1757,7 +1806,7 @@ public abstract class KernelNodes {
             }
 
             CompilerDirectives.transferToInterpreter();
-            Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
+            Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(getContext(), includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
@@ -1838,7 +1887,7 @@ public abstract class KernelNodes {
 
             // Clear the wakeUp flag, following Ruby semantics:
             // it should only be considered if we are inside the sleep when Thread#{run,wakeup} is called.
-            Layouts.THREAD.getWakeUp(thread).getAndSet(false);
+            Layouts.THREAD.getWakeUp(thread).set(false);
 
             return sleepFor(this, getContext(), durationInMillis);
         }
@@ -1870,7 +1919,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"format", "sprintf"}, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
+    @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
 
@@ -1890,7 +1939,7 @@ public abstract class KernelNodes {
             final PackResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, new Object[] { arguments, arguments.length });
+                result = (PackResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -1908,13 +1957,13 @@ public abstract class KernelNodes {
             final PackResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[] { arguments, arguments.length });
+                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
 
-            return finishFormat(Layouts.STRING.getByteList(format), result);
+            return finishFormat(StringOperations.getByteList(format), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -1936,7 +1985,7 @@ public abstract class KernelNodes {
         }
 
         private DynamicObject finishFormat(ByteList format, PackResult result) {
-            final DynamicObject string = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(result.getOutput(), 0, result.getOutputLength()), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
@@ -1973,53 +2022,11 @@ public abstract class KernelNodes {
             assert RubyGuards.isRubyString(format);
 
             try {
-                return new FormatParser(getContext()).parse(Layouts.STRING.getByteList(format));
+                return new FormatParser(getContext()).parse(StringOperations.getByteList(format));
             } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
-        }
-
-    }
-
-    @CoreMethod(names = "system", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class SystemNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode toHashNode;
-
-        public SystemNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = "isRubyString(command)")
-        public boolean system(VirtualFrame frame, DynamicObject command) {
-            if (toHashNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            CompilerDirectives.transferToInterpreter();
-
-            // TODO(CS 5-JAN-15): very simplistic implementation
-
-            final DynamicObject env = getContext().getCoreLibrary().getENV();
-            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
-
-            final List<String> envp = new ArrayList<>();
-
-            // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
-                envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
-            }
-
-            // We need to run via bash to get the variable and other expansion we expect
-            try {
-                Runtime.getRuntime().exec(new String[]{"bash", "-c", command.toString()}, envp.toArray(new String[envp.size()]));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            return true;
         }
 
     }
@@ -2099,8 +2106,8 @@ public abstract class KernelNodes {
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = ClassNodeGen.create(context, sourceSection, null);
-            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[] { null });
-            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
+            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
         }
 
         public abstract DynamicObject executeToS(VirtualFrame frame, Object self);
@@ -2113,7 +2120,7 @@ public abstract class KernelNodes {
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE));
         }
 
     }
@@ -2129,7 +2136,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = new WriteHeadObjectFieldNode(Layouts.TAINTED_IDENTIFIER);
+            writeTaintNode = WriteHeadObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
         }
 
         @Specialization

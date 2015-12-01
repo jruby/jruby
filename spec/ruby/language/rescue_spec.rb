@@ -1,4 +1,5 @@
 require File.expand_path('../../spec_helper', __FILE__)
+
 class SpecificExampleException < StandardError
 end
 class OtherCustomException < StandardError
@@ -9,6 +10,7 @@ end
 def exception_list
   [SpecificExampleException, ArbitraryException]
 end
+
 describe "The rescue keyword" do
   before :each do
     ScratchPad.record []
@@ -76,25 +78,29 @@ describe "The rescue keyword" do
   end
 
   it "will execute an else block only if no exceptions were raised" do
-    begin
+    result = begin
       ScratchPad << :one
     rescue
       ScratchPad << :does_not_run
     else
       ScratchPad << :two
+      :val
     end
+    result.should == :val
     ScratchPad.recorded.should == [:one, :two]
   end
 
   it "will not execute an else block if an exception was raised" do
-    begin
+    result = begin
       ScratchPad << :one
       raise "an error occurred"
     rescue
       ScratchPad << :two
+      :val
     else
       ScratchPad << :does_not_run
     end
+    result.should == :val
     ScratchPad.recorded.should == [:one, :two]
   end
 

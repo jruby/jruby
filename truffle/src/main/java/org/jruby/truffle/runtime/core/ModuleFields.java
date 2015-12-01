@@ -11,9 +11,14 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.utilities.AssumedValue;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -27,12 +32,13 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.object.ObjectGraphNode;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ModuleFields implements ModuleChain {
+public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     public static void debugModuleChain(DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
@@ -59,10 +65,9 @@ public class ModuleFields implements ModuleChain {
 
     public final DynamicObject lexicalParent;
     public final String givenBaseName;
-    /**
-     * Full name, including named parent
-     */
-    public String name;
+
+    private boolean hasFullName = false;
+    private String name = null;
 
     private final Map<String, InternalMethod> methods = new ConcurrentHashMap<>();
     private final Map<String, RubyConstant> constants = new ConcurrentHashMap<>();
@@ -89,36 +94,36 @@ public class ModuleFields implements ModuleChain {
         start = new PrependMarker(this);
     }
 
-    public void getAdoptedByLexicalParent(DynamicObject lexicalParent, String name, Node currentNode) {
+    public void getAdoptedByLexicalParent(RubyContext context, DynamicObject lexicalParent, String name, Node currentNode) {
         assert RubyGuards.isRubyModule(lexicalParent);
 
-        Layouts.MODULE.getFields(lexicalParent).setConstantInternal(currentNode, name, rubyModuleObject, false);
+        Layouts.MODULE.getFields(lexicalParent).setConstantInternal(context, currentNode, name, rubyModuleObject, false);
         Layouts.MODULE.getFields(lexicalParent).addLexicalDependent(rubyModuleObject);
 
-        if (this.name == null) {
+        if (!hasFullName()) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
             final DynamicObject classClass = Layouts.BASIC_OBJECT.getLogicalClass(getLogicalClass());
             final DynamicObject objectClass = ClassNodes.getSuperClass(ClassNodes.getSuperClass(classClass));
 
             if (lexicalParent == objectClass) {
-                this.name = name;
-                updateAnonymousChildrenModules();
-            } else if (Layouts.MODULE.getFields(lexicalParent).hasName()) {
-                this.name = Layouts.MODULE.getFields(lexicalParent).getName() + "::" + name;
-                updateAnonymousChildrenModules();
+                this.setFullName(name);
+                updateAnonymousChildrenModules(context);
+            } else if (Layouts.MODULE.getFields(lexicalParent).hasFullName()) {
+                this.setFullName(Layouts.MODULE.getFields(lexicalParent).getName() + "::" + name);
+                updateAnonymousChildrenModules(context);
             }
             // else: Our lexicalParent is also an anonymous module
             // and will name us when it gets named via updateAnonymousChildrenModules()
         }
     }
 
-    public void updateAnonymousChildrenModules() {
+    public void updateAnonymousChildrenModules(RubyContext context) {
         for (Map.Entry<String, RubyConstant> entry : constants.entrySet()) {
             RubyConstant constant = entry.getValue();
             if (RubyGuards.isRubyModule(constant.getValue())) {
                 DynamicObject module = (DynamicObject) constant.getValue();
-                if (!Layouts.MODULE.getFields(module).hasName()) {
-                    Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(rubyModuleObject, entry.getKey(), null);
+                if (!Layouts.MODULE.getFields(module).hasFullName()) {
+                    Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(context, rubyModuleObject, entry.getKey(), null);
                 }
             }
         }
@@ -145,10 +150,10 @@ public class ModuleFields implements ModuleChain {
     }
 
     // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
-    public void checkFrozen(Node currentNode) {
-        if (getContext().getCoreLibrary() != null && verySlowIsFrozen(getContext(), rubyModuleObject)) {
+    public void checkFrozen(RubyContext context, Node currentNode) {
+        if (context.getCoreLibrary() != null && verySlowIsFrozen(context, rubyModuleObject)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getLogicalClass()).getName(), currentNode));
+            throw new RaiseException(context.getCoreLibrary().frozenError(Layouts.MODULE.getFields(getLogicalClass()).getName(), currentNode));
         }
     }
 
@@ -167,14 +172,14 @@ public class ModuleFields implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void include(Node currentNode, DynamicObject module) {
+    public void include(RubyContext context, Node currentNode, DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
 
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
 
         // If the module we want to include already includes us, it is cyclic
         if (ModuleOperations.includesModule(module, rubyModuleObject)) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic include detected", currentNode));
+            throw new RaiseException(context.getCoreLibrary().argumentError("cyclic include detected", currentNode));
         }
 
         // We need to include the module ancestors in reverse order for a given inclusionPoint
@@ -227,19 +232,19 @@ public class ModuleFields implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void prepend(Node currentNode, DynamicObject module) {
+    public void prepend(RubyContext context, Node currentNode, DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
 
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
 
         // If the module we want to prepend already includes us, it is cyclic
         if (ModuleOperations.includesModule(module, rubyModuleObject)) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic prepend detected", currentNode));
+            throw new RaiseException(context.getCoreLibrary().argumentError("cyclic prepend detected", currentNode));
         }
 
         ModuleChain mod = Layouts.MODULE.getFields(module).start;
         ModuleChain cur = start;
-        while (mod != null && !(RubyGuards.isRubyModule(mod) && RubyGuards.isRubyClass(((ModuleFields) mod).rubyModuleObject))) {
+        while (mod != null && !(mod instanceof ModuleFields && RubyGuards.isRubyClass(((ModuleFields) mod).rubyModuleObject))) {
             if (!(mod instanceof PrependMarker)) {
                 if (!ModuleOperations.includesModule(rubyModuleObject, mod.getActualModule())) {
                     cur.insertAfter(mod.getActualModule());
@@ -257,8 +262,8 @@ public class ModuleFields implements ModuleChain {
      * Set the value of a constant, possibly redefining it.
      */
     @CompilerDirectives.TruffleBoundary
-    public void setConstant(Node currentNode, String name, Object value) {
-        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
+    public void setConstant(RubyContext context, Node currentNode, String name, Object value) {
+        if (context.getCoreLibrary().isLoadingRubyCore()) {
             final RubyConstant currentConstant = constants.get(name);
 
             if (currentConstant != null) {
@@ -267,20 +272,20 @@ public class ModuleFields implements ModuleChain {
         }
 
         if (RubyGuards.isRubyModule(value)) {
-            Layouts.MODULE.getFields(((DynamicObject) value)).getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
+            Layouts.MODULE.getFields(((DynamicObject) value)).getAdoptedByLexicalParent(context, rubyModuleObject, name, currentNode);
         } else {
-            setConstantInternal(currentNode, name, value, false);
+            setConstantInternal(context, currentNode, name, value, false);
         }
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void setAutoloadConstant(Node currentNode, String name, DynamicObject filename) {
+    public void setAutoloadConstant(RubyContext context, Node currentNode, String name, DynamicObject filename) {
         assert RubyGuards.isRubyString(filename);
-        setConstantInternal(currentNode, name, filename, true);
+        setConstantInternal(context, currentNode, name, filename, true);
     }
 
-    public void setConstantInternal(Node currentNode, String name, Object value, boolean autoload) {
-        checkFrozen(currentNode);
+    public void setConstantInternal(RubyContext context, Node currentNode, String name, Object value, boolean autoload) {
+        checkFrozen(context, currentNode);
 
         RubyConstant previous = constants.get(name);
         if (previous == null) {
@@ -295,23 +300,23 @@ public class ModuleFields implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubyConstant removeConstant(Node currentNode, String name) {
-        checkFrozen(currentNode);
+    public RubyConstant removeConstant(RubyContext context, Node currentNode, String name) {
+        checkFrozen(context, currentNode);
         RubyConstant oldConstant = constants.remove(name);
         newLexicalVersion();
         return oldConstant;
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void setClassVariable(Node currentNode, String variableName, Object value) {
-        checkFrozen(currentNode);
+    public void setClassVariable(RubyContext context, Node currentNode, String variableName, Object value) {
+        checkFrozen(context, currentNode);
 
         classVariables.put(variableName, value);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public Object removeClassVariable(Node currentNode, String name) {
-        checkFrozen(currentNode);
+    public Object removeClassVariable(RubyContext context, Node currentNode, String name) {
+        checkFrozen(context, currentNode);
 
         final Object found = classVariables.remove(name);
         if (found == null) {
@@ -322,10 +327,10 @@ public class ModuleFields implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void addMethod(Node currentNode, InternalMethod method) {
+    public void addMethod(RubyContext context, Node currentNode, InternalMethod method) {
         assert method != null;
 
-        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
+        if (context.getCoreLibrary().isLoadingRubyCore()) {
             final InternalMethod currentMethod = methods.get(method.getName());
 
             if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection() instanceof CoreSourceSection) {
@@ -333,7 +338,7 @@ public class ModuleFields implements ModuleChain {
             }
         }
 
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
         methods.put(method.getName(), method.withDeclaringModule(rubyModuleObject));
         newVersion();
 
@@ -349,18 +354,13 @@ public class ModuleFields implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void undefMethod(Node currentNode, String methodName) {
+    public void undefMethod(RubyContext context, Node currentNode, String methodName) {
         final InternalMethod method = ModuleOperations.lookupMethod(rubyModuleObject, methodName);
         if (method == null) {
-            throw new UnsupportedOperationException();
+            throw new RaiseException(context.getCoreLibrary().nameErrorUndefinedMethod(methodName, rubyModuleObject, currentNode));
         } else {
-            undefMethod(currentNode, method);
+            addMethod(context, currentNode, method.undefined());
         }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public void undefMethod(Node currentNode, InternalMethod method) {
-        addMethod(currentNode, method.undefined());
     }
 
     /**
@@ -368,14 +368,14 @@ public class ModuleFields implements ModuleChain {
      * Used for alias_method, visibility changes, etc.
      */
     @CompilerDirectives.TruffleBoundary
-    public InternalMethod deepMethodSearch(String name) {
+    public InternalMethod deepMethodSearch(RubyContext context, String name) {
         InternalMethod method = ModuleOperations.lookupMethod(rubyModuleObject, name);
         if (method != null && !method.isUndefined()) {
             return method;
         }
 
         // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
-        if (RubyGuards.isRubyModule(rubyModuleObject) && !RubyGuards.isRubyClass(rubyModuleObject)) { // TODO: handle undefined methods
+        if (!RubyGuards.isRubyClass(rubyModuleObject)) { // TODO: handle undefined methods
             method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
 
             if (method != null && !method.isUndefined()) {
@@ -387,12 +387,12 @@ public class ModuleFields implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void alias(Node currentNode, String newName, String oldName) {
-        InternalMethod method = deepMethodSearch(oldName);
+    public void alias(RubyContext context, Node currentNode, String newName, String oldName) {
+        InternalMethod method = deepMethodSearch(context, oldName);
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(oldName, rubyModuleObject, currentNode));
+            throw new RaiseException(context.getCoreLibrary().nameErrorUndefinedMethod(oldName, rubyModuleObject, currentNode));
         }
 
         InternalMethod aliasMethod = method.withName(newName);
@@ -401,12 +401,12 @@ public class ModuleFields implements ModuleChain {
             aliasMethod = aliasMethod.withVisibility(Visibility.PRIVATE);
         }
 
-        addMethod(currentNode, aliasMethod);
+        addMethod(context, currentNode, aliasMethod);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void changeConstantVisibility(Node currentNode, String name, boolean isPrivate) {
-        checkFrozen(currentNode);
+    public void changeConstantVisibility(RubyContext context, Node currentNode, String name, boolean isPrivate) {
+        checkFrozen(context, currentNode);
         RubyConstant rubyConstant = constants.get(name);
 
         if (rubyConstant != null) {
@@ -422,26 +422,40 @@ public class ModuleFields implements ModuleChain {
     }
 
     public String getName() {
-        if (name != null) {
-            return name;
+        final String name = this.name;
+        if (name == null) {
+            // Lazily compute the anonymous name because it is expensive
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            final String anonymousName = createAnonymousName();
+            this.name = anonymousName;
+            return anonymousName;
+        }
+        return name;
+    }
+
+    public void setFullName(String name) {
+        assert name != null;
+        hasFullName = true;
+        this.name = name;
+    }
+
+    @TruffleBoundary
+    private String createAnonymousName() {
+        if (givenBaseName != null) {
+            return Layouts.MODULE.getFields(lexicalParent).getName() + "::" + givenBaseName;
+        } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
+            return "#<cyclic>";
         } else {
-            CompilerDirectives.transferToInterpreter();
-            if (givenBaseName != null) {
-                return Layouts.MODULE.getFields(lexicalParent).getName() + "::" + givenBaseName;
-            } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
-                return "#<cyclic>";
-            } else {
-                return "#<" + Layouts.MODULE.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(ObjectIDOperations.verySlowGetObjectID(rubyModuleObject)) + ">";
-            }
+            return "#<" + Layouts.MODULE.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(ObjectIDOperations.verySlowGetObjectID(context, rubyModuleObject)) + ">";
         }
     }
 
-    public boolean hasName() {
-        return name != null;
+    public boolean hasFullName() {
+        return hasFullName;
     }
 
     public boolean hasPartialName() {
-        return hasName() || givenBaseName != null;
+        return hasFullName() || givenBaseName != null;
     }
 
     @Override
@@ -549,43 +563,43 @@ public class ModuleFields implements ModuleChain {
         };
     }
 
-    public Collection<DynamicObject> filterMethods(boolean includeAncestors, MethodFilter filter) {
+    public Collection<DynamicObject> filterMethods(RubyContext context, boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(rubyModuleObject);
         } else {
             allMethods = getMethods();
         }
-        return filterMethods(allMethods, filter);
+        return filterMethods(context, allMethods, filter);
     }
 
-    public Collection<DynamicObject> filterMethodsOnObject(boolean includeAncestors, MethodFilter filter) {
+    public Collection<DynamicObject> filterMethodsOnObject(RubyContext context, boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(rubyModuleObject);
         } else {
             allMethods = ModuleOperations.getMethodsUntilLogicalClass(rubyModuleObject);
         }
-        return filterMethods(allMethods, filter);
+        return filterMethods(context, allMethods, filter);
     }
 
-    public Collection<DynamicObject> filterSingletonMethods(boolean includeAncestors, MethodFilter filter) {
+    public Collection<DynamicObject> filterSingletonMethods(RubyContext context, boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getMethodsBeforeLogicalClass(rubyModuleObject);
         } else {
             allMethods = getMethods();
         }
-        return filterMethods(allMethods, filter);
+        return filterMethods(context, allMethods, filter);
     }
 
-    public Collection<DynamicObject> filterMethods(Map<String, InternalMethod> allMethods, MethodFilter filter) {
+    public Collection<DynamicObject> filterMethods(RubyContext context, Map<String, InternalMethod> allMethods, MethodFilter filter) {
         final Map<String, InternalMethod> methods = ModuleOperations.withoutUndefinedMethods(allMethods);
 
         final Set<DynamicObject> filtered = new HashSet<>();
         for (InternalMethod method : methods.values()) {
             if (filter.filter(method)) {
-                filtered.add(getContext().getSymbolTable().getSymbol(method.getName()));
+                filtered.add(context.getSymbolTable().getSymbol(method.getName()));
             }
         }
 
@@ -594,6 +608,35 @@ public class ModuleFields implements ModuleChain {
 
     public DynamicObject getLogicalClass() {
         return Layouts.BASIC_OBJECT.getLogicalClass(rubyModuleObject);
+    }
+
+    @Override
+    public Set<DynamicObject> getAdjacentObjects() {
+        final Set<DynamicObject> adjacent = new HashSet<>();
+
+        if (lexicalParent != null) {
+            adjacent.add(lexicalParent);
+        }
+
+        for (RubyConstant constant : constants.values()) {
+            final Object value = constant.getValue();
+
+            if (value instanceof DynamicObject) {
+                adjacent.add((DynamicObject) value);
+            }
+        }
+
+        for (Object value : classVariables.values()) {
+            if (value instanceof DynamicObject) {
+                adjacent.add((DynamicObject) value);
+            }
+        }
+
+        for (InternalMethod method : methods.values()) {
+            adjacent.addAll(method.getAdjacentObjects());
+        }
+
+        return adjacent;
     }
 
 }

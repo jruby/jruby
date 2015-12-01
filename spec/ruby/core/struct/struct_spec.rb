@@ -41,4 +41,3 @@ describe "Struct subclasses" do
     compact.new.class.should == compact
   end
 end
-

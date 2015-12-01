@@ -172,16 +172,18 @@ module Commands
   include ShellUtils
 
   def help
-    puts 'jt build                                       build'
-    puts 'jt build truffle                               build only the Truffle part, assumes the rest is up-to-date'
+    puts 'jt build [options]                             build'
+    puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
+    puts 'jt rebuild [options]                           clean and build'
+    puts '    --no-tests       don\'t run JUnit unit tests'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
-    puts 'jt rebuild                                     clean and build'
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
+    puts '        --full      show all phases, not just up to the Truffle partial escape'
     puts '    --jdebug        run a JDWP debug server on 8000'
     puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
@@ -206,7 +208,6 @@ module Commands
     puts 'jt findbugs                                    run findbugs'
     puts 'jt findbugs report                             run findbugs and generate an HTML report'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
-    puts 'jt install-tool                                install the jruby+truffle tool for working with Ruby gems'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -217,15 +218,22 @@ module Commands
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
   end
 
-  def build(project = nil)
-    case project
-    when 'truffle'
-      mvn '-pl', 'truffle', 'package'
-    when nil
-      mvn 'package'
-    else
-      raise ArgumentError, project
+  def build(*args)
+    mvn_args = []
+
+    if args.delete 'truffle'
+      mvn_args += ['-pl', 'truffle', 'package']
     end
+
+    if args.delete '--no-tests'
+      mvn_args << '-DskipTests'
+    end
+
+    unless args.empty?
+      raise ArgumentError, args.inspect
+    end
+
+    mvn *mvn_args
   end
 
   def clean
@@ -236,14 +244,14 @@ module Commands
     run(*%w[-S irb], *args)
   end
 
-  def rebuild
+  def rebuild(*args)
     clean
-    build
+    build *args
   end
 
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
-    jruby_args = %w[-X+T -Xtruffle.core.load_path=truffle/src/main/ruby]
+    jruby_args = ['-X+T', "-Xtruffle.core.load_path=#{JRUBY_DIR}/truffle/src/main/ruby"]
 
     { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
@@ -273,7 +281,11 @@ module Commands
     if args.delete('--igv')
       warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
-      jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
+      if args.delete('--full')
+        jruby_args += %w[-J-G:Dump=Truffle]
+      else
+        jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
+      end
     end
 
     if ENV["JRUBY_ECLIPSE"] == "true"
@@ -318,29 +330,44 @@ module Commands
 
     case path
     when nil
-      test_specs
+      test_specs('run')
       test_mri
     when 'pe' then test_pe(*rest)
-    when 'specs' then test_specs(*rest)
+    when 'specs' then test_specs('run', *rest)
     when 'mri' then test_mri(*rest)
     else
       if File.expand_path(path).start_with?("#{JRUBY_DIR}/test")
         test_mri(*args)
       else
-        test_specs(*args)
+        test_specs('run', *args)
       end
     end
   end
 
   def test_pe(*args)
-    run('--graal', *args, 'test/truffle/pe/pe.rb')
+    file = args.pop if args.last and File.exist?(args.last)
+    run('--graal', *args, 'test/truffle/pe/pe.rb', *file)
   end
   private :test_pe
 
-  def test_specs(*args)
+  def test_specs(command, *args)
     env_vars = {}
+    options = []
 
-    options = %w[--excl-tag fails]
+    case command
+    when 'run'
+      options += %w[--excl-tag fails]
+    when 'tag'
+      options += %w[--add fails --fail]
+    when 'untag'
+      options += %w[--del fails --pass]
+      command = 'tag'
+    when 'tag_all'
+      options += %w[--unguarded --all --dry-run --add fails]
+      command = 'tag'
+    else
+      raise command
+    end
 
     if args.first == 'fast'
       args.shift
@@ -360,18 +387,18 @@ module Commands
       options << "-T#{JEXCEPTION}"
     end
 
-    mspec env_vars, 'run', *options, *args
+    mspec env_vars, command, *options, *args
   end
   private :test_specs
 
   def tag(path, *args)
     return tag_all(*args) if path == 'all'
-    mspec 'tag', '--add', 'fails', '--fail', path, *args
+    test_specs('tag', path, *args)
   end
 
   # Add tags to all given examples without running them. Useful to avoid file exclusions.
   def tag_all(*args)
-    mspec 'tag', *%w[--unguarded --all --dry-run --add fails], *args
+    test_specs('tag_all', *args)
   end
   private :tag_all
 
@@ -379,7 +406,7 @@ module Commands
     puts
     puts "WARNING: untag is currently not very reliable - run `jt test #{[path,*args] * ' '}` after and manually annotate any new failures"
     puts
-    mspec 'tag', '--del', 'fails', '--pass', path, *args
+    test_specs('untag', path, *args)
   end
 
   def bench(command, *args)
@@ -471,21 +498,6 @@ module Commands
     end
   end
 
-  def install_tool
-    Dir.chdir(JRUBY_DIR) do
-      Dir.chdir('tool/truffle/jruby_truffle_runner') do
-        raw_sh('gem', 'build', 'jruby+truffle_runner.gemspec')
-        raw_sh('gem', 'install', 'jruby+truffle_runner-0.0.1.gem')
-
-        begin
-          system('rbenv', 'rehash')
-        rescue
-        end
-      end
-    end
-  end
-
-  alias_method :"install-tool", :install_tool
 end
 
 class JT
@@ -499,13 +511,14 @@ class JT
       exit
     end
 
-    case args.first
-    when "rebuild"
-      send(args.shift)
-    when "build"
-      command = [args.shift]
-      command << args.shift if args.first == "truffle"
-      send(*command)
+    if ['build', 'rebuild'].include? args.first
+      build_args = [args.shift]
+
+      while ['truffle', '--no-tests'].include? args.first
+        build_args << args.shift
+      end
+
+      send(*build_args)
     end
 
     return if args.empty?

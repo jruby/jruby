@@ -1,2 +1,0 @@
-fails:Module#class_eval uses the optional filename and lineno parameters for error messages
-fails:Module#class_eval adds methods respecting the lexical constant scope

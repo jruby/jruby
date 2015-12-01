@@ -14,6 +14,8 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
+import org.jruby.truffle.nodes.constants.RestartableReadConstantNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.ArrayOperations;
@@ -34,6 +36,10 @@ public abstract class ArrayBuilderNode extends Node {
         this.context = context;
     }
 
+    public static ArrayBuilderNode create(RubyContext context) {
+        return new UninitializedArrayBuilderNode(context);
+    }
+
     public abstract Object start();
     public abstract Object start(int length);
     public abstract Object ensure(Object store, int length);
@@ -45,7 +51,29 @@ public abstract class ArrayBuilderNode extends Node {
         return context;
     }
 
-    public static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
+    protected Object restart(int length) {
+        final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
+        replace(newNode);
+        return newNode.start(length);
+    }
+
+    protected Object appendValueFallback(Object store, int index, Object value, int expectedLength) {
+        replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
+
+        // The store type cannot be assumed if multiple threads use the same builder,
+        // so just use the generic box() since anyway this is slow path.
+        final Object[] newStore;
+        if (store instanceof Object[]) {
+            newStore = (Object[]) store;
+        } else {
+            newStore = ArrayUtils.box(store);
+        }
+
+        newStore[index] = value;
+        return newStore;
+    }
+
+    private static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
 
         private boolean couldUseInteger = true;
         private boolean couldUseLong = true;
@@ -100,7 +128,7 @@ public abstract class ArrayBuilderNode extends Node {
             Object[] storeArray = (Object[]) store;
 
             if (index >= storeArray.length) {
-                storeArray = Arrays.copyOf(storeArray, ArrayUtils.capacity(storeArray.length, index + 1));
+                storeArray = ArrayUtils.grow(storeArray, ArrayUtils.capacity(storeArray.length, index + 1));
             }
 
             storeArray[index] = value;
@@ -142,7 +170,7 @@ public abstract class ArrayBuilderNode extends Node {
 
     }
 
-    public static class IntegerArrayBuilderNode extends ArrayBuilderNode {
+    private static class IntegerArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
 
@@ -162,10 +190,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreter();
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                return newNode.start(length);
+                return restart(length);
             }
 
             return new int[expectedLength];
@@ -214,23 +239,7 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
-
-                // TODO(CS): not sure why this happens - need to investigate
-
-                final Object[] newStore;
-
-                if (store instanceof int[]) {
-                    newStore = ArrayUtils.box((int[]) store);
-                } else if (store instanceof Object[]) {
-                    newStore = (Object[]) store;
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-
-                newStore[index] = value;
-                return newStore;
+                return appendValueFallback(store, index, value, expectedLength);
             }
         }
 
@@ -240,7 +249,7 @@ public abstract class ArrayBuilderNode extends Node {
 
     }
 
-    public static class LongArrayBuilderNode extends ArrayBuilderNode {
+    private static class LongArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
         private final ConditionProfile otherLongStoreProfile = ConditionProfile.createBinaryProfile();
@@ -259,10 +268,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreter();
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                return newNode.start(length);
+                return restart(length);
             }
 
             return new long[expectedLength];
@@ -296,21 +302,17 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object appendValue(Object store, int index, Object value) {
             // TODO(CS): inject probability
-            if (store instanceof long[] && value instanceof Long) {
-                ((long[]) store)[index] = (long) value;
-                return store;
-            } else if (value instanceof Integer) {
-                ((long[]) store)[index] = (int) value;
-                return store;
-            } else {
-                CompilerDirectives.transferToInterpreter();
-
-                replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
-
-                final Object[] newStore = ArrayUtils.box((long[]) store);
-                newStore[index] = value;
-                return newStore;
+            if (store instanceof long[]) {
+                if (value instanceof Long) {
+                    ((long[]) store)[index] = (long) value;
+                    return store;
+                } else if (value instanceof Integer) {
+                    ((long[]) store)[index] = (int) value;
+                    return store;
+                }
             }
+            CompilerDirectives.transferToInterpreter();
+            return appendValueFallback(store, index, value, expectedLength);
         }
 
         public Object finish(Object store, int length) {
@@ -319,7 +321,7 @@ public abstract class ArrayBuilderNode extends Node {
 
     }
 
-    public static class DoubleArrayBuilderNode extends ArrayBuilderNode {
+    private static class DoubleArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
         private final ConditionProfile otherDoubleStoreProfile = ConditionProfile.createBinaryProfile();
@@ -338,10 +340,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreter();
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                return newNode.start(length);
+                return restart(length);
             }
 
             return new double[expectedLength];
@@ -387,12 +386,7 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
-
-                final Object[] newStore = ArrayUtils.box((double[]) store);
-                newStore[index] = value;
-                return newStore;
+                return appendValueFallback(store, index, value, expectedLength);
             }
         }
 
@@ -402,7 +396,7 @@ public abstract class ArrayBuilderNode extends Node {
 
     }
 
-    public static class ObjectArrayBuilderNode extends ArrayBuilderNode {
+    private static class ObjectArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
 
@@ -423,10 +417,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreter();
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                return newNode.start(length);
+                return restart(length);
             }
 
             return new Object[expectedLength];

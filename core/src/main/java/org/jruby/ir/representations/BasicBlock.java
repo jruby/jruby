@@ -198,7 +198,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     }
 
     public String toStringInstrs() {
-        StringBuilder buf = new StringBuilder(toString() + "\n");
+        StringBuilder buf = new StringBuilder(toString()).append("\n");
 
         for (Instr instr : getInstrs()) {
             buf.append('\t').append(instr).append('\n');

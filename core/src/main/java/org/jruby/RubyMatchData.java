@@ -18,7 +18,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import org.jcodings.Encoding;
+import org.joni.Matcher;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Region;
@@ -51,6 +52,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
 /**
@@ -61,10 +63,10 @@ public class RubyMatchData extends RubyObject {
     Region regs;        // captures
     int begin, end;     // begin and end are used when not groups defined
     RubyString str;     // source string
-    Regex pattern;
-    RubyRegexp regexp;
-    boolean charOffsetUpdated;
-    Region charOffsets;
+    private Object pattern; // Regex or (un-quoted) RubyString
+    transient RubyRegexp regexp;
+    private boolean charOffsetUpdated;
+    private Region charOffsets;
 
     public static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
@@ -72,7 +74,7 @@ public class RubyMatchData extends RubyObject {
 
         matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
         matchDataClass.setReifiedClass(RubyMatchData.class);
-        
+
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
         matchDataClass.kindOf = new RubyModule.JavaClassKindOf(RubyMatchData.class);
 
@@ -96,16 +98,57 @@ public class RubyMatchData extends RubyObject {
         super(runtime, metaClass);
     }
 
+    final void initMatchData(final ThreadContext context,
+        RubyString str, Matcher matcher, Regex pattern) {
+
+        // FIXME: This is pretty gross; we should have a cleaner initialization
+        // that doesn't depend on package-visible fields and ideally is atomic,
+        // probably using an immutable structure we replace all at once.
+
+        // The region must be cloned because a subsequent match will update the
+        // region, resulting in the MatchData created here pointing at the
+        // incorrect region (capture/group).
+        Region region = matcher.getRegion(); // lazy, null when no groups defined
+        this.regs = region == null ? null : region.clone();
+        this.begin = matcher.getBegin();
+        this.end = matcher.getEnd();
+        this.pattern = pattern;
+        this.regexp = null;
+
+        this.charOffsets = null;
+        this.charOffsetUpdated = false;
+
+        this.str = str.newFrozen();
+        this.infectBy(str);
+    }
+
+    final void initMatchData(final ThreadContext context,
+        RubyString str, int beg, RubyString pattern) {
+
+        this.regs = null;
+        this.begin = beg;
+        this.end = beg + pattern.size();
+        this.pattern = pattern.newFrozen();
+        this.regexp = null;
+
+        this.charOffsets = null;
+        this.charOffsetUpdated = false;
+
+        this.str = str.newFrozen();
+        this.infectBy(str);
+    }
+
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
-        RubyMatchData match = (RubyMatchData)clone;
-        match.regs = regs;
-        match.begin = begin;
-        match.end = end;
-        match.pattern = pattern;
-        match.regexp = regexp;
-        match.charOffsetUpdated = charOffsetUpdated;
-        match.charOffsets = charOffsets;
+        RubyMatchData match = (RubyMatchData) clone;
+        match.regs = this.regs;
+        match.begin = this.begin;
+        match.end = this.end;
+        match.pattern = this.pattern;
+        match.regexp = this.regexp;
+        match.charOffsetUpdated = this.charOffsetUpdated;
+        match.charOffsets = this.charOffsets;
+        // match.str = this.str; // uninitialized MatchData?!?
     }
 
     @Override
@@ -129,7 +172,7 @@ public class RubyMatchData extends RubyObject {
         int p = value.getBegin();
         int s = p;
         int c = 0;
-        
+
         for (int i = 0; i < length; i++) {
             int q = s + pairs[i].bytePos;
             c += StringSupport.strLength(encoding, bytes, p, q);
@@ -142,7 +185,7 @@ public class RubyMatchData extends RubyObject {
         if (charOffsetUpdated) return;
 
         if (charOffsets == null || charOffsets.numRegs < 1) charOffsets = new Region(1);
-        
+
         if (encoding.maxLength() == 1) {
             charOffsets.beg[0] = begin;
             charOffsets.end[0] = end;
@@ -180,7 +223,7 @@ public class RubyMatchData extends RubyObject {
         int numRegs = regs.numRegs;
 
         if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
-        
+
         if (encoding.maxLength() == 1) {
             for (int i = 0; i < numRegs; i++) {
                 charOffsets.beg[i] = regs.beg[i];
@@ -236,23 +279,36 @@ public class RubyMatchData extends RubyObject {
 
     // rb_match_busy
     public final void use() {
-        flags |= MATCH_BUSY; 
+        flags |= MATCH_BUSY;
     }
 
     public final boolean used() {
         return (flags & MATCH_BUSY) != 0;
     }
 
-    void check() {
+    final void check() {
         if (str == null) throw getRuntime().newTypeError("uninitialized Match");
     }
 
-    private void checkLazyRegexp() {
-        if (regexp == null) regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList)pattern.getUserObject(), pattern);
+    final Regex getPattern() {
+        final Object pattern = this.pattern;
+        if (pattern instanceof Regex) return (Regex) pattern;
+        if (pattern == null) throw getRuntime().newTypeError("uninitialized Match (missing pattern)");
+        // when a regexp is avoided for matching we lazyli instantiate one from the unquoted string :
+        Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(getRuntime(), (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
+        this.pattern = regexPattern;
+        return regexPattern;
     }
-    
-    private RubyString makeShared(Ruby runtime, RubyString str, int begin, int length) {
-        return str.makeShared19(runtime, begin, length);
+
+    private RubyRegexp getRegexp() {
+        RubyRegexp regexp = this.regexp;
+        if (regexp != null) return regexp;
+        final Regex pattern = getPattern();
+        return this.regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList) pattern.getUserObject(), pattern);
+    }
+
+    private static RubyString makeShared(Ruby runtime, RubyString str, int index, int length) {
+        return str.makeShared19(runtime, index, length);
     }
 
     private RubyArray match_array(Ruby runtime, int start) {
@@ -263,8 +319,7 @@ public class RubyMatchData extends RubyObject {
                 return runtime.newArray(runtime.getNil());
             } else {
                 RubyString ss = makeShared(runtime, str, begin, end - begin);
-                if (isTaint()) ss.setTaint(true);
-                return runtime.newArray(ss);
+                return runtime.newArray( ss.infectBy(this) );
             }
         } else {
             RubyArray arr = runtime.newArray(regs.numRegs - start);
@@ -272,14 +327,13 @@ public class RubyMatchData extends RubyObject {
                 if (regs.beg[i] == -1) {
                     arr.append(runtime.getNil());
                 } else {
-                    RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);                   
-                    if (isTaint()) ss.setTaint(true); 
-                    arr.append(ss);
+                    RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);
+                    arr.append( ss.infectBy(this) );
                 }
             }
             return arr;
         }
-        
+
     }
 
     public IRubyObject group(long n) {
@@ -293,7 +347,7 @@ public class RubyMatchData extends RubyObject {
     public int getNameToBackrefNumber(String name) {
         try {
             byte[] bytes = name.getBytes();
-            return pattern.nameToBackrefNumber(bytes, 0, bytes.length, regs);
+            return getPattern().nameToBackrefNumber(bytes, 0, bytes.length, regs);
         } catch (JOniException je) {
             throw getRuntime().newIndexError(je.getMessage());
         }
@@ -302,6 +356,7 @@ public class RubyMatchData extends RubyObject {
     // This returns a list of values in the order the names are defined (named capture local var
     // feature uses this).
     public IRubyObject[] getNamedBackrefValues(Ruby runtime) {
+        final Regex pattern = getPattern();
         if (pattern.numberOfNames() == 0) return NULL_ARRAY;
 
         IRubyObject[] values = new IRubyObject[pattern.numberOfNames()];
@@ -327,8 +382,9 @@ public class RubyMatchData extends RubyObject {
         result.cat((byte)'#').cat((byte)'<');
         result.append(getMetaClass().getRealClass().to_s());
 
-        NameEntry[]names = new NameEntry[regs == null ? 1 : regs.numRegs];
+        NameEntry[] names = new NameEntry[regs == null ? 1 : regs.numRegs];
 
+        final Regex pattern = getPattern();
         if (pattern.numberOfNames() > 0) {
             for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
                 NameEntry e = i.next();
@@ -359,17 +415,15 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject regexp(ThreadContext context, Block block) {
+    public RubyRegexp regexp(ThreadContext context, Block block) {
         check();
-        checkLazyRegexp();
-        return regexp;
+        return getRegexp();
     }
 
     @JRubyMethod
     public IRubyObject names(ThreadContext context, Block block) {
         check();
-        checkLazyRegexp();
-        return regexp.names(context);
+        return getRegexp().names(context);
     }
 
     /** match_to_a
@@ -396,7 +450,7 @@ public class RubyMatchData extends RubyObject {
 
     private int nameToBackrefNumber(RubyString str) {
         check();
-        return nameToBackrefNumber(getRuntime(), pattern, regs, str);
+        return nameToBackrefNumber(getRuntime(), getPattern(), regs, str);
     }
 
     private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, ByteListHolder str) {
@@ -413,7 +467,7 @@ public class RubyMatchData extends RubyObject {
 
     public final int backrefNumber(IRubyObject obj) {
         check();
-        return backrefNumber(getRuntime(), pattern, regs, obj);
+        return backrefNumber(getRuntime(), getPattern(), regs, obj);
     }
 
     public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
@@ -447,7 +501,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject op_aref19(IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
-        return result == null ? ((RubyArray)to_a()).aref19(idx) : result;
+        return result == null ? to_a().aref19(idx) : result;
     }
 
     /** match_aref
@@ -456,7 +510,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
-        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? ((RubyArray)to_a()).aref19(idx, rest) : result;
+        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref19(idx, rest) : result;
     }
 
     private IRubyObject op_arefCommon(IRubyObject idx) {
@@ -513,16 +567,18 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject end(ThreadContext context, IRubyObject index) {
         check();
 
-        int i = backrefNumber(index);
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
+        final int i = backrefNumber(index);
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+            throw runtime.newIndexError("index " + i + " out of matches");
+        }
 
         int e = regs == null ? end : regs.end[i];
 
-        if (e < 0) return runtime.getNil();
+        if (e < 0) return context.nil;
 
-        if (!str.singleByteOptimizable()) {
+        if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
             e = charOffsets.end[i];
         }
@@ -539,13 +595,14 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod(name = "offset")
     public IRubyObject offset19(ThreadContext context, IRubyObject index) {
-        return offsetCommon(context, backrefNumber(index), true);
-    }
-
-    private IRubyObject offsetCommon(ThreadContext context, int i, boolean is_19) {
         check();
-        Ruby runtime = context.runtime;
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+
+        final Ruby runtime = context.runtime;
+        final int i = backrefNumber(index);
+
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+            throw runtime.newIndexError("index " + i + " out of matches");
+        }
         int b, e;
         if (regs == null) {
             b = begin;
@@ -554,12 +611,15 @@ public class RubyMatchData extends RubyObject {
             b = regs.beg[i];
             e = regs.end[i];
         }
-        if (b < 0) return runtime.newArray(runtime.getNil(), runtime.getNil());
-        if (is_19 && !str.singleByteOptimizable()) {
+
+        if (b < 0) return runtime.newArray(context.nil, context.nil);
+
+        if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
             b = charOffsets.beg[i];
             e = charOffsets.end[i];
         }
+
         return runtime.newArray(RubyFixnum.newFixnum(runtime, b), RubyFixnum.newFixnum(runtime, e));
     }
 
@@ -569,9 +629,8 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     public IRubyObject pre_match(ThreadContext context) {
         check();
-        if (begin == -1) {
-            return context.runtime.getNil();
-        }
+        if (begin == -1) return context.nil;
+
         return makeShared(context.runtime, str, 0, begin).infectBy(this);
     }
 
@@ -581,10 +640,10 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     public IRubyObject post_match(ThreadContext context) {
         check();
-        if (begin == -1) {
-            return context.runtime.getNil();
-        }
-        return makeShared(context.runtime, str, end, str.getByteList().length() - end).infectBy(this);
+        if (begin == -1) return context.nil;
+
+        final int strLen = str.getByteList().length();
+        return makeShared(context.runtime, str, end, strLen - end).infectBy(this);
     }
 
     /** match_to_s
@@ -632,27 +691,31 @@ public class RubyMatchData extends RubyObject {
         if (this == other) return true;
         if (!(other instanceof RubyMatchData)) return false;
 
-        RubyMatchData match = (RubyMatchData)other;
+        final RubyMatchData that = (RubyMatchData) other;
 
-        return (this.str == match.str || (this.str != null && this.str.equals(match.str))) &&
-                (this.regexp == match.regexp || (this.regexp != null && this.regexp.equals(match.regexp))) &&
-                (this.charOffsets == match.charOffsets || (this.charOffsets != null && this.charOffsets.equals(match.charOffsets))) &&
-                this.begin == match.begin &&
-                this.end == match.end &&
-                this.charOffsetUpdated == match.charOffsetUpdated;
+        return (this.str == that.str || (this.str != null && this.str.equals(that.str))) &&
+               (this.regexp == that.regexp || (this.getRegexp().equals(that.getRegexp()))) &&
+               (this.charOffsets == that.charOffsets || (this.charOffsets != null && this.charOffsets.equals(that.charOffsets))) &&
+               this.charOffsetUpdated == that.charOffsetUpdated &&
+               this.begin == that.begin && this.end == that.end;
     }
 
     @JRubyMethod(name = {"eql?", "=="}, required = 1)
     @Override
     public IRubyObject eql_p(IRubyObject obj) {
-        return getRuntime().newBoolean(equals(obj));
+        return getRuntime().newBoolean( equals(obj) );
+    }
+
+    @Override
+    public int hashCode() {
+        check();
+        return getPattern().hashCode() ^ str.hashCode();
     }
 
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-        check();
-        return getRuntime().newFixnum(pattern.hashCode() ^ str.hashCode());
+        return getRuntime().newFixnum( hashCode() );
     }
 
     /**

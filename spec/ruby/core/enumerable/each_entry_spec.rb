@@ -26,7 +26,7 @@ describe "Enumerable#each_entry" do
     ScratchPad.recorded.should == [[:a, 0], [:b, 1]]
   end
 
-  it "raises an Argument error when extra arguments" do
+  it "raises an ArgumentError when extra arguments" do
     lambda { @enum.each_entry("one").to_a   }.should raise_error(ArgumentError)
     lambda { @enum.each_entry("one"){}.to_a }.should raise_error(ArgumentError)
   end

@@ -30,8 +30,8 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
     protected final IRScope method;
 
     protected static class DynamicMethodBox {
-        public DynamicMethod actualMethod;
-        public int callCount = 0;
+        public volatile DynamicMethod actualMethod;
+        public volatile int callCount = 0;
     }
 
     protected DynamicMethodBox box = new DynamicMethodBox();
@@ -120,11 +120,11 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, args, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, args, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, args, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, args, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -155,11 +155,11 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -190,11 +190,11 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, arg1, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, arg1, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -225,11 +225,11 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -260,11 +260,11 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, arg3, block, null);
+                return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, arg3, block, null);
+                    return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -308,7 +308,14 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
     protected void tryJit(ThreadContext context, DynamicMethodBox box) {
         if (context.runtime.isBooting()) return;  // don't JIT during runtime boot
 
-        if (box.callCount++ >= Options.JIT_THRESHOLD.load()) context.runtime.getJITCompiler().buildThresholdReached(context, this);
+        synchronized (this) {
+            if (box.callCount >= 0) {
+                if (box.callCount++ >= Options.JIT_THRESHOLD.load()) {
+                    box.callCount = -1;
+                    context.runtime.getJITCompiler().buildThresholdReached(context, this);
+                }
+            }
+        }
     }
 
     public String getClassName(ThreadContext context) {

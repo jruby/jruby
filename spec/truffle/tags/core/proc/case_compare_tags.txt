@@ -1,0 +1,1 @@
+fails:Proc#=== on a Proc created with Kernel#lambda or Kernel#proc will call #to_ary on argument and return self if return is nil

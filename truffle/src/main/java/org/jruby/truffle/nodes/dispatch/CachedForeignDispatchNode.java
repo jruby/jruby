@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.interop.messages.*;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
@@ -33,7 +34,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
     @Child private PrepareArguments prepareArguments;
 
     public CachedForeignDispatchNode(RubyContext context, DispatchNode next, Object cachedName, int arity) {
-        super(context, cachedName, next, false, DispatchAction.CALL_METHOD);
+        super(context, cachedName, next, DispatchAction.CALL_METHOD);
 
         this.name = cachedName.toString();
         this.arity = arity;
@@ -42,9 +43,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
         } else {
             this.nameForMessage = name;
         }
-
         initializeNodes(context, arity);
-
     }
 
     private void initializeNodes(RubyContext context, int arity) {
@@ -73,8 +72,8 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (receiverObject instanceof TruffleObject) {
             return doDispatch(frame, (TruffleObject) receiverObject, argumentsObjects);
         } else {
@@ -88,8 +87,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
     }
 
 
-    private Object doDispatch(VirtualFrame frame, TruffleObject receiverObject, Object argumentsObjects) {
-        Object[] arguments = (Object[]) argumentsObjects;
+    private Object doDispatch(VirtualFrame frame, TruffleObject receiverObject, Object[] arguments) {
         if (arguments.length != arity) {
             CompilerDirectives.transferToInterpreter();
             throw new IllegalStateException();

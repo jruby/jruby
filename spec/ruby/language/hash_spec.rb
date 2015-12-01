@@ -1,4 +1,7 @@
 require File.expand_path('../../spec_helper', __FILE__)
+require File.expand_path('../fixtures/hash_strings_ascii8bit', __FILE__)
+require File.expand_path('../fixtures/hash_strings_utf8', __FILE__)
+require File.expand_path('../fixtures/hash_strings_usascii', __FILE__)
 
 describe "Hash literal" do
   it "{} should return an empty hash" do
@@ -74,8 +77,15 @@ describe "Hash literal" do
   end
 
   it "accepts mixed 'key: value' and 'key => value' syntax" do
-    h = {a: 1, b: 2, "c" => 3}
+    h = {:a => 1, :b => 2, "c" => 3}
     {a: 1, b: 2, "c" => 3}.should == h
+  end
+
+  ruby_version_is "2.2" do
+    it "accepts mixed 'key: value', 'key => value' and '\"key\"': value' syntax" do
+      h = {:a => 1, :b => 2, "c" => 3, :d => 4}
+      eval('{a: 1, :b => 2, "c" => 3, "d": 4}').should == h
+    end
   end
 
   it "expands an '**{}' element into the containing Hash literal initialization" do
@@ -125,4 +135,15 @@ describe "Hash literal" do
     lambda { {**obj} }.should raise_error(TypeError)
   end
 
+  it "does not change encoding of literal string keys during creation" do
+    ascii8bit_hash = HashStringsASCII8BIT.literal_hash
+    utf8_hash = HashStringsUTF8.literal_hash
+    usascii_hash = HashStringsUSASCII.literal_hash
+
+    ascii8bit_hash.keys.first.encoding.should == Encoding::ASCII_8BIT
+    ascii8bit_hash.keys.first.should == utf8_hash.keys.first
+    utf8_hash.keys.first.encoding.should == Encoding::UTF_8
+    utf8_hash.keys.first.should == usascii_hash.keys.first
+    usascii_hash.keys.first.encoding.should == Encoding::US_ASCII
+  end
 end

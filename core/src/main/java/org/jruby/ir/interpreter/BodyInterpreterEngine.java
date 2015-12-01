@@ -2,7 +2,6 @@ package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.OpClass;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
@@ -11,21 +10,19 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
+import org.jruby.ir.instructions.PopBlockFrameInstr;
+import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.TemporaryFixnumVariable;
-import org.jruby.ir.operands.TemporaryFloatVariable;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -34,11 +31,11 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
 /**
- * Created by enebo on 2/5/15.
+ * An interpreter which puts common subset of instrs in main switch.
  */
 public class BodyInterpreterEngine extends InterpreterEngine {
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block block, Block.Type blockType) {
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -47,6 +44,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
+        Block.Type blockType = block == null ? null : block.type;
 
         // Init profiling this scope
         boolean debug = IRRuntimeHelpers.isDebug();
@@ -64,6 +62,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
             ipc++;
 
             try {
+                Frame f;
                 switch (operation) {
                     case RETURN:
                         return (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);
@@ -83,17 +82,25 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                     case THROW:
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
-                    case PUSH_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, block);
+                    case PUSH_BLOCK_FRAME:
+                        f = context.preYieldNoScope(block.getBinding());
+                        setResult(temp, currDynScope, ((PushBlockFrameInstr)instr).getResult(), f);
+                        break;
+                    case POP_BLOCK_FRAME:
+                        f = (Frame)retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp);
+                        context.postYieldNoScope(f);
+                        break;
+                    case PUSH_METHOD_FRAME:
+                        context.preMethodFrameOnly(implClass, name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
                         context.setCurrentVisibility(Visibility.PUBLIC);
                         break;
-                    case POP_FRAME:
+                    case POP_METHOD_FRAME:
                         context.popFrame();
                         break;
-                    case PUSH_BINDING:
+                    case PUSH_METHOD_BINDING:
                         // IMPORTANT: Preserve this update of currDynScope.
                         // This affects execution of all instructions in this scope
                         // which will now use the updated value of currDynScope.
@@ -161,7 +168,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case LOAD_IMPLICIT_CLOSURE:
-                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), block);
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), blockArg);
                         break;
                     case RECV_RUBY_EXC: // NO INTERP
                         setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), IRRuntimeHelpers.unwrapRubyException(exception));
@@ -219,7 +226,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
-        return interpret(context, self, interpreterContext, implClass, name, block, blockType);
+    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg) {
+        return interpret(context, block, self, interpreterContext, implClass, name, blockArg);
     }
 }

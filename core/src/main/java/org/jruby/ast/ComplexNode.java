@@ -14,7 +14,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  * @author enebo
  */
-public class ComplexNode extends NumericNode {
+public class ComplexNode extends NumericNode implements SideEffectFree {
     private NumericNode y;
 
     public ComplexNode(ISourcePosition position, NumericNode y) {

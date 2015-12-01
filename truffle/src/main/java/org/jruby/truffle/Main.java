@@ -36,9 +36,7 @@ public class Main {
 
         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
 
-        if (in == null) {
-            return;
-        } else {
+        if (in != null) {
             // Global variables
             IAccessor programName = new ValueAccessor(runtime.newString(filename));
             runtime.getGlobalVariables().define("$PROGRAM_NAME", programName, GlobalVariable.Scope.GLOBAL);
@@ -74,7 +72,6 @@ public class Main {
                 runtime.getTruffleContext().execute(scriptNode);
             } finally {
                 context.setFileAndLine(oldFile, oldLine);
-                runtime.shutdownTruffleContextIfRunning();
             }
         }
 

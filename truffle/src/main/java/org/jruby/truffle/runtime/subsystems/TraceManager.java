@@ -10,9 +10,9 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
-import org.jruby.truffle.nodes.RubyGuards;
 
 public class TraceManager {
 
@@ -20,9 +20,8 @@ public class TraceManager {
     private DynamicObject traceFunc = null;
     private boolean isInTraceFunc = false;
 
+    @TruffleBoundary
     public void setTraceFunc(DynamicObject traceFunc) {
-        assert RubyGuards.isRubyProc(traceFunc);
-
         this.traceFunc = traceFunc;
         traceAssumption.invalidate();
     }

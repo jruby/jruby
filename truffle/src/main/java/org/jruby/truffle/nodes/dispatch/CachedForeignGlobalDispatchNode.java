@@ -30,7 +30,8 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
     @Child private ForeignObjectAccessNode access;
 
     public CachedForeignGlobalDispatchNode(RubyContext context, DispatchNode next, Object cachedName, TruffleObject language, int numberOfArguments) {
-        super(context, cachedName, next, false, DispatchAction.CALL_METHOD);
+        super(context, cachedName, next, DispatchAction.CALL_METHOD);
+
         this.cachedName = cachedName;
         this.language = language;
         this.numberOfArguments = numberOfArguments;
@@ -47,13 +48,12 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (receiverObject instanceof  DynamicObject) {
-            Object[] arguments = (Object[]) argumentsObjects;
-            if (arguments.length == numberOfArguments) {
-                Object[] args = new Object[arguments.length + 2];
-                ArrayUtils.arraycopy(arguments, 0, args, 2, arguments.length);
+            if (argumentsObjects.length == numberOfArguments) {
+                Object[] args = new Object[argumentsObjects.length + 2];
+                ArrayUtils.arraycopy(argumentsObjects, 0, args, 2, argumentsObjects.length);
                 args[0] = cachedName;
                 args[1] = language;
                 return access.executeForeign(frame, language, args);

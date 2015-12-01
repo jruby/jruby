@@ -30,7 +30,6 @@ package org.jruby;
 
 import jnr.posix.util.Platform;
 
-import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
@@ -43,13 +42,12 @@ import org.jruby.util.GetResources;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
-import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.URLResource;
 import org.jruby.util.UriLikePathHelper;
 import org.jruby.util.cli.ArgumentProcessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import org.objectweb.asm.Opcodes;
 
 import java.io.BufferedInputStream;
@@ -238,12 +236,12 @@ public class RubyInstanceConfig {
      * previous code.
      */
     public String[] parseShebangOptions(InputStream in) {
-        BufferedReader reader = null;
-        String[] result = new String[0];
+        String[] result = EMPTY_STRING_ARRAY;
         if (in == null) return result;
 
         if (isXFlag()) eatToShebang(in);
 
+        BufferedReader reader;
         try {
             InputStreamMarkCursor cursor = new InputStreamMarkCursor(in, 8192);
             try {
@@ -305,12 +303,15 @@ public class RubyInstanceConfig {
             newJRubyHome = SafePropertyAccessor.getProperty("jruby.home");
         }
 
+        if (newJRubyHome == null && getLoader().getResource("META-INF/jruby.home/.jrubydir") != null) {
+            newJRubyHome = "uri:classloader://META-INF/jruby.home";
+        }
         if (newJRubyHome != null) {
             // verify it if it's there
             newJRubyHome = verifyHome(newJRubyHome, error);
         } else {
             try {
-                newJRubyHome = SystemPropertyCatcher.findJRubyHome(this);
+                newJRubyHome = SafePropertyAccessor.getenv("JRUBY_HOME");
             } catch (Exception e) {}
 
             if (newJRubyHome != null) {
@@ -326,14 +327,13 @@ public class RubyInstanceConfig {
         // We will cannonicalize on windows so that jruby.home is also C:.
         // assume all those uri-like pathnames are already in absolute form
         if (Platform.IS_WINDOWS && !RubyFile.PROTOCOL_PATTERN.matcher(newJRubyHome).matches()) {
-            File file = new File(newJRubyHome);
-
             try {
-                newJRubyHome = file.getCanonicalPath();
-            } catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
+                newJRubyHome = new File(newJRubyHome).getCanonicalPath();
+            }
+            catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
         }
 
-        return newJRubyHome;
+        return newJRubyHome == null ? null : JRubyFile.normalizeSeps(newJRubyHome);
     }
 
     // We require the home directory to be absolute
@@ -353,13 +353,14 @@ public class RubyInstanceConfig {
         }
         // do not normalize on plain jar like pathes coming from jruby-rack
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
-            NormalizedFile f = new NormalizedFile(home);
-            if (!f.isAbsolute()) {
-                home = f.getAbsolutePath();
+            File file = new File(home);
+            if (!file.exists()) {
+                final String tmpdir = SafePropertyAccessor.getProperty("java.io.tmpdir");
+                error.println("Warning: JRuby home \"" + file + "\" does not exist, using " + tmpdir);
+                return tmpdir;
             }
-            if (!f.exists()) {
-                error.println("Warning: JRuby home \"" + f + "\" does not exist, using " + SafePropertyAccessor.getProperty("java.io.tmpdir"));
-                return System.getProperty("java.io.tmpdir");
+            if (!file.isAbsolute()) {
+                home = file.getAbsolutePath();
             }
         }
         return home;

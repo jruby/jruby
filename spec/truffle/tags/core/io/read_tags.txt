@@ -2,10 +2,5 @@ fails:IO.read from a pipe runs the rest as a subprocess and returns the standard
 fails:IO.read from a pipe opens a pipe to a fork if the rest is -
 fails:IO.read from a pipe reads only the specified number of bytes requested
 fails:IO.read from a pipe raises Errno::ESPIPE if passed an offset
-fails:IO.read with BOM reads a file with a utf-8 bom
-fails:IO.read with BOM reads a file with a utf-16le bom
-fails:IO.read with BOM reads a file with a utf-16be bom
-fails:IO.read with BOM reads a file with a utf-32le bom
-fails:IO.read with BOM reads a file with a utf-32be bom
 fails(windows):IO#read on Windows normalizes line endings in text mode
 fails(windows):IO#read on Windows does not normalize line endings in binary mode

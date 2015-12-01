@@ -182,9 +182,7 @@ public abstract class Initializer {
             if (javaPropertyName != null) {
                 if (rubyCasedName.startsWith("get_")) {
                     rubyPropertyName = rubyCasedName.substring(4);
-                    if (argCount == 0 ||                                // getFoo      => foo
-                            argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
-
+                    if (argCount == 0) {                                // getFoo      => foo
                         addUnassignedAlias(javaPropertyName, assignedNames, installer);
                         addUnassignedAlias(rubyPropertyName, assignedNames, installer);
                     }
@@ -207,8 +205,7 @@ public abstract class Initializer {
             if (resultType == boolean.class) {
                 // is_something?, contains_thing?
                 addUnassignedAlias(rubyCasedName + '?', assignedNames, installer);
-                if (rubyPropertyName != null) {
-                    // something?
+                if (rubyPropertyName != null) { // something?
                     addUnassignedAlias(rubyPropertyName + '?', assignedNames, installer);
                 }
             }

@@ -20,7 +20,6 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -62,8 +61,9 @@ public class ExceptionTranslatingNode extends RubyNode {
         } catch (StackOverflowError error) {
             // TODO: we might want to do sth smarter here to avoid consuming frames when we are almost out of it.
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(translate(error));
+            throw new RaiseException(getContext().getCoreLibrary().systemStackError("stack level too deep", this));
         } catch (TruffleFatalException | ThreadExitException exception) {
+            CompilerDirectives.transferToInterpreter();
             throw exception;
         } catch (ControlFlowException exception) {
             controlProfile.enter();

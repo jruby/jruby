@@ -790,10 +790,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         return str;        
     }
-    
-    private RubyString makeString(Ruby runtime, ByteList buf) {
-        return makeString(runtime, buf, true);
-    }
 
     @JRubyMethod(name = "read", optional = 2)
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {

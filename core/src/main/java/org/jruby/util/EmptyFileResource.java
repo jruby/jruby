@@ -69,7 +69,7 @@ public class EmptyFileResource implements FileResource {
 
     @Override
     public String[] list() {
-        return new String[0];
+        return StringSupport.EMPTY_STRING_ARRAY;
     }
 
     @Override

@@ -72,23 +72,22 @@ public class NetProtocolBufferedIO {
 
     @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     public static IRubyObject initialize(IRubyObject recv, IRubyObject io) {
+        final Ruby runtime = recv.getRuntime();
         if (io instanceof RubyIO) {
             RubyIO rubyIO = (RubyIO)io;
             OpenFile of = rubyIO.getOpenFile();
-            if (of.selectChannel() != null)  {
-                SelectableChannel selChannel = of.selectChannel();
-
-                ((RubyObject)recv).extend(
-                        new IRubyObject[]{((RubyModule)recv.getRuntime().getModule("Net").getConstant("BufferedIO")).getConstant("NativeImplementation")});
-                SelectableChannel sc = (SelectableChannel)(selChannel);
-                recv.dataWrapStruct(new NativeImpl(sc));
+            SelectableChannel selChannel = of.selectChannel();
+            if (selChannel != null)  {
+                IRubyObject NativeImpl = ((RubyModule) runtime.getModule("Net").getConstant("BufferedIO")).getConstant("NativeImplementation");
+                ((RubyObject) recv).extend(new IRubyObject[]{ NativeImpl });
+                recv.dataWrapStruct(new NativeImpl(selChannel));
             }
         }
 
         recv.getInstanceVariables().setInstanceVariable("@io", io);
-        recv.getInstanceVariables().setInstanceVariable("@read_timeout", recv.getRuntime().newFixnum(60));
-        recv.getInstanceVariables().setInstanceVariable("@debug_output", recv.getRuntime().getNil());
-        recv.getInstanceVariables().setInstanceVariable("@rbuf", RubyString.newEmptyString(recv.getRuntime()));
+        recv.getInstanceVariables().setInstanceVariable("@read_timeout", runtime.newFixnum(60));
+        recv.getInstanceVariables().setInstanceVariable("@debug_output", runtime.getNil());
+        recv.getInstanceVariables().setInstanceVariable("@rbuf", RubyString.newEmptyString(runtime));
 
         return recv;
     }

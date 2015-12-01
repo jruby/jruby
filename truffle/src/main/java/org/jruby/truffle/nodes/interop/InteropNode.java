@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -147,7 +148,7 @@ public abstract class InteropNode extends RubyNode {
         @Child private DispatchHeadNode head;
         public InteropGetSizeProperty(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+            this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
         }
 
         @Override
@@ -165,7 +166,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object o = ForeignAccessArguments.getReceiver(frame.getArguments());
-            return RubyGuards.isRubyString(o) && Layouts.STRING.getByteList((DynamicObject) o).length() == 1;
+            return RubyGuards.isRubyString(o) && StringOperations.getByteList((DynamicObject) o).length() == 1;
         }
     }
 
@@ -178,7 +179,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return Layouts.STRING.getByteList((DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments())).get(0);
+            return StringOperations.getByteList((DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments())).get(0);
         }
     }
 
@@ -273,10 +274,10 @@ public abstract class InteropNode extends RubyNode {
             if (RubyGuards.isRubyString(ForeignAccessArguments.getReceiver(frame.getArguments()))) {
                 final DynamicObject string = (DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments());
                 final int index = (int) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
-                if (index >= Layouts.STRING.getByteList(string).length()) {
+                if (index >= StringOperations.getByteList(string).length()) {
                     return 0;
                 } else {
-                    return (byte) Layouts.STRING.getByteList(string).get(index);
+                    return (byte) StringOperations.getByteList(string).get(index);
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -296,7 +297,7 @@ public abstract class InteropNode extends RubyNode {
             super(context, sourceSection);
             this.name = "[]";
             this.indexIndex = indexIndex;
-            this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+            this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.toRubyIndex = IndexLabelToRubyNodeGen.create(context, sourceSection, null);
         }
 
@@ -341,7 +342,7 @@ public abstract class InteropNode extends RubyNode {
             super(context, sourceSection);
             this.name = name;
             this.labelIndex = labelIndex;
-            this.write = new WriteInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection), new RubyInteropArgumentNode(context, sourceSection, valueIndex), false);
+            this.write = new WriteInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection), new RubyInteropArgumentNode(context, sourceSection, valueIndex));
         }
 
         @Override
@@ -390,7 +391,7 @@ public abstract class InteropNode extends RubyNode {
         public ResolvedInteropReadNode(RubyContext context, SourceSection sourceSection, String name, int labelIndex) {
             super(context, sourceSection);
             this.name = name;
-            this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+            this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.labelIndex = labelIndex;
         }
 
@@ -414,7 +415,7 @@ public abstract class InteropNode extends RubyNode {
         public ResolvedInteropReadFromSymbolNode(RubyContext context, SourceSection sourceSection, DynamicObject name, int labelIndex) {
             super(context, sourceSection);
             this.name = name;
-            this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+            this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.labelIndex = labelIndex;
         }
 
@@ -484,7 +485,7 @@ public abstract class InteropNode extends RubyNode {
             this.name = "[]=";
             this.indexIndex = indexIndex;
             this.valueIndex = valueIndex;
-            this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+            this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.toRubyIndex = IndexLabelToRubyNodeGen.create(context, sourceSection, null);
         }
 
@@ -508,7 +509,7 @@ public abstract class InteropNode extends RubyNode {
             super(context, sourceSection);
             this.name = name;
             this.accessName = name + "=";
-            this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+            this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.labelIndex = labelIndex;
             this.valueIndex = valueIndex;
         }
@@ -538,7 +539,7 @@ public abstract class InteropNode extends RubyNode {
             super(context, sourceSection);
             this.name = name;
             this.accessName = context.getSymbol(Layouts.SYMBOL.getString(name) + "=");
-            this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+            this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.labelIndex = labelIndex;
             this.valueIndex = valueIndex;
         }
@@ -588,7 +589,7 @@ public abstract class InteropNode extends RubyNode {
         public ResolvedInteropExecuteAfterReadNode(RubyContext context, SourceSection sourceSection, String name, Execute message) {
             super(context, sourceSection);
             this.name = name;
-            this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+            this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.arguments = new InteropArgumentsNode(context, sourceSection, message); // [0] is label, [1] is the receiver
             this.labelIndex = 0;
             this.receiverIndex = 1;

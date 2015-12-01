@@ -23,6 +23,8 @@ public class PropertyBuilder {
     private TypeMirror type;
     private boolean nullable;
     private boolean volatileSemantics;
+    private boolean hasCompareAndSet;
+    private boolean hasGetAndSet;
     private boolean hasIdentifier;
     private boolean isShapeProperty;
 
@@ -39,7 +41,7 @@ public class PropertyBuilder {
 
         return new PropertyModel(name, hasObjectTypeGetter, hasFactoryGetter, hasFactorySetter,
                 hasGetter, hasSetter, hasUnsafeSetter, type,
-                nullable, volatileSemantics, hasIdentifier, isShapeProperty);
+                nullable, volatileSemantics, hasCompareAndSet, hasGetAndSet, hasIdentifier, isShapeProperty);
     }
 
     public void setHasObjectTypeGetter(boolean hasObjectTypeGetter) {
@@ -80,6 +82,16 @@ public class PropertyBuilder {
 
     public void setVolatile(boolean volatileSemantics) {
         this.volatileSemantics = volatileSemantics;
+    }
+
+    public void setHasCompareAndSet(boolean hasCompareAndSet) {
+        assert !hasCompareAndSet || volatileSemantics;
+        this.hasCompareAndSet = hasCompareAndSet;
+    }
+
+    public void setHasGetAndSet(boolean hasGetAndSet) {
+        assert !hasGetAndSet || volatileSemantics;
+        this.hasGetAndSet = hasGetAndSet;
     }
 
     public void setHasIdentifier(boolean hasIdentifier) {

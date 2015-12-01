@@ -5,6 +5,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
+import org.jruby.ir.instructions.ToggleBacktraceInstr;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.*;
@@ -41,6 +42,9 @@ public class IRManager {
     private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
+    private final StandardError standardError = new StandardError();
+    public final ToggleBacktraceInstr needsBacktrace = new ToggleBacktraceInstr(true);
+    public final ToggleBacktraceInstr needsNoBacktrace = new ToggleBacktraceInstr(false);
 
     // Listeners for debugging and testing of IR
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
@@ -80,6 +84,10 @@ public class IRManager {
         return nil;
     }
 
+    public StandardError getStandardError() {
+        return standardError;
+    }
+
     public org.jruby.ir.operands.Boolean getTrue() {
         return tru;
     }
@@ -90,6 +98,10 @@ public class IRManager {
 
     public IRModuleBody getObject() {
         return object;
+    }
+
+    public ToggleBacktraceInstr needsBacktrace(boolean needsIt) {
+        return needsIt ? needsBacktrace : needsNoBacktrace;
     }
 
     public CompilerPassScheduler schedulePasses() {

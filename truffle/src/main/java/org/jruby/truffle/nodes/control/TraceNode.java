@@ -17,11 +17,13 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.nodes.core.BindingNodes;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -43,8 +45,8 @@ public class TraceNode extends RubyNode {
         traceAssumption = context.getTraceManager().getTraceAssumption();
         traceFunc = null;
         callNode = null;
-        event = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("line", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
-        file = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        event = create7BitString(StringOperations.encodeByteList("line", UTF8Encoding.INSTANCE));
+        file = createString(StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
         line = sourceSection.getStartLine();
     }
 
@@ -82,12 +84,12 @@ public class TraceNode extends RubyNode {
                         file,
                         line,
                         context.getCoreLibrary().getNilObject(),
-                        Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
+                        BindingNodes.createBinding(getContext(), frame.materialize()),
                         context.getCoreLibrary().getNilObject()
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(traceFunc), Layouts.PROC.getDeclarationFrame(traceFunc), Layouts.PROC.getSelf(traceFunc), Layouts.PROC.getBlock(traceFunc), args));
+                    callNode.call(frame, ProcNodes.packArguments(traceFunc, args));
                 } finally {
                     context.getTraceManager().setInTraceFunc(false);
                 }

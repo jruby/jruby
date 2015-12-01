@@ -94,71 +94,93 @@ public final class Block {
         this.binding = null;
     }
 
+    public DynamicScope allocScope(DynamicScope parentScope) {
+        // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
+        // Do not use 'closure.getStaticScope()' -- that returns the original copy of the static scope.
+        // This matters because blocks created for Thread bodies modify the static-scope field of the block-body
+        // that records additional state about the block body.
+        //
+        // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
+        // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
+        EvalType evalType = ((IRBlockBody)body).getEvalType();
+        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, evalType);
+        if (type == Block.Type.LAMBDA) newScope.setLambda(true);
+        return newScope;
+    }
+
+    public EvalType getEvalType() {
+        // SSS FIXME: This is smelly
+        return body instanceof IRBlockBody ? ((IRBlockBody)body).getEvalType() : null;
+    }
+
     public void setEvalType(EvalType evalType) {
         body.setEvalType(evalType);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return body.call(context, args, binding, type);
+        return body.call(context, this, args);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return body.call(context, args, binding, type, block);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockArg) {
+        return body.call(context, this, args, blockArg);
     }
 
     public IRubyObject call(ThreadContext context) {
-        return body.call(context, binding, type);
+        return body.call(context, this);
     }
-    public IRubyObject call(ThreadContext context, Block block) {
-        return body.call(context, binding, type, block);
+    public IRubyObject call(ThreadContext context, Block blockArg) {
+        return body.call(context, this, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context) {
-        return body.yieldSpecific(context, binding, type);
+        return body.yieldSpecific(context, this);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0) {
-        return body.call(context, arg0, binding, type);
+        return body.call(context, this, arg0);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block block) {
-        return body.call(context, arg0, binding, type, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockArg) {
+        return body.call(context, this, arg0, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0) {
-        return body.yieldSpecific(context, arg0, binding, type);
+        return body.yieldSpecific(context, this, arg0);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return body.call(context, arg0, arg1, binding, type);
+        return body.call(context, this, arg0, arg1);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return body.call(context, arg0, arg1, binding, type, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
+        return body.call(context, this, arg0, arg1, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return body.yieldSpecific(context, arg0, arg1, binding, type);
+        return body.yieldSpecific(context, this, arg0, arg1);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return body.call(context, arg0, arg1, arg2, binding, type);
+        return body.call(context, this, arg0, arg1, arg2);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return body.call(context, arg0, arg1, arg2, binding, type, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
+        return body.call(context, this, arg0, arg1, arg2, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return body.yieldSpecific(context, arg0, arg1, arg2, binding, type);
+        return body.yieldSpecific(context, this, arg0, arg1, arg2);
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return body.yield(context, value, binding, type);
+        return body.yield(context, this, value);
     }
 
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        return body.yield(context, new IRubyObject[] { value }, self, binding, type);
+        return body.yield(context, this, new IRubyObject[] { value }, self);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
+        // SSS FIXME: Later on, we can move this code into IR insructions or
+        // introduce a specialized entry-point when we know that this block has
+        // explicit call protocol IR instructions.
         IRubyObject[] args;
-        if (!(value instanceof RubyArray)) {
-            args = new IRubyObject[] { value };
-        } else {
+        if (value instanceof RubyArray) {
             args = value.convertToArray().toJavaArray();
+        } else {
+            args = new IRubyObject[] { value };
         }
-        return body.yield(context, args, self, binding, type);
+        return body.yield(context, this, args, self);
     }
 
     public Block cloneBlock() {

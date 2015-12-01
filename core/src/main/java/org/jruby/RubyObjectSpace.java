@@ -114,7 +114,7 @@ public class RubyObjectSpace {
                 return object;
             } else {
                 runtime.getWarnings().warn("ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
-                return runtime.getNil();
+                throw recv.getRuntime().newRangeError(String.format("0x%016x is not id value", longId));
             }
         }
     }
@@ -150,6 +150,20 @@ public class RubyObjectSpace {
 
             for (IRubyObject arg : modules) {
                 block.yield(context, arg);
+            }
+        } else if (args[0].getClass() == MetaClass.class) {
+            // each_object(Cls.singleton_class) is basically a walk of Cls and all descendants of Cls.
+            // In other words, this is walking all instances of Cls's singleton class and its subclasses.
+            IRubyObject attached = ((MetaClass)args[0]).getAttached();
+            block.yield(context, attached);
+            if (attached instanceof RubyClass) {
+                for (RubyClass child : ((RubyClass)attached).subclasses(true)) {
+                    if (child instanceof IncludedModule || child.isSingleton()) {
+                        // do nothing for included wrappers or singleton classes
+                    } else {
+                        block.yield(context, child);
+                    }
+                }
             }
         } else {
             if (!runtime.isObjectSpaceEnabled()) {

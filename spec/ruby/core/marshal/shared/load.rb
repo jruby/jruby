@@ -214,7 +214,7 @@ describe :marshal_load, shared: true do
       y.first.tainted?.should be_false
     end
 
-    ruby_bug "#8945", "2.1" do
+    ruby_version_is "2.2" do
       it "does not taint Bignums" do
         x = [bignum_value]
         y = Marshal.send(@method, Marshal.dump(x).taint)
@@ -762,17 +762,29 @@ describe :marshal_load, shared: true do
 
   describe "for a wrapped C pointer" do
     it "loads" do
-      data = "\004\bd:\rUserData" \
-             "[\a[\b\"\aCN\"\vnobodyi\021[\b\"\aDC\"\fexamplei\e"
+      class DumpableDir < Dir
+        def _dump_data
+          path
+        end
+        def _load_data path
+          initialize(path)
+        end
+      end
 
-      expected = UserData.parse 'CN=nobody/DC=example'
+      data = "\x04\bd:\x10DumpableDirI\"\x06.\x06:\x06ET"
 
-      Marshal.send(@method, data).to_a.should == expected.to_a
+      Marshal.send(@method, data).path.should == '.'
     end
 
-    it "raises TypeError when the local class is missing _data_load" do
-      data = "\004\bd:\027UserDataUnloadable" \
-             "[\a[\b\"\aCN\"\vnobodyi\021[\b\"\aDC\"\fexamplei\e"
+    it "raises TypeError when the local class is missing _load_data" do
+      class UnloadableDumpableDir < Dir
+        def _dump_data
+          path
+        end
+        # no _load_data
+      end
+
+      data = "\x04\bd:\x1AUnloadableDumpableDirI\"\x06.\x06:\x06ET"
 
       lambda { Marshal.send(@method, data) }.should raise_error(TypeError)
     end

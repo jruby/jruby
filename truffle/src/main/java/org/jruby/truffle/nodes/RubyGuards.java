@@ -213,6 +213,14 @@ public abstract class RubyGuards {
         return Layouts.MATCH_DATA.isMatchData(object);
     }
 
+    public static boolean isHandle(DynamicObject object) {
+        return Layouts.HANDLE.isHandle(object);
+    }
+
+    public static boolean isHandle(Object object) {
+        return Layouts.HANDLE.isHandle(object);
+    }
+
     // Internal types
 
     public static boolean isThreadLocal(Object value) {

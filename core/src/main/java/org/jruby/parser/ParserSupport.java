@@ -882,16 +882,7 @@ public class ParserSupport {
     }
 
     public Node asSymbol(ISourcePosition position, String value) {
-        // FIXME: tLABEL and identifiers could return ByteList and not String and make String on-demand for method names
-        // or lvars.  This would prevent this re-extraction of bytes from a string with proper charset
-        try {
-            Charset charset = lexer.getEncoding().getCharset();
-            if (charset != null) return new SymbolNode(position, new ByteList(value.getBytes(charset), lexer.getEncoding()));
-        } catch (UnsupportedCharsetException e) {}
-
-        // for non-charsets we are screwed here since bytes will file.encoding and not what we read them as (see above FIXME for
-        // a much more invasive solution.
-        return new SymbolNode(position, new ByteList(value.getBytes(), lexer.getEncoding()));
+        return new SymbolNode(position, value, lexer.getEncoding(), lexer.getTokenCR());
     }
         
     public Node asSymbol(ISourcePosition position, Node value) {
@@ -943,6 +934,13 @@ public class ParserSupport {
             }
         }
         return ((DStrNode) head).add(tail);
+    }
+
+    public Node newRescueModNode(Node body, Node rescueBody) {
+        if (rescueBody == null) rescueBody = NilImplicitNode.NIL; // foo rescue () can make null.
+        ISourcePosition pos = getPosition(body);
+
+        return new RescueModNode(pos, body, new RescueBodyNode(pos, null, rescueBody, null));
     }
     
     public Node newEvStrNode(ISourcePosition position, Node node) {

@@ -15,6 +15,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -29,13 +31,16 @@ public abstract class MutexNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateNode;
+
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return Layouts.MUTEX.createMutex(Layouts.CLASS.getInstanceFactory(rubyClass), new ReentrantLock());
+            return allocateNode.allocate(rubyClass, new ReentrantLock());
         }
 
     }
@@ -210,7 +215,7 @@ public abstract class MutexNodes {
             // Here we do it before unlocking for providing nice semantics for
             // thread1: mutex.sleep
             // thread2: mutex.synchronize { <ensured that thread1 is sleeping and thread1.wakeup will wake it up> }
-            Layouts.THREAD.getWakeUp(thread).getAndSet(false);
+            Layouts.THREAD.getWakeUp(thread).set(false);
 
             UnlockNode.unlock(lock, thread, this);
             try {

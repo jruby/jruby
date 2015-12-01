@@ -9,9 +9,12 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.FiberNodes;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Collections;
@@ -27,8 +30,8 @@ public class FiberManager {
     private DynamicObject currentFiber;
     private final Set<DynamicObject> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<DynamicObject, Boolean>());
 
-    public FiberManager(DynamicObject rubyThread) {
-        this.rootFiber = FiberNodes.newRootFiber(rubyThread, this, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getMetaClass(rubyThread)).getContext().getThreadManager());
+    public FiberManager(RubyContext context, DynamicObject rubyThread) {
+        this.rootFiber = FiberNodes.createRootFiber(context, rubyThread);
         this.currentFiber = rootFiber;
     }
 
@@ -55,6 +58,7 @@ public class FiberManager {
         runningFibers.remove(fiber);
     }
 
+    @TruffleBoundary
     public void shutdown() {
         for (DynamicObject fiber : runningFibers) {
             if (!Layouts.FIBER.getRootFiber(fiber)) {

@@ -1,7 +1,0 @@
-fails:Bignum#<=> with an Object calls #coerce on other
-fails:Bignum#<=> with an Object returns nil if #coerce raises an exception
-fails:Bignum#<=> with an Object raises an exception if #coerce raises a non-StandardError exception
-fails:Bignum#<=> with an Object returns nil if #coerce does not return an Array
-fails:Bignum#<=> with an Object returns -1 if the coerced value is larger
-fails:Bignum#<=> with an Object returns 0 if the coerced value is equal
-fails:Bignum#<=> with an Object returns 1 if the coerced value is smaller

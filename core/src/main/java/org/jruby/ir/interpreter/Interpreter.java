@@ -31,22 +31,8 @@ import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static final Logger LOG = LoggerFactory.getLogger("Interpreter");
-    private static final IRubyObject[] EMPTY_ARGS = new IRubyObject[]{};
     public static final String ROOT = "(root)";
     static int interpInstrsCount = 0;
-
-    // we do not need instances of Interpreter
-    // FIXME: Should we make it real singleton and get rid of static methods?
-    private Interpreter() { }
-
-    private static class InterpreterHolder {
-        // FIXME: Remove static reference unless lifus does later
-        public static final Interpreter instance = new Interpreter();
-    }
-
-    public static Interpreter getInstance() {
-        return InterpreterHolder.instance;
-    }
 
     public static void dumpStats() {
         if ((IRRuntimeHelpers.isDebug() || IRRuntimeHelpers.inProfileMode()) && interpInstrsCount > 10000) {
@@ -113,27 +99,27 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
            InterpreterContext ic, RubyModule clazz, String name) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.engine.interpret(context, self, ic, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
+            return ic.engine.interpret(context, null, self, ic, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } finally {
             ThreadContext.popBacktrace(context);
         }
     }
 
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,
-           InterpreterContext ic, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
+           InterpreterContext ic, RubyModule clazz, IRubyObject[] args, String name, Block blockArg) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.engine.interpret(context, self, ic, clazz, name, args, block, blockType);
+            return ic.engine.interpret(context, null, self, ic, clazz, name, args, blockArg);
         } finally {
             ThreadContext.popBacktrace(context);
         }
     }
 
-    public static IRubyObject INTERPRET_BLOCK(ThreadContext context, IRubyObject self,
-            InterpreterContext ic, IRubyObject[] args, String name, Block block, Block.Type blockType) {
+    public static IRubyObject INTERPRET_BLOCK(ThreadContext context, Block block, IRubyObject self,
+            InterpreterContext ic, IRubyObject[] args, String name, Block blockArg) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.engine.interpret(context, self, ic, null, name, args, block, blockType);
+            return ic.engine.interpret(context, block, self, ic, null, name, args, blockArg);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -167,7 +153,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRubyObject self, IRubyObject src,
-                                          String file, int lineNumber, String name, Block block, EvalType evalType) {
+                                          String file, int lineNumber, String name, Block blockArg, EvalType evalType) {
         StaticScope ss = evalScope.getStaticScope();
         BeginEndInterpreterContext ic = prepareIC(context, evalScope, src, file, lineNumber, evalType);
 
@@ -178,7 +164,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
             runBeginBlocks(ic.getBeginBlocks(), context, self, ss, null);
 
-            return Interpreter.INTERPRET_EVAL(context, self, ic, ic.getStaticScope().getModule(), EMPTY_ARGS, name, block, null);
+            return Interpreter.INTERPRET_EVAL(context, self, ic, ic.getStaticScope().getModule(), IRubyObject.NULL_ARRAY, name, blockArg);
         } finally {
             evalScope.clearEvalType();
             context.popScope();

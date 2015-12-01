@@ -10,8 +10,10 @@
 package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ast.Node;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.runtime.LexicalScope;
+
+import java.util.Arrays;
 
 /**
  * {@link InternalMethod} objects are copied as properties such as visibility are changed. {@link SharedMethodInfo} stores
@@ -25,10 +27,12 @@ public class SharedMethodInfo {
     /** The original name of the method. Does not change when aliased. */
     private final String name;
     private final boolean isBlock;
-    private final org.jruby.ast.Node parseTree;
+    private final ArgumentDescriptor[] argumentDescriptors;
     private final boolean alwaysClone;
+    private final boolean alwaysInline;
+    private final boolean needsCallerFrame;
 
-    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, Node parseTree, boolean alwaysClone) {
+    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, ArgumentDescriptor[] argumentDescriptors, boolean alwaysClone, boolean alwaysInline, boolean needsCallerFrame) {
         assert sourceSection != null;
         assert name != null;
 
@@ -37,8 +41,10 @@ public class SharedMethodInfo {
         this.arity = arity;
         this.name = name;
         this.isBlock = isBlock;
-        this.parseTree = parseTree;
+        this.argumentDescriptors = argumentDescriptors == null ? new ArgumentDescriptor[] {} : argumentDescriptors;
         this.alwaysClone = alwaysClone;
+        this.alwaysInline = alwaysInline;
+        this.needsCallerFrame = needsCallerFrame;
     }
 
     public SourceSection getSourceSection() {
@@ -61,16 +67,24 @@ public class SharedMethodInfo {
         return isBlock;
     }
 
-    public org.jruby.ast.Node getParseTree() {
-        return parseTree;
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return Arrays.copyOf(argumentDescriptors, argumentDescriptors.length);
     }
 
     public boolean shouldAlwaysClone() {
         return alwaysClone;
     }
 
+    public boolean shouldAlwaysInline() {
+        return alwaysInline;
+    }
+
+    public boolean needsCallerFrame() {
+        return needsCallerFrame;
+    }
+
     public SharedMethodInfo withName(String newName) {
-        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, parseTree, alwaysClone);
+        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, argumentDescriptors, alwaysClone, alwaysInline, needsCallerFrame);
     }
 
     @Override

@@ -13,10 +13,10 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
@@ -37,7 +37,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeEnsureCapacity(VirtualFrame frame, DynamicObject array, int requiredCapacity);
+    public abstract Object executeEnsureCapacity(DynamicObject array, int requiredCapacity);
 
     @Specialization(
             guards={"isRubyArray(array)", "isIntArray(array)"}
@@ -91,7 +91,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
         final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)));
+            Layouts.ARRAY.setStore(array, ArrayUtils.grow(store, ArrayUtils.capacity(store.length, requiredCapacity)));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             return true;
         } else {

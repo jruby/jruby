@@ -24,13 +24,12 @@ import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
-import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -39,32 +38,31 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
 import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
+    public static Object[] packArguments(DynamicObject proc, Object... args) {
+        return RubyArguments.pack(
+                Layouts.PROC.getMethod(proc),
+                Layouts.PROC.getDeclarationFrame(proc),
+                null,
+                Layouts.PROC.getSelf(proc),
+                Layouts.PROC.getBlock(proc),
+                DeclarationContext.BLOCK,
+                args);
+    }
+
     public static Object rootCall(DynamicObject proc, Object... args) {
         assert RubyGuards.isRubyProc(proc);
 
-        return Layouts.PROC.getCallTargetForType(proc).call(RubyArguments.pack(
-                Layouts.PROC.getMethod(proc),
-                Layouts.PROC.getDeclarationFrame(proc),
-                Layouts.PROC.getSelf(proc),
-                Layouts.PROC.getBlock(proc),
-                args));
-    }
-
-    public static DynamicObject createRubyProc(DynamicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
-                                               CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                               Object self, DynamicObject block) {
-        return createRubyProc(Layouts.CLASS.getInstanceFactory(procClass),
-                type, sharedMethodInfo, callTargetForProcs,
-                callTargetForLambdas, declarationFrame, method,
-                self, block);
+        return Layouts.PROC.getCallTargetForType(proc).call(packArguments(proc, args));
     }
 
     public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
@@ -80,7 +78,7 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "allocate", constructor = true)
-    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -206,10 +204,9 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public Object binding(DynamicObject proc) {
+        public DynamicObject binding(DynamicObject proc) {
             final MaterializedFrame frame = Layouts.PROC.getDeclarationFrame(proc);
-
-            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame);
+            return BindingNodes.createBinding(getContext(), frame);
         }
 
     }
@@ -229,7 +226,7 @@ public abstract class ProcNodes {
             return yieldNode.dispatch(frame, proc, args);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object call(VirtualFrame frame, DynamicObject proc, Object[] args, DynamicObject block) {
             return yieldNode.dispatchWithModifiedBlock(frame, proc, block, args);
         }
@@ -260,12 +257,9 @@ public abstract class ProcNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject proc) {
-            final ArgsNode argsNode = Layouts.PROC.getSharedMethodInfo(proc).getParseTree().findFirstChild(ArgsNode.class);
+            final ArgumentDescriptor[] argsDesc = Layouts.PROC.getSharedMethodInfo(proc).getArgumentDescriptors();
 
-            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
-
-            return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
-                    argsDesc, Layouts.PROC.getType(proc) == Type.LAMBDA));
+            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, Layouts.PROC.getType(proc) == Type.LAMBDA);
         }
 
     }
@@ -285,7 +279,7 @@ public abstract class ProcNodes {
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                DynamicObject file = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                DynamicObject file = createString(StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             }

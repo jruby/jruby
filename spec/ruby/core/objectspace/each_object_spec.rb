@@ -81,6 +81,10 @@ describe "ObjectSpace.each_object" do
     ObjectSpaceFixtures.to_be_found_symbols.should include(:local_in_block_implicit)
   end
 
+  it "finds an object stored in a local variable captured in by a method defined with a block" do
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:captured_by_define_method)
+  end
+
   it "finds an object stored in a local variable captured in a Proc#binding" do
     binding = Proc.new {
       local_in_proc_binding = ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_proc_binding)
@@ -101,7 +105,7 @@ describe "ObjectSpace.each_object" do
 
   it "finds an object stored in a local variable set in a binding manually" do
     b = binding
-    b.local_variable_set(:local, ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_manual_binding))
+    b.eval("local = ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_manual_binding)")
     ObjectSpaceFixtures.to_be_found_symbols.should include(:local_in_manual_binding)
   end
 
@@ -169,5 +173,51 @@ describe "ObjectSpace.each_object" do
     ObjectSpaceFixtures.to_be_found_symbols.should include(:finalizer)
 
     alive.should_not be_nil
+  end
+
+  describe "on singleton classes" do
+    before :each do
+      @klass = Class.new
+      instance = @klass.new
+      @sclass = instance.singleton_class
+      @meta = @klass.singleton_class
+    end
+
+    ruby_version_is ""..."2.3" do
+      it "does not walk singleton classes" do
+        @sclass.should be_kind_of(@meta)
+        ObjectSpace.each_object(@meta).to_a.should_not include(@sclass)
+      end
+    end
+
+    ruby_version_is "2.3" do
+      it "walks singleton classes" do
+        @sclass.should be_kind_of(@meta)
+        ObjectSpace.each_object(@meta).to_a.should include(@sclass)
+      end
+    end
+  end
+
+  it "walks a class and its normal descendants when passed the class's singleton class" do
+    a = Class.new
+    b = Class.new(a)
+    c = Class.new(a)
+    d = Class.new(b)
+
+    c_instance = c.new
+    c_sclass = c_instance.singleton_class
+
+    expected = [ a, b, c, d ]
+
+    # singleton classes should be walked only on >= 2.3
+    ruby_version_is "2.3" do
+      expected << c_sclass
+    end
+
+    b.extend Enumerable # included modules should not be walked
+
+    classes = ObjectSpace.each_object(a.singleton_class).to_a
+
+    classes.sort_by(&:object_id).should == expected.sort_by(&:object_id)
   end
 end

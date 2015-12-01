@@ -30,16 +30,16 @@ public interface ThreadLayout extends BasicObjectLayout {
                                            DynamicObject metaClass);
 
     DynamicObject createThread(DynamicObjectFactory factory,
+                               DynamicObject threadLocals,
+                               InterruptMode interruptMode,
+                               @Volatile RubyThread.Status status,
+                               List<Lock> ownedLocks,
                                @Nullable FiberManager fiberManager,
                                @Nullable String name,
                                CountDownLatch finishedLatch,
-                               DynamicObject threadLocals,
-                               List<Lock> ownedLocks,
                                boolean abortOnException,
-                               InterruptMode interruptMode,
                                @Nullable @Volatile Thread thread,
-                               @Volatile RubyThread.Status status,
-                               @Nullable @Volatile Object exception,
+                               @Nullable @Volatile DynamicObject exception,
                                @Nullable @Volatile Object value,
                                AtomicBoolean wakeUp,
                                @Volatile int priority);
@@ -50,7 +50,7 @@ public interface ThreadLayout extends BasicObjectLayout {
     void setFiberManagerUnsafe(DynamicObject object, FiberManager fiberManager);
 
     String getName(DynamicObject object);
-    void setName(DynamicObject object, String name);
+    void setNameUnsafe(DynamicObject object, String name);
 
     CountDownLatch getFinishedLatch(DynamicObject object);
 
@@ -70,8 +70,8 @@ public interface ThreadLayout extends BasicObjectLayout {
     RubyThread.Status getStatus(DynamicObject object);
     void setStatus(DynamicObject object, RubyThread.Status status);
 
-    Object getException(DynamicObject object);
-    void setException(DynamicObject object, Object exception);
+    DynamicObject getException(DynamicObject object);
+    void setException(DynamicObject object, DynamicObject exception);
 
     Object getValue(DynamicObject object);
     void setValue(DynamicObject object, Object value);

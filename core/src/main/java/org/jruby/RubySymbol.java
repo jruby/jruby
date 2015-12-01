@@ -42,12 +42,8 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
-import org.jruby.RubyEncoding;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -66,7 +62,6 @@ import org.jruby.util.SipHashInline;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.Arrays;
 
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
@@ -188,13 +183,31 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
      */
 
     public static RubySymbol newSymbol(Ruby runtime, IRubyObject name) {
-        if (!(name instanceof RubyString)) return newSymbol(runtime, name.asJavaString());
+        if (name instanceof RubySymbol) {
+            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), false);
+        } else if (name instanceof RubyString) {
+            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), false);
+        } else {
+            return newSymbol(runtime, name.asJavaString());
+        }
+    }
 
-        return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList());
+    public static RubySymbol newHardSymbol(Ruby runtime, IRubyObject name) {
+        if (name instanceof RubySymbol) {
+            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), true);
+        } else if (name instanceof RubyString) {
+            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), true);
+        } else {
+            return newSymbol(runtime, name.asJavaString());
+        }
     }
 
     public static RubySymbol newSymbol(Ruby runtime, String name) {
-        return runtime.getSymbolTable().getSymbol(name);
+        return runtime.getSymbolTable().getSymbol(name, false);
+    }
+
+    public static RubySymbol newHardSymbol(Ruby runtime, String name) {
+        return runtime.getSymbolTable().getSymbol(name, true);
     }
 
     // FIXME: same bytesequences will fight over encoding of the symbol once cached.  I think largely
@@ -202,6 +215,17 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     // be pretty rare.
     public static RubySymbol newSymbol(Ruby runtime, String name, Encoding encoding) {
         RubySymbol newSymbol = newSymbol(runtime, name);
+
+        newSymbol.associateEncoding(encoding);
+
+        return newSymbol;
+    }
+
+    // FIXME: same bytesequences will fight over encoding of the symbol once cached.  I think largely
+    // this will only happen in some ISO_8859_?? encodings making symbols at the same time so it should
+    // be pretty rare.
+    public static RubySymbol newHardSymbol(Ruby runtime, String name, Encoding encoding) {
+        RubySymbol newSymbol = newHardSymbol(runtime, name);
 
         newSymbol.associateEncoding(encoding);
 
@@ -440,51 +464,49 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
         final CallSite site = new FunctionalCachingCallSite(symbol);
         BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL) {
-            private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block block) {
+            private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
                 if (array.isEmpty()) {
                     throw context.runtime.newArgumentError("no receiver given");
                 }
 
                 IRubyObject self = array.shift(context);
 
-                return site.call(context, self, self, array.toJavaArray(), block);
+                return site.call(context, self, self, array.toJavaArray(), blockArg);
             }
 
             @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                     Binding binding, Type type, Block block) {
-                RubyProc.prepareArgs(context, type, block.getBody(), args);
-                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), block);
+            public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+                RubyProc.prepareArgs(context, block.type, blockArg.getBody(), args);
+                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), blockArg);
             }
 
             @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject value,
-                    Binding binding, Block.Type type, Block block) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), block);
+            public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
+                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), blockArg);
             }
 
             @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
                 return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
             }
 
             @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type) {
+            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
                 return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
             }
 
             @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
+            public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
                 return site.call(context, arg0, arg0);
             }
 
             @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
+            public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
                 return site.call(context, arg0, arg0, arg1);
             }
 
             @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
+            public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
                 return site.call(context, arg0, arg0, arg1, arg2);
             }
 
@@ -689,39 +711,60 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             final String name;
             final ByteList bytes;
             final WeakReference<RubySymbol> symbol;
+            RubySymbol hardReference; // only read in this
             SymbolEntry next;
 
-            SymbolEntry(int hash, String name, ByteList bytes, WeakReference<RubySymbol> symbol, SymbolEntry next) {
+            SymbolEntry(int hash, String name, ByteList bytes, RubySymbol symbol, SymbolEntry next, boolean hard) {
                 this.hash = hash;
                 this.name = name;
                 this.bytes = bytes;
-                this.symbol = symbol;
+                this.symbol = new WeakReference<RubySymbol>(symbol);
                 this.next = next;
+                if (hard) hardReference = symbol;
+            }
+
+            /**
+             * Force an existing weak symbol to become a hard symbol, so it never goes away.
+             */
+            public void setHardReference() {
+                if (hardReference == null) {
+                    hardReference = symbol.get();
+                }
             }
         }
 
         public RubySymbol getSymbol(String name) {
+            return getSymbol(name, false);
+        }
+
+        public RubySymbol getSymbol(String name, boolean hard) {
             int hash = javaStringHashCode(name);
             RubySymbol symbol = null;
 
             for (SymbolEntry e = getEntryFromTable(symbolTable, hash); e != null; e = e.next) {
                 if (isSymbolMatch(name, hash, e)) {
+                    if (hard) e.setHardReference();
                     symbol = e.symbol.get();
                     break;
                 }
             }
 
-            if (symbol == null) symbol = createSymbol(name, symbolBytesFromString(runtime, name), hash);
+            if (symbol == null) symbol = createSymbol(name, symbolBytesFromString(runtime, name), hash, hard);
 
             return symbol;
         }
 
         public RubySymbol getSymbol(ByteList bytes) {
+            return getSymbol(bytes, false);
+        }
+
+        public RubySymbol getSymbol(ByteList bytes, boolean hard) {
             RubySymbol symbol = null;
             int hash = javaStringHashCode(bytes);
 
             for (SymbolEntry e = getEntryFromTable(symbolTable, hash); e != null; e = e.next) {
                 if (isSymbolMatch(bytes, hash, e)) {
+                    if (hard) e.setHardReference();
                     symbol = e.symbol.get();
                     break;
                 }
@@ -729,24 +772,29 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
             if (symbol == null) {
                 bytes = bytes.dup();
-                symbol = createSymbol(bytes.toString(), bytes, hash);
+                symbol = createSymbol(bytes.toString(), bytes, hash, hard);
             }
 
             return symbol;
         }
 
         public RubySymbol fastGetSymbol(String internedName) {
+            return fastGetSymbol(internedName, false);
+        }
+
+        public RubySymbol fastGetSymbol(String internedName, boolean hard) {
             RubySymbol symbol = null;
 
             for (SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode()); e != null; e = e.next) {
                 if (isSymbolMatch(internedName, e)) {
+                    if (hard) e.setHardReference();
                     symbol = e.symbol.get();
                     break;
                 }
             }
 
             if (symbol == null) {
-                symbol = fastCreateSymbol(internedName);
+                symbol = fastCreateSymbol(internedName, hard);
             }
 
             return symbol;
@@ -768,7 +816,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             return internedName == entry.name;
         }
 
-        private RubySymbol createSymbol(final String name, final ByteList value, final int hash) {
+        private RubySymbol createSymbol(final String name, final ByteList value, final int hash, boolean hard) {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
@@ -800,7 +848,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
                 if (symbol == null) {
                     String internedName = name.intern();
                     symbol = new RubySymbol(runtime, internedName, value);
-                    table[index] = new SymbolEntry(hash, internedName, value, new WeakReference(symbol), table[index]);
+                    table[index] = new SymbolEntry(hash, internedName, value, symbol, table[index], hard);
                     size++;
                     // write-volatile
                     symbolTable = table;
@@ -821,7 +869,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             size--; // reduce current size because we lost one somewhere
         }
 
-        private RubySymbol fastCreateSymbol(final String internedName) {
+        private RubySymbol fastCreateSymbol(final String internedName, boolean hard) {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
@@ -853,7 +901,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
                 if (symbol == null) {
                     symbol = new RubySymbol(runtime, internedName);
-                    table[index] = new SymbolEntry(hash, internedName, symbol.getBytes(), new WeakReference(symbol), table[index]);
+                    table[index] = new SymbolEntry(hash, internedName, symbol.getBytes(), symbol, table[index], hard);
                     size++;
                     // write-volatile
                     symbolTable = table;
@@ -934,7 +982,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
                     for (SymbolEntry p = e; p != lastRun; p = p.next) {
                         int k = p.hash & sizeMask;
                         SymbolEntry n = newTable[k];
-                        newTable[k] = new SymbolEntry(p.hash, p.name, p.bytes, p.symbol, n);
+                        newTable[k] = new SymbolEntry(p.hash, p.name, p.bytes, p.symbol.get(), n, p.hardReference != null);
                     }
                 }
             }

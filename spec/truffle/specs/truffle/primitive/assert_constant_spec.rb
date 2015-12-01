@@ -15,8 +15,8 @@ describe "Truffle::Primitive.assert_constant" do
   end
 
   unless Truffle.graal?
-    it "returns nil" do
-      Truffle::Primitive.assert_constant(14 + 2).should be_nil
+    it "returns the value of the argument" do
+      Truffle::Primitive.assert_constant(14 + 2).should == 16
     end
   end
 

@@ -39,15 +39,18 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
+
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
@@ -56,19 +59,19 @@ import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
-import org.jruby.truffle.nodes.exceptions.ClearExceptionVariableNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.Signal;
+import org.jruby.truffle.runtime.signal.SignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
-import org.jruby.util.StringSupport;
 import org.jruby.util.io.PosixShim;
 
 import java.lang.management.ManagementFactory;
@@ -90,7 +93,6 @@ public abstract class VMPrimitiveNodes {
 
         @Child private YieldDispatchHeadNode dispatchNode;
         @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-        @Child private ClearExceptionVariableNode clearExceptionVariableNode;
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -105,7 +107,7 @@ public abstract class VMPrimitiveNodes {
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object doCatch(VirtualFrame frame, Object tag, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
@@ -113,11 +115,6 @@ public abstract class VMPrimitiveNodes {
                 return dispatchNode.dispatch(frame, block, tag);
             } catch (ThrowException e) {
                 if (areSame(frame, e.getTag(), tag)) {
-                    if (clearExceptionVariableNode == null) {
-                        CompilerDirectives.transferToInterpreter();
-                        clearExceptionVariableNode = insert(new ClearExceptionVariableNode(getContext(), getSourceSection()));
-                    }
-                    clearExceptionVariableNode.execute(frame);
                     return e.getValue();
                 } else {
                     throw e;
@@ -141,6 +138,27 @@ public abstract class VMPrimitiveNodes {
 
     }
 
+    // The hard #exit!
+    @RubiniusPrimitive(name = "vm_exit", needsSelf = false)
+    public static abstract class VMExitPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public VMExitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object vmExit(int status) {
+            getContext().shutdown();
+            throw new MainExitException(status);
+        }
+
+        @Fallback
+        public Object vmExit(Object status) {
+            return null; // Primitive failure
+        }
+
+    }
+
     @RubiniusPrimitive(name = "vm_get_module_name", needsSelf = false)
     public static abstract class VMGetModuleNamePrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -150,7 +168,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -171,7 +189,7 @@ public abstract class VMPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
             }
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(passwd.getHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(passwd.getHome(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -217,7 +235,7 @@ public abstract class VMPrimitiveNodes {
 
         public VMObjectKindOfPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
+            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{ null, null });
         }
 
         @Specialization(guards = "isRubyModule(rubyClass)")
@@ -251,12 +269,12 @@ public abstract class VMPrimitiveNodes {
 
         public VMObjectSingletonClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(context, sourceSection, new RubyNode[] { null });
+            singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
         }
 
         @Specialization
-        public Object vmObjectClass(VirtualFrame frame, Object object) {
-            return singletonClassNode.singletonClass(frame, object);
+        public Object vmObjectClass(Object object) {
+            return singletonClassNode.singletonClass(object);
         }
 
     }
@@ -345,15 +363,15 @@ public abstract class VMPrimitiveNodes {
             double utime = 0.0d, stime = 0.0d, cutime = 0.0d, cstime = 0.0d;
             if (tms == null) {
                 ThreadMXBean bean = ManagementFactory.getThreadMXBean();
-                if(bean.isCurrentThreadCpuTimeSupported()) {
+                if (bean.isCurrentThreadCpuTimeSupported()) {
                     cutime = utime = bean.getCurrentThreadUserTime();
                     cstime = stime = bean.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime();
                 }
             } else {
-                utime = (double)tms.utime();
-                stime = (double)tms.stime();
-                cutime = (double)tms.cutime();
-                cstime = (double)tms.cstime();
+                utime = (double) tms.utime();
+                stime = (double) tms.stime();
+                cutime = (double) tms.cutime();
+                cstime = (double) tms.cstime();
             }
 
             long hz = posix().sysconf(Sysconf._SC_CLK_TCK);
@@ -371,13 +389,13 @@ public abstract class VMPrimitiveNodes {
             final double tstime = 0;
 
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new double[]{
-                        utime,
-                        stime,
-                        cutime,
-                        cstime,
-                        tutime,
-                        tstime
-                }, 6);
+                    utime,
+                    stime,
+                    cutime,
+                    cstime,
+                    tutime,
+                    tstime
+            }, 6);
         }
 
     }
@@ -389,28 +407,44 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(signalName)", "isRubyString(action)"})
+        @Specialization(guards = { "isRubyString(signalName)", "isRubyString(action)" })
         public boolean watchSignal(DynamicObject signalName, DynamicObject action) {
             if (!action.toString().equals("DEFAULT")) {
                 throw new UnsupportedOperationException();
             }
 
-            Signal signal = new Signal(signalName.toString());
-            SignalOperations.watchDefaultForSignal(signal);
-            return true;
+            return handleDefault(signalName);
         }
 
-        @Specialization(guards = {"isRubyString(signalName)", "isNil(nil)"})
+        @Specialization(guards = { "isRubyString(signalName)", "isNil(nil)" })
         public boolean watchSignal(DynamicObject signalName, Object nil) {
+            return handle(signalName, SignalOperations.IGNORE_HANDLER);
+        }
+
+        @Specialization(guards = { "isRubyString(signalName)", "isRubyProc(proc)" })
+        public boolean watchSignalProc(DynamicObject signalName, DynamicObject proc) {
+            return handle(signalName, new ProcSignalHandler(getContext(), proc));
+        }
+
+        @TruffleBoundary
+        private boolean handleDefault(DynamicObject signalName) {
             Signal signal = new Signal(signalName.toString());
-            SignalOperations.watchSignal(signal, SignalOperations.IGNORE_HANDLER);
+            try {
+                SignalOperations.watchDefaultForSignal(signal);
+            } catch (IllegalArgumentException e) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
             return true;
         }
 
-        @Specialization(guards = {"isRubyString(signalName)", "isRubyProc(proc)"})
-        public boolean watchSignalProc(DynamicObject signalName, DynamicObject proc) {
-            Signal signal = new Signal(signalName.toString());
-            SignalOperations.watchSignal(signal, new ProcSignalHandler(getContext(), proc));
+        @TruffleBoundary
+        private boolean handle(DynamicObject signalName, SignalHandler newHandler) {
+            final Signal signal = new Signal(signalName.toString());
+            try {
+                SignalOperations.watchSignal(signal, newHandler);
+            } catch (IllegalArgumentException e) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
             return true;
         }
 
@@ -459,7 +493,9 @@ public abstract class VMPrimitiveNodes {
                     stringValue = value.toString();
                 }
 
-                Object[] objects = new Object[]{Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(key, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(stringValue, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null)};
+                Object[] objects = new Object[]{
+                        createString(StringOperations.encodeByteList(key, UTF8Encoding.INSTANCE)),
+                        createString(StringOperations.encodeByteList(stringValue, UTF8Encoding.INSTANCE)) };
                 sectionKeyValues.add(Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
             }
 
@@ -482,7 +518,7 @@ public abstract class VMPrimitiveNodes {
             // Transliterated from Rubinius C++ - not tidied up significantly to make merging changes easier
 
             int options = 0;
-            final int[] statusReference = new int[] { 0 };
+            final int[] statusReference = new int[]{ 0 };
             int pid;
 
             if (no_hang) {
@@ -533,7 +569,7 @@ public abstract class VMPrimitiveNodes {
                 stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
             }
 
-            Object[] objects = new Object[]{output, termsig, stopsig, pid};
+            Object[] objects = new Object[]{ output, termsig, stopsig, pid };
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 

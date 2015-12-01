@@ -21,7 +21,6 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
@@ -64,6 +63,7 @@ public abstract class HashLiteralNode extends RubyNode {
         }
     }
 
+    @ExplodeLoop
     @Override
     public void executeVoid(VirtualFrame frame) {
         for (RubyNode child : keyValues) {
@@ -80,7 +80,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
-            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, null, 0, null, null, false);
+            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, 0, null, null, null, null, false);
         }
 
     }
@@ -138,7 +138,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 size++;
             }
 
-            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, store, size, null, null, false);
+            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), store, size, null, null, null, null, false);
         }
 
     }
@@ -151,6 +151,7 @@ public abstract class HashLiteralNode extends RubyNode {
             super(context, sourceSection, keyValues);
         }
 
+        @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
             if (setNode == null) {
@@ -161,7 +162,7 @@ public abstract class HashLiteralNode extends RubyNode {
             final int bucketsCount = BucketsStrategy.capacityGreaterThan(keyValues.length / 2) * BucketsStrategy.OVERALLOCATE_FACTOR;
             final Entry[] newEntries = new Entry[bucketsCount];
 
-            final DynamicObject hash = Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, newEntries, 0, null, null, false);
+            final DynamicObject hash = Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), newEntries, 0, null, null, null, null, false);
 
             for (int n = 0; n < keyValues.length; n += 2) {
                 final Object key = keyValues[n].execute(frame);

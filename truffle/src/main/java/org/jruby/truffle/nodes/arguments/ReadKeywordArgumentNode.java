@@ -30,8 +30,8 @@ public class ReadKeywordArgumentNode extends RubyNode {
     private final int kwIndex;
     private final ValueProfile argumentValueProfile = ValueProfile.createPrimitiveProfile();
 
-    private ConditionProfile optimizedProfile = ConditionProfile.createBinaryProfile();
-    private ConditionProfile defaultProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile optimizedProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile defaultProfile = ConditionProfile.createBinaryProfile();
     
     @Child private RubyNode defaultValue;
 

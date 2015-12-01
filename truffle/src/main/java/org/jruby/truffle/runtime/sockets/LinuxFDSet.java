@@ -11,7 +11,6 @@
 package org.jruby.truffle.runtime.sockets;
 
 import jnr.ffi.Pointer;
-import jnr.ffi.provider.MemoryManager;
 
 public class LinuxFDSet implements FDSet {
 
@@ -19,12 +18,10 @@ public class LinuxFDSet implements FDSet {
     private final static int FIELD_SIZE_IN_BYTES = 4;
     private final static int FIELD_SIZE_IN_BITS = FIELD_SIZE_IN_BYTES * 8;
 
-    private static final MemoryManager memoryManager = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager();
-
     private final Pointer bitmap;
 
     public LinuxFDSet() {
-        bitmap = memoryManager.allocateDirect(MAX_FDS / 8);
+        bitmap = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().allocateDirect(MAX_FDS / 8);
     }
 
     @Override

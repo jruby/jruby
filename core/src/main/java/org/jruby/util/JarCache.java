@@ -58,7 +58,7 @@ class JarCache {
 
                 int lastPathSep;
                 while ((lastPathSep = path.lastIndexOf('/')) != -1) {
-                    String dirPath = path.substring(0, lastPathSep); 
+                    String dirPath = path.substring(0, lastPathSep);
 
                     if (!mutableCache.containsKey(dirPath)) {
                         mutableCache.put(dirPath, new HashSet<String>());
@@ -77,9 +77,10 @@ class JarCache {
                 mutableCache.get(ROOT_KEY).add(path);
             }
 
-            Map<String, String[]> cachedDirEntries = new HashMap<String, String[]>();
+            Map<String, String[]> cachedDirEntries = new HashMap<String, String[]>(mutableCache.size() + 8, 1);
             for (Map.Entry<String, Set<String>> entry : mutableCache.entrySet()) {
-                cachedDirEntries.put(entry.getKey(), entry.getValue().toArray(new String[0]));
+                Set<String> value = entry.getValue();
+                cachedDirEntries.put(entry.getKey(), value.toArray(new String[value.size()]));
             }
 
             this.cachedDirEntries = Collections.unmodifiableMap(cachedDirEntries);
@@ -141,7 +142,7 @@ class JarCache {
             }
 
             if (index == null) {
-                try { 
+                try {
                     index = new JarIndex(jarPath);
                     indexCache.put(cacheKey, index);
                 } catch (IOException ioe) {

@@ -9,19 +9,26 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.DynamicObject;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.object.ObjectGraphNode;
+
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
- * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
- * lambdas and native methods written in Java.
+ * A Ruby method: either a method in a module,
+ * a literal module/class body
+ * or some meta-information for eval'd code.
+ *
+ * Blocks capture the method in which they are defined.
  */
-public class InternalMethod {
+public class InternalMethod implements ObjectGraphNode {
 
     private final SharedMethodInfo sharedMethodInfo;
     private final String name;
@@ -29,21 +36,30 @@ public class InternalMethod {
     private final DynamicObject declaringModule;
     private final Visibility visibility;
     private final boolean undefined;
+    private final DynamicObject proc; // only if method is created from a Proc
 
     private final CallTarget callTarget;
-    private final MaterializedFrame declarationFrame;
 
-    public InternalMethod(SharedMethodInfo sharedMethodInfo, String name,
-                          DynamicObject declaringModule, Visibility visibility, boolean undefined,
-                          CallTarget callTarget, MaterializedFrame declarationFrame) {
-        assert declaringModule == null || RubyGuards.isRubyModule(declaringModule);
+    public static InternalMethod fromProc(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
+            Visibility visibility, DynamicObject proc, CallTarget callTarget) {
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, false, proc, callTarget);
+    }
+
+    public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
+            Visibility visibility, CallTarget callTarget) {
+        this(sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget);
+    }
+
+    private InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
+            Visibility visibility, boolean undefined, DynamicObject proc, CallTarget callTarget) {
+        assert RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;
         this.visibility = visibility;
         this.undefined = undefined;
+        this.proc = proc;
         this.callTarget = callTarget;
-        this.declarationFrame = declarationFrame;
     }
 
     public SharedMethodInfo getSharedMethodInfo() {
@@ -66,10 +82,6 @@ public class InternalMethod {
         return undefined;
     }
 
-    public MaterializedFrame getDeclarationFrame() {
-        return declarationFrame;
-    }
-
     public CallTarget getCallTarget(){
         return callTarget;
     }
@@ -80,7 +92,7 @@ public class InternalMethod {
         if (newDeclaringModule == declaringModule) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, proc, callTarget);
         }
     }
 
@@ -88,7 +100,7 @@ public class InternalMethod {
         if (newName.equals(name)) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, proc, callTarget);
         }
     }
 
@@ -96,12 +108,12 @@ public class InternalMethod {
         if (newVisibility == visibility) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, proc, callTarget);
         }
     }
 
     public InternalMethod undefined() {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, proc, callTarget);
     }
 
     public boolean isVisibleTo(Node currentNode, DynamicObject callerClass) {
@@ -133,6 +145,21 @@ public class InternalMethod {
     @Override
     public String toString() {
         return sharedMethodInfo.toString();
+    }
+
+    @Override
+    public Set<DynamicObject> getAdjacentObjects() {
+        final Set<DynamicObject> adjacent = new HashSet<>();
+
+        if (declaringModule  != null) {
+            adjacent.add(declaringModule);
+        }
+
+        if (proc != null) {
+            adjacent.add(proc);
+        }
+
+        return adjacent;
     }
 
 }

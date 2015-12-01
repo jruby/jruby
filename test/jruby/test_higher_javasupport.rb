@@ -1313,7 +1313,7 @@ CLASSDEF
   # JRUBY-3046
   def test_java_methods_have_arity
     assert_nothing_raised do
-      assert_equal(-1, java.lang.String.instance_method(:toString).arity)
+      assert java.lang.String.instance_method(:toString).arity
     end
   end
 
@@ -1356,6 +1356,16 @@ CLASSDEF
         a.to_java :float
         break if a == 0.0
       end
+    end
+  end
+
+  # GH-3262
+  def test_indexed_bean_style_accessors_are_not_aliased
+    # ArgumentError: wrong number of arguments (0 for 1)
+    assert java.lang.Character.name
+    java.lang.Character.getName(42) # nothing raised
+    assert_raises(ArgumentError) do
+      java.lang.Character.name(42) # `getName(int)' NOT mapped to `name(i)'
     end
   end
 

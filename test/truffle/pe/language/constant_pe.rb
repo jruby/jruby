@@ -48,14 +48,14 @@ module ConstantFixtures
   end
 end
 
-example "ConstantFixtures.get_existing"
-example "ConstantFixtures.get"
-example "ConstantFixtures.get_const_get(:A)"
+example "ConstantFixtures.get_existing", Proc
+example "ConstantFixtures.get", 1
+example "ConstantFixtures.get_const_get(:A)", 1
 
 # Internal Graal compiler error
-tagged_example "ConstantFixtures.get_const_get('A')"
+tagged_example "ConstantFixtures.get_const_get('A')", 1
 
-example "ConstantFixtures::Nested.get_nested"
-example "ConstantFixtures::Child.get_inherited"
+example "ConstantFixtures::Nested.get_nested", 1
+example "ConstantFixtures::Child.get_inherited", 2
 
-example "ConstantFixtures::ConstMissing.get_missing"
+example "ConstantFixtures::ConstMissing.get_missing", :NO_SUCH_NAMED_CONSTANT

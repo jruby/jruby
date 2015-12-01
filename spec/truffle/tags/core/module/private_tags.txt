@@ -1,2 +1,0 @@
-fails:Module#private without arguments affects evaled method definitions when itself is outside the eval
-fails:Module#private without arguments affects normally if itself and following method definitions are inside a eval

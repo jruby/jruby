@@ -24,9 +24,10 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -42,11 +43,12 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.pack.parser.PackParser;
-import org.jruby.truffle.pack.runtime.PackResult;
-import org.jruby.truffle.pack.runtime.exceptions.*;
+import org.jruby.truffle.format.parser.PackParser;
+import org.jruby.truffle.format.runtime.PackResult;
+import org.jruby.truffle.format.runtime.exceptions.*;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -63,7 +65,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
-import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 
@@ -281,7 +282,7 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
-            final int storeLength = store.length;
+            final int storeLength = Layouts.ARRAY.getSize(array);
             final int newStoreLength = storeLength * count;
             final Object[] newStore = new Object[newStoreLength];
 
@@ -305,7 +306,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToStrNode.doesRespondToString(frame, object, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, object, create7BitString(StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE)), false)) {
                 return ruby(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -359,7 +360,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, DynamicObject array, int start, int length) {
+        public DynamicObject slice(VirtualFrame frame, DynamicObject array, int start, int length) {
             if (length < 0) {
                 return nil();
             }
@@ -369,19 +370,21 @@ public abstract class ArrayNodes {
                 readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            return readSliceNode.executeReadSlice(frame, (DynamicObject) array, start, length);
+            return readSliceNode.executeReadSlice(array, start, length);
         }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
-        public Object slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len) {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+        public DynamicObject slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len,
+                @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
+            final int size = Layouts.ARRAY.getSize(array);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
 
-            if (normalizedIndex < 0 || normalizedIndex > Layouts.ARRAY.getSize(array)) {
+            if (normalizedIndex < 0 || normalizedIndex > size) {
                 return nil();
             } else {
-                final int end = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
-                int index = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? end : end + 1;
-                final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(Layouts.ARRAY.getSize(array), index);
+                final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
+                final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end : end + 1);
 
                 if (exclusiveEnd <= normalizedIndex) {
                     return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
@@ -394,7 +397,7 @@ public abstract class ArrayNodes {
                     readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return readNormalizedSliceNode.executeReadSlice(frame, array, normalizedIndex, length);
+                return readNormalizedSliceNode.executeReadSlice(array, normalizedIndex, length);
             }
         }
 
@@ -418,7 +421,7 @@ public abstract class ArrayNodes {
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(method.getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), args);
+                    createString(StringOperations.encodeByteList(method.getName(), UTF8Encoding.INSTANCE)), args);
         }
 
     }
@@ -426,97 +429,87 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
-        @Child private ArrayWriteDenormalizedNode writeNode;
-        @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
+        @Child private ArrayWriteNormalizedNode writeNode;
+        @Child protected ArrayReadSliceNormalizedNode readSliceNode;
         @Child private PopOneNode popOneNode;
         @Child private ToIntNode toIntNode;
-
-        private final BranchProfile tooSmallBranch = BranchProfile.create();
 
         public IndexSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)"})
-        public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused) {
-            final int index = toInt(frame, indexObject);
-            return set(frame, array, index, value, unused);
-        }
-
         @Specialization
-        public Object set(VirtualFrame frame, DynamicObject array, int index, Object value, NotProvided unused) {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        public Object set(DynamicObject array, int index, Object value, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
                 String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-Layouts.ARRAY.getSize(array));
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
-            return write(frame, (DynamicObject) array, index, value);
+            return write(array, normalizedIndex, value);
         }
 
-        @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(lengthObject)" })
-        public Object setObject(VirtualFrame frame, DynamicObject array, int start, Object lengthObject, Object value) {
-            int length = toInt(frame, lengthObject);
-            return setObject(frame, array, start, length, value);
+        @Specialization(guards = { "!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)" })
+        public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            final int index = toInt(frame, indexObject);
+            return set(array, index, value, unused, negativeIndexProfile);
         }
 
-        @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject)" })
-        public Object setObject(VirtualFrame frame, DynamicObject array, Object startObject, int length, Object value) {
-            int start = toInt(frame, startObject);
-            return setObject(frame, array, start, length, value);
-        }
-
-        @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject)", "!isInteger(lengthObject)" })
-        public Object setObject(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, Object value) {
+        @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject) || !isInteger(lengthObject)" })
+        public Object setObject(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, Object value,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             int length = toInt(frame, lengthObject);
             int start = toInt(frame, startObject);
-            return setObject(frame, array, start, length, value);
+            return setObject(array, start, length, value, negativeIndexProfile);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)" })
-        public Object setObject(VirtualFrame frame, DynamicObject array, int start, int length, Object value) {
-            CompilerDirectives.transferToInterpreter();
-
+        public Object setObject(DynamicObject array, int start, int length, Object value,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "negative length (" + length + ")";
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
-            if (normalizedIndex < 0) {
+            final int size = Layouts.ARRAY.getSize(array);
+            final int begin = ArrayOperations.normalizeIndex(size, start, negativeIndexProfile);
+            if (begin < 0) {
                 CompilerDirectives.transferToInterpreter();
-                final String errMessage = "index " + start + " too small for array; minimum: " + Integer.toString(-Layouts.ARRAY.getSize(array));
+                final String errMessage = "index " + start + " too small for array; minimum: " + Integer.toString(-size);
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int begin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
-
-            if (begin < Layouts.ARRAY.getSize(array) && length == 1) {
-                return write(frame, array, begin, value);
+            if (begin < size && length == 1) {
+                return write(array, begin, value);
             } else {
-                if (Layouts.ARRAY.getSize(array) > (begin + length)) { // there is a tail, else other values discarded
+                if (size > (begin + length)) { // there is a tail, else other values discarded
                     if (readSliceNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                        readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
-                    DynamicObject endValues = (DynamicObject) readSliceNode.executeReadSlice(frame, (DynamicObject) array, (begin + length), (Layouts.ARRAY.getSize(array) - begin - length));
-                    write(frame, array, begin, value);
+                    DynamicObject endValues = readSliceNode.executeReadSlice(array, (begin + length), (size - begin - length));
+                    write(array, begin, value);
+
+                    CompilerDirectives.transferToInterpreter();
                     Object[] endValuesStore = ArrayUtils.box(Layouts.ARRAY.getStore(endValues));
 
                     int i = begin + 1;
                     for (Object obj : endValuesStore) {
-                        write(frame, array, i, obj);
+                        write(array, i, obj);
                         i += 1;
                     }
                 } else {
-                    write(frame, array, begin, value);
+                    write(array, begin, value);
                 }
+
                 if (popOneNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     popOneNode = insert(PopOneNodeGen.create(getContext(), getSourceSection(), null));
                 }
-                int popLength = length - 1 < Layouts.ARRAY.getSize(array) ? length - 1 : Layouts.ARRAY.getSize(array) - 1;
+                int popLength = length - 1 < size ? length - 1 : size - 1;
                 for (int i = 0; i < popLength; i++) { // TODO 3-15-2015 BF update when pop can pop multiple
                     popOneNode.executePopOne(array);
                 }
@@ -524,38 +517,26 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"!isInteger(startObject)", "isRubyArray(value)"})
-        public Object setOtherArray(VirtualFrame frame, DynamicObject array, Object startObject, int length, DynamicObject value) {
-            int start = toInt(frame, startObject);
-            return setOtherArray(frame, array, start, length, value);
-        }
-
-        @Specialization(guards = {"!isInteger(lengthObject)", "isRubyArray(value)"})
-        public Object setOtherArray(VirtualFrame frame, DynamicObject array, int start, Object lengthObject, DynamicObject value) {
-            int length = toInt(frame, lengthObject);
-            return setOtherArray(frame, array, start, length, value);
-        }
-
-        @Specialization(guards = {"!isInteger(startObject)", "!isInteger(lengthObject)", "isRubyArray(value)"})
-        public Object setOtherArray(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, DynamicObject value) {
+        @Specialization(guards = { "!isInteger(startObject)", "!isInteger(lengthObject) || isRubyArray(value)" })
+        public Object setOtherArray(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, DynamicObject value,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             int start = toInt(frame, startObject);
             int length = toInt(frame, lengthObject);
-            return setOtherArray(frame, array, start, length, value);
+            return setOtherArray(array, start, length, value, negativeIndexProfile);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyArray(replacement)")
-        public Object setOtherArray(VirtualFrame frame, DynamicObject array, int start, int length, DynamicObject replacement) {
-            CompilerDirectives.transferToInterpreter();
-
+        public Object setOtherArray(DynamicObject array, int start, int length, DynamicObject replacement,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "negative length (" + length + ")";
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start, negativeIndexProfile);
             if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", start, Layouts.ARRAY.getSize(array), this));
             }
@@ -565,7 +546,7 @@ public abstract class ArrayNodes {
 
             if (replacementLength == length) {
                 for (int i = 0; i < length; i++) {
-                    write(frame, array, start + i, replacementStore[i]);
+                    write(array, normalizedIndex + i, replacementStore[i]);
                 }
             } else {
                 final int arrayLength = Layouts.ARRAY.getSize(array);
@@ -588,7 +569,6 @@ public abstract class ArrayNodes {
 
                 final Object store = ArrayOperations.toObjectArray(array);
                 final Object newStore[] = new Object[newLength];
-
 
                 if (mustExpandArray) {
                     System.arraycopy(store, 0, newStore, 0, arrayLength);
@@ -614,67 +594,79 @@ public abstract class ArrayNodes {
             return replacement;
         }
 
-        @Specialization(guards = {"!isRubyArray(other)", "isIntegerFixnumRange(range)"})
-        public Object setRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object other, NotProvided unused) {
-            final int normalizedStart = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
-            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
-            if (normalizedEnd < 0) {
-                normalizedEnd = -1;
-            }
-            final int length = normalizedEnd - normalizedStart + 1;
+        @Specialization(guards = { "!isRubyArray(other)", "isIntegerFixnumRange(range)" })
+        public Object setRange(DynamicObject array, DynamicObject range, Object other, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            final int size = Layouts.ARRAY.getSize(array);
+            final int normalizedStart = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
-            return setObject(frame, array, normalizedStart, length, other);
+            final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
+            int inclusiveEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end - 1 : end;
+            if (inclusiveEnd < 0) {
+                inclusiveEnd = -1;
+            }
+            final int length = inclusiveEnd - normalizedStart + 1;
+            return setObject(array, normalizedStart, length, other, negativeIndexProfile);
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)"})
-        public Object setRangeArray(VirtualFrame frame, DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
-            final int normalizedStart = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+        @Specialization(guards = { "isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)" })
+        public Object setRangeArray(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            final int size = Layouts.ARRAY.getSize(array);
+            final int normalizedStart = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
-
-            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
-            if (normalizedEnd < 0) {
-                normalizedEnd = -1;
+            final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
+            int inclusiveEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end - 1 : end;
+            if (inclusiveEnd < 0) {
+                inclusiveEnd = -1;
             }
-            final int length = normalizedEnd - normalizedStart + 1;
-
-            return setOtherArray(frame, array, normalizedStart, length, other);
+            final int length = inclusiveEnd - normalizedStart + 1;
+            return setOtherArray(array, normalizedStart, length, other, negativeIndexProfile);
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)", "isIntegerFixnumRange(range)"})
-        public Object setIntegerFixnumRange(VirtualFrame frame, DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
-            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
+        public Object setIntegerFixnumRange(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range)) {
                 CompilerDirectives.transferToInterpreter();
-                return setRangeArray(frame, array, range, other, unused);
+                return setRangeArray(array, range, other, unused, negativeBeginProfile, negativeEndProfile, negativeIndexProfile);
             } else {
-                int normalizedBegin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
-                int normalizedEnd = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+                final int size = Layouts.ARRAY.getSize(array);
+                int normalizedBegin = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
+                int normalizedEnd = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
                 if (normalizedEnd < 0) {
                     normalizedEnd = -1;
                 }
-                if (normalizedBegin == 0 && normalizedEnd == Layouts.ARRAY.getSize(array) - 1) {
+                if (normalizedBegin == 0 && normalizedEnd == size - 1) {
                     Layouts.ARRAY.setStore(array, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)));
                     Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(other));
                 } else {
                     CompilerDirectives.transferToInterpreter();
-                    return setRangeArray(frame, array, range, other, unused);
+                    return setRangeArray(array, range, other, unused, negativeBeginProfile, negativeEndProfile, negativeIndexProfile);
                 }
             }
 
             return other;
         }
 
-        private Object write(VirtualFrame frame, DynamicObject array, int index, Object value) {
+        private Object write(DynamicObject array, int index, Object value) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
-            return writeNode.executeWrite(frame, array, index, value);
+            return writeNode.executeWrite(array, index, value);
         }
 
         private int toInt(VirtualFrame frame, Object indexObject) {
@@ -956,9 +948,6 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteAtNode extends CoreMethodNode {
 
-        private final BranchProfile tooSmallBranch = BranchProfile.create();
-        private final BranchProfile beyondEndBranch = BranchProfile.create();
-
         public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -967,39 +956,14 @@ public abstract class ArrayNodes {
             return ToIntNodeGen.create(getContext(), getSourceSection(), index);
         }
 
-        @Specialization(guards = "isIntArray(array)", rewriteOn = UnexpectedResultException.class)
-        public int deleteAtIntegerFixnumInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        @Specialization(guards = "isIntArray(array)")
+        public Object deleteAtIntegerFixnum(DynamicObject array, int index,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                @Cached("create()") BranchProfile notInBoundsProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
-            if (normalizedIndex < 0) {
-                throw new UnexpectedResultException(nil());
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final int[] store = (int[]) Layouts.ARRAY.getStore(array);
-                final int value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                Layouts.ARRAY.setStore(array, store);
-                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "deleteAtIntegerFixnumInBounds", guards = "isIntArray(array)")
-        public Object deleteAtIntegerFixnum(DynamicObject array, int index) {
-            CompilerDirectives.transferToInterpreter();
-
-            int normalizedIndex = index;
-
-            if (normalizedIndex < 0) {
-                normalizedIndex = Layouts.ARRAY.getSize(array) + index;
-            }
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                return nil();
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                beyondEndBranch.enter();
+            if (normalizedIndex < 0 || normalizedIndex >= Layouts.ARRAY.getSize(array)) {
+                notInBoundsProfile.enter();
                 return nil();
             } else {
                 final int[] store = (int[]) Layouts.ARRAY.getStore(array);
@@ -1011,39 +975,14 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isLongArray(array)", rewriteOn = UnexpectedResultException.class)
-        public long deleteAtLongFixnumInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        @Specialization(guards = "isLongArray(array)")
+        public Object deleteAtLongFixnum(DynamicObject array, int index,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                @Cached("create()") BranchProfile notInBoundsProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
-            if (normalizedIndex < 0) {
-                throw new UnexpectedResultException(nil());
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final long[] store = (long[]) Layouts.ARRAY.getStore(array);
-                final long value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                Layouts.ARRAY.setStore(array, store);
-                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "deleteAtLongFixnumInBounds", guards = "isLongArray(array)")
-        public Object deleteAtLongFixnum(DynamicObject array, int index) {
-            CompilerDirectives.transferToInterpreter();
-
-            int normalizedIndex = index;
-
-            if (normalizedIndex < 0) {
-                normalizedIndex = Layouts.ARRAY.getSize(array) + index;
-            }
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                return nil();
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                beyondEndBranch.enter();
+            if (normalizedIndex < 0 || normalizedIndex >= Layouts.ARRAY.getSize(array)) {
+                notInBoundsProfile.enter();
                 return nil();
             } else {
                 final long[] store = (long[]) Layouts.ARRAY.getStore(array);
@@ -1055,39 +994,14 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isDoubleArray(array)", rewriteOn = UnexpectedResultException.class)
-        public double deleteAtFloatInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        @Specialization(guards = "isDoubleArray(array)")
+        public Object deleteAtFloat(DynamicObject array, int index,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                @Cached("create()") BranchProfile notInBoundsProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
-            if (normalizedIndex < 0) {
-                throw new UnexpectedResultException(nil());
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final double[] store = (double[]) Layouts.ARRAY.getStore(array);
-                final double value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                Layouts.ARRAY.setStore(array, store);
-                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "deleteAtFloatInBounds", guards = "isDoubleArray(array)")
-        public Object deleteAtFloat(DynamicObject array, int index) {
-            CompilerDirectives.transferToInterpreter();
-
-            int normalizedIndex = index;
-
-            if (normalizedIndex < 0) {
-                normalizedIndex = Layouts.ARRAY.getSize(array) + index;
-            }
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                return nil();
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                beyondEndBranch.enter();
+            if (normalizedIndex < 0 || normalizedIndex >= Layouts.ARRAY.getSize(array)) {
+                notInBoundsProfile.enter();
                 return nil();
             } else {
                 final double[] store = (double[]) Layouts.ARRAY.getStore(array);
@@ -1099,39 +1013,14 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isObjectArray(array)", rewriteOn = UnexpectedResultException.class)
-        public Object deleteAtObjectInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        @Specialization(guards = "isObjectArray(array)")
+        public Object deleteAtObject(DynamicObject array, int index,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                @Cached("create()") BranchProfile notInBoundsProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
-            if (normalizedIndex < 0) {
-                throw new UnexpectedResultException(nil());
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
-                final Object value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                Layouts.ARRAY.setStore(array, store);
-                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "deleteAtObjectInBounds", guards = "isObjectArray(array)")
-        public Object deleteAtObject(DynamicObject array, int index) {
-            CompilerDirectives.transferToInterpreter();
-
-            int normalizedIndex = index;
-
-            if (normalizedIndex < 0) {
-                normalizedIndex = Layouts.ARRAY.getSize(array) + index;
-            }
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                return nil();
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                beyondEndBranch.enter();
+            if (normalizedIndex < 0 || normalizedIndex >= Layouts.ARRAY.getSize(array)) {
+                notInBoundsProfile.enter();
                 return nil();
             } else {
                 final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
@@ -1174,12 +1063,12 @@ public abstract class ArrayNodes {
             return toEnumNode.call(frame, array, "to_enum", null, eachSymbol);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullArray(array)")
         public Object eachNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return nil();
+            return array;
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isIntArray(array)")
         public Object eachIntegerFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
@@ -1202,7 +1091,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isLongArray(array)")
         public Object eachLongFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final long[] store = (long[]) Layouts.ARRAY.getStore(array);
 
@@ -1225,7 +1114,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isDoubleArray(array)")
         public Object eachFloat(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final double[] store = (double[]) Layouts.ARRAY.getStore(array);
 
@@ -1248,7 +1137,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isObjectArray(array)")
         public Object eachObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
@@ -1281,12 +1170,12 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullArray(array)")
         public DynamicObject eachWithEmpty(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             return array;
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isIntArray(array)")
         public Object eachWithIndexInt(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
@@ -1309,7 +1198,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isLongArray(array)")
         public Object eachWithIndexLong(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final long[] store = (long[]) Layouts.ARRAY.getStore(array);
 
@@ -1332,7 +1221,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isDoubleArray(array)")
         public Object eachWithIndexDouble(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final double[] store = (double[]) Layouts.ARRAY.getStore(array);
 
@@ -1355,7 +1244,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isObjectArray(array)")
         public Object eachWithIndexObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
@@ -1469,11 +1358,9 @@ public abstract class ArrayNodes {
         @Child private ToIntNode toIntNode;
         @Child private CallDispatchHeadNode toAryNode;
         @Child private KernelNodes.RespondToNode respondToToAryNode;
-        @Child private ArrayBuilderNode arrayBuilder;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isLong(object)", "wasProvided(object)", "!isRubyArray(object)" })
@@ -1484,7 +1371,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToAryNode.doesRespondToString(frame, object, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("to_ary", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), true)) {
+            if (respondToToAryNode.doesRespondToString(frame, object, create7BitString(StringOperations.encodeByteList("to_ary", UTF8Encoding.INSTANCE)), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
@@ -1520,7 +1407,7 @@ public abstract class ArrayNodes {
             return initialize(array, 0, nil(), block);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject initialize(DynamicObject array, NotProvided size, NotProvided defaultValue, DynamicObject block) {
             return initialize(array, 0, nil(), NotProvided.INSTANCE);
         }
@@ -1625,19 +1512,21 @@ public abstract class ArrayNodes {
 
         }
 
-        @Specialization(guards = {"wasProvided(defaultValue)", "size >= 0", "isRubyProc(block)"})
-        public Object initialize(VirtualFrame frame, DynamicObject array, int size, Object defaultValue, DynamicObject block) {
-            return initialize(frame, array, size, NotProvided.INSTANCE, block);
+        @Specialization(guards = { "wasProvided(defaultValue)", "size >= 0" })
+        public Object initialize(VirtualFrame frame, DynamicObject array, int size, Object defaultValue, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
+            return initializeBlock(frame, array, size, NotProvided.INSTANCE, block, arrayBuilder);
         }
 
-        @Specialization(guards = {"wasProvided(defaultValue)", "size < 0", "isRubyProc(block)"})
+        @Specialization(guards = { "wasProvided(defaultValue)", "size < 0" })
         public Object initializeNegative(VirtualFrame frame, DynamicObject array, int size, Object defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = {"size >= 0", "isRubyProc(block)"})
-        public Object initialize(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block) {
+        @Specialization(guards = "size >= 0")
+        public Object initializeBlock(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             Object store = arrayBuilder.start(size);
 
             int count = 0;
@@ -1662,28 +1551,19 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"size < 0", "isRubyProc(block)"})
+        @Specialization(guards = "size < 0")
         public Object initializeNegative(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "isRubyArray(copy)")
-        public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, NotProvided block) {
+        public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, Object maybeBlock) {
             CompilerDirectives.transferToInterpreter();
             Layouts.ARRAY.setStore(array, ArrayOperations.toObjectArray(copy));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(copy));
             return array;
         }
-
-        @Specialization(guards = {"isRubyArray(copy)", "isRubyProc(block)"})
-        public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-            Layouts.ARRAY.setStore(array, ArrayOperations.toObjectArray(copy));
-            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(copy));
-            return array;
-        }
-
 
     }
 
@@ -1719,7 +1599,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            Layouts.ARRAY.setStore(self, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            final int[] store = (int[]) Layouts.ARRAY.getStore(from);
+            Layouts.ARRAY.setStore(self, store.clone());
             Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
@@ -1729,7 +1610,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            Layouts.ARRAY.setStore(self, Arrays.copyOf((long[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            final long[] store = (long[]) Layouts.ARRAY.getStore(from);
+            Layouts.ARRAY.setStore(self, store.clone());
             Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
@@ -1739,7 +1621,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            Layouts.ARRAY.setStore(self, Arrays.copyOf((double[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            final double[] store = (double[]) Layouts.ARRAY.getStore(from);
+            Layouts.ARRAY.setStore(self, store.clone());
             Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
@@ -1749,7 +1632,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            Layouts.ARRAY.setStore(self, Arrays.copyOf((Object[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            final Object[] store = (Object[]) Layouts.ARRAY.getStore(from);
+            Layouts.ARRAY.setStore(self, ArrayUtils.copy(store));
             Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
@@ -1767,70 +1651,70 @@ public abstract class ArrayNodes {
             dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
         }
 
-        @Specialization(guards = { "isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        @Specialization(guards = { "isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectEmptyArray(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
             return initial;
         }
 
-        @Specialization(guards = { "isEmptyArray(array)", "isRubyProc(block)" })
+        @Specialization(guards = "isEmptyArray(array)")
         public Object injectEmptyArrayNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
             return nil();
         }
 
-        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectIntegerFixnum(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
             return injectHelper(frame, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
+        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)" })
         public Object injectIntegerFixnumNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
             final ArrayMirror mirror = ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
-        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectLongFixnum(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
             return injectHelper(frame, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
+        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)" })
         public Object injectLongFixnumNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
             final ArrayMirror mirror = ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
-        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectFloat(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
             return injectHelper(frame, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
+        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)" })
         public Object injectFloatNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
             final ArrayMirror mirror = ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
-        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectObject(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
             return injectHelper(frame, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
+        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)" })
         public Object injectObjectNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
             final ArrayMirror mirror = ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
-        @Specialization(guards = { "isNullArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        @Specialization(guards = { "isNullArray(array)", "wasProvided(initial)" })
         public Object injectNull(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
             return initial;
         }
 
-        @Specialization(guards = { "isNullArray(array)", "isRubyProc(block)" })
+        @Specialization(guards = "isNullArray(array)")
         public Object injectNullNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
             return nil();
         }
@@ -1894,8 +1778,6 @@ public abstract class ArrayNodes {
         }
 
         private Object injectHelper(VirtualFrame frame, ArrayMirror mirror, DynamicObject array, Object initial, DynamicObject block, int startIndex) {
-            assert RubyGuards.isRubyProc(block);
-
             int count = 0;
 
             Object accumulator = initial;
@@ -2047,20 +1929,18 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayBuilderNode arrayBuilder;
-
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullArray(array)")
         public DynamicObject mapNull(DynamicObject array, DynamicObject block) {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
-        public Object mapIntegerFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        @Specialization(guards = "isIntArray(array)")
+        public Object mapIntegerFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
             final int arraySize = Layouts.ARRAY.getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -2083,8 +1963,9 @@ public abstract class ArrayNodes {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
-        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
-        public Object mapLongFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        @Specialization(guards = "isLongArray(array)")
+        public Object mapLongFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final long[] store = (long[]) Layouts.ARRAY.getStore(array);
             final int arraySize = Layouts.ARRAY.getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -2107,8 +1988,9 @@ public abstract class ArrayNodes {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
-        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
-        public Object mapFloat(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        @Specialization(guards = "isDoubleArray(array)")
+        public Object mapFloat(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final double[] store = (double[]) Layouts.ARRAY.getStore(array);
             final int arraySize = Layouts.ARRAY.getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -2131,8 +2013,9 @@ public abstract class ArrayNodes {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
-        public Object mapObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        @Specialization(guards = "isObjectArray(array)")
+        public Object mapObject(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
             final int arraySize = Layouts.ARRAY.getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -2160,24 +2043,19 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayWriteDenormalizedNode writeNode;
+        @Child private ArrayWriteNormalizedNode writeNode;
 
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullArray(array)")
         public DynamicObject mapInPlaceNull(DynamicObject array, DynamicObject block) {
             return array;
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isIntArray(array)")
         public Object mapInPlaceFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            if (writeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-            }
-
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
             int count = 0;
@@ -2188,7 +2066,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
+                    write(frame, array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2200,13 +2078,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isObjectArray(array)")
         public Object mapInPlaceObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            if (writeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-            }
-
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
             int count = 0;
@@ -2217,7 +2090,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
+                    write(frame, array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2227,6 +2100,14 @@ public abstract class ArrayNodes {
 
 
             return array;
+        }
+
+        private Object write(VirtualFrame frame, DynamicObject array, int index, Object value) {
+            if (writeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+            return writeNode.executeWrite(array, index, value);
         }
     }
 
@@ -2250,12 +2131,14 @@ public abstract class ArrayNodes {
 
             final Memo<Object> maximum = new Memo<>();
 
-            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
+            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
+                    RubyArguments.pack(method, null, null, array, null, DeclarationContext.BLOCK, new Object[] {}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maximumClosureFrame.materialize(), null, array, null);
+                    maximumClosureFrame.materialize(), method, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2279,6 +2162,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public DynamicObject max(VirtualFrame frame, Object maximumObject, Object value) {
+            @SuppressWarnings("unchecked")
             final Memo<Object> maximum = (Memo<Object>) maximumObject;
 
             // TODO(CS): cast
@@ -2304,10 +2188,10 @@ public abstract class ArrayNodes {
         public MaxBlock(RubyContext context) {
             final SourceSection sourceSection = new CoreSourceSection("Array", "max");
 
-            frameDescriptor = new FrameDescriptor();
+            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
@@ -2352,12 +2236,14 @@ public abstract class ArrayNodes {
 
             final Memo<Object> minimum = new Memo<>();
 
-            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
+            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
+                    RubyArguments.pack(method, null, null, array, null, DeclarationContext.BLOCK, new Object[] {}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minimumClosureFrame.materialize(), null, array, null);
+                    minimumClosureFrame.materialize(), method, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2381,6 +2267,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public DynamicObject min(VirtualFrame frame, Object minimumObject, Object value) {
+            @SuppressWarnings("unchecked")
             final Memo<Object> minimum = (Memo<Object>) minimumObject;
 
             // TODO(CS): cast
@@ -2406,10 +2293,10 @@ public abstract class ArrayNodes {
         public MinBlock(RubyContext context) {
             final SourceSection sourceSection = new CoreSourceSection("Array", "min");
 
-            frameDescriptor = new FrameDescriptor();
+            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
@@ -2480,7 +2367,7 @@ public abstract class ArrayNodes {
                 throw handleException(e);
             }
 
-            return finishPack(Layouts.STRING.getByteList(format), result);
+            return finishPack(StringOperations.getByteList(format), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2502,7 +2389,7 @@ public abstract class ArrayNodes {
         }
 
         private DynamicObject finishPack(ByteList format, PackResult result) {
-            final DynamicObject string = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(result.getOutput(), 0, result.getOutputLength()), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
@@ -3109,7 +2996,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                store = ArrayUtils.grow(store, ArrayUtils.capacity(store.length, newSize));
             }
             ;
             for (int n = 0; n < values.length; n++) {
@@ -3190,7 +3077,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                Object store1 = store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                Object store1 = store = ArrayUtils.grow(store, ArrayUtils.capacity(store.length, newSize));
                 Layouts.ARRAY.setStore(array, store1);
                 Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             }
@@ -3207,20 +3094,18 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayBuilderNode arrayBuilder;
-
         public RejectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullArray(array)")
         public Object selectNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
-        public Object selectObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        @Specialization(guards = "isObjectArray(array)")
+        public Object selectObject(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
             Object selectedStore = arrayBuilder.start(Layouts.ARRAY.getSize(array));
@@ -3252,8 +3137,9 @@ public abstract class ArrayNodes {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
-        public Object selectFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        @Specialization(guards = "isIntArray(array)")
+        public Object selectFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
             Object selectedStore = arrayBuilder.start(Layouts.ARRAY.getSize(array));
@@ -3295,12 +3181,12 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullArray(array)")
         public Object rejectInPlaceNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             return array;
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isIntArray(array)")
         public Object rejectInPlaceInt(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
@@ -3326,7 +3212,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isLongArray(array)")
         public Object rejectInPlaceLong(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final long[] store = (long[]) Layouts.ARRAY.getStore(array);
 
@@ -3352,7 +3238,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isDoubleArray(array)")
         public Object rejectInPlaceDouble(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final double[] store = (double[]) Layouts.ARRAY.getStore(array);
 
@@ -3378,7 +3264,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isObjectArray(array)")
         public Object rejectInPlaceObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
@@ -3415,12 +3301,12 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullArray(array)")
         public Object rejectInPlaceNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             return nil();
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isIntArray(array)")
         public Object rejectInPlaceInt(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
@@ -3448,7 +3334,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isLongArray(array)")
         public Object rejectInPlaceLong(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final long[] store = (long[]) Layouts.ARRAY.getStore(array);
 
@@ -3476,7 +3362,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isDoubleArray(array)")
         public Object rejectInPlaceDouble(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final double[] store = (double[]) Layouts.ARRAY.getStore(array);
 
@@ -3504,7 +3390,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isObjectArray(array)")
         public Object rejectInPlaceObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
@@ -3601,20 +3487,18 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayBuilderNode arrayBuilder;
-
         public SelectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullArray(array)")
         public Object selectNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
-        public Object selectObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        @Specialization(guards = "isObjectArray(array)")
+        public Object selectObject(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
             Object selectedStore = arrayBuilder.start(Layouts.ARRAY.getSize(array));
@@ -3644,8 +3528,9 @@ public abstract class ArrayNodes {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
-        public Object selectFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        @Specialization(guards = "isIntArray(array)")
+        public Object selectFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
             Object selectedStore = arrayBuilder.start(Layouts.ARRAY.getSize(array));
@@ -4243,7 +4128,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"isObjectArray(array)", "isSmall(array)"})
         public DynamicObject sortVeryShortObject(VirtualFrame frame, DynamicObject array, NotProvided block) {
             final Object[] oldStore = (Object[]) Layouts.ARRAY.getStore(array);
-            final Object[] store = Arrays.copyOf(oldStore, oldStore.length);
+            final Object[] store = ArrayUtils.copy(oldStore);
 
             // Insertion sort
 
@@ -4263,7 +4148,7 @@ public abstract class ArrayNodes {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
         }
 
-        @Specialization(guards = { "!isNullArray(array)", "isRubyProc(block)" })
+        @Specialization(guards = { "!isNullArray(array)" })
         public Object sortUsingRubinius(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", Layouts.ARRAY.getSize(array), "block", block);
         }
@@ -4312,7 +4197,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", rest = true, required = 1)
+    @CoreMethod(names = "zip", rest = true, required = 1, needsBlock = true)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode zipInternalCall;
@@ -4322,7 +4207,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isIntArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others) {
+        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final int[] b = (int[]) Layouts.ARRAY.getStore(other);
@@ -4351,7 +4236,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isObjectArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others) {
+        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final Object[] b = (Object[]) Layouts.ARRAY.getStore(other);
@@ -4381,25 +4266,29 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isRubyArray(other)", "fallback(array, other, others)" })
-        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others) {
-            return zipRuby(frame, array);
+        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+            return zipRuby(frame, array, null);
         }
 
         @Specialization(guards = { "!isRubyArray(other)" })
-        public Object zipObjectObjectNotArray(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others) {
-            return zipRuby(frame, array);
+        public Object zipObjectObjectNotArray(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+            return zipRuby(frame, array, null);
         }
 
-        private Object zipRuby(VirtualFrame frame, DynamicObject array) {
+        @Specialization
+        public Object zipBlock(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, DynamicObject block) {
+            return zipRuby(frame, array, block);
+        }
+
+        private Object zipRuby(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             if (zipInternalCall == null) {
                 CompilerDirectives.transferToInterpreter();
                 zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final DynamicObject proc = RubyArguments.getBlock(frame.getArguments());
             final Object[] others = RubyArguments.extractUserArguments(frame.getArguments());
 
-            return zipInternalCall.call(frame, array, "zip_internal", proc, others);
+            return zipInternalCall.call(frame, array, "zip_internal", block, others);
         }
 
         protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {

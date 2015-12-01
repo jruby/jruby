@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.FloatNodes;
@@ -25,6 +26,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -33,24 +35,37 @@ public abstract class ToIntNode extends RubyNode {
     @Child private CallDispatchHeadNode toIntNode;
     @Child private FloatNodes.ToINode floatToIntNode;
 
+    private final ConditionProfile wasInteger = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile wasLong = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile wasLongInRange = ConditionProfile.createBinaryProfile();
+
     public ToIntNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     public int doInt(VirtualFrame frame, Object object) {
+        // TODO CS 14-Nov-15 this code is crazy - should have separate nodes for ToRubyInteger and ToJavaInt
+
         final Object integerObject = executeIntOrLong(frame, object);
 
-        if (integerObject instanceof Integer) {
+        if (wasInteger.profile(integerObject instanceof Integer)) {
             return (int) integerObject;
         }
 
-        if (RubyGuards.isRubyBignum(object)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
+        if (wasLong.profile(integerObject instanceof Long)) {
+            final long longValue = (long) integerObject;
+
+            if (wasLongInRange.profile(CoreLibrary.fitsIntoInteger(longValue))) {
+                return (int) longValue;
+            }
         }
 
         CompilerDirectives.transferToInterpreter();
-        throw new UnsupportedOperationException();
+        if (RubyGuards.isRubyBignum(object)) {
+            throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
+        } else {
+            throw new UnsupportedOperationException(object.getClass().toString());
+        }
     }
 
     public abstract Object executeIntOrLong(VirtualFrame frame, Object object);
@@ -97,11 +112,10 @@ public abstract class ToIntNode extends RubyNode {
         }
 
         final Object coerced;
-
         try {
             coerced = toIntNode.call(frame, object, "to_int", null);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Integer", this));
             } else {

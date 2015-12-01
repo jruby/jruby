@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
@@ -25,6 +24,7 @@ import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
@@ -83,7 +83,7 @@ public abstract class ObjectPrimitiveNodes {
             return ObjectIDOperations.floatToID(getContext(), value);
         }
 
-        @Specialization
+        @Specialization(guards = "!isNil(object)")
         public long objectID(DynamicObject object,
                 @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode,
                 @Cached("createWriteObjectIDNode()") WriteHeadObjectFieldNode writeObjectIdNode) {
@@ -104,11 +104,11 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), Layouts.OBJECT_ID_IDENTIFIER, 0L, null);
+            return ReadHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected WriteHeadObjectFieldNode createWriteObjectIDNode() {
-            return new WriteHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER);
+            return WriteHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER);
         }
 
     }

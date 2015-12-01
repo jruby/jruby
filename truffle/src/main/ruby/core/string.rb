@@ -9,7 +9,17 @@
 class String
 
   def %(args)
-    sprintf(self, *args)
+    if args.is_a? Hash
+      sprintf(self, args)
+    else
+      sprintf(self, *args)
+    end
+  end
+
+  def downcase
+    s = dup
+    s.downcase!
+    s
   end
 
 end

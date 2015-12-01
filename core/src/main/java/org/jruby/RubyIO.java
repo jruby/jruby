@@ -67,42 +67,41 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.jcodings.Encoding;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
+import org.jruby.internal.runtime.ThreadedRunnable;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.SelectExecutor;
-import org.jruby.util.io.IOOptions;
+import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.IOEncodable;
+import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.InvalidValueException;
-import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
-
-import org.jruby.runtime.Arity;
+import org.jruby.util.io.SelectExecutor;
+import org.jruby.util.io.STDIO;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.internal.runtime.ThreadedRunnable;
-import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.util.ShellLauncher.POpenProcess;
-import org.jruby.util.io.IOEncodable;
+import static org.jruby.runtime.Visibility.*;
+import static org.jruby.util.io.ChannelHelper.*;
 
 /**
  *
@@ -134,7 +133,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         openFile = MakeOpenFile();
-        openFile.setFD(new ChannelFD(Channels.newChannel(outputStream), runtime.getPosix(), runtime.getFilenoUtil()));
+        openFile.setFD(new ChannelFD(writableChannel(outputStream), runtime.getPosix(), runtime.getFilenoUtil()));
         openFile.setMode(OpenFile.WRITABLE | OpenFile.APPEND);
         openFile.setAutoclose(autoclose);
     }
@@ -147,7 +146,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         openFile = MakeOpenFile();
-        openFile.setFD(new ChannelFD(Channels.newChannel(inputStream), runtime.getPosix(), runtime.getFilenoUtil()));
+        openFile.setFD(new ChannelFD(readableChannel(inputStream), runtime.getPosix(), runtime.getFilenoUtil()));
         openFile.setMode(OpenFile.READABLE);
     }
 
@@ -400,7 +399,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     public Channel getChannel() {
         // FIXME: Do we want to make a faux channel that is backed by IO's buffering? Or turn buffering off?
-        return openFile.channel();
+        return getOpenFileChecked().channel();
     }
 
     // io_reopen
@@ -2984,7 +2983,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             boolean locked = fptr.lock();
             try {
                 fptr.checkCharReadable(context);
-                return fptr.readAll(context, 0, str);
+                return fptr.readAll(context, fptr.remainSize(), str);
             } finally {
                 if (locked) fptr.unlock();
             }
@@ -4319,19 +4318,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
     protected IOOptions updateIOOptionsFromOptions(ThreadContext context, RubyHash options, IOOptions ioOptions) {
         if (options == null || options.isNil()) return ioOptions;
 
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
-        if (options.containsKey(runtime.newSymbol("mode"))) {
-            ioOptions = parseIOOptions(options.fastARef(runtime.newSymbol("mode")));
+        final RubySymbol mode = runtime.newSymbol("mode");
+        if (options.containsKey(mode)) {
+            ioOptions = parseIOOptions(options.fastARef(mode));
         }
 
         // This duplicates the non-error behavior of MRI 1.9: the
         // :binmode option is ORed in with other options. It does
         // not obliterate what came before.
 
-        if (options.containsKey(runtime.newSymbol("binmode")) &&
-                options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
-
+        final RubySymbol binmode = runtime.newSymbol("binmode");
+        if (options.containsKey(binmode) && options.fastARef(binmode).isTrue()) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
 
@@ -4339,24 +4338,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
         // :binmode option is ORed in with other options. It does
         // not obliterate what came before.
 
-        if (options.containsKey(runtime.newSymbol("binmode")) &&
-                options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
-
+        if (options.containsKey(binmode) && options.fastARef(binmode).isTrue()) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
 
-        if (options.containsKey(runtime.newSymbol("textmode")) &&
-                options.fastARef(runtime.newSymbol("textmode")).isTrue()) {
-
+        final RubySymbol textmode = runtime.newSymbol("textmode");
+        if (options.containsKey(textmode) && options.fastARef(textmode).isTrue()) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.TEXT);
         }
 
+        final RubySymbol open_args = runtime.newSymbol("open_args");
         // TODO: Waaaay different than MRI.  They uniformly have all opening logic
         // do a scan of args before anything opens.  We do this logic in a less
         // consistent way.  We should consider re-impling all IO/File construction
         // logic.
-        if (options.containsKey(runtime.newSymbol("open_args"))) {
-            IRubyObject args = options.fastARef(runtime.newSymbol("open_args"));
+        if (options.containsKey(open_args)) {
+            IRubyObject args = options.fastARef(open_args);
 
             RubyArray openArgs = args.convertToArray();
 
@@ -4667,11 +4664,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
         return getline(runtime.getCurrentContext(), runtime.newString(separator), limit, null);
-    }
-
-    @Deprecated
-    private IRubyObject getline(ThreadContext context, IRubyObject separator, ByteListCache cache) {
-        return getline(context, separator, -1, cache);
     }
 
     @Deprecated

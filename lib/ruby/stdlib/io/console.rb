@@ -156,7 +156,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
           con = @console
         end
 
-        if !con.kind_of?(File) || !con.open? || !con.readable? # MRI checks IO internals here
+        if !con.kind_of?(File) || (con.kind_of?(IO) && !con.open? || !con.readable?) # MRI checks IO internals here
           remove_instance_variable :@console if defined?(@console)
           con = nil
         end

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -21,8 +22,8 @@ import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 
 import java.util.Arrays;
 import java.util.StringTokenizer;
@@ -60,6 +61,7 @@ public class SimpleShell {
                     return;
 
                 case "exit":
+                    // We're in the debugger, not normal Ruby, so just hard exit here
                     System.exit(0);
                     break;
 
@@ -70,11 +72,15 @@ public class SimpleShell {
 
                 default:
                     try {
-                        final Object result = context.execute(
-                                Source.fromText(shellLine, "shell"), UTF8Encoding.INSTANCE,
-                                TranslatorDriver.ParserContext.EVAL,
-                                RubyArguments.getSelf(currentFrame.getArguments()), currentFrame,
-                                false, currentNode, NodeWrapper.IDENTITY);
+                        final Object result = context.parseAndExecute(
+                                Source.fromText(shellLine, "shell"),
+                                UTF8Encoding.INSTANCE,
+                                ParserContext.EVAL,
+                                RubyArguments.getSelf(currentFrame.getArguments()),
+                                currentFrame,
+                                false,
+                                RubyArguments.getDeclarationContext(currentFrame.getArguments()),
+                                currentNode);
 
                         String inspected;
 

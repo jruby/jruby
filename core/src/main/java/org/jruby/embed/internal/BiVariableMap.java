@@ -46,6 +46,7 @@ import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.VariableInterceptor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 /**
  * Ruby-Java bi-directional variable map implementation. Keys of this map
@@ -350,7 +351,7 @@ public class BiVariableMap implements Map<String, Object> {
      * @return String array of Ruby's local variable names
      */
     public String[] getLocalVarNames() {
-        if ( variables == null ) return new String[0];
+        if ( variables == null ) return EMPTY_STRING_ARRAY;
 
         List<String> localVarNames = new ArrayList<String>();
         for ( final BiVariable var : variables ) {

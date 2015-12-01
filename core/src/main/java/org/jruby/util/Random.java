@@ -46,6 +46,9 @@ public class Random {
     private final int[] state = new int[N];
     private int left = 1;
 
+    public Random() {
+    }
+
     public Random(int s) {
         initGenrand(s);
     }

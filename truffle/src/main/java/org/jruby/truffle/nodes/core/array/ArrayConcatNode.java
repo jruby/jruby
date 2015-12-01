@@ -34,7 +34,7 @@ public final class ArrayConcatNode extends RubyNode {
         super(context, sourceSection);
         assert children.length > 1;
         this.children = children;
-        arrayBuilderNode = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
+        arrayBuilderNode = ArrayBuilderNode.create(context);
     }
 
     @Override

@@ -44,11 +44,11 @@ public class HashForeignAccessFactory implements ForeignAccessFactory {
     }
 
     public CallTarget getAccess(Message tree) {
-    	if (Read.create(Receiver.create(), Argument.create()).matchStructure(tree)) {
+        if (Read.create(Receiver.create(), Argument.create()).matchStructure(tree)) {
             return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createRead(context, new NullSourceSection("", ""), (Read) tree)));
-    	} else if (Execute.create(Read.create(Receiver.create(), Argument.create()),0).matchStructure(tree)) {
+        } else if (Execute.create(Read.create(Receiver.create(), Argument.create()),0).matchStructure(tree)) {
             return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, new NullSourceSection("", ""), (Execute) tree)));
-    	} else if (Write.create(Receiver.create(), Argument.create(), Argument.create()).matchStructure(tree)) {
+        } else if (Write.create(Receiver.create(), Argument.create(), Argument.create()).matchStructure(tree)) {
             return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createWrite(context, new NullSourceSection("", ""), (Write) tree)));
         } else if (IsExecutable.create(Receiver.create()).matchStructure(tree)) {
             return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, new NullSourceSection("", ""))));

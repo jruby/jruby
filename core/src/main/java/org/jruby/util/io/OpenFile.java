@@ -34,6 +34,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -71,7 +72,7 @@ public class OpenFile implements Finalizable {
     public static final int TEXTMODE           = 0x00001000;
     public static final int SETENC_BY_BOM      = 0x00100000;
     public static final int PREP         = (1<<16);
-    
+
     public static final int SYNCWRITE = SYNC | WRITABLE;
 
     public static final int PIPE_BUF = 512; // value of _POSIX_PIPE_BUF from Mac OS X 10.9
@@ -193,7 +194,7 @@ public class OpenFile implements Finalizable {
     public int getMode() {
         return mode;
     }
-    
+
     public String getModeAsString(Ruby runtime) {
         String modeString = getStringFromMode(mode);
 
@@ -203,10 +204,10 @@ public class OpenFile implements Finalizable {
 
         return modeString;
     }
-    
+
     public static int getModeFlagsAsIntFrom(int fmode) {
         int oflags = 0;
-        
+
         if ((fmode & READABLE) != 0) {
             if ((fmode & WRITABLE) != 0) {
                 oflags |= ModeFlags.RDWR;
@@ -216,13 +217,13 @@ public class OpenFile implements Finalizable {
         } else if ((fmode & WRITABLE) != 0) {
             oflags |= ModeFlags.WRONLY;
         }
-        
+
         if ((fmode & APPEND) != 0) oflags |= ModeFlags.APPEND;
         if ((fmode & CREATE) != 0) oflags |= ModeFlags.CREAT;
         if ((fmode & BINMODE) != 0) oflags |= ModeFlags.BINARY;
         if ((fmode & TEXTMODE) != 0) oflags |= ModeFlags.TEXT;
         if ((fmode & TRUNC) != 0) oflags |= ModeFlags.TRUNC;
-        
+
         return oflags;
     }
 
@@ -440,7 +441,7 @@ public class OpenFile implements Finalizable {
         try {
             if (posix.errno == null) return false;
 
-            if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
+            checkClosed();
 
             switch (posix.errno) {
                 case EINTR:
@@ -470,7 +471,7 @@ public class OpenFile implements Finalizable {
         try {
             if (posix.errno == null) return false;
 
-            if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
+            checkClosed();
 
             switch (posix.errno) {
                 case EINTR:
@@ -925,7 +926,7 @@ public class OpenFile implements Finalizable {
                 dname = encs.enc.getName();
             }
             else {
-                sname = dname = new byte[0];
+                sname = dname = EMPTY_BYTE_ARRAY;
             }
             readconv = EncodingUtils.econvOpenOpts(context, sname, dname, ecflags, ecopts);
             if (readconv == null)
@@ -1021,7 +1022,7 @@ public class OpenFile implements Finalizable {
     }
     public static final int IO_WBUF_CAPA_MIN = 8192;
 
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    private static final byte[] EMPTY_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // MRI: appendline
     public int appendline(ThreadContext context, int delim, ByteList[] strp, int[] lp) {
@@ -1390,9 +1391,7 @@ public class OpenFile implements Finalizable {
      * MRI: rb_io_wait_readable
      */
     boolean waitReadable(ThreadContext context, ChannelFD fd) {
-        if (fd == null) {
-            throw context.runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
-        }
+        checkClosed();
 
         boolean locked = lock();
         try {
@@ -2029,7 +2028,8 @@ public class OpenFile implements Finalizable {
 
     // MRI: io_fwrite
     public long fwrite(ThreadContext context, IRubyObject str, boolean nosync) {
-        if (Platform.IS_WINDOWS && isStdio()) {
+        // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
+        if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
             return rbW32WriteConsole((RubyString)str);
         }
 
@@ -2246,30 +2246,37 @@ public class OpenFile implements Finalizable {
     }
 
     public Channel channel() {
+        assert(fd != null);
         return fd.ch;
     }
 
     public ReadableByteChannel readChannel() {
+        assert(fd != null);
         return fd.chRead;
     }
 
     public WritableByteChannel writeChannel() {
+        assert(fd != null);
         return fd.chWrite;
     }
 
-    public FileChannel seekChannel() {
+    public SeekableByteChannel seekChannel() {
+        assert(fd != null);
         return fd.chSeek;
     }
 
     public SelectableChannel selectChannel() {
+        assert(fd != null);
         return fd.chSelect;
     }
 
     public FileChannel fileChannel() {
+        assert(fd != null);
         return fd.chFile;
     }
 
     public SocketChannel socketChannel() {
+        assert(fd != null);
         return fd.chSock;
     }
 
@@ -2620,28 +2627,20 @@ public class OpenFile implements Finalizable {
     }
 
     public int remainSize() {
-        FileStat st;
         int siz = READ_DATA_PENDING_COUNT();
+        long size;
         long pos;
 
-        // MRI does all this presumably to read more of the file right away, but
-        // I believe the logic that uses this is ok with just pending read plus buf size.
-
-//        if (fstat(fptr -> fd, & st)==0 && S_ISREG(st.st_mode))
-//        {
-//            if (io_fflush(fptr) < 0)
-//                rb_sys_fail(0);
-//            pos = lseek(fptr -> fd, 0, SEEK_CUR);
-//            if (st.st_size >= pos && pos >= 0) {
-//                siz += st.st_size - pos;
-//                if (siz > LONG_MAX) {
-//                    rb_raise(rb_eIOError, "file too big for single read");
-//                }
-//            }
-//        }
-//        else {
+        if ((size = posix.size(fd)) >= 0 &&
+                (pos = posix.lseek(fd, 0, PosixShim.SEEK_CUR)) >= 0 &&
+                size > pos) {
+            if (siz + (size - pos) > Integer.MAX_VALUE) {
+                throw runtime.newIOError("file too big for single read");
+            }
+            siz += size - pos;
+        } else {
             siz += BUFSIZ;
-//        }
+        }
         return siz;
     }
 

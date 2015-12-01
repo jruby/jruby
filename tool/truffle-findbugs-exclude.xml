@@ -82,6 +82,10 @@
     <Class name="org.jruby.truffle.nodes.constants.LookupConstantNode" />
     <Bug pattern="ES_COMPARING_PARAMETER_STRING_WITH_EQ" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.constants.GetConstantNode" />
+    <Bug pattern="ES_COMPARING_PARAMETER_STRING_WITH_EQ" />
+  </Match>
 
   <!-- Stuff where we're genuinely doing something complicated and we do know what we're doing -->
 
@@ -158,7 +162,7 @@
   <!-- Risks we're happy with for the sake of performance -->
 
   <Match>
-    <Class name="org.jruby.truffle.pack.runtime.PackResult" />
+    <Class name="org.jruby.truffle.format.runtime.PackResult" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
   <Match>
@@ -171,6 +175,10 @@
   </Match>
   <Match>
     <Class name="org.jruby.truffle.runtime.methods.Arity" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.translator.BodyTranslator$ArgumentsAndBlockTranslation" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
 

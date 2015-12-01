@@ -28,7 +28,7 @@ describe "File#ctime" do
     @file = File.open(__FILE__)
   end
 
-  after:each do
+  after :each do
     @file.close
     @file = nil
   end

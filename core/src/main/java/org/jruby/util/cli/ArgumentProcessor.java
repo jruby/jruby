@@ -45,14 +45,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.regex.Pattern;
 
 /**
  * Encapsulated logic for processing JRuby's command-line arguments.
- * 
+ *
  * This class holds the processing logic for JRuby's non-JVM command-line arguments.
  * All standard Ruby options are processed here, as well as nonstandard JRuby-
  * specific options.
- * 
+ *
  * Options passed directly to the JVM are processed separately, by either a launch
  * script or by a native executable.
  */
@@ -77,6 +78,8 @@ public class ArgumentProcessor {
     RubyInstanceConfig config;
     private boolean endOfArguments = false;
     private int characterIndex = 0;
+
+    private static final Pattern VERSION_FLAG = Pattern.compile("^--[12]\\.[89012]$");
 
     public ArgumentProcessor(String[] arguments, RubyInstanceConfig config) {
         this(arguments, true, false, false, config);
@@ -117,17 +120,18 @@ public class ArgumentProcessor {
     }
 
     private void processArgv() {
-        List<String> arglist = new ArrayList<String>();
+        ArrayList<String> arglist = new ArrayList<String>();
         for (; argumentIndex < arguments.size(); argumentIndex++) {
             String arg = arguments.get(argumentIndex).originalValue;
             if (config.isArgvGlobalsOn() && arg.startsWith("-")) {
                 arg = arg.substring(1);
-                if (arg.indexOf('=') > 0) {
-                    String[] keyvalue = arg.split("=", 2);
-
+                int split = arg.indexOf('=');
+                if (split > 0) {
+                    final String key = arg.substring(0, split);
+                    final String val = arg.substring(split + 1);
                     // argv globals getService their dashes replaced with underscores
-                    String globalName = keyvalue[0].replaceAll("-", "_");
-                    config.getOptionGlobals().put(globalName, keyvalue[1]);
+                    String globalName = key.replace('-', '_');
+                    config.getOptionGlobals().put(globalName, val);
                 } else {
                     config.getOptionGlobals().put(arg, null);
                 }
@@ -175,7 +179,7 @@ public class ArgumentProcessor {
                         } else {
                             try {
                                 int val = Integer.parseInt(temp, 8);
-                                config.setRecordSeparator("" + (char) val);
+                                config.setRecordSeparator(String.valueOf((char) val));
                             } catch (Exception e) {
                                 MainExitException mee = new MainExitException(1, getArgumentError(" -0 must be followed by either 0, 777, or a valid octal value"));
                                 mee.setUsageError(true);
@@ -304,7 +308,7 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'T':
                     {
-                        String temp = grabOptionalValue();
+                        grabOptionalValue();
                         break FOR;
                     }
                 case 'U':
@@ -379,8 +383,10 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
+                    } else if (extendedOption.equals("-T")) {
+                        config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        config.setDisableGems(false);
                     } else if (extendedOption.equals("+T")) {
-                        checkGraalVersion();
                         Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         config.setDisableGems(true);
@@ -447,18 +453,18 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.startsWith("--profile")) {
                         characterIndex = argument.length();
-                        int dotIndex = argument.indexOf(".");
-                        
+                        int dotIndex = argument.indexOf('.');
+
                         if (dotIndex == -1) {
                             config.setProfilingMode(RubyInstanceConfig.ProfilingMode.FLAT);
-                            
+
                         } else {
                             String profilingMode = argument.substring(dotIndex + 1, argument.length());
-                            
+
                             if (profilingMode.equals("out")) {
                                 // output file for profiling results
                                 String outputFile = grabValue(getArgumentError("--profile.out requires an output file argument"));
-                                
+
                                 try {
                                     config.setProfileOutput(new ProfileOutput(new File(outputFile)));
                                 } catch (FileNotFoundException e) {
@@ -480,19 +486,10 @@ public class ArgumentProcessor {
                                 }
                             }
                         }
-                        
+
                         break FOR;
-                    } else if (argument.equals("--1.8")) {
+                    } else if (VERSION_FLAG.matcher(argument).matches()) {
                         config.getError().println("warning: " + argument + " ignored");
-                        break FOR;
-                    } else if (argument.equals("--1.9")) {
-                        config.getError().println("warning: " + argument + " ignored");
-                        break FOR;
-                    } else if (argument.equals("--2.0")) {
-                        config.getError().println("warning: " + argument + " ignored");
-                        break FOR;
-                    } else if (argument.equals("--2.1")) {
-                        // keep the switch for consistency 
                         break FOR;
                     } else if (argument.equals("--disable-gems")) {
                         config.setDisableGems(true);
@@ -647,7 +644,7 @@ public class ArgumentProcessor {
         // JRubyFile.create.
         String result = resolve(config.getCurrentDirectory(), scriptName);
         if (result != null) return scriptName;// use relative filename
-                result = resolve(config.getJRubyHome() + "/bin", scriptName);
+        result = resolve(config.getJRubyHome() + "/bin", scriptName);
         if (result != null) return result;
         // since the current directory is also on the classpath we
         // want to find it on filesystem first
@@ -661,7 +658,7 @@ public class ArgumentProcessor {
             String path = maybePath.toString();
             String[] paths = path.split(System.getProperty("path.separator"));
             for (int i = 0; i < paths.length; i++) {
-                result = resolve(paths[i], scriptName);
+                result = resolve(new File(paths[i]).getAbsolutePath(), scriptName);
                 if (result != null) return result;
             }
         }
@@ -712,18 +709,6 @@ public class ArgumentProcessor {
     private void logScriptResolutionFailure(String path) {
         if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
             config.getError().println("Searched: " + path);
-        }
-    }
-
-    public static void checkGraalVersion() {
-        final String graalVersion = System.getProperty("graal.version", "unknown");
-        final String expectedGraalVersion = "0.7";
-
-        if (graalVersion.equals("unknown")) {
-            return;
-        } else if (!graalVersion.equals(expectedGraalVersion)) {
-            throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion +
-                    " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
         }
     }
 

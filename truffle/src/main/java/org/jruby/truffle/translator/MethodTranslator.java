@@ -9,9 +9,6 @@
  */
 package org.jruby.truffle.translator;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -19,6 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.ast.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -42,6 +40,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 public class MethodTranslator extends BodyTranslator {
 
     private final org.jruby.ast.ArgsNode argsNode;
@@ -54,7 +55,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, Type type) {
-        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
+        declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
         final Arity arityForCheck;
 
@@ -84,7 +85,7 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
         final RubyNode preludeProc;
-        if (shouldConsiderDestructuringArrayArg()) {
+        if (shouldConsiderDestructuringArrayArg(arity)) {
             final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
             final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
@@ -95,29 +96,24 @@ public class MethodTranslator extends BodyTranslator {
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
             preludeProc = new IfNode(context, sourceSection,
-                                    new ShouldDestructureNode(context, sourceSection, arity,
-                                            new RespondToNode(context, sourceSection, readArrayNode, "to_ary")),
+                                    new ShouldDestructureNode(context, sourceSection, new RespondToNode(context, sourceSection, readArrayNode, "to_ary")),
                     SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments), loadArguments);
         } else {
             preludeProc = loadArguments;
         }
 
         final RubyNode preludeLambda = SequenceNode.sequence(context, sourceSection,
-                new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                CheckArityNode.create(context, sourceSection, arityForCheck),
                 NodeUtil.cloneNode(loadArguments));
 
         // Procs
-        final RubyNode bodyProc = wrapBody(preludeProc, body);
+        final RubyNode bodyProc = new CatchForProcNode(context, sourceSection, composeBody(preludeProc, body));
 
         final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
-        final RubyNode bodyLambda =
-                new CatchBreakAsReturnNode(context, sourceSection,
-                        new CatchReturnNode(context, sourceSection,
-                                wrapBody(preludeLambda, body),
-                                environment.getReturnID()));
+        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection, composeBody(preludeLambda, body), environment.getReturnID());
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
                 context, sourceSection,
@@ -132,19 +128,20 @@ public class MethodTranslator extends BodyTranslator {
                 callTargetAsProc, callTargetAsLambda, environment.getBreakID());
     }
 
-    private boolean shouldConsiderDestructuringArrayArg() {
-        if (argsNode.getPreCount() == 0 && argsNode.getOptionalArgsCount() == 0 && argsNode.getPostCount() == 0 && argsNode.getRestArgNode() == null) {
+    private boolean shouldConsiderDestructuringArrayArg(Arity arity) {
+        // If we do not accept any arguments or only one required, there's never any need to destructure
+        if (!arity.hasRest() && arity.getOptional() == 0 && arity.getRequired() <= 1) {
             return false;
-        } else if (argsNode.getPreCount() + argsNode.getPostCount() == 1 && argsNode.getOptionalArgsCount() == 0 && argsNode.getRestArgNode() == null) {
-            return false;
-        } else if (argsNode.getPreCount() == 0 && argsNode.getRestArgNode() != null) {
+        // If there are only a rest argument and optional arguments, there is no need to destructure.
+        // Because the first optional argument (or the rest if no optional) will take the whole array.
+        } else if (arity.hasRest() && arity.getRequired() == 0) {
             return false;
         } else {
             return true;
         }
     }
 
-    private RubyNode wrapBody(RubyNode prelude, RubyNode body) {
+    private RubyNode composeBody(RubyNode prelude, RubyNode body) {
         final SourceSection sourceSection = body.getSourceSection();
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);
@@ -153,10 +150,6 @@ public class MethodTranslator extends BodyTranslator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new RedoableNode(context, sourceSection, body);
-        body = new CatchNextNode(context, sourceSection, body);
-        body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
-        body = new CatchRetryAsErrorNode(context, sourceSection, body);
         return body;
     }
 
@@ -170,7 +163,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public RubyNode doCompileMethodBody(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
-        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
+        declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
 
         RubyNode body;
@@ -192,7 +185,7 @@ public class MethodTranslator extends BodyTranslator {
             prelude = loadArguments;
         } else {
             prelude = SequenceNode.sequence(context, sourceSection,
-                    new CheckArityNode(context, sourceSection, arity, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                    CheckArityNode.create(context, sourceSection, arity),
                     loadArguments);
         }
 
@@ -202,8 +195,7 @@ public class MethodTranslator extends BodyTranslator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
-        body = new CatchRetryAsErrorNode(context, sourceSection, body);
+        body = new CatchForMethodNode(context, sourceSection, body, environment.getReturnID());
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
         body = new ExceptionTranslatingNode(context, sourceSection, body);
@@ -219,15 +211,13 @@ public class MethodTranslator extends BodyTranslator {
         return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
-    private ParameterCollector declareArguments(SourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
+    private void declareArguments(SourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
         final ParameterCollector parameterCollector = new ParameterCollector();
         argsNode.accept(parameterCollector);
 
         for (String parameter : parameterCollector.getParameters()) {
             environment.declareVar(parameter);
         }
-
-        return parameterCollector;
     }
 
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
@@ -268,7 +258,7 @@ public class MethodTranslator extends BodyTranslator {
     public RubyNode visitSuperNode(org.jruby.ast.SuperNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), null, environment.getNamedMethodName());
+        final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), environment.getNamedMethodName());
 
         return new GeneralSuperCallNode(context, sourceSection, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
     }

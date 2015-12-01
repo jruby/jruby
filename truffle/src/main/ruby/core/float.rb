@@ -1,7 +1,7 @@
 # Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
-# 
+#
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
@@ -33,6 +33,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Float
+
+  # Floats are also immediate values for us, they are primitive double
+  include ImmediateValue
 
   NAN        = 0.0 / 0.0
   INFINITY   = 1.0 / 0.0
@@ -70,5 +73,23 @@ class Float
   end
 
   private :equal_fallback
+
+  # TODO (pitr 27-Nov-2015): needs better implementation
+  def to_s
+    return format('%g', self) if infinite? || nan?
+
+    str = java_to_s
+
+    # remove extra zeroes
+    str.gsub! /^(-?)(\d+\.((\d*[1-9])|0))0+/, '\1\2'
+
+    return str if str =~ /e/
+
+    # add trailing zero if none
+    str << '.0' unless str =~ /\./
+    str
+  end
+
+  alias_method :inspect, :to_s
 
 end

@@ -190,7 +190,7 @@ public final class BasicObjectStub {
     public static IRubyObject anyToString(IRubyObject self) {
         String cname = getMetaClass(self).getRealClass().getName();
         /* 6:tags 16:addr 1:eos */
-        RubyString str = getRuntime(self).newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(self)) + ">");
+        RubyString str = getRuntime(self).newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(self)) + '>');
         str.setTaint(isTaint(self));
         return str;
     }

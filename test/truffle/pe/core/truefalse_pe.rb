@@ -6,5 +6,5 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example "true"
-example "false"
+example "true", true
+example "false", false

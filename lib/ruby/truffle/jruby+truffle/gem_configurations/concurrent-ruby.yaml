@@ -1,0 +1,21 @@
+---
+:setup:
+  :file:
+    shims.rb: |
+              # stub methods calling #system
+              module Concurrent
+                module Utility
+                  class ProcessorCounter
+                    def compute_processor_count
+                      2
+                    end
+                    def compute_physical_processor_count
+                      2
+                    end
+                  end
+                end
+              end
+:run:
+  :require:
+    - concurrent
+    - shims

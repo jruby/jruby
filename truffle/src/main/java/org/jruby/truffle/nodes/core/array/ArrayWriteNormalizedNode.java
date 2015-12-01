@@ -13,9 +13,9 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
@@ -40,7 +40,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         generalizeNode = GeneralizeArrayNodeGen.create(context, sourceSection, null, null);
     }
 
-    public abstract Object executeWrite(VirtualFrame frame, DynamicObject array, int index, Object value);
+    public abstract Object executeWrite(DynamicObject array, int index, Object value);
 
     // Writing at index 0 into a null array creates a new array of the most specific type
 
@@ -110,28 +110,11 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Writing within an existing array with a compatible type
 
     @Specialization(
-            guards={"isRubyArray(array)", "isObjectArray(array)", "isInBounds(array, index)"}
-    )
-    public boolean writeWithin(DynamicObject array, int index, boolean value) {
-        final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
-        store[index] = value;
-        return value;
-    }
-
-    @Specialization(
             guards={"isRubyArray(array)", "isIntArray(array)", "isInBounds(array, index)"}
     )
     public int writeWithin(DynamicObject array, int index, int value) {
         final int[] store = (int[]) Layouts.ARRAY.getStore(array);
         store[index] = value;
-        return value;
-    }
-
-    @Specialization(
-            guards={"isRubyArray(array)", "isLongArray(array)", "isInBounds(array, index)"}
-    )
-    public int writeWithinIntIntoLong(DynamicObject array, int index, int value) {
-        writeWithin(array, index, (long) value);
         return value;
     }
 
@@ -217,20 +200,10 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Extending an array of compatible type by just one
 
     @Specialization(
-            guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
-    )
-    public boolean writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, boolean value) {
-        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setSize(array, index + 1);
-        return value;
-    }
-
-    @Specialization(
             guards={"isRubyArray(array)", "isIntArray(array)", "isExtendingByOne(array, index)"}
     )
-    public int writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, int value) {
-        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
+    public int writeExtendByOne(DynamicObject array, int index, int value) {
+        ensureCapacityNode.executeEnsureCapacity(array, index + 1);
         ((int[]) Layouts.ARRAY.getStore(array))[index] = value;
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
@@ -239,18 +212,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isLongArray(array)", "isExtendingByOne(array, index)"}
     )
-    public int writeExtendByOneIntIntoLong(VirtualFrame frame, DynamicObject array, int index, int value) {
-        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((long[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setSize(array, index + 1);
-        return value;
-    }
-
-    @Specialization(
-            guards={"isRubyArray(array)", "isLongArray(array)", "isExtendingByOne(array, index)"}
-    )
-    public long writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, long value) {
-        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
+    public long writeExtendByOne(DynamicObject array, int index, long value) {
+        ensureCapacityNode.executeEnsureCapacity(array, index + 1);
         ((long[]) Layouts.ARRAY.getStore(array))[index] = value;
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
@@ -259,8 +222,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isDoubleArray(array)", "isExtendingByOne(array, index)"}
     )
-    public double writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, double value) {
-        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
+    public double writeExtendByOne(DynamicObject array, int index, double value) {
+        ensureCapacityNode.executeEnsureCapacity(array, index + 1);
         ((double[]) Layouts.ARRAY.getStore(array))[index] = value;
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
@@ -269,18 +232,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
     )
-    public DynamicObject writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, DynamicObject value) {
-        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setSize(array, index + 1);
-        return value;
-    }
-
-    @Specialization(
-            guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
-    )
-    public int writeObjectExtendByOne(VirtualFrame frame, DynamicObject array, int index, int value) {
-        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
+    public Object writeExtendByOne(DynamicObject array, int index, Object value) {
+        ensureCapacityNode.executeEnsureCapacity(array, index + 1);
         ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
@@ -291,8 +244,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "!isObjectArray(array)", "!isInBounds(array, index)", "!isExtendingByOne(array, index)"}
     )
-    public Object writeBeyondPrimitive(VirtualFrame frame, DynamicObject array, int index, Object value) {
-        generalizeNode.executeGeneralize(frame, array, index + 1);
+    public Object writeBeyondPrimitive(DynamicObject array, int index, Object value) {
+        generalizeNode.executeGeneralize(array, index + 1);
         final Object[] objectStore = ((Object[]) Layouts.ARRAY.getStore(array));
 
         for (int n = Layouts.ARRAY.getSize(array); n < index; n++) {
@@ -307,8 +260,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isObjectArray(array)", "!isInBounds(array, index)", "!isExtendingByOne(array, index)"}
     )
-    public Object writeBeyondObject(VirtualFrame frame, DynamicObject array, int index, Object value) {
-        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
+    public Object writeBeyondObject(DynamicObject array, int index, Object value) {
+        ensureCapacityNode.executeEnsureCapacity(array, index + 1);
         final Object[] objectStore = ((Object[]) Layouts.ARRAY.getStore(array));
 
         for (int n = Layouts.ARRAY.getSize(array); n < index; n++) {

@@ -10,9 +10,14 @@
 package org.jruby.truffle.nodes.exceptions;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Represents an ensure clause in exception handling. Represented separately to the try part.
@@ -22,6 +27,9 @@ public class EnsureNode extends RubyNode {
     @Child private RubyNode tryPart;
     @Child private RubyNode ensurePart;
 
+    private final BranchProfile rubyExceptionPath = BranchProfile.create();
+    private final BranchProfile javaExceptionPath = BranchProfile.create();
+
     public EnsureNode(RubyContext context, SourceSection sourceSection, RubyNode tryPart, RubyNode ensurePart) {
         super(context, sourceSection);
         this.tryPart = tryPart;
@@ -30,19 +38,48 @@ public class EnsureNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        final Object value;
         try {
-            return tryPart.execute(frame);
-        } finally {
+            value = tryPart.execute(frame);
+        } catch (RaiseException exception) {
+            rubyExceptionPath.enter();
+            throw setLastExceptionAndRunEnsure(frame, exception);
+        } catch (Throwable throwable) {
+            javaExceptionPath.enter();
             ensurePart.executeVoid(frame);
+            throw throwable;
         }
+
+        ensurePart.executeVoid(frame);
+        return value;
     }
 
     @Override
     public void executeVoid(VirtualFrame frame) {
         try {
             tryPart.executeVoid(frame);
-        } finally {
+        } catch (RaiseException exception) {
+            rubyExceptionPath.enter();
+            throw setLastExceptionAndRunEnsure(frame, exception);
+        } catch (Throwable throwable) {
+            javaExceptionPath.enter();
             ensurePart.executeVoid(frame);
+            throw throwable;
+        }
+
+        ensurePart.executeVoid(frame);
+    }
+
+    private RaiseException setLastExceptionAndRunEnsure(VirtualFrame frame, RaiseException exception) {
+        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+
+        final Object lastException = threadLocals.get("$!", nil());
+        threadLocals.set("$!", exception.getRubyException());
+        try {
+            ensurePart.executeVoid(frame);
+            return exception;
+        } finally {
+            threadLocals.set("$!", lastException);
         }
     }
 
