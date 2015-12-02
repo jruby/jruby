@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'syslog'
 
 describe "Syslog::Constants" do
-  platform_is_not :windows do
+  platform_is_not :windows, :solaris do
 
     before :all do
 

@@ -1107,7 +1107,7 @@ public abstract class ModuleNodes {
             final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody);
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
-            final InternalMethod method = new InternalMethod(info, name, module, Visibility.PUBLIC, newCallTarget);
+            final InternalMethod method = InternalMethod.fromProc(info, name, module, Visibility.PUBLIC, proc, newCallTarget);
             return addMethod(module, name, method);
         }
 

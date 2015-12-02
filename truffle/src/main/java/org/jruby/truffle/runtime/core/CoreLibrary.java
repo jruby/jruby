@@ -117,6 +117,7 @@ public class CoreLibrary {
     private final DynamicObject regexpErrorClass;
     private final DynamicObject rubyTruffleErrorClass;
     private final DynamicObject runtimeErrorClass;
+    private final DynamicObject systemStackErrorClass;
     private final DynamicObject securityErrorClass;
     private final DynamicObject standardErrorClass;
     private final DynamicObject stringClass;
@@ -335,7 +336,7 @@ public class CoreLibrary {
         systemExitClass = defineClass(exceptionClass, "SystemExit");
 
         // SystemStackError
-        defineClass(exceptionClass, "SystemStackError");
+        systemStackErrorClass = defineClass(exceptionClass, "SystemStackError");
 
         // Create core classes and modules
 
@@ -864,6 +865,11 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(runtimeErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public DynamicObject systemStackError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return ExceptionNodes.createRubyException(systemStackErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(currentNode));
+    }
+
     public DynamicObject frozenError(String className, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
@@ -1388,6 +1394,10 @@ public class CoreLibrary {
 
     public DynamicObject getRuntimeErrorClass() {
         return runtimeErrorClass;
+    }
+
+    public DynamicObject getSystemStackErrorClass() {
+        return systemStackErrorClass;
     }
 
     public DynamicObject getStringClass() {

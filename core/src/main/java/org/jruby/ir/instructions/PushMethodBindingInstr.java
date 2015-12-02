@@ -21,6 +21,6 @@ public class PushMethodBindingInstr extends NoOperandInstr implements FixedArity
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.PushBindingInstr(this);
+        visitor.PushMethodBindingInstr(this);
     }
 }

@@ -16,6 +16,8 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
+import org.jruby.ir.instructions.PopBlockFrameInstr;
+import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
@@ -53,7 +55,9 @@ import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.EvalType;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -109,7 +113,6 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
-        Block.Type blockType = block == null ? null : block.type;
 
         if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
 
@@ -153,7 +156,7 @@ public class InterpreterEngine {
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
-                        return processReturnOp(context, instr, operation, currDynScope, temp, self, blockType, currScope);
+                        return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
                     case BRANCH_OP:
                         switch (operation) {
                             case JUMP: ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC(); break;
@@ -167,12 +170,20 @@ public class InterpreterEngine {
                             // which will now use the updated value of currDynScope.
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
+                        } else if (operation == Operation.PUSH_BLOCK_BINDING) {
+                            DynamicScope newScope = block.getBinding().getDynamicScope();
+                            if (interpreterContext.pushNewDynScope()) {
+                                context.pushScope(block.allocScope(newScope));
+                            } else if (interpreterContext.reuseParentDynScope()) {
+                                // Reuse! We can avoid the push only if surrounding vars aren't referenced!
+                                context.pushScope(newScope);
+                            }
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, blockArg, blockType, implClass);
+                            processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, instr, operation, currDynScope, currScope, temp, self, blockType, floats, fixnums, booleans);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, floats, fixnums, booleans);
                         break;
                 }
             } catch (Throwable t) {
@@ -323,11 +334,21 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
-                                             String name, IRubyObject[] args, IRubyObject self, Block blockArg,
-                                             Block.Type blockType, RubyModule implClass) {
+    protected static void processBookKeepingOp(ThreadContext context, Block block, Instr instr, Operation operation,
+                                             String name, IRubyObject[] args, IRubyObject self, Block blockArg, RubyModule implClass,
+                                             DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
+        Block.Type blockType = block == null ? null : block.type;
+        Frame f;
         switch(operation) {
             case LABEL:
+                break;
+            case PUSH_BLOCK_FRAME:
+                f = context.preYieldNoScope(block.getBinding());
+                setResult(temp, currDynScope, ((PushBlockFrameInstr)instr).getResult(), f);
+                break;
+            case POP_BLOCK_FRAME:
+                f = (Frame)retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp);
+                context.postYieldNoScope(f);
                 break;
             case PUSH_METHOD_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, blockArg);
@@ -369,9 +390,10 @@ public class InterpreterEngine {
         }
     }
 
-    protected static IRubyObject processReturnOp(ThreadContext context, Instr instr, Operation operation,
+    protected static IRubyObject processReturnOp(ThreadContext context, Block block, Instr instr, Operation operation,
                                                  DynamicScope currDynScope, Object[] temp, IRubyObject self,
-                                                 Block.Type blockType, StaticScope currScope) {
+                                                 StaticScope currScope) {
+        Block.Type blockType = block == null ? null : block.type;
         switch(operation) {
             // --------- Return flavored instructions --------
             case RETURN: {
@@ -396,9 +418,10 @@ public class InterpreterEngine {
         return null;
     }
 
-    protected static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope,
-                                         StaticScope currScope, Object[] temp, IRubyObject self, Block.Type blockType,
+    protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
+                                         StaticScope currScope, Object[] temp, IRubyObject self,
                                          double[] floats, long[] fixnums, boolean[] booleans) {
+        Block.Type blockType = block == null ? null : block.type;
         Object result;
         switch(operation) {
             case RECV_SELF:

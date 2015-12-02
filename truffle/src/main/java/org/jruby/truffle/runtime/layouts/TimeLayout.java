@@ -22,7 +22,8 @@ public interface TimeLayout extends BasicObjectLayout {
 
     DynamicObject createTime(DynamicObjectFactory factory,
                              DateTime dateTime,
-                             Object offset);
+                             Object offset,
+                             boolean relativeOffset);
 
     boolean isTime(DynamicObject object);
 
@@ -31,5 +32,8 @@ public interface TimeLayout extends BasicObjectLayout {
 
     Object getOffset(DynamicObject object);
     void setOffset(DynamicObject object, Object value);
+
+    boolean getRelativeOffset(DynamicObject object);
+    void setRelativeOffset(DynamicObject object, boolean value);
 
 }

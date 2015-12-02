@@ -38,7 +38,6 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
-        Block.Type blockType = block == null ? null : block.type;
 
         if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
 
@@ -59,7 +58,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} ", instr + "; <#RPCs=" + rescuePCs.size() + ">");
+                Interpreter.LOG.info("I: {" + ipc + "} ", instr + "; <#RPCs=" + (rescuePCs == null ? 0 : rescuePCs.size()) + ">");
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);
@@ -78,7 +77,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
-                        return processReturnOp(context, instr, operation, currDynScope, temp, self, blockType, currScope);
+                        return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
                     case BRANCH_OP:
                         switch (operation) {
                             case JUMP:
@@ -109,11 +108,11 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 rescuePCs.pop();
                                 break;
                             default:
-                                processBookKeepingOp(context, instr, operation, name, args, self, blockArg, blockType, implClass);
+                                processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, instr, operation, currDynScope, currScope, temp, self, blockType);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self);
                         break;
                 }
             } catch (Throwable t) {
@@ -143,8 +142,9 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
     }
 
-    protected static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope,
-                                         StaticScope currScope, Object[] temp, IRubyObject self, Block.Type blockType) {
+    protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
+                                         StaticScope currScope, Object[] temp, IRubyObject self) {
+        Block.Type blockType = block == null ? null : block.type;
         switch(operation) {
             case RECV_SELF:
                 break;

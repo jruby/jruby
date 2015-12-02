@@ -95,6 +95,20 @@ public class Block {
         this.binding = null;
     }
 
+    public DynamicScope allocScope(DynamicScope parentScope) {
+        // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
+        // Do not use 'closure.getStaticScope()' -- that returns the original copy of the static scope.
+        // This matters because blocks created for Thread bodies modify the static-scope field of the block-body
+        // that records additional state about the block body.
+        //
+        // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
+        // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
+        EvalType evalType = ((IRBlockBody)body).getEvalType();
+        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, evalType);
+        if (type == Block.Type.LAMBDA) newScope.setLambda(true);
+        return newScope;
+    }
+
     public void setEvalType(EvalType evalType) {
         body.setEvalType(evalType);
     }

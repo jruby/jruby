@@ -1,7 +1,7 @@
-#include <errno.h>
-
 #include "ruby.h"
 #include "rubyspec.h"
+
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {

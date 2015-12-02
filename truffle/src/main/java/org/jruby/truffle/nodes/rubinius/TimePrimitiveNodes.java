@@ -57,7 +57,7 @@ public abstract class TimePrimitiveNodes {
         @Specialization
         public DynamicObject timeSNow(VirtualFrame frame, DynamicObject timeClass) {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
-            return allocateObjectNode.allocate(timeClass, now((DynamicObject) readTimeZoneNode.execute(frame)), nil());
+            return allocateObjectNode.allocate(timeClass, now((DynamicObject) readTimeZoneNode.execute(frame)), nil(), false);
         }
 
         @TruffleBoundary
@@ -80,7 +80,8 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public DynamicObject timeSDup(DynamicObject other) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(other), TimeNodes.getDateTime(other), Layouts.TIME.getOffset(other));
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(other), TimeNodes.getDateTime(other),
+                    Layouts.TIME.getOffset(other), Layouts.TIME.getRelativeOffset(other));
         }
 
     }
@@ -99,14 +100,14 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), time(milliseconds), nil());
+            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), time(milliseconds), nil(), false);
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
         public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), offset);
+            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), offset, false);
         }
 
         private long getMillis(long seconds, int nanoseconds) {
@@ -188,12 +189,12 @@ public abstract class TimePrimitiveNodes {
             }
 
             final int yday = dateTime.getDayOfYear();
-            final boolean isdst = false;
+            final boolean isdst = !dateTime.getZone().isStandardOffset(dateTime.getMillis());
 
             final String envTimeZoneString = readTimeZoneNode.execute(frame).toString();
             String zoneString = org.jruby.RubyTime.getRubyTimeZoneName(envTimeZoneString, dateTime);
             Object zone;
-            if (zoneString.matches(".*-\\d+")) {
+            if (Layouts.TIME.getRelativeOffset(time)) {
                 zone = nil();
             } else {
                 zone = createString(StringOperations.encodeByteList(zoneString, UTF8Encoding.INSTANCE));
@@ -259,27 +260,35 @@ public abstract class TimePrimitiveNodes {
             }
 
             final DateTimeZone zone;
+            final boolean relativeOffset;
             if (fromutc) {
                 zone = DateTimeZone.UTC;
+                relativeOffset = false;
             } else if (utcoffset == nil()) {
                 String tz = readTimeZoneNode.execute(frame).toString();
                 zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), tz);
+                relativeOffset = false;
             } else if (utcoffset instanceof Integer) {
                 zone = DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000);
+                relativeOffset = true;
             } else if (utcoffset instanceof Long) {
                 zone = DateTimeZone.forOffsetMillis((int) ((long) utcoffset) * 1_000);
+                relativeOffset = true;
             } else if (utcoffset instanceof DynamicObject) {
                 final int millis = cast(ruby(frame, "(offset * 1000).to_i", "offset", utcoffset));
                 zone = DateTimeZone.forOffsetMillis(millis);
+                relativeOffset = true;
             } else {
                 throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
             }
 
             if (isdst == -1) {
                 final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
-                return allocateObjectNode.allocate(timeClass, dateTime, utcoffset);
+                return allocateObjectNode.allocate(timeClass, dateTime, utcoffset, relativeOffset);
             } else {
-                throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
+                // TODO (pitr 26-Nov-2015): is this correct to create the DateTime without isdst application?
+                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
+                return allocateObjectNode.allocate(timeClass, dateTime, utcoffset, relativeOffset);
             }
         }
 
@@ -345,7 +354,8 @@ public abstract class TimePrimitiveNodes {
 
             dt = dt.withZone(zone);
             Layouts.TIME.setDateTime(time, dt);
-            Layouts.TIME.setOffset(time, dt.getZone().getOffset(dt.getMillis()) / 1_000);
+            Layouts.TIME.setOffset(time, nil());
+            Layouts.TIME.setRelativeOffset(time, false);
 
             final String timezone = dt.getZone().getShortName(dt.getMillis());
 

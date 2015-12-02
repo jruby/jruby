@@ -1842,7 +1842,7 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "!isNormal(value)")
-        public Object roundSpecial(VirtualFrame frame, DynamicObject value, Object unusedPrecision, Object unusedRoundingMode) {
+        public Object roundSpecial(VirtualFrame frame, DynamicObject value, NotProvided precision, Object unusedRoundingMode) {
             switch (Layouts.BIG_DECIMAL.getType(value)) {
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
@@ -1862,6 +1862,11 @@ public abstract class BigDecimalNodes {
                     throw new UnreachableCodeBranch();
 
             }
+        }
+
+        @Specialization(guards = {"!isNormal(value)", "wasProvided(precision)"})
+        public Object roundSpecial(VirtualFrame frame, DynamicObject value, Object precision, Object unusedRoundingMode) {
+            return value;
         }
     }
 
