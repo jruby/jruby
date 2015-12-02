@@ -2,6 +2,7 @@ package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.Counter;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
@@ -118,6 +119,7 @@ public class Profiler {
         return periodsWithoutChanges < NUMBER_OF_NON_MODIFYING_EXECUTIONS;
     }
 
+    // FIXME: IC should ideally not call this until FullIC
     private static void analyzeProfile() {
         //System.out.println("MOD COUNT: " + codeModificationsCount + ", Periods wo change: " + periodsWithoutChanges);
         // Don't bother doing any analysis until we see the system start to settle down from lots of modifications.
@@ -129,29 +131,26 @@ public class Profiler {
 
         final ArrayList<IRCallSite> callSites = new ArrayList<>();
 
-        long total = 0;   // Total number of times
+        long total = 0;   // Total number of calls found in this scope.
+        // Register all monomorphic found callsites which are eligible for inlining.
         for (Long id: callProfile.keySet()) {
-            CallSiteProfile csp = callProfile.get(id);
-            IRCallSite      cs  = csp.cs;
+            CallSiteProfile callSiteProfile = callProfile.get(id);
+            IRCallSite callSite  = callSiteProfile.cs;
+            boolean monomorphic = callSiteProfile.retallyCallCount();
 
-            boolean monomorphic = csp.retallyCallCount();
-//            System.out.println("CS CALL COUNT: " + cs.count + ", MONO: " + monomorphic + ", NUMBER OF CS TYPES: " + csp.counters.size());
+            if (monomorphic && !callSite.call.inliningBlocked()) {
+                CallSite runtimeCallSite = callSite.call.getCallSite();
+                if (runtimeCallSite != null && runtimeCallSite instanceof CachingCallSite) {
+                    DynamicMethod method = ((CachingCallSite) runtimeCallSite).getCache().method;
 
-            CallBase call = cs.call;
-            if (monomorphic && !call.inliningBlocked()) {
-                CallSite runtimeCS = call.getCallSite();
-                if (runtimeCS != null && runtimeCS instanceof CachingCallSite) {
-                    CachingCallSite ccs = (CachingCallSite)runtimeCS;
-                    CacheEntry ce = ccs.getCache();
+                    if (!(method instanceof Compilable) || !((Compilable) method).getIRScope().isFullBuildComplete()) continue;
 
-                    if (!(ce.method instanceof Compilable) || !((Compilable) ce.method).getIRScope().isFullBuildComplete()) continue;
-
-                    callSites.add(cs);
-                    cs.liveMethod = (Compilable) ce.method;
+                    callSites.add(callSite);
+                    callSite.liveMethod = (Compilable) method;
                 }
             }
 
-            total += cs.count;
+            total += callSite.count;
         }
 
         Collections.sort(callSites, new java.util.Comparator<IRCallSite> () {
