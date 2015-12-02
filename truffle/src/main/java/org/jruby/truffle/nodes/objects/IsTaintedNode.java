@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -55,11 +54,7 @@ public abstract class IsTaintedNode extends RubyNode {
     @Specialization
     protected boolean isTainted(DynamicObject object,
             @Cached("createReadTaintedNode()") ReadHeadObjectFieldNode readTaintedNode) {
-        try {
-            return readTaintedNode.executeBoolean(object);
-        } catch (UnexpectedResultException e) {
-            throw new UnsupportedOperationException(e);
-        }
+        return (boolean) readTaintedNode.execute(object);
     }
 
     protected ReadHeadObjectFieldNode createReadTaintedNode() {
