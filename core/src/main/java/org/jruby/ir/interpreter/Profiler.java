@@ -144,7 +144,7 @@ public class Profiler {
                     CachingCallSite ccs = (CachingCallSite)runtimeCS;
                     CacheEntry ce = ccs.getCache();
 
-                    if (!(ce.method instanceof Compilable)) continue;
+                    if (!(ce.method instanceof Compilable) || !((Compilable) ce.method).getIRScope().isFullBuildComplete()) continue;
 
                     callSites.add(cs);
                     cs.liveMethod = (Compilable) ce.method;
@@ -179,8 +179,8 @@ public class Profiler {
             // This check is arbitrary
             if (i == 100 || freq > 99.0) break;
 
-            System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
-            " in scope " + ircs.ic.getScope() + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
+            //System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
+            //" in scope " + ircs.ic.getScope() + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
             // Now inline here!
             CallBase call = ircs.call;
@@ -195,9 +195,9 @@ public class Profiler {
             //    b. use profiled (or last profiled in case more multiple profiled versions)
             hs = isHotClosure ? hs.getScope().getLexicalParent().getFullInterpreterContext() : hs;
 
-            IRScope tgtMethod = ircs.liveMethod.getIRScope();
+            Compilable tgtMethod = ircs.liveMethod;
 
-            Instr[] instrs = tgtMethod.getInterpreterContext().getInstructions();
+            Instr[] instrs = tgtMethod.getIRScope().getFullInterpreterContext().getInstructions();
             // Dont inline large methods -- 500 is arbitrary
             // Can be null if a previously inlined method hasn't been rebuilt
             if ((instrs == null) || instrs.length > 500) {
@@ -208,22 +208,19 @@ public class Profiler {
 
             RubyModule implClass = ircs.liveMethod.getImplementationClass();
             int classToken = implClass.getGeneration();
-            String n = tgtMethod.getName();
             boolean inlineCall = true;
             if (isHotClosure) {
                 Operand clArg = call.getClosureArg(null);
                 inlineCall = (clArg instanceof WrappedIRClosure) && (((WrappedIRClosure)clArg).getClosure() == hc);
             }
 
-            if (inlineCall) {
+            if (inlineCall && hs.getScope().isFullBuildComplete()) {
                 //noInlining = false;
-                //long start = new java.util.Date().getTime();
-                //hs.getScope().inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
-                //inlinedScopes.add(hs);
-                //long end = new java.util.Date().getTime();
-                // System.out.println("Inlined " + tgtMethod + " in " + hs +
-                //     " @ instr " + call + " in time (ms): "
-                //     + (end-start) + " # instrs: " + instrs.length);
+                long start = new java.util.Date().getTime();
+                hs.getScope().inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
+                inlinedScopes.add(hs);
+                long end = new java.util.Date().getTime();
+                System.out.println("Inlined " + tgtMethod + " in " + hs + " @ instr " + call + " in time (ms): " + (end-start) + " # instrs: " + instrs.length);
 
                 inlineCount++;
             } else {
