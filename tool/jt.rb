@@ -415,7 +415,7 @@ module Commands
       "JRUBY_9000_DEV_DIR" => JRUBY_DIR,
       "GRAAL_BIN" => Utilities.find_graal,
     }
-    bench_args = ["-I#{bench_dir}/lib", "#{bench_dir}/bin/bench"]
+    bench_args = ["#{bench_dir}/bin/bench"]
     case command
     when 'debug'
       if args.delete '--ruby-backtrace'
