@@ -756,17 +756,27 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int bitAnd(int a, int b) {
+        public int bitAndIntInt(int a, int b) {
             return a & b;
         }
 
         @Specialization
-        public long bitAnd(long a, long b) {
+        public int bitAndIntLong(int a, long b) {
+            return (int) (a & b);
+        }
+
+        @Specialization
+        public int bitAndLongInt(long a, int b) {
+            return (int) (a & b);
+        }
+
+        @Specialization(contains = { "bitAndIntInt", "bitAndIntLong", "bitAndLongInt" })
+        public long bitAndLongLong(long a, long b) {
             return a & b;
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object bitAnd(long a, DynamicObject b) {
+        public Object bitAndBignum(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).and(Layouts.BIGNUM.getValue(b)));
         }
     }
