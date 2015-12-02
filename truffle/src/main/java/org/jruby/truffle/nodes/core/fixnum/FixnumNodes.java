@@ -931,6 +931,11 @@ public abstract class FixnumNodes {
             return leftShiftNode.executeLeftShift(frame, a, -b);
         }
 
+        @Specialization(guards = "b >= 0")
+        public int rightShift(long a, long b) { // b is not in int range due to lowerFixnumParameters
+            return 0;
+        }
+
         @Specialization(guards = { "isRubyBignum(b)", "isPositive(b)" })
         public int rightShift(long a, DynamicObject b) {
             return 0;
