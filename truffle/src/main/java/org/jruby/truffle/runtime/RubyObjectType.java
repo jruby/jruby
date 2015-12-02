@@ -29,10 +29,8 @@ public class RubyObjectType extends ObjectType {
     public String toString(DynamicObject object) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyContext context = getContext();
-
         if (RubyGuards.isRubyString(object)) {
-            return Helpers.decodeByteList(context.getRuntime(), StringOperations.getByteList(object));
+            return Helpers.decodeByteList(getContext().getRuntime(), StringOperations.getByteList(object));
         } else if (RubyGuards.isRubySymbol(object)) {
             return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
