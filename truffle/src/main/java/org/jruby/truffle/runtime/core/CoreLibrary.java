@@ -1167,7 +1167,7 @@ public class CoreLibrary {
         CompilerAsserts.neverPartOfCompilation();
         DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE));
         DynamicObject loadError = ExceptionNodes.createRubyException(context.getCoreLibrary().getLoadErrorClass(), messageString, RubyCallStack.getBacktrace(currentNode));
-        loadError.define("@path", StringOperations.createString(context, StringOperations.encodeByteList(path, UTF8Encoding.INSTANCE)));
+        loadError.define("@path", StringOperations.createString(context, StringOperations.encodeByteList(path, UTF8Encoding.INSTANCE)), 0);
         return loadError;
     }
 
