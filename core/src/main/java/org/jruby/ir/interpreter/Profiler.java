@@ -12,7 +12,6 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.util.*;
@@ -28,6 +27,7 @@ import java.util.*;
 public class Profiler {
     public static final int UNASSIGNED_VERSION = -1;
     private static final int PROFILE_PERIOD = 20000;
+    private static final float INSIGNIFICANT_PERCENTAGE = 1.0f; // FIXME: arbitrarily chosen
 
     // Structure on what a callsite is.  It lives in an IC. It will be some form of call (CallBase).
     // It might have been called count times.
@@ -119,19 +119,16 @@ public class Profiler {
         return periodsWithoutChanges < NUMBER_OF_NON_MODIFYING_EXECUTIONS;
     }
 
-    // FIXME: IC should ideally not call this until FullIC
-    private static void analyzeProfile() {
-        //System.out.println("MOD COUNT: " + codeModificationsCount + ", Periods wo change: " + periodsWithoutChanges);
-        // Don't bother doing any analysis until we see the system start to settle down from lots of modifications.
-        if (isStillBootstrapping()) return;
-
-        versionCount++;
-
-//         System.out.println("-------------------start analysis-----------------------");
-
-        final ArrayList<IRCallSite> callSites = new ArrayList<>();
-
+    /**
+     * Examine callProfiles looking for eligible monomorphic callsites.  Return total number of calls
+     * executed from the profile.
+     *
+     * @param callSites out param of eligible callsites
+     * @return total number of calls executed by all entries in the callprofile
+     */
+    private static long findInliningCandidates(List<IRCallSite> callSites) {
         long total = 0;   // Total number of calls found in this scope.
+
         // Register all monomorphic found callsites which are eligible for inlining.
         for (Long id: callProfile.keySet()) {
             CallSiteProfile callSiteProfile = callProfile.get(id);
@@ -153,6 +150,19 @@ public class Profiler {
             total += callSite.count;
         }
 
+        return total;
+    }
+
+    private static void analyzeProfile() {
+        //System.out.println("MOD COUNT: " + codeModificationsCount + ", Periods wo change: " + periodsWithoutChanges);
+        // Don't bother doing any analysis until we see the system start to settle down from lots of modifications.
+        if (isStillBootstrapping()) return;
+
+        versionCount++;
+
+        final ArrayList<IRCallSite> callSites = new ArrayList<>();
+        long total = findInliningCandidates(callSites);
+
         Collections.sort(callSites, new java.util.Comparator<IRCallSite> () {
             @Override
             public int compare(IRCallSite a, IRCallSite b) {
@@ -164,16 +174,14 @@ public class Profiler {
         // Find top N call sites
         double freq = 0.0;
         int i = 0;
-        boolean noInlining = true;
         Set<InterpreterContext> inlinedScopes = new HashSet<>();
-        for (IRCallSite ircs: callSites) {
-            double contrib = (ircs.count*100.0)/total;
+        for (IRCallSite callSite: callSites) {
+            double percentOfTotalCalls = (callSite.count * 100.0) / total;
 
-            // 1% is arbitrary
-            if (contrib < 1.0) break;
+            if (percentOfTotalCalls < INSIGNIFICANT_PERCENTAGE) break;
 
             i++;
-            freq += contrib;
+            freq += percentOfTotalCalls;
 
             // This check is arbitrary
             if (i == 100 || freq > 99.0) break;
@@ -182,20 +190,21 @@ public class Profiler {
             //" in scope " + ircs.ic.getScope() + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
             // Now inline here!
-            CallBase call = ircs.call;
+            CallBase call = callSite.call;
 
-            InterpreterContext hs = ircs.ic;
-            boolean isHotClosure = hs.getScope() instanceof IRClosure;
-            IRScope hc = isHotClosure ? hs.getScope() : null;
-            // This has couple of assumptions in it:
-            // 1. nothing hot could ever not exist in a non-fully built parent scope so FIC is available.
+            InterpreterContext ic = callSite.ic;
+            boolean isClosure = ic.getScope() instanceof IRClosure;
+
+            // This has several of assumptions in it:
+            // 1. nothing hot could ever not exist in a non-fully built parent scope so FIC is available.  This assumption cannot be true
             // 2. if we ever have three ICs (startup, full, profiled) [or more than three] then we can:
             //    a. use full and ignore profiled
             //    b. use profiled (or last profiled in case more multiple profiled versions)
-            hs = isHotClosure ? hs.getScope().getLexicalParent().getFullInterpreterContext() : hs;
+            ic = isClosure ? ic.getScope().getLexicalParent().getFullInterpreterContext() : ic;
 
-            Compilable tgtMethod = ircs.liveMethod;
+            Compilable tgtMethod = callSite.liveMethod;
 
+            // MOVE INTO shouldInline
             Instr[] instrs = tgtMethod.getIRScope().getFullInterpreterContext().getInstructions();
             // Dont inline large methods -- 500 is arbitrary
             // Can be null if a previously inlined method hasn't been rebuilt
@@ -205,21 +214,13 @@ public class Profiler {
                 continue;
             }
 
-            RubyModule implClass = ircs.liveMethod.getImplementationClass();
-            int classToken = implClass.getGeneration();
-            boolean inlineCall = true;
-            if (isHotClosure) {
-                Operand clArg = call.getClosureArg(null);
-                inlineCall = (clArg instanceof WrappedIRClosure) && (((WrappedIRClosure)clArg).getClosure() == hc);
-            }
-
-            if (inlineCall && hs.getScope().isFullBuildComplete()) {
-                //noInlining = false;
+            if (shouldInline(call, ic, isClosure)) {
+                RubyModule implClass = callSite.liveMethod.getImplementationClass();
                 long start = new java.util.Date().getTime();
-                hs.getScope().inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
-                inlinedScopes.add(hs);
+                ic.getScope().inlineMethod(tgtMethod, implClass, implClass.getGeneration(), null, call, !inlinedScopes.contains(ic));
+                inlinedScopes.add(ic);
                 long end = new java.util.Date().getTime();
-                System.out.println("Inlined " + tgtMethod + " in " + hs + " @ instr " + call + " in time (ms): " + (end-start) + " # instrs: " + instrs.length);
+                System.out.println("Inlined " + tgtMethod + " in " + ic + " @ instr " + call + " in time (ms): " + (end-start) + " # instrs: " + instrs.length);
 
                 inlineCount++;
             } else {
@@ -245,6 +246,22 @@ public class Profiler {
         if (globalClockCount % 1000000 == 0)  {
             globalClockCount = 0;
         }
+    }
+
+    /**
+     * All methods will inline so long as they have been fully built.  A hot closure will inline through the method
+     * which call it.
+     */
+    private static boolean shouldInline(CallBase call, InterpreterContext ic, boolean isClosure) {
+        // FIXME: Closure getting lexical parent can end up with null.  We should fix that in parent method to remove this null check.
+        boolean fullBuild = ic != null && ic.getScope().isFullBuildComplete();
+
+        if (isClosure) {
+            Operand closureArg = call.getClosureArg(null);
+            return fullBuild && closureArg instanceof WrappedIRClosure && ((WrappedIRClosure) closureArg).getClosure() == ic.getScope();
+        }
+
+        return fullBuild;
     }
 
     private static void outputProfileStats() {
