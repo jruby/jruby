@@ -833,7 +833,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = { 0, 1 })
     public abstract static class LeftShiftNode extends BignumNodes.BignumCoreMethodNode {
 
         @Child private RightShiftNode rightShiftNode;
@@ -847,11 +847,6 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = { "b >= 0", "canShiftIntoInt(a, b)" })
         public int leftShift(int a, int b) {
-            return a << b;
-        }
-
-        @Specialization(guards = { "b >= 0", "canShiftIntoInt(a, b)" })
-        public int leftShift(int a, long b) {
             return a << b;
         }
 
@@ -891,17 +886,13 @@ public abstract class FixnumNodes {
             return Integer.numberOfLeadingZeros(a) - b > 0;
         }
 
-        static boolean canShiftIntoInt(int a, long b) {
-            return Integer.numberOfLeadingZeros(a) - b > 0;
-        }
-
         static boolean canShiftIntoLong(long a, int b) {
             return Long.numberOfLeadingZeros(a) - b > 0;
         }
 
     }
 
-    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = { 0, 1 })
     public abstract static class RightShiftNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
@@ -914,7 +905,7 @@ public abstract class FixnumNodes {
         public abstract Object executeRightShift(VirtualFrame frame, Object a, Object b);
 
         @Specialization(guards = "b >= 0")
-        public Object rightShift(VirtualFrame frame, int a, int b) {
+        public int rightShift(VirtualFrame frame, int a, int b) {
             if (b >= Integer.SIZE - 1) {
                 return a < 0 ? -1 : 0;
             } else {
@@ -923,16 +914,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "b >= 0")
-        public Object rightShift(VirtualFrame frame, int a, long b) {
-            if (b >= Integer.SIZE - 1) {
-                return a < 0 ? -1 : 0;
-            } else {
-                return a >> b;
-            }
-        }
-
-        @Specialization(guards = "b >= 0")
-        public Object rightShift(VirtualFrame frame, long a, int b) {
+        public long rightShift(VirtualFrame frame, long a, int b) {
             if (b >= Long.SIZE - 1) {
                 return a < 0 ? -1 : 0;
             } else {
@@ -960,7 +942,6 @@ public abstract class FixnumNodes {
                 CompilerDirectives.transferToInterpreter();
                 leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null }));
             }
-            CompilerDirectives.transferToInterpreter();
             return leftShiftNode.executeLeftShift(frame, a, Layouts.BIGNUM.getValue(b).negate());
         }
 
