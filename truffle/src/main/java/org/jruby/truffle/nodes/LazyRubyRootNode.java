@@ -60,7 +60,16 @@ public class LazyRubyRootNode extends RootNode {
             CompilerDirectives.transferToInterpreter();
 
             if (AttachmentsManager.ATTACHMENT_SOURCE == source) {
-                final SourceSection sourceSection = (SourceSection) frame.getArguments()[0];
+                SourceSection sourceSection;
+                try {
+                    sourceSection = (SourceSection) frame.getArguments()[0];
+                } catch (ClassCastException e) {
+                    CompilerDirectives.transferToInterpreter();
+                    for (Object arg : frame.getArguments()) {
+                        System.out.println(arg.getClass() + " " + arg);
+                    }
+                    sourceSection = SourceSection.createUnavailable("attachment", "attachment");
+                }
                 final DynamicObject block = (DynamicObject) frame.getArguments()[1];
 
                 final RootNode rootNode = new AttachmentsManager.AttachmentRootNode(RubyLanguage.class, cachedContext, sourceSection, null, block);
