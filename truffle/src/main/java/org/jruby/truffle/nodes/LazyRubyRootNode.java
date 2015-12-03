@@ -29,6 +29,7 @@ import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 public class LazyRubyRootNode extends RootNode {
 
     private final Source source;
+    private final String[] argumentNames;
 
     @CompilationFinal private RubyContext cachedContext;
     @CompilationFinal private DynamicObject mainObject;
@@ -37,9 +38,10 @@ public class LazyRubyRootNode extends RootNode {
     @Child private Node findContextNode;
     @Child private DirectCallNode callNode;
 
-    public LazyRubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, Source source) {
+    public LazyRubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, Source source, String[] argumentNames) {
         super(RubyLanguage.class, sourceSection, frameDescriptor);
         this.source = source;
+        this.argumentNames = argumentNames;
     }
 
     @Override
@@ -60,9 +62,8 @@ public class LazyRubyRootNode extends RootNode {
             CompilerDirectives.transferToInterpreter();
 
             if (AttachmentsManager.ATTACHMENT_SOURCE == source) {
-                final FrameDescriptor frameDescriptor = frame.getFrameDescriptor();
-                final SourceSection sourceSection = (SourceSection) frame.getValue(frameDescriptor.findFrameSlot("section"));
-                final DynamicObject block = (DynamicObject) frame.getValue(frameDescriptor.findFrameSlot("block"));
+                final SourceSection sourceSection = (SourceSection) frame.getArguments()[getIndex("section")];
+                final DynamicObject block = (DynamicObject) frame.getArguments()[getIndex("block")];
 
                 final RootNode rootNode = new AttachmentsManager.AttachmentRootNode(RubyLanguage.class, cachedContext, sourceSection, null, block);
                 final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
@@ -90,6 +91,15 @@ public class LazyRubyRootNode extends RootNode {
 
         return callNode.call(frame,
                 RubyArguments.pack(method, null, null, mainObject, null, DeclarationContext.TOP_LEVEL, frame.getArguments()));
+    }
+
+    private int getIndex(String name) {
+        for (int i = 0; i < argumentNames.length; i++) {
+            if (name.equals(argumentNames[i])) {
+                return i;
+            }
+        }
+        return -1;
     }
 
 }

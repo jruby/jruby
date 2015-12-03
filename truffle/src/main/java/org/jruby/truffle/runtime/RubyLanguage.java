@@ -77,7 +77,7 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     protected CallTarget parse(Source source, Node node, String... argumentNames) throws IOException {
-        return Truffle.getRuntime().createCallTarget(new LazyRubyRootNode(null, null, source));
+        return Truffle.getRuntime().createCallTarget(new LazyRubyRootNode(null, null, source, argumentNames));
     }
 
     @Override
