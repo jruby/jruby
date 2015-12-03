@@ -545,19 +545,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(rest = true, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = getRuntime();
-        if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
-        if (threadImpl != null) throw runtime.newThreadError("already initialized thread");
+        if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
+        if (threadImpl != null) throw context.runtime.newThreadError("already initialized thread");
 
         RubyRunnable runnable = new RubyRunnable(this, args, block);
 
-        return startWith(runnable);
+        return startWith(context, runnable);
     }
 
-    private IRubyObject startWith(Runnable runnable) throws RaiseException, OutOfMemoryError {
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-
+    private IRubyObject startWith(ThreadContext context, Runnable runnable) throws RaiseException, OutOfMemoryError {
+        final Ruby runtime = context.runtime;
         try {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
@@ -576,12 +573,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             Thread.yield();
 
             return this;
-        } catch (OutOfMemoryError oome) {
+        }
+        catch (OutOfMemoryError oome) {
             if (oome.getMessage().equals("unable to create new native thread")) {
                 throw runtime.newThreadError(oome.getMessage());
             }
             throw oome;
-        } catch (SecurityException ex) {
+        }
+        catch (SecurityException ex) {
           throw runtime.newThreadError(ex.getMessage());
         }
     }
