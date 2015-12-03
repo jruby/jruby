@@ -136,6 +136,12 @@ public abstract class ObjectGraph {
                         reachable.add((DynamicObject) element);
                     }
                 }
+            } else if (propertyValue instanceof Collection<?>) {
+                for (Object element : ((Collection<?>) propertyValue)) {
+                    if (element instanceof DynamicObject) {
+                        reachable.add((DynamicObject) element);
+                    }
+                }
             } else if (propertyValue instanceof Frame) {
                 reachable.addAll(getObjectsInFrame((Frame) propertyValue));
             } else if (propertyValue instanceof ObjectGraphNode) {
