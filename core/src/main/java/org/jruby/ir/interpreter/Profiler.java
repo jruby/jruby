@@ -5,7 +5,6 @@ import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.Counter;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
@@ -23,6 +22,12 @@ import java.util.*;
  *   modifying their applications).
  *   clock tick - hotness profiler granularity (currently denoted as # of thread_poll instrs).
  *   period - how long between attempts to analyze collected stats (PROFILE_PERIOD).  This is number of clock ticks.
+ *
+ * Basics of this profiler as-of now (currently only works with interpreters).  It will record a call site
+ * before invoking any call.  In the interpreter executing the method from the site just saved, it will look for this
+ * saved site and then record which scope the site ended up invoking.  All saved sites are store globally and every
+ * so many stable periods (e.g. not when lots of definitions are changing) it will look for most active monomorphic
+ * sites.  It might inline some of those and then it will flush collected data and start over.
  */
 public class Profiler {
     public static final int UNASSIGNED_VERSION = -1;
@@ -88,7 +93,6 @@ public class Profiler {
     // Last or about to be called IR scope
     public static IRCallSite callerSite = new IRCallSite();
 
-    private static int inlineCount = 0;
     private static int globalClockCount = 0;
 
     // How many code modifications happens during this period?
@@ -97,7 +101,6 @@ public class Profiler {
     private static int periodsWithoutChanges = 0;
     private static int versionCount = 1;
 
-    private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<>();
     private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<>();
 
     private static final int NUMBER_OF_NON_MODIFYING_EXECUTIONS = 3;
@@ -223,28 +226,19 @@ public class Profiler {
                 inlinedScopes.add(ic);
                 long end = new java.util.Date().getTime();
                 System.out.println("Inlined " + tgtMethod + " in " + ic + " @ instr " + call + " in time (ms): " + (end-start) + " # instrs: " + instrs.length);
-
-                inlineCount++;
             }
         }
 
         for (InterpreterContext x: inlinedScopes) {
             x.setVersion(versionCount); // Update version count for inlined scopes
-            // System.out.println("Updating version of " + x + " to " + versionCount);
-            //System.out.println("--- pre-inline-instrs ---");
-            //System.out.println(x.getCFG().toStringInstrs());
-            //System.out.println("--- post-inline-instrs ---");
-            //System.out.println(x.getCFG().toStringInstrs());
         }
 
         // Reset
         codeModificationsCount = 0;
-        callProfile = new HashMap<Long, CallSiteProfile>();
+        callProfile = new HashMap<>();
 
         // Every 1M thread polls, discard stats
-        if (globalClockCount % 1000000 == 0)  {
-            globalClockCount = 0;
-        }
+        if (globalClockCount % 1000000 == 0)  globalClockCount = 0;
     }
 
     /**
@@ -263,85 +257,14 @@ public class Profiler {
         return fullBuild;
     }
 
-    private static void outputProfileStats() {
-        ArrayList<IRScope> scopes = new ArrayList<IRScope>(scopeThreadPollCounts.keySet());
-        Collections.sort(scopes, new java.util.Comparator<IRScope> () {
-            @Override
-            public int compare(IRScope a, IRScope b) {
-                // In non-methods and non-closures, we may not have any thread poll instrs.
-                int aden = a.getThreadPollInstrsCount();
-                if (aden == 0) aden = 1;
-                int bden = b.getThreadPollInstrsCount();
-                if (bden == 0) bden = 1;
-
-                // Use estimated instr count to order scopes -- rather than raw thread-poll count
-                float aCount = scopeThreadPollCounts.get(a).count * (1.0f * a.getInterpreterContext().getInstructions().length/aden);
-                float bCount = scopeThreadPollCounts.get(b).count * (1.0f * b.getInterpreterContext().getInstructions().length/bden);
-                if (aCount == bCount) return 0;
-                return (aCount < bCount) ? 1 : -1;
-            }
-        });
-
-
-        /*
-        LOG.info("------------------------");
-        LOG.info("Stats after " + globalClockCount + " thread polls:");
-        LOG.info("------------------------");
-        LOG.info("# instructions: " + interpInstrsCount);
-        LOG.info("# code modifications in this period : " + codeModificationsCount);
-        LOG.info("------------------------");
-        */
-        int i = 0;
-        float f1 = 0.0f;
-        for (IRScope s: scopes) {
-            long n = scopeThreadPollCounts.get(s).count;
-            float p1 =  ((n*1000)/ globalClockCount)/10.0f;
-            String msg = i + ". " + s + " [file:" + s.getFileName() + ":" + s.getLineNumber() + "] = " + n + "; (" + p1 + "%)";
-            if (s instanceof IRClosure) {
-                IRMethod m = s.getNearestMethod();
-                //if (m != null) LOG.info(msg + " -- nearest enclosing method: " + m);
-                //else LOG.info(msg + " -- no enclosing method --");
-            } else {
-                //LOG.info(msg);
-            }
-
-            i++;
-            f1 += p1;
-
-            // Top 20 or those that account for 95% of thread poll events.
-            if (i == 20 || f1 >= 95.0) break;
-        }
-
-        // reset code modification counter
-        codeModificationsCount = 0;
-
-        // Every 1M thread polls, discard stats by reallocating the thread-poll count map
-         if (globalClockCount % 1000000 == 0)  {
-            //System.out.println("---- resetting thread-poll counters ----");
-            scopeThreadPollCounts = new HashMap<IRScope, Counter>();
-            globalClockCount = 0;
-        }
-    }
-
     public static void initProfiling(IRScope scope) {
-        /* SSS: Not being used currently
-        scopeClockCount = scopeThreadPollCounts.get(scope);
-        if (scopeClockCount == null) {
-            scopeClockCount = new Counter();
-            scopeThreadPollCounts.put(scope, scopeClockCount);
-        }
-        */
-
         //int scopeVersion = scope.getFullInterpreterContext().getVersion();
         //if (scopeVersion == UNASSIGNED_VERSION) ic.setVersion(versionCount);
 
-        // ENEBO: This sets the stage for keep track of interesting callsites within a method which only full/JITed
-        // methods are actually interested in.  I think startupIC should just keep track of times a method has been
-        // called post bootstrapping to cause full and then something like this should exist in JIT/Full for potential
-        // to inline.
-
         // FIXME: I think there is a bug here.  If we call IR -> native -> IR then this may still be set and it will
         // be inaccurate to record this save callsite info with the currently executing scope.
+
+        // This allows us to register the last callsite and associate it with the current scope.
         if (callerSite.call != null) {
             Long id = callerSite.call.callSiteId;         // we find id to look up callsite in global table (global to flush?)
             CallSiteProfile csp = callProfile.get(id);    // get saved profile
@@ -350,7 +273,6 @@ public class Profiler {
                 callProfile.put(id, csp);
             }
 
-            // ENEBO: How do we clean out counters if we never inline
             Counter csCount = csp.counters.get(scope);    // store which method is getting called (local to site)
             if (csCount == null) {                        // make new counter
                 csCount = new Counter();
@@ -367,7 +289,6 @@ public class Profiler {
     }
 
     public static void clockTick() {
-        // scopeClockCount.count++;
         if (globalClockCount++ % PROFILE_PERIOD == 0) analyzeProfile();
     }
 
