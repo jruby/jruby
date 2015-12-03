@@ -169,7 +169,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private final AtomicReference<Status> status = new AtomicReference<Status>(Status.RUN);
 
     /** Mail slot for cross-thread events */
-    private final Queue<IRubyObject> pendingInterruptQueue = new ConcurrentLinkedQueue();
+    private final Queue<IRubyObject> pendingInterruptQueue = new ConcurrentLinkedQueue<>();
 
     /** A function to use to unblock this thread, if possible */
     private volatile Unblocker unblockFunc;
@@ -210,8 +210,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
 
-        finalResult = runtime.getNil();
-        errorInfo = runtime.getNil();
+        finalResult = errorInfo = runtime.getNil();
     }
 
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
