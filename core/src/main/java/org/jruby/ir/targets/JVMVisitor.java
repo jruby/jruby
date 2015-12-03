@@ -18,6 +18,7 @@ import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
+import org.jruby.ir.interpreter.Profiler;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
@@ -152,6 +153,12 @@ public class JVMVisitor extends IRVisitor {
         }
 
         IRBytecodeAdapter m = jvmMethod();
+
+        // FIXME: We need to disable after we give up (which could be switch point or re-JITing?)
+        if (Options.IR_PROFILE.load()) {
+            jvmAdapter().getstatic(jvm.clsData().clsName, scopeField, ci(IRScope.class));
+            jvmAdapter().invokestatic(p(Profiler.class), "initProfiling", sig(void.class, IRScope.class));
+        }
 
         int numberOfBasicBlocks = bbs.length;
         int ipc = 0; // synthetic, used for debug traces that show which instr failed
@@ -1818,6 +1825,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) {
+        if (Options.IR_PROFILE.load()) {
+            jvmAdapter().invokestatic(p(Profiler.class), "clockTick", sig(void.class));
+        }
         jvmMethod().checkpoint();
     }
 

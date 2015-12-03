@@ -140,7 +140,7 @@ public class InterpreterEngine {
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
-        if (profile) Profiler.initProfiling(interpreterContext);
+        if (profile) Profiler.initProfiling(interpreterContext.getScope());
 
         // Enter the looooop!
         while (ipc < n) {

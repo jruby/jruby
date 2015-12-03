@@ -163,6 +163,8 @@ public class Profiler {
         final ArrayList<IRCallSite> callSites = new ArrayList<>();
         long total = findInliningCandidates(callSites);
 
+        //System.out.println("Total calls this period: " + total + ", candidate callsites: " + callSites.size());
+
         Collections.sort(callSites, new java.util.Comparator<IRCallSite> () {
             @Override
             public int compare(IRCallSite a, IRCallSite b) {
@@ -223,10 +225,7 @@ public class Profiler {
                 System.out.println("Inlined " + tgtMethod + " in " + ic + " @ instr " + call + " in time (ms): " + (end-start) + " # instrs: " + instrs.length);
 
                 inlineCount++;
-            } else {
-                //System.out.println("--no inlining--");
             }
-
         }
 
         for (InterpreterContext x: inlinedScopes) {
@@ -324,8 +323,7 @@ public class Profiler {
         }
     }
 
-    public static int initProfiling(InterpreterContext ic) {
-        IRScope scope = ic.getScope();
+    public static void initProfiling(IRScope scope) {
         /* SSS: Not being used currently
         scopeClockCount = scopeThreadPollCounts.get(scope);
         if (scopeClockCount == null) {
@@ -334,8 +332,8 @@ public class Profiler {
         }
         */
 
-        int scopeVersion = ic.getVersion();
-        if (scopeVersion == UNASSIGNED_VERSION) ic.setVersion(versionCount);
+        //int scopeVersion = scope.getFullInterpreterContext().getVersion();
+        //if (scopeVersion == UNASSIGNED_VERSION) ic.setVersion(versionCount);
 
         // ENEBO: This sets the stage for keep track of interesting callsites within a method which only full/JITed
         // methods are actually interested in.  I think startupIC should just keep track of times a method has been
@@ -360,8 +358,6 @@ public class Profiler {
             }
             csCount.count++;                              // this particular method was called one more time
         }
-
-        return scopeVersion;
     }
 
     // We do not pass profiling instructions through call so we temporarily tuck away last IR executed
