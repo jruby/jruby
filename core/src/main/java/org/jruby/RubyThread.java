@@ -216,7 +216,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
         this(runtime, klass);
 
-        startWith(runnable);
+        startThread(runtime.getCurrentContext(), runnable);
     }
 
     private void executeInterrupts(ThreadContext context, boolean blockingTiming) {
@@ -548,17 +548,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
         if (threadImpl != null) throw context.runtime.newThreadError("already initialized thread");
 
-        RubyRunnable runnable = new RubyRunnable(this, args, block);
-
-        return startWith(context, runnable);
+        return startThread(context, new RubyRunnable(this, args, block));
     }
 
-    private IRubyObject startWith(ThreadContext context, Runnable runnable) throws RaiseException, OutOfMemoryError {
+    private IRubyObject startThread(ThreadContext context, Runnable runnable) throws RaiseException, OutOfMemoryError {
         final Ruby runtime = context.runtime;
         try {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
-            thread.setName("Ruby-" + runtime.getRuntimeNumber() + "-" + thread.getName() + ": " + context.getFile() + ":" + (context.getLine() + 1));
+            setThreadName(runtime, thread, context.getFile(), context.getLine());
             threadImpl = new NativeThread(this, thread);
 
             addToCorrectThreadGroup(context);
@@ -583,6 +581,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         catch (SecurityException ex) {
           throw runtime.newThreadError(ex.getMessage());
         }
+    }
+
+    private static void setThreadName(final Ruby runtime, final Thread thread,
+        final String file, final int line) {
+        final StringBuilder name = new StringBuilder(24);
+        name.append("Ruby-").append(runtime.getRuntimeNumber());
+        name.append('-').append(thread.getName());
+        if ( file != null ) {
+            name.append(':').append(' ').append(file).append(':').append(line + 1);
+        }
+        thread.setName(name.toString());
     }
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
