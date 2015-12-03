@@ -100,7 +100,7 @@ public class AttachmentsManager {
 
         @Child private DirectCallNode callNode;
 
-        public AttachmentRootNode(Class<? extends TruffleLanguage> language, RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, DynamicObject block) {
+        public AttachmentRootNode(Class<? extends TruffleLanguage<?>> language, RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, DynamicObject block) {
             super(language, sourceSection, frameDescriptor);
             this.context = context;
             this.block = block;
