@@ -695,13 +695,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(name = "name=", required = 1)
-    public IRubyObject setName(ThreadContext context, IRubyObject name) {
-        this.threadName = name;
-        return threadName;
+    public IRubyObject setName(IRubyObject name) {
+        return this.threadName = name;
     }
 
     @JRubyMethod(name = "name")
-    public IRubyObject getName(ThreadContext context) {
+    public IRubyObject getName() {
         return this.threadName;
     }
 
