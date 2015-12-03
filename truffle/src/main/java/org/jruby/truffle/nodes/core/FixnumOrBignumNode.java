@@ -12,9 +12,11 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigDecimal;
@@ -30,27 +32,19 @@ public class FixnumOrBignumNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    private final BranchProfile lowerProfile = BranchProfile.create();
-    private final BranchProfile integerFromBignumProfile = BranchProfile.create();
-    private final BranchProfile longFromBignumProfile = BranchProfile.create();
+    private final ConditionProfile lowerProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile intProfile = ConditionProfile.createBinaryProfile();
 
-    private final BranchProfile integerFromDoubleProfile = BranchProfile.create();
-    private final BranchProfile longFromDoubleProfile = BranchProfile.create();
-
-    private final BranchProfile bignumProfile = BranchProfile.create();
-    private final BranchProfile checkLongProfile = BranchProfile.create();
+    private final ConditionProfile integerFromDoubleProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile longFromDoubleProfile = ConditionProfile.createBinaryProfile();
 
     public Object fixnumOrBignum(BigInteger value) {
-        if (value.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0 && value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
-            lowerProfile.enter();
-
+        if (lowerProfile.profile(value.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0 && value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0)) {
             final long longValue = value.longValue();
 
-            if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
-                integerFromBignumProfile.enter();
+            if (intProfile.profile(CoreLibrary.fitsIntoInteger(longValue))) {
                 return (int) longValue;
             } else {
-                longFromBignumProfile.enter();
                 return longValue;
             }
         } else {
@@ -59,21 +53,13 @@ public class FixnumOrBignumNode extends RubyNode {
     }
 
     public Object fixnumOrBignum(double value) {
-        if (value > Integer.MIN_VALUE && value < Integer.MAX_VALUE) {
-            integerFromDoubleProfile.enter();
+        if (integerFromDoubleProfile.profile(value > Integer.MIN_VALUE && value < Integer.MAX_VALUE)) {
             return (int) value;
-        }
-
-        checkLongProfile.enter();
-
-        if (value > Long.MIN_VALUE && value < Long.MAX_VALUE) {
-            longFromDoubleProfile.enter();
+        } else if (longFromDoubleProfile.profile(value > Long.MIN_VALUE && value < Long.MAX_VALUE)) {
             return (long) value;
+        } else {
+            return fixnumOrBignum(doubleToBigInteger(value));
         }
-
-        bignumProfile.enter();
-
-        return fixnumOrBignum(doubleToBigInteger(value));
     }
 
     @TruffleBoundary
