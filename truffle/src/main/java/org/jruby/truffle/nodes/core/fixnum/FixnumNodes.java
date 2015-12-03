@@ -771,7 +771,7 @@ public abstract class FixnumNodes {
             return (int) (a & b);
         }
 
-        @Specialization(contains = { "bitAndIntInt", "bitAndIntLong", "bitAndLongInt" })
+        @Specialization
         public long bitAndLongLong(long a, long b) {
             return a & b;
         }
