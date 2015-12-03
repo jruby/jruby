@@ -556,7 +556,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         try {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
-            setThreadName(runtime, thread, context.getFile(), context.getLine());
+            setThreadName(runtime, thread, context.getFile(), context.getLine(), true);
             threadImpl = new NativeThread(this, thread);
 
             addToCorrectThreadGroup(context);
@@ -583,15 +583,48 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    private static void setThreadName(final Ruby runtime, final Thread thread,
-        final String file, final int line) {
-        final StringBuilder name = new StringBuilder(24);
-        name.append("Ruby-").append(runtime.getRuntimeNumber());
-        name.append('-').append(thread.getName());
-        if ( file != null ) {
-            name.append(':').append(' ').append(file).append(':').append(line + 1);
+    private static final String RUBY_THREAD_PREFIX = "Ruby-";
+
+    private void setThreadName(final Ruby runtime, final Thread thread,
+        final String file, final int line, final boolean newThread) {
+        // "Ruby-0-Thread-16: (irb):21"
+        // "Ruby-0-Thread-17@worker#1: (irb):21"
+        final String newName;
+        final String setName = getNameOrNull();
+        final String currentName = thread.getName();
+        if ( currentName != null && currentName.startsWith(RUBY_THREAD_PREFIX) ) {
+            final int i = currentName.indexOf('@'); // Thread#name separator
+            if ( i == -1 ) { // name not set yet: "Ruby-0-Thread-42: FILE:LINE"
+                int end = currentName.indexOf(':');
+                if ( end == -1 ) end = currentName.length();
+                final String prefix = currentName.substring(0, end);
+                newName = currentName.replace(prefix, prefix + '@' + setName);
+
+            }
+            else { // name previously set: "Ruby-0-Thread-42@foo: FILE:LINE"
+                final String prefix = currentName.substring(0, i); // Ruby-0-Thread-42
+                int end = currentName.indexOf(':', i);
+                if ( end == -1 ) end = currentName.length();
+                final String prefixWithName = currentName.substring(0, end); // Ruby-0-Thread-42@foo:
+                newName = currentName.replace(prefixWithName, setName == null ? prefix : (prefix + '@' + setName));
+            }
         }
-        thread.setName(name.toString());
+        else if ( newThread ) {
+            final StringBuilder name = new StringBuilder(24);
+            name.append(RUBY_THREAD_PREFIX).append(runtime.getRuntimeNumber());
+            name.append('-').append(thread.getName()); // TODO avoid getName
+            if ( setName != null ) name.append('@').append(setName);
+            if ( file != null ) {
+                name.append(':').append(' ').append(file).append(':').append(line + 1);
+            }
+            newName = name.toString();
+        }
+        else return; // not a new-thread that does not match out Ruby- prefix
+        // very likely user-code set the java thread-name - thus do not mess!
+        try {
+            thread.setName(newName);
+        }
+        catch (SecurityException ignore) { } // current thread can not modify
     }
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
@@ -703,12 +736,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "name=", required = 1)
     public IRubyObject setName(IRubyObject name) {
-        return this.threadName = name;
+        this.threadName = name;
+        setThreadName(getRuntime(), getNativeThread(), null, -1, false);
+        return name;
     }
 
     @JRubyMethod(name = "name")
     public IRubyObject getName() {
         return this.threadName;
+    }
+
+    private String getNameOrNull() {
+        final IRubyObject name = getName();
+        return ( name == null || name.isNil() ) ? null : name.asJavaString();
     }
 
     private boolean pendingInterruptInclude(IRubyObject err) {
@@ -1026,10 +1066,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         String cname = getMetaClass().getRealClass().getName();
         part.append("#<").append(cname).append(':');
         part.append(identityString());
-        final IRubyObject name = getName(); // thread.name
-        if (name != null && ! name.isNil()) {
-            part.append('@');
-            part.append(name.asJavaString());
+        final String name = getNameOrNull(); // thread.name
+        if ( name != null ) {
+            part.append('@').append(name);
         }
         part.append(' ');
         part.append(status.toString().toLowerCase());

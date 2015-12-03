@@ -58,7 +58,7 @@ class TestThread < Test::Unit::TestCase
     v = t.value
     assert_equal("run", v)
     assert_equal(false, t.status)
-    
+
     # check that "run", sleep", and "dead" appear in inspected output
     q = Queue.new
     ready = false
@@ -118,7 +118,7 @@ class TestThread < Test::Unit::TestCase
       e = error
     end
     assert(e.kind_of?(RuntimeError))
-    
+
     # test raising in a sleeping thread
     e = 1
     set = false
@@ -129,7 +129,7 @@ class TestThread < Test::Unit::TestCase
       end
       t.raise("Die")
     rescue; end
-    
+
     assert_equal(2, e)
     assert_raise(RuntimeError) { t.value }
   end
@@ -139,13 +139,13 @@ class TestThread < Test::Unit::TestCase
     assert_equal(2, Thread.new { 2 }.value)
     assert_raise(RuntimeError) { Thread.new { raise "foo" }.value }
   end
-  
+
   class MyThread < Thread
     def initialize
       super do; 1; end
     end
   end
-  
+
   def test_thread_subclass_zsuper
     x = MyThread.new
     x.join
@@ -154,24 +154,24 @@ class TestThread < Test::Unit::TestCase
     x.join
     assert_equal(2, x.value)
   end
-  
+
   # Because a Ruby thread may use a pooled thread, we will
   # not preserve priorities set into dead threads. Because
   # this is a meaningless feature, anyway, I remove it here
   # and consider this behavior undefined. CON@20120306
-  
+
   # def test_dead_thread_priority
   #   x = Thread.new {}
   #   1 while x.alive?
   #   x.priority = 5
   #   assert_equal(5, x.priority)
   # end
-  
+
   def test_join_returns_thread
     x = Thread.new {}
     assert_nothing_raised { x.join.to_s }
   end
-  
+
   def test_abort_on_exception_does_not_blow_up
     # CON: I had an issue where annotated methods weren't binding right
     # where there was both a static and instance method of the same name.
@@ -221,7 +221,7 @@ class TestThread < Test::Unit::TestCase
     t.raise ex
     assert_raises(Exception) { t.join }
   end
-  
+
   # JRUBY-2315
   def test_exit_from_within_thread
     begin
@@ -235,7 +235,7 @@ class TestThread < Test::Unit::TestCase
         sleep 0.5
         Kernel.exit(1)
       end
- 
+
       a.join
       fail
       b.join
@@ -251,7 +251,7 @@ class TestThread < Test::Unit::TestCase
   def call_to_s(a)
     a.to_s
   end
-  
+
   # JRUBY-2477 - polymorphic calls are not thread-safe
   def test_poly_calls_thread_safe
     # Note this isn't a perfect test, but it's not possible to test perfectly
@@ -260,9 +260,9 @@ class TestThread < Test::Unit::TestCase
     threads = []
     sym = :foo
     str = "foo"
-    
+
     20.times {|i| threads << Thread.new { 10_000.times { call_to_s(sym); call_to_s(str) }; results[i] = true }}
-    
+
     threads.pop.join until threads.empty?
     assert_equal [true] * 20, results
   end
@@ -288,7 +288,7 @@ class TestThread < Test::Unit::TestCase
       t.join
     end
   end
-  
+
   # JRUBY-3568: thread group is inherited from parent
   def test_inherits_thread_group
     tg = ThreadGroup.new
@@ -321,7 +321,6 @@ class TestThread < Test::Unit::TestCase
 
   # JRUBY-5290
   def test_default_priority
-    require 'java'
     t = Thread.new { sleep 1 while true }
     assert_equal 0, t.priority
     t.exit
@@ -347,4 +346,45 @@ class TestThread < Test::Unit::TestCase
     t.join
     assert_equal(10000, ret.size)
   end
+
+  def test_thread_name
+    Thread.new do
+      assert_match /\#\<Thread\:0x\h+\srun\>/, Thread.current.inspect
+      assert_match /Ruby\-\d+\-Thread\-\d+\:\s.*\.rb\:\d+/, native_thread_name(Thread.current)
+    end.join
+
+    Thread.new do
+      Thread.current.name = 'foo'
+      assert_match /\#\<Thread\:0x\h+@foo\srun\>/, Thread.current.inspect
+      assert_match /Ruby\-\d+\-Thread\-\d+\@foo:\s.*\.rb\:\d+/, native_thread_name(Thread.current)
+
+      Thread.current.name = 'bar'
+      assert_match /\#\<Thread\:0x\h+@bar\srun\>/, Thread.current.inspect
+      assert_match /Ruby\-\d+\-Thread\-\d+\@bar:\s.*\.rb\:\d+/, native_thread_name(Thread.current)
+
+      Thread.current.name = nil
+      assert_match /\#\<Thread\:0x\h+\srun\>/, Thread.current.inspect
+      assert_match /Ruby\-\d+\-Thread\-\d+\:\s.*\.rb\:\d+/, native_thread_name(Thread.current)
+    end.join
+
+
+    Thread.new do
+      Thread.current.to_java.native_thread.name = 'user-set-native-thread-name'
+      Thread.current.name = 'foo'
+
+      assert_match /\#\<Thread\:0x\h+@foo\srun\>/, Thread.current.inspect
+      assert_equal 'user-set-native-thread-name', native_thread_name(Thread.current)
+
+      Thread.current.name = nil
+      assert_match /\#\<Thread\:0x\h+\srun\>/, Thread.current.inspect
+      assert_equal 'user-set-native-thread-name', native_thread_name(Thread.current)
+    end.join
+  end if defined? JRUBY_VERSION
+
+  private
+
+  def native_thread_name(thread)
+    thread.to_java.native_thread.name
+  end
+
 end
