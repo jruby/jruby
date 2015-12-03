@@ -47,7 +47,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "regexp_initialize")
+    @RubiniusPrimitive(name = "regexp_initialize", lowerFixnumParameters = 1)
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpInitializePrimitiveNode extends RubiniusPrimitiveNode {
 
