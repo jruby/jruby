@@ -28,6 +28,7 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
@@ -833,7 +834,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = { 0, 1 })
+    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends BignumNodes.BignumCoreMethodNode {
 
         @Child private RightShiftNode rightShiftNode;
@@ -892,7 +893,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = { 0, 1 })
+    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
@@ -933,6 +934,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "b >= 0")
         public int rightShift(long a, long b) { // b is not in int range due to lowerFixnumParameters
+            assert !CoreLibrary.fitsIntoInteger(b);
             return 0;
         }
 
