@@ -60,18 +60,9 @@ public class LazyRubyRootNode extends RootNode {
             CompilerDirectives.transferToInterpreter();
 
             if (AttachmentsManager.ATTACHMENT_SOURCE == source) {
-                SourceSection sourceSection;
-                DynamicObject block = null;
-                try {
-                    sourceSection = (SourceSection) frame.getArguments()[0];
-                    block = (DynamicObject) frame.getArguments()[1];
-                } catch (ClassCastException e) {
-                    CompilerDirectives.transferToInterpreter();
-                    for (Object arg : frame.getArguments()) {
-                        System.out.println(arg.getClass() + " " + arg);
-                    }
-                    sourceSection = SourceSection.createUnavailable("attachment", "attachment");
-                }
+                final FrameDescriptor frameDescriptor = frame.getFrameDescriptor();
+                final SourceSection sourceSection = (SourceSection) frame.getValue(frameDescriptor.findFrameSlot("section"));
+                final DynamicObject block = (DynamicObject) frame.getValue(frameDescriptor.findFrameSlot("block"));
 
                 final RootNode rootNode = new AttachmentsManager.AttachmentRootNode(RubyLanguage.class, cachedContext, sourceSection, null, block);
                 final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
