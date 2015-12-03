@@ -121,7 +121,7 @@ public class RubyContext extends ExecutionContext {
 
     private final PrintStream debugStandardOut;
 
-    private Map<String,TruffleObject> exported;
+    private final Map<String, TruffleObject> exported = new HashMap<>();
     private final TruffleLanguage.Env env;
 
     private org.jruby.ast.RootNode initialJRubyRootNode;
@@ -688,20 +688,15 @@ public class RubyContext extends ExecutionContext {
 
     public void exportObject(DynamicObject name, TruffleObject object) {
         assert RubyGuards.isRubyString(name);
-
-        if (exported == null) {
-            exported = new HashMap<>();
-        }
         exported.put(name.toString(), object);
     }
 
     public Object findExportedObject(String name) {
-        return exported == null ? null : exported.get(name);
+        return exported.get(name);
     }
 
     public Object importObject(DynamicObject name) {
         assert RubyGuards.isRubyString(name);
-
         return env.importSymbol(name.toString());
     }
 
