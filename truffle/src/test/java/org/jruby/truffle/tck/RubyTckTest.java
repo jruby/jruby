@@ -25,7 +25,7 @@ public class RubyTckTest extends TruffleTCK {
 
     @Test
     public void checkVM() {
-        PolyglotEngine engine = PolyglotEngine.buildNew().build();
+        PolyglotEngine engine = PolyglotEngine.newBuilder().build();
         assertNotNull(engine.getLanguages().get(mimeType()));
     }
 
@@ -67,7 +67,7 @@ public class RubyTckTest extends TruffleTCK {
                         + "Truffle::Interop.export(\"compound_object\", method(:compound_object))\n"
                         + "Truffle::Interop.export(\"identity\", method(:identity))\n",
                 "test").withMimeType(mimeType());
-        PolyglotEngine engine = PolyglotEngine.buildNew().build();
+        PolyglotEngine engine = PolyglotEngine.newBuilder().build();
         engine.eval(source);
         return engine;
     }

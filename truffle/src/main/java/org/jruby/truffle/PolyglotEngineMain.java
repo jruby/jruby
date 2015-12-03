@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 public class PolyglotEngineMain {
 
     public static void main(String[] args) {
-        final PolyglotEngine engine = PolyglotEngine.buildNew().build();
+        final PolyglotEngine engine = PolyglotEngine.newBuilder().build();
 
         for (String arg : args) {
             try (InputStream inputStream = new FileInputStream(arg)) {

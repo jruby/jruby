@@ -25,7 +25,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
     // Run by reflection from Ruby#loadTruffle
     public JRubyTruffleImpl(Ruby runtime) {
-        engine = PolyglotEngine.buildNew().globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new RubyLanguage.JRubyContextWrapper(runtime)).build();
+        engine = PolyglotEngine.newBuilder().globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new RubyLanguage.JRubyContextWrapper(runtime)).build();
 
         try {
             context = (RubyContext) engine.eval(Source.fromText("Truffle::Primitive.context", "context").withMimeType(RubyLanguage.MIME_TYPE)).get();
