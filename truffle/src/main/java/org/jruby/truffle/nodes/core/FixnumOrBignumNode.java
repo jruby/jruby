@@ -24,6 +24,9 @@ import java.math.BigInteger;
 
 public class FixnumOrBignumNode extends RubyNode {
 
+    private static final BigInteger LONG_MIN_BIGINT = BigInteger.valueOf(Long.MIN_VALUE);
+    private static final BigInteger LONG_MAX_BIGINT = BigInteger.valueOf(Long.MAX_VALUE);
+
     public static FixnumOrBignumNode create(RubyContext context, SourceSection sourceSection) {
         return new FixnumOrBignumNode(context, sourceSection);
     }
@@ -39,7 +42,7 @@ public class FixnumOrBignumNode extends RubyNode {
     private final ConditionProfile longFromDoubleProfile = ConditionProfile.createBinaryProfile();
 
     public Object fixnumOrBignum(BigInteger value) {
-        if (lowerProfile.profile(value.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0 && value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0)) {
+        if (lowerProfile.profile(value.compareTo(LONG_MIN_BIGINT) >= 0 && value.compareTo(LONG_MAX_BIGINT) <= 0)) {
             final long longValue = value.longValue();
 
             if (intProfile.profile(CoreLibrary.fitsIntoInteger(longValue))) {
