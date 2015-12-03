@@ -1016,11 +1016,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // FIXME: There's some code duplication here with RubyObject#inspect
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(":");
+        part.append("#<").append(cname).append(':');
         part.append(identityString());
-        if (threadName != null) {
+        final IRubyObject name = getName(); // thread.name
+        if (name != null && ! name.isNil()) {
             part.append('@');
-            part.append(threadName.asJavaString());
+            part.append(name.asJavaString());
         }
         part.append(' ');
         part.append(status.toString().toLowerCase());
