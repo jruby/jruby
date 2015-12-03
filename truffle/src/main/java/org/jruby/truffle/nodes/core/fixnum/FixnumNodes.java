@@ -12,12 +12,15 @@ package org.jruby.truffle.nodes.core.fixnum;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.ExactMath;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
@@ -906,8 +909,9 @@ public abstract class FixnumNodes {
         public abstract Object executeRightShift(VirtualFrame frame, Object a, Object b);
 
         @Specialization(guards = "b >= 0")
-        public int rightShift(VirtualFrame frame, int a, int b) {
-            if (b >= Integer.SIZE - 1) {
+        public int rightShift(VirtualFrame frame, int a, int b,
+                @Cached("createBinaryProfile()") ConditionProfile profile) {
+            if (profile.profile(b >= Integer.SIZE - 1)) {
                 return a < 0 ? -1 : 0;
             } else {
                 return a >> b;
@@ -915,11 +919,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "b >= 0")
-        public long rightShift(VirtualFrame frame, long a, int b) {
-            if (b >= Long.SIZE - 1) {
-                return a < 0 ? -1 : 0;
+        public Object rightShift(VirtualFrame frame, long a, int b,
+                @Cached("createBinaryProfile()") ConditionProfile profile) {
+            if (profile.profile(b >= Long.SIZE - 1)) {
+                return a < 0 ? -1 : 0; // int
             } else {
-                return a >> b;
+                return a >> b; // long
             }
         }
 
