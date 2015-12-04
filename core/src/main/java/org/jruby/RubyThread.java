@@ -144,7 +144,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile WeakReference<ThreadContext> contextRef;
 
     /** Whether to scan for cross-thread events */
-    private volatile boolean handleInterrupt = true;
+    //private volatile boolean handleInterrupt = true;
 
     /** Stack of interrupt masks active for this thread */
     private final List<RubyHash> interruptMaskStack = Collections.synchronizedList(new ArrayList<RubyHash>());
@@ -196,7 +196,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private volatile Selector currentSelector;
 
-    private static final AtomicIntegerFieldUpdater INTERRUPT_FLAG_UPDATER =
+    private static final AtomicIntegerFieldUpdater<RubyThread> INTERRUPT_FLAG_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(RubyThread.class, "interruptFlag");
 
     private static final int TIMER_INTERRUPT_MASK         = 0x01;
@@ -1244,15 +1244,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
-        if(args.length == 0) {
+        if (args.length == 0) {
             IRubyObject lastException = errorInfo;
-            if(lastException.isNil()) {
+            if (lastException.isNil()) {
                 return new RaiseException(runtime, runtime.getRuntimeError(), "", false).getException();
             }
             return lastException;
         }
 
-        final ThreadContext context = getRuntime().getCurrentContext();
+        final ThreadContext context = runtime.getCurrentContext();
         final IRubyObject arg = args[0];
 
         final IRubyObject exception;
