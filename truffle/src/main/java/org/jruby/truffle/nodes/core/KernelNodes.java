@@ -1035,19 +1035,50 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        protected static final int LIMIT = Options.FIELD_LOOKUP_CACHE;
+
         @CreateCast("name")
-        public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        public RubyNode coerceToSymbolOrString(RubyNode name) {
+            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        // TODO CS 4-Mar-15 this badly needs to be cached
+        @Specialization(
+                guards = { "isRubySymbol(name)", "name == cachedName" },
+                limit = "LIMIT")
+        public Object instanceVariableSetSymbolCached(DynamicObject object, DynamicObject name, Object value,
+                                                      @Cached("name") DynamicObject cachedName,
+                                                      @Cached("createWriteFieldNode(checkName(symbolToString(cachedName)))") WriteHeadObjectFieldNode writeHeadObjectFieldNode) {
+            writeHeadObjectFieldNode.execute(object, value);
+            return value;
+        }
+
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object instanceVariableSetSymbol(DynamicObject object, DynamicObject name, Object value) {
+            return ivarSet(object, symbolToString(name), value);
+        }
 
         @TruffleBoundary
-        @Specialization
-        public Object instanceVariableSet(DynamicObject object, String name, Object value) {
-            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
-            object.define(ivar, value, 0);
+        @Specialization(guards = "isRubyString(name)")
+        public Object instanceVariableSetString(DynamicObject object, DynamicObject name, Object value) {
+            return ivarSet(object, name.toString(), value);
+        }
+
+        @TruffleBoundary
+        private Object ivarSet(DynamicObject object, String name, Object value) {
+            object.define(checkName(name), value, 0);
             return value;
+        }
+
+        protected String symbolToString(DynamicObject name) {
+            return Layouts.SYMBOL.getString(name);
+        }
+
+        protected String checkName(String name) {
+            return RubyContext.checkInstanceVariableName(getContext(), name, this);
+        }
+
+        protected WriteHeadObjectFieldNode createWriteFieldNode(String name) {
+            return WriteHeadObjectFieldNodeGen.create(name);
         }
 
     }
