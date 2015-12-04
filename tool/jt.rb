@@ -52,7 +52,7 @@ module Utilities
   end
 
   def self.git_branch
-    @git_branch ||= `git rev-parse --abbrev-ref HEAD`.strip
+    @git_branch ||= `GIT_DIR="#{JRUBY_DIR}/.git" git rev-parse --abbrev-ref HEAD`.strip
   end
 
   def self.mangle_for_env(name)
