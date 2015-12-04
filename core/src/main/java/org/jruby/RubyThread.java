@@ -615,7 +615,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             name.append(RUBY_THREAD_PREFIX).append(runtime.getRuntimeNumber());
             name.append('-').append("Thread-").append(incAndGetThreadCount(runtime));
             if ( setName != null ) name.append('@').append(setName);
-            if ( file != null ) {
+            if ( file != null ) { // in JIT we seem to get "" as file and line 0
                 name.append(':').append(' ').append(file).append(':').append(line + 1);
             }
             newName = name.toString();

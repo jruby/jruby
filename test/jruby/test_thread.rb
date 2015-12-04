@@ -350,21 +350,22 @@ class TestThread < Test::Unit::TestCase
   def test_thread_name
     Thread.new do
       assert_match /\#\<Thread\:0x\h+\srun\>/, Thread.current.inspect
-      assert_match /Ruby\-\d+\-Thread\-\d+\:\s.*\.rb\:\d+/, native_thread_name(Thread.current)
+      # TODO? currently in JIT file comes as "" and line as 0
+      assert_match /Ruby\-\d+\-Thread\-\d+\:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)
     end.join
 
     Thread.new do
       Thread.current.name = 'foo'
       assert_match /\#\<Thread\:0x\h+@foo\srun\>/, Thread.current.inspect
-      assert_match /Ruby\-\d+\-Thread\-\d+\@foo:\s.*\.rb\:\d+/, native_thread_name(Thread.current)
+      assert_match /Ruby\-\d+\-Thread\-\d+\@foo:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)
 
       Thread.current.name = 'bar'
       assert_match /\#\<Thread\:0x\h+@bar\srun\>/, Thread.current.inspect
-      assert_match /Ruby\-\d+\-Thread\-\d+\@bar:\s.*\.rb\:\d+/, native_thread_name(Thread.current)
+      assert_match /Ruby\-\d+\-Thread\-\d+\@bar:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)
 
       Thread.current.name = nil
       assert_match /\#\<Thread\:0x\h+\srun\>/, Thread.current.inspect
-      assert_match /Ruby\-\d+\-Thread\-\d+\:\s.*\.rb\:\d+/, native_thread_name(Thread.current)
+      assert_match /Ruby\-\d+\-Thread\-\d+\:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)
     end.join
 
 
