@@ -203,7 +203,7 @@ public class RaiseException extends JumpException {
 
         exception.prepareIntegratedBacktrace(context, javaTrace);
 
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
     }
 
     private void preRaise(ThreadContext context, IRubyObject backtrace) {
@@ -227,7 +227,7 @@ public class RaiseException extends JumpException {
             setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
         }
 
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
     }
 
     private static void doCallEventHook(final ThreadContext context) {
