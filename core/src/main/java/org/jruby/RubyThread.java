@@ -68,6 +68,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
@@ -612,19 +613,33 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         else if ( newThread ) {
             final StringBuilder name = new StringBuilder(24);
             name.append(RUBY_THREAD_PREFIX).append(runtime.getRuntimeNumber());
-            name.append('-').append(thread.getName()); // TODO avoid getName
+            name.append('-').append("Thread-").append(incAndGetThreadCount(runtime));
             if ( setName != null ) name.append('@').append(setName);
             if ( file != null ) {
                 name.append(':').append(' ').append(file).append(':').append(line + 1);
             }
             newName = name.toString();
         }
-        else return; // not a new-thread that does not match out Ruby- prefix
-        // very likely user-code set the java thread-name - thus do not mess!
-        try {
-            thread.setName(newName);
-        }
+        else return; // not a new-thread that and does not match out Ruby- prefix
+        // ... very likely user-code set the java thread name - thus do not mess!
+        try { thread.setName(newName); }
         catch (SecurityException ignore) { } // current thread can not modify
+    }
+
+    // TODO likely makes sense to have a counter or the Ruby class directly (could be included with JMX)
+    private static final WeakHashMap<Ruby, AtomicLong> threadCount = new WeakHashMap<Ruby, AtomicLong>(4);
+
+    private static long incAndGetThreadCount(final Ruby runtime) {
+        AtomicLong counter = threadCount.get(runtime);
+        if ( counter == null ) {
+            synchronized (runtime) {
+                counter = threadCount.get(runtime);
+                if ( counter == null ) {
+                    threadCount.put(runtime, counter = new AtomicLong(0));
+                }
+            }
+        }
+        return counter.incrementAndGet();
     }
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
