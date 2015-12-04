@@ -106,8 +106,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger("RubyThread");
 
-    private volatile IRubyObject threadName;
-
     /** The thread-like think that is actually executing */
     private volatile ThreadLike threadImpl;
 
@@ -125,6 +123,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /** The final value resulting from the thread's execution */
     private volatile IRubyObject finalResult;
+
+    private volatile IRubyObject threadName;
+    private String file; private int line; // Thread.new location (for inspect)
 
     /**
      * The exception currently being raised out of the thread. We reference
@@ -557,7 +558,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         try {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
-            setThreadName(runtime, thread, context.getFile(), context.getLine(), true);
+            this.file = context.getFile();
+            this.line = context.getLine();
+            setThreadName(runtime, thread, file, line, true);
             threadImpl = new NativeThread(this, thread);
 
             addToCorrectThreadGroup(context);
@@ -1077,13 +1080,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @Override
     public synchronized IRubyObject inspect() {
         // FIXME: There's some code duplication here with RubyObject#inspect
-        StringBuilder part = new StringBuilder();
+        StringBuilder part = new StringBuilder(32);
         String cname = getMetaClass().getRealClass().getName();
         part.append("#<").append(cname).append(':');
         part.append(identityString());
         final String name = getNameOrNull(); // thread.name
         if ( name != null ) {
             part.append('@').append(name);
+        }
+        if ( file != null && line > 0 ) {
+            part.append('@').append(file).append(':').append(line);
         }
         part.append(' ');
         part.append(status.toString().toLowerCase());

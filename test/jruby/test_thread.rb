@@ -71,11 +71,6 @@ class TestThread < Test::Unit::TestCase
     assert(t.inspect["dead"])
   end
 
-  def test_inspect
-    t = Thread.new {}.join
-    assert_match /#<Thread:0x[0-9a-z]+ \w+>/, t.inspect
-  end
-
   def thread_foo()
     raise "hello"
   end
@@ -347,25 +342,41 @@ class TestThread < Test::Unit::TestCase
     assert_equal(10000, ret.size)
   end
 
+  def test_inspect_and_to_s
+    t = Thread.new {}.join
+    assert_match /#<Thread:0x[0-9a-z]+>/, t.to_s
+    # TODO we do not have file/line right :
+    # MRI: #<Thread:0x000000014b0e28@test/jruby/test_thread.rb:346 dead>
+    #assert_match /#<Thread:0x[0-9a-z]+@test\/jruby\/test_thread\.rb\:346 \w+>/, t.inspect
+    assert_match /#<Thread:0x[0-9a-z]+(@.*\.rb\:\d+)? \w+>/, t.inspect
+
+    assert_nil t.name
+
+    t = Thread.new {}.join
+    t.name = 'universal'
+    assert_match /#<Thread:0x[0-9a-z]+>/, t.to_s
+    assert_match /#<Thread:0x[0-9a-z]+@universal(@.*\.rb\:\d+)? \w+>/, t.inspect
+  end
+
   def test_thread_name
     Thread.new do
-      assert_match /\#\<Thread\:0x\h+\srun\>/, Thread.current.inspect
+      assert_match /\#\<Thread\:0x\h+(@[\w\/\._]+\:\d+)?\srun\>/, Thread.current.inspect
       # TODO? currently in JIT file comes as "" and line as 0
-      assert_match /Ruby\-\d+\-Thread\-\d+\:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)
+      assert_match /Ruby\-\d+\-Thread\-\d+\:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current) if defined? JRUBY_VERSION
     end.join
 
     Thread.new do
       Thread.current.name = 'foo'
-      assert_match /\#\<Thread\:0x\h+@foo\srun\>/, Thread.current.inspect
-      assert_match /Ruby\-\d+\-Thread\-\d+\@foo:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)
+      assert_match /\#\<Thread\:0x\h+@foo(@[\w\/\._]+\:\d+)?\srun\>/, Thread.current.inspect
+      assert_match /Ruby\-\d+\-Thread\-\d+\@foo:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current) if defined? JRUBY_VERSION
 
       Thread.current.name = 'bar'
-      assert_match /\#\<Thread\:0x\h+@bar\srun\>/, Thread.current.inspect
-      assert_match /Ruby\-\d+\-Thread\-\d+\@bar:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)
+      assert_match /\#\<Thread\:0x\h+@bar(@[\w\/\._]+\:\d+)?\srun\>/, Thread.current.inspect
+      assert_match /Ruby\-\d+\-Thread\-\d+\@bar:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current) if defined? JRUBY_VERSION
 
       Thread.current.name = nil
-      assert_match /\#\<Thread\:0x\h+\srun\>/, Thread.current.inspect
-      assert_match /Ruby\-\d+\-Thread\-\d+\:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)
+      assert_match /\#\<Thread\:0x\h+(@[\w\/\._]+\:\d+)?\srun\>/, Thread.current.inspect
+      assert_match /Ruby\-\d+\-Thread\-\d+\:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current) if defined? JRUBY_VERSION
     end.join
 
 
@@ -373,14 +384,14 @@ class TestThread < Test::Unit::TestCase
       Thread.current.to_java.native_thread.name = 'user-set-native-thread-name'
       Thread.current.name = 'foo'
 
-      assert_match /\#\<Thread\:0x\h+@foo\srun\>/, Thread.current.inspect
-      assert_equal 'user-set-native-thread-name', native_thread_name(Thread.current)
+      assert Thread.current.inspect.index('@foo')
+      assert_equal 'user-set-native-thread-name', native_thread_name(Thread.current) if defined? JRUBY_VERSION
 
       Thread.current.name = nil
-      assert_match /\#\<Thread\:0x\h+\srun\>/, Thread.current.inspect
-      assert_equal 'user-set-native-thread-name', native_thread_name(Thread.current)
+      assert ! Thread.current.inspect.index('@foo')
+      assert_equal 'user-set-native-thread-name', native_thread_name(Thread.current) if defined? JRUBY_VERSION
     end.join
-  end if defined? JRUBY_VERSION
+  end
 
   private
 
