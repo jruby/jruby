@@ -449,7 +449,6 @@ public class CoreLibrary {
         defineModule(truffleModule, "Debug");
         final DynamicObject primitiveModule = defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
-        defineModule(truffleModule, "Zlib");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
         psychModule = defineModule("Psych");
@@ -592,7 +591,6 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ObjSpaceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());

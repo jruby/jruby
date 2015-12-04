@@ -1,1 +1,0 @@
-fails:Zlib::ZStream#data_type returns the type of the data in the stream
