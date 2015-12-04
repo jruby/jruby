@@ -191,7 +191,6 @@ public class InlineCloneInfo extends CloneInfo {
     public void setupYieldArgsAndYieldResult(YieldInstr yi, BasicBlock yieldBB, int blockArityValue) {
         Operand yieldInstrArg = yi.getYieldArg();
 
-        System.out.println("IYA: " + yieldInstrArg);
         if ((yieldInstrArg == UndefinedValue.UNDEFINED) || (blockArityValue == 0)) {
             yieldArg = new Array(); // Zero-elt array
         } else if (yieldInstrArg instanceof Array) {

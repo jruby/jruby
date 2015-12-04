@@ -34,6 +34,13 @@ public class Profiler {
     private static final int PROFILE_PERIOD = 20000;
     private static final float INSIGNIFICANT_PERCENTAGE = 1.0f; // FIXME: arbitrarily chosen
 
+    private static final int MAX_NUMBER_OF_INTERESTING_CALLSITES = 10; // We will only look at top n sites
+
+    // FIXME: This is a bad statistic by itself.  In a super tight loop the hottest site might be >99% of the freq.
+    private static final float MAX_FREQUENCY = 99.0f; // After we covered this much of the space we do not care
+
+    private static final int MAX_INSTRUCTIONS_TO_INLINE = 500;
+
     // Structure on what a callsite is.  It lives in an IC. It will be some form of call (CallBase).
     // It might have been called count times.
     public static class IRCallSite {
@@ -89,6 +96,16 @@ public class Profiler {
             return counters.size() == 1;
         }
     }
+
+    static class CallSiteComparator implements Comparator<IRCallSite> {
+        @Override
+        public int compare(IRCallSite a, IRCallSite b) {
+            if (a.count == b.count) return 0;
+            return (a.count < b.count) ? 1 : -1;
+        }
+    }
+
+    static CallSiteComparator callSiteComparator = new CallSiteComparator();
 
     // Last or about to be called IR scope
     public static IRCallSite callerSite = new IRCallSite();
@@ -165,16 +182,9 @@ public class Profiler {
 
         final ArrayList<IRCallSite> callSites = new ArrayList<>();
         long total = findInliningCandidates(callSites);
+        Collections.sort(callSites, callSiteComparator);
 
         //System.out.println("Total calls this period: " + total + ", candidate callsites: " + callSites.size());
-
-        Collections.sort(callSites, new java.util.Comparator<IRCallSite> () {
-            @Override
-            public int compare(IRCallSite a, IRCallSite b) {
-                if (a.count == b.count) return 0;
-                return (a.count < b.count) ? 1 : -1;
-            }
-        });
 
         // Find top N call sites
         double freq = 0.0;
@@ -184,18 +194,12 @@ public class Profiler {
             double percentOfTotalCalls = (callSite.count * 100.0) / total;
 
             if (percentOfTotalCalls < INSIGNIFICANT_PERCENTAGE) break;
-
-            i++;
             freq += percentOfTotalCalls;
-
-            // This check is arbitrary
-            if (i == 100 || freq > 99.0) break;
+            if (i++ >= MAX_NUMBER_OF_INTERESTING_CALLSITES || freq > MAX_FREQUENCY) break; // overly simplistic
 
             //System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
             //" in scope " + ircs.ic.getScope() + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
-            // Now inline here!
-            CallBase call = callSite.call;
 
             InterpreterContext ic = callSite.ic;
             boolean isClosure = ic.getScope() instanceof IRClosure;
@@ -207,25 +211,17 @@ public class Profiler {
             //    b. use profiled (or last profiled in case more multiple profiled versions)
             ic = isClosure ? ic.getScope().getLexicalParent().getFullInterpreterContext() : ic;
 
-            Compilable tgtMethod = callSite.liveMethod;
+            Compilable methodToInline = callSite.liveMethod;
 
-            // MOVE INTO shouldInline
-            Instr[] instrs = tgtMethod.getIRScope().getFullInterpreterContext().getInstructions();
-            // Dont inline large methods -- 500 is arbitrary
-            // Can be null if a previously inlined method hasn't been rebuilt
-            if ((instrs == null) || instrs.length > 500) {
-                if (instrs == null) System.out.println("no instrs!");
-                else System.out.println("large method with " + instrs.length + " instrs. skipping!");
-                continue;
-            }
-
-            if (shouldInline(call, ic, isClosure)) {
-                RubyModule implClass = callSite.liveMethod.getImplementationClass();
+            if (shouldInline(methodToInline.getIRScope(), callSite.call, ic, isClosure)) {
+                RubyModule implClass = methodToInline.getImplementationClass();
                 long start = new java.util.Date().getTime();
-                ic.getScope().inlineMethod(tgtMethod, implClass, implClass.getGeneration(), null, call, !inlinedScopes.contains(ic));
+                ic.getScope().inlineMethod(methodToInline, implClass, implClass.getGeneration(), null, callSite.call, false);//!inlinedScopes.contains(ic));
                 inlinedScopes.add(ic);
                 long end = new java.util.Date().getTime();
-                System.out.println("Inlined " + tgtMethod + " in " + ic + " @ instr " + call + " in time (ms): " + (end-start) + " # instrs: " + instrs.length);
+                System.out.println("Inlined " + methodToInline.getName() + " into " + ic.getName() + " @ instr " + callSite.call +
+                        " in time (ms): " + (end-start) + " # of inlined instrs: " +
+                        methodToInline.getIRScope().getFullInterpreterContext().getInstructions().length);
             }
         }
 
@@ -245,7 +241,10 @@ public class Profiler {
      * All methods will inline so long as they have been fully built.  A hot closure will inline through the method
      * which call it.
      */
-    private static boolean shouldInline(CallBase call, InterpreterContext ic, boolean isClosure) {
+    private static boolean shouldInline(IRScope scopeToInline, CallBase call, InterpreterContext ic, boolean isClosure) {
+        Instr[] instrs = scopeToInline.getFullInterpreterContext().getInstructions();
+        if (instrs == null || instrs.length > MAX_INSTRUCTIONS_TO_INLINE) return false;
+
         // FIXME: Closure getting lexical parent can end up with null.  We should fix that in parent method to remove this null check.
         boolean fullBuild = ic != null && ic.getScope().isFullBuildComplete();
 

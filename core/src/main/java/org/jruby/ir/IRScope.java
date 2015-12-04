@@ -1026,7 +1026,7 @@ public abstract class IRScope implements ParseResult {
         newContext.generateInstructionsForIntepretation();
         this.fullInterpreterContext = newContext;
 
-        //System.out.println(fullInterpreterContext.toStringInstrs());
+        System.out.println(fullInterpreterContext.toStringInstrs());
         compilable.setInterpreterContext(fullInterpreterContext);
         // Since inline is an if/else of logic in this version of inlining we will just replace the FIC.
     }
