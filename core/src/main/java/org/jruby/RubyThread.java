@@ -1088,7 +1088,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if ( name != null ) {
             part.append('@').append(name);
         }
-        if ( file != null && line > 0 ) {
+        if ( file != null && line >= 0 ) {
             part.append('@').append(file).append(':').append(line + 1);
         }
         part.append(' ');
