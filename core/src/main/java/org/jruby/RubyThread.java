@@ -47,22 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-
 import java.util.Set;
-import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.ThreadKill;
-import org.jruby.internal.runtime.NativeThread;
-import org.jruby.internal.runtime.RubyRunnable;
-import org.jruby.internal.runtime.ThreadLike;
-import org.jruby.internal.runtime.ThreadService;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.ExecutionContext;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -72,23 +57,34 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ThreadKill;
+import org.jruby.internal.runtime.NativeThread;
+import org.jruby.internal.runtime.RubyRunnable;
+import org.jruby.internal.runtime.ThreadLike;
+import org.jruby.internal.runtime.ThreadService;
+import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
-import static org.jruby.runtime.Visibility.*;
-
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.ExecutionContext;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.SelectorFactory;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import org.jruby.java.proxies.ConcreteJavaProxy;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.backtrace.RubyStackTraceElement;
-import org.jruby.util.ByteList;
+import static org.jruby.runtime.Visibility.*;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
