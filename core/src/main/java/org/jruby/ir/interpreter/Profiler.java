@@ -10,6 +10,7 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.callsite.CachingCallSite;
 
@@ -30,6 +31,7 @@ import java.util.*;
  * sites.  It might inline some of those and then it will flush collected data and start over.
  */
 public class Profiler {
+    public static final long INVALID_CALLSITE_ID = -1;
     public static final int UNASSIGNED_VERSION = -1;
     private static final int PROFILE_PERIOD = 20000;
     private static final float INSIGNIFICANT_PERCENTAGE = 1.0f; // FIXME: arbitrarily chosen
@@ -44,25 +46,52 @@ public class Profiler {
     // Structure on what a callsite is.  It lives in an IC. It will be some form of call (CallBase).
     // It might have been called count times.
     public static class IRCallSite {
-        InterpreterContext ic;  // ic where this call site lives
-        CallBase call;          // which instr is at this callsite
-        long count;             // how many times callsite has been executed
-        Compilable liveMethod;  // winner winner chicken dinner we think we have monomorphic target method to inline.
+        InterpreterContext ic;          // ic where this call site lives
+        long id = INVALID_CALLSITE_ID;  // Callsite id (unique to system)
+        private CallBase call = null;   // which instr is at this callsite
+        long count;                     // how many times callsite has been executed
+        Compilable liveMethod;          // winner winner chicken dinner we think we have monomorphic target method to inline.
 
         public IRCallSite() {}
 
         public IRCallSite(IRCallSite cs) {
             ic = cs.ic;
+            id = cs.id;
             call  = cs.call;
             count = 0;
+        }
+
+        /**
+         * Interpreter trivially knows what the call is but the JIT only knows the callsiteId.
+         */
+        public CallBase getCall() {
+            if (call == null) call = findCall();
+            return call;
+        }
+
+        private CallBase findCall() {
+            FullInterpreterContext fic = (FullInterpreterContext) ic;
+            for (BasicBlock bb: fic.getLinearizedBBList()) {
+                for (Instr instr: bb.getInstrs()) {
+                    if (instr instanceof CallBase && ((CallBase) instr).callSiteId == id) return (CallBase) instr;
+                }
+            }
+
+            return null;
         }
 
         public int hashCode() {
             return (int) call.callSiteId;
         }
 
+        public void update(long callSiteId, InterpreterContext ic) {
+            this.ic = ic;
+            this.id = callSiteId;
+        }
+
         public void update(CallBase call, InterpreterContext ic) {
             this.ic = ic;
+            this.id = call.callSiteId;
             this.call = call;
         }
     }
@@ -155,8 +184,8 @@ public class Profiler {
             IRCallSite callSite  = callSiteProfile.cs;
             boolean monomorphic = callSiteProfile.retallyCallCount();
 
-            if (monomorphic && !callSite.call.inliningBlocked()) {
-                CallSite runtimeCallSite = callSite.call.getCallSite();
+            if (monomorphic && !callSite.getCall().inliningBlocked()) {
+                CallSite runtimeCallSite = callSite.getCall().getCallSite();
                 if (runtimeCallSite != null && runtimeCallSite instanceof CachingCallSite) {
                     DynamicMethod method = ((CachingCallSite) runtimeCallSite).getCache().method;
 
@@ -213,13 +242,13 @@ public class Profiler {
 
             Compilable methodToInline = callSite.liveMethod;
 
-            if (shouldInline(methodToInline.getIRScope(), callSite.call, ic, isClosure)) {
+            if (shouldInline(methodToInline.getIRScope(), callSite.getCall(), ic, isClosure)) {
                 RubyModule implClass = methodToInline.getImplementationClass();
                 long start = new java.util.Date().getTime();
-                ic.getScope().inlineMethod(methodToInline, implClass, implClass.getGeneration(), null, callSite.call, false);//!inlinedScopes.contains(ic));
+                ic.getScope().inlineMethod(methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
                 inlinedScopes.add(ic);
                 long end = new java.util.Date().getTime();
-                System.out.println("Inlined " + methodToInline.getName() + " into " + ic.getName() + " @ instr " + callSite.call +
+                System.out.println("Inlined " + methodToInline.getName() + " into " + ic.getName() + " @ instr " + callSite.getCall() +
                         " in time (ms): " + (end-start) + " # of inlined instrs: " +
                         methodToInline.getIRScope().getFullInterpreterContext().getInstructions().length);
             }
@@ -264,12 +293,11 @@ public class Profiler {
         // be inaccurate to record this save callsite info with the currently executing scope.
 
         // This allows us to register the last callsite and associate it with the current scope.
-        if (callerSite.call != null) {
-            Long id = callerSite.call.callSiteId;         // we find id to look up callsite in global table (global to flush?)
-            CallSiteProfile csp = callProfile.get(id);    // get saved profile
+        if (callerSite.id != -1) {
+            CallSiteProfile csp = callProfile.get(callerSite.id);    // get saved profile
             if (csp == null) {                            // of make one
                 csp = new CallSiteProfile(callerSite);
-                callProfile.put(id, csp);
+                callProfile.put(callerSite.id, csp);
             }
 
             Counter csCount = csp.counters.get(scope);    // store which method is getting called (local to site)
@@ -279,6 +307,10 @@ public class Profiler {
             }
             csCount.count++;                              // this particular method was called one more time
         }
+    }
+
+    public static void markCallAboutToBeCalled(long callsiteId, IRScope scope) {
+        callerSite.update(callsiteId, scope.getFullInterpreterContext());
     }
 
     // We do not pass profiling instructions through call so we temporarily tuck away last IR executed

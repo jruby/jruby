@@ -54,6 +54,10 @@ public class SkinnyMethodAdapter extends MethodVisitor implements Opcodes {
         this.end = new Label();
     }
 
+    public String getName() {
+        return name;
+    }
+
     public ClassVisitor getClassVisitor() {
         return cv;
     }

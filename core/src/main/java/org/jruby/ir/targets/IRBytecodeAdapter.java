@@ -44,6 +44,10 @@ public abstract class IRBytecodeAdapter {
         this.classData = classData;
     }
 
+    public String name() {
+        return adapter.getName();
+    }
+
     public ClassData getClassData() {
         return classData;
     }
