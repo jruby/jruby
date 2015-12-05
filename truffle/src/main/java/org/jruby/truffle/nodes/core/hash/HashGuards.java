@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core.hash;
 
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -26,7 +27,8 @@ public abstract class HashGuards {
     public static boolean isPackedHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
         // Can't do instanceof Object[] due to covariance
-        return !(isNullHash(hash) || isBucketHash(hash));
+        final Object store = Layouts.HASH.getStore(hash);
+        return store != null && store.getClass() == Object[].class;
     }
 
     public static boolean isBucketHash(DynamicObject hash) {

@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core.array;
 
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -39,7 +40,8 @@ public class ArrayGuards {
 
     public static boolean isObjectArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return Layouts.ARRAY.getStore(array) instanceof Object[];
+        final Object store = Layouts.ARRAY.getStore(array);
+        return store != null && store.getClass() == Object[].class;
     }
 
     // Higher level properties
