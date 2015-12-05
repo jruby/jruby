@@ -155,7 +155,11 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-        return yield(context, block, arg0);
+        if (hasCallProtocolIR()) {
+            return yieldDirect(context, block, new IRubyObject[] { arg0 }, null);
+        } else {
+            return yield(context, block, arg0);
+        }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1};
@@ -168,7 +172,11 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-        return yield(context, block, new IRubyObject[] { arg0, arg1 }, null);
+        if (hasCallProtocolIR()) {
+            return yieldDirect(context, block, new IRubyObject[] { arg0, arg1 }, null);
+        } else {
+            return yield(context, block, new IRubyObject[] { arg0, arg1 }, null);
+        }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
@@ -181,7 +189,11 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return yield(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
+        if (hasCallProtocolIR()) {
+            return yieldDirect(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
+        } else {
+            return yield(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
+        }
     }
 
 

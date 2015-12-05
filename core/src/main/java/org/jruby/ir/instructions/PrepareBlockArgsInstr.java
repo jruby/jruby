@@ -48,6 +48,9 @@ public class PrepareBlockArgsInstr extends NoOperandInstr implements FixedArityI
         return args;
     }
 
+    // SSS FIXME: This code only works for block yields, not rubyproc calls.
+    // When a block is converted to a RubyProc and called, this code below
+    // needs to implement the logic in BlockBody:prepareArgumentsForCall.
     public IRubyObject[] prepareBlockArgs(ThreadContext context, Block b, IRubyObject[] args) {
         // This is the placeholder for scenarios
         // not handled by specialized instructions.
