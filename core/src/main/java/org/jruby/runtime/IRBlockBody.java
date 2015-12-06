@@ -63,8 +63,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
-
         return commonYieldPath(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
     }
 
@@ -75,7 +73,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         } else {
             IRubyObject[] args = IRubyObject.NULL_ARRAY;
             if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
-
             return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
         }
     }
