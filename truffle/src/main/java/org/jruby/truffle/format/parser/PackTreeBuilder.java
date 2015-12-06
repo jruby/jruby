@@ -315,7 +315,9 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitBack(PackParser.BackContext ctx) {
-        appendNode(applyCount(ctx.count(), new BackNode(context)));
+        if (ctx.count() == null || ctx.count().INT() != null) {
+            appendNode(applyCount(ctx.count(), new BackNode(context)));
+        }
     }
 
     @Override
