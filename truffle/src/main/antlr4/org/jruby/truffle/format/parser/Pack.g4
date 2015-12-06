@@ -46,11 +46,13 @@ directive : C count?                                    # character
           | '@' INT?                                    # at
           | 'X' count?                                  # back
           | 'x' count?                                  # nullByte
-          | '(' directive+ ')' INT                      # subSequence
+          | subSequence                                 # subSequenceAlternate
           | ('v' | 'n' | 'V' | 'N' | 'U' | 'w' | D |
              F | 'E' | 'e' | 'g' | 'G' | 'A' | 'a' |
              'Z' | 'B' | 'b' | 'H' | 'h' | 'u' | 'M' |
              'm' | 'p' | 'P' | 'X' | 'x') NATIVE        #errorDisallowedNative ;
+
+subSequence : '(' directive+ ')' INT? ;
 
 count  : INT | '*' ;
 

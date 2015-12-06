@@ -31,6 +31,10 @@ public class PackCompiler {
     }
 
     public CallTarget compile(String format) {
+        if (format.length() > 32) {
+            format = recoverLoop(format);
+        }
+
         final PackErrorListener errorListener = new PackErrorListener(context, currentNode);
 
         final ANTLRInputStream input = new ANTLRInputStream(format.toString());
@@ -53,6 +57,83 @@ public class PackCompiler {
 
         return Truffle.getRuntime().createCallTarget(
                 new PackRootNode(describe(format), builder.getEncoding(), builder.getNode()));
+    }
+
+    /**
+     * Format strings can sometimes be dynamically generated with code such as:
+     * <p>
+     *   <code>'x' + ('NX' * size)</code>
+     * <p>
+     * This is problematic for us as it expands to:
+     * <p>
+     *   <code>xNXNXNXNXNXNXNXNXNXNX...</code>
+     * <p>
+     * We will struggle to compile that with a large value for size because it
+     * will generate a huge number of nodes. Even if we could compile it, it's
+     * not great for memory consumption or the instruction cache. Instead, we'd
+     * like to recover the loop in there and convert it to:
+     * <p>
+     *   <code>x(NX)1000</code>
+     * <p>
+     * We could try and do something really sophisticated here, with nested
+     * loops and finding the optimal pattern, but for the moment we just look
+     * for one simple loop.
+     * <p>
+     * To do that, for each character we look 1..n characters behind and see if
+     * that pattern is repeated. If it is we have the loop. Nothing more
+     * complicated than that.
+     */
+    private String recoverLoop(String format) {
+        int break_point = 0;
+
+        while (break_point < format.length()) {
+            if ("0123456789*".indexOf(format.charAt(break_point)) != -1) {
+                break_point++;
+                continue;
+            }
+
+            int repeated_length = 1;
+            int max_repeated_length = -1;
+
+            while (repeated_length <= break_point && break_point + repeated_length <= format.length()) {
+                if (format.substring(break_point - repeated_length, break_point)
+                        .equals(format.substring(break_point, break_point + repeated_length))) {
+                    max_repeated_length = repeated_length;
+                }
+
+                repeated_length++;
+            }
+
+            if (max_repeated_length == -1) {
+                break_point++;
+            } else {
+                final String repeated = format.substring(break_point, break_point + max_repeated_length);
+
+                int count = 2;
+                int rep_point = break_point + max_repeated_length;
+
+                while (rep_point + max_repeated_length <= format.length()) {
+                    if (!format.substring(rep_point, rep_point + max_repeated_length).equals(repeated)) {
+                        break;
+                    }
+
+                    count++;
+                    rep_point += max_repeated_length;
+                }
+
+                final StringBuilder builder = new StringBuilder();
+                builder.append(format.substring(0, break_point - max_repeated_length));
+                builder.append('(');
+                builder.append(repeated);
+                builder.append(')');
+                builder.append(count);
+                builder.append(format.substring(rep_point));
+                format = builder.toString();
+            }
+
+        }
+
+        return format;
     }
 
     /**

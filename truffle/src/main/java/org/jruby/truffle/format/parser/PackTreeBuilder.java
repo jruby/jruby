@@ -55,7 +55,8 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitSequence(PackParser.SequenceContext ctx) {
-        popSequence();
+        final List<PackNode> sequence = sequenceStack.pop();
+        appendNode(new SequenceNode(context, sequence.toArray(new PackNode[sequence.size()])));
     }
 
     @Override
@@ -332,7 +333,18 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitSubSequence(PackParser.SubSequenceContext ctx) {
-        popSequence();
+        final List<PackNode> sequence = sequenceStack.pop();
+        final SequenceNode sequenceNode = new SequenceNode(context, sequence.toArray(new PackNode[sequence.size()]));
+
+        final PackNode resultingNode;
+
+        if (ctx.INT() == null) {
+            resultingNode = sequenceNode;
+        } else {
+            resultingNode = new NNode(context, Integer.parseInt(ctx.INT().getText()), sequenceNode);
+        }
+
+        appendNode(resultingNode);
     }
 
     @Override
@@ -350,11 +362,6 @@ public class PackTreeBuilder extends PackBaseListener {
 
     private void pushSequence() {
         sequenceStack.push(new ArrayList<PackNode>());
-    }
-
-    private void popSequence() {
-        final List<PackNode> sequence = sequenceStack.pop();
-        appendNode(new SequenceNode(context, sequence.toArray(new PackNode[sequence.size()])));
     }
 
     private void appendNode(PackNode node) {
