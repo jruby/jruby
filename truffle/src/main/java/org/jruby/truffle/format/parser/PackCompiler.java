@@ -43,7 +43,7 @@ public class PackCompiler {
 
         final PackParser parser = new PackParser(tokens);
 
-        final PackTreeBuilder builder = new PackTreeBuilder(context);
+        final PackTreeBuilder builder = new PackTreeBuilder(context, currentNode);
         parser.addParseListener(builder);
 
         parser.removeErrorListeners();

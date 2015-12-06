@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.format.parser;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.nodes.SourceNode;
 import org.jruby.truffle.format.nodes.control.*;
@@ -31,16 +32,19 @@ import java.util.List;
 
 import org.jruby.truffle.format.parser.PackBaseListener;
 import org.jruby.truffle.format.parser.PackParser;
+import org.jruby.truffle.runtime.control.RaiseException;
 
 public class PackTreeBuilder extends PackBaseListener {
 
     private final RubyContext context;
+    private final Node currentNode;
 
     private PackEncoding encoding = PackEncoding.DEFAULT;
     private final Deque<List<PackNode>> sequenceStack = new ArrayDeque<>();
 
-    public PackTreeBuilder(RubyContext context) {
+    public PackTreeBuilder(RubyContext context, Node currentNode) {
         this.context = context;
+        this.currentNode = currentNode;
         pushSequence();
     }
 
@@ -72,6 +76,16 @@ public class PackTreeBuilder extends PackBaseListener {
     @Override
     public void exitShortNative(PackParser.ShortNativeContext ctx) {
         appendNode(applyCount(ctx.count(), writeInteger(16, ByteOrder.nativeOrder())));
+    }
+
+    @Override
+    public void exitIntLittle(PackParser.IntLittleContext ctx) {
+        appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.LITTLE_ENDIAN)));
+    }
+
+    @Override
+    public void exitIntBig(PackParser.IntBigContext ctx) {
+        appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.BIG_ENDIAN)));
     }
 
     @Override
@@ -317,6 +331,11 @@ public class PackTreeBuilder extends PackBaseListener {
     @Override
     public void exitSubSequence(PackParser.SubSequenceContext ctx) {
         popSequence();
+    }
+
+    @Override
+    public void exitErrorDisallowedNative(PackParser.ErrorDisallowedNativeContext ctx) {
+        throw new RaiseException(context.getCoreLibrary().argumentError("'" + ctx.NATIVE().getText() + "' allowed only after types sSiIlLqQ", currentNode));
     }
 
     public PackNode getNode() {
