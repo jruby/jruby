@@ -424,18 +424,18 @@ public class IRRuntimeHelpers {
         return context.runtime.newBoolean(ret);
     }
 
-    public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value) {
+    public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite callSite) {
         boolean isUndefValue = value == UndefinedValue.UNDEFINED;
         if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
                 IRubyObject v = testVals.eltInternal(i);
-                IRubyObject eqqVal = isUndefValue ? v : v.callMethod(context, "===", value);
+                IRubyObject eqqVal = isUndefValue ? v : callSite.call(context, v, v, value);
                 if (eqqVal.isTrue()) return eqqVal;
             }
             return context.runtime.newBoolean(false);
         } else {
-            return isUndefValue ? receiver : receiver.callMethod(context, "===", value);
+            return isUndefValue ? receiver : callSite.call(context, receiver, receiver, value);
         }
     }
 
