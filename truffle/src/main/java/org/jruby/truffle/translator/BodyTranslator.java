@@ -1733,7 +1733,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        ret = new ReadInstanceVariableNode(context, sourceSection, name, self, false);
+        ret = new ReadInstanceVariableNode(context, sourceSection, name, self);
         return addNewlineIfNeeded(node, ret);
     }
 

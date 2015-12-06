@@ -28,7 +28,7 @@ public class ReadInstanceVariableNode extends RubyNode {
 
     private final BranchProfile primitiveProfile = BranchProfile.create();
 
-    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
+    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.receiver = receiver;
         readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
