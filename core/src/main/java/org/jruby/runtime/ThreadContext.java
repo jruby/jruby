@@ -128,6 +128,8 @@ public final class ThreadContext {
 
     IRubyObject lastExitStatus;
 
+    private Block.Type currentBlockType;
+
     public final SecureRandom secureRandom = getSecureRandom();
 
     private static boolean trySHA1PRNG = true;
@@ -151,6 +153,7 @@ public final class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();
+        this.currentBlockType = Block.Type.NORMAL;
 
         if (runtime.getInstanceConfig().isProfilingEntireRun()) {
             startProfiling();
@@ -205,6 +208,14 @@ public final class ThreadContext {
     public IRubyObject setErrorInfo(IRubyObject errorInfo) {
         thread.setErrorInfo(errorInfo);
         return errorInfo;
+    }
+
+    public Block.Type getCurrentBlockType() {
+        return currentBlockType;
+    }
+
+    public void setCurrentBlockType(Block.Type type) {
+        currentBlockType = type;
     }
 
     public CallType getLastCallType() {

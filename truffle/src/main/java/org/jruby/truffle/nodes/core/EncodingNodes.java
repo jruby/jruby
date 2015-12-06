@@ -80,8 +80,8 @@ public abstract class EncodingNodes {
         return createRubyEncoding(encodingClass, encoding, new ByteList(name, p, end), dummy);
     }
 
-    public static DynamicObject[] cloneEncodingList() {
-        final DynamicObject[] clone = new DynamicObject[encodingList.length];
+    public static Object[] cloneEncodingList() {
+        final Object[] clone = new Object[encodingList.length];
 
         System.arraycopy(encodingList, 0, clone, 0, encodingList.length);
 
@@ -383,7 +383,7 @@ public abstract class EncodingNodes {
         public DynamicObject list() {
             CompilerDirectives.transferToInterpreter();
 
-            final DynamicObject[] encodings = cloneEncodingList();
+            final Object[] encodings = cloneEncodingList();
 
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), encodings, encodings.length);
         }
@@ -441,7 +441,7 @@ public abstract class EncodingNodes {
         public Object encodingMap(VirtualFrame frame) {
             Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
-            final DynamicObject[] encodings = cloneEncodingList();
+            final DynamicObject[] encodings = encodingList;
             for (int i = 0; i < encodings.length; i++) {
                 final Object upcased = upcaseNode.call(frame, createString(Layouts.ENCODING.getName(encodings[i])), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);

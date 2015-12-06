@@ -227,8 +227,8 @@ public class ThreadManager {
     }
 
     @TruffleBoundary
-    public DynamicObject[] getThreads() {
-        return runningRubyThreads.toArray(new DynamicObject[runningRubyThreads.size()]);
+    public Object[] getThreadList() {
+        return runningRubyThreads.toArray(new Object[runningRubyThreads.size()]);
     }
 
     @TruffleBoundary

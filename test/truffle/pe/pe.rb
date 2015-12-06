@@ -95,8 +95,15 @@ EXAMPLES.each do |example|
   test_thread = Thread.new do
     begin
       tested += 1
-      value = nil
-      eval "loop { value = Truffle::Primitive.assert_constant begin; #{example.code}; end; Truffle::Primitive.assert_not_compiled; Thread.pass }"
+      $value = nil
+      eval "
+      def test_pe_code
+        $value = Truffle::Primitive.assert_constant(begin; #{example.code}; end)
+        Truffle::Primitive.assert_not_compiled
+      end"
+      while true
+        test_pe_code
+      end
     rescue RubyTruffleError => e
       if e.message.include? 'Truffle::Primitive.assert_not_compiled'
         constant = true
@@ -115,16 +122,16 @@ EXAMPLES.each do |example|
             report 'FAILED', example.code, "wasn't constant"
             failed += 1
           else
-            if value == example.expected_value
+            if $value == example.expected_value
               report 'OK', example.code
             else
-              report 'INCORRECT', example.code, "was: #{value.inspect} and not: #{example.expected_value.inspect}"
+              report 'INCORRECT', example.code, "was: #{$value.inspect} and not: #{example.expected_value.inspect}"
               failed += 1
             end
           end
         else
           if constant
-            report 'QUERY', example.code, "wasn't supposed to be constant but it was (#{value.inspect})"
+            report 'QUERY', example.code, "wasn't supposed to be constant but it was (#{$value.inspect})"
             failed += 1
           else
             report 'OK (counter)', example.code
