@@ -205,6 +205,7 @@ public class InterpreterEngine {
                         case PREPARE_FIXED_BLOCK_ARGS:
                         case PREPARE_BLOCK_ARGS:
                             args = ((PrepareBlockArgsInstr)instr).prepareBlockArgs(context, block, args);
+                            if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
                             break;
                         default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);

@@ -28,11 +28,20 @@ public class PrepareFixedBlockArgsInstr extends PrepareBlockArgsInstr  {
             return IRubyObject.NULL_ARRAY;
         }
 
+        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        if (isProcCall) {
+            return prepareProcArgs(context, b, args);
+        }
+
+        boolean isLambda = b.type == Block.Type.LAMBDA;
+        if (isLambda && isProcCall) {
+            return args;
+        }
+
         // SSS FIXME: This check here is not required as long as
         // the single-instruction cases always uses PreapreSingleBlockArgInstr
         // But, including this here for robustness for now.
-        int blockArity = b.getBody().getSignature().arityValue();
-        if (blockArity == 1) {
+        if (b.getBody().getSignature().arityValue() == 1) {
             return args;
         }
 

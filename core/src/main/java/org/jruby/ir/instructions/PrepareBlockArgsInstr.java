@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import java.util.Arrays;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
@@ -48,14 +49,30 @@ public class PrepareBlockArgsInstr extends NoOperandInstr implements FixedArityI
         return args;
     }
 
-    // SSS FIXME: This code only works for block yields, not rubyproc calls.
-    // When a block is converted to a RubyProc and called, this code below
-    // needs to implement the logic in BlockBody:prepareArgumentsForCall.
+    protected IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
+        if (args.length == 1) {
+            int arityValue = b.getBody().getSignature().arityValue();
+            return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arityValue, b.type == Block.Type.NORMAL && args[0] instanceof RubyArray);
+        } else {
+            return args;
+        }
+    }
+
     public IRubyObject[] prepareBlockArgs(ThreadContext context, Block b, IRubyObject[] args) {
         // This is the placeholder for scenarios
         // not handled by specialized instructions.
         if (args == null) {
             return IRubyObject.NULL_ARRAY;
+        }
+
+        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        if (isProcCall) {
+            return prepareProcArgs(context, b, args);
+        }
+
+        boolean isLambda = b.type == Block.Type.LAMBDA;
+        if (isLambda && isProcCall) {
+            return args;
         }
 
         BlockBody body = b.getBody();
@@ -64,8 +81,7 @@ public class PrepareBlockArgsInstr extends NoOperandInstr implements FixedArityI
         // blockArity == 0 and 1 have been handled in the specialized instructions
         // This test is when we only have opt / rest arg (either keyword or non-keyword)
         // but zero required args.
-        int blockArity = sig.arityValue();
-        if (blockArity == -1) {
+        if (sig.arityValue() == -1) {
             return args;
         }
 
@@ -73,6 +89,11 @@ public class PrepareBlockArgsInstr extends NoOperandInstr implements FixedArityI
         // (keyword or non-keyword in either case).
         // So, convert a single value to an array if possible.
         args = toAry(context, args);
+
+        // Nothing more to do for lambdas
+        if (isLambda) {
+            return args;
+        }
 
         // Deal with keyword args that needs special handling
         int needsKwargs = sig.hasKwargs() ? 1 - sig.getRequiredKeywordForArityCount() : 0;
