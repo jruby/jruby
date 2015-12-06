@@ -63,7 +63,11 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        return commonYieldPath(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
+        if (hasCallProtocolIR()) {
+            return callDirect(context, block, args, blockArg);
+        } else {
+            return commonYieldPath(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
+        }
     }
 
     @Override

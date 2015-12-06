@@ -65,20 +65,28 @@ public abstract class BlockBody {
         return false;
     }
 
+    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        throw new RuntimeException("callDirect not implemented in base class. We should never get here.");
+    }
+
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         throw new RuntimeException("yieldDirect not implemented in base class. We should never get here.");
     }
 
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        args = prepareArgumentsForCall(context, args, block.type);
-
-        return yield(context, block, args, null);
+        if (hasCallProtocolIR()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
     }
 
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        args = prepareArgumentsForCall(context, args, block.type);
-
-        return yield(context, block, args, null, blockArg);
+        if (hasCallProtocolIR()) {
+            return callDirect(context, block, args, blockArg);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
+        }
     }
 
     public final IRubyObject yield(ThreadContext context, Block block, IRubyObject value) {
@@ -128,9 +136,11 @@ public abstract class BlockBody {
 
     public IRubyObject call(ThreadContext context, Block block) {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
-        args = prepareArgumentsForCall(context, args, block.type);
-
-        return yield(context, block, args, null);
+        if (hasCallProtocolIR()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
     }
 
     public IRubyObject call(ThreadContext context, Block block, Block unusedBlock) {
@@ -146,9 +156,11 @@ public abstract class BlockBody {
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0) {
         IRubyObject[] args = new IRubyObject[] {arg0};
-        args = prepareArgumentsForCall(context, args, block.type);
-
-        return yield(context, block, args, null);
+        if (hasCallProtocolIR()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, Block unusedBlock) {
         return call(context, block, arg0);
@@ -163,9 +175,11 @@ public abstract class BlockBody {
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1};
-        args = prepareArgumentsForCall(context, args, block.type);
-
-        return yield(context, block, args, null);
+        if (hasCallProtocolIR()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block unusedBlock) {
         return call(context, block, arg0, arg1);
@@ -180,9 +194,11 @@ public abstract class BlockBody {
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
-        args = prepareArgumentsForCall(context, args, block.type);
-
-        return yield(context, block, args, null);
+        if (hasCallProtocolIR()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
         return call(context, block, arg0, arg1, arg2);
