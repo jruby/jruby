@@ -28,8 +28,6 @@
 
 TIMEOUT = 10
 
-TIMEOUT = 10
-
 EXAMPLES = []
 
 Example = Struct.new(:code, :expected_value, :expected_constant, :tagged)
@@ -71,7 +69,6 @@ else
   require_relative 'core/hash_pe.rb'
   require_relative 'core/eval_pe.rb'
   require_relative 'core/send_pe.rb'
-  require_relative 'core/string_pe.rb'
   require_relative 'core/objectid_pe.rb'
   require_relative 'core/binding_pe.rb'
   require_relative 'core/frozen_pe.rb'
