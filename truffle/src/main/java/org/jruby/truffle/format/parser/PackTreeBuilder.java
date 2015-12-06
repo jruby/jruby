@@ -202,7 +202,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitBinaryStringNullStar(PackParser.BinaryStringNullStarContext ctx) {
-        binaryString((byte) 0, true, true, ctx.count());
+        binaryString((byte) 0, true, ctx.count() != null && ctx.count().INT() == null, ctx.count());
     }
 
     @Override
