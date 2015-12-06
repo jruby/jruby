@@ -89,6 +89,30 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         return closure.getName();
     }
 
+    @Override
+    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        if (callCount >= 0) promoteToFullBuild(context);
+        CompiledIRBlockBody jittedBody = this.jittedBody;
+        if (jittedBody != null) {
+            return jittedBody.callDirect(context, block, args, blockArg);
+        }
+
+        context.setCurrentBlockType(Block.Type.PROC);
+        return Interpreter.INTERPRET_BLOCK(context, block, null, interpreterContext, args, block.getBinding().getMethod(), blockArg);
+    }
+
+    @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        if (callCount >= 0) promoteToFullBuild(context);
+        CompiledIRBlockBody jittedBody = this.jittedBody;
+        if (jittedBody != null) {
+            return jittedBody.yieldDirect(context, block, args, self);
+        }
+
+        context.setCurrentBlockType(Block.Type.NORMAL);
+        return Interpreter.INTERPRET_BLOCK(context, block, self, interpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
+    }
+
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         if (callCount >= 0) promoteToFullBuild(context);
 
