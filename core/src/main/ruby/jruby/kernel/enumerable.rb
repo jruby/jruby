@@ -91,6 +91,35 @@ module Enumerable
       end
     end
   end
+  
+  def chunk_while(&block)
+    raise ArgumentError.new("missing block") unless block
+    return Enumerator.new {|e| } if empty?
+    return Enumerator.new {|e| e.yield self } if length < 2
+
+    Enumerator.new do |enum|
+      ary = nil
+      last_after = nil
+      each_cons(2) do |before, after|
+        last_after = after
+        match = block.call before, after
+
+        ary ||= []
+        if match
+          ary << before
+        else
+          ary << before
+          enum.yield ary
+          ary = []
+        end
+      end
+
+      unless ary.nil?
+        ary << last_after
+        enum.yield ary
+      end
+    end
+  end
 
   def lazy
     klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8
