@@ -172,6 +172,7 @@ module Commands
   include ShellUtils
 
   def help
+    puts 'jt checkout name                               checkout a different Git branch and rebuild'
     puts 'jt build [options]                             build'
     puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
     puts 'jt rebuild [options]                           clean and build'
@@ -216,6 +217,11 @@ module Commands
     puts '  GRAAL_BIN                                    GraalVM executable (java command) to use'
     puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
+  end
+
+  def checkout(branch)
+    sh 'git', 'checkout', branch
+    rebuild
   end
 
   def build(*args)
