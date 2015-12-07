@@ -249,6 +249,8 @@ module Commands
     unless args.empty?
       raise ArgumentError, args.inspect
     end
+
+    mvn *mvn_args
   end
 
   def clean
