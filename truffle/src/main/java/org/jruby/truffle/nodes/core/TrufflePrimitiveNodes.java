@@ -64,6 +64,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject bindingOfCaller() {
             /*
@@ -87,6 +88,10 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
+            if (frame == null) {
+                return nil();
+            }
+
             return BindingNodes.createBinding(getContext(), frame);
         }
 
@@ -99,6 +104,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject sourceOfCaller() {
             final Memo<Integer> frameCount = new Memo<>(0);
@@ -116,6 +122,10 @@ public abstract class TrufflePrimitiveNodes {
                 }
 
             });
+
+            if (source == null) {
+                return nil();
+            }
 
             return createString(StringOperations.encodeByteList(source, UTF8Encoding.INSTANCE));
         }
