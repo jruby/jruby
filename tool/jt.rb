@@ -236,21 +236,17 @@ module Commands
   end
 
   def build(*args)
-    mvn_args = []
+    opts = %w[-DskipTests]
 
     if args.delete 'truffle'
-      mvn_args += ['-pl', 'truffle', 'package']
-    end
-
-    if args.delete '--no-tests'
-      mvn_args << '-DskipTests'
+      opts += ['-pl', 'truffle', 'package']
     end
 
     unless args.empty?
       raise ArgumentError, args.inspect
     end
 
-    mvn *mvn_args
+    mvn *opts
   end
 
   def clean
