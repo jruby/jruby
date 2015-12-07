@@ -234,19 +234,17 @@ module Commands
     sh 'git', 'checkout', branch
     rebuild
   end
-
-  def build(*args)
+  
+  def build(project = nil)
     opts = %w[-DskipTests]
-
-    if args.delete 'truffle'
-      opts += ['-pl', 'truffle', 'package']
+    case project
+    when 'truffle'
+      mvn *opts, '-pl', 'truffle', 'package'
+    when nil
+      mvn *opts, 'package'
+    else
+      raise ArgumentError, project
     end
-
-    unless args.empty?
-      raise ArgumentError, args.inspect
-    end
-
-    mvn *opts
   end
 
   def clean
