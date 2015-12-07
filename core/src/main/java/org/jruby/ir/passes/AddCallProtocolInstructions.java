@@ -83,7 +83,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
         // For now, we always require frame for closures
         boolean requireFrame = doesItRequireFrame(scope, bindingHasEscaped);
-        boolean requireBinding = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        boolean reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+        boolean requireBinding = reuseParentDynScope || !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
 
         if (scope instanceof IRClosure || requireBinding || requireFrame) {
             BasicBlock entryBB = cfg.getEntryBB();
