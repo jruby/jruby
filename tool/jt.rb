@@ -181,8 +181,11 @@ module Commands
   include ShellUtils
 
   def help
-    puts 'jt build                                       build'
-    puts 'jt build truffle                               build only the Truffle part, assumes the rest is up-to-date'
+    puts 'jt checkout name                               checkout a different Git branch and rebuild'
+    puts 'jt build [options]                             build'
+    puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
+    puts 'jt rebuild [options]                           clean and build'
+    puts '    --no-tests       don\'t run JUnit unit tests'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
     puts 'jt rebuild                                     clean and build'
@@ -227,15 +230,24 @@ module Commands
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
   end
 
-  def build(project = nil)
-    opts = %w[-DskipTests]
-    case project
-    when 'truffle'
-      mvn *opts, '-pl', 'truffle', 'package'
-    when nil
-      mvn *opts, 'package'
-    else
-      raise ArgumentError, project
+  def checkout(branch)
+    sh 'git', 'checkout', branch
+    rebuild
+  end
+
+  def build(*args)
+    mvn_args = []
+
+    if args.delete 'truffle'
+      mvn_args += ['-pl', 'truffle', 'package']
+    end
+
+    if args.delete '--no-tests'
+      mvn_args << '-DskipTests'
+    end
+
+    unless args.empty?
+      raise ArgumentError, args.inspect
     end
   end
 

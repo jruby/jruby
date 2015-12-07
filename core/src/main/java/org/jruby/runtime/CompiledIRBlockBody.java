@@ -31,6 +31,16 @@ public class CompiledIRBlockBody extends IRBlockBody {
         return closure.getArgumentDescriptors();
     }
 
+    @Override
+    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        throw new RuntimeException("callDirect not implemented in CompiledIRBlockBody. Implement me!");
+    }
+
+    @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        throw new RuntimeException("yieldDirect not implemented in CompiledIRBlockBody. Implement me!");
+    }
+
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         Binding binding = block.getBinding();
         Visibility oldVis = binding.getFrame().getVisibility();

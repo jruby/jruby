@@ -42,6 +42,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     @Override
     public void completeBuild(InterpreterContext interpreterContext) {
         this.interpreterContext = interpreterContext;
+        hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
     }
 
     @Override
@@ -63,8 +64,8 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
         if (interpreterContext == null) {
             interpreterContext = closure.getInterpreterContext();
+            hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         }
-        hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         return interpreterContext;
     }
 

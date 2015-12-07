@@ -106,16 +106,15 @@ public class InterpreterEngine {
         return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
     }
 
-    private DynamicScope getBlockScope(ThreadContext context, Block block, InterpreterContext interpreterContext) {
+    private DynamicScope getNewBlockScope(ThreadContext context, Block block, InterpreterContext interpreterContext) {
         DynamicScope newScope = block.getBinding().getDynamicScope();
-        if (interpreterContext.pushNewDynScope()) {
-            context.pushScope(block.allocScope(newScope));
-        } else if (interpreterContext.reuseParentDynScope()) {
-            // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-            context.pushScope(newScope);
-        }
+        if (interpreterContext.pushNewDynScope()) return block.allocScope(newScope);
 
-        return newScope;
+        // Reuse! We can avoid the push only if surrounding vars aren't referenced!
+        if (interpreterContext.reuseParentDynScope()) return newScope;
+
+        // No change
+        return null;
     }
 
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
@@ -180,16 +179,19 @@ public class InterpreterEngine {
                         }
                         break;
                     case BOOK_KEEPING_OP:
+                        // IMPORTANT: Preserve these update to currDynScope, self, and args.
+                        // They affect execution of all following instructions in this scope.
                         switch (operation) {
                         case PUSH_METHOD_BINDING:
-                            // IMPORTANT: Preserve this update of currDynScope.
-                            // This affects execution of all instructions in this scope
-                            // which will now use the updated value of currDynScope.
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                             break;
                         case PUSH_BLOCK_BINDING:
-                            currDynScope = getBlockScope(context, block, interpreterContext);
+                            DynamicScope newScope = getNewBlockScope(context, block, interpreterContext);
+                            if (newScope != null) {
+                                currDynScope = newScope;
+                                context.pushScope(currDynScope);
+                            }
                             break;
                         case UPDATE_BLOCK_STATE:
                             if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {

@@ -9,13 +9,20 @@
 require_relative '../../../ruby/spec_helper'
 
 describe "Truffle.source_of_caller" do
+
+  def source_of_caller
+    Truffle.source_of_caller
+  end
+
+  #it "returns nil if there is no caller"
+  #end
   
   it "returns a String" do
-    Truffle.source_of_caller.should be_kind_of(String)
+    source_of_caller.should be_kind_of(String)
   end
   
   it "returns the name of the file at the call site" do
-    Truffle.source_of_caller.should == __FILE__
+    source_of_caller.should == __FILE__
   end
   
   it "works through #send" do

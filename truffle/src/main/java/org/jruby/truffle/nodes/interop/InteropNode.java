@@ -424,7 +424,7 @@ public abstract class InteropNode extends RubyNode {
         public InteropInstanceVariableReadNode(RubyContext context, SourceSection sourceSection, String name, int labelIndex) {
             super(context, sourceSection);
             this.name = name;
-            this.read = new ReadInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection), false);
+            this.read = new ReadInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection));
             this.labelIndex = labelIndex;
         }
 

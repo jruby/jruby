@@ -19,16 +19,16 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 
 public class ReadInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private ReadHeadObjectFieldNode readNode;
 
-    private final BranchProfile primitiveProfile = BranchProfile.create();
+    private final ConditionProfile objectProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
+    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.receiver = receiver;
         readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
@@ -38,10 +38,9 @@ public class ReadInstanceVariableNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
 
-        if (receiverObject instanceof DynamicObject) {
+        if (objectProfile.profile(receiverObject instanceof DynamicObject)) {
             return readNode.execute((DynamicObject) receiverObject);
         } else {
-            primitiveProfile.enter();
             return nil();
         }
     }
