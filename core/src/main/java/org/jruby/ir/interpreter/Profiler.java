@@ -6,6 +6,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.Counter;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.JIT;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
@@ -178,17 +179,23 @@ public class Profiler {
     private static long findInliningCandidates(List<IRCallSite> callSites) {
         long total = 0;   // Total number of calls found in this scope.
 
+        System.out.println("" + callProfile.size() + " candidates.");
         // Register all monomorphic found callsites which are eligible for inlining.
         for (Long id: callProfile.keySet()) {
             CallSiteProfile callSiteProfile = callProfile.get(id);
             IRCallSite callSite  = callSiteProfile.cs;
             boolean monomorphic = callSiteProfile.retallyCallCount();
 
+            System.out.println("candidate: calls=" + callSite.count + ", mono: " + monomorphic + ", KS: " + callSiteProfile.counters.size());
             if (monomorphic && !callSite.getCall().inliningBlocked()) {
                 CallSite runtimeCallSite = callSite.getCall().getCallSite();
                 if (runtimeCallSite != null && runtimeCallSite instanceof CachingCallSite) {
                     DynamicMethod method = ((CachingCallSite) runtimeCallSite).getCache().method;
 
+                    System.out.println("METHOD: " + callSite.getCall() + " , METH: " + method);
+                    if (callSite.getCall().getName().equals("[]")) {
+                        System.out.println(callSite.ic.toStringInstrs());
+                    }
                     if (!(method instanceof Compilable) || !((Compilable) method).getIRScope().isFullBuildComplete()) continue;
 
                     callSites.add(callSite);
@@ -203,7 +210,7 @@ public class Profiler {
     }
 
     private static void analyzeProfile() {
-        //System.out.println("MOD COUNT: " + codeModificationsCount + ", Periods wo change: " + periodsWithoutChanges);
+        System.out.println("MOD COUNT: " + codeModificationsCount + ", Periods wo change: " + periodsWithoutChanges);
         // Don't bother doing any analysis until we see the system start to settle down from lots of modifications.
         if (isStillBootstrapping()) return;
 
@@ -213,7 +220,7 @@ public class Profiler {
         long total = findInliningCandidates(callSites);
         Collections.sort(callSites, callSiteComparator);
 
-        //System.out.println("Total calls this period: " + total + ", candidate callsites: " + callSites.size());
+        System.out.println("Total calls this period: " + total + ", candidate callsites: " + callSites.size());
 
         // Find top N call sites
         double freq = 0.0;
@@ -289,6 +296,10 @@ public class Profiler {
         //int scopeVersion = scope.getFullInterpreterContext().getVersion();
         //if (scopeVersion == UNASSIGNED_VERSION) ic.setVersion(versionCount);
 
+        // FIXME: JIT is somehow registering callProfile from original call and registering itself
+        // as a called scope.  Why does only the JIT cause this?
+        if (scope instanceof IRClosure) return;
+
         // FIXME: I think there is a bug here.  If we call IR -> native -> IR then this may still be set and it will
         // be inaccurate to record this save callsite info with the currently executing scope.
 
@@ -309,7 +320,9 @@ public class Profiler {
         }
     }
 
+    @JIT
     public static void markCallAboutToBeCalled(long callsiteId, IRScope scope) {
+        callerSite.call = null;
         callerSite.update(callsiteId, scope.getFullInterpreterContext());
     }
 
