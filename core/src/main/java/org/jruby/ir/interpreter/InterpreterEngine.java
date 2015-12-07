@@ -109,7 +109,8 @@ public class InterpreterEngine {
     private DynamicScope getBlockScope(ThreadContext context, Block block, InterpreterContext interpreterContext) {
         DynamicScope newScope = block.getBinding().getDynamicScope();
         if (interpreterContext.pushNewDynScope()) {
-            context.pushScope(block.allocScope(newScope));
+            newScope = block.allocScope(newScope);
+            context.pushScope(newScope);
         } else if (interpreterContext.reuseParentDynScope()) {
             // Reuse! We can avoid the push only if surrounding vars aren't referenced!
             context.pushScope(newScope);
