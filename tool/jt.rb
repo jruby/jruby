@@ -224,22 +224,16 @@ module Commands
     rebuild
   end
 
-  def build(*args)
-    mvn_args = []
-
-    if args.delete 'truffle'
-      mvn_args += ['-pl', 'truffle', 'package']
+  def build(project = nil)
+    opts = %w[-DskipTests]
+    case project
+    when 'truffle'
+      mvn *opts, '-pl', 'truffle', 'package'
+    when nil
+      mvn *opts, 'package'
+    else
+      raise ArgumentError, project
     end
-
-    if args.delete '--no-tests'
-      mvn_args << '-DskipTests'
-    end
-
-    unless args.empty?
-      raise ArgumentError, args.inspect
-    end
-
-    mvn *mvn_args
   end
 
   def clean
