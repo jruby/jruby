@@ -4,6 +4,7 @@ import org.jruby.EvalType;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -50,6 +51,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         this.callCount = -1;
         blockBody.evalType = this.evalType; // share with parent
         this.jittedBody = blockBody;
+        hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
     }
 
     @Override
@@ -75,6 +77,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
         if (interpreterContext == null) {
             interpreterContext = closure.getInterpreterContext();
+            hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         }
         return interpreterContext;
     }
