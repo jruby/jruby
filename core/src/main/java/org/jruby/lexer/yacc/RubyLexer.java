@@ -1543,6 +1543,9 @@ public class RubyLexer {
             yaccValue = "&";
             setState(LexState.EXPR_BEG);
             return Tokens.tOP_ASGN;
+        case '.':
+            yaccValue = "&.";
+            return Tokens.tANDDOT;
         }
         pushback(c);
         

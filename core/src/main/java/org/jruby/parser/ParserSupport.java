@@ -280,7 +280,7 @@ public class ParserSupport {
     public Node aryset(Node receiver, Node index) {
         checkExpression(receiver);
 
-        return new_attrassign(receiver.getPosition(), receiver, "[]=", index);
+        return new_attrassign(receiver.getPosition(), receiver, "[]=", index, false);
     }
 
     /**
@@ -291,9 +291,13 @@ public class ParserSupport {
      * @return an AttrAssignNode
      */
     public Node attrset(Node receiver, String name) {
+        return attrset(receiver, ".", name);
+    }
+
+    public Node attrset(Node receiver, String callType, String name) {
         checkExpression(receiver);
 
-        return new_attrassign(receiver.getPosition(), receiver, name + "=", null);
+        return new_attrassign(receiver.getPosition(), receiver, name + "=", null, isLazy(callType));
     }
 
     public void backrefAssignError(Node node) {
@@ -731,9 +735,17 @@ public class ParserSupport {
 
         return newNode;
     }
+
+    public Node newOpAsgn(ISourcePosition position, Node receiverNode, String callType, Node valueNode, String variableName, String operatorName) {
+        return new OpAsgnNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
+    }
+
+    public boolean isLazy(String callType) {
+        return "&.".equals(callType);
+    }
     
-    public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args) {
-        return new AttrAssignNode(position, receiver, name, args);
+    public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args, boolean isLazy) {
+        return new AttrAssignNode(position, receiver, name, args, isLazy);
     }
     
     private boolean isNumericOperator(String name) {
@@ -755,15 +767,20 @@ public class ParserSupport {
         return false;
     }
 
-    public Node new_call(Node receiver, String name, Node argsNode, Node iter) {
+    public Node new_call(Node receiver, String callType, String name, Node argsNode, Node iter) {
         if (argsNode instanceof BlockPassNode) {
             if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
 
             BlockPassNode blockPass = (BlockPassNode) argsNode;
-            return new CallNode(position(receiver, argsNode), receiver, name, blockPass.getArgsNode(), blockPass);
+            return new CallNode(position(receiver, argsNode), receiver, name, blockPass.getArgsNode(), blockPass, isLazy(callType));
         }
 
-        return new CallNode(position(receiver, argsNode), receiver, name, argsNode, iter);
+        return new CallNode(position(receiver, argsNode), receiver, name, argsNode, iter, isLazy(callType));
+
+    }
+
+    public Node new_call(Node receiver, String name, Node argsNode, Node iter) {
+        return new_call(receiver, ".", name, argsNode, iter);
     }
 
     public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
@@ -1369,7 +1386,7 @@ public class ParserSupport {
     public Node new_defined(ISourcePosition position, Node something) {
         return new DefinedNode(position, something);
     }
-    
+
     public String internalId() {
         return "";
     }

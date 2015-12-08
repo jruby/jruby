@@ -31,6 +31,7 @@ package org.jruby.parser;
 import java.io.IOException;
 
 import org.jruby.ast.ArgsNode;
+ import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BackRefNode;
@@ -170,6 +171,7 @@ public class RubyParser {
 %token <String> tDOT2 tDOT3    /* .. and ... */
 %token <String> tAREF tASET    /* [] and []= */
 %token <String> tLSHFT tRSHFT  /* << and >> */
+%token <String> tANDDOT	       /* &. */
 %token <String> tCOLON2        /* :: */
 %token <String> tCOLON3        /* :: at EXPR_BEG */
 %token <String> tOP_ASGN       /* +=, -=  etc. */
@@ -268,6 +270,8 @@ public class RubyParser {
 %token <String> tDSTAR
 %token <String> tSTRING_DEND
 %type <String> kwrest_mark, f_kwrest, f_label
+%type <String> call_op call_op2
+%type <ArgumentNode> f_arg_asgn
 %type <FCallNode> fcall
 %token <String> tLABEL_END, tSTRING_DEND
 
@@ -467,11 +471,11 @@ stmt            : kALIAS fitem {
   // FIXME: arg_concat logic missing for opt_call_args
                     $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
                 }
-                | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
+                | primary_value call_op tIDENTIFIER tOP_ASGN command_call {
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
-                | primary_value tDOT tCONSTANT tOP_ASGN command_call {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
+                | primary_value call_op tCONSTANT tOP_ASGN command_call {
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
                     support.yyerror("can't make alias for the number variables");
@@ -479,7 +483,7 @@ stmt            : kALIAS fitem {
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | backref tOP_ASGN command_call {
                     support.backrefAssignError($1);
@@ -529,7 +533,7 @@ command_call    : command
 
 // Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command   : block_call
-                | block_call dot_or_colon operation2 command_args {
+                | block_call call_op2 operation2 command_args {
                     $$ = support.new_call($1, $3, $4, null);
                 }
 
@@ -554,11 +558,11 @@ command        : fcall command_args %prec tLOWEST {
                     support.frobnicate_fcall_args($1, $2, $3);
                     $$ = $1;
                 }
-                | primary_value tDOT operation2 command_args %prec tLOWEST {
-                    $$ = support.new_call($1, $3, $4, null);
+                | primary_value call_op operation2 command_args %prec tLOWEST {
+                    $$ = support.new_call($1, $2, $3, $4, null);
                 }
-                | primary_value tDOT operation2 command_args cmd_brace_block {
-                    $$ = support.new_call($1, $3, $4, $5); 
+                | primary_value call_op operation2 command_args cmd_brace_block {
+                    $$ = support.new_call($1, $2, $3, $4, $5); 
                 }
                 | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
                     $$ = support.new_call($1, $3, $4, null);
@@ -697,14 +701,14 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 | primary_value '[' opt_call_args rbracket {
                     $$ = support.aryset($1, $3);
                 }
-                | primary_value tDOT tIDENTIFIER {
-                    $$ = support.attrset($1, $3);
+                | primary_value call_op tIDENTIFIER {
+                    $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
                     $$ = support.attrset($1, $3);
                 }
-                | primary_value tDOT tCONSTANT {
-                    $$ = support.attrset($1, $3);
+                | primary_value call_op tCONSTANT {
+                    $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -776,14 +780,14 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 | primary_value '[' opt_call_args rbracket {
                     $$ = support.aryset($1, $3);
                 }
-                | primary_value tDOT tIDENTIFIER {
-                    $$ = support.attrset($1, $3);
+                | primary_value call_op tIDENTIFIER {
+                    $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
                     $$ = support.attrset($1, $3);
                 }
-                | primary_value tDOT tCONSTANT {
-                    $$ = support.attrset($1, $3);
+                | primary_value call_op tCONSTANT {
+                    $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -1040,14 +1044,14 @@ arg             : lhs '=' arg {
   // FIXME: arg_concat missing for opt_call_args
                     $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
                 }
-                | primary_value tDOT tIDENTIFIER tOP_ASGN arg {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
+                | primary_value call_op tIDENTIFIER tOP_ASGN arg {
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
-                | primary_value tDOT tCONSTANT tOP_ASGN arg {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
+                | primary_value call_op tCONSTANT tOP_ASGN arg {
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
                     support.yyerror("constant re-assignment");
@@ -1753,13 +1757,13 @@ block_call      : command do_block {
                     $$ = $1;
                     $<Node>$.setPosition($1.getPosition());
                 }
-                | block_call dot_or_colon operation2 opt_paren_args {
+                | block_call call_op2 operation2 opt_paren_args {
                     $$ = support.new_call($1, $3, $4, null);
                 }
-                | block_call dot_or_colon operation2 opt_paren_args brace_block {
+                | block_call call_op2 operation2 opt_paren_args brace_block {
                     $$ = support.new_call($1, $3, $4, $5);
                 }
-                | block_call dot_or_colon operation2 command_args do_block {
+                | block_call call_op2 operation2 command_args do_block {
                     $$ = support.new_call($1, $3, $4, $5);
                 }
 
@@ -1768,8 +1772,8 @@ method_call     : fcall paren_args {
                     support.frobnicate_fcall_args($1, $2, null);
                     $$ = $1;
                 }
-                | primary_value tDOT operation2 opt_paren_args {
-                    $$ = support.new_call($1, $3, $4, null);
+                | primary_value call_op operation2 opt_paren_args {
+                    $$ = support.new_call($1, $2, $3, $4, null);
                 }
                 | primary_value tCOLON2 operation2 paren_args {
                     $$ = support.new_call($1, $3, $4, null);
@@ -1777,8 +1781,8 @@ method_call     : fcall paren_args {
                 | primary_value tCOLON2 operation3 {
                     $$ = support.new_call($1, $3, null, null);
                 }
-                | primary_value tDOT paren_args {
-                    $$ = support.new_call($1, "call", $3, null);
+                | primary_value call_op paren_args {
+                    $$ = support.new_call($1, $2, "call", $3, null);
                 }
                 | primary_value tCOLON2 paren_args {
                     $$ = support.new_call($1, "call", $3, null);
@@ -2301,8 +2305,12 @@ f_norm_arg      : f_bad_arg
                     $$ = support.formal_argument($1);
                 }
 
-f_arg_item      : f_norm_arg {
+f_arg_asgn      : f_norm_arg {
                     $$ = support.arg_var($1);
+                }
+
+f_arg_item      : f_arg_asgn {
+                    $$ = $1;
                 }
                 | tLPAREN f_margs rparen {
                     $$ = $2;
@@ -2377,14 +2385,12 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = support.internalId();
                 }
 
-f_opt           : f_norm_arg '=' arg_value {
-                    support.arg_var($1);
-                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1, $3));
+f_opt           : f_arg_asgn '=' arg_value {
+                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName(), $3));
                 }
 
-f_block_opt     : tIDENTIFIER '=' primary_value {
-                    support.arg_var(support.formal_argument($1));
-                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1, $3));
+f_block_opt     : f_arg_asgn '=' primary_value {
+                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName(), $3));
                 }
 
 f_block_optarg  : f_block_opt {
@@ -2497,6 +2503,19 @@ operation       : tIDENTIFIER | tCONSTANT | tFID
 operation2      : tIDENTIFIER | tCONSTANT | tFID | op
 operation3      : tIDENTIFIER | tFID | op
 dot_or_colon    : tDOT | tCOLON2
+
+call_op 	: tDOT {
+                    $$ = $1;
+                }
+                | tANDDOT {
+                    $$ = $1;
+                }
+
+call_op2        : call_op
+                | tCOLON2 {
+                    $$ = tCOLON2;
+                }
+  
 opt_terms       : /* none */ | terms
 opt_nl          : /* none */ | '\n'
 rparen          : opt_nl tRPAREN {
