@@ -57,17 +57,6 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
             Object methodName,
             DynamicObject blockObject,
             Object[] argumentsObjects) {
-        if (!guard(methodName, receiverObject)) {
-            return next.executeDispatch(
-                    frame,
-                    receiverObject,
-                    methodName,
-                    blockObject,
-                    argumentsObjects);
-        }
-
-        // Check the class has not been modified
-
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
@@ -78,6 +67,15 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                     blockObject,
                     argumentsObjects,
                     "class modified");
+        }
+
+        if (!guard(methodName, receiverObject)) {
+            return next.executeDispatch(
+                    frame,
+                    receiverObject,
+                    methodName,
+                    blockObject,
+                    argumentsObjects);
         }
 
         switch (getDispatchAction()) {
