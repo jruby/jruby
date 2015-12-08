@@ -17,7 +17,6 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PopBlockFrameInstr;
-import org.jruby.ir.instructions.PrepareBlockArgsInstr;
 import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
@@ -58,8 +57,6 @@ import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.EvalType;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
@@ -104,17 +101,6 @@ public class InterpreterEngine {
                                  InterpreterContext interpreterContext, RubyModule implClass,
                                  String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
         return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
-    }
-
-    private DynamicScope getNewBlockScope(ThreadContext context, Block block, InterpreterContext interpreterContext) {
-        DynamicScope newScope = block.getBinding().getDynamicScope();
-        if (interpreterContext.pushNewDynScope()) return block.allocScope(newScope);
-
-        // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-        if (interpreterContext.reuseParentDynScope()) return newScope;
-
-        // No change
-        return null;
     }
 
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
@@ -187,27 +173,19 @@ public class InterpreterEngine {
                             context.pushScope(currDynScope);
                             break;
                         case PUSH_BLOCK_BINDING:
-                            DynamicScope newScope = getNewBlockScope(context, block, interpreterContext);
-                            if (newScope != null) {
-                                currDynScope = newScope;
-                                context.pushScope(currDynScope);
-                            }
+                            currDynScope = IRRuntimeHelpers.pushBlockDynamicScopeIfNeeded(context, block, interpreterContext.pushNewDynScope(), interpreterContext.reuseParentDynScope());
                             break;
                         case UPDATE_BLOCK_STATE:
-                            if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
-                                // Update self to the binding's self
-                                Binding b = block.getBinding();
-                                self = b.getSelf();
-                                b.getFrame().setSelf(self);
-                            }
-                            // Clear block's eval type
-                            block.setEvalType(EvalType.NONE);
+                            self = IRRuntimeHelpers.updateBlockState(block, self);
                             break;
                         case PREPARE_SINGLE_BLOCK_ARG:
+                            args = IRRuntimeHelpers.prepareSingleBlockArgs(context, block, args);
+                            break;
                         case PREPARE_FIXED_BLOCK_ARGS:
+                            args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
+                            break;
                         case PREPARE_BLOCK_ARGS:
-                            args = ((PrepareBlockArgsInstr)instr).prepareBlockArgs(context, block, args);
-                            if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
+                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args);
                             break;
                         default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
