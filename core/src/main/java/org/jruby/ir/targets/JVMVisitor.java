@@ -158,10 +158,11 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().loadContext();
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
             jvmStoreLocal(DYNAMIC_SCOPE);
-        } else {
-            // just assign null so it verifies ok
+        } else if (scope instanceof IRClosure) {
+            // just load scope from context
             // FIXME: don't do this if we won't need the scope
-            jvmAdapter().aconst_null();
+            jvmMethod().loadContext();
+            jvmAdapter().invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
             jvmStoreLocal(DYNAMIC_SCOPE);
         }
 
