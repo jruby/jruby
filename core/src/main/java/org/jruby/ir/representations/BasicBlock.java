@@ -86,6 +86,10 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         instrs.add(0, i);
     }
 
+    public void insertInstr(int index, Instr i) {
+        instrs.add(index, i);
+    }
+
     public List<Instr> getInstrs() {
         return instrs;
     }

@@ -59,6 +59,7 @@ public class JVMVisitor extends IRVisitor {
     public static final String DYNAMIC_SCOPE = "$dynamicScope";
     private static final boolean DEBUG = false;
     public static final String BLOCK_ARG_NAME = "blockArg";
+    public static final String SELF_BLOCK_NAME = "selfBlock";
 
     private static final Signature METHOD_SIGNATURE_BASE = Signature
             .returning(IRubyObject.class)
@@ -66,7 +67,7 @@ public class JVMVisitor extends IRVisitor {
 
     public static final Signature CLOSURE_SIGNATURE = Signature
             .returning(IRubyObject.class)
-            .appendArgs(new String[]{"context", "block", "scope", "self", "args", BLOCK_ARG_NAME, "superName", "type"}, ThreadContext.class, Block.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
+            .appendArgs(new String[]{"context", SELF_BLOCK_NAME, "scope", "self", "args", BLOCK_ARG_NAME, "superName", "type"}, ThreadContext.class, Block.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
     public JVMVisitor() {
         this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
@@ -152,11 +153,15 @@ public class JVMVisitor extends IRVisitor {
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
         }
 
-        // Some scopes (closures, module/class bodies) do not have explicit call protocol yet.
-        // Unconditionally load current dynamic scope for those bodies.
         if (!scope.hasExplicitCallProtocol()) {
+            // No call protocol, dynscope has been prepared for us
             jvmMethod().loadContext();
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
+            jvmStoreLocal(DYNAMIC_SCOPE);
+        } else {
+            // just assign null so it verifies ok
+            // FIXME: don't do this if we won't need the scope
+            jvmAdapter().aconst_null();
             jvmStoreLocal(DYNAMIC_SCOPE);
         }
 
@@ -1392,9 +1397,43 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void PopBlockFrameInstr(PopBlockFrameInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getFrame());
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "postYieldNoScope", sig(void.class, Frame.class));
+    }
+
+    @Override
     public void PopMethodFrameInstr(PopMethodFrameInstr popframeinstr) {
         jvmMethod().loadContext();
         jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void postMethodFrameOnly()"));
+    }
+
+    @Override
+    public void PrepareBlockArgsInstr(PrepareBlockArgsInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelfBlock();
+        jvmMethod().loadArgs();
+        jvmMethod().invokeIRHelper("prepareBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class));
+        jvmMethod().storeArgs();
+    }
+
+    @Override
+    public void PrepareFixedBlockArgsInstr(PrepareFixedBlockArgsInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelfBlock();
+        jvmMethod().loadArgs();
+        jvmMethod().invokeIRHelper("prepareFixedBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class));
+        jvmMethod().storeArgs();
+    }
+
+    @Override
+    public void PrepareSingleBlockArgInstr(PrepareSingleBlockArgInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelfBlock();
+        jvmMethod().loadArgs();
+        jvmMethod().invokeIRHelper("prepareSingleBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class));
+        jvmMethod().storeArgs();
     }
 
     @Override
@@ -1404,6 +1443,31 @@ public class JVMVisitor extends IRVisitor {
         visit(processmodulebodyinstr.getBlock());
         jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class, Block.class));
         jvmStoreLocal(processmodulebodyinstr.getResult());
+    }
+
+    @Override
+    public void PushBlockBindingInstr(PushBlockBindingInstr instr) {
+        IRScope scope = jvm.methodData().scope;
+        // FIXME: Centralize this out of InterpreterContext
+        boolean reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+        boolean pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
+        boolean popDynScope = pushNewDynScope || reuseParentDynScope;
+
+        jvmMethod().loadContext();
+        jvmMethod().loadSelfBlock();
+        jvmAdapter().ldc(pushNewDynScope);
+        jvmAdapter().ldc(reuseParentDynScope);
+        jvmMethod().invokeIRHelper("pushBlockDynamicScopeIfNeeded", sig(DynamicScope.class, ThreadContext.class, Block.class, boolean.class, boolean.class));
+        jvmStoreLocal(DYNAMIC_SCOPE);
+    }
+
+    @Override
+    public void PushBlockFrameInstr(PushBlockFrameInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelfBlock();
+        jvmAdapter().invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "preYieldNoScope", sig(Frame.class, Binding.class));
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -1624,6 +1688,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void RestoreBindingVisibilityInstr(RestoreBindingVisibilityInstr instr) {
+        jvmMethod().loadSelfBlock();
+        jvmAdapter().invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
+        visit(instr.getVisibility());
+        jvmAdapter().invokevirtual(p(Binding.class), "setVisibility", sig(void.class, Visibility.class));
+    }
+
+    @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
         switch (runtimehelpercall.getHelperMethod()) {
             case HANDLE_PROPAGATED_BREAK:
@@ -1730,6 +1802,14 @@ public class JVMVisitor extends IRVisitor {
             default:
                 throw new NotCompilableException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
         }
+    }
+
+    @Override
+    public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) {
+        jvmMethod().loadSelfBlock();
+        jvmAdapter().invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
+        jvmAdapter().invokevirtual(p(Binding.class), "getVisibility", sig(Visibility.class));
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -1858,6 +1938,14 @@ public class JVMVisitor extends IRVisitor {
         Operand closure = unresolvedsuperinstr.getClosureArg(null);
 
         superCommon(name, unresolvedsuperinstr, args, definingModule, containsArgSplat, closure);
+    }
+
+    @Override
+    public void UpdateBlockExecutionStateInstr (UpdateBlockExecutionStateInstr instr) {
+        jvmMethod().loadSelfBlock();
+        jvmMethod().loadSelf();
+        jvmMethod().invokeIRHelper("updateBlockState", sig(IRubyObject.class, Block.class, IRubyObject.class));
+        jvmMethod().storeSelf();
     }
 
     @Override

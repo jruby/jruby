@@ -132,6 +132,10 @@ public abstract class IRBytecodeAdapter {
         adapter.aload(signature.argOffset("context"));
     }
 
+    public void loadSelfBlock() {
+        adapter.aload(signature.argOffset(JVMVisitor.SELF_BLOCK_NAME));
+    }
+
     public void loadStaticScope() {
         adapter.aload(signature.argOffset("scope"));
     }
@@ -168,6 +172,14 @@ public abstract class IRBytecodeAdapter {
         } else {
             adapter.aload(signature.argOffset("type"));
         }
+    }
+
+    public void storeSelf() {
+        adapter.astore(signature.argOffset("self"));
+    }
+
+    public void storeArgs() {
+        adapter.astore(signature.argOffset("args"));
     }
 
     public void storeLocal(int i) {
