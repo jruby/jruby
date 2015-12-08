@@ -841,11 +841,28 @@ public class IRBuilder {
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode) {
         boolean containsAssignment = attrAssignNode.containsVariableAssignment();
         Operand obj = buildWithOrder(attrAssignNode.getReceiverNode(), containsAssignment);
+
+        Label lazyLabel = getNewLabel();
+        Label endLabel = getNewLabel();
+        Variable result = createTemporaryVariable();
+        if (attrAssignNode.isLazy()) {
+            addInstr(new BNilInstr(lazyLabel, obj));
+        }
+
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
         addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
-        return lastArg;
+        addInstr(new CopyInstr(result, lastArg));
+
+        if (attrAssignNode.isLazy()) {
+            addInstr(new JumpInstr(endLabel));
+            addInstr(new LabelInstr(lazyLabel));
+            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new LabelInstr(endLabel));
+        }
+
+        return result;
     }
 
     public Operand buildAttrAssignAssignment(Node node, Operand value) {
@@ -1002,9 +1019,17 @@ public class IRBuilder {
         // that is incorrect IR because the receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
         Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
-        Operand[] args       = setupCallArgs(callArgsNode);
-        Operand   block      = setupCallClosure(callNode.getIterNode());
         Variable  callResult = createTemporaryVariable();
+
+        Label lazyLabel = getNewLabel();
+        Label endLabel = getNewLabel();
+        if (callNode.isLazy()) {
+            addInstr(new BNilInstr(lazyLabel, receiver));
+        }
+
+        Operand[] args       = setupCallArgs(callArgsNode);
+        Operand block      = setupCallClosure(callNode.getIterNode());
+
         CallInstr callInstr  = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
@@ -1015,6 +1040,14 @@ public class IRBuilder {
         }
 
         receiveBreakException(block, callInstr);
+
+        if (callNode.isLazy()) {
+            addInstr(new JumpInstr(endLabel));
+            addInstr(new LabelInstr(lazyLabel));
+            addInstr(new CopyInstr(callResult, manager.getNil()));
+            addInstr(new LabelInstr(endLabel));
+        }
+
         return callResult;
     }
 
@@ -2809,6 +2842,7 @@ public class IRBuilder {
         return manager.getNil();
     }
 
+    // FIXME: The logic for lazy and non-lazy building is pretty icky...clean up
     public Operand buildOpAsgn(OpAsgnNode opAsgnNode) {
         Label l;
         Variable readerValue = createTemporaryVariable();
@@ -2816,6 +2850,14 @@ public class IRBuilder {
 
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode());
+
+        Label lazyLabel = getNewLabel();
+        Label endLabel = getNewLabel();
+        Variable result = createTemporaryVariable();
+        if (opAsgnNode.isLazy()) {
+            addInstr(new BNilInstr(lazyLabel, v1));
+        }
+
         addInstr(CallInstr.create(scope, readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
@@ -2834,10 +2876,10 @@ public class IRBuilder {
             addInstr(new CopyInstr(readerValue, v2));
             addInstr(new LabelInstr(l));
 
-            return readerValue;
-        }
-        // Ex: e.val = e.val.f(n)
-        else {
+            if (!opAsgnNode.isLazy()) return readerValue;
+
+            addInstr(new CopyInstr(result, readerValue));
+        } else {  // Ex: e.val = e.val.f(n)
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode());
             Variable setValue = createTemporaryVariable();
@@ -2847,8 +2889,17 @@ public class IRBuilder {
             addInstr(CallInstr.create(scope, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
             // Returning writerValue is incorrect becuase the assignment method
             // might return something else other than the value being set!
-            return setValue;
+            if (!opAsgnNode.isLazy()) return setValue;
+
+            addInstr(new CopyInstr(result, setValue));
         }
+
+        addInstr(new JumpInstr(endLabel));
+        addInstr(new LabelInstr(lazyLabel));
+        addInstr(new CopyInstr(result, manager.getNil()));
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
     }
 
     // Translate "x &&= y" --> "x = y if is_true(x)" -->
