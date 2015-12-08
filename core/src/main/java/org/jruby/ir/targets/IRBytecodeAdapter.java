@@ -145,7 +145,7 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadBlock() {
-        adapter.aload(signature.argOffset("block"));
+        adapter.aload(signature.argOffset(JVMVisitor.BLOCK_ARG_NAME));
     }
 
     public void loadFrameClass() {

@@ -70,7 +70,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         if (usesKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
         try {
-            return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, blockArg, binding.getMethod(), block.type);
+            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), self, args, blockArg, binding.getMethod(), block.type);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached

@@ -58,6 +58,15 @@ public class JVMVisitor extends IRVisitor {
     private static final Logger LOG = LoggerFactory.getLogger("JVMVisitor");
     public static final String DYNAMIC_SCOPE = "$dynamicScope";
     private static final boolean DEBUG = false;
+    public static final String BLOCK_ARG_NAME = "blockArg";
+
+    private static final Signature METHOD_SIGNATURE_BASE = Signature
+            .returning(IRubyObject.class)
+            .appendArgs(new String[]{"context", "scope", "self", BLOCK_ARG_NAME, "class", "callName"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
+
+    public static final Signature CLOSURE_SIGNATURE = Signature
+            .returning(IRubyObject.class)
+            .appendArgs(new String[]{"context", "block", "scope", "self", "args", BLOCK_ARG_NAME, "superName", "type"}, ThreadContext.class, Block.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
     public JVMVisitor() {
         this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
@@ -198,10 +207,6 @@ public class JVMVisitor extends IRVisitor {
         jvm.popmethod();
     }
 
-    private static final Signature METHOD_SIGNATURE_BASE = Signature
-            .returning(IRubyObject.class)
-            .appendArgs(new String[]{"context", "scope", "self", "block", "class", "callName"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
-
     public static final Signature signatureFor(IRScope method, boolean aritySplit) {
         if (aritySplit) {
             StaticScope argScope = method.getStaticScope();
@@ -223,10 +228,6 @@ public class JVMVisitor extends IRVisitor {
         // normal boxed arg list signature
         return METHOD_SIGNATURE_BASE.insertArgs(3, new String[]{"args"}, IRubyObject[].class);
     }
-
-    public static final Signature CLOSURE_SIGNATURE = Signature
-            .returning(IRubyObject.class)
-            .appendArgs(new String[]{"context", "scope", "self", "args", "block", "superName", "type"}, ThreadContext.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
     public void emitScriptBody(IRScriptBody script) {
         // Note: no index attached because there should be at most one script body per .class
@@ -1488,7 +1489,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) {
         jvmMethod().loadRuntime();
-        jvmLoadLocal("$block");
+        jvmLoadLocal("$blockArg");
         jvmMethod().invokeIRHelper("newProc", sig(IRubyObject.class, Ruby.class, Block.class));
         jvmStoreLocal(reifyclosureinstr.getResult());
     }
