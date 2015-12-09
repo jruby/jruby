@@ -211,7 +211,7 @@ public abstract class ArrayUtils {
             return boxExtra((long[]) array, extra);
         } else if (array instanceof double[]) {
             return boxExtra((double[]) array, extra);
-        } else if (array instanceof Object[]) {
+        } else if (array.getClass() == Object[].class) {
             final Object[] objectArray = (Object[]) array;
             return ArrayUtils.grow(objectArray, objectArray.length + extra);
         } else {
@@ -260,7 +260,7 @@ public abstract class ArrayUtils {
             return boxUntil((long[]) array, length);
         } else if (array instanceof double[]) {
             return boxUntil((double[]) array, length);
-        } else if (array instanceof Object[]) {
+        } else if (array.getClass() == Object[].class) {
             final Object[] objectArray = (Object[]) array;
             return Arrays.copyOf(objectArray, length);
         } else {
@@ -333,7 +333,7 @@ public abstract class ArrayUtils {
             for (int n = 0; n < length; n++) {
                 destination[destinationStart + n] = unboxedSource[n];
             }
-        } else if (source instanceof Object[]) {
+        } else if (source.getClass() == Object[].class) {
             arraycopy((Object[]) source, 0, destination, destinationStart, length);
         } else {
             throw new UnsupportedOperationException();

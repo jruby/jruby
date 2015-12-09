@@ -63,7 +63,7 @@ public abstract class ArrayBuilderNode extends Node {
         // The store type cannot be assumed if multiple threads use the same builder,
         // so just use the generic box() since anyway this is slow path.
         final Object[] newStore;
-        if (store instanceof Object[]) {
+        if (store.getClass() == Object[].class) {
             newStore = (Object[]) store;
         } else {
             newStore = ArrayUtils.box(store);
@@ -445,7 +445,7 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
-            if (hasAppendedObjectArray && otherStore instanceof Object[]) {
+            if (hasAppendedObjectArray && otherStore.getClass() == Object[].class) {
                 System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
@@ -488,7 +488,7 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
-            if (otherStore instanceof Object[]) {
+            if (otherStore.getClass() == Object[].class) {
                 hasAppendedObjectArray = true;
                 System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;

@@ -142,7 +142,7 @@ public abstract class RubyNode extends Node {
     public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
-        if (value instanceof Object[]) {
+        if (value.getClass() == Object[].class) {
             return (Object[]) value;
         } else {
             throw new UnexpectedResultException(value);

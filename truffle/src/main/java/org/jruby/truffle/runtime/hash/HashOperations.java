@@ -27,15 +27,13 @@ public abstract class HashOperations {
     }
 
     public static boolean verifyStore(RubyContext context, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        assert store == null || store instanceof Object[] || store instanceof Entry[];
+        assert store == null || store.getClass() == Object[].class || store instanceof Entry[];
 
         if (store == null) {
             assert size == 0;
             assert firstInSequence == null;
             assert lastInSequence == null;
-        }
-
-        if (store instanceof Entry[]) {
+        } else if (store instanceof Entry[]) {
             assert lastInSequence == null || lastInSequence.getNextInSequence() == null;
 
             final Entry[] entryStore = (Entry[]) store;
@@ -86,7 +84,7 @@ public abstract class HashOperations {
             }
 
             assert foundSizeSequence == size : String.format("%d %d", foundSizeSequence, size);
-        } else if (store instanceof Object[]) {
+        } else if (store.getClass() == Object[].class) {
             assert ((Object[]) store).length == context.getOptions().HASH_PACKED_ARRAY_MAX * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
 
             final Object[] packedStore = (Object[]) store;
