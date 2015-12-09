@@ -139,7 +139,7 @@ public abstract class HashNodes {
             final DynamicObject array = (DynamicObject) arg;
             final Object store = Layouts.ARRAY.getStore(array);
 
-            if (store != null && store.getClass() != Object[].class) {
+            if (store == null || store.getClass() != Object[].class) {
                 return false;
             }
 
