@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.RubyContext;
  * binary string. I think MRI that now has a copying collector so not sure how
  * safe this is even there.
  * <p>
- * We simply implement it as {@code NULL}. At least any attempty to dereference
+ * We simply implement it as {@code NULL}. At least any attempt to dereference
  * will fail early.
  * <pre>
  * [1, 2, 3].pack('x') # =>  "\x00\x00\x00\x00\x00\x00\x00\x00"

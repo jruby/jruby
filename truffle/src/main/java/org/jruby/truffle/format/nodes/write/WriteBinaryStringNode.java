@@ -52,6 +52,8 @@ public abstract class WriteBinaryStringNode extends PackNode {
             for (int n = 0; n < width; n++) {
                 writeByte(frame, padding);
             }
+        } else if (appendNull) {
+            writeByte(frame, (byte) 0);
         }
 
         return null;
