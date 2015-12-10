@@ -199,6 +199,35 @@ class TestSymbol < Test::Unit::TestCase
     assert_raise(TypeError) { a = :foo; def a.foo; end }
   end
 
+  SymbolsForEval = [
+    :foo,
+    "dynsym_#{Random.rand(10000)}_#{Time.now}".to_sym
+  ]
+
+  def test_instance_eval
+    bug11086 = '[ruby-core:68961] [Bug #11086]'
+    SymbolsForEval.each do |sym|
+      assert_nothing_raised(TypeError, sym, bug11086) {
+        sym.instance_eval {}
+      }
+      assert_raise(TypeError, sym, bug11086) {
+        sym.instance_eval {def foo; end}
+      }
+    end
+  end
+
+  def test_instance_exec
+    bug11086 = '[ruby-core:68961] [Bug #11086]'
+    SymbolsForEval.each do |sym|
+      assert_nothing_raised(TypeError, sym, bug11086) {
+        sym.instance_exec {}
+      }
+      assert_raise(TypeError, sym, bug11086) {
+        sym.instance_exec {def foo; end}
+      }
+    end
+  end
+
   def test_frozen_symbol
     assert_equal(true, :foo.frozen?)
     assert_equal(true, :each.frozen?)
@@ -229,5 +258,32 @@ class TestSymbol < Test::Unit::TestCase
       attr_writer :unagi
     end
     assert_nothing_raised(NoMethodError, bug10259) {obj.send("unagi=".intern, 1)}
+  end
+
+  def test_symbol_fstr_leak
+    bug10686 = '[ruby-core:67268] [Bug #10686]'
+    x = 0
+    assert_no_memory_leak([], '', <<-"end;", bug10686, limit: 1.65)
+      200_000.times { |i| i.to_s.to_sym }
+    end;
+  end
+
+  def test_hash_redefinition
+    assert_separately([], <<-'end;')
+      bug11035 = '[ruby-core:68767] [Bug #11035]'
+      class Symbol
+        def hash
+          raise
+        end
+      end
+
+      h = {}
+      assert_nothing_raised(RuntimeError, bug11035) {
+        h[:foo] = 1
+      }
+      assert_nothing_raised(RuntimeError, bug11035) {
+        h['bar'.to_sym] = 2
+      }
+    end;
   end
 end
