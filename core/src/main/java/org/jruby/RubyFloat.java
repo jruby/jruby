@@ -661,7 +661,9 @@ public class RubyFloat extends RubyNumeric {
     
     private boolean equals(RubyFloat that) {
         if ( Double.isNaN(this.value) || Double.isNaN(that.value) ) return false;
-        return Double.doubleToLongBits(this.value) == Double.doubleToLongBits(that.value);
+        final double val1 = this.value == -0.0 ? 0.0 : this.value;
+        final double val2 = that.value == -0.0 ? 0.0 : that.value;
+        return Double.doubleToLongBits(val1) == Double.doubleToLongBits(val2);
     }
     
     /** flo_hash
@@ -670,17 +672,17 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "hash")
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
+        return getRuntime().newFixnum( hashCode() );
     }
 
     @Override
     public final int hashCode() {
-        System.out.println(" " + inspect() + " value = " + value);
-        long l = Double.doubleToLongBits(value);
-        return (int)(l ^ l >>> 32);
-    }    
+        final double val = value == 0.0 ? -0.0 : value;
+        final long l = Double.doubleToLongBits(val);
+        return (int) ( l ^ l >>> 32 );
+    }
 
-    /** flo_fo 
+    /** flo_fo
      * 
      */
     @JRubyMethod(name = "to_f")
