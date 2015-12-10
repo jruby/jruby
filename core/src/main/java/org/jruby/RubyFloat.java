@@ -651,18 +651,19 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "eql?", required = 1)
     @Override
     public IRubyObject eql_p(IRubyObject other) {
-        if (other instanceof RubyFloat) {
-            double b = ((RubyFloat) other).value;
-            if (Double.isNaN(value) || Double.isNaN(b)) {
-                return getRuntime().getFalse();
-            }
-            if (value == b) {
-                return getRuntime().getTrue();
-            }
-        }
-        return getRuntime().getFalse();
+        return getRuntime().newBoolean( equals(other) );
     }
 
+    @Override
+    public boolean equals(Object other) {
+        return (other instanceof RubyFloat) && equals((RubyFloat) other);
+    }
+    
+    private boolean equals(RubyFloat that) {
+        if ( Double.isNaN(this.value) || Double.isNaN(that.value) ) return false;
+        return Double.doubleToLongBits(this.value) == Double.doubleToLongBits(that.value);
+    }
+    
     /** flo_hash
      * 
      */
@@ -674,6 +675,7 @@ public class RubyFloat extends RubyNumeric {
 
     @Override
     public final int hashCode() {
+        System.out.println(" " + inspect() + " value = " + value);
         long l = Double.doubleToLongBits(value);
         return (int)(l ^ l >>> 32);
     }    
