@@ -506,24 +506,21 @@ public class RubyBigDecimal extends RubyNumeric {
         String strValue = arg.convertToString().toString().trim();
 
         int sign = 1;
-        if(strValue.length() > 0) {
-            switch (strValue.charAt(0)) {
-                case '_' :
-                    return newZero(context.runtime, 1); // leading "_" are not allowed
-                case 'N' :
-                    if ( "NaN".equals(strValue) ) return newNaN(context.runtime);
-                    break;
-                case 'I' :
-                    if ( "Infinity".equals(strValue) ) return newInfinity(context.runtime, 1);
-                    break;
-                case '-' :
-                    if ( "-Infinity".equals(strValue) ) return newInfinity(context.runtime, -1);
-                    sign = -1;
-                    break;
-                case '+' :
-                    if ( "+Infinity".equals(strValue) ) return newInfinity(context.runtime, +1);
-                    break;
-            }
+        switch ( strValue.length() > 0 ? strValue.charAt(0) : ' ' ) {
+            case '_' : return newZero(context.runtime, 1); // leading "_" are not allowed
+            case 'N' :
+                if ( "NaN".equals(strValue) ) return newNaN(context.runtime);
+                break;
+            case 'I' :
+                if ( "Infinity".equals(strValue) ) return newInfinity(context.runtime, 1);
+                break;
+            case '-' :
+                if ( "-Infinity".equals(strValue) ) return newInfinity(context.runtime, -1);
+                sign = -1;
+                break;
+            case '+' :
+                if ( "+Infinity".equals(strValue) ) return newInfinity(context.runtime, +1);
+                break;
         }
 
         // Convert String to Java understandable format (for BigDecimal).
@@ -533,17 +530,21 @@ public class RubyBigDecimal extends RubyNumeric {
         Matcher matcher = NUMBER_PATTERN.matcher(strValue);
         strValue = matcher.replaceFirst("$1");                          // 3. MRI ignores the trailing junk
 
-        String exp = matcher.group(2);
-        if(!exp.isEmpty()) {
+        String exp = matcher.group(2); int idx;
+        if ( exp != null && ! exp.isEmpty() ) {
             String expValue = matcher.group(3);
             if (expValue.isEmpty() || expValue.equals("-") || expValue.equals("+")) {
                 strValue = strValue.concat("0");                        // 4. MRI allows 1E, 1E-, 1E+
-            } else if (isExponentOutOfRange(expValue)) {
+            }
+            else if (isExponentOutOfRange(expValue)) {
                 // Handle infinity (Integer.MIN_VALUE + 1) < expValue < Integer.MAX_VALUE
                 return newInfinity(context.runtime, sign);
             }
         }
-
+        else if ( ( idx = matcher.start(3) ) > 0 ) {
+            strValue = strValue.substring(0, idx); // ignored tail junk e.g. "5-6" -> "-6"
+        }
+        
         BigDecimal decimal;
         try {
             decimal = new BigDecimal(strValue, mathContext);
