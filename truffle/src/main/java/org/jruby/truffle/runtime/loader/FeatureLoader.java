@@ -173,7 +173,11 @@ public class FeatureLoader {
         if (source == mainScriptSource) {
             return mainScriptFullPath;
         } else {
-            return source.getPath();
+            if (source.getPath() == null) {
+                return source.getShortName();
+            } else {
+                return source.getPath();
+            }
         }
     }
 

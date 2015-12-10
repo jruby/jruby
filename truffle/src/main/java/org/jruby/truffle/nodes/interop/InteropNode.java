@@ -159,8 +159,8 @@ public abstract class InteropNode extends RubyNode {
                                 @Cached("getMethod(cachedMethod)") InternalMethod internalMethod,
                                 @Cached("create(getMethod(cachedMethod).getCallTarget())") DirectCallNode callNode) {
             final List<Object> faArgs = ForeignAccess.getArguments(frame);
-            // skip first argument; it's the receiver but a RubyMethod knows its receiver
-            Object[] args = faArgs.subList(1, faArgs.size()).toArray();
+            
+            Object[] args = faArgs.subList(0, faArgs.size()).toArray();
             return callNode.call(frame, RubyArguments.pack(internalMethod, null, null, Layouts.METHOD.getReceiver(cachedMethod), null, DeclarationContext.METHOD, args));
         }
         
@@ -168,8 +168,8 @@ public abstract class InteropNode extends RubyNode {
         protected Object doCall(VirtualFrame frame, DynamicObject method) {
             final InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
             final List<Object> faArgs = ForeignAccess.getArguments(frame);
-            // skip first argument; it's the receiver but a RubyMethod knows its receiver
-            Object[] args = faArgs.subList(1, faArgs.size()).toArray();
+            
+            Object[] args = faArgs.subList(0, faArgs.size()).toArray();
             return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(
                     internalMethod,
                     null,
@@ -733,12 +733,10 @@ public abstract class InteropNode extends RubyNode {
 
         public InteropArgumentsNode(RubyContext context, SourceSection sourceSection, int arity) {
             super(context, sourceSection);
-            this.arguments = new InteropArgumentNode[arity - 1]; // exclude the receiver
-            // Execute(Read(receiver, label), a0 (which is the receiver), a1, a2)
-            // the arguments array looks like:
-            // label, a0 (which is the receiver), a1, a2, ...
-            for (int i = 2; i < 2 + arity - 1; i++) {
-                arguments[i - 2] = new InteropArgumentNode(context, sourceSection, i - 1);
+            this.arguments = new InteropArgumentNode[arity]; 
+            // index 0 is the lable
+            for (int i = 1; i < 1 + arity; i++) {
+                arguments[i - 1] = new InteropArgumentNode(context, sourceSection, i);
             }
         }
 

@@ -35,7 +35,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
     @Child private Node nullCheck;
     @Child private Node access;
     @Child private PrepareArguments prepareArguments;
-    @CompilerDirectives.CompilationFinal private boolean passReceiver;
+    
 
     public CachedForeignDispatchNode(RubyContext context, DispatchNode next, Object cachedName, int arity) {
         super(context, cachedName, next, DispatchAction.CALL_METHOD);
@@ -57,16 +57,12 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
             directArray = Message.WRITE.createNode();
         } else if (name.endsWith("=") && arity == 1) {
             directField = Message.WRITE.createNode();
-        } else if (name.endsWith("static_call")) {
-            directCall = Message.createExecute(arity).createNode();
-            passReceiver = false;
-        } else if (name.endsWith("call")) {// arity + 1 for receiver
-        	directCall = Message.createExecute(arity + 1).createNode();
-            passReceiver = true;
-        } else if (name.endsWith("nil?")) {
+        } else if (name.equals("call")) {
+        	directCall = Message.createExecute(arity).createNode();
+        } else if (name.equals("nil?")) {
             nullCheck = Message.IS_NULL.createNode();
         } else {
-            access = Message.createInvoke(arity + 1).createNode();
+            access = Message.createInvoke(arity).createNode();
         }
         prepareArguments = new PrepareArguments(context, getSourceSection(), arity);
     }
@@ -111,21 +107,14 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
             return ForeignAccess.execute(directField, frame, receiverObject, args);
         } else if (directCall != null) {
             Object[] args;
-
-            if (passReceiver) {
-                args = prepareArguments.convertArguments(frame, arguments, 1);
-                args[0] = receiverObject;
-            } else {
-                args = prepareArguments.convertArguments(frame, arguments, 0);
-            }
+            args = prepareArguments.convertArguments(frame, arguments, 0);
             return ForeignAccess.execute(directCall, frame, receiverObject, args);
         } else if (nullCheck != null) {
             Object[] args = prepareArguments.convertArguments(frame, arguments, 0);
             return ForeignAccess.execute(nullCheck, frame, receiverObject, args);
         } else if (access != null) {
-            Object[] args = prepareArguments.convertArguments(frame, arguments, 2);
+            Object[] args = prepareArguments.convertArguments(frame, arguments, 1);
             args[0] = name;
-            args[1] = receiverObject;
             return ForeignAccess.execute(access, frame, receiverObject, args);
         } else {
             CompilerDirectives.transferToInterpreter();

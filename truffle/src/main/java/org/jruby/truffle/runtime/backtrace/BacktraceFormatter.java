@@ -211,7 +211,7 @@ public class BacktraceFormatter {
     }
 
     private boolean isCore(SourceSection sourceSection) {
-        return sourceSection == null || sourceSection.getSource() == null || sourceSection.getSource().getPath().startsWith(SourceLoader.TRUFFLE_SCHEME);
+        return sourceSection == null || sourceSection.getSource() == null || (sourceSection.getSource().getPath() != null && sourceSection.getSource().getPath().startsWith(SourceLoader.TRUFFLE_SCHEME));
     }
 
 }
