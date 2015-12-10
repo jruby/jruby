@@ -79,3 +79,10 @@
     - date
     - bigdecimal
     - pathname
+:stored_commands:
+  :ci:
+    - "jruby+truffle setup"
+    - :test
+  :test: "jruby+truffle run --exclude-pattern 'jdom_engine' --require-pattern 'test/**/**/*_test.rb' -r exclude_tests -- -I test -e 'nil'"
+
+

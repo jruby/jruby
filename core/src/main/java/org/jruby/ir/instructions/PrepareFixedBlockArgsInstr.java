@@ -23,36 +23,6 @@ public class PrepareFixedBlockArgsInstr extends PrepareBlockArgsInstr  {
         return new PrepareFixedBlockArgsInstr();
     }
 
-    public IRubyObject[] prepareBlockArgs(ThreadContext context, Block b, IRubyObject[] args) {
-        if (args == null) {
-            return IRubyObject.NULL_ARRAY;
-        }
-
-        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
-        if (isProcCall) {
-            return prepareProcArgs(context, b, args);
-        }
-
-        boolean isLambda = b.type == Block.Type.LAMBDA;
-        if (isLambda && isProcCall) {
-            return args;
-        }
-
-        // SSS FIXME: This check here is not required as long as
-        // the single-instruction cases always uses PreapreSingleBlockArgInstr
-        // But, including this here for robustness for now.
-        if (b.getBody().getSignature().arityValue() == 1) {
-            return args;
-        }
-
-        // Since we have more than 1 required arg,
-        // convert a single value to an array if possible.
-        args = toAry(context, args);
-
-        // If there are insufficient args, ReceivePreReqdInstr will return nil
-        return args;
-    }
-
     @Override
     public void visit(IRVisitor visitor) {
         visitor.PrepareFixedBlockArgsInstr(this);

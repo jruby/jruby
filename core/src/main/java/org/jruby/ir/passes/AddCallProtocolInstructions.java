@@ -92,10 +92,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
             if (scope instanceof IRClosure) {
                 savedViz = scope.createTemporaryVariable();
                 savedFrame = scope.createTemporaryVariable();
-                entryBB.addInstr(new SaveBindingVisibilityInstr(savedViz));
-                entryBB.addInstr(new PushBlockFrameInstr(savedFrame, scope.getName()));
-                if (requireBinding) entryBB.addInstr(new PushBlockBindingInstr());
-                entryBB.addInstr(new UpdateBlockExecutionStateInstr(Self.SELF));
+                entryBB.insertInstr(0, new SaveBindingVisibilityInstr(savedViz));
+                entryBB.insertInstr(1, new PushBlockFrameInstr(savedFrame, scope.getName()));
+                entryBB.insertInstr(2, new UpdateBlockExecutionStateInstr(Self.SELF));
+                if (requireBinding) entryBB.insertInstr(3, new PushBlockBindingInstr());
                 Signature sig = ((IRClosure)scope).getSignature();
 
                 // If it doesn't need any args, no arg preparation involved!

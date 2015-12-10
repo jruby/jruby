@@ -21,6 +21,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         this.reuseParentScope = closure.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushScope = !closure.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentScope;
         this.usesKwargs = closure.receivesKeywordArgs();
+        this.hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
         closure.getStaticScope().determineModule();
@@ -33,12 +34,24 @@ public class CompiledIRBlockBody extends IRBlockBody {
 
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        throw new RuntimeException("callDirect not implemented in CompiledIRBlockBody. Implement me!");
+        context.setCurrentBlockType(Block.Type.PROC);
+        try {
+            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), (IRubyObject)null, args, blockArg, block.getBinding().getMethod(), block.type);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
     }
 
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        throw new RuntimeException("yieldDirect not implemented in CompiledIRBlockBody. Implement me!");
+        context.setCurrentBlockType(Block.Type.NORMAL);
+        try {
+            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), self, args, Block.NULL_BLOCK, block.getBinding().getMethod(), block.type);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
@@ -70,7 +83,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         if (usesKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
         try {
-            return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, blockArg, binding.getMethod(), block.type);
+            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), self, args, blockArg, binding.getMethod(), block.type);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached

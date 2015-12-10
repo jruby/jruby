@@ -46,7 +46,6 @@ import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -58,9 +57,9 @@ import org.jruby.util.RegexpOptions;
 public class Timeout implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyModule timeout = runtime.defineModule("Timeout");
-        RubyClass superclass = runtime.getRuntimeError();
-        RubyClass timeoutError = runtime.defineClassUnder("Error", superclass, superclass.getAllocator(), timeout);
-        runtime.defineClassUnder("ExitException", runtime.getException(), runtime.getException().getAllocator(), timeout);
+        RubyClass RuntimeError = runtime.getRuntimeError();
+        RubyClass TimeoutError = runtime.defineClassUnder("Error", RuntimeError, RuntimeError.getAllocator(), timeout);
+        timeout.defineConstant("ExitException", TimeoutError);
 
         // Here we create an "anonymous" exception type used for unrolling the stack.
         // MRI creates a new one for *every call* to timeout, which can be costly.
@@ -76,7 +75,7 @@ public class Timeout implements Library {
         timeout.defineAnnotatedMethods(Timeout.class);
 
         // Toplevel defines
-        runtime.getObject().defineConstant("TimeoutError", timeoutError);
+        runtime.getObject().defineConstant("TimeoutError", TimeoutError);
         runtime.getObject().defineAnnotatedMethods(TimeoutToplevel.class);
     }
 

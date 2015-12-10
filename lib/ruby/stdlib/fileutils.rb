@@ -156,10 +156,10 @@ module FileUtils
   end
   module_function :uptodate?
 
-  def remove_trailing_slash(dir)
+  def remove_tailing_slash(dir)
     dir == '/' ? dir : dir.chomp(?/)
   end
-  private_module_function :remove_trailing_slash
+  private_module_function :remove_tailing_slash
 
   #
   # Options: mode noop verbose
@@ -207,7 +207,7 @@ module FileUtils
     fu_output_message "mkdir -p #{options[:mode] ? ('-m %03o ' % options[:mode]) : ''}#{list.join ' '}" if options[:verbose]
     return *list if options[:noop]
 
-    list.map {|path| remove_trailing_slash(path)}.each do |path|
+    list.map {|path| remove_tailing_slash(path)}.each do |path|
       # optimize for the most common case
       begin
         fu_mkdir path, options[:mode]
@@ -244,7 +244,7 @@ module FileUtils
   OPT_TABLE['makedirs'] = [:mode, :noop, :verbose]
 
   def fu_mkdir(path, mode)   #:nodoc:
-    path = remove_trailing_slash(path)
+    path = remove_tailing_slash(path)
     if mode
       Dir.mkdir path, mode
       File.chmod mode, path
@@ -272,7 +272,7 @@ module FileUtils
     return if options[:noop]
     list.each do |dir|
       begin
-        Dir.rmdir(dir = remove_trailing_slash(dir))
+        Dir.rmdir(dir = remove_tailing_slash(dir))
         if parents
           until (parent = File.dirname(dir)) == '.' or parent == dir
             dir = parent
@@ -518,7 +518,7 @@ module FileUtils
       begin
         if destent.exist?
           if destent.directory?
-            raise Errno::EEXIST, dest
+            raise Errno::EEXIST, d
           else
             destent.remove_file if rename_cannot_overwrite_file?
           end
@@ -726,15 +726,14 @@ module FileUtils
     end
     # freeze tree root
     euid = Process.euid
-    dot_file = fullpath + "/."
-    File.lstat(dot_file).tap {|fstat|
-      unless fu_stat_identical_entry?(st, fstat)
+    File.open(fullpath + '/.') {|f|
+      unless fu_stat_identical_entry?(st, f.stat)
         # symlink (TOC-to-TOU attack?)
         File.unlink fullpath
         return
       end
-      File.chown euid, -1, dot_file
-      File.chmod 0700, dot_file
+      f.chown euid, -1
+      f.chmod 0700
       unless fu_stat_identical_entry?(st, File.lstat(fullpath))
         # TOC-to-TOU attack?
         File.unlink fullpath
