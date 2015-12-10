@@ -57,9 +57,11 @@ class JRubyTruffleRunner
             mock_load_path:      ['--mock-load-path PATH',
                                   'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
                                   assign_new_value, 'mocks'],
-            use_fs_core:         ['--[no-]use-fs-core', 'use core from the filesystem rather than the JAR',
+            use_fs_core:         ['--[no-]use-fs-core', 'Use core from the filesystem rather than the JAR',
                                   assign_new_value, true],
-            bundle_cmd:          ['--bundle-cmd CMD', 'command to run for bundle', assign_new_value, 'bundle']
+            bundle_cmd:          ['--bundle-cmd CMD', 'Command to run for bundle', assign_new_value, 'bundle'],
+            configuration:       ['--config GEM_NAME', 'Load configuration for specified gem', assign_new_value, nil],
+            dir:                 ['--dir DIRECTORY', 'Set working directory', assign_new_value, Dir.pwd],
         },
         setup:  {
             help:    ['-h', '--help', 'Show this message', assign_new_value, false],
@@ -170,27 +172,32 @@ class JRubyTruffleRunner
 
   def initialize(argv = ARGV)
     construct_default_options
-    load_gem_configuration
-    load_local_configuration
     build_option_parsers
 
     subcommand, *argv_after_global = @option_parsers[:global].order argv
 
-    if subcommand.nil?
+    Dir.chdir @options[:global][:dir] do
+      puts "pwd: #{Dir.pwd}" if verbose?
+
+      load_gem_configuration
+      load_local_configuration
+
+      if subcommand.nil?
+        print_options
+        help :global
+      end
+      help :global if @options[:global][:help]
+
+      subcommand = subcommand.to_sym
+
+      subcommand_option_parser = @option_parsers[subcommand] || raise("unknown subcommand: #{subcommand}")
+      argv_after_subcommand    = subcommand_option_parser.order argv_after_global
+
       print_options
-      help :global
+      help subcommand if @options[subcommand][:help] && subcommand != :readme
+
+      send "subcommand_#{subcommand}", argv_after_subcommand
     end
-    help :global if @options[:global][:help]
-
-    subcommand = subcommand.to_sym
-
-    subcommand_option_parser = @option_parsers[subcommand] || raise("unknown subcommand: #{subcommand}")
-    argv_after_subcommand    = subcommand_option_parser.order argv_after_global
-
-    print_options
-    help subcommand if @options[subcommand][:help] && subcommand != :readme
-
-    send "subcommand_#{subcommand}", argv_after_subcommand
   end
 
   def print_options
@@ -224,12 +231,11 @@ class JRubyTruffleRunner
   end
 
   def load_gem_configuration
-    candidates = Dir['*.gemspec'] # TODO pwd?
+    candidates = @options[:global][:configuration] ? [@options[:global][:configuration]] : Dir['*.gemspec']
 
     if candidates.size == 1
       gem_name, _ = candidates.first.split('.')
       yaml_path   = File.dirname(__FILE__) + "/gem_configurations/#{gem_name}.yaml"
-      File.exist? yaml_path
     end
 
     apply_yaml_to_configuration(yaml_path)
@@ -325,6 +331,7 @@ class JRubyTruffleRunner
 
     @options[:setup][:file].each do |name, content|
       puts "creating file: #{mock_path}/#{name}" if verbose?
+      FileUtils.mkpath File.dirname("#{mock_path}/#{name}")
       File.write "#{mock_path}/#{name}", content
     end
 
