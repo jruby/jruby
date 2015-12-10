@@ -81,6 +81,10 @@ class JRubyTruffleRunner
             executable:      ['-S', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
             jexception:      ['--jexception', 'print Java exceptions', assign_new_value, false]
         },
+        stored: {
+            help: ['-h', '--help', 'Show this message', assign_new_value, false],
+            list: ['-l', '--list', 'List stored commands', assign_new_value, false]
+        },
         clean:  {
             help: ['-h', '--help', 'Show this message', assign_new_value, false]
         },
@@ -138,7 +142,29 @@ class JRubyTruffleRunner
 
     TXT
 
-    HELP = { global: global_help, setup: setup_help, run: run_help, clean: clean_help }
+    stored_help = <<-TXT.gsub(/^ {6}/, '')
+
+      Usage: #{EXECUTABLE} [options] stored [subcommand-options] [COMMAND_NAME]
+
+      Runs stored list of bash commands. They are stored under :stored_commands key
+      in options. It can contain single command or an array of commands,
+      e.g. to define how to run CI cycle for a given gem/application on JRuby+Truffle.
+
+      Examples: #{EXECUTABLE} stored --list
+                #{EXECUTABLE} stored ci
+
+      Stored commands may reference each other by Symbols.
+
+      Configuration example:
+        :stored_commands:
+          :ci:
+            - "jruby+truffle setup"
+            - :test
+          :test: "jruby+truffle run -S rake -- test"
+
+    TXT
+
+    HELP = { global: global_help, setup: setup_help, run: run_help, clean: clean_help, stored: stored_help }
   end
 
 
@@ -312,8 +338,7 @@ class JRubyTruffleRunner
   end
 
   def subcommand_run(rest)
-    jruby_path = Pathname("#{@options[:global][:interpreter_path]}/../..").expand_path
-
+    jruby_path         = Pathname("#{@options[:global][:interpreter_path]}/../..").expand_path
     ruby_options, rest = if rest.include?('--')
                            split = rest.index('--')
                            [rest[0...split], rest[(split+1)..-1]]
@@ -368,6 +393,31 @@ class JRubyTruffleRunner
 
     execute_cmd(cmd, fail: false, print_always: true)
     exit $?.exitstatus
+  end
+
+  def subcommand_stored(rest)
+    if @options[:stored][:list]
+      pp @options[:stored_commands]
+      exit
+    end
+
+    commands = get_stored_command rest.first
+
+    puts "executing #{commands.size} commands:"
+    commands.each { |cmd| print_cmd cmd, true }
+    puts
+
+    commands.each do |cmd|
+      unless execute_cmd(cmd, fail: false, print_always: true)
+        exit $?.exitstatus
+      end
+    end
+  end
+
+  def get_stored_command(name, fail: true)
+    result = @options.fetch(:stored_commands, {})[name.to_sym]
+    raise("unknown stored command: #{name}") if fail && !result
+    Array(result).flat_map { |c| (c.is_a? Symbol) ? get_stored_command(c) : c }
   end
 
   def subcommand_clean(rest)
