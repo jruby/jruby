@@ -38,6 +38,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.MainExitException;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.main.DripMain;
@@ -205,9 +206,14 @@ public class Main {
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
-        } catch (RaiseException rj) {
-            System.exit(handleRaiseException(rj));
-        } catch (Throwable t) {
+        }
+        catch (RaiseException ex) {
+            System.exit( handleRaiseException(ex) );
+        }
+        catch (JumpException ex) {
+            System.exit( handleUnexpectedJump(ex) );
+        }
+        catch (Throwable t) {
             // If a Truffle exception gets this far it's a hard failure - don't try and dress it up as a Ruby exception
 
             if (main.config.getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
@@ -516,25 +522,54 @@ public class Main {
      * run should be System.err. In order to avoid the Ruby err being closed and unable
      * to write, we use System.err unconditionally.
      *
-     * @param rj
+     * @param ex
      * @return
      */
-    protected static int handleRaiseException(RaiseException rj) {
-        RubyException raisedException = rj.getException();
-        Ruby runtime = raisedException.getRuntime();
-        if (runtime.getSystemExit().isInstance(raisedException)) {
+    protected static int handleRaiseException(final RaiseException ex) {
+        RubyException raisedException = ex.getException();
+        final Ruby runtime = raisedException.getRuntime();
+        if ( runtime.getSystemExit().isInstance(raisedException) ) {
             IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
-            if (status != null && !status.isNil()) {
+            if (status != null && ! status.isNil()) {
                 return RubyNumeric.fix2int(status);
-            } else {
-                return 0;
             }
-        } else {
-            System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
-            return 1;
+            return 0;
         }
+        System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
+        return 1;
     }
 
+    private static int handleUnexpectedJump(final JumpException ex) {
+        if ( ex instanceof JumpException.SpecialJump ) { // ex == JumpException.SPECIAL_JUMP
+            System.err.println("Unexpected break: " + ex);
+        }
+        else if ( ex instanceof JumpException.FlowControlException ) {
+            // NOTE: assuming a single global runtime main(args) should have :
+            if ( Ruby.isGlobalRuntimeReady() ) {
+                final Ruby runtime = Ruby.getGlobalRuntime();
+                RaiseException raise = ((JumpException.FlowControlException) ex).buildException(runtime);
+                if ( raise != null ) handleRaiseException(raise);
+            }
+            else {
+                System.err.println("Unexpected jump: " + ex);
+            }
+        }
+        else {
+            System.err.println("Unexpected: " + ex);
+        }
+        
+        final StackTraceElement[] trace = ex.getStackTrace();
+        if ( trace != null && trace.length > 0 ) {
+            System.err.println( ThreadContext.createRawBacktraceStringFromThrowable(ex, false) );
+        }
+        else {
+            System.err.println("HINT: to get backtrace for jump exceptions run with -Xjump.backtrace=true");
+        }
+        
+        // TODO: should match MRI (>= 2.2.3) exit status - @see ruby/test_enum.rb#test_first
+        return 2;
+    }
+    
     public static void printTruffleTimeMetric(String id) {
         if (Options.TRUFFLE_METRICS_TIME.load()) {
             final long millis = System.currentTimeMillis();
