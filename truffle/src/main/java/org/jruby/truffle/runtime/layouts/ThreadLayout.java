@@ -31,7 +31,7 @@ public interface ThreadLayout extends BasicObjectLayout {
 
     DynamicObject createThread(DynamicObjectFactory factory,
                                DynamicObject threadLocals,
-                               InterruptMode interruptMode,
+                               @Volatile InterruptMode interruptMode, // needs to be volatile for fibers implemented by threads
                                @Volatile RubyThread.Status status,
                                List<Lock> ownedLocks,
                                @Nullable FiberManager fiberManager,
