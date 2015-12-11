@@ -7,6 +7,8 @@ SNAKEYAMLJAR = "#{Dir.home}/.m2/repository/org/yaml/snakeyaml/1.14/snakeyaml-1.1
 
 JRUBY = File.expand_path('../..', __FILE__)
 
+VERIFY_JRUBY = false
+
 java = ENV["JAVACMD"] || "java"
 
 java_flags = []
@@ -35,6 +37,11 @@ if rest.include?('-X+T')
   classpath << SNAKEYAMLJAR
   classpath << "#{JRUBY}/truffle/build.eclipse"
   java_flags << "-Djruby.truffle.core.load_path=#{JRUBY}/truffle/src/main/ruby"
+end
+
+unless VERIFY_JRUBY
+  bootclasspath += classpath
+  classpath.clear
 end
 
 args = [java]
