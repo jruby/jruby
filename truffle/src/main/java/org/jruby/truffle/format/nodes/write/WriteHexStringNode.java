@@ -14,9 +14,10 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.format.nodes.PackNode;
-import org.jruby.truffle.format.runtime.Endianness;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+
+import java.nio.ByteOrder;
 
 /**
  * Read a string that contains a hex string and write as actual binary data.
@@ -28,12 +29,12 @@ import org.jruby.util.ByteList;
 })
 public abstract class WriteHexStringNode extends PackNode {
 
-    private final Endianness endianness;
+    private final ByteOrder byteOrder;
     private final int length;
 
-    public WriteHexStringNode(RubyContext context, Endianness endianness, int length) {
+    public WriteHexStringNode(RubyContext context, ByteOrder byteOrder, int length) {
         super(context);
-        this.endianness = endianness;
+        this.byteOrder = byteOrder;
         this.length = length;
     }
 
@@ -61,33 +62,24 @@ public abstract class WriteHexStringNode extends PackNode {
             }
 
             if (Character.isJavaIdentifierStart(currentChar)) {
-                switch (endianness) {
-                    case LITTLE:
-                        currentByte |= (((currentChar & 15) + 9) & 15) << 4;
-                        break;
-                    case BIG:
-                        currentByte |= ((currentChar & 15) + 9) & 15;
-                        break;
+                if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                    currentByte |= (((currentChar & 15) + 9) & 15) << 4;
+                } else {
+                    currentByte |= ((currentChar & 15) + 9) & 15;
                 }
             } else {
-                switch (endianness) {
-                    case LITTLE:
-                        currentByte |= (currentChar & 15) << 4;
-                        break;
-                    case BIG:
-                        currentByte |= currentChar & 15;
-                        break;
+                if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                    currentByte |= (currentChar & 15) << 4;
+                } else {
+                    currentByte |= currentChar & 15;
                 }
             }
 
             if (((n - 1) & 1) != 0) {
-                switch (endianness) {
-                    case LITTLE:
-                        currentByte >>= 4;
-                        break;
-                    case BIG:
-                        currentByte <<= 4;
-                        break;
+                if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                    currentByte >>= 4;
+                } else {
+                    currentByte <<= 4;
                 }
             } else {
                 writeByte(frame, (byte) currentByte);

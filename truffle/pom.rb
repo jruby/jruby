@@ -11,6 +11,8 @@ project 'JRuby Truffle' do
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'
+  jar 'org.antlr:antlr4-runtime:4.5'
+
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
   repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
@@ -22,6 +24,10 @@ project 'JRuby Truffle' do
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
   jar 'junit:junit', :scope => 'test'
+
+  plugin 'org.antlr:antlr4-maven-plugin', '4.5' do
+    execute_goal :antlr4
+  end
 
   plugin( :compiler,
           'encoding' => 'utf-8',

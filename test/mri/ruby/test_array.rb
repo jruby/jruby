@@ -806,7 +806,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_flatten_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     o = Object.new
     def o.to_ary() callcc {|k| @cont = k; [1,2,3]} end
     begin
@@ -820,7 +820,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_permutation_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -837,7 +837,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_product_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -854,7 +854,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_combination_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -871,7 +871,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_permutation_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -888,7 +888,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_combination_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -1366,7 +1366,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_sort_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = (1..100).to_a
@@ -2031,7 +2031,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_reject_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     bug9727 = '[ruby-dev:48101] [Bug #9727]'
     cont = nil
     a = [*1..10].reject do |i|
@@ -2494,6 +2494,41 @@ class TestArray < Test::Unit::TestCase
     EOS
     rescue Timeout::Error => e
       skip e.message
+    end
+  end
+
+  sizeof_long = [0].pack("l!").size
+  sizeof_voidp = [""].pack("p").size
+  if sizeof_long < sizeof_voidp
+    ARY_MAX = (1<<(8*sizeof_long-1)) / sizeof_voidp - 1
+    Bug11235 = '[ruby-dev:49043] [Bug #11235]'
+
+    def test_push_over_ary_max
+      assert_separately(['-', ARY_MAX.to_s, Bug11235], <<-"end;")
+        a = Array.new(ARGV[0].to_i)
+        assert_raise(IndexError, ARGV[1]) {0x1000.times {a.push(1)}}
+      end;
+    end
+
+    def test_unshift_over_ary_max
+      assert_separately(['-', ARY_MAX.to_s, Bug11235], <<-"end;")
+        a = Array.new(ARGV[0].to_i)
+        assert_raise(IndexError, ARGV[1]) {0x1000.times {a.unshift(1)}}
+      end;
+    end
+
+    def test_splice_over_ary_max
+      assert_separately(['-', ARY_MAX.to_s, Bug11235], <<-"end;")
+        a = Array.new(ARGV[0].to_i)
+        assert_raise(IndexError, ARGV[1]) {a[0, 0] = Array.new(0x1000)}
+      end;
+    end
+  end
+
+  private
+  def need_continuation
+    unless respond_to?(:callcc, true)
+      EnvUtil.suppress_warning {require 'continuation'}
     end
   end
 end
