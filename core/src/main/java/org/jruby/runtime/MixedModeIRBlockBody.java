@@ -77,7 +77,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
         if (interpreterContext == null) {
             interpreterContext = closure.getInterpreterContext();
-            hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
+            hasCallProtocolIR = false;
         }
         return interpreterContext;
     }
