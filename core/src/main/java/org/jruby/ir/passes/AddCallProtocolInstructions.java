@@ -24,7 +24,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod
             // SSS: Turning this off till this is fully debugged
-            // || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
+            || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
             || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
     }
 
