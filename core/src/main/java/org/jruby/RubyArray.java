@@ -2111,24 +2111,45 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod
     public IRubyObject bsearch(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-
         if (!block.isGiven()) {
             return enumeratorize(context.runtime, this, "bsearch");
         }
 
+        int rVal = bsearch_index_internal(context, block);
+        if(rVal == -1) {
+            return context.nil;
+        } else {
+            return eltOk(rVal);
+        }
+    }
+
+    @JRubyMethod
+    public IRubyObject bsearch_index(ThreadContext context, Block block) {
+        if (!block.isGiven()) {
+            return enumeratorize(context.runtime, this, "bsearch_index");
+        }
+        int rVal = bsearch_index_internal(context, block);
+        if(rVal == -1) {
+            return context.nil;
+        } else {
+            return RubyFixnum.newFixnum(context.runtime, rVal);
+        }
+    }
+
+    private int bsearch_index_internal(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
+
         int low = 0, high = realLength, mid;
         boolean smaller = false, satisfied = false;
-        IRubyObject v, val;
+        IRubyObject v;
 
         while (low < high) {
             mid = low + ((high - low) / 2);
-            val = eltOk(mid);
-            v = block.yieldSpecific(context, val);
+            v = block.yieldSpecific(context, eltOk(mid));
 
             if (v instanceof RubyFixnum) {
                 long fixValue = ((RubyFixnum)v).getLongValue();
-                if (fixValue == 0) return val;
+                if (fixValue == 0) return mid;
                 smaller = fixValue < 0;
             } else if (v == runtime.getTrue()) {
                 satisfied = true;
@@ -2137,7 +2158,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 smaller = false;
             } else if (runtime.getNumeric().isInstance(v)) {
                 switch (RubyComparable.cmpint(context, invokedynamic(context, v, OP_CMP, RubyFixnum.zero(runtime)), v, RubyFixnum.zero(runtime))) {
-                    case 0: return val;
+                    case 0: return mid;
                     case 1: smaller = true; break;
                     case -1: smaller = false;
                 }
@@ -2150,9 +2171,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 low = mid + 1;
             }
         }
-        if (low == realLength) return context.nil;
-        if (!satisfied) return context.nil;
-        return eltOk(low);
+        if (low == realLength) return -1;
+        if (!satisfied) return -1;
+        return low;
     }
 
     /** rb_ary_rindex
