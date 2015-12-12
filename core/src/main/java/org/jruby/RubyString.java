@@ -1487,12 +1487,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
+    // TODO: Fold kwargs into the @JRubyMethod decorator
+    final String[] validInitializeArgs = new String[]{"encoding"};
+
     @JRubyMethod(name = "initialize", visibility = PRIVATE, optional = 2)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args) {
-        final String[] validArgs = new String[]{"encoding"};
-        IRubyObject[] extractedArgs = ArgsUtil.extractKeywordArgs(context, args, validArgs);
+        IRubyObject[] extractedArgs = ArgsUtil.extractKeywordArgs(context, args, validInitializeArgs);
 
-        if (args.length > 0 && args[0] instanceof RubyString) {
+        if ((args.length == 1 && extractedArgs == null) || args.length > 1) {
             replace19(args[0]);
         }
 
