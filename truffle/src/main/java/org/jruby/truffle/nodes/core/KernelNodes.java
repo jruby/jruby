@@ -1150,11 +1150,6 @@ public abstract class KernelNodes {
 
         public abstract boolean executeIsA(Object self, DynamicObject rubyClass);
 
-        @Specialization(guards = { "isNil(nil)", "!isRubyModule(nil)" })
-        public boolean isANil(DynamicObject self, Object nil) {
-            return false;
-        }
-
         @Specialization(
                 limit = "getCacheLimit()",
                 guards = { "isRubyModule(module)", "getMetaClass(self) == cachedMetaClass", "module == cachedModule" },
