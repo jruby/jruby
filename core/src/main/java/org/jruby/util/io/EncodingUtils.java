@@ -249,7 +249,12 @@ public class EncodingUtils {
                         vperm(vmodeAndVperm_p, v);
                     }
                 }
-                
+
+                IRubyObject extraFlags = hashARef(runtime, options, "flags");
+                if (!extraFlags.isNil()) {
+                    oflags_p[0] |= extraFlags.convertToInteger().getIntValue();
+                }
+
                 ecflags = (fmode_p[0] & OpenFile.READABLE) != 0 ?
                         MODE_BTMODE(fmode_p[0], ECONV_DEFAULT_NEWLINE_DECORATOR, 0, EConvFlags.UNIVERSAL_NEWLINE_DECORATOR) : 0;
                 if (TEXTMODE_NEWLINE_DECORATOR_ON_WRITE != -1) {
