@@ -319,7 +319,7 @@ public class RubyProc extends RubyObject implements DataType {
         return args;
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
 
