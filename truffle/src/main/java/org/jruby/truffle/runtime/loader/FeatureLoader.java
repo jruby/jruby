@@ -164,7 +164,7 @@ public class FeatureLoader {
 
     public void setMainScriptSource(Source source) {
         this.mainScriptSource = source;
-        if (!source.getPath().equals("-e")) {
+        if (source.getPath() != null && !source.getPath().equals("-e")) {
             this.mainScriptFullPath = expandPath(context, source.getPath());
         }
     }
