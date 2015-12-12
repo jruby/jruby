@@ -55,6 +55,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -1476,8 +1477,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return initialize19(context);
     }
 
-    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        return initialize19(context, arg0);
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        return initialize19(context, args);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
@@ -1486,9 +1487,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0) {
-        replace19(arg0);
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, optional = 2)
+    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args) {
+        final String[] validArgs = new String[]{"encoding"};
+        IRubyObject[] extractedArgs = ArgsUtil.extractKeywordArgs(context, args, validArgs);
+
+        if (args.length > 0 && args[0] instanceof RubyString) {
+            replace19(args[0]);
+        }
+
+        if (extractedArgs != null) {
+            force_encoding(context, extractedArgs[0]);
+        }
         return this;
     }
 
