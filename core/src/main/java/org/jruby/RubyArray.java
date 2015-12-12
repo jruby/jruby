@@ -2116,7 +2116,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
 
         int rVal = bsearch_index_internal(context, block);
-        if(rVal == -1) {
+        if (rVal == -1) {
             return context.nil;
         } else {
             return eltOk(rVal);
@@ -2129,7 +2129,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             return enumeratorize(context.runtime, this, "bsearch_index");
         }
         int rVal = bsearch_index_internal(context, block);
-        if(rVal == -1) {
+        if (rVal == -1) {
             return context.nil;
         } else {
             return RubyFixnum.newFixnum(context.runtime, rVal);
