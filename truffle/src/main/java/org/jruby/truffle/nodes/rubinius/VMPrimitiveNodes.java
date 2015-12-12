@@ -61,6 +61,8 @@ import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
+import org.jruby.truffle.nodes.objects.IsANode;
+import org.jruby.truffle.nodes.objects.IsANodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -231,14 +233,14 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_object_kind_of", needsSelf = false)
     public static abstract class VMObjectKindOfPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private KernelNodes.IsANode isANode;
+        @Child private IsANode isANode;
 
         public VMObjectKindOfPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{ null, null });
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization(guards = "isRubyModule(rubyClass)")
+        @Specialization
         public boolean vmObjectKindOf(Object object, DynamicObject rubyClass) {
             return isANode.executeIsA(object, rubyClass);
         }

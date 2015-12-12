@@ -9,11 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -31,7 +29,6 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -51,7 +48,6 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFacto
 import org.jruby.truffle.nodes.core.ProcNodes.ProcNewNode;
 import org.jruby.truffle.nodes.core.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
@@ -1139,55 +1135,24 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = { "is_a?", "kind_of?" }, required = 1)
-    public abstract static class IsANode extends CoreMethodArrayArgumentsNode {
+    public abstract static class KernelIsANode extends CoreMethodArrayArgumentsNode {
 
-        @Child MetaClassNode metaClassNode;
+        @Child IsANode isANode;
 
-        public IsANode(RubyContext context, SourceSection sourceSection) {
+        public KernelIsANode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
         }
 
-        public abstract boolean executeIsA(Object self, DynamicObject rubyClass);
-
-        @Specialization(
-                limit = "getCacheLimit()",
-                guards = { "isRubyModule(module)", "getMetaClass(self) == cachedMetaClass", "module == cachedModule" },
-                assumptions = "getUnmodifiedAssumption(cachedModule)")
-        public boolean isACached(Object self,
-                                 DynamicObject module,
-                                 @Cached("getMetaClass(self)") DynamicObject cachedMetaClass,
-                                 @Cached("module") DynamicObject cachedModule,
-                                 @Cached("isA(cachedMetaClass, cachedModule)") boolean result) {
-            return result;
-        }
-
-        public Assumption getUnmodifiedAssumption(DynamicObject module) {
-            return Layouts.MODULE.getFields(module).getUnmodifiedAssumption();
-        }
-
-        @Specialization(guards = "isRubyModule(module)")
-        public boolean isAUncached(Object self, DynamicObject module) {
-            return isA(getMetaClass(self), module);
+        @Specialization
+        public boolean isA(Object self, DynamicObject module) {
+            return isANode.executeIsA(self, module);
         }
 
         @Specialization(guards = "!isRubyModule(module)")
         public boolean isATypeError(Object self, Object module) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("class or module required", this));
-        }
-
-        @TruffleBoundary
-        protected boolean isA(DynamicObject metaClass, DynamicObject module) {
-            return ModuleOperations.assignableTo(metaClass, module);
-        }
-
-        protected DynamicObject getMetaClass(Object object) {
-            return metaClassNode.executeMetaClass(object);
-        }
-
-        protected int getCacheLimit() {
-            return getContext().getOptions().IS_A_CACHE;
         }
 
     }
