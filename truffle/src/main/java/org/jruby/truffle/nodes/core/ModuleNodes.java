@@ -89,29 +89,18 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class ContainsInstanceNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private MetaClassNode metaClassNode;
+        @Child private IsANode isANode;
 
         public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public boolean containsInstance(DynamicObject module, DynamicObject instance) {
-            return includes(Layouts.BASIC_OBJECT.getMetaClass(instance), module);
+            return isANode.executeIsA(instance, module);
         }
 
-        @Specialization(guards = "!isDynamicObject(instance)")
-        public boolean containsInstance(DynamicObject module, Object instance) {
-            return includes(metaClassNode.executeMetaClass(instance), module);
-        }
-
-        @TruffleBoundary
-        public boolean includes(DynamicObject metaClass, DynamicObject module) {
-            assert RubyGuards.isRubyModule(metaClass);
-            assert RubyGuards.isRubyModule(module);
-            return ModuleOperations.includesModule(metaClass, module);
-        }
     }
 
     @CoreMethod(names = "<", required = 1)
