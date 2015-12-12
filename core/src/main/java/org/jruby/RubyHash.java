@@ -1212,6 +1212,51 @@ public class RubyHash extends RubyObject implements Map {
         return ((value = internalGet(key)) == null) ? invokedynamic(context, this, DEFAULT, key) : value;
     }
 
+    /** hash_le_i
+     *
+     */
+    private boolean hash_le(RubyHash other) {
+        RubyArray keys = keys();
+        for (Object key : keys) {
+            if (!other.get(key).equals( get(key) )) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @JRubyMethod(name = "<", required = 1)
+    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
+        final RubyHash otherHash = other.convertToHash();
+        if (size() >= otherHash.size()) {
+            return RubyBoolean.newBoolean(context.runtime, false);
+        }
+
+        return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
+    }
+
+    @JRubyMethod(name = "<=", required = 1)
+    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
+        final RubyHash otherHash = other.convertToHash();
+        if (size() > otherHash.size()) {
+            return RubyBoolean.newBoolean(context.runtime, false);
+        }
+
+        return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
+    }
+
+    @JRubyMethod(name = ">", required = 1)
+    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
+        final RubyHash otherHash = other.convertToHash();
+        return otherHash.op_lt(context, this);
+    }
+
+    @JRubyMethod(name = ">=", required = 1)
+    public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
+        final RubyHash otherHash = other.convertToHash();
+        return otherHash.op_le(context, this);
+    }
+
     /** rb_hash_hash
      *
      */
