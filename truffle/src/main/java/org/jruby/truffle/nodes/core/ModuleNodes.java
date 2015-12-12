@@ -97,7 +97,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean containsInstance(DynamicObject module, DynamicObject instance) {
+        public boolean containsInstance(DynamicObject module, Object instance) {
             return isANode.executeIsA(instance, module);
         }
 
