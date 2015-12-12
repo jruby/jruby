@@ -182,7 +182,7 @@ public class EncodingUtils {
                 fmode_p[0] = OpenFile.READABLE;
                 oflags_p[0] = ModeFlags.RDONLY;
             } else {
-                intmode = TypeConverter.checkIntegerType(context.runtime, vmode(vmodeAndVperm_p), "to_int");
+                intmode = TypeConverter.checkIntegerType(runtime, vmode(vmodeAndVperm_p), "to_int");
 
                 if (!intmode.isNil()) {
                     vmode(vmodeAndVperm_p, intmode);
@@ -198,7 +198,7 @@ public class EncodingUtils {
                         hasEnc = true;
                         parseModeEncoding(context, ioEncodable, p.substring(colonSplit + 1), fmode_p);
                     } else {
-                        Encoding e = (fmode_p[0] & OpenFile.BINMODE) != 0 ? ascii8bitEncoding(context.runtime) : null;
+                        Encoding e = (fmode_p[0] & OpenFile.BINMODE) != 0 ? ascii8bitEncoding(runtime) : null;
                         ioExtIntToEncs(context, ioEncodable, e, null, fmode_p[0]);
                     }
                 }
@@ -216,24 +216,24 @@ public class EncodingUtils {
                 ecflags = SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(ioEncodable.getEnc2(), ecflags);
                 ecopts_p[0] = context.nil;
             } else {
-                extractBinmode(context.runtime, options, fmode_p);
+                extractBinmode(runtime, options, fmode_p);
                 // Differs from MRI but we open with ModeFlags
                 if ((fmode_p[0] & OpenFile.BINMODE) != 0) {
                     oflags_p[0] |= ModeFlags.BINARY;
                 
                     if (!hasEnc) {
-                        ioExtIntToEncs(context, ioEncodable, ascii8bitEncoding(context.runtime), null, fmode_p[0]);
+                        ioExtIntToEncs(context, ioEncodable, ascii8bitEncoding(runtime), null, fmode_p[0]);
                     }
                 } else if (DEFAULT_TEXTMODE != 0 && (vmode(vmodeAndVperm_p) == null || vmode(vmodeAndVperm_p).isNil())) {
                     fmode_p[0] |= DEFAULT_TEXTMODE;
                 }
 
                 if (!hasVmode) {
-                    IRubyObject v = hashARef(context.runtime, options, "mode");
+                    IRubyObject v = hashARef(runtime, options, "mode");
 
                     if (!v.isNil()) {
                         if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
-                            throw context.runtime.newArgumentError("mode specified twice");
+                            throw runtime.newArgumentError("mode specified twice");
                         }
                         hasVmode = true;
                         vmode(vmodeAndVperm_p, v);
@@ -241,10 +241,10 @@ public class EncodingUtils {
                         continue vmode_handle;
                     }
                 }
-                IRubyObject v = hashARef(context.runtime, options, "perm");
+                IRubyObject v = hashARef(runtime, options, "perm");
                 if (!v.isNil()) {
                     if (vperm(vmodeAndVperm_p) != null) {
-                        if (!vperm(vmodeAndVperm_p).isNil()) throw context.runtime.newArgumentError("perm specified twice");
+                        if (!vperm(vmodeAndVperm_p).isNil()) throw runtime.newArgumentError("perm specified twice");
 
                         vperm(vmodeAndVperm_p, v);
                     }
@@ -263,7 +263,7 @@ public class EncodingUtils {
                 }
 
                 if (ioExtractEncodingOption(context, ioEncodable, options, fmode_p)) {
-                    if (hasEnc) throw context.runtime.newArgumentError("encoding specified twice");
+                    if (hasEnc) throw runtime.newArgumentError("encoding specified twice");
                 }
                 
                 ecflags = SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(ioEncodable.getEnc2(), ecflags);
