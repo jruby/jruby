@@ -1297,8 +1297,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) {
-        // SSS FIXME: Unused at this time
-        throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
+//        throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
     }
 
     @Override

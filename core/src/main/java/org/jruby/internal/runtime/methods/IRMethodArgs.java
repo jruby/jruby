@@ -1,5 +1,6 @@
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Signature;
 

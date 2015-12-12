@@ -1,8 +1,12 @@
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.MetaClass;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -18,10 +22,10 @@ import java.lang.invoke.MethodHandle;
 
 import org.jruby.runtime.Helpers;
 
-public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
-    protected final MethodHandle variable;
+public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Compilable<DynamicMethod> {
+    public MethodHandle variable;
 
-    protected final MethodHandle specific;
+    public MethodHandle specific;
     protected final int specificArity;
 
     protected final IRScope method;
@@ -241,11 +245,56 @@ public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, Pos
         return new CompiledIRMethod(variable, specific, specificArity, method, getVisibility(), implementationClass, hasKwargs);
     }
 
+    @Override
+    public void setCallCount(int count) {
+
+    }
+
+    @Override
+    public void completeBuild(DynamicMethod buildResult) {
+
+    }
+
+    @Override
+    public IRScope getIRScope() {
+        return getIRMethod();
+    }
+
+    @Override
+    public InterpreterContext ensureInstrsReady() {
+        return getIRMethod().getFullInterpreterContext();
+    }
+
+    @Override
+    public String getClassName(ThreadContext context) {
+        String className;
+        if (implementationClass.isSingleton()) {
+            MetaClass metaClass = (MetaClass) implementationClass;
+            RubyClass realClass = metaClass.getRealClass();
+            // if real class is Class
+            if (realClass == context.runtime.getClassClass()) {
+                // use the attached class's name
+                className = ((RubyClass) metaClass.getAttached()).getName();
+            } else {
+                // use the real class name
+                className = realClass.getName();
+            }
+        } else {
+            // use the class name
+            className = implementationClass.getName();
+        }
+        return className;
+    }
+
     public String getFile() {
         return method.getFileName();
     }
 
     public int getLine() {
         return method.getLineNumber();
+    }
+
+    @Override
+    public void setInterpreterContext(InterpreterContext interpreterContext) {
     }
 }

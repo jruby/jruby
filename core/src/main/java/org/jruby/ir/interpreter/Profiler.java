@@ -2,9 +2,11 @@ package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.Counter;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.JIT;
 import org.jruby.ir.instructions.CallBase;
@@ -40,7 +42,7 @@ public class Profiler {
     private static final int MAX_NUMBER_OF_INTERESTING_CALLSITES = 10; // We will only look at top n sites
 
     // FIXME: This is a bad statistic by itself.  In a super tight loop the hottest site might be >99% of the freq.
-    private static final float MAX_FREQUENCY = 99.0f; // After we covered this much of the space we do not care
+    private static final float MAX_FREQUENCY = 100.0f; // After we covered this much of the space we do not care
 
     private static final int MAX_INSTRUCTIONS_TO_INLINE = 500;
 
@@ -51,7 +53,7 @@ public class Profiler {
         long id = INVALID_CALLSITE_ID;  // Callsite id (unique to system)
         private CallBase call = null;   // which instr is at this callsite
         long count;                     // how many times callsite has been executed
-        Compilable liveMethod;          // winner winner chicken dinner we think we have monomorphic target method to inline.
+        DynamicMethod liveMethod;          // winner winner chicken dinner we think we have monomorphic target method to inline.
 
         public IRCallSite() {}
 
@@ -179,27 +181,35 @@ public class Profiler {
     private static long findInliningCandidates(List<IRCallSite> callSites) {
         long total = 0;   // Total number of calls found in this scope.
 
-        System.out.println("" + callProfile.size() + " candidates.");
+        //System.out.println("" + callProfile.size() + " candidates.");
         // Register all monomorphic found callsites which are eligible for inlining.
         for (Long id: callProfile.keySet()) {
             CallSiteProfile callSiteProfile = callProfile.get(id);
             IRCallSite callSite  = callSiteProfile.cs;
             boolean monomorphic = callSiteProfile.retallyCallCount();
 
-            System.out.println("candidate: calls=" + callSite.count + ", mono: " + monomorphic + ", KS: " + callSiteProfile.counters.size());
+            //System.out.println("candidate: calls=" + callSite.count + ", mono: " + monomorphic + ", KS: " + callSiteProfile.counters.size());
             if (monomorphic && !callSite.getCall().inliningBlocked()) {
-                CallSite runtimeCallSite = callSite.getCall().getCallSite();
-                if (runtimeCallSite != null && runtimeCallSite instanceof CachingCallSite) {
-                    DynamicMethod method = ((CachingCallSite) runtimeCallSite).getCache().method;
+                DynamicMethod compilable = callSiteProfile.counters.keySet().iterator().next().getCompilable();
 
-                    System.out.println("METHOD: " + callSite.getCall() + " , METH: " + method);
-                    if (callSite.getCall().getName().equals("[]")) {
-                        System.out.println(callSite.ic.toStringInstrs());
-                    }
-                    if (!(method instanceof Compilable) || !((Compilable) method).getIRScope().isFullBuildComplete()) continue;
-
+                //System.out.println("SCOPE: " + callSiteProfile.counters.keySet().iterator().next());
+                if (compilable != null) {
                     callSites.add(callSite);
-                    callSite.liveMethod = (Compilable) method;
+                    callSite.liveMethod = compilable;
+                } else {  // Interpreter
+                    CallSite runtimeCallSite = callSite.getCall().getCallSite();
+                    if (runtimeCallSite != null && runtimeCallSite instanceof CachingCallSite) {
+                        DynamicMethod method = ((CachingCallSite) runtimeCallSite).getCache().method;
+
+                        if (callSite.getCall().getName().equals("[]")) {
+                            System.out.println(callSite.ic.toStringInstrs());
+                        }
+                        if (!(method instanceof Compilable) || !((Compilable) method).getIRScope().isFullBuildComplete())
+                            continue;
+
+                        callSites.add(callSite);
+                        callSite.liveMethod = method;
+                    }
                 }
             }
 
@@ -210,7 +220,7 @@ public class Profiler {
     }
 
     private static void analyzeProfile() {
-        System.out.println("MOD COUNT: " + codeModificationsCount + ", Periods wo change: " + periodsWithoutChanges);
+        //System.out.println("MOD COUNT: " + codeModificationsCount + ", Periods wo change: " + periodsWithoutChanges);
         // Don't bother doing any analysis until we see the system start to settle down from lots of modifications.
         if (isStillBootstrapping()) return;
 
@@ -220,7 +230,7 @@ public class Profiler {
         long total = findInliningCandidates(callSites);
         Collections.sort(callSites, callSiteComparator);
 
-        System.out.println("Total calls this period: " + total + ", candidate callsites: " + callSites.size());
+        //System.out.println("Total calls this period: " + total + ", candidate callsites: " + callSites.size());
 
         // Find top N call sites
         double freq = 0.0;
@@ -231,6 +241,7 @@ public class Profiler {
 
             if (percentOfTotalCalls < INSIGNIFICANT_PERCENTAGE) break;
             freq += percentOfTotalCalls;
+            //System.out.println("FREQ: " + freq);
             if (i++ >= MAX_NUMBER_OF_INTERESTING_CALLSITES || freq > MAX_FREQUENCY) break; // overly simplistic
 
             //System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
@@ -247,17 +258,30 @@ public class Profiler {
             //    b. use profiled (or last profiled in case more multiple profiled versions)
             ic = isClosure ? ic.getScope().getLexicalParent().getFullInterpreterContext() : ic;
 
-            Compilable methodToInline = callSite.liveMethod;
+            DynamicMethod methodToInline = callSite.liveMethod;
 
-            if (shouldInline(methodToInline.getIRScope(), callSite.getCall(), ic, isClosure)) {
+            if (methodToInline instanceof CompiledIRMethod && ic.getScope() instanceof IRMethod) {
+                ((FullInterpreterContext) ic).generateInstructionsForIntepretation();
+                System.out.println("Inlining " + methodToInline.getName() + " into " + ic.getName());
+                IRScope scope = ((CompiledIRMethod) methodToInline).getIRMethod();
                 RubyModule implClass = methodToInline.getImplementationClass();
                 long start = new java.util.Date().getTime();
-                ic.getScope().inlineMethod(methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
+                ic.getScope().inlineMethodJIT((Compilable) methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
                 inlinedScopes.add(ic);
                 long end = new java.util.Date().getTime();
-                System.out.println("Inlined " + methodToInline.getName() + " into " + ic.getName() + " @ instr " + callSite.getCall() +
-                        " in time (ms): " + (end-start) + " # of inlined instrs: " +
-                        methodToInline.getIRScope().getFullInterpreterContext().getInstructions().length);
+            } else if (methodToInline instanceof Compilable && ic.getScope() instanceof IRMethod) {
+                System.out.println("Inlining " + methodToInline.getName() + " into " + ic.getName());
+                IRScope scope = ((Compilable) methodToInline).getIRScope();
+                if (shouldInline(scope, callSite.getCall(), ic, isClosure)) {
+                    RubyModule implClass = methodToInline.getImplementationClass();
+                    long start = new java.util.Date().getTime();
+                    ic.getScope().inlineMethod((Compilable) methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
+                    inlinedScopes.add(ic);
+                    long end = new java.util.Date().getTime();
+                    System.out.println("Inlined " + methodToInline.getName() + " into " + ic.getName() + " @ instr " + callSite.getCall() +
+                            " in time (ms): " + (end - start) + " # of inlined instrs: " +
+                            scope.getFullInterpreterContext().getInstructions().length);
+                }
             }
         }
 

@@ -1,9 +1,17 @@
 package org.jruby.ir;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import org.jruby.ParseResult;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.ast.util.SexpMaker;
 import org.jruby.compiler.Compilable;
+import org.jruby.compiler.JITCompiler;
+import org.jruby.compiler.JITCompiler.MethodJITClassGenerator;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -16,6 +24,8 @@ import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.passes.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
+import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
@@ -23,6 +33,7 @@ import org.jruby.parser.StaticScope;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -123,7 +134,7 @@ public abstract class IRScope implements ParseResult {
 
     private TemporaryVariable yieldClosureVariable;
 
-    private Compilable compilable;
+    private DynamicMethod compilable;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -543,13 +554,24 @@ public abstract class IRScope implements ParseResult {
 
         fullInterpreterContext = new FullInterpreterContext(this, instrs);
     }
+
+    // FIXME: This is a hack so JIT Compiler can store method in live scope so we can more easily extract it.
+    // The existence of compilable as a field feels wrong in this class.
+    public void setCompilable(DynamicMethod compilable) {
+        this.compilable = compilable;
+    }
+
+    public DynamicMethod getCompilable() {
+        return compilable;
+    }
+
     /**
      * This initializes a more complete(full) InterpreterContext which if used in mixed mode will be
      * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
      */
     public synchronized FullInterpreterContext prepareFullBuild(Compilable compilable) {
         // FIXME: This is gross
-        this.compilable = compilable;
+        this.compilable = (DynamicMethod) compilable;
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
@@ -1027,9 +1049,67 @@ public abstract class IRScope implements ParseResult {
         this.fullInterpreterContext = newContext;
 
         System.out.println(fullInterpreterContext.toStringInstrs());
-        compilable.setInterpreterContext(fullInterpreterContext);
+        ((Compilable) compilable).setInterpreterContext(fullInterpreterContext);
         // Since inline is an if/else of logic in this version of inlining we will just replace the FIC.
     }
+
+    // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
+    public void inlineMethodJIT(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+        IRMethod methodToInline = (IRMethod) method.getIRScope();
+
+        // We need fresh fic so we can modify it during inlining without making already running code explode.
+        FullInterpreterContext newContext = fullInterpreterContext.duplicate();
+
+        new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+
+        // Reset state
+        resetState();
+
+        // Re-run opts
+        for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
+            pass.run(this);
+        }
+
+
+        //runCompilerPasses(getManager().getJITPasses(this));
+        newContext.generateInstructionsForIntepretation();
+        this.fullInterpreterContext = newContext;
+
+        System.out.println("FFFFFF\n" + fullInterpreterContext.toStringInstrs());
+//        ((Compilable) compilable).setInterpreterContext(fullInterpreterContext);
+        // Since inline is an if/else of logic in this version of inlining we will just replace the FIC.
+
+        Ruby runtime = implClass.getRuntime();
+        String key = SexpMaker.sha1(this);
+        JVMVisitor visitor = new JVMVisitor();
+        MethodJITClassGenerator generator = new MethodJITClassGenerator(implClass.getName(), getName(), key, runtime, (Compilable) compilable, visitor);
+
+        JVMVisitorMethodContext context = new JVMVisitorMethodContext();
+        generator.compile(context);
+
+        Class sourceClass = visitor.defineFromBytecode(this, generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
+
+        Map<Integer, MethodType> signatures = context.getNativeSignatures();
+        String jittedName = context.getJittedName();
+        try {
+            if (signatures.size() == 1) {
+                ((CompiledIRMethod) compilable).variable = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, signatures.get(-1));
+            } else {
+                ((CompiledIRMethod) compilable).variable = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, signatures.get(-1));
+
+                for (Map.Entry<Integer, MethodType> entry : signatures.entrySet()) {
+                    if (entry.getKey() == -1) continue; // variable arity handle pushed above
+
+                    ((CompiledIRMethod) compilable).specific = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, entry.getValue());
+                    break;
+                }
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
 
     /** Record a begin block.  Only eval and script body scopes support this */
     public void recordBeginBlock(IRClosure beginBlockClosure) {

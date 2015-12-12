@@ -36,6 +36,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -404,7 +405,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     public static class MethodJITClassGenerator {
-        public MethodJITClassGenerator(String className, String methodName, String key, Ruby ruby, MixedModeIRMethod method, JVMVisitor visitor) {
+        public MethodJITClassGenerator(String className, String methodName, String key, Ruby ruby, Compilable method, JVMVisitor visitor) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
             if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
                 // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
@@ -426,7 +427,7 @@ public class JITCompiler implements JITCompilerMBean {
         }
 
         @SuppressWarnings("unchecked")
-        protected void compile(JVMVisitorMethodContext context) {
+        public void compile(JVMVisitorMethodContext context) {
             if (bytecode != null) return;
 
             // Time the compilation
@@ -440,6 +441,8 @@ public class JITCompiler implements JITCompilerMBean {
                 throw new NotCompilableException("Could not compile " + method + "; instruction count " + insnCount + " exceeds threshold of " + Options.JIT_MAXSIZE.load());
             }
 
+            method.getIRScope().setCompilable((DynamicMethod)method);
+            System.out.println("Adding compiable to " + method.getIRScope());
             // This may not be ok since we'll end up running passes specific to JIT
             // CON FIXME: Really should clone scope before passes in any case
             bytecode = visitor.compileToBytecode(method.getIRScope(), context);
@@ -482,7 +485,7 @@ public class JITCompiler implements JITCompilerMBean {
         private final String className;
         private final String methodName;
         private final String digestString;
-        private final MixedModeIRMethod method;
+        private final Compilable method;
         private final JVMVisitor visitor;
 
         private byte[] bytecode;
