@@ -81,8 +81,11 @@
     - pathname
 :stored_commands:
   :ci:
-    - "jruby+truffle setup"
+    - :setup
     - :test
-  :test: "jruby+truffle run --exclude-pattern 'jdom_engine' --require-pattern 'test/**/**/*_test.rb' -r exclude_tests -- -I test -e 'nil'"
+  :setup:
+    - "git clone -b 4-2-stable git@github.com:rails/rails.git"
+    - "jruby+truffle --dir rails/activesupport setup"
+  :test: "jruby+truffle --dir rails/activesupport run --exclude-pattern 'jdom_engine' --require-pattern 'test/**/**/*_test.rb' -r exclude_tests -- -I test -e 'nil'"
 
 

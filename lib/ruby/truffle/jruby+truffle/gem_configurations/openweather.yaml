@@ -1,0 +1,12 @@
+:setup:
+  :file:
+    "bundler/gem_tasks.rb": nil
+:stored_commands:
+  :ci:
+    - :setup
+    - :test
+  :setup:
+    - "git clone git@github.com:lucasocon/openweather.git"
+    - "jruby+truffle --dir openweather setup"
+  :test: "jruby+truffle --dir openweather run --require-pattern 'test/*_test.rb' -I test -- -e nil"
+
