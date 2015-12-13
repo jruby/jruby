@@ -73,7 +73,7 @@ public class RubyStruct extends RubyObject {
     private RubyStruct(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
 
-        int size = RubyNumeric.fix2int(getInternalVariable((RubyClass)rubyClass, "__size__"));
+        int size = RubyNumeric.fix2int(getInternalVariable(rubyClass, "__size__"));
 
         values = new IRubyObject[size];
 
@@ -397,7 +397,7 @@ public class RubyStruct extends RubyObject {
             Helpers.fillNil(values, provided, values.length, context.runtime);
         }
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     // NOTE: no longer used ... should it get deleted?
@@ -710,29 +710,33 @@ public class RubyStruct extends RubyObject {
     // of something lower.
     @JRubyMethod(rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
-        int olen = values.length;
-        RubyArray result = getRuntime().newArray(args.length);
+        final Ruby runtime = getRuntime();
+        final int olen = values.length;
+        RubyArray result = runtime.newArray(args.length);
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof RubyFixnum) {
-                result.append(aref(args[i]));
+            final IRubyObject arg = args[i];
+            if ( arg instanceof RubyFixnum ) {
+                result.append( aref(arg) );
                 continue;
             }
 
-            int beglen[];
-            if (!(args[i] instanceof RubyRange)) {
-            } else if ((beglen = ((RubyRange) args[i]).begLenInt(olen, 0)) == null) {
+            final int[] beglen;
+            if ( ! ( arg instanceof RubyRange ) ) {
+            }
+            else if ( ( beglen = ((RubyRange) args[i]).begLenInt(olen, 0) ) == null ) {
                 continue;
-            } else {
+            }
+            else {
                 int beg = beglen[0];
                 int len = beglen[1];
                 int end = len;
                 for (int j = 0; j < end; j++) {
-                    result.append(aref(getRuntime().newFixnum(j + beg)));
+                    result.append(aref(runtime.newFixnum(j + beg)));
                 }
                 continue;
             }
-            result.append(aref(getRuntime().newFixnum(RubyNumeric.num2long(args[i]))));
+            result.append( aref(runtime.newFixnum( RubyNumeric.num2long(arg) ) ) );
         }
 
         return result;
