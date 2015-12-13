@@ -432,10 +432,10 @@ module Commands
   def bench(command, *args)
     bench_dir = Utilities.find_bench
     env_vars = {
-      "JRUBY_9000_DEV_DIR" => JRUBY_DIR,
+      "JRUBY_DEV_DIR" => JRUBY_DIR,
       "GRAAL_BIN" => Utilities.find_graal,
     }
-    bench_args = ["#{bench_dir}/bin/bench"]
+    bench_args = ["#{bench_dir}/bin/bench9000"]
     case command
     when 'debug'
       if args.delete '--ruby-backtrace'
@@ -444,13 +444,13 @@ module Commands
         compilation_exceptions_behaviour = '-J-Djvmci.option.TruffleCompilationExceptionsAreFatal=true'
       end
       env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-Djvmci.option.TraceTruffleCompilation=true #{compilation_exceptions_behaviour}'"})
-      bench_args += ['score', 'jruby-9000-dev-truffle-graal', '--show-commands', '--show-samples']
+      bench_args += ['score', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands', '--show-samples']
       raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
     when 'reference'
-      bench_args += ['reference', 'jruby-9000-dev-truffle-graal', '--show-commands']
+      bench_args += ['reference', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands']
       args << "5" if args.empty?
     when 'compare'
-      bench_args += ['compare-reference', 'jruby-9000-dev-truffle-graal']
+      bench_args += ['compare-reference', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal']
       args << "5" if args.empty?
     else
       raise ArgumentError, command
