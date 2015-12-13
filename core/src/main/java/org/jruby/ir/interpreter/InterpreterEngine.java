@@ -378,6 +378,9 @@ public class InterpreterEngine {
             case POP_BINDING:
                 context.popScope();
                 break;
+            case RETHROW_SAVED_EXC_IN_LAMBDA:
+                IRRuntimeHelpers.rethrowSavedExcInLambda(context);
+                break; // may not be reachable
             case THREAD_POLL:
                 if (IRRuntimeHelpers.inProfileMode()) Profiler.clockTick();
                 context.callThreadPoll();

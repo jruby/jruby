@@ -23,8 +23,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod
-            // SSS: Turning this off till this is fully debugged
-            // || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
+            || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
             || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
     }
 
@@ -46,7 +45,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
     }
 
-    private void popSavedState(IRScope scope, boolean requireBinding, boolean requireFrame, Variable savedViz, Variable savedFrame, ListIterator<Instr> instrs) {
+    private void popSavedState(IRScope scope, boolean isGEB, boolean requireBinding, boolean requireFrame, Variable savedViz, Variable savedFrame, ListIterator<Instr> instrs) {
+        if (scope instanceof IRClosure && isGEB) {
+            // Add before RethrowSavedExcInLambdaInstr
+            instrs.previous();
+        }
         if (requireBinding) instrs.add(new PopBindingInstr());
         if (scope instanceof IRClosure) {
             instrs.add(new PopBlockFrameInstr(savedFrame));
@@ -143,7 +146,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         instrs.previous();
-                        popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                        popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                         if (bb == geb) gebProcessed = true;
                         break;
                     }
@@ -155,23 +158,16 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         instrs.previous();
                     }
-                    popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                    popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                     if (bb == geb) gebProcessed = true;
-                }
-
-                if (!gebProcessed && bb == geb) {
+                } else if (!gebProcessed && bb == geb) {
                     // Add before throw-exception-instr which would be the last instr
                     if (i != null) {
                         // Assumption: Last instr should always be a control-transfer instruction
                         assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + scope + " is " + i + ", not a control-xfer instruction";
                         instrs.previous();
                     }
-
-                    // SSS FIXME: This is totally broken for lambdas
-                    //
-                    // handleBreakAndReturnsInLambdas would have executed by this point,
-                    // and it might have raised an exception which would totally skip these pops.
-                    popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                    popSavedState(scope, true, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                 }
             }
         }

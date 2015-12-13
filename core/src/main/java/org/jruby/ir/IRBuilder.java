@@ -2087,6 +2087,7 @@ public class IRBuilder {
         // --> IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, bj, blockType)
         Variable ret = createTemporaryVariable();
         addInstr(new RuntimeHelperCall(ret, RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
+        addInstr(new RethrowSavedExcInLambdaInstr());
         addInstr(new ReturnInstr(ret));
 
         // End

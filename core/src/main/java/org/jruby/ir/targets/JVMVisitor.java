@@ -1698,6 +1698,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void RethrowSavedExcInLambdaInstr(RethrowSavedExcInLambdaInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().invokeIRHelper("rethrowSavedExcInLambda", sig(void.class, ThreadContext.class));
+    }
+
+    @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
         switch (runtimehelpercall.getHelperMethod()) {
             case HANDLE_PROPAGATED_BREAK:
