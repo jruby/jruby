@@ -1943,14 +1943,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * <p>Closes all open resources for the IO.  It also removes
      * it from our magical all open file descriptor pool.</p>
      *
-     * @return The IO.
+     * @return The IO. Returns nil if the IO was already closed.
      *
      * MRI: rb_io_close_m
      */
     @JRubyMethod
     public IRubyObject close() {
         Ruby runtime = getRuntime();
-
+        if (isClosed()) {
+            return runtime.getNil();
+        }
         openFile.checkClosed();
         return rbIoClose(runtime);
     }
