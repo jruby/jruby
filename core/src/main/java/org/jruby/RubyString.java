@@ -1477,8 +1477,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return initialize19(context);
     }
 
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        return initialize19(context, args);
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
+        return initialize19(context, new IRubyObject[] { arg0 });
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
@@ -1487,20 +1487,25 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
-    // TODO: Fold kwargs into the @JRubyMethod decorator
-    final static String[] validInitializeArgs = new String[]{"encoding"};
-
     @JRubyMethod(name = "initialize", visibility = PRIVATE, optional = 2)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args) {
-        IRubyObject[] extractedArgs = ArgsUtil.extractKeywordArgs(context, args, validInitializeArgs);
+        if ( args.length == 0 ) return this;
 
-        if ((args.length == 1 && extractedArgs == null) || args.length > 1) {
-            replace19(args[0]);
+        IRubyObject arg = args[ args.length - 1 ];
+
+        final IRubyObject string; final IRubyObject encoding;
+        if ( arg instanceof RubyHash ) { // new encoding: ...
+            final RubySymbol enc = context.runtime.newSymbol("encoding");
+            encoding = ( (RubyHash) arg ).fastARef(enc);
+            string = args.length > 1 ? args[0] : null;
+        }
+        else {
+            string = arg; encoding = null;
         }
 
-        if (extractedArgs != null) {
-            force_encoding(context, extractedArgs[0]);
-        }
+        if ( string != null ) replace19(string);
+        if ( encoding != null ) force_encoding(context, encoding);
+
         return this;
     }
 
