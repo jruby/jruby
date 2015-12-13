@@ -114,12 +114,15 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
+        boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+        // Blocks with explicit call protocol shouldn't do this before args are prepared
+        if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
+            IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+        }
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -185,7 +188,7 @@ public class InterpreterEngine {
                             args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
                             break;
                         case PREPARE_BLOCK_ARGS:
-                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args);
+                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
                             break;
                         default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);

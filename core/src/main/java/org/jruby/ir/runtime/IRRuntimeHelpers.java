@@ -1491,8 +1491,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @JIT
-    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
+    public static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
         // This is the placeholder for scenarios
         // not handled by specialized instructions.
         if (args == null) {
@@ -1554,6 +1553,15 @@ public class IRRuntimeHelpers {
 
         if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
 
+        return args;
+    }
+
+    @JIT
+    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
+        args = prepareBlockArgsInternal(context, block, args);
+        if (usesKwArgs) {
+            frobnicateKwargsArgument(context, block.getBody().getSignature().required(), args);
+        }
         return args;
     }
 
