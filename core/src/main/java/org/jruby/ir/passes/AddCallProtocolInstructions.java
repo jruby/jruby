@@ -24,7 +24,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod
             // SSS: Turning this off till this is fully debugged
-            || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
+            // || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
             || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
     }
 
@@ -137,15 +137,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 ListIterator<Instr> instrs = bb.getInstrs().listIterator();
                 while (instrs.hasNext()) {
                     i = instrs.next();
-                    // Right now, we only support explicit call protocol on methods.
-                    // So, non-local returns and breaks don't get here.
-                    // Non-local-returns and breaks are tricky since they almost always
-                    // throw an exception and we don't multiple pops (once before the
-                    // return/break, and once when the exception is caught).
-                    if (!bb.isExitBB() && i instanceof ReturnBase) {
-                        if (requireBinding || requireFrame) {
-                            fixReturn(scope, (ReturnBase)i, instrs);
-                        }
+                    // Breaks & non-local returns in blocks will throw exceptions
+                    // and pops for them will be handled in the GEB
+                    if (!bb.isExitBB() && i instanceof ReturnInstr) {
+                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         instrs.previous();
                         popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
@@ -156,10 +151,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
                 if (bb.isExitBB() && !bb.isEmpty()) {
                     // Last instr could be a return -- so, move iterator one position back
-                    if (i != null && i instanceof ReturnBase) {
-                        if (requireBinding || requireFrame) {
-                            fixReturn(scope, (ReturnBase)i, instrs);
-                        }
+                    if (i != null && i instanceof ReturnInstr) {
+                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         instrs.previous();
                     }
                     popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
@@ -173,10 +166,21 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + scope + " is " + i + ", not a control-xfer instruction";
                         instrs.previous();
                     }
+
+                    // SSS FIXME: This is totally broken for lambdas
+                    //
+                    // handleBreakAndReturnsInLambdas would have executed by this point,
+                    // and it might have raised an exception which would totally skip these pops.
                     popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                 }
             }
         }
+
+/*
+        if (scope instanceof IRClosure) {
+            System.out.println(scope + " after acp: " + cfg.toStringInstrs());
+        }
+*/
 
         // This scope has an explicit call protocol flag now
         scope.setExplicitCallProtocolFlag();
