@@ -546,6 +546,9 @@ public class RubyObject extends RubyBasicObject {
         if ( obj instanceof RubyHash ) {
             return ((RubyHash) obj).dig(context, args, idx);
         }
+        if ( obj instanceof RubyStruct ) {
+            return ((RubyStruct) obj).dig(context, args, idx);
+        }
         if ( obj.respondsTo("dig") ) {
             final int len = args.length - idx;
             switch ( len ) {

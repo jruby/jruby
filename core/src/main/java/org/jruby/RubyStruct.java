@@ -131,25 +131,29 @@ public class RubyStruct extends RubyObject {
     }
 
     private IRubyObject setByName(String name, IRubyObject value) {
-        RubyArray member = __member__();
+        final RubyArray member = __member__();
 
         modify();
 
-        for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (member.eltInternal(i).asJavaString().equals(name)) return values[i] = value;
+        for ( int i = 0; i < member.getLength(); i++ ) {
+            if ( member.eltInternal(i).asJavaString().equals(name) ) {
+                return values[i] = value;
+            }
         }
 
-        throw notStructMemberError(name);
+        return null;
     }
 
     private IRubyObject getByName(String name) {
-        RubyArray member = __member__();
+        final RubyArray member = __member__();
 
-        for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (member.eltInternal(i).asJavaString().equals(name)) return values[i];
+        for ( int i = 0; i < member.getLength(); i++ ) {
+            if ( member.eltInternal(i).asJavaString().equals(name) ) {
+                return values[i];
+            }
         }
 
-        throw notStructMemberError(name);
+        return null;
     }
 
     // Struct methods
@@ -666,8 +670,18 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject aref(IRubyObject key) {
+        return arefImpl( key, false );
+    }
+
+    private IRubyObject arefImpl(IRubyObject key, final boolean nilOnNoMember) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
-            return getByName(key.asJavaString());
+            final String name = key.asJavaString();
+            final IRubyObject value = getByName(name);
+            if ( value == null ) {
+                if ( nilOnNoMember ) return getRuntime().getNil();
+                throw notStructMemberError(name);
+            }
+            return value;
         }
         return aref( RubyNumeric.fix2int(key) );
     }
@@ -688,7 +702,10 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = "[]=", required = 2)
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
-            return setByName(key.asJavaString(), value);
+            final String name = key.asJavaString();
+            final IRubyObject val = setByName(name, value);
+            if ( val == null ) throw notStructMemberError(name);
+            return value;
         }
 
         return aset(RubyNumeric.fix2int(key), value);
@@ -739,6 +756,16 @@ public class RubyStruct extends RubyObject {
         }
 
         return result;
+    }
+
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        return dig(context, args, 0);
+    }
+
+    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
+        final IRubyObject val = arefImpl( args[idx++], true );
+        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
     }
 
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {
