@@ -488,7 +488,7 @@ public class RubyStruct extends RubyObject {
         return getRuntime().newNameError("no member '" + name + "' in struct", name);
     }
 
-    public IRubyObject get(int index) {
+    public final IRubyObject get(int index) {
         return values[index];
     }
 
@@ -669,14 +669,16 @@ public class RubyStruct extends RubyObject {
         if (key instanceof RubyString || key instanceof RubySymbol) {
             return getByName(key.asJavaString());
         }
+        return aref( RubyNumeric.fix2int(key) );
+    }
 
-        int idx = RubyNumeric.fix2int(key);
-
+    final IRubyObject aref(int idx) {
         idx = idx < 0 ? values.length + idx : idx;
 
         if (idx < 0) {
             throw getRuntime().newIndexError("offset " + idx + " too small for struct(size:" + values.length + ")");
-        } else if (idx >= values.length) {
+        }
+        if (idx >= values.length) {
             throw getRuntime().newIndexError("offset " + idx + " too large for struct(size:" + values.length + ")");
         }
 
@@ -706,8 +708,6 @@ public class RubyStruct extends RubyObject {
     }
 
     // FIXME: This is copied code from RubyArray.  Both RE, Struct, and Array should share one impl
-    // This is also hacky since I construct ruby objects to access ruby arrays through aref instead
-    // of something lower.
     @JRubyMethod(rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
         final Ruby runtime = getRuntime();
@@ -728,15 +728,14 @@ public class RubyStruct extends RubyObject {
                 continue;
             }
             else {
-                int beg = beglen[0];
-                int len = beglen[1];
-                int end = len;
-                for (int j = 0; j < end; j++) {
-                    result.append(aref(runtime.newFixnum(j + beg)));
+                final int beg = beglen[0];
+                final int len = beglen[1];
+                for (int j = 0; j < len; j++) {
+                    result.append( aref(j + beg) );
                 }
                 continue;
             }
-            result.append( aref(runtime.newFixnum( RubyNumeric.num2long(arg) ) ) );
+            result.append( aref(RubyNumeric.num2int(arg)) );
         }
 
         return result;
