@@ -1110,13 +1110,23 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return invokedynamic(context, other, OP_EQUAL, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
     }
 
-    public IRubyObject op_plus(ThreadContext context, IRubyObject _str) {
-        return op_plus19(context, _str);
+    @JRubyMethod(name = "-@") // -'foo' returns frozen string
+    public final IRubyObject minus_at() {
+        return isFrozen() ? this : this.dupFrozen();
+    }
+
+    @JRubyMethod(name = "+@") // +'foo' returns modifiable string
+    public final IRubyObject plus_at() {
+        return isFrozen() ? this.dup() : this;
+    }
+
+    public IRubyObject op_plus(ThreadContext context, IRubyObject arg) {
+        return op_plus19(context, arg);
     }
 
     @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus19(ThreadContext context, IRubyObject _str) {
-        RubyString str = _str.convertToString();
+    public IRubyObject op_plus19(ThreadContext context, IRubyObject arg) {
+        RubyString str = arg.convertToString();
         Encoding enc = checkEncoding(str);
         RubyString resultStr = newStringNoCopy(context.runtime, StringSupport.addByteLists(value, str.value),
                 enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
