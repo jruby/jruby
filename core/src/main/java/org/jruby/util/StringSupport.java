@@ -970,8 +970,6 @@ public final class StringSupport {
     /**
      * rb_str_tr / rb_str_tr_bang
      */
-
-    // TODO (nirvdrum Dec. 19, 2014): Neither the constructor nor the fields should be public. I temporarily escalated visibility during a refactoring that moved the inner class to a new parent class, while the old parent class still needs access.
     public static final class TR {
         public TR(ByteList bytes) {
             p = bytes.getBegin();
@@ -981,9 +979,9 @@ public final class StringSupport {
             gen = false;
         }
 
-        public int p, pend, now, max;
-        public boolean gen;
-        public byte[]buf;
+        byte[] buf;
+        int p, pend, now, max;
+        boolean gen;
     }
 
     /**
@@ -995,23 +993,23 @@ public final class StringSupport {
 
     public static TrTables trSetupTable(ByteList str, Ruby runtime, boolean[] stable, TrTables tables, boolean first, Encoding enc) {
         int errc = -1;
-        byte[] buf = new byte[256];
-        final TR tr = new TR(str);
         int c;
         IntHash<IRubyObject> table = null, ptable = null;
         int i, l[] = {0};
-        boolean cflag = false;
+        final boolean cflag;
 
-        tr.buf = str.unsafeBytes(); tr.p = str.begin(); tr.pend = tr.p + str.realSize();
-        tr.gen = false;
-        tr.now = tr.max = 0;
+        final TR tr = new TR(str);
 
         if (str.realSize() > 1 && EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, l, enc) == '^') {
             cflag = true;
             tr.p += l[0];
         }
+        else {
+            cflag = false;
+        }
+
         if (first) {
-            for (i=0; i<TRANS_SIZE; i++) {
+            for ( i = 0; i < TRANS_SIZE; i++) {
                 stable[i] = true;
             }
             stable[TRANS_SIZE] = cflag;
@@ -1019,15 +1017,16 @@ public final class StringSupport {
         else if (stable[TRANS_SIZE] && !cflag) {
             stable[TRANS_SIZE] = false;
         }
-        for (i=0; i<TRANS_SIZE; i++) {
-            buf[i] = (byte)(cflag ? 1 : 0);
+        final byte[] buf = new byte[TRANS_SIZE];
+        for ( i = 0; i < TRANS_SIZE; i++ ) {
+            buf[i] = (byte) (cflag ? 1 : 0);
         }
 
         if (tables == null) tables = new TrTables();
 
         while ((c = trNext(tr, runtime, enc)) != errc) {
             if (c < TRANS_SIZE) {
-                buf[c & 0xff] = (byte)(cflag ? 0 : 1);
+                buf[c & 0xff] = (byte) (cflag ? 0 : 1);
             }
             else {
                 int key = c;
@@ -1049,7 +1048,7 @@ public final class StringSupport {
                 }
             }
         }
-        for (i=0; i<TRANS_SIZE; i++) {
+        for ( i = 0; i < TRANS_SIZE; i++ ) {
             stable[i] = stable[i] && buf[i] != 0;
         }
         if (table == null && !cflag) {
@@ -1062,20 +1061,19 @@ public final class StringSupport {
     public static boolean trFind(int c, boolean[] table, TrTables tables) {
         if (c < TRANS_SIZE) {
             return table[c];
-        } else {
-            int v = c;
-
-            if (tables.del != null) {
-                if (tables.del.get(v) != null &&
-                        (tables.noDel == null || tables.noDel.get(v) == null)) {
-                    return true;
-                }
-            }
-            else if (tables.noDel != null && tables.noDel.get(v) != null) {
-                return false;
-            }
-            return table[TRANS_SIZE] ? true : false;
         }
+        int v = c;
+
+        if (tables.del != null) {
+            if (tables.del.get(v) != null &&
+                    (tables.noDel == null || tables.noDel.get(v) == null)) {
+                return true;
+            }
+        }
+        else if (tables.noDel != null && tables.noDel.get(v) != null) {
+            return false;
+        }
+        return table[TRANS_SIZE];
     }
 
     public static int trNext(TR t, Ruby runtime, Encoding enc) {
@@ -2008,7 +2006,7 @@ public final class StringSupport {
         int s = value.getBegin();
         int t = s;
         int send = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        final byte[] bytes = value.getUnsafeBytes();
         int save = -1;
 
         while (s < send) {
