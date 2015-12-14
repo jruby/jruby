@@ -134,7 +134,7 @@ public abstract class IRScope implements ParseResult {
 
     private TemporaryVariable yieldClosureVariable;
 
-    private DynamicMethod compilable;
+    private Compilable compilable;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -557,11 +557,11 @@ public abstract class IRScope implements ParseResult {
 
     // FIXME: This is a hack so JIT Compiler can store method in live scope so we can more easily extract it.
     // The existence of compilable as a field feels wrong in this class.
-    public void setCompilable(DynamicMethod compilable) {
+    public void setCompilable(Compilable compilable) {
         this.compilable = compilable;
     }
 
-    public DynamicMethod getCompilable() {
+    public Compilable getCompilable() {
         return compilable;
     }
 
@@ -571,7 +571,7 @@ public abstract class IRScope implements ParseResult {
      */
     public synchronized FullInterpreterContext prepareFullBuild(Compilable compilable) {
         // FIXME: This is gross
-        this.compilable = (DynamicMethod) compilable;
+        this.compilable = compilable;
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
@@ -1049,7 +1049,7 @@ public abstract class IRScope implements ParseResult {
         this.fullInterpreterContext = newContext;
 
         System.out.println(fullInterpreterContext.toStringInstrs());
-        ((Compilable) compilable).setInterpreterContext(fullInterpreterContext);
+        compilable.setInterpreterContext(fullInterpreterContext);
         // Since inline is an if/else of logic in this version of inlining we will just replace the FIC.
     }
 
@@ -1082,7 +1082,7 @@ public abstract class IRScope implements ParseResult {
         Ruby runtime = implClass.getRuntime();
         String key = SexpMaker.sha1(this);
         JVMVisitor visitor = new JVMVisitor();
-        MethodJITClassGenerator generator = new MethodJITClassGenerator(implClass.getName(), getName(), key, runtime, (Compilable) compilable, visitor);
+        MethodJITClassGenerator generator = new MethodJITClassGenerator(implClass.getName(), getName(), key, runtime, compilable, visitor);
 
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         generator.compile(context);

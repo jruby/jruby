@@ -53,7 +53,7 @@ public class Profiler {
         long id = INVALID_CALLSITE_ID;  // Callsite id (unique to system)
         private CallBase call = null;   // which instr is at this callsite
         long count;                     // how many times callsite has been executed
-        DynamicMethod liveMethod;          // winner winner chicken dinner we think we have monomorphic target method to inline.
+        Compilable liveMethod;          // winner winner chicken dinner we think we have monomorphic target method to inline.
 
         public IRCallSite() {}
 
@@ -190,7 +190,7 @@ public class Profiler {
 
             //System.out.println("candidate: calls=" + callSite.count + ", mono: " + monomorphic + ", KS: " + callSiteProfile.counters.size());
             if (monomorphic && !callSite.getCall().inliningBlocked()) {
-                DynamicMethod compilable = callSiteProfile.counters.keySet().iterator().next().getCompilable();
+                Compilable compilable = callSiteProfile.counters.keySet().iterator().next().getCompilable();
 
                 //System.out.println("SCOPE: " + callSiteProfile.counters.keySet().iterator().next());
                 if (compilable != null) {
@@ -208,7 +208,7 @@ public class Profiler {
                             continue;
 
                         callSites.add(callSite);
-                        callSite.liveMethod = method;
+                        callSite.liveMethod = (Compilable) method;
                     }
                 }
             }
@@ -248,37 +248,38 @@ public class Profiler {
             //" in scope " + ircs.ic.getScope() + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
 
-            InterpreterContext ic = callSite.ic;
-            boolean isClosure = ic.getScope() instanceof IRClosure;
+            InterpreterContext parentIC = callSite.ic;
+            boolean isClosure = parentIC.getScope() instanceof IRClosure;
 
             // This has several of assumptions in it:
             // 1. nothing hot could ever not exist in a non-fully built parent scope so FIC is available.  This assumption cannot be true
             // 2. if we ever have three ICs (startup, full, profiled) [or more than three] then we can:
             //    a. use full and ignore profiled
             //    b. use profiled (or last profiled in case more multiple profiled versions)
-            ic = isClosure ? ic.getScope().getLexicalParent().getFullInterpreterContext() : ic;
+            parentIC = isClosure ? parentIC.getScope().getLexicalParent().getFullInterpreterContext() : parentIC;
 
-            DynamicMethod methodToInline = callSite.liveMethod;
+            // For now we are not inlining into anything but a method
+            if (!(parentIC.getScope() instanceof IRMethod)) continue;
 
-            if (methodToInline instanceof CompiledIRMethod && ic.getScope() instanceof IRMethod) {
-                ((FullInterpreterContext) ic).generateInstructionsForIntepretation();
-                System.out.println("Inlining " + methodToInline.getName() + " into " + ic.getName());
+            Compilable methodToInline = callSite.liveMethod;
+
+            if (methodToInline instanceof CompiledIRMethod) {
+                ((FullInterpreterContext) parentIC).generateInstructionsForIntepretation();
                 IRScope scope = ((CompiledIRMethod) methodToInline).getIRMethod();
                 RubyModule implClass = methodToInline.getImplementationClass();
                 long start = new java.util.Date().getTime();
-                ic.getScope().inlineMethodJIT((Compilable) methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
-                inlinedScopes.add(ic);
+                parentIC.getScope().inlineMethodJIT(methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
+                inlinedScopes.add(parentIC);
                 long end = new java.util.Date().getTime();
-            } else if (methodToInline instanceof Compilable && ic.getScope() instanceof IRMethod) {
-                System.out.println("Inlining " + methodToInline.getName() + " into " + ic.getName());
-                IRScope scope = ((Compilable) methodToInline).getIRScope();
-                if (shouldInline(scope, callSite.getCall(), ic, isClosure)) {
+            } else if (methodToInline instanceof Compilable) {
+                IRScope scope = (methodToInline).getIRScope();
+                if (shouldInline(scope, callSite.getCall(), parentIC, isClosure)) {
                     RubyModule implClass = methodToInline.getImplementationClass();
                     long start = new java.util.Date().getTime();
-                    ic.getScope().inlineMethod((Compilable) methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
-                    inlinedScopes.add(ic);
+                    parentIC.getScope().inlineMethod(methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
+                    inlinedScopes.add(parentIC);
                     long end = new java.util.Date().getTime();
-                    System.out.println("Inlined " + methodToInline.getName() + " into " + ic.getName() + " @ instr " + callSite.getCall() +
+                    System.out.println("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +
                             " in time (ms): " + (end - start) + " # of inlined instrs: " +
                             scope.getFullInterpreterContext().getInstructions().length);
                 }

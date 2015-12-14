@@ -441,7 +441,7 @@ public class JITCompiler implements JITCompilerMBean {
                 throw new NotCompilableException("Could not compile " + method + "; instruction count " + insnCount + " exceeds threshold of " + Options.JIT_MAXSIZE.load());
             }
 
-            method.getIRScope().setCompilable((DynamicMethod)method);
+            method.getIRScope().setCompilable(method);
             System.out.println("Adding compiable to " + method.getIRScope());
             // This may not be ok since we'll end up running passes specific to JIT
             // CON FIXME: Really should clone scope before passes in any case

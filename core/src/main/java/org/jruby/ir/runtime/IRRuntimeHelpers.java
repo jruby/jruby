@@ -4,6 +4,7 @@ import com.headius.invokebinder.Signature;
 import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.compiler.Compilable;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.CompiledIRMetaClassBody;
@@ -1298,11 +1299,11 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, method.getName(), currVisibility);
 
-        DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz, method.receivesKeywordArgs());
+        Compilable newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz, method.receivesKeywordArgs());
         method.setCompilable(newMethod);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
+        Helpers.addInstanceMethod(clazz, method.getName(), (DynamicMethod) newMethod, currVisibility, context, runtime);
     }
 
     @JIT
@@ -1313,11 +1314,11 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, method.getName(), currVisibility);
 
-        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz, method.receivesKeywordArgs());
+        Compilable newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz, method.receivesKeywordArgs());
         method.setCompilable(newMethod);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
+        Helpers.addInstanceMethod(clazz, method.getName(), (DynamicMethod) newMethod, currVisibility, context, runtime);
     }
 
     @JIT
