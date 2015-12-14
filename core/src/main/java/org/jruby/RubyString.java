@@ -4406,48 +4406,53 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     // MRI: rb_str_count, first half
     @JRubyMethod(name = "count")
     public IRubyObject count19(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
-        RubyString otherStr = arg.convertToString();
-        ByteList otherBL = otherStr.getByteList();
-        Encoding enc = checkEncoding(otherStr);
+        final RubyString countStr = arg.convertToString();
+        final ByteList countValue = countStr.getByteList();
+        final Encoding enc = checkEncoding(countStr);
 
-        if (otherBL.length() == 1 && enc.isAsciiCompatible() &&
-                enc.isReverseMatchAllowed(otherBL.unsafeBytes(), otherBL.begin(), otherBL.begin() + otherBL.getRealSize()) &&
-                !isCodeRangeBroken()) {
-            int n = 0;
-            int[] len_p = {0};
-            int c = EncodingUtils.encCodepointLength(runtime, otherBL.unsafeBytes(), otherBL.begin(), otherBL.begin() + otherBL.getRealSize(), len_p, enc);
+        if ( countValue.length() == 1 && enc.isAsciiCompatible() ) {
+            final byte[] countBytes = countValue.unsafeBytes();
+            final int begin = countValue.begin(), size = countValue.length();
+            if ( enc.isReverseMatchAllowed(countBytes, begin, begin + size) && ! isCodeRangeBroken() ) {
+                if ( value.length() == 0 ) return RubyFixnum.zero(runtime);
 
-            if (value.length() ==0) return RubyFixnum.zero(runtime);
-            byte[]bytes = value.unsafeBytes();
-            int p = value.getBegin();
-            int end = p + value.length();
-            while (p < end) {
-                if ((bytes[p++] & 0xff) == c) n++;
+                int n = 0;
+                int[] len_p = {0};
+                int c = EncodingUtils.encCodepointLength(runtime, countBytes, begin, begin + size, len_p, enc);
+
+                final byte[] bytes = value.unsafeBytes();
+                int i = value.begin();
+                final int end = i + value.length();
+                while ( i < end ) {
+                    if ( ( bytes[i++] & 0xff ) == c ) n++;
+                }
+                return RubyFixnum.newFixnum(runtime, n);
             }
-            return RubyFixnum.newFixnum(runtime, n);
         }
 
-        final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, context.runtime, table, null, true, enc);
+        final boolean[] table = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = StringSupport.trSetupTable(countValue, runtime, table, null, true, enc);
         return runtime.newFixnum(StringSupport.countCommon19(value, runtime, table, tables, enc));
     }
 
     // MRI: rb_str_count for arity > 1, first half
     @JRubyMethod(name = "count", required = 1, rest = true)
     public IRubyObject count19(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return RubyFixnum.zero(runtime);
+        final Ruby runtime = context.runtime;
 
-        RubyString otherStr = args[0].convertToString();
-        Encoding enc = checkEncoding(otherStr);
-        final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, table, null, true, enc);
-        for (int i = 1; i<args.length; i++) {
-            otherStr = args[i].convertToString();
-            enc = checkEncoding(otherStr);
-            tables = StringSupport.trSetupTable(otherStr.value, runtime, table, tables, false, enc);
+        if ( value.length() == 0 ) return RubyFixnum.zero(runtime);
+
+        RubyString countStr = args[0].convertToString();
+        Encoding enc = checkEncoding(countStr);
+
+        final boolean[] table = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = StringSupport.trSetupTable(countStr.value, runtime, table, null, true, enc);
+        for ( int i = 1; i < args.length; i++ ) {
+            countStr = args[i].convertToString();
+            enc = checkEncoding(countStr);
+            tables = StringSupport.trSetupTable(countStr.value, runtime, table, tables, false, enc);
         }
 
         return runtime.newFixnum(StringSupport.countCommon19(value, runtime, table, tables, enc));
