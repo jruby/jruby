@@ -2532,14 +2532,7 @@ public class IRBuilder {
                 addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat}));
                 continue;
             } else {
-                // TODO: This isn't super pretty. If AST were aware of literal hash string keys being "special"
-                // it could have an appropriate AST node for frozen string and this code would just go away.
-                if (key instanceof StrNode) {
-                    StrNode strKey = (StrNode)key;
-                    keyOperand = new FrozenString(strKey.getValue(), strKey.getCodeRange());
-                } else {
-                    keyOperand = buildWithOrder(key, hasAssignments);
-                }
+                keyOperand = buildWithOrder(key, hasAssignments);
             }
 
             args.add(new KeyValuePair<>(keyOperand, buildWithOrder(pair.getValue(), hasAssignments)));
@@ -3315,10 +3308,13 @@ public class IRBuilder {
     }
 
     public Operand buildStr(StrNode strNode) {
-        if (strNode instanceof FileNode) {
-            return new Filename();
-        }
-        return copyAndReturnValue(new StringLiteral(strNode.getValue(), strNode.getCodeRange()));
+        if (strNode instanceof FileNode) return new Filename();
+
+        Operand literal = strNode.isFrozen() ?
+                new FrozenString(strNode.getValue(), strNode.getCodeRange()) :
+                new StringLiteral(strNode.getValue(), strNode.getCodeRange());
+
+        return copyAndReturnValue(literal);
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {
