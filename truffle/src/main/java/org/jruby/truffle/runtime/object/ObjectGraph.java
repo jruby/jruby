@@ -161,12 +161,12 @@ public abstract class ObjectGraph {
             objects.addAll(getObjectsInFrame(lexicalParentFrame));
         }
 
-        final Object self = RubyArguments.getSelf(arguments);
+        final Object self = RubyArguments.tryGetSelf(arguments);
         if (self instanceof DynamicObject) {
             objects.add((DynamicObject) self);
         }
 
-        final DynamicObject block = RubyArguments.getBlock(arguments);
+        final DynamicObject block = RubyArguments.tryGetBlock(arguments);
         if (block != null) {
             objects.add(block);
         }

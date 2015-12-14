@@ -152,6 +152,26 @@ public final class RubyArguments {
         return null;
     }
 
+    public static Object tryGetSelf(Object[] arguments) {
+        if (SELF_INDEX >= arguments.length) {
+            return null;
+        }
+        return arguments[SELF_INDEX];
+    }
+
+    public static DynamicObject tryGetBlock(Object[] arguments) {
+        if (BLOCK_INDEX >= arguments.length) {
+            return null;
+        }
+
+        final Object block = arguments[BLOCK_INDEX];
+        if (block instanceof DynamicObject) {
+            return (DynamicObject) block;
+        } else {
+            return null;
+        }
+    }
+
     public static MaterializedFrame getCallerFrame(Object[] arguments) {
         return (MaterializedFrame) arguments[CALLER_FRAME_INDEX];
     }
