@@ -37,7 +37,6 @@ import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyObject;
@@ -45,7 +44,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
+import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.io.EncodingUtils;
 import sun.misc.Unsafe;
 
@@ -859,7 +858,7 @@ public final class StringSupport {
         return outBytes;
     }
 
-    public static boolean isEVStr(byte[]bytes, int p, int end) {
+    public static boolean isEVStr(byte[] bytes, int p, int end) {
         return p < end ? isEVStr(bytes[p] & 0xff) : false;
     }
 
@@ -871,10 +870,10 @@ public final class StringSupport {
      * rb_str_count
      */
 
-    public static int countCommon19(ByteList value, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
-        final byte[] bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
-        final int end = p + value.getRealSize();
+    public static int countCommon19(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
+        final byte[] bytes = str.getUnsafeBytes();
+        int p = str.getBegin();
+        final int end = p + str.getRealSize();
 
         int count = 0;
         while (p < end) {
@@ -979,7 +978,7 @@ public final class StringSupport {
             gen = false;
         }
 
-        byte[] buf;
+        final byte[] buf;
         int p, pend, now, max;
         boolean gen;
     }
@@ -988,13 +987,14 @@ public final class StringSupport {
      * tr_setup_table
      */
     public static final class TrTables {
-        IntHash<IRubyObject> del, noDel;
+        IntHashMap<Object> del, noDel; // used as ~ Set
     }
+
+    private static final Object DUMMY_VALUE = "";
 
     public static TrTables trSetupTable(final ByteList str, final Ruby runtime,
         final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
 
-        IntHash<IRubyObject> table = null, ptable = null;
         int i, l[] = {0};
         final boolean cflag;
 
@@ -1019,6 +1019,7 @@ public final class StringSupport {
         if (tables == null) tables = new TrTables();
 
         byte[] buf = null; // lazy initialized
+        IntHashMap<Object> table = null, ptable = null;
 
         int c;
         while ((c = trNext(tr, runtime, enc)) != -1) {
@@ -1033,22 +1034,29 @@ public final class StringSupport {
                 buf[c & 0xff] = (byte) (cflag ? 0 : 1);
             }
             else {
-                final int key = c;
-
-                if (table == null && (first || tables.del != null || stable[TRANS_SIZE])) {
-                    if (cflag) {
+                if ( table == null && (first || tables.del != null || stable[TRANS_SIZE]) ) {
+                    if ( cflag ) {
                         ptable = tables.noDel;
-                        table = ptable != null ? ptable : new IntHash<IRubyObject>();
+                        table = ptable != null ? ptable : new IntHashMap<>(8);
                         tables.noDel = table;
                     }
                     else {
-                        table = new IntHash<IRubyObject>();
+                        table = new IntHashMap<>(8);
                         ptable = tables.del;
                         tables.del = table;
                     }
                 }
-                if (table != null && (ptable == null || (cflag ^ ptable.get(key) == null))) {
-                    table.put(key, RubyBasicObject.NEVER);
+
+                if ( table != null ) {
+                    final int key = c;
+                    if ( ptable == null ) table.put(key, DUMMY_VALUE);
+                    else {
+                        if ( cflag ) table.put(key, DUMMY_VALUE);
+                        else {
+                            final boolean val = ptable.get(key) != null;
+                            table.put(key, val ? DUMMY_VALUE : null);
+                        }
+                    }
                 }
             }
         }
@@ -1063,9 +1071,7 @@ public final class StringSupport {
             }
         }
 
-        if (table == null && !cflag) {
-            tables.del = null;
-        }
+        if ( table == null && ! cflag ) tables.del = null;
 
         return tables;
     }
@@ -1073,7 +1079,7 @@ public final class StringSupport {
     public static boolean trFind(final int c, final boolean[] table, final TrTables tables) {
         if (c < TRANS_SIZE) return table[c];
 
-        final IntHash<IRubyObject> del = tables.del, noDel = tables.noDel;
+        final IntHashMap<Object> del = tables.del, noDel = tables.noDel;
 
         if (del != null) {
             if (del.get(c) != null &&

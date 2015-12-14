@@ -1,4 +1,3 @@
-exclude :test_count, "needs investigation"
 exclude :test_partition, "needs investigation"
 exclude :test_rpartition, "needs investigation"
 exclude :test_rstrip, "needs investigation"
