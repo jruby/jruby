@@ -377,7 +377,7 @@ public final class StringSupport {
         return (int)(cr >>> 31);
     }
 
-    public static int codePoint(Ruby runtime, Encoding enc, byte[]bytes, int p, int end) {
+    public static int codePoint(Ruby runtime, Encoding enc, byte[] bytes, int p, int end) {
         if (p >= end) throw runtime.newArgumentError("empty string");
         int cl = preciseLength(enc, bytes, p, end);
         if (cl <= 0) throw runtime.newArgumentError("invalid byte sequence in " + enc);
@@ -872,25 +872,25 @@ public final class StringSupport {
      */
 
     public static int countCommon19(ByteList value, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
-        int i = 0;
-        byte[]bytes = value.getUnsafeBytes();
+        final byte[] bytes = value.getUnsafeBytes();
         int p = value.getBegin();
-        int end = p + value.getRealSize();
+        final int end = p + value.getRealSize();
 
-        int c;
+        int count = 0;
         while (p < end) {
+            int c;
             if (enc.isAsciiCompatible() && (c = bytes[p] & 0xff) < 0x80) {
-                if (table[c]) i++;
+                if (table[c]) count++;
                 p++;
             } else {
                 c = codePoint(runtime, enc, bytes, p, end);
                 int cl = codeLength(enc, c);
-                if (trFind(c, table, tables)) i++;
+                if (trFind(c, table, tables)) count++;
                 p += cl;
             }
         }
 
-        return i;
+        return count;
     }
 
     // MRI: rb_str_rindex
@@ -988,7 +988,7 @@ public final class StringSupport {
      * tr_setup_table
      */
     public static final class TrTables {
-        private IntHash<IRubyObject> del, noDel;
+        IntHash<IRubyObject> del, noDel;
     }
 
     public static TrTables trSetupTable(ByteList str, Ruby runtime, boolean[] stable, TrTables tables, boolean first, Encoding enc) {
@@ -1058,21 +1058,21 @@ public final class StringSupport {
         return tables;
     }
 
-    public static boolean trFind(int c, boolean[] table, TrTables tables) {
-        if (c < TRANS_SIZE) {
-            return table[c];
-        }
-        int v = c;
+    public static boolean trFind(final int c, final boolean[] table, final TrTables tables) {
+        if (c < TRANS_SIZE) return table[c];
 
-        if (tables.del != null) {
-            if (tables.del.get(v) != null &&
-                    (tables.noDel == null || tables.noDel.get(v) == null)) {
+        final IntHash<IRubyObject> del = tables.del, noDel = tables.noDel;
+
+        if (del != null) {
+            if (del.get(c) != null &&
+                (noDel == null || noDel.get(c) == null)) {
                 return true;
             }
         }
-        else if (tables.noDel != null && tables.noDel.get(v) != null) {
+        else if (noDel != null && noDel.get(c) != null) {
             return false;
         }
+
         return table[TRANS_SIZE];
     }
 
@@ -1686,7 +1686,7 @@ public final class StringSupport {
         }
 
         if (subptr != pend) {
-            line = str.substr(subptr - ptr, pend - subptr);
+            line = str.substr(runtime, subptr - ptr, pend - subptr);
             if (wantarray) {
                 ((RubyArray) ary).push(line);
             } else {
