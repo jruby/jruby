@@ -149,7 +149,7 @@ public abstract class IOPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "io_open", needsSelf = false)
+    @RubiniusPrimitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 })
     public static abstract class IOOpenPrimitiveNode extends RubiniusPrimitiveNode {
 
         public IOOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -172,11 +172,6 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(path)")
-        public int truncate(DynamicObject path, int length) {
-            return truncate(path, (long) length);
-        }
-
-        @Specialization(guards = "isRubyString(path)")
         public int truncate(DynamicObject path, long length) {
             final int result = posix().truncate(StringOperations.getString(getContext(), path), length);
             if (result == -1) {
@@ -193,11 +188,6 @@ public abstract class IOPrimitiveNodes {
 
         public IOFTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization
-        public int ftruncate(VirtualFrame frame, DynamicObject io, int length) {
-            return ftruncate(frame, io, (long) length);
         }
 
         @Specialization
@@ -346,7 +336,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_reopen_path")
+    @RubiniusPrimitive(name = "io_reopen_path", lowerFixnumParameters = 1)
     public static abstract class IOReopenPathPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;

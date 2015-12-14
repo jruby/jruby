@@ -15,13 +15,11 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -69,14 +67,7 @@ public abstract class ObjectSpaceNodes {
                 final long id,
                 @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode) {
             for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
-                final long objectID;
-
-                try {
-                    objectID = readObjectIdNode.executeLong(object);
-                } catch (UnexpectedResultException e) {
-                    throw new UnsupportedOperationException(e);
-                }
-
+                final long objectID = (long) readObjectIdNode.execute(object);
                 if (objectID == id) {
                     return object;
                 }

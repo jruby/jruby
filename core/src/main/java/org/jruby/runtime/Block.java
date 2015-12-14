@@ -109,6 +109,11 @@ public class Block {
         return newScope;
     }
 
+    public EvalType getEvalType() {
+        // SSS FIXME: This is smelly
+        return body instanceof IRBlockBody ? ((IRBlockBody)body).getEvalType() : null;
+    }
+
     public void setEvalType(EvalType evalType) {
         body.setEvalType(evalType);
     }
@@ -167,11 +172,14 @@ public class Block {
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
+        // SSS FIXME: Later on, we can move this code into IR insructions or
+        // introduce a specialized entry-point when we know that this block has
+        // explicit call protocol IR instructions.
         IRubyObject[] args;
-        if (!(value instanceof RubyArray)) {
-            args = new IRubyObject[] { value };
-        } else {
+        if (value instanceof RubyArray) {
             args = value.convertToArray().toJavaArray();
+        } else {
+            args = new IRubyObject[] { value };
         }
         return body.yield(context, this, args, self);
     }

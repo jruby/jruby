@@ -530,7 +530,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public DynamicObject list() {
-            final DynamicObject[] threads = getContext().getThreadManager().getThreads();
+            final Object[] threads = getContext().getThreadManager().getThreadList();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), threads, threads.length);
         }
     }

@@ -15,6 +15,16 @@
     <Class name="~.*NodeGen.*" />
   </Match>
 
+  <!-- Let Antlr do whatever it wants -->
+
+  <Match>
+    <Class name="org.jruby.truffle.format.parser.PackLexer" />
+  </Match>
+
+  <Match>
+    <Class name="org.jruby.truffle.format.parser.PackParser" />
+  </Match>
+
   <!-- Sometimes we really do want to exit - but we should rethink for multi-tennant -->
 
   <Match>

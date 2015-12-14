@@ -348,6 +348,14 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(BigDecimal.new("10.9", 2).to_f, 10.9)
   end
 
+  # GH-3527
+  def test_tail_junk
+    b = BigDecimal.new("5-6")
+    assert_equal BigDecimal('5'), b
+    b = BigDecimal.new("100+42")
+    assert_equal 100, b.to_i
+  end
+  
   class BigDeci < BigDecimal
 
     # MRI does not invoke initialize on 1.8./1.9

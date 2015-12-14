@@ -60,6 +60,7 @@ import org.jruby.util.TypeConverter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -81,9 +82,10 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 @JRubyClass(name="Time", include="Comparable")
 public class RubyTime extends RubyObject {
     public static final String UTC = "UTC";
-    public static final BigDecimal ONE_MILLION_BD = new BigDecimal(1000000);
+    @Deprecated // no longer used
+    public static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
     public static final BigInteger ONE_MILLION_BI = BigInteger.valueOf(1000000);
-    public static final BigDecimal ONE_THOUSAND_BD = new BigDecimal(1000);
+    public static final BigDecimal ONE_THOUSAND_BD = BigDecimal.valueOf(1000);
     private DateTime dt;
     private long nsec;
 
@@ -1058,12 +1060,19 @@ public class RubyTime extends RubyObject {
                     long numerator = rational.numerator(context).convertToInteger().getLongValue();
                     long denominator = rational.denominator(context).convertToInteger().getLongValue();
 
-                    BigDecimal accurateSeconds = new BigDecimal(numerator).divide(new BigDecimal(denominator));
-                    BigDecimal accurateMillis = accurateSeconds.multiply(ONE_THOUSAND_BD);
-                    BigInteger integralMillis = accurateMillis.toBigInteger();
-                    BigInteger remainingNanos = accurateMillis.multiply(ONE_MILLION_BD).toBigInteger().subtract(integralMillis.multiply(ONE_MILLION_BI));
+                    final BigDecimal secs;
+                    if ( numerator <= Integer.MAX_VALUE ) {
+                        secs = new BigDecimal(numerator * 1000);
+                    }
+                    else {
+                        secs = BigDecimal.valueOf(numerator).multiply(ONE_THOUSAND_BD);
+                    }
+                    final BigDecimal millis = secs.divide(BigDecimal.valueOf(denominator), 12, RoundingMode.DOWN);
+                    
+                    final BigInteger roundMillis = millis.toBigInteger();
+                    BigInteger remainingNanos = millis.movePointRight(6).toBigInteger().subtract( roundMillis.multiply(ONE_MILLION_BI) );
 
-                    millisecs = integralMillis.longValue();
+                    millisecs = roundMillis.longValue();
                     nanosecs = remainingNanos.longValue();
                 }
             } else {

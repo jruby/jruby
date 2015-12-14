@@ -2,7 +2,6 @@ require 'test/unit'
 require 'delegate'
 require 'timeout'
 require 'bigdecimal'
-require_relative 'envutil'
 
 class TestRange < Test::Unit::TestCase
   def test_range_string
@@ -69,7 +68,6 @@ class TestRange < Test::Unit::TestCase
     assert_equal(2, (1..2).max)
     assert_equal(nil, (2..1).max)
     assert_equal(1, (1...2).max)
-    assert_equal(18446744073709551615, (0...2**64).max)
 
     assert_equal(2.0, (1.0..2.0).max)
     assert_equal(nil, (2.0..1.0).max)
@@ -283,6 +281,14 @@ class TestRange < Test::Unit::TestCase
   def test_eqq
     assert_operator(0..10, :===, 5)
     assert_not_operator(0..10, :===, 11)
+  end
+
+  def test_eqq_time
+    bug11113 = '[ruby-core:69052] [Bug #11113]'
+    t = Time.now
+    assert_nothing_raised(TypeError, bug11113) {
+      assert_operator(t..(t+10), :===, t+5)
+    }
   end
 
   def test_include

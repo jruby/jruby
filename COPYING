@@ -78,6 +78,10 @@ below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
  Some parts of the RubySL implementations of the stdlib in lib/ruby/truffle/rubysl
  are copyright (c) 2013 Brian Shirai and are licensed under the 3-clause BSD license.
 
+ pr-zlib is copyright Park Heesob and Daniel Berger. "This library is covered
+ under the same license as zlib itself. For the text of the zlib license,
+ please see http://zlib.net/zlib_license.html."
+
 The complete text of the Eclipse Public License is as follows:
 
   Eclipse Public License - v 1.0

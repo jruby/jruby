@@ -12,6 +12,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final int lineNumber;
     protected final IRClosure closure;
     protected ThreadLocal<EvalType> evalType;
+    protected boolean hasCallProtocolIR;
 
     public IRBlockBody(IRScope closure, Signature signature) {
         super(closure.getStaticScope(), signature);
@@ -28,6 +29,11 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     public void setEvalType(EvalType evalType) {
         this.evalType.set(evalType);
+    }
+
+    @Override
+    public boolean hasCallProtocolIR() {
+        return hasCallProtocolIR;
     }
 
     @Override
@@ -57,45 +63,66 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
-
-        return commonYieldPath(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
+        if (hasCallProtocolIR()) {
+            return callDirect(context, block, args, blockArg);
+        } else {
+            return commonYieldPath(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
+        }
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block) {
-        IRubyObject[] args = IRubyObject.NULL_ARRAY;
-        if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
-
-        return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
+        if (hasCallProtocolIR()) {
+            return yieldDirect(context, block, null, null);
+        } else {
+            IRubyObject[] args = IRubyObject.NULL_ARRAY;
+            if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
+            return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
+        }
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-        if (arg0 instanceof RubyArray) {
-		    // Unwrap the array arg
-            IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arityValue(), true);
-
-            // FIXME: arity error is aginst new args but actual error shows arity of original args.
-            if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
-
-            return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
+        IRubyObject[] args;
+        if (hasCallProtocolIR()) {
+            if (arg0 instanceof RubyArray) {
+                // Unwrap the array arg
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arityValue(), true);
+            } else {
+                args = new IRubyObject[] { arg0 };
+            }
+            return yieldDirect(context, block, args, null);
         } else {
-            return yield(context, block, arg0);
+            if (arg0 instanceof RubyArray) {
+                // Unwrap the array arg
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arityValue(), true);
+
+                // FIXME: arity error is aginst new args but actual error shows arity of original args.
+                if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
+
+                return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
+            } else {
+                return yield(context, block, arg0);
+            }
         }
     }
 
     IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, Block block, IRubyObject[] args) {
         int blockArity = getSignature().arityValue();
-        if (blockArity == 0) {
-            args = IRubyObject.NULL_ARRAY; // discard args
-        } else if (blockArity == 1) {
+        if (blockArity == 1) {
             args = new IRubyObject[] { RubyArray.newArrayNoCopy(context.runtime, args) };
         }
 
-        if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
+        if (hasCallProtocolIR()) {
+            return yieldDirect(context, block, args, null);
+        } else {
+            if (blockArity == 0) {
+                args = IRubyObject.NULL_ARRAY; // discard args
+            }
+            if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
 
-        return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
+            return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
+        }
     }
 
     @Override

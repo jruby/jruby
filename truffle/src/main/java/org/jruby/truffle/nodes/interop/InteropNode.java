@@ -317,7 +317,7 @@ public abstract class InteropNode extends RubyNode {
         public InteropInstanceVariableReadNode(RubyContext context, SourceSection sourceSection, String name, int labelIndex) {
             super(context, sourceSection);
             this.name = name;
-            this.read = new ReadInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection), false);
+            this.read = new ReadInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection));
             this.labelIndex = labelIndex;
         }
 
@@ -342,7 +342,7 @@ public abstract class InteropNode extends RubyNode {
             super(context, sourceSection);
             this.name = name;
             this.labelIndex = labelIndex;
-            this.write = new WriteInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection), new RubyInteropArgumentNode(context, sourceSection, valueIndex), false);
+            this.write = new WriteInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection), new RubyInteropArgumentNode(context, sourceSection, valueIndex));
         }
 
         @Override

@@ -58,6 +58,8 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.methods.LookupMethodNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
 import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
@@ -975,16 +977,48 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        protected static final int LIMIT = Options.FIELD_LOOKUP_CACHE;
+
         @CreateCast("name")
-        public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        public RubyNode coerceToSymbolOrString(RubyNode name) {
+            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization(
+                guards = { "isRubySymbol(name)", "name == cachedName" },
+                limit = "LIMIT")
+        public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
+                @Cached("name") DynamicObject cachedName,
+                @Cached("createReadFieldNode(checkName(symbolToString(cachedName)))") ReadHeadObjectFieldNode readHeadObjectFieldNode) {
+            return readHeadObjectFieldNode.execute(object);
+        }
+
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object instanceVariableGetSymbol(DynamicObject object, DynamicObject name) {
+            return ivarGet(object, symbolToString(name));
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object instanceVariableGet(DynamicObject object, String name) {
-            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
-            return object.get(ivar, nil());
+        @Specialization(guards = "isRubyString(name)")
+        public Object instanceVariableGetString(DynamicObject object, DynamicObject name) {
+            return ivarGet(object, name.toString());
+        }
+
+        @TruffleBoundary
+        private Object ivarGet(DynamicObject object, String name) {
+            return object.get(checkName(name), nil());
+        }
+
+        protected String symbolToString(DynamicObject name) {
+            return Layouts.SYMBOL.getString(name);
+        }
+
+        protected String checkName(String name) {
+            return RubyContext.checkInstanceVariableName(getContext(), name, this);
+        }
+
+        protected ReadHeadObjectFieldNode createReadFieldNode(String name) {
+            return ReadHeadObjectFieldNodeGen.create(name, nil());
         }
 
     }
@@ -1001,19 +1035,50 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        protected static final int LIMIT = Options.FIELD_LOOKUP_CACHE;
+
         @CreateCast("name")
-        public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        public RubyNode coerceToSymbolOrString(RubyNode name) {
+            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        // TODO CS 4-Mar-15 this badly needs to be cached
+        @Specialization(
+                guards = { "isRubySymbol(name)", "name == cachedName" },
+                limit = "LIMIT")
+        public Object instanceVariableSetSymbolCached(DynamicObject object, DynamicObject name, Object value,
+                                                      @Cached("name") DynamicObject cachedName,
+                                                      @Cached("createWriteFieldNode(checkName(symbolToString(cachedName)))") WriteHeadObjectFieldNode writeHeadObjectFieldNode) {
+            writeHeadObjectFieldNode.execute(object, value);
+            return value;
+        }
+
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object instanceVariableSetSymbol(DynamicObject object, DynamicObject name, Object value) {
+            return ivarSet(object, symbolToString(name), value);
+        }
 
         @TruffleBoundary
-        @Specialization
-        public Object instanceVariableSet(DynamicObject object, String name, Object value) {
-            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
-            object.define(ivar, value, 0);
+        @Specialization(guards = "isRubyString(name)")
+        public Object instanceVariableSetString(DynamicObject object, DynamicObject name, Object value) {
+            return ivarSet(object, name.toString(), value);
+        }
+
+        @TruffleBoundary
+        private Object ivarSet(DynamicObject object, String name, Object value) {
+            object.define(checkName(name), value, 0);
             return value;
+        }
+
+        protected String symbolToString(DynamicObject name) {
+            return Layouts.SYMBOL.getString(name);
+        }
+
+        protected String checkName(String name) {
+            return RubyContext.checkInstanceVariableName(getContext(), name, this);
+        }
+
+        protected WriteHeadObjectFieldNode createWriteFieldNode(String name) {
+            return WriteHeadObjectFieldNodeGen.create(name);
         }
 
     }
@@ -1087,11 +1152,6 @@ public abstract class KernelNodes {
         }
 
         public abstract boolean executeIsA(VirtualFrame frame, Object self, DynamicObject rubyClass);
-
-        @Specialization(guards = { "isNil(nil)", "!isRubyModule(nil)" })
-        public boolean isANil(DynamicObject self, Object nil) {
-            return false;
-        }
 
         @Specialization(
                 limit = "getCacheLimit()",
@@ -1593,7 +1653,7 @@ public abstract class KernelNodes {
 
                 if (sourcePath == null) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", this));
+                    throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", featureString, this));
                 }
 
                 featurePath = dirname(sourcePath) + "/" + featureString;

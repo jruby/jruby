@@ -21,6 +21,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         this.reuseParentScope = closure.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushScope = !closure.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentScope;
         this.usesKwargs = closure.receivesKeywordArgs();
+        this.hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
         closure.getStaticScope().determineModule();
@@ -31,43 +32,58 @@ public class CompiledIRBlockBody extends IRBlockBody {
         return closure.getArgumentDescriptors();
     }
 
+    @Override
+    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        context.setCurrentBlockType(Block.Type.PROC);
+        try {
+            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), (IRubyObject)null, args, blockArg, block.getBinding().getMethod(), block.type);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        context.setCurrentBlockType(Block.Type.NORMAL);
+        try {
+            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), self, args, Block.NULL_BLOCK, block.getBinding().getMethod(), block.type);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         Binding binding = block.getBinding();
-
-        // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
-        // Do not use 'closure.getStaticScope()' -- that returns the original copy of the static scope.
-        // This matters because blocks created for Thread bodies modify the static-scope field of the block-body
-        // that records additional state about the block body.
-        //
-        // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
-        // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame prevFrame = context.preYieldNoScope(binding);
+
+        // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
+        // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
+        // is just wasteful allocation since the scope is not used at all.
+        DynamicScope prevScope = binding.getDynamicScope();
+        if (this.pushScope) {
+            // SSS FIXME: for lambdas, this behavior is different
+            // compared to what InterpretedIRBlockBody and MixedModeIRBlockBody do
+            context.pushScope(DynamicScope.newDynamicScope(getStaticScope(), prevScope, this.evalType.get()));
+        } else if (this.reuseParentScope) {
+            // Reuse! We can avoid the push only if surrounding vars aren't referenced!
+            context.pushScope(prevScope);
+        }
 
         // SSS FIXME: Why is self null in non-binding-eval contexts?
         if (self == null || this.evalType.get() == EvalType.BINDING_EVAL) {
             self = useBindingSelf(binding);
         }
 
-        // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
-        // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
-        // is just wasteful allocation since the scope is not used at all.
-
-        // Pass on eval state info to the dynamic scope and clear it on the block-body
-        DynamicScope prevScope = binding.getDynamicScope();
-        if (this.pushScope) {
-            context.pushScope(DynamicScope.newDynamicScope(getStaticScope(), prevScope, this.evalType.get()));
-        } else if (this.reuseParentScope) {
-            // Reuse!
-            // We can avoid the push only if surrounding vars aren't referenced!
-            context.pushScope(prevScope);
-        }
-        this.evalType.set(EvalType.NONE);
+        // Clear evaltype now that it has been set on dyn-scope
+        block.setEvalType(EvalType.NONE);
 
         if (usesKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
         try {
-            return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, blockArg, binding.getMethod(), block.type);
+            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), self, args, blockArg, binding.getMethod(), block.type);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached

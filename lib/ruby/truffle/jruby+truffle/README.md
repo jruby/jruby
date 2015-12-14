@@ -92,6 +92,23 @@ activesupport's configuration file follows:
     - shims
 ```
 
+## Using the tool in CI
+
+Assuming there are similar stored commands for a given gem:
+ 
+```yaml
+:stored_commands:
+  :ci:
+    - :setup
+    - :test
+  :setup:
+    - "git clone git@github.com:lucasocon/openweather.git"
+    - "jruby+truffle --dir openweather setup"
+  :test: "jruby+truffle --dir openweather run --require-pattern 'test/*_test.rb' -I test -- -e nil"
+```
+
+then `jruby+truffle --config openweather stored ci` can be used to run tests of the given gem in CI.
+
 ## Example step-by-step
 
 ```sh

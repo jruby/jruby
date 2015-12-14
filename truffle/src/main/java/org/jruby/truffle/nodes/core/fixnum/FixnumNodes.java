@@ -12,12 +12,15 @@ package org.jruby.truffle.nodes.core.fixnum;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.ExactMath;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
@@ -28,6 +31,7 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
@@ -756,17 +760,27 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int bitAnd(int a, int b) {
+        public int bitAndIntInt(int a, int b) {
             return a & b;
         }
 
         @Specialization
-        public long bitAnd(long a, long b) {
+        public int bitAndIntLong(int a, long b) {
+            return a & ((int) b);
+        }
+
+        @Specialization
+        public int bitAndLongInt(long a, int b) {
+            return ((int) a) & b;
+        }
+
+        @Specialization
+        public long bitAndLongLong(long a, long b) {
             return a & b;
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object bitAnd(long a, DynamicObject b) {
+        public Object bitAndBignum(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).and(Layouts.BIGNUM.getValue(b)));
         }
     }
@@ -840,9 +854,9 @@ public abstract class FixnumNodes {
             return a << b;
         }
 
-        @Specialization(guards = { "b >= 0", "canShiftIntoInt(a, b)" })
-        public int leftShift(int a, long b) {
-            return a << b;
+        @Specialization(guards = { "b >= 0", "canShiftLongIntoInt(a, b)" })
+        public int leftShift(long a, int b) {
+            return (int) (a << b);
         }
 
         @Specialization(guards = { "b >= 0", "canShiftIntoLong(a, b)" })
@@ -881,8 +895,8 @@ public abstract class FixnumNodes {
             return Integer.numberOfLeadingZeros(a) - b > 0;
         }
 
-        static boolean canShiftIntoInt(int a, long b) {
-            return Integer.numberOfLeadingZeros(a) - b > 0;
+        static boolean canShiftLongIntoInt(long a, int b) {
+            return Long.numberOfLeadingZeros(a) - 32 - b > 0;
         }
 
         static boolean canShiftIntoLong(long a, int b) {
@@ -904,8 +918,9 @@ public abstract class FixnumNodes {
         public abstract Object executeRightShift(VirtualFrame frame, Object a, Object b);
 
         @Specialization(guards = "b >= 0")
-        public Object rightShift(VirtualFrame frame, int a, int b) {
-            if (b >= Integer.SIZE - 1) {
+        public int rightShift(VirtualFrame frame, int a, int b,
+                @Cached("createBinaryProfile()") ConditionProfile profile) {
+            if (profile.profile(b >= Integer.SIZE - 1)) {
                 return a < 0 ? -1 : 0;
             } else {
                 return a >> b;
@@ -913,20 +928,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "b >= 0")
-        public Object rightShift(VirtualFrame frame, int a, long b) {
-            if (b >= Integer.SIZE - 1) {
-                return a < 0 ? -1 : 0;
+        public Object rightShift(VirtualFrame frame, long a, int b,
+                @Cached("createBinaryProfile()") ConditionProfile profile) {
+            if (profile.profile(b >= Long.SIZE - 1)) {
+                return a < 0 ? -1 : 0; // int
             } else {
-                return a >> b;
-            }
-        }
-
-        @Specialization(guards = "b >= 0")
-        public Object rightShift(VirtualFrame frame, long a, int b) {
-            if (b >= Long.SIZE - 1) {
-                return a < 0 ? -1 : 0;
-            } else {
-                return a >> b;
+                return a >> b; // long
             }
         }
 
@@ -937,6 +944,12 @@ public abstract class FixnumNodes {
                 leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null }));
             }
             return leftShiftNode.executeLeftShift(frame, a, -b);
+        }
+
+        @Specialization(guards = "b >= 0")
+        public int rightShift(long a, long b) { // b is not in int range due to lowerFixnumParameters
+            assert !CoreLibrary.fitsIntoInteger(b);
+            return 0;
         }
 
         @Specialization(guards = { "isRubyBignum(b)", "isPositive(b)" })
@@ -950,7 +963,6 @@ public abstract class FixnumNodes {
                 CompilerDirectives.transferToInterpreter();
                 leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null }));
             }
-            CompilerDirectives.transferToInterpreter();
             return leftShiftNode.executeLeftShift(frame, a, Layouts.BIGNUM.getValue(b).negate());
         }
 

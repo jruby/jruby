@@ -4,8 +4,11 @@
 
 TRUFFLEJAR = "#{Dir.home}/.m2/repository/com/oracle/truffle/0.7/truffle-0.7.jar"
 SNAKEYAMLJAR = "#{Dir.home}/.m2/repository/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
+ANTLR4JAR = "#{Dir.home}/.m2/repository/org/antlr/antlr4-runtime/4.5/antlr4-runtime-4.5.jar"
 
 JRUBY = File.expand_path('../..', __FILE__)
+
+VERIFY_JRUBY = false
 
 java = ENV["JAVACMD"] || "java"
 
@@ -33,8 +36,14 @@ classpath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
 if rest.include?('-X+T')
   bootclasspath << TRUFFLEJAR
   classpath << SNAKEYAMLJAR
+  classpath << ANTLR4JAR
   classpath << "#{JRUBY}/truffle/build.eclipse"
   java_flags << "-Djruby.truffle.core.load_path=#{JRUBY}/truffle/src/main/ruby"
+end
+
+unless VERIFY_JRUBY
+  bootclasspath += classpath
+  classpath.clear
 end
 
 args = [java]

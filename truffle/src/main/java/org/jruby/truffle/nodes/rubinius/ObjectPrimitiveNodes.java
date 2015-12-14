@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -87,12 +86,7 @@ public abstract class ObjectPrimitiveNodes {
         public long objectID(DynamicObject object,
                 @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode,
                 @Cached("createWriteObjectIDNode()") WriteHeadObjectFieldNode writeObjectIdNode) {
-            final long id;
-            try {
-                id = readObjectIdNode.executeLong(object);
-            } catch (UnexpectedResultException e) {
-                throw new UnsupportedOperationException(e);
-            }
+            final long id = (long) readObjectIdNode.execute(object);
 
             if (id == 0) {
                 final long newId = getContext().getNextObjectID();

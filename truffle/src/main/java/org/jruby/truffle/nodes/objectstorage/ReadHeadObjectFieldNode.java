@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.*;
 
 import org.jruby.truffle.runtime.Options;
@@ -31,58 +30,12 @@ public abstract class ReadHeadObjectFieldNode extends Node {
         return name;
     }
 
-    public abstract boolean executeBoolean(DynamicObject object) throws UnexpectedResultException;
-    public abstract int executeInteger(DynamicObject object) throws UnexpectedResultException;
-    public abstract long executeLong(DynamicObject object) throws UnexpectedResultException;
-    public abstract double executeDouble(DynamicObject object) throws UnexpectedResultException;
-
     public abstract Object execute(DynamicObject object);
-
-    @Specialization(
-            guards = { "location != null", "receiver.getShape() == cachedShape" },
-            assumptions = "cachedShape.getValidAssumption()",
-            limit = "getCacheLimit()")
-    protected boolean readBooleanObjectFieldCached(DynamicObject receiver,
-            @Cached("receiver.getShape()") Shape cachedShape,
-            @Cached("getBooleanLocation(cachedShape)") BooleanLocation location) {
-        return location.getBoolean(receiver, cachedShape);
-    }
-
-    @Specialization(
-            guards = { "location != null", "receiver.getShape() == cachedShape" },
-            assumptions = "cachedShape.getValidAssumption()",
-            limit = "getCacheLimit()")
-    protected int readIntObjectFieldCached(DynamicObject receiver,
-            @Cached("receiver.getShape()") Shape cachedShape,
-            @Cached("getIntLocation(cachedShape)") IntLocation location) {
-        return location.getInt(receiver, cachedShape);
-    }
-
-    @Specialization(
-            guards = { "location != null", "receiver.getShape() == cachedShape" },
-            assumptions = "cachedShape.getValidAssumption()",
-            limit = "getCacheLimit()")
-    protected long readLongObjectFieldCached(DynamicObject receiver,
-            @Cached("receiver.getShape()") Shape cachedShape,
-            @Cached("getLongLocation(cachedShape)") LongLocation location) {
-        return location.getLong(receiver, cachedShape);
-    }
-
-    @Specialization(
-            guards = { "location != null", "receiver.getShape() == cachedShape" },
-            assumptions = "cachedShape.getValidAssumption()",
-            limit = "getCacheLimit()")
-    protected double readDoubleObjectFieldCached(DynamicObject receiver,
-            @Cached("receiver.getShape()") Shape cachedShape,
-            @Cached("getDoubleLocation(cachedShape)") DoubleLocation location) {
-        return location.getDouble(receiver, cachedShape);
-    }
 
     @Specialization(
             guards = "receiver.getShape() == cachedShape",
             assumptions = "cachedShape.getValidAssumption()",
-            limit = "getCacheLimit()",
-            contains = { "readBooleanObjectFieldCached", "readIntObjectFieldCached", "readLongObjectFieldCached", "readDoubleObjectFieldCached" })
+            limit = "getCacheLimit()")
     protected Object readObjectFieldCached(DynamicObject receiver,
             @Cached("receiver.getShape()") Shape cachedShape,
             @Cached("cachedShape.getProperty(name)") Property property) {
@@ -96,45 +49,7 @@ public abstract class ReadHeadObjectFieldNode extends Node {
     @TruffleBoundary
     @Specialization
     protected Object readObjectFieldUncached(DynamicObject receiver) {
-        final Shape shape = receiver.getShape();
-        final Property property = shape.getProperty(name);
-        if (property != null) {
-            return property.get(receiver, shape);
-        } else {
-            return defaultValue;
-        }
-    }
-
-    protected BooleanLocation getBooleanLocation(Shape shape) {
-        final Property property = shape.getProperty(name);
-        if (property != null && property.getLocation() instanceof BooleanLocation) {
-            return (BooleanLocation) property.getLocation();
-        }
-        return null;
-    }
-
-    protected IntLocation getIntLocation(Shape shape) {
-        final Property property = shape.getProperty(name);
-        if (property != null && property.getLocation() instanceof IntLocation) {
-            return (IntLocation) property.getLocation();
-        }
-        return null;
-    }
-
-    protected LongLocation getLongLocation(Shape shape) {
-        final Property property = shape.getProperty(name);
-        if (property != null && property.getLocation() instanceof LongLocation) {
-            return (LongLocation) property.getLocation();
-        }
-        return null;
-    }
-
-    protected DoubleLocation getDoubleLocation(Shape shape) {
-        final Property property = shape.getProperty(name);
-        if (property != null && property.getLocation() instanceof DoubleLocation) {
-            return (DoubleLocation) property.getLocation();
-        }
-        return null;
+        return receiver.get(name, defaultValue);
     }
 
     protected int getCacheLimit() {

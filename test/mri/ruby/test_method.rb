@@ -1,6 +1,5 @@
 # -*- coding: us-ascii -*-
 require 'test/unit'
-require_relative 'envutil'
 
 class TestMethod < Test::Unit::TestCase
   def setup
@@ -855,5 +854,41 @@ class TestMethod < Test::Unit::TestCase
     m = c3.instance_method(:foo)
     m = assert_nothing_raised(NameError, Feature9781) {break m.super_method}
     assert_nil(m, Feature9781)
+  end
+
+  def rest_parameter(*rest)
+    rest
+  end
+
+  def test_splat_long_array
+    n = 10_000_000
+    assert_equal n  , rest_parameter(*(1..n)).size, '[Feature #10440]'
+  end
+
+  def test_insecure_method
+    m = "\u{5371 967a}"
+    c = Class.new do
+      proc {$SAFE=3;def foo;end}.call
+      alias_method m, "foo"
+      eval "def bar; #{m}; end"
+    end
+    obj = c.new
+    assert_raise_with_message(SecurityError, /#{m}/) do
+      obj.bar
+    end
+  end
+
+  def test_to_proc_binding
+    bug11012 = '[ruby-core:68673] [Bug #11012]'
+    class << (obj = Object.new)
+      src = 1000.times.map {|i|"v#{i} = nil"}.join("\n")
+      eval("def foo()\n""#{src}\n""end")
+    end
+
+    b = obj.method(:foo).to_proc.binding
+    b.local_variables.each_with_index {|n, i|
+      b.local_variable_set(n, i)
+    }
+    assert_equal([998, 999], %w[v998 v999].map {|n| b.local_variable_get(n)}, bug11012)
   end
 end

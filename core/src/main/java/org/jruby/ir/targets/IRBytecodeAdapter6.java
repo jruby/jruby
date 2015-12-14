@@ -12,7 +12,6 @@ import java.util.Map;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -36,10 +35,6 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.runtime.callsite.NormalCachingCallSite;
-import org.jruby.runtime.callsite.RefinedCachingCallSite;
-import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
@@ -331,7 +326,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             }
         }
 
-        String methodName = "invokeOther" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+        String methodName = getUniqueSiteName(name);
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -341,44 +336,9 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null,
                 null);
 
-        // call site object field
-        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CachingCallSite.class), null, null).visitEnd();
-
-        // lazily construct it
-        adapter2.getstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
-        adapter2.dup();
-        Label doCall = new Label();
-        adapter2.ifnonnull(doCall);
-        adapter2.pop();
-        adapter2.ldc(name);
-        Class<? extends CachingCallSite> siteClass;
-        String signature;
-        if (isPotentiallyRefined) {
-            siteClass = RefinedCachingCallSite.class;
-            signature = sig(siteClass, String.class, String.class);
-            adapter2.ldc(callType.name());
-        } else {
-            switch (callType) {
-                case NORMAL:
-                    siteClass = NormalCachingCallSite.class;
-                    break;
-                case FUNCTIONAL:
-                    siteClass = FunctionalCachingCallSite.class;
-                    break;
-                case VARIABLE:
-                    siteClass = VariableCachingCallSite.class;
-                    break;
-                default:
-                    throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
-            }
-            signature = sig(siteClass, String.class);
-        }
-        adapter2.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), signature);
-        adapter2.dup();
-        adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+        cacheCallSite(adapter2, getClassData().clsName, methodName, name, callType, isPotentiallyRefined);
 
         // use call site to invoke
-        adapter2.label(doCall);
         adapter2.aload(0); // context
         adapter2.aload(1); // caller
         adapter2.aload(2); // self

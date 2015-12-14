@@ -37,8 +37,8 @@ class Thread
     __thread_local_variables.keys
   end
 
-  def self.start(&block)
-    Thread.new(&block)
+  def self.start(*args, &block)
+    Thread.new(*args, &block)
   end
 
   def self.abort_on_exception

@@ -1,2 +1,0 @@
-fails:Truffle.binding_of_caller gives read access to local variables at the call site
-fails:Truffle.binding_of_caller gives write access to local variables at the call site

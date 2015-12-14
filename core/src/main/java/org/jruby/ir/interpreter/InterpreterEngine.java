@@ -21,9 +21,11 @@ import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
+import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
+import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
 import org.jruby.ir.instructions.TraceInstr;
@@ -55,10 +57,9 @@ import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.EvalType;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -113,12 +114,15 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
+        boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+        // Blocks with explicit call protocol shouldn't do this before args are prepared
+        if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
+            IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+        }
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -164,22 +168,31 @@ public class InterpreterEngine {
                         }
                         break;
                     case BOOK_KEEPING_OP:
-                        if (operation == Operation.PUSH_METHOD_BINDING) {
-                            // IMPORTANT: Preserve this update of currDynScope.
-                            // This affects execution of all instructions in this scope
-                            // which will now use the updated value of currDynScope.
+                        // IMPORTANT: Preserve these update to currDynScope, self, and args.
+                        // They affect execution of all following instructions in this scope.
+                        switch (operation) {
+                        case PUSH_METHOD_BINDING:
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
-                        } else if (operation == Operation.PUSH_BLOCK_BINDING) {
-                            DynamicScope newScope = block.getBinding().getDynamicScope();
-                            if (interpreterContext.pushNewDynScope()) {
-                                context.pushScope(block.allocScope(newScope));
-                            } else if (interpreterContext.reuseParentDynScope()) {
-                                // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-                                context.pushScope(newScope);
-                            }
-                        } else {
+                            break;
+                        case PUSH_BLOCK_BINDING:
+                            currDynScope = IRRuntimeHelpers.pushBlockDynamicScopeIfNeeded(context, block, interpreterContext.pushNewDynScope(), interpreterContext.reuseParentDynScope());
+                            break;
+                        case UPDATE_BLOCK_STATE:
+                            self = IRRuntimeHelpers.updateBlockState(block, self);
+                            break;
+                        case PREPARE_SINGLE_BLOCK_ARG:
+                            args = IRRuntimeHelpers.prepareSingleBlockArgs(context, block, args);
+                            break;
+                        case PREPARE_FIXED_BLOCK_ARGS:
+                            args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
+                            break;
+                        case PREPARE_BLOCK_ARGS:
+                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
+                            break;
+                        default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
+                            break;
                         }
                         break;
                     case OTHER_OP:
@@ -337,18 +350,20 @@ public class InterpreterEngine {
     protected static void processBookKeepingOp(ThreadContext context, Block block, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block blockArg, RubyModule implClass,
                                              DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
-        Block.Type blockType = block == null ? null : block.type;
-        Frame f;
         switch(operation) {
             case LABEL:
                 break;
+            case SAVE_BINDING_VIZ:
+                setResult(temp, currDynScope, ((SaveBindingVisibilityInstr) instr).getResult(), block.getBinding().getVisibility());
+                break;
+            case RESTORE_BINDING_VIZ:
+                block.getBinding().setVisibility((Visibility) retrieveOp(((RestoreBindingVisibilityInstr) instr).getVisibility(), context, self, currDynScope, currScope, temp));
+                break;
             case PUSH_BLOCK_FRAME:
-                f = context.preYieldNoScope(block.getBinding());
-                setResult(temp, currDynScope, ((PushBlockFrameInstr)instr).getResult(), f);
+                setResult(temp, currDynScope, ((PushBlockFrameInstr) instr).getResult(), context.preYieldNoScope(block.getBinding()));
                 break;
             case POP_BLOCK_FRAME:
-                f = (Frame)retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp);
-                context.postYieldNoScope(f);
+                context.postYieldNoScope((Frame) retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_METHOD_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, blockArg);
@@ -368,7 +383,7 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr)instr).checkArity(context, args, blockType);
+                ((CheckArityInstr) instr).checkArity(context, args, block == null ? null : block.type);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);

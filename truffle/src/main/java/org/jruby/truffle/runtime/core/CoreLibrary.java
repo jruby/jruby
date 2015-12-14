@@ -439,7 +439,6 @@ public class CoreLibrary {
         defineModule(truffleModule, "Debug");
         final DynamicObject primitiveModule = defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
-        defineModule(truffleModule, "Zlib");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
         psychModule = defineModule("Psych");
@@ -578,7 +577,6 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ObjSpaceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
@@ -1163,14 +1161,17 @@ public class CoreLibrary {
         return noMethodError(String.format("private method `%s' called for %s", name, className), name, currentNode);
     }
 
-    public DynamicObject loadError(String message, Node currentNode) {
+    public DynamicObject loadError(String message, String path, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getLoadErrorClass(), StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(currentNode));
+        DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE));
+        DynamicObject loadError = ExceptionNodes.createRubyException(context.getCoreLibrary().getLoadErrorClass(), messageString, RubyCallStack.getBacktrace(currentNode));
+        loadError.define("@path", StringOperations.createString(context, StringOperations.encodeByteList(path, UTF8Encoding.INSTANCE)), 0);
+        return loadError;
     }
 
     public DynamicObject loadErrorCannotLoad(String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return loadError(String.format("cannot load such file -- %s", name), currentNode);
+        return loadError(String.format("cannot load such file -- %s", name), name, currentNode);
     }
 
     public DynamicObject zeroDivisionError(Node currentNode) {
