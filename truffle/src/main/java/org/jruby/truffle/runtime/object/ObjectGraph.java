@@ -155,10 +155,23 @@ public abstract class ObjectGraph {
     public static Set<DynamicObject> getObjectsInFrame(Frame frame) {
         final Set<DynamicObject> objects = new HashSet<>();
 
-        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(frame.getArguments());
+        final Object[] arguments = frame.getArguments();
+        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(arguments);
         if (lexicalParentFrame != null) {
             objects.addAll(getObjectsInFrame(lexicalParentFrame));
         }
+
+        final Object self = RubyArguments.getSelf(arguments);
+        if (self instanceof DynamicObject) {
+            objects.add((DynamicObject) self);
+        }
+
+        final DynamicObject block = RubyArguments.getBlock(arguments);
+        if (block != null) {
+            objects.add(block);
+        }
+
+        // Other frame arguments are either only internal or user arguments which appear in slots.
 
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
             final Object slotValue = frame.getValue(slot);
