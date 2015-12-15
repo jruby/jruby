@@ -10,7 +10,6 @@ import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.thread.SizedQueue;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
@@ -31,9 +30,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         Ruby runtime = context.runtime;
         
         ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getClass("Fiber")); // FIXME: getFiber()
-        
-        assert runtime.getClass("SizedQueue") != null : "SizedQueue has not been loaded";
-        rootFiber.data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue"), 1), null, rootFiber);
+
+        rootFiber.data = new FiberData(new FiberQueue(runtime), null, rootFiber);
         rootFiber.thread = context.getThread();
         context.setRootFiber(rootFiber);
     }
@@ -44,7 +42,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         if (!block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without block");
 
-        data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue"), 1), context.getFiberCurrentThread(), this);
+        data = new FiberData(new FiberQueue(runtime), context.getFiberCurrentThread(), this);
         
         FiberData currentFiberData = context.getFiber().data;
         
@@ -238,7 +236,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return thread != null && thread.isAlive() && !data.queue.isShutdown();
     }
     
-    static RubyThread createThread(final Ruby runtime, final FiberData data, final SizedQueue queue, final Block block) {
+    static RubyThread createThread(final Ruby runtime, final FiberData data, final FiberQueue queue, final Block block) {
         final AtomicReference<RubyThread> fiberThread = new AtomicReference();
         runtime.getFiberExecutor().execute(new Runnable() {
             public void run() {
@@ -336,7 +334,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
     
     public static class FiberData {
-        FiberData(SizedQueue queue, RubyThread parent, ThreadFiber fiber) {
+        FiberData(FiberQueue queue, RubyThread parent, ThreadFiber fiber) {
             this.queue = queue;
             this.parent = parent;
             this.fiber = new WeakReference<ThreadFiber>(fiber);
@@ -346,7 +344,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             return prev;
         }
         
-        final SizedQueue queue;
+        final FiberQueue queue;
         volatile ThreadFiber prev;
         final RubyThread parent;
         final WeakReference<ThreadFiber> fiber;
