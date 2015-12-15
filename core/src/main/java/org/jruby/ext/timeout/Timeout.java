@@ -76,6 +76,7 @@ public class Timeout implements Library {
 
         // Toplevel defines
         runtime.getObject().defineConstant("TimeoutError", TimeoutError);
+        runtime.getObject().deprecateConstant(runtime, "TimeoutError");
         runtime.getObject().defineAnnotatedMethods(TimeoutToplevel.class);
     }
 
