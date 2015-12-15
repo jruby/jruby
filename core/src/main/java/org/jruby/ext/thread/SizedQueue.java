@@ -30,31 +30,34 @@ package org.jruby.ext.thread;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Block;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.ArrayList;
+import java.util.concurrent.locks.Condition;
 
 /**
  * The "SizedQueue" class from the 'thread' library.
  */
 @JRubyClass(name = "SizedQueue", parent = "Queue")
 public class SizedQueue extends Queue {
-    public SizedQueue(Ruby runtime, RubyClass type) {
+    protected final Condition pushCond = lock.newCondition();
+    protected volatile int max;
+
+    protected SizedQueue(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
-    public SizedQueue(Ruby runtime, RubyClass type, int size) {
+    public SizedQueue(Ruby runtime, RubyClass type, int max) {
         super(runtime, type);
 
-        this.queue = new ArrayBlockingQueue<IRubyObject>(size, false);
+        initialize(runtime.getCurrentContext(), runtime.newFixnum(max));
     }
 
     public static void setup(Ruby runtime) {
@@ -71,34 +74,159 @@ public class SizedQueue extends Queue {
     @JRubyMethod
     @Override
     public IRubyObject clear(ThreadContext context) {
-        super.clear(context);
+        lock.lock();
+        try {
+            getQue().clear();
+
+            pushCond.signalAll();
+        } finally {
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
 
         return this;
     }
 
     @JRubyMethod
     public RubyNumeric max(ThreadContext context) {
-        return RubyNumeric.int2fix(context.runtime, queue.size() + queue.remainingCapacity());
+        return RubyNumeric.int2fix(context.runtime, max);
     }
 
     @JRubyMethod(name = "max=")
     public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
-        BlockingQueue<IRubyObject> oldQueue = this.queue;
-        initialize(context, arg);
-        oldQueue.drainTo(this.queue);
-        return arg;
+        Ruby runtime = context.runtime;
+        int max = RubyNumeric.num2int(arg), diff = 0;
+
+        if (max <= 0) {
+            throw runtime.newArgumentError("queue size must be positive");
+        }
+
+        lock.lock();
+        try {
+            if (max > this.max) {
+                diff = max - this.max;
+            }
+            this.max = max;
+            while (diff-- > 0) {
+                pushCond.signal();
+            }
+            return arg;
+        } finally {
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public synchronized IRubyObject initialize(ThreadContext context, IRubyObject arg) {
-        int new_capacity = RubyNumeric.fix2int(arg);
+        que = new ArrayList<>();
 
-        if (new_capacity <= 0) {
-            throw context.runtime.newArgumentError("queue size must be positive");
-        }
-
-        this.queue = new ArrayBlockingQueue<IRubyObject>(new_capacity, false);
+        max_set(context, arg);
 
         return this;
+    }
+
+    @JRubyMethod(name = {"push", "<<", "enq"}, required = 1, optional = 1)
+    public IRubyObject push(ThreadContext context, final IRubyObject[] argv) {
+        boolean should_block = shouldBlock(context, argv);
+
+        try {
+            return context.getThread().executeTask(context, argv[0], should_block ? blockingPushTask : nonblockingPushTask);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#push");
+        }
+    }
+
+    private final RubyThread.Task<IRubyObject, IRubyObject> blockingPushTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
+        @Override
+        public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
+            lock.lock();
+            try {
+                while (getQue().size() >= max) {
+                    if (closed) {
+                        return raiseClosedError(context);
+                    }
+                    else {
+                        pushCond.await();
+                    }
+                }
+
+                if (closed) {
+                    raiseClosedError(context);
+                }
+
+                return push(context, value);
+            } finally {
+                if (lock.isHeldByCurrentThread()) lock.unlock();
+            }
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, IRubyObject value) {
+            thread.getNativeThread().interrupt();
+        }
+    };
+
+    private final RubyThread.Task<IRubyObject, IRubyObject> nonblockingPushTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
+        @Override
+        public IRubyObject run(ThreadContext context, IRubyObject value) {
+            lock.lock();
+            try {
+                if (getQue().size() >= max) {
+                    throw context.runtime.newThreadError("queue full");
+                }
+
+                if (closed) {
+                    raiseClosedError(context);
+                }
+
+                return push(context, value);
+            } finally {
+                if (lock.isHeldByCurrentThread()) lock.unlock();
+            }
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, IRubyObject value) {
+            thread.getNativeThread().interrupt();
+        }
+    };
+
+    private static boolean shouldBlock(ThreadContext context, IRubyObject[] argv) {
+        boolean should_block = true;
+        Arity.checkArgumentCount(context, argv, 1, 2);
+        if (argv.length > 1) {
+            should_block = !argv[1].isTrue();
+        }
+        return should_block;
+    }
+
+    @Override
+    protected IRubyObject doClose(ThreadContext context) throws InterruptedException {
+        if (!closed) {
+            closed = true;
+
+            if (lock.hasWaiters(popCond)) {
+                popCond.signalAll();
+            }
+
+            if (lock.hasWaiters(pushCond)) {
+                pushCond.signalAll();
+            }
+        }
+
+        return this;
+    }
+
+    @Override
+    protected IRubyObject popInternal(ThreadContext context, boolean should_block) throws InterruptedException {
+        lock.lock();
+        try {
+            IRubyObject result = should_block ? popBlocking(context) : popNonblocking(context);
+
+            pushCond.signal();
+
+            return result;
+        } finally {
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
     }
 }

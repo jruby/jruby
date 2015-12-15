@@ -27,9 +27,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.thread;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -44,43 +45,17 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.DataType;
 
 /**
  * The "Queue" class from the 'thread' library.
  */
 @JRubyClass(name = "Queue")
-public class Queue extends RubyObject {
-    protected BlockingQueue<IRubyObject> queue;
-    protected AtomicLong numWaiting = new AtomicLong();
-
-    final RubyThread.Task<Queue, IRubyObject> takeTask = new RubyThread.Task<Queue, IRubyObject>() {
-        @Override
-        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
-            return queue.getQueueSafe().take();
-        }
-
-        @Override
-        public void wakeup(RubyThread thread, Queue data) {
-            thread.getNativeThread().interrupt();
-        }
-    };
-
-    final RubyThread.Task<IRubyObject[], IRubyObject> putTask = new RubyThread.Task<IRubyObject[], IRubyObject>() {
-        @Override
-        public IRubyObject run(ThreadContext context, IRubyObject[] args) throws InterruptedException {
-            final BlockingQueue<IRubyObject> queue = getQueueSafe();
-            if(args.length == 2 && args[1].isTrue() && queue.remainingCapacity() == 0) {
-                throw context.runtime.newThreadError("queue full");
-            }
-            queue.put(args[0]);
-            return context.nil;
-        }
-
-        @Override
-        public void wakeup(RubyThread thread, IRubyObject[] data) {
-            thread.getNativeThread().interrupt();
-        }
-    };
+public class Queue extends RubyObject implements DataType {
+    protected final ReentrantLock lock = new ReentrantLock();
+    protected final Condition popCond = lock.newCondition();
+    protected volatile List<IRubyObject> que;
+    protected volatile boolean closed;
 
     public Queue(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -96,88 +71,84 @@ public class Queue extends RubyObject {
         cQueue.undefineMethod("initialize_copy");
         cQueue.setReifiedClass(Queue.class);
         cQueue.defineAnnotatedMethods(Queue.class);
+
+        runtime.defineClass("ClosedQueueError", runtime.getStopIteration(), runtime.getStopIteration().getAllocator());
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
-        queue = new LinkedBlockingQueue<IRubyObject>();
+        que = new ArrayList<>();
+
         return this;
     }
 
-    @JRubyMethod(name = "shutdown!")
-    public IRubyObject shutdown(ThreadContext context) {
-        queue = null;
-        return context.runtime.getNil();
-    }
-    
-    public synchronized void shutdown() {
-        queue = null;
-    }
-
-    public boolean isShutdown() {
-        return queue == null;
-    }
-
-    public BlockingQueue<IRubyObject> getQueueSafe() {
-        BlockingQueue<IRubyObject> queue = this.queue;
-        checkShutdown();
-        return queue;
-    }
-
-    public synchronized void checkShutdown() {
-        if (queue == null) {
-            Ruby runtime = getRuntime();
-            throw new RaiseException(runtime, runtime.getThreadError(), "queue shut down", false);
-        }
-    }
-
     @JRubyMethod
-    public synchronized IRubyObject clear(ThreadContext context) {
-        BlockingQueue<IRubyObject> queue = getQueueSafe();
-        queue.clear();
+    public IRubyObject clear(ThreadContext context) {
+        try {
+            lock.lockInterruptibly();
+
+            getQue().clear();
+        } catch (InterruptedException ie) {
+            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#clear");
+        } finally {
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
+
         return this;
     }
 
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
-        BlockingQueue<IRubyObject> queue = getQueueSafe();
-        return context.runtime.newBoolean(queue.size() == 0);
+        return context.runtime.newBoolean(getQue().isEmpty());
     }
 
     @JRubyMethod(name = {"length", "size"})
     public RubyNumeric length(ThreadContext context) {
-        checkShutdown();
-        return RubyNumeric.int2fix(context.runtime, queue.size());
-    }
-
-    protected long java_length() {
-        return queue.size();
+        return RubyNumeric.int2fix(context.runtime, getQue().size());
     }
 
     @JRubyMethod
     public RubyNumeric num_waiting(ThreadContext context) {
-        return context.runtime.newFixnum(numWaiting.longValue());
+        lock.lock();
+        try {
+            return context.runtime.newFixnum(lock.getWaitQueueLength(popCond));
+        } finally {
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
     }
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
     public IRubyObject pop(ThreadContext context) {
-        return pop(context, true);
+        try {
+            return context.getThread().executeTask(context, this, BLOCKING_POP_TASK);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#pop");
+        }
     }
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
     public IRubyObject pop(ThreadContext context, IRubyObject arg0) {
-        return pop(context, !arg0.isTrue());
+        try {
+            return context.getThread().executeTask(context, this, !arg0.isTrue() ? BLOCKING_POP_TASK : NONBLOCKING_POP_TASK);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#pop");
+        }
     }
 
-    @JRubyMethod(name = {"push", "<<", "enq"}, required = 1, optional = 1)
-    public IRubyObject push(ThreadContext context, final IRubyObject[] args) {
-        checkShutdown();
-        try {
-            context.getThread().executeTask(context, args, putTask);
-            return this;
-        } catch (InterruptedException ie) {
-            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#push");
+    @JRubyMethod(name = {"push", "<<", "enq"})
+    public IRubyObject push(ThreadContext context, IRubyObject value) {
+        if (closed) {
+            raiseClosedError(context);
         }
+        lock.lock();
+        try {
+            getQue().add(value);
+            popCond.signal();
+        } finally {
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
+
+        return this;
     }
 
     @JRubyMethod
@@ -185,19 +156,121 @@ public class Queue extends RubyObject {
         return ThreadLibrary.undumpable(context, this);
     }
 
-    private IRubyObject pop(ThreadContext context, boolean should_block) {
-        final BlockingQueue<IRubyObject> queue = getQueueSafe();
-        if (!should_block && queue.size() == 0) {
-            throw new RaiseException(context.runtime, context.runtime.getThreadError(), "queue empty", false);
-        }
-        numWaiting.incrementAndGet();
+    @JRubyMethod
+    public IRubyObject close(ThreadContext context) {
+        lock.lock();
         try {
-            return context.getThread().executeTask(context, this, takeTask);
+            doClose(context);
         } catch (InterruptedException ie) {
             throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#pop");
         } finally {
-            numWaiting.decrementAndGet();
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
+
+        return this;
+    }
+
+    @JRubyMethod(name = "closed?")
+    public IRubyObject closed_p(ThreadContext context) {
+        return context.runtime.newBoolean(closed);
+    }
+
+    protected IRubyObject doClose(ThreadContext context) throws InterruptedException {
+        if (!closed) {
+            closed = true;
+
+            if (lock.hasWaiters(popCond)) {
+                popCond.signalAll();
+            }
+        }
+
+        return this;
+    }
+
+    public synchronized void shutdown() {
+        closed = true;
+    }
+
+    public boolean isShutdown() {
+        return closed;
+    }
+
+    public synchronized void checkShutdown() {
+        if (isShutdown()) {
+            Ruby runtime = getRuntime();
+            throw new RaiseException(runtime, runtime.getThreadError(), "queue shut down", false);
         }
     }
-    
+
+    protected long java_length() {
+        return getQue().size();
+    }
+
+    protected IRubyObject popInternal(ThreadContext context, boolean should_block) throws InterruptedException {
+        lock.lock();
+        try {
+            return should_block ? popBlocking(context) : popNonblocking(context);
+        } finally {
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
+    }
+
+    protected IRubyObject popBlocking(ThreadContext context) throws InterruptedException {
+        while (getQue().isEmpty()) {
+            if (closed) {
+                return context.nil;
+            }
+            else {
+                assert(getQue().size() == 0);
+                assert(!closed);
+
+                popCond.await();
+            }
+        }
+
+        return getQue().remove(0);
+    }
+
+    protected IRubyObject popNonblocking(ThreadContext context) throws InterruptedException {
+        lock.lock();
+        try {
+            if (getQue().isEmpty()) {
+                throw context.runtime.newThreadError("queue empty");
+            }
+
+            return getQue().remove(0);
+        } finally {
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
+    }
+
+    private static final RubyThread.Task<Queue, IRubyObject> BLOCKING_POP_TASK = new RubyThread.Task<Queue, IRubyObject>() {
+        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
+            return queue.popInternal(context, true);
+        }
+        public void wakeup(RubyThread thread, Queue queue) {
+            thread.getNativeThread().interrupt();
+        }
+    };
+
+    private static final RubyThread.Task<Queue, IRubyObject> NONBLOCKING_POP_TASK = new RubyThread.Task<Queue, IRubyObject>() {
+        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
+            return queue.popInternal(context, false);
+        }
+        public void wakeup(RubyThread thread, Queue queue) {
+            thread.getNativeThread().interrupt();
+        }
+    };
+
+    public IRubyObject raiseClosedError(ThreadContext context) {
+        throw context.runtime.newRaiseException(context.runtime.getClass("ClosedQueueError"), "queue closed");
+    }
+
+    protected List<IRubyObject> getQue() {
+        List<IRubyObject> que = this.que;
+
+        if (que == null) throw getRuntime().newTypeError(this + " not initialized");
+
+        return que;
+    }
 }

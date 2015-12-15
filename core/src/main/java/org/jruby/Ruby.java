@@ -1327,6 +1327,7 @@ public final class Ruby implements Constantizable {
     private void bootstrap() {
         initCore();
         initExceptions();
+        initLibraries();
     }
 
     private void initDefinedMessages() {
@@ -1565,11 +1566,6 @@ public final class Ruby implements Constantizable {
             RubyEnumerator.defineEnumerator(this);
         }
 
-        // Fiber depends on thread library, so we load it here
-        new ThreadLibrary().load(this, false);
-
-        new ThreadFiberLibrary().load(this, false);
-
         TracePoint.createTracePointClass(this);
     }
 
@@ -1648,6 +1644,11 @@ public final class Ruby implements Constantizable {
         inRecursiveListOperation.set(false);
 
         initErrno();
+    }
+
+    private void initLibraries() {
+        new ThreadLibrary().load(this, false);
+        new ThreadFiberLibrary().load(this, false);
     }
 
     private RubyClass defineClassIfAllowed(String name, RubyClass superClass) {
