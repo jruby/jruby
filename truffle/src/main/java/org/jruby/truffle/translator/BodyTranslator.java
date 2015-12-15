@@ -1768,7 +1768,7 @@ public class BodyTranslator extends Translator {
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, parseEnvironment, returnID, hasOwnScope, false,
                 sharedMethodInfo, namedMethodName, true, parseEnvironment.allocateBreakID());
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, isProc, source, argsNode);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
 
         if (isProc) {
             methodCompiler.translatingForStatement = translatingForStatement;
