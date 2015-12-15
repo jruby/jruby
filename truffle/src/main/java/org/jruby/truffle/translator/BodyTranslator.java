@@ -1765,6 +1765,25 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
+    public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+        final org.jruby.ast.ArgsNode argsNode = node.getArgsNode();
+
+        // TODO(cs): code copied and modified from visitIterNode - extract common
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true,
+                Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
+
+        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                context, environment, environment.getParseEnvironment(), environment.getReturnID(), true, false,
+                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBreakID());
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
+
+        final RubyNode definitionNode = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.LAMBDA);
+
+        return addNewlineIfNeeded(node, definitionNode);
+    }
+
+    @Override
     public RubyNode visitLocalAsgnNode(org.jruby.ast.LocalAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
@@ -2744,24 +2763,6 @@ public class BodyTranslator extends Translator {
 
         final RubyNode ret = new ReadMatchReferenceNode(context, translate(node.getPosition()), index);
         return addNewlineIfNeeded(node, ret);
-    }
-
-    public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-        final org.jruby.ast.ArgsNode argsNode = node.getArgsNode();
-
-        // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true,
-                Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
-
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getReturnID(), true, false,
-                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBreakID());
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
-
-        final RubyNode definitionNode = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.LAMBDA);
-
-        return addNewlineIfNeeded(node, definitionNode);
     }
 
     protected RubyNode initFlipFlopStates(SourceSection sourceSection) {
