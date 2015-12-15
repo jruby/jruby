@@ -1740,6 +1740,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitIterNode(org.jruby.ast.IterNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
+        final org.jruby.ast.ArgsNode argsNode = node.getArgsNode();
 
         /*
          * In a block we do NOT allocate a new return ID - returns will return from the method, not
@@ -1749,22 +1750,9 @@ public class BodyTranslator extends Translator {
 
         final boolean hasOwnScope = !translatingForStatement;
 
-        org.jruby.ast.ArgsNode argsNode;
-
-        if (node.getVarNode() instanceof org.jruby.ast.ArgsNode) {
-            argsNode = (org.jruby.ast.ArgsNode) node.getVarNode();
-        } else if (node.getVarNode() instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.ArgumentNode arg = new org.jruby.ast.ArgumentNode(node.getPosition(), ((org.jruby.ast.DAsgnNode) node.getVarNode()).getName());
-            final org.jruby.ast.ListNode preArgs = new org.jruby.ast.ArrayNode(node.getPosition(), arg);
-            argsNode = new org.jruby.ast.ArgsNode(node.getPosition(), preArgs, null, null, null, null, null, null);
-        } else if (node.getVarNode() == null) {
-            argsNode = null;
-        } else {
-            throw new UnsupportedOperationException();
-        }
-
         // Unset this flag for any for any blocks within the for statement's body
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false, false, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true,
+                Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
@@ -2760,23 +2748,11 @@ public class BodyTranslator extends Translator {
 
     public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-
-        org.jruby.ast.ArgsNode argsNode;
-
-        if (node.getVarNode() instanceof org.jruby.ast.ArgsNode) {
-            argsNode = (org.jruby.ast.ArgsNode) node.getVarNode();
-        } else if (node.getVarNode() instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.ArgumentNode arg = new org.jruby.ast.ArgumentNode(node.getPosition(), ((org.jruby.ast.DAsgnNode) node.getVarNode()).getName());
-            final org.jruby.ast.ListNode preArgs = new org.jruby.ast.ArrayNode(node.getPosition(), arg);
-            argsNode = new org.jruby.ast.ArgsNode(node.getPosition(), preArgs, null, null, null, null, null, null);
-        } else if (node.getVarNode() == null) {
-            argsNode = null;
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        final org.jruby.ast.ArgsNode argsNode = node.getArgsNode();
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false, false, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true,
+                Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), true, false,
