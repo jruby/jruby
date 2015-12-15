@@ -3,6 +3,7 @@ package org.jruby.ir.representations;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.dirgra.ExplicitVertexID;
 import org.jruby.ir.IRManager;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.listeners.InstructionsListener;
@@ -134,16 +135,23 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         this.instrs.addAll(foodBB.instrs);
     }
 
-    // FIXME: Untested in inliner (and we need to replace cloneInstrs(InlineCloneInfo) with this).
     public BasicBlock clone(CloneInfo info, CFG newCFG) {
         BasicBlock newBB = new BasicBlock(newCFG, info.getRenamedLabel(label));
         boolean isClosureClone = info instanceof InlineCloneInfo && ((InlineCloneInfo) info).isClosure();
 
         for (Instr instr: instrs) {
             Instr newInstr = instr.clone(info);
+            // Inlining clones the original CFG/BBs and we want to maintain ipc since it is how
+            // we find which instr we want (we clone original instr and ipc is our identity).
             if (info instanceof SimpleCloneInfo && ((SimpleCloneInfo) info).shouldCloneIPC()) {
                 newInstr.setIPC(instr.getIPC());
                 newInstr.setRPC(instr.getRPC());
+            }
+
+            // All call-derived types do not clone this field.  Inliner clones original instrs
+            // and we need this preserved to make sure we do not endless inline the same call.
+            if (instr instanceof CallBase && ((CallBase) instr).inliningBlocked()) {
+                ((CallBase) newInstr).blockInlining();
             }
 
             if (newInstr != null) {  // inliner may kill off unneeded instr
