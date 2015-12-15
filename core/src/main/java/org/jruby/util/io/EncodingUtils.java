@@ -1842,7 +1842,7 @@ public class EncodingUtils {
 
     // MRI: get_actual_encoding
     public static Encoding getActualEncoding(Encoding enc, ByteList byteList) {
-        if (enc.isDummy() && enc instanceof UnicodeEncoding) {
+        if (enc.isDummy() && enc.isUnicode()) {
             // handle dummy UTF-16 and UTF-32 by scanning for BOM, as in MRI
             byte[] bytes = byteList.unsafeBytes();
             int p = byteList.begin();
