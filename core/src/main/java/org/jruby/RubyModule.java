@@ -57,7 +57,6 @@ import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
@@ -68,10 +67,8 @@ import org.jruby.ir.IRMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
@@ -3239,6 +3236,30 @@ public class RubyModule extends RubyObject {
         return constantNames;
     }
 
+    public void deprecateConstant(Ruby runtime, String name) {
+        ConstantEntry entry = getConstantMap().get(name);
+        if (entry == null) {
+            throw runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
+        }
+
+        storeConstant(name, entry.value, entry.hidden, true);
+        invalidateConstantCache(name);
+    }
+
+    @JRubyMethod
+    public IRubyObject deprecate_constant(ThreadContext context, IRubyObject rname) {
+        deprecateConstant(context.runtime, validateConstant(rname));
+        return this;
+    }
+
+    @JRubyMethod(rest = true)
+    public IRubyObject deprecate_constant(ThreadContext context, IRubyObject[] names) {
+        for (IRubyObject rname : names) {
+            deprecate_constant(context, rname);
+        }
+        return this;
+    }
+
     @JRubyMethod
     public IRubyObject private_constant(ThreadContext context, IRubyObject rubyName) {
         String name = validateConstant(rubyName);
@@ -3932,6 +3953,15 @@ public class RubyModule extends RubyObject {
         if (entry.hidden && !includePrivate) {
             throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", name);
         }
+        if (entry.deprecated) {
+            final Ruby runtime = getRuntime();
+            if ( "Object".equals( getName() ) ) {
+                runtime.getWarnings().warn(ID.CONSTANT_DEPRECATED, "constant ::"+ name +" is deprecated");
+            }
+            else {
+                runtime.getWarnings().warn(ID.CONSTANT_DEPRECATED, "constant "+ getName() +"::"+ name +" is deprecated");
+            }
+        }
 
         return entry.value;
     }
@@ -3955,6 +3985,15 @@ public class RubyModule extends RubyObject {
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden);
+    }
+
+    // NOTE: private for now - not sure about the API - maybe an int mask would be better?
+    private IRubyObject storeConstant(String name, IRubyObject value, boolean hidden, boolean deprecated) {
+        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
+        assert value != null : "value is null";
+
+        ensureConstantsSettable();
+        return constantTableStore(name, value, hidden, deprecated);
     }
 
     @Deprecated
@@ -4070,8 +4109,12 @@ public class RubyModule extends RubyObject {
     }
 
     protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
+        return constantTableStore(name, value, hidden, false);
+    }
+
+    protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden, boolean deprecated) {
         Map<String, ConstantEntry> constMap = getConstantMapForWrite();
-        constMap.put(name, new ConstantEntry(value, hidden));
+        constMap.put(name, new ConstantEntry(value, hidden, deprecated));
         return value;
     }
 
@@ -4264,6 +4307,7 @@ public class RubyModule extends RubyObject {
      */
     private String cachedName;
 
+    @SuppressWarnings("unchecked")
     private volatile Map<String, ConstantEntry> constants = Collections.EMPTY_MAP;
 
     /**
@@ -4272,14 +4316,22 @@ public class RubyModule extends RubyObject {
     public static class ConstantEntry {
         public final IRubyObject value;
         public final boolean hidden;
+        final boolean deprecated;
 
         public ConstantEntry(IRubyObject value, boolean hidden) {
             this.value = value;
             this.hidden = hidden;
+            this.deprecated = false;
+        }
+
+        ConstantEntry(IRubyObject value, boolean hidden, boolean deprecated) {
+            this.value = value;
+            this.hidden = hidden;
+            this.deprecated = deprecated;
         }
 
         public ConstantEntry dup() {
-            return new ConstantEntry(value, hidden);
+            return new ConstantEntry(value, hidden, deprecated);
         }
     }
 
