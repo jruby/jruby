@@ -49,7 +49,7 @@ public class Profiler {
     // Structure on what a callsite is.  It lives in an IC. It will be some form of call (CallBase).
     // It might have been called count times.
     public static class IRCallSite {
-        InterpreterContext ic;          // ic where this call site lives
+        IRScope scope;
         long id = INVALID_CALLSITE_ID;  // Callsite id (unique to system)
         private CallBase call = null;   // which instr is at this callsite
         long count;                     // how many times callsite has been executed
@@ -58,7 +58,7 @@ public class Profiler {
         public IRCallSite() {}
 
         public IRCallSite(IRCallSite cs) {
-            ic = cs.ic;
+            scope = cs.scope;
             id = cs.id;
             call  = cs.call;
             count = 0;
@@ -73,7 +73,7 @@ public class Profiler {
         }
 
         private CallBase findCall() {
-            FullInterpreterContext fic = (FullInterpreterContext) ic;
+            FullInterpreterContext fic = scope.getFullInterpreterContext();
             for (BasicBlock bb: fic.getLinearizedBBList()) {
                 for (Instr instr: bb.getInstrs()) {
                     if (instr instanceof CallBase && ((CallBase) instr).callSiteId == id) return (CallBase) instr;
@@ -87,13 +87,13 @@ public class Profiler {
             return (int) call.callSiteId;
         }
 
-        public void update(long callSiteId, InterpreterContext ic) {
-            this.ic = ic;
+        public void update(long callSiteId, IRScope scope) {
+            this.scope = scope;
             this.id = callSiteId;
         }
 
-        public void update(CallBase call, InterpreterContext ic) {
-            this.ic = ic;
+        public void update(CallBase call, IRScope scope) {
+            this.scope = scope;
             this.id = call.callSiteId;
             this.call = call;
         }
@@ -187,13 +187,16 @@ public class Profiler {
             CallSiteProfile callSiteProfile = callProfile.get(id);
             IRCallSite callSite  = callSiteProfile.cs;
             boolean monomorphic = callSiteProfile.retallyCallCount();
+            CallBase call = callSite.getCall();
 
             //System.out.println("candidate: calls=" + callSite.count + ", mono: " + monomorphic + ", KS: " + callSiteProfile.counters.size());
-            if (monomorphic && !callSite.getCall().inliningBlocked()) {
+            if (monomorphic && call != null && !call.inliningBlocked()) {
                 Compilable compilable = callSiteProfile.counters.keySet().iterator().next().getCompilable();
 
                 //System.out.println("SCOPE: " + callSiteProfile.counters.keySet().iterator().next());
-                if (compilable != null) {
+                if (compilable != null && compilable instanceof CompiledIRMethod) {
+                    if (callSite.scope.getCompilable() == null) continue;
+
                     callSites.add(callSite);
                     callSite.liveMethod = compilable;
                 } else {  // Interpreter
@@ -201,11 +204,8 @@ public class Profiler {
                     if (runtimeCallSite != null && runtimeCallSite instanceof CachingCallSite) {
                         DynamicMethod method = ((CachingCallSite) runtimeCallSite).getCache().method;
 
-                        if (callSite.getCall().getName().equals("[]")) {
-                            System.out.println(callSite.ic.toStringInstrs());
-                        }
-                        if (!(method instanceof Compilable) || !((Compilable) method).getIRScope().isFullBuildComplete())
-                            continue;
+                        if (!(method instanceof Compilable)) continue;
+                        if (!areScopesFullyBuilt(callSite.scope, (Compilable) method)) continue;
 
                         callSites.add(callSite);
                         callSite.liveMethod = (Compilable) method;
@@ -217,6 +217,10 @@ public class Profiler {
         }
 
         return total;
+    }
+
+    private static boolean areScopesFullyBuilt(IRScope callingScope, Compilable liveMethod) {
+        return liveMethod.getIRScope().isFullBuildComplete() && callingScope.isFullBuildComplete();
     }
 
     private static void analyzeProfile() {
@@ -248,7 +252,7 @@ public class Profiler {
             //" in scope " + ircs.ic.getScope() + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
 
-            InterpreterContext parentIC = callSite.ic;
+            InterpreterContext parentIC = callSite.scope.getFullInterpreterContext();
             boolean isClosure = parentIC.getScope() instanceof IRClosure;
 
             // This has several of assumptions in it:
@@ -348,13 +352,13 @@ public class Profiler {
     @JIT
     public static void markCallAboutToBeCalled(long callsiteId, IRScope scope) {
         callerSite.call = null;
-        callerSite.update(callsiteId, scope.getFullInterpreterContext());
+        callerSite.update(callsiteId, scope);
     }
 
     // We do not pass profiling instructions through call so we temporarily tuck away last IR executed
     // call in Profiler.
     public static void markCallAboutToBeCalled(CallBase call, InterpreterContext ic) {
-        callerSite.update(call, ic);
+        callerSite.update(call, ic.getScope());
     }
 
     public static void clockTick() {
