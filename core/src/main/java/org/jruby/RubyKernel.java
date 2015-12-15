@@ -1295,7 +1295,7 @@ public class RubyKernel {
             final RubyClass StopIteration = runtime.getStopIteration();
             if ( StopIteration.isInstance(ex.getException()) ) {
                 runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-                return context.nil;
+                return ex.getException().callMethod("result");
             }
             else {
                 throw ex;
