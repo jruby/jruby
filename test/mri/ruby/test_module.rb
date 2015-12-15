@@ -678,14 +678,18 @@ class TestModule < Test::Unit::TestCase
 
   def test_const_set_invalid_name
     c1 = Class.new
-    assert_raise(NameError) { c1.const_set(:foo, :foo) }
-    assert_raise(NameError) { c1.const_set("bar", :foo) }
-    assert_raise(TypeError) { c1.const_set(1, :foo) }
+    assert_raise_with_message(NameError, /foo/) { c1.const_set(:foo, :foo) }
+    assert_raise_with_message(NameError, /bar/) { c1.const_set("bar", :foo) }
+    assert_raise_with_message(TypeError, /1/) { c1.const_set(1, :foo) }
     assert_nothing_raised(NameError) { c1.const_set("X\u{3042}", :foo) }
     assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-16be"), :foo) }
     assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-16le"), :foo) }
     assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-32be"), :foo) }
     assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-32le"), :foo) }
+    cx = EnvUtil.labeled_class("X\u{3042}")
+    EnvUtil.with_default_internal(Encoding::UTF_8) {
+      assert_raise_with_message(TypeError, /X\u{3042}/) { c1.const_set(cx, :foo) }
+    }
   end
 
   def test_const_get_invalid_name
@@ -823,6 +827,9 @@ class TestModule < Test::Unit::TestCase
     c.class_eval('@@foo = :foo')
     c.class_eval { remove_class_variable(:@@foo) }
     assert_equal(false, c.class_variable_defined?(:@@foo))
+    assert_raise(NameError) do
+      c.class_eval { remove_class_variable(:@var) }
+    end
   end
 
   def test_export_method
@@ -1083,6 +1090,8 @@ class TestModule < Test::Unit::TestCase
     assert_equal("C\u{df}", c.name, '[ruby-core:24600]')
     c = eval("class C\u{df}; self; end")
     assert_equal("TestModule::C\u{df}", c.name, '[ruby-core:24600]')
+    c = Module.new.module_eval("class X\u{df} < Module; self; end")
+    assert_match(/::X\u{df}:/, c.new.to_s)
   end
 
   def test_method_added
@@ -1350,6 +1359,13 @@ class TestModule < Test::Unit::TestCase
     assert_equal("foo", c.class_eval("FOO"))
     c.public_constant(:FOO)
     assert_equal("foo", c::FOO)
+  end
+
+  def test_deprecate_constant
+    c = Class.new
+    c.const_set(:FOO, "foo")
+    c.deprecate_constant(:FOO)
+    assert_warn(/deprecated/) {c::FOO}
   end
 
   def test_constants_with_private_constant
@@ -1721,6 +1737,38 @@ class TestModule < Test::Unit::TestCase
     assert_equal('hello!', foo.new.hello, bug9236)
   end
 
+  def test_prepend_each_classes
+    m = labeled_module("M")
+    c1 = labeled_class("C1") {prepend m}
+    c2 = labeled_class("C2", c1) {prepend m}
+    assert_equal([m, c2, m, c1], c2.ancestors[0, 4], "should be able to prepend each classes")
+  end
+
+  def test_prepend_no_duplication
+    m = labeled_module("M")
+    c = labeled_class("C") {prepend m; prepend m}
+    assert_equal([m, c], c.ancestors[0, 2], "should never duplicate")
+  end
+
+  def test_prepend_in_superclass
+    m = labeled_module("M")
+    c1 = labeled_class("C1")
+    c2 = labeled_class("C2", c1) {prepend m}
+    c1.class_eval {prepend m}
+    assert_equal([m, c2, m, c1], c2.ancestors[0, 4], "should accesisble prepended module in superclass")
+  end
+
+  def test_prepend_call_super
+    assert_separately([], <<-'end;') #do
+      bug10847 = '[ruby-core:68093] [Bug #10847]'
+      module M; end
+      Float.prepend M
+      assert_nothing_raised(SystemStackError, bug10847) do
+        0.3.numerator
+      end
+    end;
+  end
+
   def test_class_variables
     m = Module.new
     m.class_variable_set(:@@foo, 1)
@@ -1922,8 +1970,8 @@ class TestModule < Test::Unit::TestCase
     assert_raise(NoMethodError, bug8284) {Object.define_method}
   end
 
-  def test_include_module_with_constants_invalidates_method_cache
-    assert_in_out_err([], <<-RUBY, %w(123 456), [])
+  def test_include_module_with_constants_does_not_invalidate_method_cache
+    assert_in_out_err([], <<-RUBY, %w(123 456 true), [])
       A = 123
 
       class Foo
@@ -1937,8 +1985,13 @@ class TestModule < Test::Unit::TestCase
       end
 
       puts Foo.a
+      starting = RubyVM.stat[:global_method_state]
+
       Foo.send(:include, M)
+
+      ending = RubyVM.stat[:global_method_state]
       puts Foo.a
+      puts starting == ending
     RUBY
   end
 
@@ -1997,9 +2050,41 @@ class TestModule < Test::Unit::TestCase
 
       A.prepend InspectIsShallow
 
-      expect = "#<Method: A(Object)#inspect(shallow_inspect)>"
+      expect = "#<Method: A(ShallowInspect)#inspect(shallow_inspect)>"
       assert_equal expect, A.new.method(:inspect).inspect, "#{bug_10282}"
     RUBY
+  end
+
+  def test_define_method_with_unbound_method
+    # Passing an UnboundMethod to define_method succeeds if it is from an ancestor
+    assert_nothing_raised do
+      cls = Class.new(String) do
+        define_method('foo', String.instance_method(:to_s))
+      end
+
+      obj = cls.new('bar')
+      assert_equal('bar', obj.foo)
+    end
+
+    # Passing an UnboundMethod to define_method fails if it is not from an ancestor
+    assert_raise(TypeError) do
+      Class.new do
+        define_method('foo', String.instance_method(:to_s))
+      end
+    end
+  end
+
+  def test_redefinition_mismatch
+    m = Module.new
+    m.module_eval "A = 1"
+    assert_raise_with_message(TypeError, /is not a module/) {
+      m.module_eval "module A; end"
+    }
+    n = "M\u{1f5ff}"
+    m.module_eval "#{n} = 42"
+    assert_raise_with_message(TypeError, "#{n} is not a module") {
+      m.module_eval "module #{n}; end"
+    }
   end
 
   private
