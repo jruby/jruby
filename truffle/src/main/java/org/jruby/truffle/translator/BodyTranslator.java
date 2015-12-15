@@ -1762,9 +1762,12 @@ public class BodyTranslator extends Translator {
 
         final String namedMethodName = isLambda ? sharedMethodInfo.getName(): environment.getNamedMethodName();
 
+        final ParseEnvironment parseEnvironment = environment.getParseEnvironment();
+        final ReturnID returnID = isLambda ? parseEnvironment.allocateReturnID() : environment.getReturnID();
+
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
-                sharedMethodInfo, namedMethodName, true, environment.getParseEnvironment().allocateBreakID());
+                context, environment, parseEnvironment, returnID, hasOwnScope, false,
+                sharedMethodInfo, namedMethodName, true, parseEnvironment.allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, isProc, source, argsNode);
 
         if (isProc) {
