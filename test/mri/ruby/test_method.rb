@@ -124,6 +124,11 @@ class TestMethod < Test::Unit::TestCase
     assert_nil(eval("class TestCallee; __callee__; end"))
   end
 
+  def test_orphan_callee
+    c = Class.new{def foo; proc{__callee__}; end; alias alias_foo foo}
+    assert_equal(:alias_foo, c.new.alias_foo.call, '[Bug #11046]')
+  end
+
   def test_method_in_define_method_block
     bug4606 = '[ruby-core:35386]'
     c = Class.new do
@@ -273,19 +278,38 @@ class TestMethod < Test::Unit::TestCase
     end
   end
 
-  def test_define_singleton_method
+  def test_define_method_no_proc
     o = Object.new
     def o.foo(c)
       c.class_eval { define_method(:foo) }
     end
     c = Class.new
-    o.foo(c) { :foo }
-    assert_equal(:foo, c.new.foo)
+    assert_raise(ArgumentError) {o.foo(c)}
 
+    bug11283 = '[ruby-core:69655] [Bug #11283]'
+    assert_raise(ArgumentError, bug11283) {o.foo(c) {:foo}}
+  end
+
+  def test_define_singleton_method
     o = Object.new
     o.instance_eval { define_singleton_method(:foo) { :foo } }
     assert_equal(:foo, o.foo)
+  end
 
+  def test_define_singleton_method_no_proc
+    o = Object.new
+    assert_raise(ArgumentError) {
+      o.instance_eval { define_singleton_method(:bar) }
+    }
+
+    bug11283 = '[ruby-core:69655] [Bug #11283]'
+    def o.define(n)
+      define_singleton_method(n)
+    end
+    assert_raise(ArgumentError) {o.define(:bar) {:bar}}
+  end
+
+  def test_define_method_invalid_arg
     assert_raise(TypeError) do
       Class.new.class_eval { define_method(:foo, Object.new) }
     end
@@ -652,6 +676,15 @@ class TestMethod < Test::Unit::TestCase
       EOC
   end
 
+  def test_unbound_method_proc_coerce
+    # '&' coercion of an UnboundMethod raises TypeError
+    assert_raise(TypeError) do
+      Class.new do
+        define_method('foo', &Object.instance_method(:to_s))
+      end
+    end
+  end
+
   def test___dir__
     assert_instance_of String, __dir__
     assert_equal(File.dirname(File.realpath(__FILE__)), __dir__)
@@ -865,30 +898,26 @@ class TestMethod < Test::Unit::TestCase
     assert_equal n  , rest_parameter(*(1..n)).size, '[Feature #10440]'
   end
 
-  def test_insecure_method
-    m = "\u{5371 967a}"
-    c = Class.new do
-      proc {$SAFE=3;def foo;end}.call
-      alias_method m, "foo"
-      eval "def bar; #{m}; end"
-    end
-    obj = c.new
-    assert_raise_with_message(SecurityError, /#{m}/) do
-      obj.bar
+  class C
+    D = "Const_D"
+    def foo
+      a = b = c = 12345
     end
   end
 
   def test_to_proc_binding
     bug11012 = '[ruby-core:68673] [Bug #11012]'
-    class << (obj = Object.new)
-      src = 1000.times.map {|i|"v#{i} = nil"}.join("\n")
-      eval("def foo()\n""#{src}\n""end")
-    end
 
-    b = obj.method(:foo).to_proc.binding
-    b.local_variables.each_with_index {|n, i|
-      b.local_variable_set(n, i)
-    }
-    assert_equal([998, 999], %w[v998 v999].map {|n| b.local_variable_get(n)}, bug11012)
+    b = C.new.method(:foo).to_proc.binding
+    assert_equal([], b.local_variables)
+    assert_equal("Const_D", b.eval("D")) # Check CREF
+
+    assert_raise(NameError){ b.local_variable_get(:foo) }
+    assert_equal(123, b.local_variable_set(:foo, 123))
+    assert_equal(123, b.local_variable_get(:foo))
+    assert_equal(456, b.local_variable_set(:bar, 456))
+    assert_equal(123, b.local_variable_get(:foo))
+    assert_equal(456, b.local_variable_get(:bar))
+    assert_equal([:bar, :foo], b.local_variables.sort)
   end
 end
