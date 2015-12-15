@@ -22,6 +22,16 @@ describe "A lambda literal -> () { }" do
     -> () { }.lambda?.should be_true
   end
 
+  it "has its own scope for local variables" do
+    l = -> arg {
+      var = arg
+      # this would override var if it was declared outside the lambda
+      l.call(arg-1) if arg > 0
+      var
+    }
+    l.call(1).should == 1
+  end
+
   context "assigns no local variables" do
     evaluate <<-ruby do
         @a = -> { }
