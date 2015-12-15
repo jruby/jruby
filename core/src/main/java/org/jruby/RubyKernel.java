@@ -1245,9 +1245,9 @@ public class RubyKernel {
         RubyClass singleton_class = recv.getSingletonClass();
         if (args.length > 1) {
             IRubyObject arg1 = args[1];
-            if (context.runtime.getUnboundMethod().isInstance(args[1])) {
-                RubyUnboundMethod method = (RubyUnboundMethod)arg1;
-                RubyModule owner = (RubyModule)method.owner(context);
+            if (context.runtime.getUnboundMethod().isInstance(arg1)) {
+                RubyUnboundMethod method = (RubyUnboundMethod) arg1;
+                RubyModule owner = (RubyModule) method.owner(context);
                 if (owner.isSingleton() &&
                     !(recv.getMetaClass().isSingleton() && recv.getMetaClass().isKindOfModule(owner))) {
 
