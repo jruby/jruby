@@ -217,6 +217,15 @@ public class RubyNameError extends RubyException {
         return name;
     }
 
+    @JRubyMethod
+    public IRubyObject receiver(ThreadContext context) {
+        if (name instanceof RubyNameErrorMessage) {
+            return ((RubyNameErrorMessage)name).object;
+        }
+
+        throw context.runtime.newArgumentError("no receiver is available");
+    }
+
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         super.copySpecialInstanceVariables(clone);
