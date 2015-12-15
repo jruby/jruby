@@ -17,7 +17,13 @@ import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
+import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.util.ByteList;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -48,6 +54,60 @@ public abstract class IRBytecodeAdapter {
         return adapter.getName();
     }
 
+    /**
+     * Utility to lazily construct and cache a call site object.
+     *
+     * @param method the SkinnyMethodAdapter to that's generating the containing method body
+     * @param className the name of the class in which the field will reside
+     * @param siteName the unique name of the site, used for the field
+     * @param rubyName the Ruby method name being invoked
+     * @param callType the type of call
+     * @param isPotentiallyRefined whether the call might be refined
+     */
+    public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, String rubyName, CallType callType, boolean isPotentiallyRefined) {
+        // call site object field
+        method.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, siteName, ci(CachingCallSite.class), null, null).visitEnd();
+
+        // lazily construct it
+        method.getstatic(className, siteName, ci(CachingCallSite.class));
+        method.dup();
+        Label doCall = new Label();
+        method.ifnonnull(doCall);
+        method.pop();
+        method.ldc(rubyName);
+        Class<? extends CachingCallSite> siteClass;
+        String signature;
+        if (isPotentiallyRefined) {
+            siteClass = RefinedCachingCallSite.class;
+            signature = sig(siteClass, String.class, String.class);
+            method.ldc(callType.name());
+        } else {
+            switch (callType) {
+                case NORMAL:
+                    siteClass = NormalCachingCallSite.class;
+                    break;
+                case FUNCTIONAL:
+                    siteClass = FunctionalCachingCallSite.class;
+                    break;
+                case VARIABLE:
+                    siteClass = VariableCachingCallSite.class;
+                    break;
+                default:
+                    throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
+            }
+            signature = sig(siteClass, String.class);
+        }
+        method.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), signature);
+        method.dup();
+        method.putstatic(className, siteName, ci(CachingCallSite.class));
+
+        method.label(doCall);
+    }
+
+    public String getUniqueSiteName(String name) {
+        return "invokeOther" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+    }
+
     public ClassData getClassData() {
         return classData;
     }
@@ -76,6 +136,10 @@ public abstract class IRBytecodeAdapter {
         adapter.aload(signature.argOffset("context"));
     }
 
+    public void loadSelfBlock() {
+        adapter.aload(signature.argOffset(JVMVisitor.SELF_BLOCK_NAME));
+    }
+
     public void loadStaticScope() {
         adapter.aload(signature.argOffset("scope"));
     }
@@ -89,7 +153,7 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadBlock() {
-        adapter.aload(signature.argOffset("block"));
+        adapter.aload(signature.argOffset(JVMVisitor.BLOCK_ARG_NAME));
     }
 
     public void loadFrameClass() {
@@ -112,6 +176,14 @@ public abstract class IRBytecodeAdapter {
         } else {
             adapter.aload(signature.argOffset("type"));
         }
+    }
+
+    public void storeSelf() {
+        adapter.astore(signature.argOffset("self"));
+    }
+
+    public void storeArgs() {
+        adapter.astore(signature.argOffset("args"));
     }
 
     public void storeLocal(int i) {

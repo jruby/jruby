@@ -42,6 +42,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     @Override
     public void completeBuild(InterpreterContext interpreterContext) {
         this.interpreterContext = interpreterContext;
+        hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
     }
 
     @Override
@@ -67,8 +68,8 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
         if (interpreterContext == null) {
             interpreterContext = closure.getInterpreterContext();
+            hasCallProtocolIR = false;
         }
-        hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         return interpreterContext;
     }
 
@@ -83,7 +84,14 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     }
 
     @Override
+    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        context.setCurrentBlockType(Block.Type.PROC);
+        return Interpreter.INTERPRET_BLOCK(context, block, null, interpreterContext, args, block.getBinding().getMethod(), blockArg);
+    }
+
+    @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        context.setCurrentBlockType(Block.Type.NORMAL);
         return Interpreter.INTERPRET_BLOCK(context, block, self, interpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
     }
 

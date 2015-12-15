@@ -11,10 +11,16 @@ project 'JRuby Truffle' do
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'
+  jar 'org.antlr:antlr4-runtime:4.5'
+
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
   jar 'com.oracle:truffle:0.7'
   jar 'com.oracle:truffle-dsl-processor:0.7', :scope => 'provided'
+
+  plugin 'org.antlr:antlr4-maven-plugin', '4.5' do
+    execute_goal :antlr4
+  end
 
   plugin( :compiler,
           'encoding' => 'utf-8',
@@ -35,7 +41,8 @@ project 'JRuby Truffle' do
                    :id => 'default-compile',
                    :phase => 'compile',
                    'annotationProcessors' => [ 'org.jruby.truffle.om.dsl.processor.OMProcessor',
-                                               'com.oracle.truffle.dsl.processor.TruffleProcessor' ],
+                                               'com.oracle.truffle.dsl.processor.TruffleProcessor',
+                                               'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',

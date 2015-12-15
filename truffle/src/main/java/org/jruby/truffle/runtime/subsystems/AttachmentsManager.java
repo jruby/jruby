@@ -47,7 +47,7 @@ public class AttachmentsManager {
         lineToProbesMap.install();
     }
 
-    public synchronized void attach(String file, int line, final DynamicObject block) {
+    public synchronized Instrument attach(String file, int line, final DynamicObject block) {
         final Instrument instrument = Instrument.create(new StandardInstrumentListener() {
 
             @Override
@@ -86,25 +86,11 @@ public class AttachmentsManager {
         for (Probe probe : lineToProbesMap.findProbes(lineLocation)) {
             if (probe.isTaggedAs(StandardSyntaxTag.STATEMENT)) {
                 probe.attach(instrument);
-                return;
+                return instrument;
             }
         }
 
         throw new RuntimeException("couldn't find a statement!");
-    }
-
-    public synchronized void detach(String file, int line) {
-        final Source source = context.getSourceCache().getBestSourceFuzzily(file);
-
-        final LineLocation lineLocation = source.createLineLocation(line);
-
-        final List<Instrument> instruments = attachments.remove(lineLocation);
-
-        if (instruments != null) {
-            for (Instrument instrument : instruments) {
-                instrument.dispose();
-            }
-        }
     }
 
 }

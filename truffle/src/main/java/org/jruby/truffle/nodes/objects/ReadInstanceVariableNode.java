@@ -9,86 +9,38 @@
  */
 package org.jruby.truffle.nodes.objects;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.Property;
-import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
+
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 
 public class ReadInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private ReadHeadObjectFieldNode readNode;
 
-    private final BranchProfile primitiveProfile = BranchProfile.create();
+    private final ConditionProfile objectProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
+    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.receiver = receiver;
         readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
     }
 
     @Override
-    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
-        final Object receiverObject = receiver.execute(frame);
-
-        if (receiverObject instanceof DynamicObject) {
-            return readNode.executeInteger((DynamicObject) receiverObject);
-        } else {
-            // TODO(CS): need to put this onto the fast path?
-
-            CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(nil());
-        }
-    }
-
-    @Override
-    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
-        final Object receiverObject = receiver.execute(frame);
-
-        if (receiverObject instanceof DynamicObject) {
-            return readNode.executeLong((DynamicObject) receiverObject);
-        } else {
-            // TODO(CS): need to put this onto the fast path?
-
-            CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(nil());
-        }
-    }
-
-    @Override
-    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
-        final Object receiverObject = receiver.execute(frame);
-
-        if (receiverObject instanceof DynamicObject) {
-            return readNode.executeDouble((DynamicObject) receiverObject);
-        } else {
-            // TODO(CS): need to put this onto the fast path?
-
-            CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(nil());
-        }
-    }
-
-    @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
 
-        if (receiverObject instanceof DynamicObject) {
+        if (objectProfile.profile(receiverObject instanceof DynamicObject)) {
             return readNode.execute((DynamicObject) receiverObject);
         } else {
-            primitiveProfile.enter();
             return nil();
         }
     }

@@ -48,6 +48,7 @@ import org.objectweb.asm.Type;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
 
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
@@ -151,7 +152,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject handleNonlocalReturn(StaticScope scope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
-            return null;
+            return null; // Unreachable
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
@@ -195,16 +196,33 @@ public class IRRuntimeHelpers {
     public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
         if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
-            throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
-        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
-            // Ignore non-local return processing in non-lambda blocks.
-            // Methods have a null blocktype
-            return handleNonlocalReturn(scope, dynScope, exc, blockType);
-        } else {
-            // Propagate
-            Helpers.throwException((Throwable)exc);
-            // should not get here
+            context.setSavedExceptionInLambda(IRException.BREAK_LocalJumpError.getException(context.getRuntime()));
             return null;
+        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
+            try {
+                // Ignore non-local return processing in non-lambda blocks.
+                // Methods have a null blocktype
+                return handleNonlocalReturn(scope, dynScope, exc, blockType);
+            } catch (Throwable e) {
+                context.setSavedExceptionInLambda(e);
+                return null;
+            }
+        } else {
+            // Propagate the exception
+            context.setSavedExceptionInLambda((Throwable)exc);
+            return null;
+        }
+    }
+
+    @JIT
+    public static void rethrowSavedExcInLambda(ThreadContext context) {
+        // This rethrows the exception saved in handleBreakAndReturnsInLambda
+        // after additional code to pop frames, bindings, etc. are done.
+        Throwable exc = context.getSavedExceptionInLambda();
+        if (exc != null) {
+            // IMPORTANT: always clear!
+            context.setSavedExceptionInLambda(null);
+            Helpers.throwException(exc);
         }
     }
 
@@ -212,7 +230,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject handlePropagatedBreak(ThreadContext context, DynamicScope dynScope, Object bjExc, Block.Type blockType) {
         if (!(bjExc instanceof IRBreakJump)) {
             Helpers.throwException((Throwable)bjExc);
-            return null;
+            return null; // Unreachable
         }
 
         IRBreakJump bj = (IRBreakJump)bjExc;
@@ -425,18 +443,18 @@ public class IRRuntimeHelpers {
         return context.runtime.newBoolean(ret);
     }
 
-    public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value) {
+    public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite callSite) {
         boolean isUndefValue = value == UndefinedValue.UNDEFINED;
         if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
                 IRubyObject v = testVals.eltInternal(i);
-                IRubyObject eqqVal = isUndefValue ? v : v.callMethod(context, "===", value);
+                IRubyObject eqqVal = isUndefValue ? v : callSite.call(context, v, v, value);
                 if (eqqVal.isTrue()) return eqqVal;
             }
             return context.runtime.newBoolean(false);
         } else {
-            return isUndefValue ? receiver : receiver.callMethod(context, "===", value);
+            return isUndefValue ? receiver : callSite.call(context, receiver, receiver, value);
         }
     }
 
@@ -794,6 +812,7 @@ public class IRRuntimeHelpers {
                             case MODULE_BODY:
                             case CLASS_BODY:
                             case METACLASS_BODY:
+                            case SCRIPT_BODY:
                                 return (RubyModule) self;
 
                             case INSTANCE_METHOD:
@@ -1467,5 +1486,188 @@ public class IRRuntimeHelpers {
             i++;
         }
         return context.runtime.newFixnum(i);
+    }
+
+    public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
+        if (args.length == 1 && args[0].respondsTo("to_ary")) {
+            IRubyObject newAry = Helpers.aryToAry(args[0]);
+            if (newAry.isNil()) {
+                args = new IRubyObject[] { args[0] };
+            } else if (newAry instanceof RubyArray) {
+                args = ((RubyArray) newAry).toJavaArray();
+            } else {
+                throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
+            }
+        }
+        return args;
+    }
+
+    public static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
+        if (args.length == 1) {
+            int arityValue = b.getBody().getSignature().arityValue();
+            return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arityValue, b.type == Block.Type.NORMAL && args[0] instanceof RubyArray);
+        } else {
+            return args;
+        }
+    }
+
+    public static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
+        // This is the placeholder for scenarios
+        // not handled by specialized instructions.
+        if (args == null) {
+            return IRubyObject.NULL_ARRAY;
+        }
+
+        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        if (isProcCall) {
+            return prepareProcArgs(context, block, args);
+        }
+
+        boolean isLambda = block.type == Block.Type.LAMBDA;
+        if (isLambda && isProcCall) {
+            return args;
+        }
+
+        BlockBody body = block.getBody();
+        org.jruby.runtime.Signature sig = body.getSignature();
+
+        // blockArity == 0 and 1 have been handled in the specialized instructions
+        // This test is when we only have opt / rest arg (either keyword or non-keyword)
+        // but zero required args.
+        if (sig.arityValue() == -1) {
+            return args;
+        }
+
+        // We get here only when we have both required and optional/rest args
+        // (keyword or non-keyword in either case).
+        // So, convert a single value to an array if possible.
+        args = toAry(context, args);
+
+        // Nothing more to do for lambdas
+        if (isLambda) {
+            return args;
+        }
+
+        // Deal with keyword args that needs special handling
+        int needsKwargs = sig.hasKwargs() ? 1 - sig.getRequiredKeywordForArityCount() : 0;
+        int required = sig.required();
+        int actual = args.length;
+        if (needsKwargs == 0 || required > actual) {
+            // Nothing to do if we have fewer args in args than what is required
+            // The required arg instructions will return nil in those cases.
+            return args;
+        }
+
+        if (sig.isFixed() && required > 0 && required+needsKwargs != actual) {
+            // Make sure we have a ruby-hash
+            IRubyObject[] newArgs = Arrays.copyOf(args, required + needsKwargs);
+            if (actual < required+needsKwargs) {
+                // Not enough args and we need an empty {} for kwargs processing.
+                newArgs[newArgs.length - 1] = RubyHash.newHash(context.runtime);
+            } else {
+                // We have more args than we need and kwargs is always the last arg.
+                newArgs[newArgs.length - 1] = args[args.length - 1];
+            }
+            args = newArgs;
+        }
+
+        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
+
+        return args;
+    }
+
+    @JIT
+    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
+        args = prepareBlockArgsInternal(context, block, args);
+        if (usesKwArgs) {
+            frobnicateKwargsArgument(context, block.getBody().getSignature().required(), args);
+        }
+        return args;
+    }
+
+    public static IRubyObject[] prepareFixedBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
+        if (args == null) {
+            return IRubyObject.NULL_ARRAY;
+        }
+
+        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        if (isProcCall) {
+            return IRRuntimeHelpers.prepareProcArgs(context, block, args);
+        }
+
+        boolean isLambda = block.type == Block.Type.LAMBDA;
+        if (isLambda && isProcCall) {
+            return args;
+        }
+
+        // SSS FIXME: This check here is not required as long as
+        // the single-instruction cases always uses PreapreSingleBlockArgInstr
+        // But, including this here for robustness for now.
+        if (block.getBody().getSignature().arityValue() == 1) {
+            return args;
+        }
+
+        // Since we have more than 1 required arg,
+        // convert a single value to an array if possible.
+        args = IRRuntimeHelpers.toAry(context, args);
+
+        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
+
+        // If there are insufficient args, ReceivePreReqdInstr will return nil
+        return args;
+    }
+
+    public static IRubyObject[] prepareSingleBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
+        if (args == null) args = IRubyObject.NULL_ARRAY;
+
+        // Deal with proc calls
+        if (context.getCurrentBlockType() == Block.Type.PROC) {
+            if (args.length == 0) {
+                args = context.runtime.getSingleNilArray();
+            } else if (args.length == 1) {
+                args = prepareProcArgs(context, block, args);
+            } else {
+                args = new IRubyObject[] { args[0] };
+            }
+        }
+
+        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
+
+        // Nothing more to do! Hurray!
+        // If there are insufficient args, ReceivePreReqdInstr will return nil
+        return args;
+    }
+
+    private static DynamicScope getNewBlockScope(Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
+        DynamicScope newScope = block.getBinding().getDynamicScope();
+        if (pushNewDynScope) return block.allocScope(newScope);
+
+        // Reuse! We can avoid the push only if surrounding vars aren't referenced!
+        if (reuseParentDynScope) return newScope;
+
+        // No change
+        return null;
+    }
+
+    @JIT
+    public static DynamicScope pushBlockDynamicScopeIfNeeded(ThreadContext context, Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
+        DynamicScope newScope = getNewBlockScope(block, pushNewDynScope, reuseParentDynScope);
+        if (newScope != null) {
+            context.pushScope(newScope);
+        }
+        return newScope;
+    }
+
+    @JIT
+    public static IRubyObject updateBlockState(Block block, IRubyObject self) {
+        if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
+            // Update self to the binding's self
+            Binding b = block.getBinding();
+            self = b.getSelf();
+            b.getFrame().setSelf(self);
+        }
+        // Clear block's eval type
+        block.setEvalType(EvalType.NONE);
+        return self;
     }
 }

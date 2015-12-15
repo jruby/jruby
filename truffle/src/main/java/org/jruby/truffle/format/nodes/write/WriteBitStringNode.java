@@ -14,9 +14,10 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.format.nodes.PackNode;
-import org.jruby.truffle.format.runtime.Endianness;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+
+import java.nio.ByteOrder;
 
 /**
  * Read a string that contains a binary string (literally a string of binary
@@ -29,13 +30,13 @@ import org.jruby.util.ByteList;
 })
 public abstract class WriteBitStringNode extends PackNode {
 
-    private final Endianness endianness;
+    private final ByteOrder byteOrder;
     private final boolean star;
     private final int length;
 
-    public WriteBitStringNode(RubyContext context, Endianness endianness, boolean star, int length) {
+    public WriteBitStringNode(RubyContext context, ByteOrder byteOrder, boolean star, int length) {
         super(context);
-        this.endianness = endianness;
+        this.byteOrder = byteOrder;
         this.star = star;
         this.length = length;
     }
@@ -62,49 +63,45 @@ public abstract class WriteBitStringNode extends PackNode {
             occurrences = lCurElemString.length();
         }
 
-        switch (endianness) {
-            case LITTLE: {
-                for (int i = 0; i < occurrences;) {
-                    if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
-                        currentByte |= 128; //set the high bit of the result
-                    }
-
-                    if ((i & 7) == 0) {
-                        writeByte(frame, (byte) (currentByte & 0xff));
-                        currentByte = 0;
-                        continue;
-                    }
-
-                    //if the index is not a multiple of 8, we are not on a byte boundary
-                    currentByte >>= 1; //shift the byte
+        if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+            for (int i = 0; i < occurrences;) {
+                if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
+                    currentByte |= 128; //set the high bit of the result
                 }
 
-                if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
-                    currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
+                if ((i & 7) == 0) {
                     writeByte(frame, (byte) (currentByte & 0xff));
-                }
-            } break;
-
-            case BIG: {
-                for (int i = 0; i < occurrences;) {
-                    currentByte |= lCurElemString.charAt(i++) & 1;
-
-                    // we filled up current byte; append it and create next one
-                    if ((i & 7) == 0) {
-                        writeByte(frame, (byte) (currentByte & 0xff));
-                        currentByte = 0;
-                        continue;
-                    }
-
-                    //if the index is not a multiple of 8, we are not on a byte boundary
-                    currentByte <<= 1;
+                    currentByte = 0;
+                    continue;
                 }
 
-                if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
-                    currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
+                //if the index is not a multiple of 8, we are not on a byte boundary
+                currentByte >>= 1; //shift the byte
+            }
+
+            if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+                currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
+                writeByte(frame, (byte) (currentByte & 0xff));
+            }
+        } else {
+            for (int i = 0; i < occurrences;) {
+                currentByte |= lCurElemString.charAt(i++) & 1;
+
+                // we filled up current byte; append it and create next one
+                if ((i & 7) == 0) {
                     writeByte(frame, (byte) (currentByte & 0xff));
+                    currentByte = 0;
+                    continue;
                 }
-            } break;
+
+                //if the index is not a multiple of 8, we are not on a byte boundary
+                currentByte <<= 1;
+            }
+
+            if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+                currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
+                writeByte(frame, (byte) (currentByte & 0xff));
+            }
         }
 
         writeNullBytes(frame, padLength);

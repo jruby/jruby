@@ -345,11 +345,16 @@ public abstract class TimePrimitiveNodes {
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public Object timeEnvZone(VirtualFrame frame, DynamicObject time) {
-            DateTime dt = Layouts.TIME.getDateTime(time);
             final DynamicObject zoneName = (DynamicObject) readTimeZoneNode.execute(frame);
+
+            return createString(StringOperations.encodeByteList(getShortZoneName(time, zoneName), UTF8Encoding.INSTANCE));
+        }
+
+        @TruffleBoundary
+        private String getShortZoneName(DynamicObject time, DynamicObject zoneName) {
+            DateTime dt = Layouts.TIME.getDateTime(time);
             final DateTimeZone zone = parseTimeZoneString(StringOperations.getString(getContext(), zoneName));
 
             dt = dt.withZone(zone);
@@ -357,9 +362,7 @@ public abstract class TimePrimitiveNodes {
             Layouts.TIME.setOffset(time, nil());
             Layouts.TIME.setRelativeOffset(time, false);
 
-            final String timezone = dt.getZone().getShortName(dt.getMillis());
-
-            return createString(StringOperations.encodeByteList(timezone, UTF8Encoding.INSTANCE));
+            return dt.getZone().getShortName(dt.getMillis());
         }
 
         // Following private methods in this class were copied over from org.jruby.RubyTime.

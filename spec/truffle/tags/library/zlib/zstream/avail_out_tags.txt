@@ -1,1 +1,0 @@
-fails:Zlib::ZStream#avail_out returns bytes in the output buffer

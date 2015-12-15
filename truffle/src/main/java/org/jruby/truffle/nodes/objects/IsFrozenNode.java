@@ -13,7 +13,6 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -69,11 +68,7 @@ public abstract class IsFrozenNode extends RubyNode {
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
     protected boolean isFrozen(DynamicObject object,
             @Cached("createReadFrozenNode()") ReadHeadObjectFieldNode readFrozenNode) {
-        try {
-            return readFrozenNode.executeBoolean(object);
-        } catch (UnexpectedResultException e) {
-            throw new UnsupportedOperationException(e);
-        }
+        return (boolean) readFrozenNode.execute(object);
     }
 
     protected ReadHeadObjectFieldNode createReadFrozenNode() {

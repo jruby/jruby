@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrument.Instrument;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -63,6 +64,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject bindingOfCaller() {
             /*
@@ -86,6 +88,10 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
+            if (frame == null) {
+                return nil();
+            }
+
             return BindingNodes.createBinding(getContext(), frame);
         }
 
@@ -98,6 +104,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject sourceOfCaller() {
             final Memo<Integer> frameCount = new Memo<>(0);
@@ -115,6 +122,10 @@ public abstract class TrufflePrimitiveNodes {
                 }
 
             });
+
+            if (source == null) {
+                return nil();
+            }
 
             return createString(StringOperations.encodeByteList(source, UTF8Encoding.INSTANCE));
         }
@@ -346,13 +357,12 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
         public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
-            getContext().getAttachmentsManager().attach(file.toString(), line, block);
-            return getContext().getCoreLibrary().getNilObject();
+            return getContext().createHandle(getContext().getAttachmentsManager().attach(file.toString(), line, block));
         }
 
     }
 
-    @CoreMethod(names = "detach", onSingleton = true, required = 2)
+    @CoreMethod(names = "detach", onSingleton = true, required = 1)
     public abstract static class DetachNode extends CoreMethodArrayArgumentsNode {
 
         public DetachNode(RubyContext context, SourceSection sourceSection) {
@@ -360,9 +370,10 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(file)")
-        public DynamicObject detach(DynamicObject file, int line) {
-            getContext().getAttachmentsManager().detach(file.toString(), line);
+        @Specialization(guards = "isHandle(handle)")
+        public DynamicObject detach(DynamicObject handle) {
+            final Instrument instrument = (Instrument) Layouts.HANDLE.getObject(handle);
+            instrument.dispose();
             return getContext().getCoreLibrary().getNilObject();
         }
 
@@ -730,16 +741,13 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode pathCall;
-
         public LoadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            pathCall = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
-        public boolean load(VirtualFrame frame, DynamicObject file, boolean wrap) {
+        public boolean load(DynamicObject file, boolean wrap) {
             if (wrap) {
                 throw new UnsupportedOperationException();
             }
@@ -748,18 +756,15 @@ public abstract class TrufflePrimitiveNodes {
                 getContext().loadFile(StringOperations.getString(getContext(), file), this);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
-                final DynamicObject rubyException = getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this);
-                pathCall.call(frame, rubyException, "path=", null, file);
-
-                throw new RaiseException(rubyException);
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
             }
 
             return true;
         }
 
         @Specialization(guards = "isRubyString(file)")
-        public boolean load(VirtualFrame frame, DynamicObject file, NotProvided wrap) {
-            return load(frame, file, false);
+        public boolean load(DynamicObject file, NotProvided wrap) {
+            return load(file, false);
         }
     }
 

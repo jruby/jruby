@@ -651,34 +651,38 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "eql?", required = 1)
     @Override
     public IRubyObject eql_p(IRubyObject other) {
-        if (other instanceof RubyFloat) {
-            double b = ((RubyFloat) other).value;
-            if (Double.isNaN(value) || Double.isNaN(b)) {
-                return getRuntime().getFalse();
-            }
-            if (value == b) {
-                return getRuntime().getTrue();
-            }
-        }
-        return getRuntime().getFalse();
+        return getRuntime().newBoolean( equals(other) );
     }
 
+    @Override
+    public boolean equals(Object other) {
+        return (other instanceof RubyFloat) && equals((RubyFloat) other);
+    }
+    
+    private boolean equals(RubyFloat that) {
+        if ( Double.isNaN(this.value) || Double.isNaN(that.value) ) return false;
+        final double val1 = this.value == -0.0 ? 0.0 : this.value;
+        final double val2 = that.value == -0.0 ? 0.0 : that.value;
+        return Double.doubleToLongBits(val1) == Double.doubleToLongBits(val2);
+    }
+    
     /** flo_hash
      * 
      */
     @JRubyMethod(name = "hash")
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
+        return getRuntime().newFixnum( hashCode() );
     }
 
     @Override
     public final int hashCode() {
-        long l = Double.doubleToLongBits(value);
-        return (int)(l ^ l >>> 32);
-    }    
+        final double val = value == 0.0 ? -0.0 : value;
+        final long l = Double.doubleToLongBits(val);
+        return (int) ( l ^ l >>> 32 );
+    }
 
-    /** flo_fo 
+    /** flo_fo
      * 
      */
     @JRubyMethod(name = "to_f")

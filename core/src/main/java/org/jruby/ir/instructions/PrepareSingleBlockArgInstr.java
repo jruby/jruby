@@ -22,13 +22,6 @@ public class PrepareSingleBlockArgInstr extends PrepareBlockArgsInstr  {
     public static PrepareSingleBlockArgInstr decode(IRReaderDecoder d) {
         return new PrepareSingleBlockArgInstr();
     }
-
-    public IRubyObject[] prepareBlockArgs(ThreadContext context, Block b, IRubyObject[] args) {
-        if (args == null) args = IRubyObject.NULL_ARRAY;
-        // Nothing more to do! Hurray!
-        // If there are insufficient args, ReceivePreReqdInstr will return nil
-        return args;
-    }
     
     @Override
     public void visit(IRVisitor visitor) {

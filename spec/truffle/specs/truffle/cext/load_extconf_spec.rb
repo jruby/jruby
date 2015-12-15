@@ -18,7 +18,7 @@ describe "Truffle::CExt.load_extconf" do
 
     it "raises a RuntimeError" do
       lambda {
-        Truffle::CExt.load_extconf File.expand_path('fixtures/foo/ext/foo/extconf.rb', __FILE__)
+        Truffle::CExt.load_extconf File.expand_path('fixtures/foo/ext/foo/extconf.rb', File.dirname(__FILE__))
       }.should raise_error(RuntimeError)
     end
 

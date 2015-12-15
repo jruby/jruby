@@ -74,7 +74,7 @@ public class Signature {
     public boolean hasRest() { return rest != Rest.NONE; }
 
     /**
-     * Are their an exact (fixed) number of parameters to this signature?
+     * Are there an exact (fixed) number of parameters to this signature?
      */
     public boolean isFixed() {
         return arityValue() >= 0;

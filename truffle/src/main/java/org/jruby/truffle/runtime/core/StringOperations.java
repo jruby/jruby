@@ -74,7 +74,6 @@ public abstract class StringOperations {
         int cr = Layouts.STRING.getCodeRange(string);
 
         if (cr == StringSupport.CR_UNKNOWN) {
-            CompilerDirectives.transferToInterpreter();
             cr = slowCodeRangeScan(string);
             Layouts.STRING.setCodeRange(string, cr);
         }

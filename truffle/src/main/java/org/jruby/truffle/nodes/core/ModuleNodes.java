@@ -407,7 +407,7 @@ public abstract class ModuleNodes {
             final SelfNode self = new SelfNode(getContext(), sourceSection);
             final RubyNode accessInstanceVariable;
             if (isGetter) {
-                accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceSection, ivar, self, false);
+                accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceSection, ivar, self);
             } else {
                 ReadPreArgumentNode readArgument = new ReadPreArgumentNode(getContext(), sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
                 accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);

@@ -83,10 +83,13 @@ public class SafepointManager {
     @TruffleBoundary
     private void assumptionInvalidated(Node currentNode, boolean fromBlockingCall) {
         final DynamicObject thread = context.getThreadManager().getCurrentThread();
-        final boolean interruptible = (Layouts.THREAD.getInterruptMode(thread) == InterruptMode.IMMEDIATE) ||
-                (fromBlockingCall && Layouts.THREAD.getInterruptMode(thread) == InterruptMode.ON_BLOCKING);
+        final InterruptMode interruptMode = Layouts.THREAD.getInterruptMode(thread);
+
+        final boolean interruptible = (interruptMode == InterruptMode.IMMEDIATE) ||
+                (fromBlockingCall && interruptMode == InterruptMode.ON_BLOCKING);
 
         if (!interruptible) {
+            Thread.currentThread().interrupt(); // keep the interrupt flag
             return; // interrupt me later
         }
 

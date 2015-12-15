@@ -16,6 +16,7 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
+import org.jruby.runtime.InterpretedIRBlockBody;
 import org.jruby.runtime.Signature;
 import org.objectweb.asm.Handle;
 
@@ -67,7 +68,8 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new MixedModeIRBlockBody(c, c.getSignature());
+            boolean shouldJit = getManager().getInstanceConfig().getCompileMode().shouldJIT();
+            this.body = shouldJit ? new MixedModeIRBlockBody(c, c.getSignature()) : new InterpretedIRBlockBody(c, c.getSignature());
         }
 
         this.signature = c.signature;
@@ -90,7 +92,8 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new MixedModeIRBlockBody(this, signature);
+            boolean shouldJit = manager.getInstanceConfig().getCompileMode().shouldJIT();
+            this.body = shouldJit ? new MixedModeIRBlockBody(this, signature) : new InterpretedIRBlockBody(this, signature);
             if (staticScope != null && !isBeginEndBlock) {
                 staticScope.setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());

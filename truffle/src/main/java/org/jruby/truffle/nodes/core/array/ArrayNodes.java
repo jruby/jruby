@@ -28,6 +28,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.format.parser.PackCompiler;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -46,7 +47,6 @@ import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.format.parser.PackParser;
 import org.jruby.truffle.format.runtime.PackResult;
 import org.jruby.truffle.format.runtime.exceptions.*;
 import org.jruby.truffle.runtime.NotProvided;
@@ -2113,7 +2113,7 @@ public abstract class ArrayNodes {
 
     // TODO: move into Enumerable?
 
-    @CoreMethod(names = "max")
+    @CoreMethod(names = "max", needsBlock = true)
     public abstract static class MaxNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachNode;
@@ -2126,7 +2126,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object max(VirtualFrame frame, DynamicObject array) {
+        public Object max(VirtualFrame frame, DynamicObject array, NotProvided blockNotProvided) {
             // TODO: can we just write to the frame instead of having this indirect object?
 
             final Memo<Object> maximum = new Memo<>();
@@ -2149,6 +2149,11 @@ public abstract class ArrayNodes {
             }
         }
 
+        @Specialization
+        public Object max(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+            return ruby(frame, "array.max_internal(&block)", "array", array, "block", block);
+        }
+
     }
 
     public abstract static class MaxBlockNode extends CoreMethodArrayArgumentsNode {
@@ -2165,12 +2170,22 @@ public abstract class ArrayNodes {
             @SuppressWarnings("unchecked")
             final Memo<Object> maximum = (Memo<Object>) maximumObject;
 
-            // TODO(CS): cast
-
             final Object current = maximum.get();
 
-            if (current == null || (int) compareNode.call(frame, value, "<=>", null, current) > 0) {
+            if (current == null) {
                 maximum.set(value);
+            } else {
+                final Object compared = compareNode.call(frame, value, "<=>", null, current);
+
+                if (compared instanceof Integer) {
+                    if ((int) compared > 0) {
+                        maximum.set(value);
+                    }
+                } else {
+                    CompilerDirectives.transferToInterpreter();
+                    // Should be the actual type and object in this string - but this method should go away soon
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError("comparison of X with Y failed", this));
+                }
             }
 
             return nil();
@@ -2218,7 +2233,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = "min")
+    @CoreMethod(names = "min", needsBlock = true)
     public abstract static class MinNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachNode;
@@ -2231,7 +2246,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object min(VirtualFrame frame, DynamicObject array) {
+        public Object min(VirtualFrame frame, DynamicObject array, NotProvided blockNotProvided) {
             // TODO: can we just write to the frame instead of having this indirect object?
 
             final Memo<Object> minimum = new Memo<>();
@@ -2254,6 +2269,11 @@ public abstract class ArrayNodes {
             }
         }
 
+        @Specialization
+        public Object min(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+            return ruby(frame, "array.min_internal(&block)", "array", array, "block", block);
+        }
+
     }
 
     public abstract static class MinBlockNode extends CoreMethodArrayArgumentsNode {
@@ -2270,12 +2290,22 @@ public abstract class ArrayNodes {
             @SuppressWarnings("unchecked")
             final Memo<Object> minimum = (Memo<Object>) minimumObject;
 
-            // TODO(CS): cast
-
             final Object current = minimum.get();
 
-            if (current == null || (int) compareNode.call(frame, value, "<=>", null, current) < 0) {
+            if (current == null) {
                 minimum.set(value);
+            } else {
+                final Object compared = compareNode.call(frame, value, "<=>", null, current);
+
+                if (compared instanceof Integer) {
+                    if ((int) compared < 0) {
+                        minimum.set(value);
+                    }
+                } else {
+                    CompilerDirectives.transferToInterpreter();
+                    // Should be the actual type and object in this string - but this method should go away soon
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError("comparison of X with Y failed", this));
+                }
             }
 
             return nil();
@@ -2449,12 +2479,7 @@ public abstract class ArrayNodes {
         @TruffleBoundary
         protected CallTarget compileFormat(DynamicObject format) {
             assert RubyGuards.isRubyString(format);
-            try {
-                return new PackParser(getContext()).parse(format.toString(), false);
-            } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
-            }
+            return new PackCompiler(getContext(), this).compile(format.toString());
         }
 
         protected int getCacheLimit() {

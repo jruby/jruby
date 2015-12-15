@@ -52,7 +52,7 @@ module Utilities
   end
 
   def self.git_branch
-    @git_branch ||= `git rev-parse --abbrev-ref HEAD`.strip
+    @git_branch ||= `GIT_DIR="#{JRUBY_DIR}/.git" git rev-parse --abbrev-ref HEAD`.strip
   end
 
   def self.mangle_for_env(name)
@@ -172,6 +172,7 @@ module Commands
   include ShellUtils
 
   def help
+    puts 'jt checkout name                               checkout a different Git branch and rebuild'
     puts 'jt build [options]                             build'
     puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
     puts 'jt rebuild [options]                           clean and build'
@@ -218,22 +219,21 @@ module Commands
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
   end
 
-  def build(*args)
-    mvn_args = []
+  def checkout(branch)
+    sh 'git', 'checkout', branch
+    rebuild
+  end
 
-    if args.delete 'truffle'
-      mvn_args += ['-pl', 'truffle', 'package']
+  def build(project = nil)
+    opts = %w[-DskipTests]
+    case project
+    when 'truffle'
+      mvn *opts, '-pl', 'truffle', 'package'
+    when nil
+      mvn *opts, 'package'
+    else
+      raise ArgumentError, project
     end
-
-    if args.delete '--no-tests'
-      mvn_args << '-DskipTests'
-    end
-
-    unless args.empty?
-      raise ArgumentError, args.inspect
-    end
-
-    mvn *mvn_args
   end
 
   def clean
@@ -415,7 +415,7 @@ module Commands
       "JRUBY_9000_DEV_DIR" => JRUBY_DIR,
       "GRAAL_BIN" => Utilities.find_graal,
     }
-    bench_args = ["-I#{bench_dir}/lib", "#{bench_dir}/bin/bench"]
+    bench_args = ["#{bench_dir}/bin/bench"]
     case command
     when 'debug'
       if args.delete '--ruby-backtrace'

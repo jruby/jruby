@@ -18,7 +18,6 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PopBlockFrameInstr;
-import org.jruby.ir.instructions.PrepareBlockArgsInstr;
 import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
@@ -59,8 +58,6 @@ import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.EvalType;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
@@ -107,18 +104,6 @@ public class InterpreterEngine {
         return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
     }
 
-    private DynamicScope getBlockScope(ThreadContext context, Block block, InterpreterContext interpreterContext) {
-        DynamicScope newScope = block.getBinding().getDynamicScope();
-        if (interpreterContext.pushNewDynScope()) {
-            context.pushScope(block.allocScope(newScope));
-        } else if (interpreterContext.reuseParentDynScope()) {
-            // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-            context.pushScope(newScope);
-        }
-
-        return newScope;
-    }
-
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                          InterpreterContext interpreterContext, RubyModule implClass,
                                          String name, IRubyObject[] args, Block blockArg) {
@@ -130,12 +115,15 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
+        boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+        // Blocks with explicit call protocol shouldn't do this before args are prepared
+        if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
+            IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+        }
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -175,31 +163,27 @@ public class InterpreterEngine {
                         }
                         break;
                     case BOOK_KEEPING_OP:
+                        // IMPORTANT: Preserve these update to currDynScope, self, and args.
+                        // They affect execution of all following instructions in this scope.
                         switch (operation) {
                         case PUSH_METHOD_BINDING:
-                            // IMPORTANT: Preserve this update of currDynScope.
-                            // This affects execution of all instructions in this scope
-                            // which will now use the updated value of currDynScope.
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                             break;
                         case PUSH_BLOCK_BINDING:
-                            currDynScope = getBlockScope(context, block, interpreterContext);
+                            currDynScope = IRRuntimeHelpers.pushBlockDynamicScopeIfNeeded(context, block, interpreterContext.pushNewDynScope(), interpreterContext.reuseParentDynScope());
                             break;
                         case UPDATE_BLOCK_STATE:
-                            if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
-                                // Update self to the binding's self
-                                Binding b = block.getBinding();
-                                self = b.getSelf();
-                                b.getFrame().setSelf(self);
-                            }
-                            // Clear block's eval type
-                            block.setEvalType(EvalType.NONE);
+                            self = IRRuntimeHelpers.updateBlockState(block, self);
                             break;
                         case PREPARE_SINGLE_BLOCK_ARG:
+                            args = IRRuntimeHelpers.prepareSingleBlockArgs(context, block, args);
+                            break;
                         case PREPARE_FIXED_BLOCK_ARGS:
+                            args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
+                            break;
                         case PREPARE_BLOCK_ARGS:
-                            args = ((PrepareBlockArgsInstr)instr).prepareBlockArgs(context, block, args);
+                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
                             break;
                         default:
                             processBookKeepingOp(interpreterContext, context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
@@ -393,6 +377,9 @@ public class InterpreterEngine {
             case POP_BINDING:
                 context.popScope();
                 break;
+            case RETHROW_SAVED_EXC_IN_LAMBDA:
+                IRRuntimeHelpers.rethrowSavedExcInLambda(context);
+                break; // may not be reachable
             case THREAD_POLL:
                 if (IRRuntimeHelpers.inProfileMode()) Profiler.clockTick();
                 context.callThreadPoll();

@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.supercall;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -17,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
@@ -97,6 +99,7 @@ public abstract class LookupSuperMethodNode extends RubyNode {
         return metaClassNode.executeMetaClass(frame, object);
     }
 
+    @TruffleBoundary
     protected InternalMethod doLookup(InternalMethod currentMethod, DynamicObject selfMetaClass) {
         assert RubyGuards.isRubyClass(selfMetaClass);
         InternalMethod superMethod = ModuleOperations.lookupSuperMethod(currentMethod, selfMetaClass);
