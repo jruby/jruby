@@ -1777,14 +1777,14 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         RubySymbol nameSym = TypeConverter.checkID(arg0);
         String name = nameSym.toString();
-        DynamicMethod newMethod = null;
+        DynamicMethod newMethod;
         Visibility visibility = PUBLIC;
 
         if (!block.isGiven()) {
-            throw getRuntime().newArgumentError("tried to create Proc object without a block");
+            throw runtime.newArgumentError("tried to create Proc object without a block");
         }
 
         // If we know it comes from IR we can convert this directly to a method and
@@ -1818,10 +1818,10 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         RubySymbol nameSym = TypeConverter.checkID(arg0);
         String name = nameSym.toString();
-        DynamicMethod newMethod = null;
+        DynamicMethod newMethod;
         Visibility visibility = PUBLIC;
 
         if (runtime.getProc().isInstance(arg1)) {
