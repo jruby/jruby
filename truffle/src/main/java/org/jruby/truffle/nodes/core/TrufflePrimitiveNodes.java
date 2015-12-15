@@ -139,6 +139,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public int gcCount() {
             return RubyGC.getCollectionCount();
