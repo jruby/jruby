@@ -1739,46 +1739,40 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitIterNode(org.jruby.ast.IterNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-        final org.jruby.ast.ArgsNode argsNode = node.getArgsNode();
-
-        /*
-         * In a block we do NOT allocate a new return ID - returns will return from the method, not
-         * the block (in the general case, see Proc and the difference between Proc and Lambda for
-         * specifics).
-         */
-
-        final boolean hasOwnScope = !translatingForStatement;
-
-        // Unset this flag for any for any blocks within the for statement's body
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true,
-                Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
-
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
-                sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBreakID());
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
-        methodCompiler.translatingForStatement = translatingForStatement;
-
-        final RubyNode ret = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.PROC);
-        return addNewlineIfNeeded(node, ret);
+        return translateBlockLikeNode(node, false);
     }
 
     @Override
     public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
+        return translateBlockLikeNode(node, true);
+    }
+
+    private RubyNode translateBlockLikeNode(org.jruby.ast.IterNode node, boolean isLambda) {
         final SourceSection sourceSection = translate(node.getPosition());
         final org.jruby.ast.ArgsNode argsNode = node.getArgsNode();
 
-        // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true,
+        // Unset this flag for any for any blocks within the for statement's body
+        final boolean hasOwnScope = isLambda || !translatingForStatement;
+
+        final String name = isLambda ? "(lambda)" : currentCallMethodName;
+        final boolean isProc = !isLambda;
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), name, true,
                 Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getReturnID(), true, false,
-                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBreakID());
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
+        final String namedMethodName = isLambda ? sharedMethodInfo.getName(): environment.getNamedMethodName();
 
-        final RubyNode definitionNode = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.LAMBDA);
+        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
+                sharedMethodInfo, namedMethodName, true, environment.getParseEnvironment().allocateBreakID());
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, isProc, source, argsNode);
+
+        if (isProc) {
+            methodCompiler.translatingForStatement = translatingForStatement;
+        }
+
+        final Type type = isLambda ? Type.LAMBDA : Type.PROC;
+        final RubyNode definitionNode = methodCompiler.compileBlockNode(sourceSection, sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, type);
 
         return addNewlineIfNeeded(node, definitionNode);
     }
