@@ -2415,11 +2415,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     m = l.method("hello")
      *     m.call   #=> "Hello, @iv = Fred"
      */
-    public IRubyObject method(IRubyObject symbol) {
-        return getMetaClass().newMethod(this, symbol.asJavaString(), true, null);
+    public IRubyObject method(IRubyObject name) {
+        return getMetaClass().newMethod(this, name.asJavaString(), true, null);
     }
 
-    public IRubyObject method19(IRubyObject symbol) {
+    public IRubyObject method19(IRubyObject name) {
+        final RubySymbol symbol = TypeConverter.checkID(name);
         return getMetaClass().newMethod(this, symbol.asJavaString(), true, null, true);
     }
 

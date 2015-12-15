@@ -11,7 +11,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -87,7 +87,7 @@ public class TypeConverter {
      */
     public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
         IRubyObject r = obj.checkCallMethod(obj.getRuntime().getCurrentContext(), convertMethod);
-        
+
         return r == null ? handleUncoercibleObject(raise, obj, target) : r;
     }
 
@@ -127,7 +127,7 @@ public class TypeConverter {
     // MRI: rb_to_float 1.9
     public static RubyNumeric toFloat(Ruby runtime, IRubyObject obj) {
         RubyClass floatClass = runtime.getFloat();
-        
+
         if (floatClass.isInstance(obj)) return (RubyNumeric) obj;
         if (!runtime.getNumeric().isInstance(obj)) throw runtime.newTypeError(obj, "Float");
 
@@ -144,7 +144,7 @@ public class TypeConverter {
 
         throw obj.getRuntime().newTypeError("wrong argument type " + typeAsString(obj) + " (expected Data)");
     }
-    
+
     private static String typeAsString(IRubyObject obj) {
         if (obj.isNil()) return "nil";
         if (obj instanceof RubyBoolean) return obj.isTrue() ? "true" : "false";
@@ -161,11 +161,18 @@ public class TypeConverter {
      * For 2.2 compatibility, we also force all incoming identifiers to get anchored as hard-referenced symbols.
      */
     public static RubySymbol checkID(IRubyObject obj) {
-        if (obj instanceof RubySymbol || obj instanceof RubyString) {
-            return RubySymbol.newHardSymbol(obj.getRuntime(), obj);
+        final Ruby runtime = obj.getRuntime();
+        if ( obj instanceof RubySymbol || obj instanceof RubyString ) {
+            return RubySymbol.newHardSymbol(runtime, obj);
         }
-        
-        return RubySymbol.newHardSymbol(obj.getRuntime(), obj.asJavaString());
+
+        final IRubyObject str = convertToTypeWithCheck(obj, runtime.getString(), "to_str");
+        if ( ! str.isNil() ) {
+            return RubySymbol.newHardSymbol(runtime, str);
+        }
+
+        final ThreadContext context = runtime.getCurrentContext();
+        throw runtime.newTypeError(obj.callMethod(context, "inspect") + " is not a symbol nor a string");
     }
 
     /**
