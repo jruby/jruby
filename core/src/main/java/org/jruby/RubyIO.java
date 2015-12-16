@@ -2772,22 +2772,24 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // MRI: io_read_nonblock
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean useException) {
         final Ruby runtime = context.runtime;
-        boolean no_exception = !useException;
+        boolean noException = !useException;
 
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
 
         if ( ! opts.isNil() &&
             runtime.getFalse() == ((RubyHash) opts).op_aref(context, runtime.newSymbol("exception")) ) {
-            no_exception = true;
+            noException = true;
         }
 
-        IRubyObject ret = getPartial(context, args, true, no_exception);
+        IRubyObject ret = getPartial(context, args, true, noException);
 
-        if (ret.isNil()) {
-            if (no_exception) return ret;
-            throw runtime.newEOFError();
-        }
-        return ret;
+        return ret.isNil() ? nonblockEOF(runtime, noException) : ret;
+    }
+
+    // MRI: io_nonblock_eof(VALUE opts)
+    static IRubyObject nonblockEOF(final Ruby runtime, final boolean noException) {
+        if ( noException ) return runtime.getNil();
+        throw runtime.newEOFError();
     }
 
     @JRubyMethod(name = "readpartial", required = 1, optional = 1)
@@ -2802,11 +2804,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // MRI: io_getpartial
-    private IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean nonblock, boolean noException) {
+    IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean nonblock, boolean noException) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         IRubyObject length, str;
-        int n, len;
 
         switch (args.length) {
             case 3:
@@ -2828,7 +2829,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 str = context.nil;
         }
 
-        if ((len = RubyNumeric.num2int(length)) < 0) {
+        final int len;
+        if ( ( len = RubyNumeric.num2int(length) ) < 0 ) {
             throw runtime.newArgumentError("negative length " + len + " given");
         }
 
@@ -2837,15 +2839,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = getOpenFileChecked();
 
-        boolean locked = fptr.lock();
+        final boolean locked = fptr.lock(); int n;
         try {
             fptr.checkByteReadable(context);
 
-            if (len == 0)
-                return str;
+            if ( len == 0 ) return str;
 
-            if (!nonblock)
-                fptr.READ_CHECK(context);
+            if ( ! nonblock ) fptr.READ_CHECK(context);
+
             ByteList strByteList = ((RubyString) str).getByteList();
             n = fptr.readBufferedData(strByteList.unsafeBytes(), strByteList.begin(), len);
             if (n <= 0) {
@@ -2866,26 +2867,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         if (!nonblock && fptr.waitReadable(context))
                             continue again;
                         if (nonblock && (fptr.errno() == Errno.EWOULDBLOCK || fptr.errno() == Errno.EAGAIN)) {
-                            if (noException)
-                                return runtime.newSymbol("wait_readable");
-                            else
-                                throw runtime.newErrnoEAGAINReadableError("read would block");
+                            if (noException) return runtime.newSymbol("wait_readable");
+                            throw runtime.newErrnoEAGAINReadableError("read would block");
                         }
                         throw runtime.newEOFError(fptr.getPath());
                     }
                     break;
                 }
             }
-        } finally {
-            if (locked) fptr.unlock();
+        }
+        finally {
+            if ( locked ) fptr.unlock();
         }
 
-        ((RubyString)str).setReadLength(n);
+        ((RubyString) str).setReadLength(n);
 
-        if (n == 0)
-            return context.nil;
-        else
-            return str;
+        return n == 0 ? context.nil : str;
     }
 
     // MRI: rb_io_sysread

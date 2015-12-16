@@ -660,7 +660,7 @@ public class RubyArgsFile extends RubyObject {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 2)
     public static IRubyObject read_nonblock(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return getPartial(context, recv, args, true);
     }
@@ -671,37 +671,52 @@ public class RubyArgsFile extends RubyObject {
     }
 
     private static IRubyObject getPartial(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean nonBlocking) {
-        ArgsFileData data = ArgsFileData.getDataFrom(recv);
-
-        if (args.length > 1) args[1] = args[1].convertToString();
-
-        if (!data.next_argv(context)) throw context.runtime.newEOFError();
-
-        IRubyObject tmp;
-        if (!(data.currentFile instanceof RubyFile)) { // In MRI this is stdin && !FILE
-            tmp = data.currentFile.callMethod(context, "getpartial", args);
-        } else {
-            // In MRI io_getpartial.  Not split
-            if (nonBlocking) {
-                tmp = ((RubyIO) data.currentFile).read_nonblock(context, args);
-            } else {
-                tmp = ((RubyIO) data.currentFile).readpartial(context, args);
+        final Ruby runtime = context.runtime;
+        boolean noException = false;
+        if ( args.length > 0 ) {
+            IRubyObject opts = TypeConverter.checkHashType(runtime, args[args.length - 1]);
+            if ( ! opts.isNil() &&
+                runtime.getFalse() == ((RubyHash) opts).op_aref(context, runtime.newSymbol("exception")) ) {
+                noException = true;
             }
         }
 
-        if (tmp.isNil()) {
-            if (data.next_p == -1) throw context.runtime.newEOFError();
+        if ( args.length > 1 ) args[1] = args[1].convertToString();
+
+        final ArgsFileData data = ArgsFileData.getDataFrom(recv);
+
+        if ( ! data.next_argv(context) ) {
+            return RubyIO.nonblockEOF(runtime, noException);
+        }
+
+        IRubyObject res;
+        // NOTE: this seems no longer relevant, please review :
+        //if ( ! (data.currentFile instanceof RubyFile) ) { // In MRI this is stdin && !FILE
+        //    res = data.currentFile.callMethod(context, "getpartial", args);
+        //} else {
+        //    res = ((RubyIO) data.currentFile).getPartial(context, args, nonBlocking, noException);
+        //}
+        res = ((RubyIO) data.currentFile).getPartial(context, args, nonBlocking, noException);
+
+        if ( res.isNil() ) {
+            if ( data.next_p == -1 ) {
+                return RubyIO.nonblockEOF(runtime, noException);
+            }
 
             argf_close(context, data.currentFile);
             data.next_p = 1;
-            // FIXME: Missing EOF error is no more argv element at this point
 
-            if (args.length > 1 && args[1].isNil()) return context.runtime.newString();
+            if ( data.argv.size() == 0 ) {
+                return RubyIO.nonblockEOF(runtime, noException);
+            }
 
-            return args[1];
+            if ( args.length > 1 ) {
+                if ( args[1].isNil() ) return context.runtime.newString();
+                return args[1];
+            }
         }
 
-        return tmp;
+        return res;
     }
 
     @JRubyMethod
