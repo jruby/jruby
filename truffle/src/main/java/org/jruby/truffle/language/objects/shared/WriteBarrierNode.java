@@ -30,9 +30,10 @@ public abstract class WriteBarrierNode extends Node {
             limit = "CACHE_LIMIT")
     protected void writeBarrierCached(DynamicObject value,
             @Cached("value.getShape()") Shape cachedShape,
-            @Cached("isShared(cachedShape)") boolean alreadyShared) {
+            @Cached("isShared(cachedShape)") boolean alreadyShared,
+            @Cached("createShareObjectNode(alreadyShared)") ShareObjectNode shareObjectNode) {
         if (!alreadyShared) {
-            SharedObjects.shareObject(value);
+            shareObjectNode.executeShare(value);
         }
     }
 
@@ -48,6 +49,10 @@ public abstract class WriteBarrierNode extends Node {
 
     @Specialization(guards = "!isDynamicObject(value)")
     protected void noWriteBarrier(Object value) {
+        assert value instanceof Boolean ||
+                value instanceof Integer ||
+                value instanceof Long ||
+                value instanceof Double : value.getClass().getName();
     }
 
     protected static boolean isDynamicObject(Object value) {
@@ -56,6 +61,14 @@ public abstract class WriteBarrierNode extends Node {
 
     protected static boolean isShared(Shape shape) {
         return SharedObjects.isShared(shape);
+    }
+
+    protected ShareObjectNode createShareObjectNode(boolean alreadyShared) {
+        if (!alreadyShared) {
+            return ShareObjectNodeGen.create();
+        } else {
+            return null;
+        }
     }
 
 }
