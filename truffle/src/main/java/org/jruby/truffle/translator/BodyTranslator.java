@@ -1744,41 +1744,45 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitIterNode(org.jruby.ast.IterNode node) {
+        return translateBlockLikeNode(node, false);
+    }
+
+    @Override
+    public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
+        return translateBlockLikeNode(node, true);
+    }
+
+    private RubyNode translateBlockLikeNode(org.jruby.ast.IterNode node, boolean isLambda) {
         final SourceSection sourceSection = translate(node.getPosition());
-
-        /*
-         * In a block we do NOT allocate a new return ID - returns will return from the method, not
-         * the block (in the general case, see Proc and the difference between Proc and Lambda for
-         * specifics).
-         */
-
-        final boolean hasOwnScope = !translatingForStatement;
-
-        org.jruby.ast.ArgsNode argsNode;
-
-        if (node.getVarNode() instanceof org.jruby.ast.ArgsNode) {
-            argsNode = (org.jruby.ast.ArgsNode) node.getVarNode();
-        } else if (node.getVarNode() instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.ArgumentNode arg = new org.jruby.ast.ArgumentNode(node.getPosition(), ((org.jruby.ast.DAsgnNode) node.getVarNode()).getName());
-            final org.jruby.ast.ListNode preArgs = new org.jruby.ast.ArrayNode(node.getPosition(), arg);
-            argsNode = new org.jruby.ast.ArgsNode(node.getPosition(), preArgs, null, null, null, null, null, null);
-        } else if (node.getVarNode() == null) {
-            argsNode = null;
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        final org.jruby.ast.ArgsNode argsNode = node.getArgsNode();
 
         // Unset this flag for any for any blocks within the for statement's body
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(org.jruby.ast.ArgsNode.class)), false, false, false);
+        final boolean hasOwnScope = isLambda || !translatingForStatement;
+
+        final String name = isLambda ? "(lambda)" : currentCallMethodName;
+        final boolean isProc = !isLambda;
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), name, true,
+                Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
+
+        final String namedMethodName = isLambda ? sharedMethodInfo.getName(): environment.getNamedMethodName();
+
+        final ParseEnvironment parseEnvironment = environment.getParseEnvironment();
+        final ReturnID returnID = isLambda ? parseEnvironment.allocateReturnID() : environment.getReturnID();
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
-                sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBreakID());
+                context, environment, parseEnvironment, returnID, hasOwnScope, false,
+                sharedMethodInfo, namedMethodName, true, parseEnvironment.allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
-        methodCompiler.translatingForStatement = translatingForStatement;
 
-        final RubyNode ret = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.PROC);
-        return addNewlineIfNeeded(node, ret);
+        if (isProc) {
+            methodCompiler.translatingForStatement = translatingForStatement;
+        }
+
+        final Type type = isLambda ? Type.LAMBDA : Type.PROC;
+        final RubyNode definitionNode = methodCompiler.compileBlockNode(sourceSection, sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, type);
+
+        return addNewlineIfNeeded(node, definitionNode);
     }
 
     @Override
@@ -2768,36 +2772,6 @@ public class BodyTranslator extends Translator {
 
         final RubyNode ret = new ReadMatchReferenceNode(context, translate(node.getPosition()), index);
         return addNewlineIfNeeded(node, ret);
-    }
-
-    public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        org.jruby.ast.ArgsNode argsNode;
-
-        if (node.getVarNode() instanceof org.jruby.ast.ArgsNode) {
-            argsNode = (org.jruby.ast.ArgsNode) node.getVarNode();
-        } else if (node.getVarNode() instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.ArgumentNode arg = new org.jruby.ast.ArgumentNode(node.getPosition(), ((org.jruby.ast.DAsgnNode) node.getVarNode()).getName());
-            final org.jruby.ast.ListNode preArgs = new org.jruby.ast.ArrayNode(node.getPosition(), arg);
-            argsNode = new org.jruby.ast.ArgsNode(node.getPosition(), preArgs, null, null, null, null, null, null);
-        } else if (node.getVarNode() == null) {
-            argsNode = null;
-        } else {
-            throw new UnsupportedOperationException();
-        }
-
-        // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(org.jruby.ast.ArgsNode.class)), false, false, false);
-
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,
-                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBreakID());
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
-
-        final RubyNode definitionNode = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.LAMBDA);
-
-        return addNewlineIfNeeded(node, definitionNode);
     }
 
     protected RubyNode initFlipFlopStates(SourceSection sourceSection) {

@@ -1138,6 +1138,9 @@ public class RubyClass extends RubyModule {
         if (((RubyClass)superClass).isSingleton()) {
             throw superClass.getRuntime().newTypeError("can't make subclass of virtual class");
         }
+        if (superClass == superClass.getRuntime().getClassClass()) {
+            throw superClass.getRuntime().newTypeError("can't make subclass of Class");
+        }
     }
 
     public final ObjectMarshal getMarshal() {

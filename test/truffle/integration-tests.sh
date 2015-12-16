@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -u # no undefined vars
+set -e # abort on first error
+set -x # show expanded commands
+
 PORT=8080
 
 function wait_until_port_open {
@@ -11,10 +15,12 @@ function wait_until_port_open {
 }
 
 function test_server {
+  serverpid=$!
   wait_until_port_open
-  response=`curl http://localhost:$PORT/`
-  kill -9 $!
-  wait
+  response=`curl -s http://localhost:$PORT/`
+  jobs -l
+  kill -9 $serverpid
+  wait $serverpid || true
   if [[ $response != *"Hello"* ]]
   then
     echo Response not expected
@@ -23,7 +29,7 @@ function test_server {
 }
 
 echo "Array#pack with real usage..."
-bin/jruby -X+T test/truffle/pack-real-usage.rb || exit 1
+bin/jruby -X+T test/truffle/pack-real-usage.rb
 
 echo "Simple web server..."
 bin/jruby -X+T test/truffle/simple-server.rb &

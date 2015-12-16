@@ -151,7 +151,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject handleNonlocalReturn(StaticScope scope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
-            return null;
+            return null; // Unreachable
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
@@ -195,16 +195,33 @@ public class IRRuntimeHelpers {
     public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
         if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
-            throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
-        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
-            // Ignore non-local return processing in non-lambda blocks.
-            // Methods have a null blocktype
-            return handleNonlocalReturn(scope, dynScope, exc, blockType);
-        } else {
-            // Propagate
-            Helpers.throwException((Throwable)exc);
-            // should not get here
+            context.setSavedExceptionInLambda(IRException.BREAK_LocalJumpError.getException(context.getRuntime()));
             return null;
+        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
+            try {
+                // Ignore non-local return processing in non-lambda blocks.
+                // Methods have a null blocktype
+                return handleNonlocalReturn(scope, dynScope, exc, blockType);
+            } catch (Throwable e) {
+                context.setSavedExceptionInLambda(e);
+                return null;
+            }
+        } else {
+            // Propagate the exception
+            context.setSavedExceptionInLambda((Throwable)exc);
+            return null;
+        }
+    }
+
+    @JIT
+    public static void rethrowSavedExcInLambda(ThreadContext context) {
+        // This rethrows the exception saved in handleBreakAndReturnsInLambda
+        // after additional code to pop frames, bindings, etc. are done.
+        Throwable exc = context.getSavedExceptionInLambda();
+        if (exc != null) {
+            // IMPORTANT: always clear!
+            context.setSavedExceptionInLambda(null);
+            Helpers.throwException(exc);
         }
     }
 
@@ -212,7 +229,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject handlePropagatedBreak(ThreadContext context, DynamicScope dynScope, Object bjExc, Block.Type blockType) {
         if (!(bjExc instanceof IRBreakJump)) {
             Helpers.throwException((Throwable)bjExc);
-            return null;
+            return null; // Unreachable
         }
 
         IRBreakJump bj = (IRBreakJump)bjExc;
@@ -1491,8 +1508,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @JIT
-    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
+    public static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
         // This is the placeholder for scenarios
         // not handled by specialized instructions.
         if (args == null) {
@@ -1554,6 +1570,15 @@ public class IRRuntimeHelpers {
 
         if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
 
+        return args;
+    }
+
+    @JIT
+    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
+        args = prepareBlockArgsInternal(context, block, args);
+        if (usesKwArgs) {
+            frobnicateKwargsArgument(context, block.getBody().getSignature().required(), args);
+        }
         return args;
     }
 

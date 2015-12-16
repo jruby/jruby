@@ -1415,7 +1415,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadSelfBlock();
         jvmMethod().loadArgs();
-        jvmMethod().invokeIRHelper("prepareBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class));
+        jvmAdapter().ldc(((IRClosure)jvm.methodData().scope).receivesKeywordArgs());
+        jvmMethod().invokeIRHelper("prepareBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class, boolean.class));
         jvmMethod().storeArgs();
     }
 
@@ -1694,6 +1695,12 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
         visit(instr.getVisibility());
         jvmAdapter().invokevirtual(p(Binding.class), "setVisibility", sig(void.class, Visibility.class));
+    }
+
+    @Override
+    public void RethrowSavedExcInLambdaInstr(RethrowSavedExcInLambdaInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().invokeIRHelper("rethrowSavedExcInLambda", sig(void.class, ThreadContext.class));
     }
 
     @Override

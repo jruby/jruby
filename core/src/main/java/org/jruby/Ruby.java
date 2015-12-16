@@ -1614,7 +1614,9 @@ public final class Ruby implements Constantizable {
         typeError = defineClassIfAllowed("TypeError", standardError);
         argumentError = defineClassIfAllowed("ArgumentError", standardError);
         indexError = defineClassIfAllowed("IndexError", standardError);
-        stopIteration = defineClassIfAllowed("StopIteration", indexError);
+        if (profile.allowClass("StopIteration")) {
+            stopIteration = RubyStopIteration.createStopIterationClass(this, indexError);
+        }
         syntaxError = defineClassIfAllowed("SyntaxError", scriptError);
         loadError = defineClassIfAllowed("LoadError", scriptError);
         notImplementedError = defineClassIfAllowed("NotImplementedError", scriptError);
@@ -4075,7 +4077,7 @@ public final class Ruby implements Constantizable {
         if (RubyInstanceConfig.ERRNO_BACKTRACE) {
             return new RaiseException(this, exceptionClass, message, true);
         } else {
-            return new RaiseException(this, exceptionClass, ERRNO_BACKTRACE_MESSAGE, RubyArray.newEmptyArray(this), true);
+            return new RaiseException(this, exceptionClass, ERRNO_BACKTRACE_MESSAGE, disabledBacktrace(), true);
         }
     }
 
@@ -4090,12 +4092,24 @@ public final class Ruby implements Constantizable {
      *
      * @param message the message for the exception
      */
-    public RaiseException newLightweightStopIterationError(String message) {
+    public RaiseException newStopIteration(IRubyObject result, String message) {
+        final ThreadContext context = getCurrentContext();
         if (RubyInstanceConfig.STOPITERATION_BACKTRACE) {
-            return new RaiseException(this, stopIteration, message, true);
-        } else {
-            return new RaiseException(this, stopIteration, STOPIERATION_BACKTRACE_MESSAGE, RubyArray.newEmptyArray(this), true);
+            RubyException ex = RubyStopIteration.newInstance(context, result, message);
+            return new RaiseException(ex);
         }
+        if ( message == null ) message = STOPIERATION_BACKTRACE_MESSAGE;
+        RubyException ex = RubyStopIteration.newInstance(context, result, message);
+        return new RaiseException(ex, disabledBacktrace());
+    }
+
+    @Deprecated
+    public RaiseException newLightweightStopIterationError(String message) {
+        return newStopIteration(null, message);
+    }
+
+    private IRubyObject disabledBacktrace() {
+        return RubyArray.newEmptyArray(this);
     }
 
     // Equivalent of Data_Wrap_Struct

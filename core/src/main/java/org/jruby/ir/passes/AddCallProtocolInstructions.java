@@ -23,7 +23,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod
-            // SSS: Turning this off till this is fully debugged
             || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
             || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
     }
@@ -46,7 +45,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
     }
 
-    private void popSavedState(IRScope scope, boolean requireBinding, boolean requireFrame, Variable savedViz, Variable savedFrame, ListIterator<Instr> instrs) {
+    private void popSavedState(IRScope scope, boolean isGEB, boolean requireBinding, boolean requireFrame, Variable savedViz, Variable savedFrame, ListIterator<Instr> instrs) {
+        if (scope instanceof IRClosure && isGEB) {
+            // Add before RethrowSavedExcInLambdaInstr
+            instrs.previous();
+        }
         if (requireBinding) instrs.add(new PopBindingInstr());
         if (scope instanceof IRClosure) {
             instrs.add(new PopBlockFrameInstr(savedFrame));
@@ -137,18 +140,13 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 ListIterator<Instr> instrs = bb.getInstrs().listIterator();
                 while (instrs.hasNext()) {
                     i = instrs.next();
-                    // Right now, we only support explicit call protocol on methods.
-                    // So, non-local returns and breaks don't get here.
-                    // Non-local-returns and breaks are tricky since they almost always
-                    // throw an exception and we don't multiple pops (once before the
-                    // return/break, and once when the exception is caught).
-                    if (!bb.isExitBB() && i instanceof ReturnBase) {
-                        if (requireBinding || requireFrame) {
-                            fixReturn(scope, (ReturnBase)i, instrs);
-                        }
+                    // Breaks & non-local returns in blocks will throw exceptions
+                    // and pops for them will be handled in the GEB
+                    if (!bb.isExitBB() && i instanceof ReturnInstr) {
+                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         instrs.previous();
-                        popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                        popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                         if (bb == geb) gebProcessed = true;
                         break;
                     }
@@ -156,27 +154,29 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
                 if (bb.isExitBB() && !bb.isEmpty()) {
                     // Last instr could be a return -- so, move iterator one position back
-                    if (i != null && i instanceof ReturnBase) {
-                        if (requireBinding || requireFrame) {
-                            fixReturn(scope, (ReturnBase)i, instrs);
-                        }
+                    if (i != null && i instanceof ReturnInstr) {
+                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         instrs.previous();
                     }
-                    popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                    popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                     if (bb == geb) gebProcessed = true;
-                }
-
-                if (!gebProcessed && bb == geb) {
+                } else if (!gebProcessed && bb == geb) {
                     // Add before throw-exception-instr which would be the last instr
                     if (i != null) {
                         // Assumption: Last instr should always be a control-transfer instruction
                         assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + scope + " is " + i + ", not a control-xfer instruction";
                         instrs.previous();
                     }
-                    popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                    popSavedState(scope, true, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                 }
             }
         }
+
+/*
+        if (scope instanceof IRClosure) {
+            System.out.println(scope + " after acp: " + cfg.toStringInstrs());
+        }
+*/
 
         // This scope has an explicit call protocol flag now
         scope.setExplicitCallProtocolFlag();

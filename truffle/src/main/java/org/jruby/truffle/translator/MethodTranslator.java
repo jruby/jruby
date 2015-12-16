@@ -81,7 +81,8 @@ public class MethodTranslator extends BodyTranslator {
             parentSourceSection.pop();
         }
 
-        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
+        final boolean isProc = type == Type.PROC;
+        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isProc, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
         final RubyNode preludeProc;
@@ -91,7 +92,7 @@ public class MethodTranslator extends BodyTranslator {
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
             final RubyNode writeArrayNode = new WriteLocalVariableNode(context, sourceSection, castArrayNode, arraySlot);
 
-            final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
+            final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isProc, this);
             destructureArgumentsTranslator.pushArraySlot(arraySlot);
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
@@ -176,7 +177,7 @@ public class MethodTranslator extends BodyTranslator {
             parentSourceSection.pop();
         }
 
-        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
+        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, false, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
         final RubyNode prelude;
