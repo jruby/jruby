@@ -2738,7 +2738,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 //            if (len > INT_MAX)
                 //                rb_raise(rb_eIOError, "ungetc failed");
                 //            #endif
-                fptr.makeReadConversion(context, (int) len);
+                fptr.makeReadConversion(context, len);
                 if (fptr.cbuf.capa - fptr.cbuf.len < len)
                     throw runtime.newIOError("ungetc failed");
                 // shift cbuf back to 0
@@ -2749,8 +2749,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                             fptr.cbuf.len);
                     fptr.cbuf.off = fptr.cbuf.capa - fptr.cbuf.len; // this should be 0 too
                 }
-                fptr.cbuf.off -= (int) len;
-                fptr.cbuf.len += (int) len;
+                fptr.cbuf.off -= len;
+                fptr.cbuf.len += len;
                 ByteList cByteList = ((RubyString) c).getByteList();
                 System.arraycopy(cByteList.unsafeBytes(), cByteList.begin(), fptr.cbuf.ptr, fptr.cbuf.off, len);
             } else {
@@ -2771,23 +2771,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // MRI: io_read_nonblock
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean useException) {
-        Ruby runtime = context.runtime;
-        IRubyObject ret;
-        IRubyObject opts;
+        final Ruby runtime = context.runtime;
         boolean no_exception = !useException;
 
-        opts = ArgsUtil.getOptionsArg(runtime, args);
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
 
-        if (!opts.isNil() && runtime.getFalse() == ((RubyHash)opts).op_aref(context, runtime.newSymbol("exception")))
+        if ( ! opts.isNil() &&
+            runtime.getFalse() == ((RubyHash) opts).op_aref(context, runtime.newSymbol("exception")) ) {
             no_exception = true;
+        }
 
-        ret = getPartial(context, args, true, no_exception);
+        IRubyObject ret = getPartial(context, args, true, no_exception);
 
         if (ret.isNil()) {
-            if (no_exception)
-                return ret;
-            else
-                throw runtime.newEOFError();
+            if (no_exception) return ret;
+            throw runtime.newEOFError();
         }
         return ret;
     }
