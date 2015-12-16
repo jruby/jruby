@@ -35,23 +35,23 @@ package org.jruby;
 import java.io.File;
 import java.io.IOException;
 
+import jnr.posix.FileStat;
+import jnr.posix.util.Platform;
+
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-
-import jnr.posix.FileStat;
-import jnr.posix.util.Platform;
-
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.util.TypeConverter;
 
 public class RubyArgsFile extends RubyObject {
 
@@ -68,19 +68,24 @@ public class RubyArgsFile extends RubyObject {
         IRubyObject argsFile = argfClass.newInstance(runtime.getCurrentContext(), new IRubyObject[] { null }, (Block) null);
 
         runtime.setArgsFile(argsFile);
-        runtime.getGlobalVariables().defineReadonly("$<", new IAccessor() {
-            @Override
-            public IRubyObject getValue() {
-                return runtime.getArgsFile();
-            }
-
-            @Override
-            public IRubyObject setValue(IRubyObject newValue) {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-        }, GlobalVariable.Scope.GLOBAL);
+        runtime.getGlobalVariables().defineReadonly("$<", new ArgsFileAccessor(runtime), GlobalVariable.Scope.GLOBAL);
         runtime.defineGlobalConstant("ARGF", argsFile);
         runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
+    }
+
+
+    private static class ArgsFileAccessor implements IAccessor {
+
+        private final Ruby runtime;
+        ArgsFileAccessor(Ruby runtime) { this.runtime = runtime; }
+
+        public IRubyObject getValue() {
+            return runtime.getArgsFile();
+        }
+
+        public IRubyObject setValue(IRubyObject newValue) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     private static final ObjectAllocator ARGF_ALLOCATOR = new ObjectAllocator() {
