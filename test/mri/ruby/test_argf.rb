@@ -473,7 +473,7 @@ class TestArgf < Test::Unit::TestCase
 
   def test_readpartial
     ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
-      s = ""
+      s = "".dup
       begin
         loop do
           s << ARGF.readpartial(1)
