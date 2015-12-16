@@ -137,20 +137,21 @@ public class RubyArgsFile extends RubyObject {
                 currentLineNumber = 0;
             }
 
+            IRubyObject $FILENAME = runtime.getGlobalVariables().get("$FILENAME");
+
             if (next_p == 1) {
                 next_p = 0;
                 if (argv.getLength() > 0) {
-                    IRubyObject arg = argv.shift(context);
-                    RubyString filename = (RubyString)((RubyObject)arg).to_s();
-                    ByteList filenameBytes = filename.getByteList();
-                    if (!filename.op_equal(context, (RubyString) runtime.getGlobalVariables().get("$FILENAME")).isTrue()) {
+                    final RubyString filename = argv.shift(context).convertToString();
+                    if ( ! filename.op_equal(context, $FILENAME).isTrue() ) {
                         runtime.defineReadonlyVariable("$FILENAME", filename, GlobalVariable.Scope.GLOBAL);
                     }
 
-                    if (filenameBytes.length() == 1 && filenameBytes.get(0) == '-') {
+                    if ( filenameEqlDash(filename) ) {
                         currentFile = runtime.getGlobalVariables().get("$stdin");
-                    } else {
-                        currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{filename}, Block.NULL_BLOCK);
+                    }
+                    else {
+                        currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{ filename }, Block.NULL_BLOCK);
                         String extension = runtime.getInstanceConfig().getInPlaceBackupExtension();
                         if (extension != null) {
                             if (Platform.IS_WINDOWS) {
@@ -166,14 +167,20 @@ public class RubyArgsFile extends RubyObject {
                     next_p = 1;
                     return false;
                 }
-            } else if (next_p == -1) {
+            }
+            else if (next_p == -1) {
                 currentFile = runtime.getGlobalVariables().get("$stdin");
-                if(!runtime.getGlobalVariables().get("$FILENAME").asJavaString().equals("-")) {
+                if ( ! filenameEqlDash((RubyString) $FILENAME) ) {
                     runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
                 }
             }
 
             return true;
+        }
+
+        private static boolean filenameEqlDash(final RubyString filename) {
+            final ByteList filenameBytes = filename.getByteList();
+            return filenameBytes.length() == 1 && filenameBytes.get(0) == '-';
         }
 
         public static ArgsFileData getDataFrom(IRubyObject recv) {
@@ -291,20 +298,20 @@ public class RubyArgsFile extends RubyObject {
 
         boolean retry = true;
         IRubyObject line = null;
-        while(retry) {
+        while (retry) {
             retry = false;
-            if (!data.next_argv(context)) return context.runtime.getNil();
+            if ( ! data.next_argv(context) ) return context.nil;
 
             line = data.currentFile.callMethod(context, "gets", args);
 
-            if (line.isNil() && data.next_p != -1) {
+            if ( line.isNil() && data.next_p != -1 ) {
                 argf_close(context, data.currentFile);
                 data.next_p = 1;
                 retry = true;
             }
         }
 
-        if (line != null && !line.isNil()) {
+        if ( line != null && ! line.isNil() ) {
             context.runtime.setCurrentLine(data.currentLineNumber);
         }
 
