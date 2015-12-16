@@ -427,9 +427,9 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = nilNode(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (receiver instanceof VCallNode // undefined.equal?(obj)
-                && ((VCallNode) receiver).getName().equals("undefined")
-                && sourceSection.getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")
+        } else if (receiver instanceof org.jruby.ast.VCallNode // undefined.equal?(obj)
+                && ((org.jruby.ast.VCallNode) receiver).getName().equals("undefined")
+                && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")
                 && methodName.equals("equal?")) {
             RubyNode argument = translateArgumentsAndBlock(sourceSection, null, node.getArgsNode(), methodName).getArguments()[0];
             final RubyNode ret = new IsRubiniusUndefinedNode(context, sourceSection, argument);
@@ -965,6 +965,22 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
+    private String getSourcePath(SourceSection sourceSection) {
+        final Source source = sourceSection.getSource();
+
+        if (source == null) {
+            return "(unknown)";
+        }
+
+        final String path = source.getPath();
+
+        if (path == null) {
+            return source.getShortName();
+        }
+
+        return path;
+    }
+
     @Override
     public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
         // Unqualified constant access, as in CONST
@@ -979,13 +995,13 @@ public class BodyTranslator extends Translator {
 
         final String name = ConstantReplacer.replacementName(sourceSection, node.getName());
 
-        if (name.equals("Rubinius") && sourceSection.getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius")) {
+        if (name.equals("Rubinius") && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius")) {
             final RubyNode ret = new org.jruby.ast.Colon3Node(node.getPosition(), name).accept(this);
             return addNewlineIfNeeded(node, ret);
         }
 
         // TODO (pitr 01-Dec-2015): remove when RUBY_PLATFORM is set to "truffle"
-        if (name.equals("RUBY_PLATFORM") && sourceSection.getSource().getPath().contains("test/xml_mini/jdom_engine_test.rb")) {
+        if (name.equals("RUBY_PLATFORM") && getSourcePath(sourceSection).contains("test/xml_mini/jdom_engine_test.rb")) {
             final LiteralNode ret = new LiteralNode(context, sourceSection, StringOperations.createString(context, StringOperations.encodeByteList("truffle", UTF8Encoding.INSTANCE)));
             return addNewlineIfNeeded(node, ret);
         }
@@ -1105,7 +1121,7 @@ public class BodyTranslator extends Translator {
         // a bit different than aliasing because normally if a Rubinius method name conflicts with an already defined
         // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
 
-        final String path = sourceSection.getSource().getPath();
+        final String path = getSourcePath(sourceSection);
         final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/";
         if (path.startsWith(coreRubiniusPath)) {
             boolean rename = false;
@@ -1435,7 +1451,8 @@ public class BodyTranslator extends Translator {
             return new UpdateLastBacktraceNode(context, sourceSection, rhs);
         }
 
-        final boolean inCore = rhs.getSourceSection().getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/");
+        final boolean inCore = getSourcePath(rhs.getSourceSection()).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/");
+
         if (!inCore && READ_ONLY_GLOBAL_VARIABLES.contains(name)) {
             return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
         }
@@ -1501,7 +1518,7 @@ public class BodyTranslator extends Translator {
             RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
             if (name.equals("$_")) {
-                if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/regexp.rb")) {
+                if (getSourcePath(sourceSection).equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/regexp.rb")) {
                     readNode = new RubiniusLastStringReadNode(context, sourceSection);
                 } else {
                     readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
@@ -1600,7 +1617,7 @@ public class BodyTranslator extends Translator {
         // Also note the check for frozen.
         final RubyNode self = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
 
-        final String path = sourceSection.getSource().getPath();
+        final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
         if (path.equals(corePath + "rubinius/common/time.rb")) {
@@ -1661,7 +1678,7 @@ public class BodyTranslator extends Translator {
          * expects that we'll replace it statically with a call to Array#size. We also replace @tuple with
          * self, and @start to be 0.
          */
-        final String path = sourceSection.getSource().getPath();
+        final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
         if (path.equals(corePath + "rubinius/common/array.rb") || path.equals(corePath + "rubinius/api/shims/array.rb")) {
@@ -2638,7 +2655,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitVCallNode(org.jruby.ast.VCallNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        if (node.getName().equals("undefined") && sourceSection.getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")) {
+        if (node.getName().equals("undefined") && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")) {
             final RubyNode ret = new LiteralNode(context, sourceSection, context.getCoreLibrary().getRubiniusUndefined());
             return addNewlineIfNeeded(node, ret);
         }
