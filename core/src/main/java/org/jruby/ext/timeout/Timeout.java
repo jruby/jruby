@@ -44,6 +44,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyThread;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
@@ -85,6 +86,7 @@ public class Timeout implements Library {
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
         public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+            context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "Object#timeout is deprecated, use Timeout.timeout instead");
             return Helpers.invoke(context, context.runtime.getModule("Timeout"), "timeout", args, block);
         }
     }
