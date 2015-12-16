@@ -97,14 +97,15 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
         final RubyArray argv;
         if (args.length == 1 && args[0] == null) {
-            argv = context.getRuntime().getObject().getConstant("ARGV").convertToArray();
+            argv = runtime.getObject().getConstant("ARGV").convertToArray();
         } else {
-            argv = context.getRuntime().newArray(args);
+            argv = runtime.newArray(args);
         }
 
-        ArgsFileData data = new ArgsFileData(context.getRuntime(), argv);
+        ArgsFileData data = new ArgsFileData(runtime, argv);
         this.dataWrapStruct(data);
         return this;
     }
@@ -176,10 +177,11 @@ public class RubyArgsFile extends RubyObject {
         }
 
         public static ArgsFileData getDataFrom(IRubyObject recv) {
-            ArgsFileData data = (ArgsFileData)recv.dataGetStruct();
+            ArgsFileData data = (ArgsFileData) recv.dataGetStruct();
 
             if (data == null) {
-                data = new ArgsFileData(recv.getRuntime(), recv.getRuntime().newEmptyArray());
+                final Ruby runtime = recv.getRuntime();
+                data = new ArgsFileData(runtime, runtime.newEmptyArray());
                 recv.dataWrapStruct(data);
             }
 
@@ -197,7 +199,7 @@ public class RubyArgsFile extends RubyObject {
         private void inplaceEditWindows(ThreadContext context, String filename, String extension) throws RaiseException {
             File file = new File(filename);
 
-            if (!extension.equals("")) {
+            if (extension.length() > 0) {
                 String backup = filename + extension;
                 File backupFile = new File(backup);
 
@@ -220,7 +222,7 @@ public class RubyArgsFile extends RubyObject {
             File file = new File(filename);
             FileStat stat = runtime.getPosix().stat(filename);
 
-            if (!extension.equals("")) {
+            if (extension.length() > 0) {
                 file.renameTo(new File(filename + extension));
             } else {
                 file.delete();
