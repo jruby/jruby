@@ -1439,7 +1439,9 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size >= 0")
         public DynamicObject initialize(DynamicObject array, int size, int defaultValue, NotProvided block) {
             final int[] store = new int[size];
-            Arrays.fill(store, defaultValue);
+            if (defaultValue != 0) {
+                Arrays.fill(store, defaultValue);
+            }
             Layouts.ARRAY.setStore(array, store);
             Layouts.ARRAY.setSize(array, size);
             return array;
@@ -1454,7 +1456,9 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size >= 0")
         public DynamicObject initialize(DynamicObject array, int size, long defaultValue, NotProvided block) {
             final long[] store = new long[size];
-            Arrays.fill(store, defaultValue);
+            if (defaultValue != 0L) {
+                Arrays.fill(store, defaultValue);
+            }
             Layouts.ARRAY.setStore(array, store);
             Layouts.ARRAY.setSize(array, size);
             return array;
@@ -1469,7 +1473,9 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size >= 0")
         public DynamicObject initialize(DynamicObject array, int size, double defaultValue, NotProvided block) {
             final double[] store = new double[size];
-            Arrays.fill(store, defaultValue);
+            if (defaultValue != 0.0) {
+                Arrays.fill(store, defaultValue);
+            }
             Layouts.ARRAY.setStore(array, store);
             Layouts.ARRAY.setSize(array, size);
             return array;
