@@ -21,7 +21,6 @@ public class CompiledIRBlockBody extends IRBlockBody {
         this.reuseParentScope = closure.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushScope = !closure.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentScope;
         this.usesKwargs = closure.receivesKeywordArgs();
-        this.hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
         closure.getStaticScope().determineModule();
@@ -30,6 +29,11 @@ public class CompiledIRBlockBody extends IRBlockBody {
     @Override
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return closure.getArgumentDescriptors();
+    }
+
+    @Override
+    public boolean canCallDirect() {
+        return true;
     }
 
     @Override
