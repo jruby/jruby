@@ -1515,15 +1515,15 @@ public class IRRuntimeHelpers {
             return IRubyObject.NULL_ARRAY;
         }
 
-        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
-        if (isProcCall) {
-            return prepareProcArgs(context, block, args);
-        }
-
         boolean isLambda = block.type == Block.Type.LAMBDA;
         if (isLambda) {
             block.getBody().getSignature().checkArity(context.runtime, args);
             return args;
+        }
+
+        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        if (isProcCall) {
+            return prepareProcArgs(context, block, args);
         }
 
         BlockBody body = block.getBody();
