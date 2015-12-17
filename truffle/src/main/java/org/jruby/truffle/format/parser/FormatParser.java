@@ -117,7 +117,7 @@ public class FormatParser {
                         break;
                     case 'd':
                     case 'i':
-					case 'o':
+                    case 'o':
                     case 'u':
                     case 'x':
                     case 'X':
