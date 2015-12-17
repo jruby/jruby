@@ -17,7 +17,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class PrepareBlockArgsInstr extends NoOperandInstr implements FixedArityInstr {
-    public PrepareBlockArgsInstr(Operation op) {
+    public static final PrepareBlockArgsInstr INSTANCE = new PrepareBlockArgsInstr(Operation.PREPARE_BLOCK_ARGS);
+
+    protected PrepareBlockArgsInstr(Operation op) {
         super(op);
     }
 
@@ -27,7 +29,7 @@ public class PrepareBlockArgsInstr extends NoOperandInstr implements FixedArityI
     }
 
     public static PrepareBlockArgsInstr decode(IRReaderDecoder d) {
-        return new PrepareBlockArgsInstr(Operation.PREPARE_BLOCK_ARGS);
+        return INSTANCE;
     }
     
     @Override

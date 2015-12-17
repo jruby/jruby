@@ -91,6 +91,7 @@ public abstract class IRVisitor {
     public void PrepareBlockArgsInstr(PrepareBlockArgsInstr instr) { error(instr); }
     public void PrepareFixedBlockArgsInstr(PrepareFixedBlockArgsInstr instr) { error(instr); }
     public void PrepareSingleBlockArgInstr(PrepareSingleBlockArgInstr instr) { error(instr); }
+    public void PrepareNoBlockArgsInstr(PrepareNoBlockArgsInstr instr) { error(instr); }
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) { error(processmodulebodyinstr); }
     public void PutClassVariableInstr(PutClassVariableInstr putclassvariableinstr) { error(putclassvariableinstr); }
     public void PutConstInstr(PutConstInstr putconstinstr) { error(putconstinstr); }

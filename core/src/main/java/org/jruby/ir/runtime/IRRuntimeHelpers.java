@@ -1574,6 +1574,25 @@ public class IRRuntimeHelpers {
         return args;
     }
 
+    /**
+     * Check whether incoming args are zero length for a lambda, and no-op for non-lambda.
+     *
+     * This could probably be simplified to just an arity check with no return value, but returns the
+     * incoming args currently for consistency with the other prepares.
+     *
+     * @param context
+     * @param block
+     * @param args
+     * @return
+     */
+    @Interp @JIT
+    public static IRubyObject[] prepareNoBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
+        if (block.type == Block.Type.LAMBDA) {
+            block.getSignature().checkArity(context.runtime, args);
+        }
+        return args;
+    }
+
     @Interp @JIT
     public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
         args = prepareBlockArgsInternal(context, block, args);

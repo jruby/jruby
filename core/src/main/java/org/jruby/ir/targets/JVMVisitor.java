@@ -1442,6 +1442,15 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void PrepareNoBlockArgsInstr(PrepareNoBlockArgsInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelfBlock();
+        jvmMethod().loadArgs();
+        jvmMethod().invokeIRHelper("prepareNoBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class));
+        jvmMethod().storeArgs();
+    }
+
+    @Override
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) {
         jvmMethod().loadContext();
         visit(processmodulebodyinstr.getModuleBody());

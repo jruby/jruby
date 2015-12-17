@@ -181,6 +181,9 @@ public class InterpreterEngine {
                         case UPDATE_BLOCK_STATE:
                             self = IRRuntimeHelpers.updateBlockState(block, self);
                             break;
+                        case PREPARE_NO_BLOCK_ARGS:
+                            args = IRRuntimeHelpers.prepareNoBlockArgs(context, block, args);
+                            break;
                         case PREPARE_SINGLE_BLOCK_ARG:
                             args = IRRuntimeHelpers.prepareSingleBlockArgs(context, block, args);
                             break;
