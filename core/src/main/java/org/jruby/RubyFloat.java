@@ -39,8 +39,6 @@ package org.jruby;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 import org.jcodings.specific.ASCIIEncoding;
@@ -207,11 +205,8 @@ public class RubyFloat extends RubyNumeric {
         } else if (number instanceof RubyFloat) {
             return number;
         }
-        throw recv.getRuntime().newTypeError(
-                "failed to convert " + number.getMetaClass() + " into Float");
+        throw recv.getRuntime().newTypeError("failed to convert " + number.getMetaClass() + " into Float");
     }
-
-    private final static DecimalFormat FORMAT = new DecimalFormat("##############0.0##############", new DecimalFormatSymbols(Locale.ENGLISH));
 
     /** flo_to_s
      *
@@ -219,9 +214,13 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "to_s")
     @Override
     public IRubyObject to_s() {
-        Ruby runtime = getRuntime();
-        if (Double.isInfinite(value)) return RubyString.newString(runtime, value < 0 ? "-Infinity" : "Infinity");
-        if (Double.isNaN(value)) return RubyString.newString(runtime, "NaN");
+        final Ruby runtime = getRuntime();
+        if (Double.isInfinite(value)) {
+            return RubyString.newString(runtime, value < 0 ? "-Infinity" : "Infinity");
+        }
+        if (Double.isNaN(value)) {
+            return RubyString.newString(runtime, "NaN");
+        }
 
         ByteList buf = new ByteList();
         // Under 1.9, use full-precision float formatting (JRUBY-4846).
