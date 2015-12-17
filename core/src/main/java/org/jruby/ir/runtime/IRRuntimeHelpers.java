@@ -1521,7 +1521,8 @@ public class IRRuntimeHelpers {
         }
 
         boolean isLambda = block.type == Block.Type.LAMBDA;
-        if (isLambda && isProcCall) {
+        if (isLambda) {
+            block.getBody().getSignature().checkArity(context.runtime, args);
             return args;
         }
 
@@ -1592,11 +1593,6 @@ public class IRRuntimeHelpers {
             return IRRuntimeHelpers.prepareProcArgs(context, block, args);
         }
 
-        boolean isLambda = block.type == Block.Type.LAMBDA;
-        if (isLambda && isProcCall) {
-            return args;
-        }
-
         // SSS FIXME: This check here is not required as long as
         // the single-instruction cases always uses PreapreSingleBlockArgInstr
         // But, including this here for robustness for now.
@@ -1617,6 +1613,10 @@ public class IRRuntimeHelpers {
     public static IRubyObject[] prepareSingleBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) args = IRubyObject.NULL_ARRAY;
 
+        if (block.type == Block.Type.LAMBDA) {
+            block.getBody().getSignature().checkArity(context.runtime, args);
+        }
+
         // Deal with proc calls
         if (context.getCurrentBlockType() == Block.Type.PROC) {
             if (args.length == 0) {
@@ -1627,8 +1627,6 @@ public class IRRuntimeHelpers {
                 args = new IRubyObject[] { args[0] };
             }
         }
-
-        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
 
         // Nothing more to do! Hurray!
         // If there are insufficient args, ReceivePreReqdInstr will return nil
