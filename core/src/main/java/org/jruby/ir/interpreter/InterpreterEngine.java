@@ -354,10 +354,10 @@ public class InterpreterEngine {
             case LABEL:
                 break;
             case SAVE_BINDING_VIZ:
-                setResult(temp, currDynScope, ((SaveBindingVisibilityInstr) instr).getResult(), block.getBinding().getVisibility());
+                setResult(temp, currDynScope, ((SaveBindingVisibilityInstr) instr).getResult(), block.getBinding().getFrame().getVisibility());
                 break;
             case RESTORE_BINDING_VIZ:
-                block.getBinding().setVisibility((Visibility) retrieveOp(((RestoreBindingVisibilityInstr) instr).getVisibility(), context, self, currDynScope, currScope, temp));
+                block.getBinding().getFrame().setVisibility((Visibility) retrieveOp(((RestoreBindingVisibilityInstr) instr).getVisibility(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_BLOCK_FRAME:
                 setResult(temp, currDynScope, ((PushBlockFrameInstr) instr).getResult(), context.preYieldNoScope(block.getBinding()));
