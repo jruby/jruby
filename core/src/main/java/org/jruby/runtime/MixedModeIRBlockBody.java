@@ -30,7 +30,8 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
         // JIT currently JITs blocks along with their method and no on-demand by themselves.  We only
         // promote to full build here if we are -X-C.
-        if (!closure.getManager().getInstanceConfig().getCompileMode().shouldJIT()) {
+        if (!closure.getManager().getInstanceConfig().getCompileMode().shouldJIT() ||
+                Options.JIT_THRESHOLD.load() < 0) {
             callCount = -1;
         }
     }
