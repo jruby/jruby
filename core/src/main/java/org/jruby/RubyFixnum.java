@@ -665,21 +665,21 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         checkZeroDivisionError(context, other);
         if (other instanceof RubyFixnum) {
-            return divmodFixnum(context, other);
+            return divmodFixnum(context, (RubyFixnum) other);
         }
         return coerceBin(context, "divmod", other);
     }
 
-    private IRubyObject divmodFixnum(ThreadContext context, IRubyObject other) {
-        long x = value;
-        long y = ((RubyFixnum) other).value;
+    private IRubyObject divmodFixnum(ThreadContext context, RubyFixnum other) {
         final Ruby runtime = context.runtime;
+
+        final long x = this.value;
+        final long y = other.value;
         if (y == 0) {
             throw runtime.newZeroDivisionError();
         }
 
-        long mod;
-        IRubyObject integerDiv;
+        long mod; final RubyInteger integerDiv;
         if (y == -1) {
             if (x == MIN) {
                 integerDiv = RubyBignum.newBignum(runtime, BigInteger.valueOf(x).negate());
@@ -710,8 +710,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyFloat.newFloat(context.runtime, (double) value / (double) ((RubyFixnum) other).value);
-        } else if (other instanceof RubyBignum) {
-            return RubyFloat.newFloat(context.runtime, (double) value / (double) ((RubyBignum) other).getDoubleValue());
+        }
+        if (other instanceof RubyBignum) {
+            return RubyFloat.newFloat(context.runtime, (double) value / ((RubyBignum) other).getDoubleValue());
         }
         return coerceBin(context, "quo", other);
     }
