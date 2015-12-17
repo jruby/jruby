@@ -567,7 +567,7 @@ public abstract class HashNodes {
                     }
 
                     if (n < Layouts.HASH.getSize(hash)) {
-                        yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)}, 2));
+                        yieldPair(frame, block, PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n));
                     }
                 }
             } finally {
@@ -584,7 +584,7 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(getContext(), hash);
 
             for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
-                yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
+                yieldPair(frame, block, keyValue.getKey(), keyValue.getValue());
             }
 
             return hash;
@@ -599,6 +599,10 @@ public abstract class HashNodes {
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             return toEnumNode.call(frame, hash, "to_enum", null, getSymbol(method.getName()));
+        }
+
+        private Object yieldPair(VirtualFrame frame, DynamicObject block, Object key, Object value) {
+            return yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] { key, value }, 2));
         }
 
     }
