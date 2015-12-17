@@ -1453,7 +1453,6 @@ public class JVMVisitor extends IRVisitor {
         // FIXME: Centralize this out of InterpreterContext
         boolean reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         boolean pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
-        boolean popDynScope = pushNewDynScope || reuseParentDynScope;
 
         jvmMethod().loadContext();
         jvmMethod().loadSelfBlock();
