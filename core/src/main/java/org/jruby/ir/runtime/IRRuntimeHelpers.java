@@ -1485,7 +1485,7 @@ public class IRRuntimeHelpers {
         return context.runtime.newFixnum(i);
     }
 
-    public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
+    private static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
         if (args.length == 1 && args[0].respondsTo("to_ary")) {
             IRubyObject newAry = Helpers.aryToAry(args[0]);
             if (newAry.isNil()) {
@@ -1499,7 +1499,7 @@ public class IRRuntimeHelpers {
         return args;
     }
 
-    public static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
+    private static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
         if (args.length == 1) {
             int arityValue = b.getBody().getSignature().arityValue();
             return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arityValue, b.type == Block.Type.NORMAL && args[0] instanceof RubyArray);
@@ -1508,7 +1508,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
+    private static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
         // This is the placeholder for scenarios
         // not handled by specialized instructions.
         if (args == null) {
@@ -1602,6 +1602,7 @@ public class IRRuntimeHelpers {
         return args;
     }
 
+    @Interp @JIT
     public static IRubyObject[] prepareFixedBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) {
             return IRubyObject.NULL_ARRAY;
@@ -1629,6 +1630,7 @@ public class IRRuntimeHelpers {
         return args;
     }
 
+    @Interp @JIT
     public static IRubyObject[] prepareSingleBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) args = IRubyObject.NULL_ARRAY;
 
