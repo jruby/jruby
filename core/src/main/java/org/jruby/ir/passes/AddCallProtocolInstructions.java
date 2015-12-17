@@ -95,10 +95,19 @@ public class AddCallProtocolInstructions extends CompilerPass {
             if (scope instanceof IRClosure) {
                 savedViz = scope.createTemporaryVariable();
                 savedFrame = scope.createTemporaryVariable();
-                entryBB.insertInstr(0, new SaveBindingVisibilityInstr(savedViz));
-                entryBB.insertInstr(1, new PushBlockFrameInstr(savedFrame, scope.getName()));
-                entryBB.insertInstr(2, new UpdateBlockExecutionStateInstr(Self.SELF));
-                if (requireBinding) entryBB.insertInstr(3, new PushBlockBindingInstr());
+
+                { // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
+                    int insertIndex = 0;
+                    entryBB.insertInstr(insertIndex++, new SaveBindingVisibilityInstr(savedViz));
+                    entryBB.insertInstr(insertIndex++, new PushBlockFrameInstr(savedFrame, scope.getName()));
+
+                    // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
+                    if (requireBinding) {
+                        entryBB.insertInstr(insertIndex++, new PushBlockBindingInstr());
+                    }
+                    entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
+                }
+
                 Signature sig = ((IRClosure)scope).getSignature();
 
                 // If it doesn't need any args, no arg preparation involved!
