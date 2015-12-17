@@ -1573,7 +1573,7 @@ public class IRRuntimeHelpers {
         return args;
     }
 
-    @JIT
+    @Interp @JIT
     public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
         args = prepareBlockArgsInternal(context, block, args);
         if (usesKwArgs) {
@@ -1646,7 +1646,7 @@ public class IRRuntimeHelpers {
         return null;
     }
 
-    @JIT
+    @Interp @JIT
     public static DynamicScope pushBlockDynamicScopeIfNeeded(ThreadContext context, Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
         DynamicScope newScope = getNewBlockScope(block, pushNewDynScope, reuseParentDynScope);
         if (newScope != null) {
@@ -1655,7 +1655,7 @@ public class IRRuntimeHelpers {
         return newScope;
     }
 
-    @JIT
+    @Interp @JIT
     public static IRubyObject updateBlockState(Block block, IRubyObject self) {
         if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
             // Update self to the binding's self
