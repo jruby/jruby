@@ -96,6 +96,11 @@ class TestString < Test::Unit::TestCase
     assert_equal(2, "abc\u{3042 3044 3046}".count("^\u3042", "^\u3044", "^\u3046", "^c"))
   end
 
+  def test_arguments
+    assert_raises(TypeError) { String.new encoding: :"utf-8" }
+    assert_raises(ArgumentError) { String.new bad_parameter: "whatever" }
+  end
+
   private
 
   def do_sub buf, e1, e2, e3

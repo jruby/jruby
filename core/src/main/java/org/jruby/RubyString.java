@@ -1497,6 +1497,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
+    private static String[] validInitArgs = new String[]{"encoding"};
+
     @JRubyMethod(name = "initialize", visibility = PRIVATE, optional = 2)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args) {
         if ( args.length == 0 ) return this;
@@ -1505,8 +1507,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         final IRubyObject string; final IRubyObject encoding;
         if ( arg instanceof RubyHash ) { // new encoding: ...
-            final RubySymbol enc = context.runtime.newSymbol("encoding");
-            encoding = ( (RubyHash) arg ).fastARef(enc);
+            IRubyObject[] kwargs = ArgsUtil.extractKeywordArgs(context, (RubyHash)arg, validInitArgs);
+            encoding = kwargs[0];
             string = args.length > 1 ? args[0] : null;
         }
         else {
