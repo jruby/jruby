@@ -1657,14 +1657,23 @@ public class IRRuntimeHelpers {
 
     @Interp @JIT
     public static IRubyObject updateBlockState(Block block, IRubyObject self) {
+        // SSS FIXME: Why is self null in non-binding-eval contexts?
         if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
             // Update self to the binding's self
-            Binding b = block.getBinding();
-            self = b.getSelf();
-            b.getFrame().setSelf(self);
+            self = useBindingSelf(block.getBinding());
         }
+
         // Clear block's eval type
         block.setEvalType(EvalType.NONE);
+
+        // Return self in case it has been updated
+        return self;
+    }
+
+    public static IRubyObject useBindingSelf(Binding binding) {
+        IRubyObject self = binding.getSelf();
+        binding.getFrame().setSelf(self);
+
         return self;
     }
 }

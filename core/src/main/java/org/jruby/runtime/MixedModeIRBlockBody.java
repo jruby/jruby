@@ -142,13 +142,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
             context.pushScope(actualScope);
         }
 
-        // SSS FIXME: Why is self null in non-binding-eval contexts?
-        if (self == null || this.evalType.get() == EvalType.BINDING_EVAL) {
-            self = useBindingSelf(binding);
-        }
-
-        // Clear evaltype now that it has been set on dyn-scope
-        block.setEvalType(EvalType.NONE);
+        self = IRRuntimeHelpers.updateBlockState(block, self);
 
         try {
             return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
