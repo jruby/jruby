@@ -36,6 +36,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.math.BigInteger;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -52,11 +54,6 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
-import org.jruby.util.TypeCoercer;
-
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Implementation of the Fixnum class.
@@ -196,7 +193,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     @Override
-    public int getIntValue() { return (int)value; }
+    public int getIntValue() { return (int) value; }
 
     @Override
     public BigInteger getBigIntegerValue() {
@@ -253,7 +250,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public final int hashCode() {
-        return (int)(value ^ value >>> 32);
+        return (int) (value ^ value >>> 32);
     }
 
     @Override
@@ -283,32 +280,31 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @JRubyMethod
     public IRubyObject times(ThreadContext context, Block block) {
         if (block.isGiven()) {
-            Ruby runtime = context.runtime;
-            long lvalue = this.value;
+            final long value = this.value;
             boolean checkArity = block.type.checkArity;
 
             if (block.getSignature() == Signature.NO_ARGUMENTS) {
                 if (checkArity) {
                     // must pass arg
-                    IRubyObject nil = runtime.getNil();
-                    for (long i = 0; i < lvalue; i++) {
+                    final IRubyObject nil = context.nil;
+                    for (long i = 0; i < value; i++) {
                         block.yieldSpecific(context, nil);
                     }
                 } else {
                     // no arg needed
-                    for (long i = 0; i < lvalue; i++) {
+                    for (long i = 0; i < value; i++) {
                         block.yieldSpecific(context);
                     }
                 }
             } else {
-                for (long i = 0; i < lvalue; i++) {
+                final Ruby runtime = context.runtime;
+                for (long i = 0; i < value; i++) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
                 }
             }
             return this;
-        } else {
-            return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
         }
+        return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
     }
 
     /** fix_to_s
@@ -316,9 +312,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     public RubyString to_s(IRubyObject[] args) {
         switch (args.length) {
-        case 0: return to_s();
-        case 1: return to_s(args[0]);
-        default: throw getRuntime().newArgumentError(args.length, 1);
+            case 0: return to_s();
+            case 1: return to_s(args[0]);
+            default: throw getRuntime().newArgumentError(args.length, 1);
         }
     }
 
@@ -369,7 +365,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
-            return addFixnum(context, (RubyFixnum)other);
+            return addFixnum(context, (RubyFixnum) other);
         }
         return addOther(context, other);
     }
@@ -517,8 +513,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         //   result = value * othervalue;  #=> Long.MIN_VALUE (overflow)
         //   result / value  #=>  Long.MIN_VALUE (overflow) == otherValue
 
-        Ruby runtime = context.runtime;
-        long value = this.value;
+        final Ruby runtime = context.runtime;
+        final long value = this.value;
 
         // fast check for known ranges that won't overflow
         if (value <= 3037000499L && otherValue <= 3037000499L &&
@@ -603,7 +599,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     private IRubyObject idivLong(ThreadContext context, long x, long y) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         if (y == 0) {
             throw runtime.newZeroDivisionError();
         }
@@ -1250,24 +1246,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Deprecated
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
-    }
-
-    private static final Map<Class, TypeCoercer> JAVA_COERCERS = new HashMap<Class, TypeCoercer>(4, 1);
-
-    static {
-        TypeCoercer intCoercer = new TypeCoercer() {
-            public Object coerce(IRubyObject self) {
-                RubyFixnum fixnum = (RubyFixnum)self;
-
-                if (fixnum.value > Integer.MAX_VALUE) {
-                    throw self.getRuntime().newRangeError("Fixnum " + fixnum.value + " is too large for Java int");
-                }
-
-                return Integer.valueOf((int) fixnum.value);
-            }
-        };
-        JAVA_COERCERS.put(int.class, intCoercer);
-        JAVA_COERCERS.put(Integer.class, intCoercer);
     }
 
     private void checkZeroDivisionError(ThreadContext context, IRubyObject other) {
