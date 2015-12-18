@@ -1516,14 +1516,14 @@ public class IRRuntimeHelpers {
         }
 
         boolean isLambda = block.type == Block.Type.LAMBDA;
-        if (isLambda) {
-            block.getBody().getSignature().checkArity(context.runtime, args);
-            return args;
-        }
-
         boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
         if (isProcCall) {
-            return prepareProcArgs(context, block, args);
+            if (isLambda) {
+                block.getBody().getSignature().checkArity(context.runtime, args);
+                return args;
+            } else {
+                return prepareProcArgs(context, block, args);
+            }
         }
 
         BlockBody body = block.getBody();
@@ -1533,6 +1533,7 @@ public class IRRuntimeHelpers {
         // This test is when we only have opt / rest arg (either keyword or non-keyword)
         // but zero required args.
         if (sig.arityValue() == -1) {
+            if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
             return args;
         }
 
@@ -1543,6 +1544,7 @@ public class IRRuntimeHelpers {
 
         // Nothing more to do for lambdas
         if (isLambda) {
+            block.getBody().getSignature().checkArity(context.runtime, args);
             return args;
         }
 
@@ -1568,8 +1570,6 @@ public class IRRuntimeHelpers {
             }
             args = newArgs;
         }
-
-        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
 
         return args;
     }
@@ -1608,9 +1608,15 @@ public class IRRuntimeHelpers {
             return IRubyObject.NULL_ARRAY;
         }
 
+        boolean isLambda = block.type == Block.Type.LAMBDA;
         boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
         if (isProcCall) {
-            return IRRuntimeHelpers.prepareProcArgs(context, block, args);
+            if (isLambda) {
+                block.getBody().getSignature().checkArity(context.runtime, args);
+                return args;
+            } else {
+                return prepareProcArgs(context, block, args);
+            }
         }
 
         // SSS FIXME: This check here is not required as long as
@@ -1624,7 +1630,7 @@ public class IRRuntimeHelpers {
         // convert a single value to an array if possible.
         args = IRRuntimeHelpers.toAry(context, args);
 
-        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
+        if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
 
         // If there are insufficient args, ReceivePreReqdInstr will return nil
         return args;
@@ -1636,10 +1642,8 @@ public class IRRuntimeHelpers {
 
         if (block.type == Block.Type.LAMBDA) {
             block.getBody().getSignature().checkArity(context.runtime, args);
-        }
-
-        // Deal with proc calls
-        if (context.getCurrentBlockType() == Block.Type.PROC) {
+        } else if (context.getCurrentBlockType() == Block.Type.PROC) {
+            // Deal with proc calls
             if (args.length == 0) {
                 args = context.runtime.getSingleNilArray();
             } else if (args.length == 1) {
@@ -1648,6 +1652,7 @@ public class IRRuntimeHelpers {
                 args = new IRubyObject[] { args[0] };
             }
         }
+
 
         // Nothing more to do! Hurray!
         // If there are insufficient args, ReceivePreReqdInstr will return nil
