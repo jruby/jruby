@@ -85,12 +85,12 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     }
 
     @Specialization(guards = "updateShape(object)")
-    public void updateShape(DynamicObject object, Object value) {
+    public void updateShapeAndWrite(DynamicObject object, Object value) {
         execute(object, value);
     }
 
     @TruffleBoundary
-    @Specialization(contains = { "writeExistingField", "writeNewField", "updateShape" })
+    @Specialization(contains = { "writeExistingField", "writeNewField", "updateShapeAndWrite" })
     public void writeUncached(DynamicObject object, Object value) {
         object.define(name, value, 0);
     }
