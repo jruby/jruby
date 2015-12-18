@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CFGInliner {
-    private static final boolean debug = false;
+    private static final boolean debug = true;
     private final FullInterpreterContext fullInterpreterContext;
     private final CFG cfg;
     private final IRScope hostScope;
@@ -68,11 +68,13 @@ public class CFGInliner {
     }
 
     private BasicBlock findCallsiteBB(CallBase call) {
+        System.out.println("LOOKING FOR IPC: " + call.getIPC());
         for (BasicBlock bb: cfg.getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
-                // System.out.println("IPC " + i.getIPC() + " = " + i);
-                if (i.getIPC() == call.getIPC()) {
-                    // System.out.println("Found it!!!! -- " + call +  ", i: " + i);
+                 System.out.println("IPC " + i.getIPC() + " = " + i);
+                // Some instrs reuse instrs (like LineNumberInstr) so we need to add call check.
+                if (i.getIPC() == call.getIPC() && i instanceof CallBase) {
+                    System.out.println("Found it!!!! -- " + call +  ", i: " + i + ", IPC: " + call.getIPC());
                     return bb;
                 }
             }

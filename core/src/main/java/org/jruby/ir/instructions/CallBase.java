@@ -22,7 +22,7 @@ import static org.jruby.ir.IRFlags.*;
 public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
 
-    public final long callSiteId;
+    public long callSiteId;
     private final CallType callType;
     protected String name;
     protected CallSite callSite;

@@ -158,6 +158,14 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
                 ((CallBase) newInstr).blockInlining();
             }
 
+            // Really icky but when we clone any call instructions we assign a new callsiteid.
+            // If an inline occurs and profiler decides before new inlined host scope has come into
+            // play it will not be able to find the current callsite.  By keeping the same values
+            // the profiler will continue to work.
+            if (instr instanceof CallBase) {
+                ((CallBase) newInstr).callSiteId = ((CallBase) instr).callSiteId;
+            }
+
             if (newInstr != null) {  // inliner may kill off unneeded instr
                 newBB.addInstr(newInstr);
                 if (isClosureClone && newInstr instanceof YieldInstr) {

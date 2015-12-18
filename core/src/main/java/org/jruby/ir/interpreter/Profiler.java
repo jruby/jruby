@@ -240,7 +240,7 @@ public class Profiler {
         // Find top N call sites
         double freq = 0.0;
         int i = 0;
-        Set<InterpreterContext> inlinedScopes = new HashSet<>();
+        Set<IRScope> inlinedScopes = new HashSet<>();
         for (IRCallSite callSite: callSites) {
             double percentOfTotalCalls = (callSite.count * 100.0) / total;
 
@@ -272,10 +272,18 @@ public class Profiler {
                 ((FullInterpreterContext) parentIC).generateInstructionsForIntepretation();
                 System.out.println("Inlined " + methodToInline.getName() + " into " + parentIC.getName());
                 IRScope scope = ((CompiledIRMethod) methodToInline).getIRMethod();
+                CallBase call;
+                // If we are in same batch of interesting callsites then the underlying scope has already
+                // cloned any other interesting callsites.
+                if (inlinedScopes.contains(callSite.scope)) {
+                    call = callSite.findCall();
+                } else {
+                    call = callSite.getCall();
+                }
                 RubyModule implClass = methodToInline.getImplementationClass();
                 long start = new java.util.Date().getTime();
-                parentIC.getScope().inlineMethodJIT(methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
-                inlinedScopes.add(parentIC);
+                parentIC.getScope().inlineMethodJIT(methodToInline, implClass, implClass.getGeneration(), null, call, false);//!inlinedScopes.contains(ic));
+                inlinedScopes.add(parentIC.getScope());
                 long end = new java.util.Date().getTime();
             } else if (methodToInline instanceof Compilable) {
                 IRScope scope = (methodToInline).getIRScope();
@@ -283,7 +291,7 @@ public class Profiler {
                     RubyModule implClass = methodToInline.getImplementationClass();
                     long start = new java.util.Date().getTime();
                     parentIC.getScope().inlineMethod(methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
-                    inlinedScopes.add(parentIC);
+                    inlinedScopes.add(parentIC.getScope());
                     long end = new java.util.Date().getTime();
                     System.out.println("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +
                             " in time (ms): " + (end - start) + " # of inlined instrs: " +
@@ -292,9 +300,9 @@ public class Profiler {
             }
         }
 
-        for (InterpreterContext x: inlinedScopes) {
-            x.setVersion(versionCount); // Update version count for inlined scopes
-        }
+        //for (IRScope x: inlinedScopes) {
+//            x.setVersion(versionCount); // Update version count for inlined scopes
+//        }
 
         // Reset
         codeModificationsCount = 0;
