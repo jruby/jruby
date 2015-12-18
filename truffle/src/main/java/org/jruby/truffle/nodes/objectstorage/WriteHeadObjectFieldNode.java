@@ -9,13 +9,14 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
+import org.jruby.truffle.nodes.ShapeCachingGuards;
 import org.jruby.truffle.runtime.Options;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -25,6 +26,7 @@ import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 
+@ImportStatic(ShapeCachingGuards.class)
 public abstract class WriteHeadObjectFieldNode extends Node {
 
     protected static final int CACHE_LIMIT = Options.FIELD_LOOKUP_CACHE;
@@ -110,11 +112,6 @@ public abstract class WriteHeadObjectFieldNode extends Node {
 
     protected Location getNewLocation(Shape newShape) {
         return newShape.getProperty(name).getLocation();
-    }
-
-    protected boolean updateShape(DynamicObject object) {
-        CompilerDirectives.transferToInterpreter();
-        return object.updateShape();
     }
 
     protected Assumption createAssumption() {
