@@ -18,7 +18,7 @@ import org.jruby.util.ByteList;
  */
 public class FormatTokenizer {
 
-    private static final String TYPE_CHARS = "%-sdiuxXfgGeE";
+    private static final String TYPE_CHARS = "%-sdiuxXfgGeEo";
 
     private final RubyContext context;
     private final ByteList format;

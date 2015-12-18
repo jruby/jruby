@@ -63,6 +63,10 @@ public abstract class FormatIntegerNode extends PackNode {
                 formatted = bigInteger.toString();
                 break;
 
+            case 'o':
+                formatted = bigInteger.toString(8).toLowerCase(Locale.ENGLISH);
+                break;
+
             case 'x':
                 formatted = bigInteger.toString(16).toLowerCase(Locale.ENGLISH);
                 break;

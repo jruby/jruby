@@ -10,7 +10,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class PrepareFixedBlockArgsInstr extends PrepareBlockArgsInstr  {
-    public PrepareFixedBlockArgsInstr() {
+    public static final PrepareFixedBlockArgsInstr INSTANCE = new PrepareFixedBlockArgsInstr();
+
+    private PrepareFixedBlockArgsInstr() {
         super(Operation.PREPARE_FIXED_BLOCK_ARGS);
     }
 
@@ -20,7 +22,7 @@ public class PrepareFixedBlockArgsInstr extends PrepareBlockArgsInstr  {
     }
 
     public static PrepareFixedBlockArgsInstr decode(IRReaderDecoder d) {
-        return new PrepareFixedBlockArgsInstr();
+        return INSTANCE;
     }
 
     @Override

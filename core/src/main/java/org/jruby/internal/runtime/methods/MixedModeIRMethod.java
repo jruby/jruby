@@ -43,7 +43,8 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         this.signature = getStaticScope().getSignature();
 
         // disable JIT if JIT is disabled
-        if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
+        if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT() ||
+                Options.JIT_THRESHOLD.load() < 0) {
             this.box.callCount = -1;
         }
     }
