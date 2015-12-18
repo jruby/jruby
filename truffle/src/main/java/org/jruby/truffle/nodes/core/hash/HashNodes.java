@@ -569,7 +569,7 @@ public abstract class HashNodes {
                     }
 
                     if (n < Layouts.HASH.getSize(hash)) {
-                        yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)}, 2));
+                        yieldPair(frame, block, PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n));
                     }
                 }
             } finally {
@@ -586,7 +586,7 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(getContext(), hash);
 
             for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
-                yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
+                yieldPair(frame, block, keyValue.getKey(), keyValue.getValue());
             }
 
             return hash;
@@ -601,6 +601,10 @@ public abstract class HashNodes {
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             return toEnumNode.call(frame, hash, "to_enum", null, getSymbol(method.getName()));
+        }
+
+        private Object yieldPair(VirtualFrame frame, DynamicObject block, Object key, Object value) {
+            return yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] { key, value }, 2));
         }
 
     }
@@ -786,7 +790,7 @@ public abstract class HashNodes {
                     if (n < length) {
                         final Object key = PackedArrayStrategy.getKey(store, n);
                         final Object value = PackedArrayStrategy.getValue(store, n);
-                        resultStore = arrayBuilderNode.appendValue(resultStore, n, yield(frame, block, key, value));
+                        resultStore = arrayBuilderNode.appendValue(resultStore, n, yieldPair(frame, block, key, value));
                     }
                 }
             } finally {
@@ -810,7 +814,7 @@ public abstract class HashNodes {
 
             try {
                 for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
-                    arrayBuilderNode.appendValue(store, index, yield(frame, block, keyValue.getKey(), keyValue.getValue()));
+                    arrayBuilderNode.appendValue(store, index, yieldPair(frame, block, keyValue.getKey(), keyValue.getValue()));
                     index++;
                 }
             } finally {
@@ -820,6 +824,10 @@ public abstract class HashNodes {
             }
 
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilderNode.finish(store, length), length);
+        }
+
+        private Object yieldPair(VirtualFrame frame, DynamicObject block, Object key, Object value) {
+            return yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] { key, value }, 2));
         }
 
     }

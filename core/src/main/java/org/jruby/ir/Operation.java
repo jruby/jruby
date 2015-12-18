@@ -219,7 +219,8 @@ public enum Operation {
 
     PREPARE_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PREPARE_SINGLE_BLOCK_ARG(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
+    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
 
     public final OpClass opClass;
     private int flags;

@@ -443,7 +443,6 @@ module Commands
       else
         compilation_exceptions_behaviour = '-J-Djvmci.option.TruffleCompilationExceptionsAreFatal=true'
       end
-      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-Djvmci.option.TraceTruffleCompilation=true #{compilation_exceptions_behaviour}'"})
       bench_args += ['score', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands', '--show-samples']
       raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
     when 'reference'

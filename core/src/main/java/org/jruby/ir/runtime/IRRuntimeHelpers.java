@@ -1485,7 +1485,7 @@ public class IRRuntimeHelpers {
         return context.runtime.newFixnum(i);
     }
 
-    public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
+    private static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
         if (args.length == 1 && args[0].respondsTo("to_ary")) {
             IRubyObject newAry = Helpers.aryToAry(args[0]);
             if (newAry.isNil()) {
@@ -1499,7 +1499,7 @@ public class IRRuntimeHelpers {
         return args;
     }
 
-    public static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
+    private static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
         if (args.length == 1) {
             int arityValue = b.getBody().getSignature().arityValue();
             return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arityValue, b.type == Block.Type.NORMAL && args[0] instanceof RubyArray);
@@ -1508,21 +1508,22 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
+    private static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
         // This is the placeholder for scenarios
         // not handled by specialized instructions.
         if (args == null) {
             return IRubyObject.NULL_ARRAY;
         }
 
+        boolean isLambda = block.type == Block.Type.LAMBDA;
         boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
         if (isProcCall) {
-            return prepareProcArgs(context, block, args);
-        }
-
-        boolean isLambda = block.type == Block.Type.LAMBDA;
-        if (isLambda && isProcCall) {
-            return args;
+            if (isLambda) {
+                block.getBody().getSignature().checkArity(context.runtime, args);
+                return args;
+            } else {
+                return prepareProcArgs(context, block, args);
+            }
         }
 
         BlockBody body = block.getBody();
@@ -1532,6 +1533,7 @@ public class IRRuntimeHelpers {
         // This test is when we only have opt / rest arg (either keyword or non-keyword)
         // but zero required args.
         if (sig.arityValue() == -1) {
+            if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
             return args;
         }
 
@@ -1542,6 +1544,7 @@ public class IRRuntimeHelpers {
 
         // Nothing more to do for lambdas
         if (isLambda) {
+            block.getBody().getSignature().checkArity(context.runtime, args);
             return args;
         }
 
@@ -1568,12 +1571,29 @@ public class IRRuntimeHelpers {
             args = newArgs;
         }
 
-        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
-
         return args;
     }
 
-    @JIT
+    /**
+     * Check whether incoming args are zero length for a lambda, and no-op for non-lambda.
+     *
+     * This could probably be simplified to just an arity check with no return value, but returns the
+     * incoming args currently for consistency with the other prepares.
+     *
+     * @param context
+     * @param block
+     * @param args
+     * @return
+     */
+    @Interp @JIT
+    public static IRubyObject[] prepareNoBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
+        if (block.type == Block.Type.LAMBDA) {
+            block.getSignature().checkArity(context.runtime, args);
+        }
+        return args;
+    }
+
+    @Interp @JIT
     public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
         args = prepareBlockArgsInternal(context, block, args);
         if (usesKwArgs) {
@@ -1582,19 +1602,21 @@ public class IRRuntimeHelpers {
         return args;
     }
 
+    @Interp @JIT
     public static IRubyObject[] prepareFixedBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) {
             return IRubyObject.NULL_ARRAY;
         }
 
+        boolean isLambda = block.type == Block.Type.LAMBDA;
         boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
         if (isProcCall) {
-            return IRRuntimeHelpers.prepareProcArgs(context, block, args);
-        }
-
-        boolean isLambda = block.type == Block.Type.LAMBDA;
-        if (isLambda && isProcCall) {
-            return args;
+            if (isLambda) {
+                block.getBody().getSignature().checkArity(context.runtime, args);
+                return args;
+            } else {
+                return prepareProcArgs(context, block, args);
+            }
         }
 
         // SSS FIXME: This check here is not required as long as
@@ -1608,17 +1630,20 @@ public class IRRuntimeHelpers {
         // convert a single value to an array if possible.
         args = IRRuntimeHelpers.toAry(context, args);
 
-        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
+        if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
 
         // If there are insufficient args, ReceivePreReqdInstr will return nil
         return args;
     }
 
+    @Interp @JIT
     public static IRubyObject[] prepareSingleBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) args = IRubyObject.NULL_ARRAY;
 
-        // Deal with proc calls
-        if (context.getCurrentBlockType() == Block.Type.PROC) {
+        if (block.type == Block.Type.LAMBDA) {
+            block.getBody().getSignature().checkArity(context.runtime, args);
+        } else if (context.getCurrentBlockType() == Block.Type.PROC) {
+            // Deal with proc calls
             if (args.length == 0) {
                 args = context.runtime.getSingleNilArray();
             } else if (args.length == 1) {
@@ -1628,7 +1653,6 @@ public class IRRuntimeHelpers {
             }
         }
 
-        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
 
         // Nothing more to do! Hurray!
         // If there are insufficient args, ReceivePreReqdInstr will return nil
@@ -1646,7 +1670,7 @@ public class IRRuntimeHelpers {
         return null;
     }
 
-    @JIT
+    @Interp @JIT
     public static DynamicScope pushBlockDynamicScopeIfNeeded(ThreadContext context, Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
         DynamicScope newScope = getNewBlockScope(block, pushNewDynScope, reuseParentDynScope);
         if (newScope != null) {
@@ -1655,16 +1679,25 @@ public class IRRuntimeHelpers {
         return newScope;
     }
 
-    @JIT
+    @Interp @JIT
     public static IRubyObject updateBlockState(Block block, IRubyObject self) {
+        // SSS FIXME: Why is self null in non-binding-eval contexts?
         if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
             // Update self to the binding's self
-            Binding b = block.getBinding();
-            self = b.getSelf();
-            b.getFrame().setSelf(self);
+            self = useBindingSelf(block.getBinding());
         }
+
         // Clear block's eval type
         block.setEvalType(EvalType.NONE);
+
+        // Return self in case it has been updated
+        return self;
+    }
+
+    public static IRubyObject useBindingSelf(Binding binding) {
+        IRubyObject self = binding.getSelf();
+        binding.getFrame().setSelf(self);
+
         return self;
     }
 }
