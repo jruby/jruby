@@ -10,8 +10,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 
-/**
-  */
 public class CheckForLJEInstr extends NoOperandInstr {
     private boolean maybeLambda;
 

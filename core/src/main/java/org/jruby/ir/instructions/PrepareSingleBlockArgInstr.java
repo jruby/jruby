@@ -5,9 +5,6 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class PrepareSingleBlockArgInstr extends PrepareBlockArgsInstr  {
     public static final PrepareSingleBlockArgInstr INSTANCE = new PrepareSingleBlockArgInstr();
