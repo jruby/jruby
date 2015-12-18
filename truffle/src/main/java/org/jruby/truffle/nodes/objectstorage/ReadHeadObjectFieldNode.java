@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -46,10 +47,20 @@ public abstract class ReadHeadObjectFieldNode extends Node {
         }
     }
 
+    @Specialization(guards = "updateShape(object)")
+    public Object updateShapeAndRead(DynamicObject object) {
+        return execute(object);
+    }
+
     @TruffleBoundary
-    @Specialization
+    @Specialization(contains = { "readObjectFieldCached", "updateShapeAndRead" })
     protected Object readObjectFieldUncached(DynamicObject receiver) {
         return receiver.get(name, defaultValue);
+    }
+
+    protected boolean updateShape(DynamicObject object) {
+        CompilerDirectives.transferToInterpreter();
+        return object.updateShape();
     }
 
     protected int getCacheLimit() {
