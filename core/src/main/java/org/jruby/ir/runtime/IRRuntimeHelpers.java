@@ -121,9 +121,9 @@ public class IRRuntimeHelpers {
      * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
      */
     public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, IRubyObject returnValue) {
-        // If not in a lambda, check if this was a non-local return
-        if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
+        if (IRRuntimeHelpers.inLambda(blockType)) throw new IRWrappedLambdaReturnValue(returnValue);
 
+        // If not in a lambda, check if this was a non-local return
         while (dynScope != null) {
             StaticScope ss = dynScope.getStaticScope();
             // SSS FIXME: Why is scopeType empty? Looks like this static-scope
@@ -171,7 +171,7 @@ public class IRRuntimeHelpers {
             // Ensures would already have been run since the IR builder makes
             // sure that ensure code has run before we hit the break.  Treat
             // the break as a regular return from the closure.
-            return breakValue;
+            throw new IRWrappedLambdaReturnValue(breakValue);
         } else {
             StaticScope scope = dynScope.getStaticScope();
             IRScopeType scopeType = scope.getScopeType();
@@ -193,7 +193,9 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
-        if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
+        if (exc instanceof IRWrappedLambdaReturnValue) {
+            return ((IRWrappedLambdaReturnValue)exc).returnValue;
+        } else if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
             context.setSavedExceptionInLambda(IRException.BREAK_LocalJumpError.getException(context.getRuntime()));
             return null;
