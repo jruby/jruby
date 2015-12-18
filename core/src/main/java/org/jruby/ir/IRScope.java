@@ -8,10 +8,8 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.compiler.Compilable;
-import org.jruby.compiler.JITCompiler;
 import org.jruby.compiler.JITCompiler.MethodJITClassGenerator;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -135,6 +133,8 @@ public abstract class IRScope implements ParseResult {
     private TemporaryVariable yieldClosureVariable;
 
     private Compilable compilable;
+    // FIXME: A hack to limit number of inlines to 1
+    public boolean alreadyHasInline;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -1050,6 +1050,7 @@ public abstract class IRScope implements ParseResult {
 
         System.out.println(fullInterpreterContext.toStringInstrs());
         compilable.setInterpreterContext(fullInterpreterContext);
+        alreadyHasInline = true;
         // Since inline is an if/else of logic in this version of inlining we will just replace the FIC.
     }
 
@@ -1108,6 +1109,7 @@ public abstract class IRScope implements ParseResult {
             e.printStackTrace();
         }
 
+        alreadyHasInline = true;
     }
 
 
@@ -1186,5 +1188,10 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean isScriptScope() {
         return false;
+    }
+
+    // FIXME: This should become some heuristic later
+    public boolean inliningAllowed() {
+        return alreadyHasInline;
     }
 }

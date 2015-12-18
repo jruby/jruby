@@ -27,11 +27,11 @@ import java.util.*;
  *   clock tick - hotness profiler granularity (currently denoted as # of thread_poll instrs).
  *   period - how long between attempts to analyze collected stats (PROFILE_PERIOD).  This is number of clock ticks.
  *
- * Basics of this profiler as-of now (currently only works with interpreters).  It will record a call site
- * before invoking any call.  In the interpreter executing the method from the site just saved, it will look for this
- * saved site and then record which scope the site ended up invoking.  All saved sites are store globally and every
- * so many stable periods (e.g. not when lots of definitions are changing) it will look for most active monomorphic
- * sites.  It might inline some of those and then it will flush collected data and start over.
+ * Basics of this profiler as-of now.  It will record a call site before invoking any call.  At all calls, we will
+ * record the callsite (id in JIT and callbase in interpreter).  When we enter the called scope we then record this
+ * reached scope with the last recorded callsite.  All saved sites are store globally and every so many stable
+ * periods (e.g. not when lots of definitions are changing) it will look for most active monomorphic sites.  It
+ * might inline some of those and then it will flush collected data and start over.
  */
 public class Profiler {
     public static final long INVALID_CALLSITE_ID = -1;
@@ -49,7 +49,7 @@ public class Profiler {
     // Structure on what a callsite is.  It lives in an IC. It will be some form of call (CallBase).
     // It might have been called count times.
     public static class IRCallSite {
-        IRScope scope;
+        IRScope scope;                  // Scope where callsite is located
         long id = INVALID_CALLSITE_ID;  // Callsite id (unique to system)
         private CallBase call = null;   // which instr is at this callsite
         long count;                     // how many times callsite has been executed
@@ -190,7 +190,8 @@ public class Profiler {
             CallBase call = callSite.getCall();
 
             //System.out.println("candidate: calls=" + callSite.count + ", mono: " + monomorphic + ", KS: " + callSiteProfile.counters.size());
-            if (monomorphic && call != null && !call.inliningBlocked()) {
+            // FIXME: Why is call sometimes null?
+            if (monomorphic && call != null && !call.inliningBlocked() && !callSite.scope.inliningAllowed()) {
                 Compilable compilable = callSiteProfile.counters.keySet().iterator().next().getCompilable();
 
                 //System.out.println("SCOPE: " + callSiteProfile.counters.keySet().iterator().next());
@@ -263,12 +264,13 @@ public class Profiler {
             parentIC = isClosure ? parentIC.getScope().getLexicalParent().getFullInterpreterContext() : parentIC;
 
             // For now we are not inlining into anything but a method
-            if (!(parentIC.getScope() instanceof IRMethod)) continue;
+            if (parentIC == null || !(parentIC.getScope() instanceof IRMethod)) continue;
 
             Compilable methodToInline = callSite.liveMethod;
 
             if (methodToInline instanceof CompiledIRMethod) {
                 ((FullInterpreterContext) parentIC).generateInstructionsForIntepretation();
+                System.out.println("Inlined " + methodToInline.getName() + " into " + parentIC.getName());
                 IRScope scope = ((CompiledIRMethod) methodToInline).getIRMethod();
                 RubyModule implClass = methodToInline.getImplementationClass();
                 long start = new java.util.Date().getTime();
@@ -334,8 +336,8 @@ public class Profiler {
 
         // This allows us to register the last callsite and associate it with the current scope.
         if (callerSite.id != -1) {
-            CallSiteProfile csp = callProfile.get(callerSite.id);    // get saved profile
-            if (csp == null) {                            // of make one
+            CallSiteProfile csp = callProfile.get(callerSite.id);  // get saved profile
+            if (csp == null) {                                     // or make one
                 csp = new CallSiteProfile(callerSite);
                 callProfile.put(callerSite.id, csp);
             }
