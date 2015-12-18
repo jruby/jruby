@@ -886,10 +886,6 @@ public class IRBuilder {
         IRLoop currLoop = getCurrentLoop();
 
         Operand rv = build(breakNode.getValueNode());
-        // If we have ensure blocks, have to run those first!
-        if (!activeEnsureBlockStack.empty()) {
-            emitEnsureBlocks(currLoop);
-        }
 
         if (currLoop != null) {
             addInstr(new CopyInstr(currLoop.loopResult, rv));
@@ -3246,14 +3242,12 @@ public class IRBuilder {
             // closure is a proc. If the closure is a lambda, then this becomes a normal return.
             boolean maybeLambda = scope.getNearestMethod() == null;
             addInstr(new CheckForLJEInstr(maybeLambda));
-            retVal = processEnsureRescueBlocks(retVal);
             addInstr(new NonlocalReturnInstr(retVal, maybeLambda ? "--none--" : scope.getNearestMethod().getName()));
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            retVal = processEnsureRescueBlocks(retVal);
             if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getName()));
         } else {
             retVal = processEnsureRescueBlocks(retVal);
