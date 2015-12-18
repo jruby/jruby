@@ -41,9 +41,9 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     @Override
     public void completeBuild(InterpreterContext interpreterContext) {
         this.interpreterContext = interpreterContext;
-        // This enables IR & CFG to be dumped in debug mode 
+        // This enables IR & CFG to be dumped in debug mode
         // when this updated code starts executing.
-        this.displayedCFG = true;
+        this.displayedCFG = false;
     }
 
     @Override
