@@ -6,18 +6,14 @@ set -x # show expanded commands
 
 PORT=8080
 
-function wait_until_port_open {
-  until lsof -i :$PORT
+function test_server {
+  serverpid=$!
+  local cmd="curl -s http://localhost:$PORT/"
+  local response=""
+  while ! response=$($cmd) || [[ -z response ]];
   do
     sleep 1
   done
-  sleep 1
-}
-
-function test_server {
-  serverpid=$!
-  wait_until_port_open
-  response=`curl -s http://localhost:$PORT/`
   jobs -l
   kill -9 $serverpid
   wait $serverpid || true
