@@ -888,6 +888,10 @@ public class IRBuilder {
         Operand rv = build(breakNode.getValueNode());
 
         if (currLoop != null) {
+            // If we have ensure blocks, have to run those first!
+            if (!activeEnsureBlockStack.empty()) {
+                emitEnsureBlocks(currLoop);
+             }
             addInstr(new CopyInstr(currLoop.loopResult, rv));
             addInstr(new JumpInstr(currLoop.loopEndLabel));
         } else {
