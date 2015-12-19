@@ -1535,11 +1535,7 @@ public class IRRuntimeHelpers {
 
         BlockBody body = block.getBody();
         org.jruby.runtime.Signature sig = body.getSignature();
-
-        // blockArity == 0 and 1 have been handled in the specialized instructions
-        // This test is when we only have opt / rest arg (either keyword or non-keyword)
-        // but zero required args.
-        if (sig.arityValue() == -1) {
+        if (sig.arityValue() == -1 || sig.required() == 1) {
             if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
             return args;
         }
