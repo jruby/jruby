@@ -1073,11 +1073,10 @@ public abstract class IRScope implements ParseResult {
 
 
         //runCompilerPasses(getManager().getJITPasses(this));
-        newContext.generateInstructionsForIntepretation();
+        newContext.linearizeBasicBlocks();
         this.fullInterpreterContext = newContext;
 
         System.out.println("FFFFFF\n" + fullInterpreterContext.toStringInstrs());
-//        ((Compilable) compilable).setInterpreterContext(fullInterpreterContext);
         // Since inline is an if/else of logic in this version of inlining we will just replace the FIC.
 
         Ruby runtime = implClass.getRuntime();
