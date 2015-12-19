@@ -5,3 +5,5 @@ exclude :test_load_rakefile_prints_rakefile_directory_from_subdir, "needs invest
 exclude :test_good_run, "needs investigation"
 exclude :test_rake_error_excludes_exception_name, "needs investigation"
 exclude :test_load_rakefile_from_subdir, "needs investigation"
+exclude :test_load_from_calculated_system_rakefile, "needs investigation"
+exclude :test_load_rakefile_doesnt_print_rakefile_directory_from_same_dir, "needs investigation"
