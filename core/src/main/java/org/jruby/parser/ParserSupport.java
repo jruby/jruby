@@ -56,6 +56,7 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
+import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
@@ -879,6 +880,12 @@ public class ParserSupport {
 
     public DStrNode createDStrNode(ISourcePosition position) {
         return new DStrNode(position, lexer.getEncoding());
+    }
+
+    public KeyValuePair<Node, Node> createKeyValue(Node key, Node value) {
+        if (key != null && key instanceof StrNode) ((StrNode) key).setFrozen(true);
+
+        return new KeyValuePair<>(key, value);
     }
 
     public Node asSymbol(ISourcePosition position, String value) {

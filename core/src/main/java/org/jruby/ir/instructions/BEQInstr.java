@@ -12,12 +12,45 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BEQInstr extends TwoOperandBranchInstr implements FixedArityInstr {
-    public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
+    public static Instr create(Operand v1, Operand v2, Label jmpTarget) {
         if (v2 instanceof Boolean) {
-            return ((Boolean) v2).isTrue() ? new BTrueInstr(jmpTarget, v1) : new BFalseInstr(jmpTarget, v1);
+            Boolean lhs = (Boolean) v2;
+
+            if (lhs.isTrue()) {
+                if (v1 instanceof Boolean) {
+                    if (((Boolean) v1).isTrue()) { // true == true -> just jump
+                        return new JumpInstr(jmpTarget);
+                    } else {                       // false == true (this will never jump)
+                        return NopInstr.NOP;
+                    }
+                } else {
+                    return new BTrueInstr(jmpTarget, v1);
+                }
+            } else if (lhs.isFalse()) {
+                if (v1 instanceof Boolean) {
+                    if (((Boolean) v1).isFalse()) { // false == false -> just jump
+                        return new JumpInstr(jmpTarget);
+                    } else {                        // true == false (this will never jump)
+                        return NopInstr.NOP;
+                    }
+                } else {
+                    return new BFalseInstr(jmpTarget, v1);
+                }
+            }
+        } else if (v2 instanceof Nil) {
+            if (v1 instanceof Nil) { // nil == nil -> just jump
+                return new JumpInstr(jmpTarget);
+            } else {
+                return new BNilInstr(jmpTarget, v1);
+            }
         }
-        if (v2 instanceof Nil) return new BNilInstr(jmpTarget, v1);
-        if (v2 == UndefinedValue.UNDEFINED) return new BUndefInstr(jmpTarget, v1);
+        if (v2 == UndefinedValue.UNDEFINED) {
+            if (v1 == UndefinedValue.UNDEFINED) {
+                return new JumpInstr(jmpTarget);
+            } else {
+                return new BUndefInstr(jmpTarget, v1);
+            }
+        }
 
         return new BEQInstr(jmpTarget, v1, v2);
     }

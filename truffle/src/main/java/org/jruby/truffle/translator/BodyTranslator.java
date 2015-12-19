@@ -52,6 +52,7 @@ import org.jruby.truffle.nodes.core.ModuleNodesFactory.AliasMethodNodeFactory;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.UndefMethodNodeFactory;
 import org.jruby.truffle.nodes.core.ProcNodes.Type;
 import org.jruby.truffle.nodes.core.array.*;
+import org.jruby.truffle.nodes.core.array.ArrayNodes.PushOneNode;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLiteralNode;
 import org.jruby.truffle.nodes.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
@@ -427,9 +428,9 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = nilNode(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (receiver instanceof VCallNode // undefined.equal?(obj)
-                && ((VCallNode) receiver).getName().equals("undefined")
-                && sourceSection.getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")
+        } else if (receiver instanceof org.jruby.ast.VCallNode // undefined.equal?(obj)
+                && ((org.jruby.ast.VCallNode) receiver).getName().equals("undefined")
+                && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")
                 && methodName.equals("equal?")) {
             RubyNode argument = translateArgumentsAndBlock(sourceSection, null, node.getArgsNode(), methodName).getArguments()[0];
             final RubyNode ret = new IsRubiniusUndefinedNode(context, sourceSection, argument);
@@ -727,6 +728,9 @@ public class BodyTranslator extends Translator {
                     } else if (expressionNode instanceof org.jruby.ast.ArgsCatNode) {
                         final ArrayConcatNode arrayConcatNode = (ArrayConcatNode) rubyExpression;
                         comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), arrayConcatNode));
+                    } else if (expressionNode instanceof org.jruby.ast.ArgsPushNode) {
+                        final PushOneNode pushOneNode = (PushOneNode) rubyExpression;
+                        comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), pushOneNode));
                     } else {
                         comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, true, NodeUtil.cloneNode(readTemp)));
                     }
@@ -965,6 +969,22 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
+    private String getSourcePath(SourceSection sourceSection) {
+        final Source source = sourceSection.getSource();
+
+        if (source == null) {
+            return "(unknown)";
+        }
+
+        final String path = source.getPath();
+
+        if (path == null) {
+            return source.getShortName();
+        }
+
+        return path;
+    }
+
     @Override
     public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
         // Unqualified constant access, as in CONST
@@ -979,13 +999,13 @@ public class BodyTranslator extends Translator {
 
         final String name = ConstantReplacer.replacementName(sourceSection, node.getName());
 
-        if (name.equals("Rubinius") && sourceSection.getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius")) {
+        if (name.equals("Rubinius") && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius")) {
             final RubyNode ret = new org.jruby.ast.Colon3Node(node.getPosition(), name).accept(this);
             return addNewlineIfNeeded(node, ret);
         }
 
         // TODO (pitr 01-Dec-2015): remove when RUBY_PLATFORM is set to "truffle"
-        if (name.equals("RUBY_PLATFORM") && sourceSection.getSource().getPath().contains("test/xml_mini/jdom_engine_test.rb")) {
+        if (name.equals("RUBY_PLATFORM") && getSourcePath(sourceSection).contains("test/xml_mini/jdom_engine_test.rb")) {
             final LiteralNode ret = new LiteralNode(context, sourceSection, StringOperations.createString(context, StringOperations.encodeByteList("truffle", UTF8Encoding.INSTANCE)));
             return addNewlineIfNeeded(node, ret);
         }
@@ -1105,7 +1125,7 @@ public class BodyTranslator extends Translator {
         // a bit different than aliasing because normally if a Rubinius method name conflicts with an already defined
         // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
 
-        final String path = sourceSection.getSource().getPath();
+        final String path = getSourcePath(sourceSection);
         final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/";
         if (path.startsWith(coreRubiniusPath)) {
             boolean rename = false;
@@ -1435,7 +1455,8 @@ public class BodyTranslator extends Translator {
             return new UpdateLastBacktraceNode(context, sourceSection, rhs);
         }
 
-        final boolean inCore = rhs.getSourceSection().getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/");
+        final boolean inCore = getSourcePath(rhs.getSourceSection()).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/");
+
         if (!inCore && READ_ONLY_GLOBAL_VARIABLES.contains(name)) {
             return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
         }
@@ -1501,7 +1522,7 @@ public class BodyTranslator extends Translator {
             RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
             if (name.equals("$_")) {
-                if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/regexp.rb")) {
+                if (getSourcePath(sourceSection).equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/regexp.rb")) {
                     readNode = new RubiniusLastStringReadNode(context, sourceSection);
                 } else {
                     readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
@@ -1600,7 +1621,7 @@ public class BodyTranslator extends Translator {
         // Also note the check for frozen.
         final RubyNode self = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
 
-        final String path = sourceSection.getSource().getPath();
+        final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
         if (path.equals(corePath + "rubinius/common/time.rb")) {
@@ -1661,7 +1682,7 @@ public class BodyTranslator extends Translator {
          * expects that we'll replace it statically with a call to Array#size. We also replace @tuple with
          * self, and @start to be 0.
          */
-        final String path = sourceSection.getSource().getPath();
+        final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
         if (path.equals(corePath + "rubinius/common/array.rb") || path.equals(corePath + "rubinius/api/shims/array.rb")) {
@@ -1739,41 +1760,45 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitIterNode(org.jruby.ast.IterNode node) {
+        return translateBlockLikeNode(node, false);
+    }
+
+    @Override
+    public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
+        return translateBlockLikeNode(node, true);
+    }
+
+    private RubyNode translateBlockLikeNode(org.jruby.ast.IterNode node, boolean isLambda) {
         final SourceSection sourceSection = translate(node.getPosition());
-
-        /*
-         * In a block we do NOT allocate a new return ID - returns will return from the method, not
-         * the block (in the general case, see Proc and the difference between Proc and Lambda for
-         * specifics).
-         */
-
-        final boolean hasOwnScope = !translatingForStatement;
-
-        org.jruby.ast.ArgsNode argsNode;
-
-        if (node.getVarNode() instanceof org.jruby.ast.ArgsNode) {
-            argsNode = (org.jruby.ast.ArgsNode) node.getVarNode();
-        } else if (node.getVarNode() instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.ArgumentNode arg = new org.jruby.ast.ArgumentNode(node.getPosition(), ((org.jruby.ast.DAsgnNode) node.getVarNode()).getName());
-            final org.jruby.ast.ListNode preArgs = new org.jruby.ast.ArrayNode(node.getPosition(), arg);
-            argsNode = new org.jruby.ast.ArgsNode(node.getPosition(), preArgs, null, null, null, null, null, null);
-        } else if (node.getVarNode() == null) {
-            argsNode = null;
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        final org.jruby.ast.ArgsNode argsNode = node.getArgsNode();
 
         // Unset this flag for any for any blocks within the for statement's body
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false, false, false);
+        final boolean hasOwnScope = isLambda || !translatingForStatement;
+
+        final String name = isLambda ? "(lambda)" : currentCallMethodName;
+        final boolean isProc = !isLambda;
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), name, true,
+                Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
+
+        final String namedMethodName = isLambda ? sharedMethodInfo.getName(): environment.getNamedMethodName();
+
+        final ParseEnvironment parseEnvironment = environment.getParseEnvironment();
+        final ReturnID returnID = isLambda ? parseEnvironment.allocateReturnID() : environment.getReturnID();
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
-                sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBreakID());
+                context, environment, parseEnvironment, returnID, hasOwnScope, false,
+                sharedMethodInfo, namedMethodName, true, parseEnvironment.allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
-        methodCompiler.translatingForStatement = translatingForStatement;
 
-        final RubyNode ret = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.PROC);
-        return addNewlineIfNeeded(node, ret);
+        if (isProc) {
+            methodCompiler.translatingForStatement = translatingForStatement;
+        }
+
+        final Type type = isLambda ? Type.LAMBDA : Type.PROC;
+        final RubyNode definitionNode = methodCompiler.compileBlockNode(sourceSection, sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, type);
+
+        return addNewlineIfNeeded(node, definitionNode);
     }
 
     @Override
@@ -2634,7 +2659,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitVCallNode(org.jruby.ast.VCallNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        if (node.getName().equals("undefined") && sourceSection.getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")) {
+        if (node.getName().equals("undefined") && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")) {
             final RubyNode ret = new LiteralNode(context, sourceSection, context.getCoreLibrary().getRubiniusUndefined());
             return addNewlineIfNeeded(node, ret);
         }
@@ -2756,36 +2781,6 @@ public class BodyTranslator extends Translator {
 
         final RubyNode ret = new ReadMatchReferenceNode(context, translate(node.getPosition()), index);
         return addNewlineIfNeeded(node, ret);
-    }
-
-    public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        org.jruby.ast.ArgsNode argsNode;
-
-        if (node.getVarNode() instanceof org.jruby.ast.ArgsNode) {
-            argsNode = (org.jruby.ast.ArgsNode) node.getVarNode();
-        } else if (node.getVarNode() instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.ArgumentNode arg = new org.jruby.ast.ArgumentNode(node.getPosition(), ((org.jruby.ast.DAsgnNode) node.getVarNode()).getName());
-            final org.jruby.ast.ListNode preArgs = new org.jruby.ast.ArrayNode(node.getPosition(), arg);
-            argsNode = new org.jruby.ast.ArgsNode(node.getPosition(), preArgs, null, null, null, null, null, null);
-        } else if (node.getVarNode() == null) {
-            argsNode = null;
-        } else {
-            throw new UnsupportedOperationException();
-        }
-
-        // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false, false, false);
-
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,
-                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBreakID());
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
-
-        final RubyNode definitionNode = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.LAMBDA);
-
-        return addNewlineIfNeeded(node, definitionNode);
     }
 
     protected RubyNode initFlipFlopStates(SourceSection sourceSection) {

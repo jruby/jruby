@@ -118,8 +118,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                if (rescuePCs == null || rescuePCs.empty() || (t instanceof IRBreakJump && instr instanceof BreakInstr) ||
-                        (t instanceof IRReturnJump && instr instanceof NonlocalReturnInstr)) {
+                if (rescuePCs == null || rescuePCs.empty()) {
                     ipc = -1;
                 } else {
                     ipc = rescuePCs.pop();

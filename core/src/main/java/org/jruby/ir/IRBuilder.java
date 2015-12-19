@@ -886,12 +886,12 @@ public class IRBuilder {
         IRLoop currLoop = getCurrentLoop();
 
         Operand rv = build(breakNode.getValueNode());
-        // If we have ensure blocks, have to run those first!
-        if (!activeEnsureBlockStack.empty()) {
-            emitEnsureBlocks(currLoop);
-        }
 
         if (currLoop != null) {
+            // If we have ensure blocks, have to run those first!
+            if (!activeEnsureBlockStack.empty()) {
+                emitEnsureBlocks(currLoop);
+             }
             addInstr(new CopyInstr(currLoop.loopResult, rv));
             addInstr(new JumpInstr(currLoop.loopEndLabel));
         } else {
@@ -2087,6 +2087,7 @@ public class IRBuilder {
         // --> IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, bj, blockType)
         Variable ret = createTemporaryVariable();
         addInstr(new RuntimeHelperCall(ret, RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
+        addInstr(new RethrowSavedExcInLambdaInstr());
         addInstr(new ReturnInstr(ret));
 
         // End
@@ -2531,14 +2532,7 @@ public class IRBuilder {
                 addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat}));
                 continue;
             } else {
-                // TODO: This isn't super pretty. If AST were aware of literal hash string keys being "special"
-                // it could have an appropriate AST node for frozen string and this code would just go away.
-                if (key instanceof StrNode) {
-                    StrNode strKey = (StrNode)key;
-                    keyOperand = new FrozenString(strKey.getValue(), strKey.getCodeRange());
-                } else {
-                    keyOperand = buildWithOrder(key, hasAssignments);
-                }
+                keyOperand = buildWithOrder(key, hasAssignments);
             }
 
             args.add(new KeyValuePair<>(keyOperand, buildWithOrder(pair.getValue(), hasAssignments)));
@@ -3252,14 +3246,12 @@ public class IRBuilder {
             // closure is a proc. If the closure is a lambda, then this becomes a normal return.
             boolean maybeLambda = scope.getNearestMethod() == null;
             addInstr(new CheckForLJEInstr(maybeLambda));
-            retVal = processEnsureRescueBlocks(retVal);
             addInstr(new NonlocalReturnInstr(retVal, maybeLambda ? "--none--" : scope.getNearestMethod().getName()));
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            retVal = processEnsureRescueBlocks(retVal);
             if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getName()));
         } else {
             retVal = processEnsureRescueBlocks(retVal);
@@ -3314,10 +3306,13 @@ public class IRBuilder {
     }
 
     public Operand buildStr(StrNode strNode) {
-        if (strNode instanceof FileNode) {
-            return new Filename();
-        }
-        return copyAndReturnValue(new StringLiteral(strNode.getValue(), strNode.getCodeRange()));
+        if (strNode instanceof FileNode) return new Filename();
+
+        Operand literal = strNode.isFrozen() ?
+                new FrozenString(strNode.getValue(), strNode.getCodeRange()) :
+                new StringLiteral(strNode.getValue(), strNode.getCodeRange());
+
+        return copyAndReturnValue(literal);
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {

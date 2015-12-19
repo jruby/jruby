@@ -1279,12 +1279,10 @@ public class RubyKernel {
 
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
-        Ruby runtime = context.runtime;
-        if (!block.isGiven()) {
+        if ( ! block.isGiven() ) {
             return RubyEnumerator.enumeratorizeWithSize(context, recv, "loop", loopSizeFn(context));
         }
-        IRubyObject nil = runtime.getNil();
-        RubyClass stopIteration = runtime.getStopIteration();
+        final Ruby runtime = context.runtime;
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             while (true) {
@@ -1292,14 +1290,17 @@ public class RubyKernel {
 
                 context.pollThreadEvents();
             }
-        } catch (RaiseException ex) {
-            if (!stopIteration.op_eqq(context, ex.getException()).isTrue()) {
-                throw ex;
-            } else {
+        }
+        catch (RaiseException ex) {
+            final RubyClass StopIteration = runtime.getStopIteration();
+            if ( StopIteration.isInstance(ex.getException()) ) {
                 runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+                return context.nil;
+            }
+            else {
+                throw ex;
             }
         }
-        return nil;
     }
 
     private static SizeFn loopSizeFn(final ThreadContext context) {

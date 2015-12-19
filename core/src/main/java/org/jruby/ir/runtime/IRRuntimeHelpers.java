@@ -121,9 +121,9 @@ public class IRRuntimeHelpers {
      * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
      */
     public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, IRubyObject returnValue) {
-        // If not in a lambda, check if this was a non-local return
-        if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
+        if (IRRuntimeHelpers.inLambda(blockType)) throw new IRWrappedLambdaReturnValue(returnValue);
 
+        // If not in a lambda, check if this was a non-local return
         while (dynScope != null) {
             StaticScope ss = dynScope.getStaticScope();
             // SSS FIXME: Why is scopeType empty? Looks like this static-scope
@@ -151,7 +151,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject handleNonlocalReturn(StaticScope scope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
-            return null;
+            return null; // Unreachable
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
@@ -168,10 +168,11 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject initiateBreak(ThreadContext context, DynamicScope dynScope, IRubyObject breakValue, Block.Type blockType) throws RuntimeException {
         if (inLambda(blockType)) {
-            // Ensures would already have been run since the IR builder makes
-            // sure that ensure code has run before we hit the break.  Treat
-            // the break as a regular return from the closure.
-            return breakValue;
+            // Wrap the return value in an exception object
+            // and push it through the break exception paths so
+            // that ensures are run, frames/scopes are popped
+            // from runtime stacks, etc.
+            throw new IRWrappedLambdaReturnValue(breakValue);
         } else {
             StaticScope scope = dynScope.getStaticScope();
             IRScopeType scopeType = scope.getScopeType();
@@ -193,18 +194,41 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
-        if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
+        if (exc instanceof IRWrappedLambdaReturnValue) {
+            // Wrap the return value in an exception object
+            // and push it through the nonlocal return exception paths so
+            // that ensures are run, frames/scopes are popped
+            // from runtime stacks, etc.
+            return ((IRWrappedLambdaReturnValue)exc).returnValue;
+        } else if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
-            throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
-        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
-            // Ignore non-local return processing in non-lambda blocks.
-            // Methods have a null blocktype
-            return handleNonlocalReturn(scope, dynScope, exc, blockType);
-        } else {
-            // Propagate
-            Helpers.throwException((Throwable)exc);
-            // should not get here
+            context.setSavedExceptionInLambda(IRException.BREAK_LocalJumpError.getException(context.getRuntime()));
             return null;
+        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
+            try {
+                // Ignore non-local return processing in non-lambda blocks.
+                // Methods have a null blocktype
+                return handleNonlocalReturn(scope, dynScope, exc, blockType);
+            } catch (Throwable e) {
+                context.setSavedExceptionInLambda(e);
+                return null;
+            }
+        } else {
+            // Propagate the exception
+            context.setSavedExceptionInLambda((Throwable)exc);
+            return null;
+        }
+    }
+
+    @JIT
+    public static void rethrowSavedExcInLambda(ThreadContext context) {
+        // This rethrows the exception saved in handleBreakAndReturnsInLambda
+        // after additional code to pop frames, bindings, etc. are done.
+        Throwable exc = context.getSavedExceptionInLambda();
+        if (exc != null) {
+            // IMPORTANT: always clear!
+            context.setSavedExceptionInLambda(null);
+            Helpers.throwException(exc);
         }
     }
 
@@ -212,7 +236,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject handlePropagatedBreak(ThreadContext context, DynamicScope dynScope, Object bjExc, Block.Type blockType) {
         if (!(bjExc instanceof IRBreakJump)) {
             Helpers.throwException((Throwable)bjExc);
-            return null;
+            return null; // Unreachable
         }
 
         IRBreakJump bj = (IRBreakJump)bjExc;
@@ -1468,7 +1492,7 @@ public class IRRuntimeHelpers {
         return context.runtime.newFixnum(i);
     }
 
-    public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
+    private static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
         if (args.length == 1 && args[0].respondsTo("to_ary")) {
             IRubyObject newAry = Helpers.aryToAry(args[0]);
             if (newAry.isNil()) {
@@ -1482,7 +1506,7 @@ public class IRRuntimeHelpers {
         return args;
     }
 
-    public static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
+    private static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
         if (args.length == 1) {
             int arityValue = b.getBody().getSignature().arityValue();
             return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arityValue, b.type == Block.Type.NORMAL && args[0] instanceof RubyArray);
@@ -1491,31 +1515,31 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @JIT
-    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
+    private static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
         // This is the placeholder for scenarios
         // not handled by specialized instructions.
         if (args == null) {
             return IRubyObject.NULL_ARRAY;
         }
 
+        boolean isLambda = block.type == Block.Type.LAMBDA;
         boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
         if (isProcCall) {
-            return prepareProcArgs(context, block, args);
-        }
-
-        boolean isLambda = block.type == Block.Type.LAMBDA;
-        if (isLambda && isProcCall) {
-            return args;
+            if (isLambda) {
+                block.getBody().getSignature().checkArity(context.runtime, args);
+                return args;
+            } else {
+                return prepareProcArgs(context, block, args);
+            }
         }
 
         BlockBody body = block.getBody();
         org.jruby.runtime.Signature sig = body.getSignature();
-
-        // blockArity == 0 and 1 have been handled in the specialized instructions
-        // This test is when we only have opt / rest arg (either keyword or non-keyword)
-        // but zero required args.
-        if (sig.arityValue() == -1) {
+        int arityValue = sig.arityValue();
+        if (isLambda && (arityValue == -1 || sig.required() == 1)) {
+            block.getBody().getSignature().checkArity(context.runtime, args);
+            return args;
+        } else if (!isLambda && arityValue >= -1 && arityValue <= 1) {
             return args;
         }
 
@@ -1526,6 +1550,7 @@ public class IRRuntimeHelpers {
 
         // Nothing more to do for lambdas
         if (isLambda) {
+            block.getBody().getSignature().checkArity(context.runtime, args);
             return args;
         }
 
@@ -1552,28 +1577,56 @@ public class IRRuntimeHelpers {
             args = newArgs;
         }
 
-        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
-
         return args;
     }
 
+    /**
+     * Check whether incoming args are zero length for a lambda, and no-op for non-lambda.
+     *
+     * This could probably be simplified to just an arity check with no return value, but returns the
+     * incoming args currently for consistency with the other prepares.
+     *
+     * @param context
+     * @param block
+     * @param args
+     * @return
+     */
+    @Interp @JIT
+    public static IRubyObject[] prepareNoBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
+        if (block.type == Block.Type.LAMBDA) {
+            block.getSignature().checkArity(context.runtime, args);
+        }
+        return args;
+    }
+
+    @Interp @JIT
+    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
+        args = prepareBlockArgsInternal(context, block, args);
+        if (usesKwArgs) {
+            frobnicateKwargsArgument(context, block.getBody().getSignature().required(), args);
+        }
+        return args;
+    }
+
+    @Interp @JIT
     public static IRubyObject[] prepareFixedBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) {
             return IRubyObject.NULL_ARRAY;
         }
 
+        boolean isLambda = block.type == Block.Type.LAMBDA;
         boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
         if (isProcCall) {
-            return IRRuntimeHelpers.prepareProcArgs(context, block, args);
-        }
-
-        boolean isLambda = block.type == Block.Type.LAMBDA;
-        if (isLambda && isProcCall) {
-            return args;
+            if (isLambda) {
+                block.getBody().getSignature().checkArity(context.runtime, args);
+                return args;
+            } else {
+                return prepareProcArgs(context, block, args);
+            }
         }
 
         // SSS FIXME: This check here is not required as long as
-        // the single-instruction cases always uses PreapreSingleBlockArgInstr
+        // the single-instruction cases always uses PrepareSingleBlockArgInstr
         // But, including this here for robustness for now.
         if (block.getBody().getSignature().arityValue() == 1) {
             return args;
@@ -1583,17 +1636,20 @@ public class IRRuntimeHelpers {
         // convert a single value to an array if possible.
         args = IRRuntimeHelpers.toAry(context, args);
 
-        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
+        if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
 
         // If there are insufficient args, ReceivePreReqdInstr will return nil
         return args;
     }
 
+    @Interp @JIT
     public static IRubyObject[] prepareSingleBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) args = IRubyObject.NULL_ARRAY;
 
-        // Deal with proc calls
-        if (context.getCurrentBlockType() == Block.Type.PROC) {
+        if (block.type == Block.Type.LAMBDA) {
+            block.getBody().getSignature().checkArity(context.runtime, args);
+        } else if (context.getCurrentBlockType() == Block.Type.PROC) {
+            // Deal with proc calls
             if (args.length == 0) {
                 args = context.runtime.getSingleNilArray();
             } else if (args.length == 1) {
@@ -1603,7 +1659,6 @@ public class IRRuntimeHelpers {
             }
         }
 
-        if (block.type == Block.Type.LAMBDA) block.getBody().getSignature().checkArity(context.runtime, args);
 
         // Nothing more to do! Hurray!
         // If there are insufficient args, ReceivePreReqdInstr will return nil
@@ -1621,7 +1676,7 @@ public class IRRuntimeHelpers {
         return null;
     }
 
-    @JIT
+    @Interp @JIT
     public static DynamicScope pushBlockDynamicScopeIfNeeded(ThreadContext context, Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
         DynamicScope newScope = getNewBlockScope(block, pushNewDynScope, reuseParentDynScope);
         if (newScope != null) {
@@ -1630,16 +1685,25 @@ public class IRRuntimeHelpers {
         return newScope;
     }
 
-    @JIT
+    @Interp @JIT
     public static IRubyObject updateBlockState(Block block, IRubyObject self) {
+        // SSS FIXME: Why is self null in non-binding-eval contexts?
         if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
             // Update self to the binding's self
-            Binding b = block.getBinding();
-            self = b.getSelf();
-            b.getFrame().setSelf(self);
+            self = useBindingSelf(block.getBinding());
         }
+
         // Clear block's eval type
         block.setEvalType(EvalType.NONE);
+
+        // Return self in case it has been updated
+        return self;
+    }
+
+    public static IRubyObject useBindingSelf(Binding binding) {
+        IRubyObject self = binding.getSelf();
+        binding.getFrame().setSelf(self);
+
         return self;
     }
 }

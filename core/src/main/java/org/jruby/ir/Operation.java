@@ -88,10 +88,11 @@ public enum Operation {
 
     /** returns -- returns unwind stack, etc. */
     RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
-    NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
-    /* BREAK is a return because it can only be used within closures
+    /* These two insructions use exceptions to exit closures
+     * BREAK is a return because it can only be used within closures
      * and the net result is to return from the closure. */
-    BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return | OpFlags.f_can_raise_exception),
+    BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return | OpFlags.f_can_raise_exception),
 
     /** defines **/
     ALIAS(OpFlags.f_has_side_effect| OpFlags.f_modifies_code | OpFlags.f_can_raise_exception),
@@ -213,12 +214,14 @@ public enum Operation {
     POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     SAVE_BINDING_VIZ(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     RESTORE_BINDING_VIZ(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    RETHROW_SAVED_EXC_IN_LAMBDA(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     TOGGLE_BACKTRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     UPDATE_BLOCK_STATE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
 
     PREPARE_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PREPARE_SINGLE_BLOCK_ARG(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
+    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
 
     public final OpClass opClass;
     private int flags;

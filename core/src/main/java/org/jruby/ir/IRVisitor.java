@@ -91,6 +91,7 @@ public abstract class IRVisitor {
     public void PrepareBlockArgsInstr(PrepareBlockArgsInstr instr) { error(instr); }
     public void PrepareFixedBlockArgsInstr(PrepareFixedBlockArgsInstr instr) { error(instr); }
     public void PrepareSingleBlockArgInstr(PrepareSingleBlockArgInstr instr) { error(instr); }
+    public void PrepareNoBlockArgsInstr(PrepareNoBlockArgsInstr instr) { error(instr); }
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) { error(processmodulebodyinstr); }
     public void PutClassVariableInstr(PutClassVariableInstr putclassvariableinstr) { error(putclassvariableinstr); }
     public void PutConstInstr(PutConstInstr putconstinstr) { error(putconstinstr); }
@@ -117,6 +118,7 @@ public abstract class IRVisitor {
     public void RestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restargmultipleasgninstr) { error(restargmultipleasgninstr); }
     public void RestoreBindingVisibilityInstr(RestoreBindingVisibilityInstr instr) { error(instr); }
     public void ReturnInstr(ReturnInstr returninstr) { error(returninstr); }
+    public void RethrowSavedExcInLambdaInstr(RethrowSavedExcInLambdaInstr instr) { error(instr); }
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
     public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) { error(instr); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }

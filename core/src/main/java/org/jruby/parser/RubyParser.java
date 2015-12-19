@@ -5236,14 +5236,14 @@ states[609] = new ParserState() {
 };
 states[610] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new KeyValuePair<Node,Node>(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.createKeyValue(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[611] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     Node label = support.asSymbol(support.getPosition(((Node)yyVals[0+yyTop])), ((String)yyVals[-1+yyTop]));
-                    yyVal = new KeyValuePair<Node,Node>(label, ((Node)yyVals[0+yyTop]));
+                    yyVal = support.createKeyValue(label, ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -5252,9 +5252,9 @@ states[612] = new ParserState() {
                     if (((Node)yyVals[-2+yyTop]) instanceof StrNode) {
                         DStrNode dnode = new DStrNode(support.getPosition(((Node)yyVals[-2+yyTop])), lexer.getEncoding());
                         dnode.add(((Node)yyVals[-2+yyTop]));
-                        yyVal = new KeyValuePair<Node,Node>(new DSymbolNode(support.getPosition(((Node)yyVals[-2+yyTop])), dnode), ((Node)yyVals[0+yyTop]));
+                        yyVal = support.createKeyValue(new DSymbolNode(support.getPosition(((Node)yyVals[-2+yyTop])), dnode), ((Node)yyVals[0+yyTop]));
                     } else if (((Node)yyVals[-2+yyTop]) instanceof DStrNode) {
-                        yyVal = new KeyValuePair<Node,Node>(new DSymbolNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((DStrNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop]));
+                        yyVal = support.createKeyValue(new DSymbolNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((DStrNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop]));
                     } else {
                         support.compile_error("Uknown type for assoc in strings: " + ((Node)yyVals[-2+yyTop]));
                     }
@@ -5264,7 +5264,7 @@ states[612] = new ParserState() {
 };
 states[613] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new KeyValuePair<Node,Node>(null, ((Node)yyVals[0+yyTop]));
+                    yyVal = support.createKeyValue(null, ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -5293,7 +5293,7 @@ states[640] = new ParserState() {
   }
 };
 }
-					// line 2525 "RubyParser.y"
+					// line 2524 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure

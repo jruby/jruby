@@ -139,6 +139,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public int gcCount() {
             return RubyGC.getCollectionCount();
@@ -306,7 +307,10 @@ public abstract class TrufflePrimitiveNodes {
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
                 final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
-                converted.put(createString(StringOperations.encodeByteList(source.getKey().getPath(), UTF8Encoding.INSTANCE)), array);
+
+                if (source.getKey().getPath() != null) {
+                    converted.put(createString(StringOperations.encodeByteList(source.getKey().getPath(), UTF8Encoding.INSTANCE)), array);
+                }
             }
 
             return BucketsStrategy.create(getContext(), converted.entrySet(), false);
