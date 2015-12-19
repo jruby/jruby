@@ -52,8 +52,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
         if (requireBinding) instrs.add(new PopBindingInstr());
         if (scope instanceof IRClosure) {
-            instrs.add(new PopBlockFrameInstr(savedFrame));
             instrs.add(new RestoreBindingVisibilityInstr(savedViz));
+            instrs.add(new PopBlockFrameInstr(savedFrame));
         } else {
             if (requireFrame) instrs.add(new PopMethodFrameInstr());
         }
