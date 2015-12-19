@@ -34,6 +34,11 @@ import java.util.List;
 
 public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfParserBaseListener {
 
+    // TODO CS 19-Dec-15 this is never used, but the functionality seems useful
+    public static final int PADDING_FROM_ARGUMENT = -2;
+
+    public static final int DEFAULT = -1;
+
     private final RubyContext context;
     private final ByteList source;
 
@@ -67,12 +72,12 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
         if (ctx.width != null) {
             width = Integer.parseInt(ctx.width.getText());
         } else {
-            width = FormatDirective.DEFAULT;
+            width = DEFAULT;
         }
 
         boolean leftJustified = false;
-        int spacePadding = FormatDirective.DEFAULT;
-        int zeroPadding = FormatDirective.DEFAULT;
+        int spacePadding = DEFAULT;
+        int zeroPadding = DEFAULT;
 
         for (org.jruby.truffle.format.parser.PrintfParser.FlagContext flag : ctx.flag()) {
             if (flag.MINUS() != null) {
@@ -86,7 +91,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
             }
         }
 
-        if (spacePadding == FormatDirective.DEFAULT && zeroPadding == FormatDirective.DEFAULT) {
+        if (spacePadding == DEFAULT && zeroPadding == DEFAULT) {
             spacePadding = width;
         }
 
@@ -107,7 +112,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
         if (ctx.precision != null) {
             precision = Integer.parseInt(ctx.precision.getText());
         } else {
-            precision = FormatDirective.DEFAULT;
+            precision = DEFAULT;
         }
 
         final PackNode node;
@@ -115,7 +120,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
         switch (type) {
             case 's':
                 if (ctx.ANGLE_KEY() == null) {
-                    if (spacePadding == FormatDirective.DEFAULT) {
+                    if (spacePadding == DEFAULT) {
                         node = WriteBytesNodeGen.create(context, ReadStringNodeGen.create(
                                 context, true, "to_s", false, new ByteList(), new SourceNode()));
                     } else {
@@ -123,7 +128,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
                                 ReadStringNodeGen.create(context, true, "to_s", false, new ByteList(), new SourceNode()));
                     }
                 } else {
-                    if (spacePadding == FormatDirective.DEFAULT) {
+                    if (spacePadding == DEFAULT) {
                         node = WriteBytesNodeGen.create(context, ToStringNodeGen.create(
                                 context, true, "to_s", false, new ByteList(), valueNode));
                     } else {
@@ -139,7 +144,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
             case 'x':
             case 'X':
                 final PackNode spacePaddingNode;
-                if (spacePadding == FormatDirective.PADDING_FROM_ARGUMENT) {
+                if (spacePadding == PADDING_FROM_ARGUMENT) {
                     spacePaddingNode = ReadIntegerNodeGen.create(context, new SourceNode());
                 } else {
                     spacePaddingNode = new LiteralIntegerNode(context, spacePadding);
@@ -153,7 +158,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
                          * is actually ignored if it's set.
                          */
 
-                if (zeroPadding == FormatDirective.PADDING_FROM_ARGUMENT) {
+                if (zeroPadding == PADDING_FROM_ARGUMENT) {
                     zeroPaddingNode = ReadIntegerNodeGen.create(context, new SourceNode());
                 } else if (ctx.precision != null) {
                     zeroPaddingNode = new LiteralIntegerNode(context, Integer.parseInt(ctx.precision.getText()));
