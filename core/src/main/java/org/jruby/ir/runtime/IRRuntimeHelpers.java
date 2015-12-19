@@ -1535,8 +1535,11 @@ public class IRRuntimeHelpers {
 
         BlockBody body = block.getBody();
         org.jruby.runtime.Signature sig = body.getSignature();
-        if (sig.arityValue() == -1 || sig.required() == 1) {
-            if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
+        int arityValue = sig.arityValue();
+        if (isLambda && (arityValue == -1 || sig.required() == 1)) {
+            block.getBody().getSignature().checkArity(context.runtime, args);
+            return args;
+        } else if (!isLambda && arityValue >= -1 && arityValue <= 1) {
             return args;
         }
 
@@ -1623,7 +1626,7 @@ public class IRRuntimeHelpers {
         }
 
         // SSS FIXME: This check here is not required as long as
-        // the single-instruction cases always uses PreapreSingleBlockArgInstr
+        // the single-instruction cases always uses PrepareSingleBlockArgInstr
         // But, including this here for robustness for now.
         if (block.getBody().getSignature().arityValue() == 1) {
             return args;
