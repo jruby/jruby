@@ -83,7 +83,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     @Override
     public boolean canCallDirect() {
-        return fullInterpreterContext != null && fullInterpreterContext.hasExplicitCallProtocol();
+        return interpreterContext != null && interpreterContext.hasExplicitCallProtocol();
     }
 
     @Override
