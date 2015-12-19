@@ -122,6 +122,7 @@ public class Queue extends RubyObject implements DataType {
         try {
             return context.getThread().executeTask(context, this, BLOCKING_POP_TASK);
         } catch (InterruptedException ie) {
+            // FIXME: is this the right thing to do?
             throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#pop");
         }
     }
@@ -137,11 +138,12 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"push", "<<", "enq"})
     public IRubyObject push(ThreadContext context, IRubyObject value) {
-        if (closed) {
-            raiseClosedError(context);
-        }
         lock.lock();
         try {
+            if (closed) {
+                raiseClosedError(context);
+            }
+
             getQue().add(value);
             popCond.signal();
         } finally {
@@ -221,9 +223,6 @@ public class Queue extends RubyObject implements DataType {
                 return context.nil;
             }
             else {
-                assert(getQue().size() == 0);
-                assert(!closed);
-
                 popCond.await();
             }
         }
