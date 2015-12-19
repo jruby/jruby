@@ -65,7 +65,6 @@ import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodesFactory;
-import org.jruby.truffle.format.parser.FormatParser;
 import org.jruby.truffle.format.runtime.PackResult;
 import org.jruby.truffle.format.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
@@ -1947,118 +1946,6 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
-    @ImportStatic(StringCachingGuards.class)
-    public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private TaintNode taintNode;
-
-        public FormatNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = { "isRubyString(format)", "byteListsEqual(format, cachedFormat)" })
-        public DynamicObject formatCached(
-                VirtualFrame frame,
-                DynamicObject format,
-                Object[] arguments,
-                @Cached("privatizeByteList(format)") ByteList cachedFormat,
-                @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
-            final PackResult result;
-
-            try {
-                result = (PackResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
-            } catch (PackException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw handleException(e);
-            }
-
-            return finishFormat(cachedFormat, result);
-        }
-
-        @Specialization(guards = "isRubyString(format)", contains = "formatCached")
-        public DynamicObject formatUncached(
-                VirtualFrame frame,
-                DynamicObject format,
-                Object[] arguments,
-                @Cached("create()") IndirectCallNode callPackNode) {
-            final PackResult result;
-
-            try {
-                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
-            } catch (PackException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw handleException(e);
-            }
-
-            return finishFormat(StringOperations.getByteList(format), result);
-        }
-
-        private RuntimeException handleException(PackException exception) {
-            try {
-                throw exception;
-            } catch (TooFewArgumentsException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
-            } catch (NoImplicitConversionException e) {
-                return new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-            } catch (OutsideOfStringException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
-            } catch (CantCompressNegativeException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
-            } catch (RangeException e) {
-                return new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
-            } catch (CantConvertException e) {
-                return new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
-            }
-        }
-
-        private DynamicObject finishFormat(ByteList format, PackResult result) {
-            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
-
-            if (format.length() == 0) {
-                StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
-            } else {
-                switch (result.getEncoding()) {
-                    case DEFAULT:
-                    case ASCII_8BIT:
-                        break;
-                    case US_ASCII:
-                        StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
-                        break;
-                    case UTF_8:
-                        StringOperations.forceEncoding(string, UTF8Encoding.INSTANCE);
-                        break;
-                    default:
-                        throw new UnsupportedOperationException();
-                }
-            }
-
-            if (result.isTainted()) {
-                if (taintNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
-                }
-
-                taintNode.executeTaint(string);
-            }
-
-            return string;
-        }
-
-        @TruffleBoundary
-        protected CallTarget compileFormat(DynamicObject format) {
-            assert RubyGuards.isRubyString(format);
-
-            try {
-                return new FormatParser(getContext()).parse(StringOperations.getByteList(format));
-            } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
-            }
-        }
-
-    }
-
-    @CoreMethod(names = { "xformat", "xsprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class XFormatNode extends CoreMethodArrayArgumentsNode {
 
