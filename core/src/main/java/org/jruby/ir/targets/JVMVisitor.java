@@ -73,7 +73,7 @@ public class JVMVisitor extends IRVisitor {
     public JVMVisitor() {
         this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
         this.methodIndex = 0;
-        this.scopeMap = new HashMap();
+        this.scopeMap = new HashMap<String, IRScope>();
     }
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
@@ -776,8 +776,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) {
         final IRBytecodeAdapter m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
-
         RegexpOptions options = instr.getOptions();
         final Operand[] operands = instr.getPieces();
 
@@ -785,8 +783,7 @@ public class JVMVisitor extends IRVisitor {
             @Override
             public void run() {
                 m.loadContext();
-                for (int i = 0; i < operands.length; i++) {
-                    Operand operand = operands[i];
+                for (Operand operand: operands) {
                     visit(operand);
                 }
             }
@@ -1187,8 +1184,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().checkcast(p(RubyClass.class));
 
         // process args
-        for (int i = 0; i < args.length; i++) {
-            Operand operand = args[i];
+        for (Operand operand: args) {
             visit(operand);
         }
 
@@ -1430,7 +1426,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadSelfBlock();
         jvmMethod().loadArgs();
-        jvmAdapter().ldc(((IRClosure)jvm.methodData().scope).receivesKeywordArgs());
+        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
         jvmMethod().invokeIRHelper("prepareBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class, boolean.class));
         jvmMethod().storeArgs();
     }

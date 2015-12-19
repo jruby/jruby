@@ -1028,8 +1028,7 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
-    public void inlineMethod(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+    private FullInterpreterContext inlineMethodCommon(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
         IRMethod methodToInline = (IRMethod) method.getIRScope();
 
         // We need fresh fic so we can modify it during inlining without making already running code explode.
@@ -1044,6 +1043,13 @@ public abstract class IRScope implements ParseResult {
         for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
             pass.run(this);
         }
+
+        return newContext;
+    }
+
+    // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
+    public void inlineMethod(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+        FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
 
         newContext.generateInstructionsForIntepretation();
         this.fullInterpreterContext = newContext;
@@ -1051,33 +1057,16 @@ public abstract class IRScope implements ParseResult {
         System.out.println(fullInterpreterContext.toStringInstrs());
         compilable.setInterpreterContext(fullInterpreterContext);
         alreadyHasInline = true;
-        // Since inline is an if/else of logic in this version of inlining we will just replace the FIC.
     }
 
     // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
     public void inlineMethodJIT(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
-        IRMethod methodToInline = (IRMethod) method.getIRScope();
+        FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
 
-        // We need fresh fic so we can modify it during inlining without making already running code explode.
-        FullInterpreterContext newContext = fullInterpreterContext.duplicate();
+        // We are not running any JIT-specific passes here.
 
-        new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
-
-        // Reset state
-        resetState();
-
-        // Re-run opts
-        for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
-            pass.run(this);
-        }
-
-
-        //runCompilerPasses(getManager().getJITPasses(this));
         newContext.linearizeBasicBlocks();
         this.fullInterpreterContext = newContext;
-
-        System.out.println("FFFFFF\n" + fullInterpreterContext.toStringInstrs());
-        // Since inline is an if/else of logic in this version of inlining we will just replace the FIC.
 
         Ruby runtime = implClass.getRuntime();
         String key = SexpMaker.sha1(this);
