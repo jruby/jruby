@@ -86,6 +86,10 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
             }
         }
 
+        if (spacePadding == FormatDirective.DEFAULT && zeroPadding == FormatDirective.DEFAULT) {
+            spacePadding = width;
+        }
+
         final char type = ctx.TYPE().getSymbol().getText().charAt(0);
 
         final PackNode valueNode;
