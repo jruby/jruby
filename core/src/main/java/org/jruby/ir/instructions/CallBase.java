@@ -19,10 +19,10 @@ import java.util.Map;
 
 import static org.jruby.ir.IRFlags.*;
 
-public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr {
-    private static long callSiteCounter = 1;
+public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr, Site {
+    static long callSiteCounter = 1;
 
-    public long callSiteId;
+    private long siteId;
     private final CallType callType;
     protected String name;
     protected CallSite callSite;
@@ -42,7 +42,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                        boolean potentiallyRefined) {
         super(op, getOperands(receiver, args, closure));
 
-        this.callSiteId = callSiteCounter++;
+        siteId = callSiteCounter++;
         argsCount = args.length;
         hasClosure = closure != null;
         this.name = name;
@@ -126,6 +126,14 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     public CallSite getCallSite() {
         return callSite;
+    }
+
+    public long getSiteId() {
+        return siteId;
+    }
+
+    public void setSiteId(long siteId) {
+        this.siteId = siteId;
     }
 
     public void setCallSite(CallSite callSite) {

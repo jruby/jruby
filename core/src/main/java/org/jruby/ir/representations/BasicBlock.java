@@ -5,6 +5,7 @@ import org.jruby.dirgra.ExplicitVertexID;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.Site;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.listeners.InstructionsListenerDecorator;
@@ -110,17 +111,17 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
     // Adds all instrs after the found instr to a new BB and removes them from the original BB
     // If includeSpltpointInstr is true it will include that instr in the new BB.
-    public BasicBlock splitAtInstruction(Instr splitPoint, Label newLabel, boolean includeSplitPointInstr) {
+    public BasicBlock splitAtInstruction(Site splitPoint, Label newLabel, boolean includeSplitPointInstr) {
         BasicBlock newBB = new BasicBlock(cfg, newLabel);
         int idx = 0;
         int numInstrs = instrs.size();
         boolean found = false;
         for (Instr i: instrs) {
-            if (i.getIPC() == splitPoint.getIPC()) found = true;
+            if (i instanceof Site && ((Site) i).getSiteId() == splitPoint.getSiteId()) found = true;
 
             // Move instructions from split point into the new bb
             if (found) {
-                if (includeSplitPointInstr || i.getIPC() != splitPoint.getIPC()) newBB.addInstr(i);
+                if (includeSplitPointInstr || !(i instanceof Site) || ((Site) i).getSiteId() != splitPoint.getSiteId()) newBB.addInstr(i);
             } else {
                 idx++;
             }
@@ -147,10 +148,10 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
             Instr newInstr = instr.clone(info);
             // Inlining clones the original CFG/BBs and we want to maintain ipc since it is how
             // we find which instr we want (we clone original instr and ipc is our identity).
-            if (info instanceof SimpleCloneInfo && ((SimpleCloneInfo) info).shouldCloneIPC()) {
-                newInstr.setIPC(instr.getIPC());
-                newInstr.setRPC(instr.getRPC());
-            }
+            //if (info instanceof SimpleCloneInfo && ((SimpleCloneInfo) info).shouldCloneIPC()) {
+            //    newInstr.setIPC(instr.getIPC());
+            //    newInstr.setRPC(instr.getRPC());
+            //}
 
             // All call-derived types do not clone this field.  Inliner clones original instrs
             // and we need this preserved to make sure we do not endless inline the same call.
@@ -162,8 +163,8 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
             // If an inline occurs and profiler decides before new inlined host scope has come into
             // play it will not be able to find the current callsite.  By keeping the same values
             // the profiler will continue to work.
-            if (instr instanceof CallBase) {
-                ((CallBase) newInstr).callSiteId = ((CallBase) instr).callSiteId;
+            if (instr instanceof Site) {
+                ((Site) newInstr).setSiteId(((Site) instr).getSiteId());
             }
 
             if (newInstr != null) {  // inliner may kill off unneeded instr

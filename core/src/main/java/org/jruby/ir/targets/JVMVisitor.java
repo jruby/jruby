@@ -833,7 +833,7 @@ public class JVMVisitor extends IRVisitor {
         Variable result = callInstr.getResult();
 
         if (Options.IR_PROFILE.load()) {
-            jvmAdapter().ldc(callInstr.callSiteId);
+            jvmAdapter().ldc(callInstr.getSiteId());
             jvmAdapter().getstatic(jvm.clsData().clsName, jvm.clsData().methodData().method.adapter.getName() + "_IRScope", ci(IRScope.class));
             jvmAdapter().invokestatic(p(Profiler.class), "markCallAboutToBeCalled", sig(void.class, long.class, IRScope.class));
         }

@@ -68,13 +68,13 @@ public class CFGInliner {
     }
 
     private BasicBlock findCallsiteBB(CallBase call) {
-        System.out.println("LOOKING FOR IPC: " + call.getIPC());
+        long callSiteId = call.getSiteId();
+        System.out.println("LOOKING FOR CALLSITEID: " + callSiteId);
         for (BasicBlock bb: cfg.getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
-                 System.out.println("IPC " + i.getIPC() + " = " + i);
                 // Some instrs reuse instrs (like LineNumberInstr) so we need to add call check.
-                if (i.getIPC() == call.getIPC() && i instanceof CallBase) {
-                    System.out.println("Found it!!!! -- " + call +  ", i: " + i + ", IPC: " + call.getIPC());
+                if (i instanceof CallBase && ((CallBase) i).getSiteId() == callSiteId) {
+                    System.out.println("Found it!!!! -- " + call +  ", i: " + i);
                     return bb;
                 }
             }
@@ -85,7 +85,7 @@ public class CFGInliner {
 
     private void printInlineDebugPrologue(IRScope methodScope, CallBase call) {
         System.out.println("---------------------------------- PROLOGUE (start) --------");
-        System.out.println("Looking for: " + call.getIPC() + ": " + call);
+        System.out.println("Looking for: " + call.getSiteId() + ": " + call);
         printInlineCFG(cfg);
         System.out.println("source cfg   :" + methodScope.getCFG().toStringGraph());
         System.out.println("source instrs:" + methodScope.getCFG().toStringInstrs());

@@ -76,7 +76,7 @@ public class Profiler {
             FullInterpreterContext fic = scope.getFullInterpreterContext();
             for (BasicBlock bb: fic.getLinearizedBBList()) {
                 for (Instr instr: bb.getInstrs()) {
-                    if (instr instanceof CallBase && ((CallBase) instr).callSiteId == id) return (CallBase) instr;
+                    if (instr instanceof CallBase && ((CallBase) instr).getSiteId() == id) return (CallBase) instr;
                 }
             }
 
@@ -84,7 +84,7 @@ public class Profiler {
         }
 
         public int hashCode() {
-            return (int) call.callSiteId;
+            return (int) call.getSiteId();
         }
 
         public void update(long callSiteId, IRScope scope) {
@@ -94,7 +94,7 @@ public class Profiler {
 
         public void update(CallBase call, IRScope scope) {
             this.scope = scope;
-            this.id = call.callSiteId;
+            this.id = call.getSiteId();
             this.call = call;
         }
     }
@@ -249,7 +249,7 @@ public class Profiler {
             //System.out.println("FREQ: " + freq);
             if (i++ >= MAX_NUMBER_OF_INTERESTING_CALLSITES || freq > MAX_FREQUENCY) break; // overly simplistic
 
-            //System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
+            //System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.getSiteId() +
             //" in scope " + ircs.ic.getScope() + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
 
