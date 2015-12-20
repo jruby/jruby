@@ -1519,7 +1519,7 @@ public class IRRuntimeHelpers {
         // This is the placeholder for scenarios
         // not handled by specialized instructions.
         if (args == null) {
-            return IRubyObject.NULL_ARRAY;
+            args = IRubyObject.NULL_ARRAY;
         }
 
         boolean isLambda = block.type == Block.Type.LAMBDA;
@@ -1611,7 +1611,7 @@ public class IRRuntimeHelpers {
     @Interp @JIT
     public static IRubyObject[] prepareFixedBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) {
-            return IRubyObject.NULL_ARRAY;
+            args = IRubyObject.NULL_ARRAY;
         }
 
         boolean isLambda = block.type == Block.Type.LAMBDA;
@@ -1629,6 +1629,7 @@ public class IRRuntimeHelpers {
         // the single-instruction cases always uses PrepareSingleBlockArgInstr
         // But, including this here for robustness for now.
         if (block.getBody().getSignature().arityValue() == 1) {
+            if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
             return args;
         }
 
@@ -1644,7 +1645,9 @@ public class IRRuntimeHelpers {
 
     @Interp @JIT
     public static IRubyObject[] prepareSingleBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
-        if (args == null) args = IRubyObject.NULL_ARRAY;
+        if (args == null) {
+            args = IRubyObject.NULL_ARRAY;
+        }
 
         if (block.type == Block.Type.LAMBDA) {
             block.getBody().getSignature().checkArity(context.runtime, args);
