@@ -56,7 +56,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
 
     @Override
     public void exitString(org.jruby.truffle.format.parser.PrintfParser.StringContext ctx) {
-        final ByteList keyBytes = tokenAsBytes(ctx.CURLEY_KEY().getSymbol(), 1);
+        final ByteList keyBytes = tokenAsBytes(ctx.CURLY_KEY().getSymbol(), 1);
         final DynamicObject key = context.getSymbol(keyBytes);
 
         sequence.add(

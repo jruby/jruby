@@ -13,7 +13,7 @@ options { tokenVocab=PrintfLexer; }
 
 sequence : (FORMAT directive | literal)* ;
 
-directive : CURLEY_KEY                 # string
+directive : CURLY_KEY                  # string
           | ESCAPED                    # escaped
           | ANGLE_KEY?
             flag*

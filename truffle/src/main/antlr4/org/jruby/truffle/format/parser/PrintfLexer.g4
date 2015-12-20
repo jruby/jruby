@@ -23,6 +23,6 @@ MINUS       : '-' ;
 STAR        : '*' ;
 DOLLAR      : '$' ;
 DOT         : '.' ;
-CURLEY_KEY  : '{' .*? '}' -> mode(DEFAULT_MODE) ;
+CURLY_KEY   : '{' .*? '}' -> mode(DEFAULT_MODE) ;
 TYPE        : [bBdiouxXeEfgGaAcps] -> mode(DEFAULT_MODE) ;
 ESCAPED     : '%' -> mode(DEFAULT_MODE) ;
