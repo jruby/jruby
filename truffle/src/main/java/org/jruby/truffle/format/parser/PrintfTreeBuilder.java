@@ -34,7 +34,6 @@ import java.util.List;
 
 public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfParserBaseListener {
 
-    // TODO CS 19-Dec-15 this is never used, but the functionality seems useful
     public static final int PADDING_FROM_ARGUMENT = -2;
 
     public static final int DEFAULT = -1;
@@ -79,13 +78,26 @@ public class PrintfTreeBuilder extends org.jruby.truffle.format.parser.PrintfPar
         int spacePadding = DEFAULT;
         int zeroPadding = DEFAULT;
 
-        for (org.jruby.truffle.format.parser.PrintfParser.FlagContext flag : ctx.flag()) {
+
+        for (int n = 0; n < ctx.flag().size(); n++) {
+            final org.jruby.truffle.format.parser.PrintfParser.FlagContext flag = ctx.flag(n);
+
             if (flag.MINUS() != null) {
                 leftJustified = true;
             } else if (flag.SPACE() != null) {
-                spacePadding = width;
+                if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
+                    spacePadding = PADDING_FROM_ARGUMENT;
+                } else {
+                    spacePadding = width;
+                }
             } else if (flag.ZERO() != null) {
-                zeroPadding = width;
+                if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
+                    zeroPadding = PADDING_FROM_ARGUMENT;
+                } else {
+                    zeroPadding = width;
+                }
+            } else if (flag.STAR() != null) {
+                // Handled in space and zero, above
             } else {
                 throw new UnsupportedOperationException();
             }
