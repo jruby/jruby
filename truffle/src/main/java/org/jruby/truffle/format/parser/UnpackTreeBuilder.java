@@ -13,11 +13,9 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.nodes.SourceNode;
 import org.jruby.truffle.format.nodes.control.*;
-import org.jruby.truffle.format.nodes.read.ReadDoubleNodeGen;
-import org.jruby.truffle.format.nodes.read.ReadLongOrBigIntegerNodeGen;
-import org.jruby.truffle.format.nodes.read.ReadStringNodeGen;
-import org.jruby.truffle.format.nodes.read.ReadValueNodeGen;
+import org.jruby.truffle.format.nodes.read.*;
 import org.jruby.truffle.format.nodes.type.AsSinglePrecisionNodeGen;
+import org.jruby.truffle.format.nodes.type.ByteToFixnumNodeGen;
 import org.jruby.truffle.format.nodes.type.ReinterpretLongNodeGen;
 import org.jruby.truffle.format.nodes.type.ToLongNodeGen;
 import org.jruby.truffle.format.nodes.write.*;
@@ -60,8 +58,9 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitCharacter(PackParser.CharacterContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(8, ByteOrder.nativeOrder())));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context,
+                ReadByteNodeGen.create(context,
+                        new SourceNode()))));
     }
 
     @Override
