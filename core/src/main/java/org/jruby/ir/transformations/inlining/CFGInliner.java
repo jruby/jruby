@@ -69,17 +69,18 @@ public class CFGInliner {
 
     private BasicBlock findCallsiteBB(CallBase call) {
         long callSiteId = call.getSiteId();
-        System.out.println("LOOKING FOR CALLSITEID: " + callSiteId);
+        if (debug) System.out.println("LOOKING FOR CALLSITEID: " + callSiteId);
         for (BasicBlock bb: cfg.getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 // Some instrs reuse instrs (like LineNumberInstr) so we need to add call check.
                 if (i instanceof CallBase && ((CallBase) i).getSiteId() == callSiteId) {
-                    System.out.println("Found it!!!! -- " + call +  ", i: " + i);
+                    if (debug) System.out.println("Found it!!!! -- " + call +  ", i: " + i);
                     return bb;
                 }
             }
         }
 
+        if (debug) System.out.println("Did not find it");
         return null;
     }
 
@@ -388,9 +389,9 @@ public class CFGInliner {
 
             BasicBlock cbProtector = ii.getRenamedBB(closureCFG.getRescuerBBFor(cb));
             if (cbProtector != null) {
-                cfg.setRescuerBB(cb, cbProtector);
+                cfg.setRescuerBB(cb.cloneForInlining(ii), cbProtector);
             } else if (yieldBBrescuer != null) {
-                cfg.setRescuerBB(cb, yieldBBrescuer);
+                cfg.setRescuerBB(cb.cloneForInlining(ii), yieldBBrescuer);
             }
         }
     }

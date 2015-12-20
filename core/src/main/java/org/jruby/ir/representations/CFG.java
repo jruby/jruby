@@ -203,6 +203,7 @@ public class CFG {
     }
 
     public void setRescuerBB(BasicBlock block, BasicBlock rescuerBlock) {
+        if (block == null) new Exception().printStackTrace();
         rescuerMap.put(block, rescuerBlock);
     }
 

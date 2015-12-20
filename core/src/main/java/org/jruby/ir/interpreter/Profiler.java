@@ -269,8 +269,7 @@ public class Profiler {
             Compilable methodToInline = callSite.liveMethod;
 
             if (methodToInline instanceof CompiledIRMethod) {
-                ((FullInterpreterContext) parentIC).generateInstructionsForIntepretation();
-                System.out.println("Inlined " + methodToInline.getName() + " into " + parentIC.getName());
+                System.out.println("Inlining " + methodToInline.getName() + " into " + parentIC.getName());
                 IRScope scope = ((CompiledIRMethod) methodToInline).getIRMethod();
                 CallBase call;
                 // If we are in same batch of interesting callsites then the underlying scope has already
@@ -285,6 +284,9 @@ public class Profiler {
                 parentIC.getScope().inlineMethodJIT(methodToInline, implClass, implClass.getGeneration(), null, call, false);//!inlinedScopes.contains(ic));
                 inlinedScopes.add(parentIC.getScope());
                 long end = new java.util.Date().getTime();
+                System.out.println("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +
+                        " in time (ms): " + (end - start));
+
             } else if (methodToInline instanceof Compilable) {
                 IRScope scope = (methodToInline).getIRScope();
                 if (shouldInline(scope, callSite.getCall(), parentIC, isClosure)) {
