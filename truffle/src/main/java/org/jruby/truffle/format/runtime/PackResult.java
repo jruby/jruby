@@ -11,19 +11,19 @@ package org.jruby.truffle.format.runtime;
 
 public class PackResult {
 
-    private final byte[] output;
+    private final Object output;
     private final int outputLength;
     private final boolean tainted;
     private final PackEncoding encoding;
 
-    public PackResult(byte[] output, int outputLength, boolean tainted, PackEncoding encoding) {
+    public PackResult(Object output, int outputLength, boolean tainted, PackEncoding encoding) {
         this.output = output;
         this.outputLength = outputLength;
         this.tainted = tainted;
         this.encoding = encoding;
     }
 
-    public byte[] getOutput() {
+    public Object getOutput() {
         return output;
     }
 

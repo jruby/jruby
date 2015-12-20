@@ -24,10 +24,13 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -38,8 +41,13 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.format.parser.PackCompiler;
+import org.jruby.truffle.format.parser.UnpackCompiler;
+import org.jruby.truffle.format.runtime.PackResult;
+import org.jruby.truffle.format.runtime.exceptions.*;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
 import org.jruby.truffle.nodes.cast.CmpIntNodeGen;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
@@ -51,10 +59,7 @@ import org.jruby.truffle.nodes.core.array.ArrayCoreMethodNode;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.AllocateObjectNode;
-import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.nodes.objects.IsFrozenNode;
-import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
+import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
@@ -2145,6 +2150,147 @@ public abstract class StringNodes {
         public DynamicObject unpack(DynamicObject string, DynamicObject format) {
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), StringOperations.getByteList(string), StringOperations.getByteList(format));
             return getContext().toTruffle(jrubyArray);
+        }
+
+    }
+
+    @CoreMethod(names = "xunpack", required = 1, taintFromParameter = 0)
+    @ImportStatic(StringCachingGuards.class)
+    public abstract static class XUnpackNode extends ArrayCoreMethodNode {
+
+        @Child private TaintNode taintNode;
+
+        public XUnpackNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = {"isRubyString(format)", "byteListsEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
+        public DynamicObject unpackCached(
+                VirtualFrame frame,
+                DynamicObject string,
+                DynamicObject format,
+                @Cached("privatizeByteList(format)") ByteList cachedFormat,
+                @Cached("create(compileFormat(format))") DirectCallNode callUnpackNode) {
+            final ByteList bytes = Layouts.STRING.getByteList(string);
+
+            final PackResult result;
+
+            try {
+                // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
+                result = (PackResult) callUnpackNode.call(frame, new Object[]{bytes.bytes(), bytes.length()});
+            } catch (PackException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw handleException(e);
+            }
+
+            return finishUnpack(cachedFormat, result);
+        }
+
+        @Specialization(contains = "unpackCached", guards = "isRubyString(format)")
+        public DynamicObject unpackUncached(
+                VirtualFrame frame,
+                DynamicObject string,
+                DynamicObject format,
+                @Cached("create()") IndirectCallNode callUnpackNode) {
+            final ByteList bytes = Layouts.STRING.getByteList(string);
+
+            final PackResult result;
+
+            try {
+                // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
+                result = (PackResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{bytes.bytes(), bytes.length()});
+            } catch (PackException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw handleException(e);
+            }
+
+            return finishUnpack(StringOperations.getByteList(format), result);
+        }
+
+        private RuntimeException handleException(PackException exception) {
+            try {
+                throw exception;
+            } catch (TooFewArgumentsException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+            } catch (NoImplicitConversionException e) {
+                return new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+            } catch (OutsideOfStringException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+            } catch (CantCompressNegativeException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+            } catch (RangeException e) {
+                return new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+            } catch (CantConvertException e) {
+                return new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+            }
+        }
+
+        private DynamicObject finishUnpack(ByteList format, PackResult result) {
+            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
+
+            if (format.length() == 0) {
+                //StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
+            } else {
+                switch (result.getEncoding()) {
+                    case DEFAULT:
+                    case ASCII_8BIT:
+                        break;
+                    case US_ASCII:
+                        //StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
+                        break;
+                    case UTF_8:
+                        //StringOperations.forceEncoding(string, UTF8Encoding.INSTANCE);
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            }
+
+            if (result.isTainted()) {
+                if (taintNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                }
+
+                taintNode.executeTaint(array);
+            }
+
+            return array;
+        }
+
+        @Specialization
+        public Object unpack(VirtualFrame frame, DynamicObject array, boolean format) {
+            return ruby(frame, "raise TypeError");
+        }
+
+        @Specialization
+        public Object unpack(VirtualFrame frame, DynamicObject array, int format) {
+            return ruby(frame, "raise TypeError");
+        }
+
+        @Specialization
+        public Object unpack(VirtualFrame frame, DynamicObject array, long format) {
+            return ruby(frame, "raise TypeError");
+        }
+
+        @Specialization(guards = "isNil(format)")
+        public Object unpackNil(VirtualFrame frame, DynamicObject array, Object format) {
+            return ruby(frame, "raise TypeError");
+        }
+
+        @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
+        public Object unpack(VirtualFrame frame, DynamicObject array, Object format) {
+            return ruby(frame, "unpack(format.to_str)", "format", format);
+        }
+
+        @TruffleBoundary
+        protected CallTarget compileFormat(DynamicObject format) {
+            assert RubyGuards.isRubyString(format);
+            return new UnpackCompiler(getContext(), this).compile(format.toString());
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().UNPACK_CACHE;
         }
 
     }

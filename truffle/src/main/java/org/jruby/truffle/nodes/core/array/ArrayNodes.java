@@ -2419,7 +2419,7 @@ public abstract class ArrayNodes {
         }
 
         private DynamicObject finishPack(ByteList format, PackResult result) {
-            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+            final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);

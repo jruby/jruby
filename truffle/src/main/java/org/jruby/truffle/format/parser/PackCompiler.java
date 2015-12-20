@@ -83,7 +83,7 @@ public class PackCompiler {
      * that pattern is repeated. If it is we have the loop. Nothing more
      * complicated than that.
      */
-    private String recoverLoop(String format) {
+    public static String recoverLoop(String format) {
         int break_point = 0;
 
         while (break_point < format.length()) {
