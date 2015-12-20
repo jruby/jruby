@@ -13,9 +13,9 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.nodes.SourceNode;
 import org.jruby.truffle.format.nodes.control.*;
+import org.jruby.truffle.format.nodes.decode.*;
 import org.jruby.truffle.format.nodes.read.*;
 import org.jruby.truffle.format.nodes.type.AsSinglePrecisionNodeGen;
-import org.jruby.truffle.format.nodes.type.ByteToFixnumNodeGen;
 import org.jruby.truffle.format.nodes.type.ReinterpretLongNodeGen;
 import org.jruby.truffle.format.nodes.type.ToLongNodeGen;
 import org.jruby.truffle.format.nodes.write.*;
@@ -65,74 +65,62 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitShortLittle(PackParser.ShortLittleContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(16, ByteOrder.LITTLE_ENDIAN)));
+        appendNode(applyCount(ctx.count(), readInteger(16, ByteOrder.LITTLE_ENDIAN)));
     }
 
     @Override
     public void exitShortBig(PackParser.ShortBigContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(16, ByteOrder.BIG_ENDIAN)));
+        appendNode(applyCount(ctx.count(), readInteger(16, ByteOrder.BIG_ENDIAN)));
     }
 
     @Override
     public void exitShortNative(PackParser.ShortNativeContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(16, ByteOrder.nativeOrder())));
+        appendNode(applyCount(ctx.count(), readInteger(16, ByteOrder.nativeOrder())));
     }
 
     @Override
     public void exitIntLittle(PackParser.IntLittleContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.LITTLE_ENDIAN)));
+        appendNode(applyCount(ctx.count(), readInteger(32, ByteOrder.LITTLE_ENDIAN)));
     }
 
     @Override
     public void exitIntBig(PackParser.IntBigContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.BIG_ENDIAN)));
+        appendNode(applyCount(ctx.count(), readInteger(32, ByteOrder.BIG_ENDIAN)));
     }
 
     @Override
     public void exitIntNative(PackParser.IntNativeContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.nativeOrder())));
+        appendNode(applyCount(ctx.count(), readInteger(32, ByteOrder.nativeOrder())));
     }
 
     @Override
     public void exitLongLittle(PackParser.LongLittleContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.LITTLE_ENDIAN)));
+        appendNode(applyCount(ctx.count(), readInteger(32, ByteOrder.LITTLE_ENDIAN)));
     }
 
     @Override
     public void exitLongBig(PackParser.LongBigContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.BIG_ENDIAN)));
+        appendNode(applyCount(ctx.count(), readInteger(32, ByteOrder.BIG_ENDIAN)));
     }
 
     @Override
     public void exitLongNative(PackParser.LongNativeContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.nativeOrder())));
+        appendNode(applyCount(ctx.count(), readInteger(32, ByteOrder.nativeOrder())));
     }
 
     @Override
     public void exitQuadLittle(PackParser.QuadLittleContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(64, ByteOrder.LITTLE_ENDIAN)));
+        appendNode(applyCount(ctx.count(), readInteger(64, ByteOrder.LITTLE_ENDIAN)));
     }
 
     @Override
     public void exitQuadBig(PackParser.QuadBigContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(64, ByteOrder.BIG_ENDIAN)));
+        appendNode(applyCount(ctx.count(), readInteger(64, ByteOrder.BIG_ENDIAN)));
     }
 
     @Override
     public void exitQuadNative(PackParser.QuadNativeContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(), writeInteger(64, ByteOrder.nativeOrder())));
+        appendNode(applyCount(ctx.count(), readInteger(64, ByteOrder.nativeOrder())));
     }
 
     @Override
@@ -391,37 +379,41 @@ public class UnpackTreeBuilder extends PackBaseListener {
         sequenceStack.peek().add(node);
     }
 
-    private PackNode writeInteger(int size, ByteOrder byteOrder) {
-        final PackNode readNode = ToLongNodeGen.create(context,
-                ReadValueNodeGen.create(context, new SourceNode()));
-        return writeInteger(size, byteOrder, readNode);
+    private PackNode readInteger(int size, ByteOrder byteOrder) {
+        final PackNode readNode = ReadBytesNodeGen.create(context, size, new SourceNode());
+        return readInteger(size, byteOrder, readNode);
     }
 
-    private PackNode writeInteger(int size, ByteOrder byteOrder, PackNode readNode) {
+    private PackNode readInteger(int size, ByteOrder byteOrder, PackNode readNode) {
+        final PackNode convert;
+
         switch (size) {
-            case 8:
-                return Write8NodeGen.create(context, readNode);
             case 16:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return Write16LittleNodeGen.create(context, readNode);
+                    convert = DecodeInteger16LittleNodeGen.create(context, readNode);
                 } else {
-                    return Write16BigNodeGen.create(context, readNode);
+                    convert = DecodeInteger16BigNodeGen.create(context, readNode);
                 }
+                break;
             case 32:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return Write32LittleNodeGen.create(context, readNode);
+                    convert = DecodeInteger32LittleNodeGen.create(context, readNode);
                 } else {
-                    return Write32BigNodeGen.create(context, readNode);
+                    convert = DecodeInteger32BigNodeGen.create(context, readNode);
                 }
+                break;
             case 64:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return Write64LittleNodeGen.create(context, readNode);
+                    convert = DecodeInteger64LittleNodeGen.create(context, readNode);
                 } else {
-                    return Write64BigNodeGen.create(context, readNode);
+                    convert = DecodeInteger64BigNodeGen.create(context, readNode);
                 }
+                break;
             default:
                 throw new UnsupportedOperationException();
         }
+
+        return WriteValueNodeGen.create(context, convert);
     }
 
     private void binaryString(byte padding, boolean padOnNull, boolean appendNull, PackParser.CountContext count) {
