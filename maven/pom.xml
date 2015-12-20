@@ -67,7 +67,6 @@
         <module>jruby-complete</module>
         <module>jruby-dist</module>
         <module>jruby-jars</module>
-        <module>jruby-rake-plugin</module>
       </modules>
     </profile>
     <profile>

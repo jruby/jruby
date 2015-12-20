@@ -29,7 +29,7 @@ project 'JRuby Artifacts' do
     'jruby-complete' => [ :release, :complete, :osgi ],
     'jruby-dist' => [ :release, :dist ],
     'jruby-jars' => [ :release, 'jruby-jars' ],
-    'jruby-rake-plugin' => [ :release, 'jruby-rake-plugin']
+    'jruby-rake-plugin' => [ 'jruby-rake-plugin']
   }
 
   profile :all do
