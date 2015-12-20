@@ -23,8 +23,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod
-            // Turn off till we get everything greened again
-            // || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
+            || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
             || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
     }
 
@@ -53,8 +52,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
         if (requireBinding) instrs.add(new PopBindingInstr());
         if (scope instanceof IRClosure) {
-            instrs.add(new PopBlockFrameInstr(savedFrame));
             instrs.add(new RestoreBindingVisibilityInstr(savedViz));
+            instrs.add(new PopBlockFrameInstr(savedFrame));
         } else {
             if (requireFrame) instrs.add(new PopMethodFrameInstr());
         }

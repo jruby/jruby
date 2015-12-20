@@ -736,6 +736,30 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void BuildBackrefInstr(BuildBackrefInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "getBackRef", sig(IRubyObject.class));
+
+        switch (instr.type) {
+            case '&':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "last_match", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            case '`':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_pre", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            case '\'':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_post", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            case '+':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_last", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            default:
+                assert false: "backref with invalid type";
+        }
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
     public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) {
         jvmMethod().loadContext();
         visit(instr.getAppendingArg());
@@ -2061,29 +2085,6 @@ public class JVMVisitor extends IRVisitor {
     public void AsString(AsString asstring) {
         visit(asstring.getSource());
         jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
-    }
-
-    @Override
-    public void Backref(Backref backref) {
-        jvmMethod().loadContext();
-        jvmAdapter().invokevirtual(p(ThreadContext.class), "getBackRef", sig(IRubyObject.class));
-
-        switch (backref.type) {
-            case '&':
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "last_match", sig(IRubyObject.class, IRubyObject.class));
-                break;
-            case '`':
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_pre", sig(IRubyObject.class, IRubyObject.class));
-                break;
-            case '\'':
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_post", sig(IRubyObject.class, IRubyObject.class));
-                break;
-            case '+':
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_last", sig(IRubyObject.class, IRubyObject.class));
-                break;
-            default:
-                assert false: "backref with invalid type";
-        }
     }
 
     @Override

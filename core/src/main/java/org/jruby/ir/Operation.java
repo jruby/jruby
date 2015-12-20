@@ -88,10 +88,11 @@ public enum Operation {
 
     /** returns -- returns unwind stack, etc. */
     RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
-    NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
-    /* BREAK is a return because it can only be used within closures
+    /* These two insructions use exceptions to exit closures
+     * BREAK is a return because it can only be used within closures
      * and the net result is to return from the closure. */
-    BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return | OpFlags.f_can_raise_exception),
+    BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return | OpFlags.f_can_raise_exception),
 
     /** defines **/
     ALIAS(OpFlags.f_has_side_effect| OpFlags.f_modifies_code | OpFlags.f_can_raise_exception),
@@ -139,14 +140,15 @@ public enum Operation {
 
     /** JRuby-impl instructions **/
     ARG_SCOPE_DEPTH(0),
+    BACKTICK_STRING(OpFlags.f_can_raise_exception),
     BINDING_LOAD(OpFlags.f_is_load),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    BUILD_BACKREF(OpFlags.f_can_raise_exception),
     BUILD_COMPOUND_ARRAY(OpFlags.f_can_raise_exception),
     BUILD_COMPOUND_STRING(OpFlags.f_can_raise_exception),
     BUILD_DREGEXP(OpFlags.f_can_raise_exception),
     BUILD_RANGE(OpFlags.f_can_raise_exception),
     BUILD_SPLAT(OpFlags.f_can_raise_exception),
-    BACKTICK_STRING(OpFlags.f_can_raise_exception),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
     CHECK_FOR_LJE(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),

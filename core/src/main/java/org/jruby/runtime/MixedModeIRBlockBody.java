@@ -118,9 +118,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
         InterpreterContext ic = ensureInstrsReady();
 
-        // double check if full build completed
-        if (canCallDirect()) return callOrYieldDirect(context, block, type, args, self, blockArg);
-
         Binding binding = block.getBinding();
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame prevFrame = context.preYieldNoScope(binding);

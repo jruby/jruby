@@ -30,6 +30,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.format.parser.PrintfCompiler;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -60,7 +61,6 @@ import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodesFactory;
-import org.jruby.truffle.format.parser.FormatParser;
 import org.jruby.truffle.format.runtime.PackResult;
 import org.jruby.truffle.format.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
@@ -1884,11 +1884,11 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
-    public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class SprintfNode extends CoreMethodArrayArgumentsNode {
 
         @Child private TaintNode taintNode;
 
-        public FormatNode(RubyContext context, SourceSection sourceSection) {
+        public SprintfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
@@ -1986,7 +1986,7 @@ public abstract class KernelNodes {
             assert RubyGuards.isRubyString(format);
 
             try {
-                return new FormatParser(getContext()).parse(StringOperations.getByteList(format));
+                return new PrintfCompiler(getContext(), this).compile(StringOperations.getByteList(format));
             } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));

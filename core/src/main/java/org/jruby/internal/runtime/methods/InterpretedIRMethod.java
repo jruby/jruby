@@ -259,6 +259,8 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     public void completeBuild(InterpreterContext interpreterContext) {
         this.interpreterContext = interpreterContext;
+        // Reset so that we can see the new instr dump again
+        this.displayedCFG = false;
     }
 
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while

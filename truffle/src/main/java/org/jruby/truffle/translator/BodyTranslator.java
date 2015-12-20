@@ -41,6 +41,7 @@ import org.jruby.truffle.nodes.core.ModuleNodesFactory.AliasMethodNodeFactory;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.UndefMethodNodeFactory;
 import org.jruby.truffle.nodes.core.ProcNodes.Type;
 import org.jruby.truffle.nodes.core.array.*;
+import org.jruby.truffle.nodes.core.array.ArrayNodes.PushOneNode;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLiteralNode;
 import org.jruby.truffle.nodes.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
@@ -714,6 +715,9 @@ public class BodyTranslator extends Translator {
                     } else if (expressionNode instanceof org.jruby.ast.ArgsCatNode) {
                         final ArrayConcatNode arrayConcatNode = (ArrayConcatNode) rubyExpression;
                         comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), arrayConcatNode));
+                    } else if (expressionNode instanceof org.jruby.ast.ArgsPushNode) {
+                        final PushOneNode pushOneNode = (PushOneNode) rubyExpression;
+                        comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), pushOneNode));
                     } else {
                         comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, true, NodeUtil.cloneNode(readTemp)));
                     }

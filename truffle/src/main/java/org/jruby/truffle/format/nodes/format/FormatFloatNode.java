@@ -14,7 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.format.nodes.PackNode;
-import org.jruby.truffle.format.parser.FormatDirective;
+import org.jruby.truffle.format.parser.PrintfTreeBuilder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.util.ByteList;
@@ -68,12 +68,12 @@ public abstract class FormatFloatNode extends PackNode {
 
             if (Double.isInfinite(value)) {
 
-                if (spacePadding != FormatDirective.DEFAULT) {
+                if (spacePadding != PrintfTreeBuilder.DEFAULT) {
                     builder.append(" ");
                     builder.append(spacePadding + 5);
                 }
 
-                if (zeroPadding != FormatDirective.DEFAULT && zeroPadding != 0) {
+                if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
                     builder.append("0");
                     builder.append(zeroPadding + 5);
                 }
@@ -86,20 +86,20 @@ public abstract class FormatFloatNode extends PackNode {
 
             } else {
 
-                if (spacePadding != FormatDirective.DEFAULT) {
+                if (spacePadding != PrintfTreeBuilder.DEFAULT) {
                     builder.append(" ");
                     builder.append(spacePadding);
 
-                    if (zeroPadding != FormatDirective.DEFAULT) {
+                    if (zeroPadding != PrintfTreeBuilder.DEFAULT) {
                         builder.append(".");
                         builder.append(zeroPadding);
                     }
-                } else if (zeroPadding != FormatDirective.DEFAULT && zeroPadding != 0) {
+                } else if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
                     builder.append("0");
                     builder.append(zeroPadding);
                 }
 
-                if (precision != FormatDirective.DEFAULT) {
+                if (precision != PrintfTreeBuilder.DEFAULT) {
                     builder.append(".");
                     builder.append(precision);
                 }

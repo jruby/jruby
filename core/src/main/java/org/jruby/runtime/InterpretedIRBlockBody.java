@@ -20,6 +20,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private int callCount = 0;
     private InterpreterContext interpreterContext;
+    private InterpreterContext fullInterpreterContext;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
@@ -40,7 +41,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     @Override
     public void completeBuild(InterpreterContext interpreterContext) {
-        this.interpreterContext = interpreterContext;
+        this.fullInterpreterContext = interpreterContext;
         // This enables IR & CFG to be dumped in debug mode
         // when this updated code starts executing.
         this.displayedCFG = false;
@@ -65,6 +66,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
         if (interpreterContext == null) {
             interpreterContext = closure.getInterpreterContext();
+            fullInterpreterContext = interpreterContext;
         }
         return interpreterContext;
     }
@@ -87,13 +89,15 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         context.setCurrentBlockType(Block.Type.PROC);
-        return Interpreter.INTERPRET_BLOCK(context, block, null, interpreterContext, args, block.getBinding().getMethod(), blockArg);
+        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, null, ic, args, block.getBinding().getMethod(), blockArg);
     }
 
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         context.setCurrentBlockType(Block.Type.NORMAL);
-        return Interpreter.INTERPRET_BLOCK(context, block, self, interpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
+        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
     }
 
     @Override
@@ -102,8 +106,10 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
         InterpreterContext ic = ensureInstrsReady();
 
-        // double check since instructionContext is set up lazily
-        if (canCallDirect()) callOrYieldDirect(context, block, type, args, self, blockArg);
+        // Update interpreter context for next time this block is executed
+        // This ensures that if we had determined canCallDirect() is false
+        // based on the old IC, we continue to execute with it.
+        interpreterContext = fullInterpreterContext;
 
         Binding binding = block.getBinding();
         Visibility oldVis = binding.getFrame().getVisibility();
