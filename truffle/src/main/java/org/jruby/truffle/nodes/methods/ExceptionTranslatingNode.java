@@ -176,8 +176,11 @@ public class ExceptionTranslatingNode extends RubyNode {
     private boolean shouldObjectBeVisible(Object object) {
         return object instanceof TruffleObject
                 || object instanceof Boolean
+                || object instanceof Byte
+                || object instanceof Short
                 || object instanceof Integer
                 || object instanceof Long
+                || object instanceof Float
                 || object instanceof Double;
     }
 
