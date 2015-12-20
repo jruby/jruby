@@ -129,18 +129,18 @@ public class SocketUtils {
     }
 
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject port, IRubyObject host) {
-        int portNum = 0;
-        
-        if(!port.isNil()){
-          portNum = port instanceof RubyString ?
-                Integer.parseInt(port.convertToString().toString()) :
-                RubyNumeric.fix2int(port);
+        final int portNum;
+        if ( ! port.isNil() ) {
+            portNum = port instanceof RubyString ?
+                    Integer.parseInt(port.convertToString().toString()) :
+                        RubyNumeric.fix2int(port);
+        }
+        else {
+            portNum = 0;
         }
 
-        return Sockaddr.pack_sockaddr_in(
-                context,
-                portNum,
-                host.isNil() ? null : host.convertToString().toString());
+        final String hostStr = host.isNil() ? null : host.convertToString().toString();
+        return Sockaddr.pack_sockaddr_in(context, portNum, hostStr);
     }
 
     public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
@@ -318,7 +318,7 @@ public class SocketUtils {
                 } else if ("numeric".equals(reverseString)) {
                     reverseLookup = false;
                 } else {
-                    throw runtime.newArgumentError("invalid reverse_lookup flag: :" + 
+                    throw runtime.newArgumentError("invalid reverse_lookup flag: :" +
                      reverseString);
                 }
             }
@@ -555,7 +555,7 @@ public class SocketUtils {
     private static String getHostAddress(ThreadContext context, InetAddress addr, Boolean reverse) {
         String ret;
         if (reverse == null) {
-            ret = context.runtime.isDoNotReverseLookupEnabled() ? 
+            ret = context.runtime.isDoNotReverseLookupEnabled() ?
                    addr.getHostAddress() : addr.getCanonicalHostName();
         } else if (reverse) {
             ret = addr.getCanonicalHostName();
@@ -632,7 +632,7 @@ public class SocketUtils {
 
         return proto;
     }
-    
+
     public static int portToInt(IRubyObject port) {
         return port.isNil() ? 0 : RubyNumeric.fix2int(port);
     }
