@@ -1947,11 +1947,11 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
-    public abstract static class XFormatNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class SprintfNode extends CoreMethodArrayArgumentsNode {
 
         @Child private TaintNode taintNode;
 
-        public XFormatNode(RubyContext context, SourceSection sourceSection) {
+        public SprintfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
