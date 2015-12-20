@@ -9,14 +9,10 @@ public enum OperandType {
 
     ARRAY((byte) 'A'),
     AS_STRING((byte) 'a'),
-    BACKREF((byte) '\\'),
-    BACKTICK_STRING((byte) '`'),
     BIGNUM((byte) 'B'),
     BOOLEAN((byte) 'b'),
     LOCAL_VARIABLE((byte) 'l'), // Also applicable for ClosureLocalVariable
     COMPLEX((byte) 'C'),
-    COMPOUND_ARRAY((byte) 'c'),
-    COMPOUND_STRING((byte) '"'),
     CURRENT_SCOPE((byte) 's'),
     DYNAMIC_SYMBOL((byte) 'd'),
     FIXNUM((byte) 'f'),

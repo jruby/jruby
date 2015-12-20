@@ -200,6 +200,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case BLOCK_GIVEN: return BlockGivenInstr.decode(this);
             case BNE: return BNEInstr.decode(this);
             case BREAK: return BreakInstr.decode(this);
+            case BUILD_BACKREF: return BuildBackrefInstr.decode(this);
             case BUILD_COMPOUND_ARRAY: return BuildCompoundArrayInstr.decode(this);
             case BUILD_COMPOUND_STRING: return BuildCompoundStringInstr.decode(this);
             case BUILD_DREGEXP: return BuildDynRegExpInstr.decode(this);
@@ -429,7 +430,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         switch (type) {
             case ARRAY: return Array.decode(this);
             case AS_STRING: return AsString.decode(this);
-            case BACKREF: return Backref.decode(this);
             case BIGNUM: return Bignum.decode(this);
             case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
             case CURRENT_SCOPE: return CurrentScope.decode(this);

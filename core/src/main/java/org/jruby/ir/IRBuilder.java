@@ -858,8 +858,7 @@ public class IRBuilder {
     }
 
     public Operand buildBackref(BackRefNode node) {
-        // SSS FIXME: Required? Verify with Tom/Charlie
-        return copyAndReturnValue(new Backref(node.getType()));
+        return addResultInstr(new BuildBackrefInstr(createTemporaryVariable(), node.getType()));
     }
 
     public Operand buildBegin(BeginNode beginNode) {
