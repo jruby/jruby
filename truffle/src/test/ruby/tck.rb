@@ -77,3 +77,25 @@ def evaluate_source(mime, source)
 end
 
 Truffle::Interop.export_method(:evaluate_source)
+
+def complex_add(a, b)
+  Truffle::Interop.write_property a, :imaginary, Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
+  Truffle::Interop.write_property a, :real, Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
+end
+
+Truffle::Interop.export_method(:complex_add)
+
+def complex_sum_real(complexes)
+  complexes.map(&:real).inject(&:+)
+end
+
+Truffle::Interop.export_method(:complex_sum_real)
+
+def complex_copy(a, b)
+  a.zip(b) do |x, y|
+    x.imaginary = y.imaginary
+    x.real = y.real
+  end
+end
+
+Truffle::Interop.export_method(:complex_copy)

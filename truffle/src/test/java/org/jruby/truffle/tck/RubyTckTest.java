@@ -97,8 +97,18 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
-    public void testSumRealOfComplexNumbersA() throws Exception {
-        // Ignored temporarily
+    protected String complexAdd() {
+        return "complex_add";
+    }
+
+    @Override
+    protected String complexSumReal() {
+        return "complex_sum_real";
+    }
+
+    @Override
+    protected String complexCopy() {
+        return "complex_copy";
     }
 
     @Override
@@ -107,12 +117,12 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
-    public void testSumRealOfComplexNumbersB() throws Exception {
+    public void testSumRealOfComplexNumbersA() throws Exception {
         // Ignored temporarily
     }
 
     @Override
-    public void testAddComplexNumbers() throws Exception {
+    public void testSumRealOfComplexNumbersB() throws Exception {
         // Ignored temporarily
     }
 
@@ -135,4 +145,5 @@ public class RubyTckTest extends TruffleTCK {
     public void testCopyStructuredComplexToComplexNumbersA() throws Exception {
         // Ignored temporarily
     }
-}
+
+    }

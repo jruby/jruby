@@ -158,100 +158,104 @@ public abstract class TruffleInteropNodes {
     }
 
     @CoreMethod(names = "read_property", isModuleFunction = true, needsSelf = false, required = 2)
+    @ImportStatic(StringCachingGuards.class)
     public abstract static class ReadPropertyNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private Node node;
 
         public ReadPropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = Message.READ.createNode();
+        }
+
+        // TODO CS 21-Dec-15 should Truffle provide foreign access for strings?
+
+        @Specialization
+        public Object readProperty(String receiver, int identifier) {
+            return receiver.charAt(identifier);
         }
 
         @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, int identifier) {
-            return ForeignAccess.execute(node, frame, receiver, identifier);
-        }
-        
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, String receiver, int identifier) {
-            return receiver.charAt(identifier);
-        }
-        
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, String receiver, long identifier) {
+        public Object readProperty(String receiver, long identifier) {
             return receiver.charAt((int) identifier);
         }
 
-
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, long identifier) {
-            return ForeignAccess.execute(node, frame, receiver, (int) identifier);
+        @Specialization(guards = {"!isRubySymbol(identifier)", "!isRubyString(identifier)"})
+        public Object readProperty(VirtualFrame frame,
+                                   TruffleObject receiver,
+                                   Object identifier,
+                                   @Cached("createReadNode()") Node readNode) {
+            return ForeignAccess.execute(readNode, frame, receiver, identifier);
         }
 
-        @CompilationFinal private String identifier;
-
-        @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
-            if (this.identifier == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = Layouts.SYMBOL.getString(identifier).intern();
-            }
-            return ForeignAccess.execute(node, frame, receiver, this.identifier);
+        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
+        public Object readProperty(VirtualFrame frame,
+                                   TruffleObject receiver,
+                                   DynamicObject identifier,
+                                   @Cached("identifier") DynamicObject cachedIdentifier,
+                                   @Cached("identifier.toString()") String identifierString,
+                                   @Cached("createReadNode()") Node readNode) {
+            return ForeignAccess.execute(readNode, frame, receiver, identifierString);
         }
 
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
-            return ForeignAccess.execute(node, frame, receiver, slowPathToString(identifier));
+        @Specialization(guards = {"isRubyString(identifier)", "byteListsEqual(identifier, cachedIdentifier)"})
+        public Object readProperty(VirtualFrame frame,
+                                   TruffleObject receiver,
+                                   DynamicObject identifier,
+                                   @Cached("privatizeByteList(identifier)") ByteList cachedIdentifier,
+                                   @Cached("identifier.toString()") String identifierString,
+                                   @Cached("createReadNode()") Node readNode) {
+            return ForeignAccess.execute(readNode, frame, receiver, identifierString);
         }
 
-        @TruffleBoundary
-        private static String slowPathToString(DynamicObject identifier) {
-            assert RubyGuards.isRubyString(identifier);
-            return identifier.toString();
+        protected static Node createReadNode() {
+            return Message.READ.createNode();
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().EVAL_CACHE;
         }
 
     }
 
     @CoreMethod(names = "write_property", isModuleFunction = true, needsSelf = false, required = 3)
+    @ImportStatic(StringCachingGuards.class)
     public abstract static class WritePropertyNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private Node node;
 
         public WritePropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = Message.WRITE.createNode();
         }
 
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, int identifier,  Object value) {
-            return ForeignAccess.execute(node, frame, receiver, identifier, value);
+        @Specialization(guards = {"!isRubySymbol(identifier)", "!isRubyString(identifier)"})
+        public Object writeProperty(VirtualFrame frame,
+                                    TruffleObject receiver,
+                                    Object identifier,
+                                    Object value,
+                                    @Cached("createWriteNode()") Node writeNode) {
+            return ForeignAccess.execute(writeNode, frame, receiver, identifier, value);
         }
 
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, long identifier,  Object value) {
-            return ForeignAccess.execute(node, frame, receiver, identifier, value);
+        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
+        public Object writeProperty(VirtualFrame frame,
+                                    TruffleObject receiver,
+                                    DynamicObject identifier,
+                                    Object value,
+                                    @Cached("identifier") DynamicObject cachedIdentifier,
+                                    @Cached("identifier.toString()") String identifierString,
+                                    @Cached("createWriteNode()") Node writeNode) {
+            return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
         }
 
-        @CompilationFinal private String identifier;
-
-        @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier,  Object value) {
-            if (this.identifier == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = Layouts.SYMBOL.getString(identifier).intern();
-            }
-            return ForeignAccess.execute(node, frame, receiver, this.identifier, value);
+        @Specialization(guards = {"isRubyString(identifier)", "byteListsEqual(identifier, cachedIdentifier)"})
+        public Object writeProperty(VirtualFrame frame,
+                                    TruffleObject receiver,
+                                    DynamicObject identifier,
+                                    Object value,
+                                    @Cached("privatizeByteList(identifier)") ByteList cachedIdentifier,
+                                    @Cached("identifier.toString()") String identifierString,
+                                    @Cached("createWriteNode()") Node writeNode) {
+            return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
         }
 
-        @Specialization(guards = "isRubyString(identifier)")
-        public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier, Object value) {
-            return ForeignAccess.execute(node, frame, receiver, slowPathToString(identifier), value);
-        }
-
-        @TruffleBoundary
-        private static String slowPathToString(DynamicObject identifier) {
-            assert RubyGuards.isRubyString(identifier);
-            return identifier.toString();
+        protected static Node createWriteNode() {
+            return Message.WRITE.createNode();
         }
 
     }
