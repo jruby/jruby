@@ -87,8 +87,8 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
-    public void multiplyTwoVariables() throws Exception {
-        // Ignored temporarily
+    protected String multiplyCode(String firstName, String secondName) {
+        return firstName + " * " + secondName;
     }
 
     @Override

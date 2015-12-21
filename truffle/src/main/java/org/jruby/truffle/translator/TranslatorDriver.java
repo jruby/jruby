@@ -24,7 +24,10 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.CatchNextNode;
 import org.jruby.truffle.nodes.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.nodes.methods.CatchReturnAsErrorNode;
@@ -38,6 +41,8 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TranslatorDriver {
 
@@ -51,18 +56,20 @@ public class TranslatorDriver {
         parseEnvironment = new ParseEnvironment(context);
     }
 
-    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
+    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
 
         final StaticScope staticScope = context.getRuntime().getStaticScopeFactory().newLocalScope(null);
+
+        /*
+         * Note that jruby-parser will be mistaken about how deep the existing variables are,
+         * but that doesn't matter as we look them up ourselves after being told they're in some
+         * parent scope.
+         */
+
         if (parentFrame != null) {
-            /*
-             * Note that jruby-parser will be mistaken about how deep the existing variables are,
-             * but that doesn't matter as we look them up ourselves after being told they're in some
-             * parent scope.
-             */
 
             MaterializedFrame frame = parentFrame;
 
@@ -75,6 +82,12 @@ public class TranslatorDriver {
                 }
 
                 frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+            }
+        }
+
+        if (argumentNames != null) {
+            for (String name : argumentNames) {
+                staticScope.addVariableThisScope(name.intern()); // StaticScope expects interned var names
             }
         }
 
@@ -101,10 +114,10 @@ public class TranslatorDriver {
             throw new RaiseException(context.getCoreLibrary().syntaxError(message, currentNode));
         }
 
-        return parse(currentNode, context, source, parserContext, parentFrame, ownScopeForAssignments, node);
+        return parse(currentNode, context, source, parserContext, argumentNames, parentFrame, ownScopeForAssignments, node);
     }
 
-    private RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode) {
+    private RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, String[] argumentNames, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
 
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
@@ -125,6 +138,14 @@ public class TranslatorDriver {
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame),
                 parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false, null);
+
+        // Declare arguments as local variables in the top-level environment - we'll put the values there in a prelude
+
+        if (argumentNames != null) {
+            for (String name : argumentNames) {
+                environment.declareVar(name);
+            }
+        }
 
         // Get the DATA constant
 
@@ -149,6 +170,22 @@ public class TranslatorDriver {
             }
         } else {
             truffleNode = rootNode.getBodyNode().accept(translator);
+        }
+
+        // Load arguments
+
+        if (argumentNames != null && argumentNames.length > 0) {
+            final List<RubyNode> sequence = new ArrayList<>();
+
+            for (int n = 0; n < argumentNames.length; n++) {
+                final String name = argumentNames[n];
+                final RubyNode readNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.NIL);
+                final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(name);
+                sequence.add(new WriteLocalVariableNode(context, sourceSection, readNode, slot));
+            }
+
+            sequence.add(truffleNode);
+            truffleNode = SequenceNode.sequence(context, sourceSection, sequence);
         }
 
         // Load flip-flop states

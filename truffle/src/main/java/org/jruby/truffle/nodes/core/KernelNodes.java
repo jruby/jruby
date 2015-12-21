@@ -650,7 +650,7 @@ public abstract class KernelNodes {
 
             final TranslatorDriver translator = new TranslatorDriver(getContext());
 
-            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, ParserContext.EVAL, parentFrame, true, this));
+            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, ParserContext.EVAL, null, parentFrame, true, this));
         }
 
         protected boolean parseDependsOnDeclarationFrame(RootNodeWrapper rootNode) {

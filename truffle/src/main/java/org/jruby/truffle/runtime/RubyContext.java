@@ -410,7 +410,7 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     private RubyRootNode parse(Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         final TranslatorDriver translator = new TranslatorDriver(this);
-        return translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode);
+        return translator.parse(this, source, defaultEncoding, parserContext, null, parentFrame, ownScopeForAssignments, currentNode);
     }
 
     @TruffleBoundary
