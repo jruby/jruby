@@ -40,11 +40,11 @@ env:
     - PHASE='-Prake -Dtask=spec:jruby'
     - PHASE='-Prake -Dtask=spec:jrubyc'
     - PHASE='-Prake -Dtask=spec:profiler'
-    - PHASE='-Ptruffle-specs-language'
-    - PHASE='-Ptruffle-specs-core'
-    - PHASE='-Ptruffle-specs-library'
-    - PHASE='-Ptruffle-specs-truffle'
-    - PHASE='-Ptruffle-mri-tests'
+    #- PHASE='-Ptruffle-specs-language'
+    #- PHASE='-Ptruffle-specs-core'
+    #- PHASE='-Ptruffle-specs-library'
+    #- PHASE='-Ptruffle-specs-truffle'
+    #- PHASE='-Ptruffle-mri-tests'
 
 matrix:
   include:
