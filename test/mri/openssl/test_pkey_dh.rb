@@ -1,10 +1,32 @@
+# frozen_string_literal: false
 require_relative 'utils'
 
-if defined?(OpenSSL)
+if defined?(OpenSSL::TestUtils)
 
 class OpenSSL::TestPKeyDH < Test::Unit::TestCase
 
   NEW_KEYLEN = 256
+
+  def test_DEFAULT_512
+    params = <<-eop
+-----BEGIN DH PARAMETERS-----
+MEYCQQD0zXHljRg/mJ9PYLACLv58Cd8VxBxxY7oEuCeURMiTqEhMym16rhhKgZG2
+zk2O9uUIBIxSj+NKMURHGaFKyIvLAgEC
+-----END DH PARAMETERS-----
+    eop
+    assert_equal params, OpenSSL::PKey::DH::DEFAULT_512.to_s
+  end
+
+  def test_DEFAULT_1024
+    params = <<-eop
+-----BEGIN DH PARAMETERS-----
+MIGHAoGBAJ0lOVy0VIr/JebWn0zDwY2h+rqITFOpdNr6ugsgvkDXuucdcChhYExJ
+AV/ZD2AWPbrTqV76mGRgJg4EddgT1zG0jq3rnFdMj2XzkBYx3BVvfR0Arnby0RHR
+T4h7KZ/2zmjvV+eF8kBUHBJAojUlzxKj4QeO2x20FP9X5xmNUXeDAgEC
+-----END DH PARAMETERS-----
+    eop
+    assert_equal params, OpenSSL::PKey::DH::DEFAULT_1024.to_s
+  end
 
   def test_new
     dh = OpenSSL::PKey::DH.new(NEW_KEYLEN)
@@ -13,7 +35,7 @@ class OpenSSL::TestPKeyDH < Test::Unit::TestCase
 
   def test_new_break
     assert_nil(OpenSSL::PKey::DH.new(NEW_KEYLEN) { break })
-    assert_raises(RuntimeError) do
+    assert_raise(RuntimeError) do
       OpenSSL::PKey::DH.new(NEW_KEYLEN) { raise }
     end
   end

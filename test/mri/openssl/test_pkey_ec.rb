@@ -1,6 +1,7 @@
+# frozen_string_literal: false
 require_relative 'utils'
 
-if defined?(OpenSSL::PKey::EC)
+if defined?(OpenSSL::TestUtils) && defined?(OpenSSL::PKey::EC)
 
 class OpenSSL::TestEC < Test::Unit::TestCase
   def setup
