@@ -29,12 +29,16 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.layouts.StringLayout;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.io.IOException;
 
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
+
+    // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class InteropToRubyNode extends CoreMethodArrayArgumentsNode {
@@ -389,6 +393,23 @@ public abstract class TruffleInteropNodes {
 
         protected int getCacheLimit() {
             return getContext().getOptions().EVAL_CACHE;
+        }
+
+    }
+
+    // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
+
+    @CoreMethod(names = "java_string_to_ruby", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class JavaStringToRubyNode extends CoreMethodArrayArgumentsNode {
+
+        public JavaStringToRubyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        @TruffleBoundary
+        public DynamicObject javaStringToRuby(String string) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ByteList.create(string), StringSupport.CR_UNKNOWN, null);
         }
 
     }

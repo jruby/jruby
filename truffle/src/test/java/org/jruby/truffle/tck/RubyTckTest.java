@@ -92,8 +92,8 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
-    public void testEvaluateSource() throws Exception {
-        // Ignored temporarily
+    protected String evaluateSource() {
+        return "evaluate_source";
     }
 
     @Override
