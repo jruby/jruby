@@ -86,25 +86,26 @@ end
 Truffle::Interop.export_method(:complex_add)
 
 def complex_sum_real(complexes)
-  sum = 0
-  n = 0
-  while n < Truffle::Interop.size(complexes)
-    sum += Truffle::Interop.read_property(Truffle::Interop.read_property(complexes, n), :real)
-    n += 1
-  end
-  sum
+  complexes = Truffle::Interop.enumerable(complexes)
+
+  complexes.map{ |c| Truffle::Interop.read_property(c, :real) }.inject(&:+)
 end
 
 Truffle::Interop.export_method(:complex_sum_real)
 
 def complex_copy(a, b)
-  n = 0
-  while n < Truffle::Interop.size(a)
-    x = Truffle::Interop.read_property(a, n)
-    y = Truffle::Interop.read_property(b, n)
+  a = Truffle::Interop.enumerable(a)
+  b = Truffle::Interop.enumerable(b)
+
+  # TODO CS 21-Dec-15
+  # If we don't force b to an array here, the zip below will try to iterate both a and b at the same time. It can't do
+  # that with Ruby blocks, so it creates a Fiber (a Java thread) to do it using two separate call stacks. That causes
+  # com.oracle.truffle.api.interop.ForeignAccess.checkThread(ForeignAccess.java:133) to fail. What do we do about this?
+  b = b.to_a
+
+  a.zip(b).each do |x, y|
     Truffle::Interop.write_property x, :imaginary, Truffle::Interop.read_property(y, :imaginary)
     Truffle::Interop.write_property x, :real, Truffle::Interop.read_property(y, :real)
-    n += 1
   end
 end
 

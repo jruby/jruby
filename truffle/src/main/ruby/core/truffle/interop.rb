@@ -24,6 +24,31 @@ module Truffle
       export(name.to_s, Object.method(name.to_sym))
     end
 
+    class ForeignEnumerable
+      include Enumerable
+
+      attr_reader :foreign
+
+      def initialize(foreign)
+        @foreign = foreign
+      end
+
+      def each
+        (0...size).each do |n|
+          yield foreign[n]
+        end
+      end
+
+      def size
+        Truffle::Interop.size(foreign)
+      end
+
+    end
+
+    def self.enumerable(foreign)
+      ForeignEnumerable.new(foreign)
+    end
+
   end
 
 end
