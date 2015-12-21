@@ -86,15 +86,25 @@ end
 Truffle::Interop.export_method(:complex_add)
 
 def complex_sum_real(complexes)
-  complexes.map(&:real).inject(&:+)
+  sum = 0
+  n = 0
+  while n < Truffle::Interop.size(complexes)
+    sum += Truffle::Interop.read_property(Truffle::Interop.read_property(complexes, n), :real)
+    n += 1
+  end
+  sum
 end
 
 Truffle::Interop.export_method(:complex_sum_real)
 
 def complex_copy(a, b)
-  a.zip(b) do |x, y|
-    x.imaginary = y.imaginary
-    x.real = y.real
+  n = 0
+  while n < Truffle::Interop.size(a)
+    x = Truffle::Interop.read_property(a, n)
+    y = Truffle::Interop.read_property(b, n)
+    Truffle::Interop.write_property x, :imaginary, Truffle::Interop.read_property(y, :imaginary)
+    Truffle::Interop.write_property x, :real, Truffle::Interop.read_property(y, :real)
+    n += 1
   end
 end
 

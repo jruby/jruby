@@ -37,6 +37,11 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected String mimeType() {
+        return RubyLanguage.MIME_TYPE;
+    }
+
+    @Override
     protected String plusInt() {
         return "plus_int";
     }
@@ -49,11 +54,6 @@ public class RubyTckTest extends TruffleTCK {
     @Override
     protected String fourtyTwo() {
         return "fourty_two";
-    }
-
-    @Override
-    protected String mimeType() {
-        return RubyLanguage.MIME_TYPE;
     }
 
     @Override
@@ -111,39 +111,4 @@ public class RubyTckTest extends TruffleTCK {
         return "complex_copy";
     }
 
-    @Override
-    public void testSumRealOfComplexNumbersAsStructuredDataRowBased() throws Exception {
-        // Ignored temporarily
-    }
-
-    @Override
-    public void testSumRealOfComplexNumbersA() throws Exception {
-        // Ignored temporarily
-    }
-
-    @Override
-    public void testSumRealOfComplexNumbersB() throws Exception {
-        // Ignored temporarily
-    }
-
-    @Override
-    public void testSumRealOfComplexNumbersAsStructuredDataColumnBased() throws Exception {
-        // Ignored temporarily
-    }
-
-    @Override
-    public void testCopyComplexNumbersA() throws Exception {
-        // Ignored temporarily
-    }
-
-    @Override
-    public void testCopyComplexNumbersB() throws Exception {
-        // Ignored temporarily
-    }
-
-    @Override
-    public void testCopyStructuredComplexToComplexNumbersA() throws Exception {
-        // Ignored temporarily
-    }
-
-    }
+}
