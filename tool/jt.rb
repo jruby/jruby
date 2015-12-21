@@ -18,6 +18,7 @@ JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
+JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 
 # wait for sub-processes to handle the interrupt
@@ -200,7 +201,7 @@ module Commands
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
     puts 'jt test                                        run all mri tests and specs'
-    puts 'jt test tck                                    run the Truffle Compatibility Kit tests'
+    puts 'jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests'
     puts 'jt test mri                                    run mri tests'
     puts 'jt test specs                                  run all specs'
     puts 'jt test specs fast                             run all specs except sub-processes, GC, sleep, ...'
@@ -346,7 +347,12 @@ module Commands
       test_mri
     when 'pe' then test_pe(*rest)
     when 'specs' then test_specs('run', *rest)
-    when 'tck' then test_tck
+    when 'tck' then
+      args = []
+      if rest.include? '--jdebug'
+        args << JDEBUG_TEST
+      end
+      test_tck *args
     when 'mri' then test_mri(*rest)
     else
       if File.expand_path(path).start_with?("#{JRUBY_DIR}/test")
@@ -406,8 +412,8 @@ module Commands
   end
   private :test_specs
 
-  def test_tck
-    mvn 'test'
+  def test_tck(*args)
+    mvn *args + ['test']
   end
   private :test_tck
 
