@@ -23,6 +23,8 @@ import static org.junit.Assert.*;
 
 public class RubyTckTest extends TruffleTCK {
 
+    private static PolyglotEngine engine;
+
     @Test
     public void checkVM() {
         PolyglotEngine engine = PolyglotEngine.newBuilder().build();
@@ -30,9 +32,12 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
-    protected PolyglotEngine prepareVM() throws Exception {
-        PolyglotEngine engine = PolyglotEngine.newBuilder().build();
-        engine.eval(Source.fromFileName("src/test/ruby/tck.rb"));
+    protected synchronized PolyglotEngine prepareVM() throws Exception {
+        if (engine == null) {
+            engine = PolyglotEngine.newBuilder().build();
+            engine.eval(Source.fromFileName("src/test/ruby/tck.rb"));
+        }
+
         return engine;
     }
 
@@ -109,6 +114,15 @@ public class RubyTckTest extends TruffleTCK {
     @Override
     protected String complexCopy() {
         return "complex_copy";
+    }
+
+    @Override
+    public void testCoExistanceOfMultipleLanguageInstances() throws Exception {
+        /*
+         * Not running this test as it clears the engine, but we're caching that globally to avoid creating tens of
+         * engines concurrently.
+         */
+
     }
 
 }
