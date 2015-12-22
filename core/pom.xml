@@ -207,11 +207,6 @@
       <artifactId>options</artifactId>
       <version>1.3</version>
     </dependency>
-    <dependency>
-      <groupId>com.boundary</groupId>
-      <artifactId>high-scale-lib</artifactId>
-      <version>1.0.6</version>
-    </dependency>
   </dependencies>
   <properties>
     <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
