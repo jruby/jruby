@@ -231,7 +231,7 @@ public class RubyServerSocket extends RubySocket {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, "bind", e);
+            handleSocketException(runtime, e, "bind(2)", iaddr);
         }
         catch (IOException e) {
             throw sockerr(runtime, "bind(2): name or service not known", e);

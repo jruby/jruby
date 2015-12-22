@@ -210,10 +210,11 @@ public class RubySocket extends RubyBasicSocket {
     public IRubyObject bind(ThreadContext context, IRubyObject arg) {
         final InetSocketAddress iaddr;
 
-        if (arg instanceof Addrinfo){
+        if (arg instanceof Addrinfo) {
             Addrinfo addr = (Addrinfo) arg;
             iaddr = new InetSocketAddress(addr.getInetAddress().getHostAddress(), addr.getPort());
-        } else {
+        }
+        else {
              iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
         }
 
@@ -531,7 +532,7 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, "connect", e);
+            handleSocketException(runtime, e, "connect(2)", addr);
         }
         catch (IOException e) {
             throw sockerr(runtime, "connect(2): name or service not known", e);
@@ -564,41 +565,53 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, "bind", e); // throws
+            handleSocketException(runtime, e, "bind(2)", iaddr); // throws
         }
         catch (IOException e) {
             throw sockerr(runtime, "bind(2): name or service not known", e);
         }
-        catch (IllegalArgumentException iae) {
-            throw SocketUtils.sockerr(runtime, iae.getMessage());
+        catch (IllegalArgumentException e) {
+            throw sockerr(runtime, e.getMessage(), e);
         }
     }
 
-    protected static void handleSocketException(Ruby runtime, String caller, SocketException e) {
-        final String msg = formatMessage(e, "bind");
-        // This is ugly, but what can we do, Java provides the same exception type
-        // for different situations, so we differentiate the errors
-        // based on the exception's message.
-        if (ALREADY_BOUND_PATTERN.matcher(msg).find()) {
-            throw runtime.newErrnoEINVALError(msg);
+    static void handleSocketException(final Ruby runtime, final SocketException ex,
+        final String caller, final SocketAddress addr) {
+
+        final String message = ex.getMessage();
+        if ( message != null ) {
+            switch ( message ) {
+                case "permission denied" :
+                case "Permission denied" :
+                    if ( addr == null ) {
+                        throw runtime.newErrnoEACCESError(caller + " - " + message);
+                    }
+                    throw runtime.newErrnoEACCESError("Address already in use - " + caller + " for " + formatAddress(addr));
+                case "Address already in use" :
+                    throw runtime.newErrnoEADDRINUSEError(caller + " for " + formatAddress(addr));
+            }
+
+            // This is ugly, but what can we do, Java provides the same exception type
+            // for different situations, so we differentiate the errors
+            // based on the exception's message.
+            if (ALREADY_BOUND_PATTERN.matcher(message).find()) {
+                throw runtime.newErrnoEINVALError(caller + " - " + message);
+            }
+            if (ADDR_NOT_AVAIL_PATTERN.matcher(message).find()) {
+                throw runtime.newErrnoEADDRNOTAVAILError(caller + " - " + message);
+            }
         }
-        if (ADDR_NOT_AVAIL_PATTERN.matcher(msg).find()) {
-            throw runtime.newErrnoEADDRNOTAVAILError(msg);
-        }
-        if (PERM_DENIED_PATTERN.matcher(msg).find()) {
-            throw runtime.newErrnoEACCESError(msg);
-        }
-        throw runtime.newErrnoEADDRINUSEError(msg);
+
+        throw runtime.newErrnoEADDRINUSEError(caller + " - " + message);
     }
 
-    private static String formatMessage(Throwable e, String defaultMsg) {
-        String msg = e.getMessage();
-        if (msg == null) {
-            msg = defaultMsg;
-        } else {
-            msg = defaultMsg + " - " + msg;
+    private static CharSequence formatAddress(final SocketAddress addr) {
+        if ( addr == null ) return null;
+        final String str = addr.toString();
+        if ( str.length() > 0 && str.charAt(0) == '/' ) {
+            return str.substring(1);
         }
-        return msg;
+        return str;
     }
 
     private SocketAddress addressForChannel(ThreadContext context, IRubyObject arg) {
@@ -626,7 +639,7 @@ public class RubySocket extends RubyBasicSocket {
 
     private static final Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");
     private static final Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
-    private static final Pattern PERM_DENIED_PATTERN = Pattern.compile("[Pp]ermission.*denied");
+    //private static final Pattern PERM_DENIED_PATTERN = Pattern.compile("[Pp]ermission.*denied");
 
     public static final int MSG_OOB = 0x1;
     public static final int MSG_PEEK = 0x2;

@@ -1,7 +1,6 @@
 exclude :test_accept_loop, "needs investigation"
 exclude :test_accept_loop_multi_port, "needs investigation"
 exclude :test_accept_loop_with_unix, "needs investigation"
-exclude :test_bind, "needs investigation"
 exclude :test_bind_in_rescue, "needs investigation"
 exclude :test_connect_in_rescue, "needs investigation"
 exclude :test_getaddrinfo, "needs investigation"
