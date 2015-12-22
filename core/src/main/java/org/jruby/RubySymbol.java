@@ -43,7 +43,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -519,11 +518,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             @Override
             public int getLine() {
                 return -1;
-            }
-
-            @Override
-            public ArgumentDescriptor[] getArgumentDescriptors() {
-                return ArgumentDescriptor.ANON_REST;
             }
         };
 
