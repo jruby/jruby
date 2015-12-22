@@ -2891,21 +2891,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // MRI: rb_io_sysread
     @JRubyMethod(name = "sysread", required = 1, optional = 1)
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        IRubyObject len, str;
-        OpenFile fptr;
-        int ilen, n;
-//        struct read_internal_arg arg;
+        final Ruby runtime = context.runtime;
 
-        len = args.length >= 1 ? args[0] : context.nil;
-        str = args.length >= 2 ? args[1] : context.nil;
-        ilen = RubyNumeric.num2int(len);
+        final int length = RubyNumeric.num2int(args.length >= 1 ? args[0] : context.nil);
+        RubyString str = EncodingUtils.setStrBuf(runtime, args.length >= 2 ? args[1] : context.nil, length);
+        if (length == 0) return str;
 
-        str = EncodingUtils.setStrBuf(runtime, str, (int)ilen);
-        if (ilen == 0) return str;
+        final OpenFile fptr = getOpenFileChecked();
 
-        fptr = getOpenFileChecked();
-
+        final int n;
         boolean locked = fptr.lock();
         try {
             fptr.checkByteReadable(context);
@@ -2926,23 +2920,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             fptr.checkClosed();
 
-            str = EncodingUtils.setStrBuf(runtime, str, ilen);
-            ByteList strByteList = ((RubyString) str).getByteList();
-            n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), ilen);
+            ByteList strByteList = str.getByteList();
+            n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), length);
 
             if (n == -1) {
                 throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
             }
-        } finally {
+        }
+        finally {
             if (locked) fptr.unlock();
         }
 
-        ((RubyString)str).setReadLength(n);
-        if (n == 0 && ilen > 0) {
-            throw runtime.newEOFError();
-        }
+        if (n == 0 && length > 0) throw runtime.newEOFError();
+        
+        str.setReadLength(n);
         str.setTaint(true);
-
         return str;
     }
 
@@ -4654,7 +4646,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return 1;
     }
 
-    private static final byte[] NEWLINE_BYTES = {(byte)'\n'};
+    private static final byte[] NEWLINE_BYTES = { (byte) '\n' };
 
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator) {
