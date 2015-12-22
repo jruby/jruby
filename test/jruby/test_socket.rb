@@ -174,6 +174,38 @@ class SocketTest < Test::Unit::TestCase
     assert_not_equal(server_socket.bind(addr1), nil)
     assert_not_equal(server_socket.listen(128), nil)
   end
+
+  def test_udp_socket_bind
+    begin
+      UDPSocket.new.bind nil, 42
+    rescue Errno::EACCES
+      # Permission denied - bind(2) for nil port 42
+    else; fail 'not raised'
+    end
+
+    #begin
+    #  UDPSocket.new.bind nil, nil
+    #rescue SocketError
+    #  # getaddrinfo: Name or service not known
+    #else; fail 'not raised'
+    #end
+
+    begin
+      socket = UDPSocket.new
+      socket.bind 0, 42
+    rescue Errno::EACCES
+      # Permission denied - bind(2) for 0 port 42
+    else; fail 'not raised'
+    end
+
+    begin
+      UDPSocket.new.bind "127.0.0.1", 191
+    rescue Errno::EACCES
+      # Permission denied - bind(2) for "127.0.0.1" port 191
+    else; fail 'not raised'
+    end
+  end
+
 end
 
 
@@ -476,7 +508,7 @@ class UNIXSocketTests < Test::Unit::TestCase
 
 class ServerTest < Test::Unit::TestCase
   include TestHelper
-  
+
   def test_server_close_interrupts_pending_accepts
     # unfortunately this test is going to not be 100% reliable
     # since it involves thread interaction and it's impossible to

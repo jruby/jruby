@@ -115,31 +115,33 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     @JRubyMethod
     public IRubyObject bind(ThreadContext context, IRubyObject host, IRubyObject _port) {
-        Ruby runtime = context.runtime;
-        InetSocketAddress addr = null;
+        final Ruby runtime = context.runtime;
 
+        final InetSocketAddress addr;
+        final int port = SocketUtils.portToInt(_port);
         try {
-            Channel channel = getChannel();
-            int port = SocketUtils.portToInt(_port);
+            final Channel channel = getChannel();
 
-            if (host.isNil()
-                || ((host instanceof RubyString)
-                && ((RubyString) host).isEmpty())) {
-
+            if ( host.isNil() ||
+                 ( (host instanceof RubyString) && ((RubyString) host).isEmpty() ) ) {
                 // host is nil or the empty string, bind to INADDR_ANY
                 addr = new InetSocketAddress(port);
-
-            } else if (host instanceof RubyFixnum) {
-
+            }
+            else if (host instanceof RubyFixnum) {
                 // passing in something like INADDR_ANY
-                int intAddr = RubyNumeric.fix2int(host);
-                RubyModule socketMod = runtime.getModule("Socket");
-                if (intAddr == RubyNumeric.fix2int(socketMod.getConstant("INADDR_ANY"))) {
+                final int intAddr = RubyNumeric.fix2int(host);
+                final RubyModule Socket = runtime.getModule("Socket");
+                if (intAddr == RubyNumeric.fix2int(Socket.getConstant("INADDR_ANY"))) {
                     addr = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), port);
                 }
-
-            } else {
-                // passing in something like INADDR_ANY
+                else {
+                    if (multicastStateManager == null) {
+                        throw runtime.newNotImplementedError("bind with host: " + intAddr);
+                    }
+                    else addr = null;
+                }
+            }
+            else {
                 addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), port);
             }
 
@@ -155,7 +157,14 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
         }
         catch (SocketException e) {
-            throw SocketUtils.sockerr(runtime, "bind: name or service not known");
+            final String message = e.getMessage();
+            if ( message != null ) {
+                switch ( message ) {
+                    case "Permission denied" :
+                        throw runtime.newErrnoEACCESError("bind(2) for " + host.inspect() + " port " + port);
+                }
+            }
+            throw sockerr(runtime, "bind: name or service not known", e);
         }
         catch (IOException e) {
             throw sockerr(runtime, "bind: name or service not known", e);
