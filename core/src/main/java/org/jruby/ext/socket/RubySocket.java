@@ -574,7 +574,7 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    protected void handleSocketException(Ruby runtime, String caller, SocketException e) {
+    protected static void handleSocketException(Ruby runtime, String caller, SocketException e) {
         final String msg = formatMessage(e, "bind");
         // This is ugly, but what can we do, Java provides the same exception type
         // for different situations, so we differentiate the errors
