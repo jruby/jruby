@@ -3582,6 +3582,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("ECONNREFUSED"), "Connection refused");
     }
 
+    public RaiseException newErrnoECONNREFUSEDError(String message) {
+        return newRaiseException(getErrno().getClass("ECONNREFUSED"), message);
+    }
+
     public RaiseException newErrnoECONNRESETError() {
         return newRaiseException(getErrno().getClass("ECONNRESET"), "Connection reset by peer");
     }

@@ -78,11 +78,11 @@ public class RubyTCPSocket extends RubyIPSocket {
     @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        IRubyObject _host = args[0];
-        IRubyObject _port = args[1];
+        IRubyObject host = args[0];
+        IRubyObject port = args[1];
 
-        String remoteHost = _host.isNil()? "localhost" : _host.convertToString().toString();
-        int remotePort = SocketUtils.getPortFrom(context, _port);
+        final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
+        final int remotePort = SocketUtils.getPortFrom(context, port);
 
         String localHost = (args.length >= 3 && !args[2].isNil()) ? args[2].convertToString().toString() : null;
         int localPort = (args.length == 4 && !args[3].isNil()) ? SocketUtils.getPortFrom(context, args[3]) : 0;
@@ -116,13 +116,13 @@ public class RubyTCPSocket extends RubyIPSocket {
                 success = true;
             }
             catch (BindException e) {
-            	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ':' + String.valueOf(remotePort));
+            	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ':' + remotePort);
             }
             catch (NoRouteToHostException e) {
                 throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
             }
             catch (ConnectException e) {
-                throw runtime.newErrnoECONNREFUSEDError();
+                throw runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect() + " port " + remotePort);
             }
             catch (UnknownHostException e) {
                 throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
@@ -132,12 +132,14 @@ public class RubyTCPSocket extends RubyIPSocket {
             throw runtime.newErrnoECONNREFUSEDError();
         }
         catch (BindException e) {
-            throw runtime.newErrnoEADDRFromBindException(e, " on: " + localHost + ':' + String.valueOf(localPort));
+            throw runtime.newErrnoEADDRFromBindException(e, " on: " + localHost + ':' + localPort);
         }
-        catch(IOException e) {
+        catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }
         catch (IllegalArgumentException e) {
+            // NOTE: MRI does -1 as SocketError but +65536 as ECONNREFUSED
+            // ... which JRuby does currently not blindly follow!
             throw sockerr(runtime, e.getMessage(), e);
         }
         finally {

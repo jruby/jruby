@@ -128,10 +128,25 @@ class SocketTest < Test::Unit::TestCase
 
   # JRUBY-2874
   def test_raises_socket_error_on_out_of_range_port
-    [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 -1].each do |port|
-      assert_raises(SocketError) do
-        TCPSocket.new('localhost', port)
-      end
+    port = -2**16
+    assert_raises(SocketError) { TCPSocket.new('localhost', port) }
+    # SocketError(<getaddrinfo: Servname not supported for ai_socktype>)
+
+    port = -2**8
+    assert_raises(SocketError) { TCPSocket.new('localhost', port) }
+    # SocketError(<getaddrinfo: Servname not supported for ai_socktype>)
+
+    port = -2
+    assert_raises(SocketError) { TCPSocket.new('localhost', port) }
+    # SocketError(<getaddrinfo: Servname not supported for ai_socktype>)
+
+    port = -1
+    assert_raises(SocketError) { TCPSocket.new('localhost', port) }
+    # SocketError(<getaddrinfo: Servname not supported for ai_socktype>)
+
+    error = defined?(JRUBY_VERSION) ? SocketError : Errno::ECONNREFUSED
+    [ 2**16, 2**16 + 1, 2**17, 2**30 - 1 ].each do |port|
+      assert_raises(error) { TCPSocket.new('localhost', port) }
     end
   end
 
@@ -178,8 +193,9 @@ class SocketTest < Test::Unit::TestCase
   def test_udp_socket_bind
     begin
       UDPSocket.new.bind nil, 42
-    rescue Errno::EACCES
+    rescue Errno::EACCES => e
       # Permission denied - bind(2) for nil port 42
+      assert_equal 'Permission denied - bind(2) for nil port 42', e.message
     else; fail 'not raised'
     end
 
@@ -202,6 +218,24 @@ class SocketTest < Test::Unit::TestCase
       UDPSocket.new.bind "127.0.0.1", 191
     rescue Errno::EACCES
       # Permission denied - bind(2) for "127.0.0.1" port 191
+    else; fail 'not raised'
+    end
+  end
+
+  def test_tcp_socket_errors
+    begin
+      TCPSocket.new('127.0.0.10', 42)
+    rescue Errno::ECONNREFUSED => e
+      # Connection refused - connect(2) for "127.0.0.1" port 42
+      assert_equal 'Connection refused - connect(2) for "127.0.0.10" port 42', e.message
+    else; fail 'not raised'
+    end
+
+    socket = TCPSocket.new('127.0.0.1', 22)
+    begin
+      socket.read_nonblock 100
+    rescue IO::EAGAINWaitReadable
+      # Resource temporarily unavailable - read would block
     else; fail 'not raised'
     end
   end
