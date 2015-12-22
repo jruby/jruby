@@ -2476,27 +2476,26 @@ assocs          : assoc {
 
 // Cons: [!null]
 assoc           : arg_value tASSOC arg_value {
-                    $$ = new KeyValuePair<Node,Node>($1, $3);
+                    $$ = support.createKeyValue($1, $3);
                 }
                 | tLABEL arg_value {
                     Node label = support.asSymbol(support.getPosition($2), $1);
-                    $$ = new KeyValuePair<Node,Node>(label, $2);
+                    $$ = support.createKeyValue(label, $2);
                 }
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
                     if ($2 instanceof StrNode) {
                         DStrNode dnode = new DStrNode(support.getPosition($2), lexer.getEncoding());
                         dnode.add($2);
-                        $$ = new KeyValuePair<Node,Node>(new DSymbolNode(support.getPosition($2), dnode), $4);
+                        $$ = support.createKeyValue(new DSymbolNode(support.getPosition($2), dnode), $4);
                     } else if ($2 instanceof DStrNode) {
-                        $$ = new KeyValuePair<Node,Node>(new DSymbolNode(support.getPosition($2), $<DStrNode>2), $4);
+                        $$ = support.createKeyValue(new DSymbolNode(support.getPosition($2), $<DStrNode>2), $4);
                     } else {
                         support.compile_error("Uknown type for assoc in strings: " + $2);
                     }
 
                 }
-
                 | tDSTAR arg_value {
-                    $$ = new KeyValuePair<Node,Node>(null, $2);
+                    $$ = support.createKeyValue(null, $2);
                 }
 
 operation       : tIDENTIFIER | tCONSTANT | tFID

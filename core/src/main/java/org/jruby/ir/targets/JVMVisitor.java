@@ -159,10 +159,13 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
             jvmStoreLocal(DYNAMIC_SCOPE);
         } else if (scope instanceof IRClosure) {
-            // just load scope from context
-            // FIXME: don't do this if we won't need the scope
-            jvmMethod().loadContext();
-            jvmAdapter().invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
+//            // just load scope from context
+//            // FIXME: don't do this if we won't need the scope
+//            jvmMethod().loadContext();
+//            jvmAdapter().invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
+
+            // just load null so it is initialized; if we need it, we'll set it later
+            jvmAdapter().aconst_null();
             jvmStoreLocal(DYNAMIC_SCOPE);
         }
 
@@ -730,6 +733,30 @@ public class JVMVisitor extends IRVisitor {
         visit(bundefinstr.getArg1());
         jvmMethod().pushUndefined();
         jvmAdapter().if_acmpeq(getJVMLabel(bundefinstr.getJumpTarget()));
+    }
+
+    @Override
+    public void BuildBackrefInstr(BuildBackrefInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "getBackRef", sig(IRubyObject.class));
+
+        switch (instr.type) {
+            case '&':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "last_match", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            case '`':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_pre", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            case '\'':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_post", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            case '+':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_last", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            default:
+                assert false: "backref with invalid type";
+        }
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -1439,6 +1466,15 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void PrepareNoBlockArgsInstr(PrepareNoBlockArgsInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelfBlock();
+        jvmMethod().loadArgs();
+        jvmMethod().invokeIRHelper("prepareNoBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class));
+        jvmMethod().storeArgs();
+    }
+
+    @Override
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) {
         jvmMethod().loadContext();
         visit(processmodulebodyinstr.getModuleBody());
@@ -1453,7 +1489,6 @@ public class JVMVisitor extends IRVisitor {
         // FIXME: Centralize this out of InterpreterContext
         boolean reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         boolean pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
-        boolean popDynScope = pushNewDynScope || reuseParentDynScope;
 
         jvmMethod().loadContext();
         jvmMethod().loadSelfBlock();
@@ -1693,8 +1728,15 @@ public class JVMVisitor extends IRVisitor {
     public void RestoreBindingVisibilityInstr(RestoreBindingVisibilityInstr instr) {
         jvmMethod().loadSelfBlock();
         jvmAdapter().invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
+        jvmAdapter().invokevirtual(p(Binding.class), "getFrame", sig(Frame.class));
         visit(instr.getVisibility());
-        jvmAdapter().invokevirtual(p(Binding.class), "setVisibility", sig(void.class, Visibility.class));
+        jvmAdapter().invokevirtual(p(Frame.class), "setVisibility", sig(void.class, Visibility.class));
+    }
+
+    @Override
+    public void RethrowSavedExcInLambdaInstr(RethrowSavedExcInLambdaInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().invokeIRHelper("rethrowSavedExcInLambda", sig(void.class, ThreadContext.class));
     }
 
     @Override
@@ -1810,7 +1852,8 @@ public class JVMVisitor extends IRVisitor {
     public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) {
         jvmMethod().loadSelfBlock();
         jvmAdapter().invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
-        jvmAdapter().invokevirtual(p(Binding.class), "getVisibility", sig(Visibility.class));
+        jvmAdapter().invokevirtual(p(Binding.class), "getFrame", sig(Frame.class));
+        jvmAdapter().invokevirtual(p(Frame.class), "getVisibility", sig(Visibility.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -2042,29 +2085,6 @@ public class JVMVisitor extends IRVisitor {
     public void AsString(AsString asstring) {
         visit(asstring.getSource());
         jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
-    }
-
-    @Override
-    public void Backref(Backref backref) {
-        jvmMethod().loadContext();
-        jvmAdapter().invokevirtual(p(ThreadContext.class), "getBackRef", sig(IRubyObject.class));
-
-        switch (backref.type) {
-            case '&':
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "last_match", sig(IRubyObject.class, IRubyObject.class));
-                break;
-            case '`':
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_pre", sig(IRubyObject.class, IRubyObject.class));
-                break;
-            case '\'':
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_post", sig(IRubyObject.class, IRubyObject.class));
-                break;
-            case '+':
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_last", sig(IRubyObject.class, IRubyObject.class));
-                break;
-            default:
-                assert false: "backref with invalid type";
-        }
     }
 
     @Override

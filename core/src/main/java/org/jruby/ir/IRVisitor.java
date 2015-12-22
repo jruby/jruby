@@ -41,6 +41,7 @@ public abstract class IRVisitor {
     public void BreakInstr(BreakInstr breakinstr) { error(breakinstr); }
     public void BTrueInstr(BTrueInstr btrueinstr) { error(btrueinstr); }
     public void BUndefInstr(BUndefInstr bundefinstr) { error(bundefinstr); }
+    public void BuildBackrefInstr(BuildBackrefInstr instr) { error(instr); }
     public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) { error(instr); }
     public void BuildCompoundStringInstr(BuildCompoundStringInstr instr) { error(instr); }
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) { error(instr); }
@@ -91,6 +92,7 @@ public abstract class IRVisitor {
     public void PrepareBlockArgsInstr(PrepareBlockArgsInstr instr) { error(instr); }
     public void PrepareFixedBlockArgsInstr(PrepareFixedBlockArgsInstr instr) { error(instr); }
     public void PrepareSingleBlockArgInstr(PrepareSingleBlockArgInstr instr) { error(instr); }
+    public void PrepareNoBlockArgsInstr(PrepareNoBlockArgsInstr instr) { error(instr); }
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) { error(processmodulebodyinstr); }
     public void PutClassVariableInstr(PutClassVariableInstr putclassvariableinstr) { error(putclassvariableinstr); }
     public void PutConstInstr(PutConstInstr putconstinstr) { error(putconstinstr); }
@@ -117,6 +119,7 @@ public abstract class IRVisitor {
     public void RestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restargmultipleasgninstr) { error(restargmultipleasgninstr); }
     public void RestoreBindingVisibilityInstr(RestoreBindingVisibilityInstr instr) { error(instr); }
     public void ReturnInstr(ReturnInstr returninstr) { error(returninstr); }
+    public void RethrowSavedExcInLambdaInstr(RethrowSavedExcInLambdaInstr instr) { error(instr); }
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
     public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) { error(instr); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }
@@ -154,7 +157,6 @@ public abstract class IRVisitor {
     // operands
     public void Array(Array array) { error(array); }
     public void AsString(AsString asstring) { error(asstring); }
-    public void Backref(Backref backref) { error(backref); }
     public void Bignum(Bignum bignum) { error(bignum); }
     public void Boolean(Boolean bool) { error(bool); }
     public void UnboxedBoolean(UnboxedBoolean bool) { error(bool); }

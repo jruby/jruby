@@ -25,6 +25,14 @@
     <Class name="org.jruby.truffle.format.parser.PackParser" />
   </Match>
 
+  <Match>
+    <Class name="org.jruby.truffle.format.parser.PrintfLexer" />
+  </Match>
+
+  <Match>
+    <Class name="org.jruby.truffle.format.parser.PrintfParser" />
+  </Match>
+
   <!-- Sometimes we really do want to exit - but we should rethink for multi-tennant -->
 
   <Match>

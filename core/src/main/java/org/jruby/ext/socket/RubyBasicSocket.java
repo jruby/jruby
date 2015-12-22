@@ -28,10 +28,6 @@
 
 package org.jruby.ext.socket;
 
-import static jnr.constants.platform.IPProto.IPPROTO_TCP;
-import static jnr.constants.platform.IPProto.IPPROTO_IP;
-import static jnr.constants.platform.TCP.TCP_NODELAY;
-
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
@@ -44,6 +40,9 @@ import java.nio.channels.SelectableChannel;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
+import jnr.constants.platform.SocketLevel;
+import jnr.constants.platform.SocketOption;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -64,14 +63,14 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 
-import jnr.constants.platform.SocketLevel;
-import jnr.constants.platform.SocketOption;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
+import static jnr.constants.platform.IPProto.IPPROTO_TCP;
+import static jnr.constants.platform.IPProto.IPPROTO_IP;
+import static jnr.constants.platform.TCP.TCP_NODELAY;
 
 /**
  * Implementation of the BasicSocket class from Ruby.
@@ -259,8 +258,6 @@ public class RubyBasicSocket extends RubyIO {
         SocketLevel level = levelFromArg(_level);
         SocketOption opt = optionFromArg(_opt);
 
-        int value = 0;
-
         try {
             Channel channel = getOpenChannel();
 
@@ -275,7 +272,7 @@ public class RubyBasicSocket extends RubyIO {
                     throw runtime.newErrnoENOPROTOOPTError();
                 }
 
-                value = SocketType.forChannel(channel).getSocketOption(channel, opt);
+                int value = SocketType.forChannel(channel).getSocketOption(channel, opt);
 
                 return new Option(runtime, ProtocolFamily.PF_INET, level, opt, value);
 

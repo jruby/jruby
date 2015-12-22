@@ -4,7 +4,6 @@ import org.jruby.RubyModule;
 import org.jruby.EvalType;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -21,6 +20,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private int callCount = 0;
     private InterpreterContext interpreterContext;
+    private InterpreterContext fullInterpreterContext;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
@@ -41,8 +41,10 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     @Override
     public void completeBuild(InterpreterContext interpreterContext) {
-        this.interpreterContext = interpreterContext;
-        hasCallProtocolIR = closure.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
+        this.fullInterpreterContext = interpreterContext;
+        // This enables IR & CFG to be dumped in debug mode
+        // when this updated code starts executing.
+        this.displayedCFG = false;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
         if (interpreterContext == null) {
             interpreterContext = closure.getInterpreterContext();
-            hasCallProtocolIR = false;
+            fullInterpreterContext = interpreterContext;
         }
         return interpreterContext;
     }
@@ -80,21 +82,34 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     }
 
     @Override
+    public boolean canCallDirect() {
+        return interpreterContext != null && interpreterContext.hasExplicitCallProtocol();
+    }
+
+    @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         context.setCurrentBlockType(Block.Type.PROC);
-        return Interpreter.INTERPRET_BLOCK(context, block, null, interpreterContext, args, block.getBinding().getMethod(), blockArg);
+        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, null, ic, args, block.getBinding().getMethod(), blockArg);
     }
 
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         context.setCurrentBlockType(Block.Type.NORMAL);
-        return Interpreter.INTERPRET_BLOCK(context, block, self, interpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
+        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+    @Override
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
         if (callCount >= 0) promoteToFullBuild(context);
 
         InterpreterContext ic = ensureInstrsReady();
+
+        // Update interpreter context for next time this block is executed
+        // This ensures that if we had determined canCallDirect() is false
+        // based on the old IC, we continue to execute with it.
+        interpreterContext = fullInterpreterContext;
 
         Binding binding = block.getBinding();
         Visibility oldVis = binding.getFrame().getVisibility();
@@ -111,13 +126,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
             context.pushScope(actualScope);
         }
 
-        // SSS FIXME: Why is self null in non-binding-eval contexts?
-        if (self == null || getEvalType() == EvalType.BINDING_EVAL) {
-            self = useBindingSelf(binding);
-        }
-
-        // Clear evaltype now that it has been set on dyn-scope
-        block.setEvalType(EvalType.NONE);
+        self = IRRuntimeHelpers.updateBlockState(block, self);
 
         try {
             return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);

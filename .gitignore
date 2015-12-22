@@ -13,6 +13,7 @@
 *.versionsBackup
 *.zip
 *~
+*.tokens
 
 .DS_Store
 .debug.properties

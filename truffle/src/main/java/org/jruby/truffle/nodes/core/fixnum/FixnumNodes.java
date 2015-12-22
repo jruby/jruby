@@ -1019,9 +1019,6 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "bit_length")
     public abstract static class BitLengthNode extends CoreMethodArrayArgumentsNode {
 
-        private static final int INT_BITS = Integer.numberOfLeadingZeros(0);
-        private static final int LONG_BITS = Long.numberOfLeadingZeros(0);
-
         public BitLengthNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1032,7 +1029,7 @@ public abstract class FixnumNodes {
                 n = ~n;
             }
 
-            return INT_BITS - Integer.numberOfLeadingZeros(n);
+            return Integer.SIZE - Integer.numberOfLeadingZeros(n);
         }
 
         @Specialization
@@ -1041,7 +1038,7 @@ public abstract class FixnumNodes {
                 n = ~n;
             }
 
-            return LONG_BITS - Long.numberOfLeadingZeros(n);
+            return Long.SIZE - Long.numberOfLeadingZeros(n);
         }
 
     }

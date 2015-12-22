@@ -53,7 +53,7 @@ public class LoadArgumentsTranslator extends Translator {
         }
     }
 
-    private final boolean isBlock;
+    private final boolean isProc;
     private final BodyTranslator methodBodyTranslator;
     private final Deque<ArraySlot> arraySlotStack = new ArrayDeque<>();
 
@@ -74,9 +74,9 @@ public class LoadArgumentsTranslator extends Translator {
 
     private org.jruby.ast.ArgsNode argsNode;
 
-    public LoadArgumentsTranslator(Node currentNode, RubyContext context, Source source, boolean isBlock, BodyTranslator methodBodyTranslator) {
+    public LoadArgumentsTranslator(Node currentNode, RubyContext context, Source source, boolean isProc, BodyTranslator methodBodyTranslator) {
         super(currentNode, context, source);
-        this.isBlock = isBlock;
+        this.isProc = isProc;
         this.methodBodyTranslator = methodBodyTranslator;
     }
 
@@ -214,7 +214,7 @@ public class LoadArgumentsTranslator extends Translator {
             return PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index);
         } else {
             if (state == State.PRE) {
-                return new ReadPreArgumentNode(context, sourceSection, index, isBlock ? MissingArgumentBehaviour.NIL : MissingArgumentBehaviour.RUNTIME_ERROR);
+                return new ReadPreArgumentNode(context, sourceSection, index, isProc ? MissingArgumentBehaviour.NIL : MissingArgumentBehaviour.RUNTIME_ERROR);
             } else if (state == State.POST) {
                 return new ReadPostArgumentNode(context, sourceSection, index);
             } else {

@@ -185,7 +185,7 @@ module Commands
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts '        --full      show all phases, not just up to the Truffle partial escape'
-    puts '    --jdebug        run a JDWP debug server on 8000'
+    puts '    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}'
     puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
@@ -201,7 +201,7 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt bench debug [--ruby-backtrace] benchmark    run a single benchmark with options for compiler debugging'
+    puts 'jt bench debug [--ruby-backtrace] [vm-args] benchmark    run a single benchmark with options for compiler debugging'
     puts 'jt bench reference [benchmarks]                run a set of benchmarks and record a reference point'
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
@@ -412,25 +412,35 @@ module Commands
   def bench(command, *args)
     bench_dir = Utilities.find_bench
     env_vars = {
-      "JRUBY_9000_DEV_DIR" => JRUBY_DIR,
+      "JRUBY_DEV_DIR" => JRUBY_DIR,
       "GRAAL_BIN" => Utilities.find_graal,
     }
-    bench_args = ["#{bench_dir}/bin/bench"]
+    bench_args = ["#{bench_dir}/bin/bench9000"]
     case command
     when 'debug'
+      vm_args = ['-G:+TraceTruffleCompilation', '-G:+DumpOnError']
       if args.delete '--ruby-backtrace'
-        compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreThrown"
+        vm_args.push '-G:+TruffleCompilationExceptionsAreThrown'
       else
-        compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreFatal"
+        vm_args.push '-G:+TruffleCompilationExceptionsAreFatal'
       end
-      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-G:+TraceTruffleCompilation -J-G:+DumpOnError -J-G:-GraphPE #{compilation_exceptions_behaviour}"})
-      bench_args += ['score', 'jruby-9000-dev-truffle-graal', '--show-commands', '--show-samples']
-      raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
+      remaining_args = []
+      args.each do |arg|
+        if arg.start_with? '-'
+          vm_args.push arg
+        else
+          remaining_args.push arg
+        end
+      end
+      env_vars["JRUBY_OPTS"] = vm_args.map{ |a| '-J' + a }.join(' ')
+      bench_args += ['score', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands', '--show-samples']
+      raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if remaining_args.size != 1
+      args = remaining_args
     when 'reference'
-      bench_args += ['reference', 'jruby-9000-dev-truffle-graal', '--show-commands']
+      bench_args += ['reference', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands']
       args << "5" if args.empty?
     when 'compare'
-      bench_args += ['compare-reference', 'jruby-9000-dev-truffle-graal']
+      bench_args += ['compare-reference', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal']
       args << "5" if args.empty?
     else
       raise ArgumentError, command

@@ -23,8 +23,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod
-            // SSS: Turning this off till this is fully debugged
-            // || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
+            || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
             || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
     }
 
@@ -46,11 +45,15 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
     }
 
-    private void popSavedState(IRScope scope, boolean requireBinding, boolean requireFrame, Variable savedViz, Variable savedFrame, ListIterator<Instr> instrs) {
+    private void popSavedState(IRScope scope, boolean isGEB, boolean requireBinding, boolean requireFrame, Variable savedViz, Variable savedFrame, ListIterator<Instr> instrs) {
+        if (scope instanceof IRClosure && isGEB) {
+            // Add before RethrowSavedExcInLambdaInstr
+            instrs.previous();
+        }
         if (requireBinding) instrs.add(new PopBindingInstr());
         if (scope instanceof IRClosure) {
-            instrs.add(new PopBlockFrameInstr(savedFrame));
             instrs.add(new RestoreBindingVisibilityInstr(savedViz));
+            instrs.add(new PopBlockFrameInstr(savedFrame));
         } else {
             if (requireFrame) instrs.add(new PopMethodFrameInstr());
         }
@@ -92,24 +95,34 @@ public class AddCallProtocolInstructions extends CompilerPass {
             if (scope instanceof IRClosure) {
                 savedViz = scope.createTemporaryVariable();
                 savedFrame = scope.createTemporaryVariable();
-                entryBB.insertInstr(0, new SaveBindingVisibilityInstr(savedViz));
-                entryBB.insertInstr(1, new PushBlockFrameInstr(savedFrame, scope.getName()));
-                entryBB.insertInstr(2, new UpdateBlockExecutionStateInstr(Self.SELF));
-                if (requireBinding) entryBB.insertInstr(3, new PushBlockBindingInstr());
+
+                { // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
+                    int insertIndex = 0;
+                    entryBB.insertInstr(insertIndex++, new SaveBindingVisibilityInstr(savedViz));
+                    entryBB.insertInstr(insertIndex++, new PushBlockFrameInstr(savedFrame, scope.getName()));
+
+                    // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
+                    if (requireBinding) {
+                        entryBB.insertInstr(insertIndex++, new PushBlockBindingInstr());
+                    }
+                    entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
+                }
+
                 Signature sig = ((IRClosure)scope).getSignature();
 
-                // If it doesn't need any args, no arg preparation involved!
+                // Add the right kind of arg preparation instruction
                 int arityValue = sig.arityValue();
-                if (arityValue != 0) {
-                    // Add the right kind of arg preparation instruction
+                if (arityValue == 0) {
+                    entryBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
+                } else {
                     if (sig.isFixed()) {
                         if (arityValue == 1) {
-                            entryBB.addInstr(new PrepareSingleBlockArgInstr());
+                            entryBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
                         } else {
-                            entryBB.addInstr(new PrepareFixedBlockArgsInstr());
+                            entryBB.addInstr(PrepareFixedBlockArgsInstr.INSTANCE);
                         }
                     } else {
-                        entryBB.addInstr(new PrepareBlockArgsInstr(Operation.PREPARE_BLOCK_ARGS));
+                        entryBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
                     }
                 }
             } else {
@@ -143,7 +156,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         instrs.previous();
-                        popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                        popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                         if (bb == geb) gebProcessed = true;
                         break;
                     }
@@ -155,23 +168,16 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         instrs.previous();
                     }
-                    popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                    popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                     if (bb == geb) gebProcessed = true;
-                }
-
-                if (!gebProcessed && bb == geb) {
+                } else if (!gebProcessed && bb == geb) {
                     // Add before throw-exception-instr which would be the last instr
                     if (i != null) {
                         // Assumption: Last instr should always be a control-transfer instruction
                         assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + scope + " is " + i + ", not a control-xfer instruction";
                         instrs.previous();
                     }
-
-                    // SSS FIXME: This is totally broken for lambdas
-                    //
-                    // handleBreakAndReturnsInLambdas would have executed by this point,
-                    // and it might have raised an exception which would totally skip these pops.
-                    popSavedState(scope, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                    popSavedState(scope, true, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                 }
             }
         }
