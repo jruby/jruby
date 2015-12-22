@@ -27,8 +27,10 @@ env:
   matrix:
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
+    - PHASE='-Prake -Dtask=test:jruby:fullint'
     - PHASE='-Prake -Dtask=test:jruby:jit'
     - PHASE='-Prake -Dtask=test:mri'
+    - PHASE='-Prake -Dtask=test:mri:fullint'
     - PHASE='-Prake -Dtask=test:mri:jit'
     - PHASE='-Prake -Dtask=test:slow_suites'
     - PHASE='-Prake -Dtask=test:tracing'
