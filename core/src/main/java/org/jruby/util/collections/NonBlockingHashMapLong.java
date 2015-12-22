@@ -8,7 +8,6 @@ import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -82,36 +81,67 @@ public class NonBlockingHashMapLong<TypeV>
 
   private static final int REPROBE_LIMIT = 10; // Too many reprobes then force a table-resize
 
+  private static final Unsafe _unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
   // --- Bits to allow Unsafe access to arrays
-  private static final Unsafe _unsafe = UtilUnsafe.getUnsafe();
-  private static final int _Obase  = _unsafe.arrayBaseOffset(Object[].class);
-  private static final int _Oscale = _unsafe.arrayIndexScale(Object[].class);
-  private static long rawIndex(final Object[] ary, final int idx) {
-    assert idx >= 0 && idx < ary.length;
-    return _Obase + idx * _Oscale;
-  }
-  private static final int _Lbase  = _unsafe.arrayBaseOffset(long[].class);
-  private static final int _Lscale = _unsafe.arrayIndexScale(long[].class);
-  private static long rawIndex(final long[] ary, final int idx) {
-    assert idx >= 0 && idx < ary.length;
-    return _Lbase + idx * _Lscale;
-  }
-
+  private static final int _Obase;
+  private static final int _Oscale;
+  private static final int _Lbase;
+  private static final int _Lscale;
   // --- Bits to allow Unsafe CAS'ing of the CHM field
-  private static final long _chm_offset;
-  private static final long _val_1_offset;
-  static {                      // <clinit>
-    Field f = null;
-    try { f = NonBlockingHashMapLong.class.getDeclaredField("_chm"); }
-    catch( java.lang.NoSuchFieldException e ) { throw new RuntimeException(e); }
-    _chm_offset = _unsafe.objectFieldOffset(f);
+  //private static final long _chm_offset;
+  //private static final long _val_1_offset;
 
-    try { f = NonBlockingHashMapLong.class.getDeclaredField("_val_1"); }
-    catch( java.lang.NoSuchFieldException e ) { throw new RuntimeException(e); }
-    _val_1_offset = _unsafe.objectFieldOffset(f);
+  static {
+      if ( _unsafe != null ) {
+        _Obase  = _unsafe.arrayBaseOffset(Object[].class);
+        _Oscale = _unsafe.arrayIndexScale(Object[].class);
+        _Lbase  = _unsafe.arrayBaseOffset(long[].class);
+        _Lscale = _unsafe.arrayIndexScale(long[].class);
+
+        //Field f; long offset;
+        //try {
+        //    f = NonBlockingHashMapLong.class.getDeclaredField("_chm");
+        //    offset = _unsafe.objectFieldOffset(f);
+        //}
+        //catch ( java.lang.NoSuchFieldException e ) { offset = 0; }
+        //_chm_offset = offset;
+        //try {
+        //    f = NonBlockingHashMapLong.class.getDeclaredField("_val_1");
+        //    offset = _unsafe.objectFieldOffset(f);
+        //}
+        //catch( java.lang.NoSuchFieldException e ) { offset = 0; }
+        //_val_1_offset = offset;
+      }
+      else {
+        _Obase = _Oscale = _Lbase = _Lscale = 0;
+        //_chm_offset = _val_1_offset = 0;
+      }
   }
-  private final boolean CAS( final long offset, final Object old, final Object nnn ) {
-    return _unsafe.compareAndSwapObject(this, offset, old, nnn );
+
+  //private final boolean CAS( final long offset, final Object old, final Object nnn ) {
+  //  return _unsafe.compareAndSwapObject(this, offset, old, nnn );
+  //}
+
+  private static final AtomicReferenceFieldUpdater<NonBlockingHashMapLong, CHM> _chmUpdater =
+      AtomicReferenceFieldUpdater.newUpdater(NonBlockingHashMapLong.class, CHM.class, "_chm");
+
+  private final boolean CAS_chm( final CHM old, final CHM nnn ) {
+      return _chmUpdater.compareAndSet(this, old, nnn);
+      //final long offset = _chm_offset;
+      //return offset != 0 ?
+          //_unsafe.compareAndSwapObject(this, offset, old, nnn ) :
+            //CAS_chmFallback(old, nnn);
+  }
+
+  private static final AtomicReferenceFieldUpdater<NonBlockingHashMapLong, Object> _val_1Updater =
+      AtomicReferenceFieldUpdater.newUpdater(NonBlockingHashMapLong.class, Object.class, "_val_1");
+
+  private final boolean CAS_val_1( final Object old, final Object nnn ) {
+      return _val_1Updater.compareAndSet(this, old, nnn);
+      //final long offset = _val_1_offset;
+      //return offset != 0 ?
+          //_unsafe.compareAndSwapObject(this, offset, old, nnn ) :
+            //CAS_val_1Fallback(old, nnn);
   }
 
   // --- Adding a 'prime' bit onto Values via wrapping with a junk wrapper class
@@ -299,7 +329,7 @@ public class NonBlockingHashMapLong<TypeV>
           curVal == oldVal ||       // No instant match already?
           (oldVal == MATCH_ANY && curVal != TOMBSTONE) ||
           oldVal.equals(curVal) )   // Expensive equals check
-        CAS(_val_1_offset,curVal,newVal); // One shot CAS update attempt
+        CAS_val_1(curVal, newVal); // One shot CAS update attempt
       return curVal == TOMBSTONE ? null : (TypeV)curVal; // Return the last value present
     }
     final Object res = _chm.putIfMatch( key, newVal, oldVal );
@@ -311,8 +341,8 @@ public class NonBlockingHashMapLong<TypeV>
   /** Removes all of the mappings from this map. */
   public void clear() {         // Smack a new empty table down
     CHM newchm = new CHM(this,new Counter(),MIN_SIZE_LOG);
-    while( !CAS(_chm_offset,_chm,newchm) ) ; // Spin until the clear works
-    CAS(_val_1_offset,_val_1,TOMBSTONE);
+    while( !CAS_chm(_chm, newchm) ) ; // Spin until the clear works
+    CAS_val_1(_val_1, TOMBSTONE);
   }
 
   /** Returns <tt>true</tt> if this Map maps one or more keys to the specified
@@ -439,11 +469,37 @@ public class NonBlockingHashMapLong<TypeV>
 
     // --- key,val -------------------------------------------------------------
     // Access K,V for a given idx
-    private final boolean CAS_key( int idx, long   old, long   key ) {
-      return _unsafe.compareAndSwapLong  ( _keys, rawIndex(_keys, idx), old, key );
+    private final boolean CAS_key( int idx, long old, long key ) {
+        assert idx >= 0 && idx < _keys.length;
+        if ( _unsafe != null ) {
+            final int rawIndex = _Lbase + idx * _Lscale;
+            return _unsafe.compareAndSwapLong( _keys, rawIndex, old, key );
+        }
+        return CAS_keyFallback( idx, old, key );
+    }
+    private final boolean CAS_keyFallback( int idx, long old, long key ) {
+        final long[] keys = this._keys;
+        synchronized ( keys ) { // TODO: not really same atomic semantics!
+            if ( keys[idx] != old ) return false;
+            keys[idx] = key;
+        }
+        return true;
     }
     private final boolean CAS_val( int idx, Object old, Object val ) {
-      return _unsafe.compareAndSwapObject( _vals, rawIndex(_vals, idx), old, val );
+        assert idx >= 0 && idx < _vals.length;
+        if ( _unsafe != null ) {
+            final int rawIndex = _Obase + idx * _Oscale;
+            return _unsafe.compareAndSwapObject( _vals, rawIndex, old, val );
+        }
+        return CAS_valFallback( idx, old, val );
+    }
+    private final boolean CAS_valFallback( int idx, Object old, Object val ) {
+        final Object[] vals = this._vals;
+        synchronized ( vals ) { // TODO: not really same atomic semantics!
+            if ( vals[idx] != old ) return false;
+            vals[idx] = val;
+        }
+        return true;
     }
 
     final long   [] _keys;
@@ -866,7 +922,7 @@ public class NonBlockingHashMapLong<TypeV>
       if( nowDone == oldlen &&   // Ready to promote this table?
           _nbhml._chm == this && // Looking at the top-level table?
           // Attempt to promote
-          _nbhml.CAS(_chm_offset,this,_newchm) ) {
+          _nbhml.CAS_chm(this, _newchm) ) {
         _nbhml._last_resize_milli = System.currentTimeMillis();  // Record resize time for next check
         //long nano = System.nanoTime();
         //System.out.println(" "+nano+" Promote table "+oldlen+" to "+_newchm._keys.length);
@@ -1319,15 +1375,35 @@ class ConcurrentAutoTable implements Serializable {
   private static class CAT implements Serializable {
 
     // Unsafe crud: get a function which will CAS arrays
-    private static final Unsafe _unsafe = UtilUnsafe.getUnsafe();
-    private static final int _Lbase  = _unsafe.arrayBaseOffset(long[].class);
-    private static final int _Lscale = _unsafe.arrayIndexScale(long[].class);
-    private static long rawIndex(long[] ary, int i) {
-      assert i >= 0 && i < ary.length;
-      return _Lbase + i * _Lscale;
+    private static final Unsafe _unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
+
+    private static final int _Lbase;
+    private static final int _Lscale;
+    static {
+        if ( _unsafe != null ) {
+            _Lbase  = _unsafe.arrayBaseOffset(long[].class);
+            _Lscale = _unsafe.arrayIndexScale(long[].class);
+        }
+        else {
+            _Lbase = _Lscale = 0;
+        }
     }
+
     private final static boolean CAS( long[] A, int idx, long old, long nnn ) {
-      return _unsafe.compareAndSwapLong( A, rawIndex(A,idx), old, nnn );
+        assert idx >= 0 && idx < A.length;
+        if ( _unsafe != null ) {
+            final int rawIndex = _Lbase + idx * _Lscale;
+            return _unsafe.compareAndSwapLong( A, rawIndex, old, nnn );
+        }
+        return CASnoUnsafe(A, idx, old, nnn);
+    }
+
+    private final static boolean CASnoUnsafe( long[] A, int idx, long old, long nnn ) {
+        synchronized ( A ) { // TODO: not really same atomic semantics!
+            if ( A[idx] != old ) return false;
+            A[idx] = nnn;
+        }
+        return true;
     }
 
     volatile long _resizers;    // count of threads attempting a resize
