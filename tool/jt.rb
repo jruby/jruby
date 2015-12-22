@@ -201,7 +201,7 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt bench debug [--ruby-backtrace] benchmark    run a single benchmark with options for compiler debugging'
+    puts 'jt bench debug [--ruby-backtrace] [vm-args] benchmark    run a single benchmark with options for compiler debugging'
     puts 'jt bench reference [benchmarks]                run a set of benchmarks and record a reference point'
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
@@ -418,13 +418,24 @@ module Commands
     bench_args = ["#{bench_dir}/bin/bench9000"]
     case command
     when 'debug'
+      vm_args = ['-G:+TraceTruffleCompilation', '-G:+DumpOnError']
       if args.delete '--ruby-backtrace'
-        compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreThrown"
+        vm_args.push '-G:+TruffleCompilationExceptionsAreThrown'
       else
-        compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreFatal"
+        vm_args.push '-G:+TruffleCompilationExceptionsAreFatal'
       end
+      remaining_args = []
+      args.each do |arg|
+        if arg.start_with? '-'
+          vm_args.push arg
+        else
+          remaining_args.push arg
+        end
+      end
+      env_vars["JRUBY_OPTS"] = vm_args.map{ |a| '-J' + a }.join(' ')
       bench_args += ['score', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands', '--show-samples']
-      raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
+      raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if remaining_args.size != 1
+      args = remaining_args
     when 'reference'
       bench_args += ['reference', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands']
       args << "5" if args.empty?
