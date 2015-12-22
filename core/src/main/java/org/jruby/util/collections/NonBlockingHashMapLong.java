@@ -152,10 +152,10 @@ public class NonBlockingHashMapLong<TypeV>
   }
 
   // --- The Hash Table --------------------
-  private transient CHM _chm;
+  private transient volatile CHM _chm;
   // This next field holds the value for Key 0 - the special key value which
   // is the initial array value, and also means: no-key-inserted-yet.
-  private transient Object _val_1; // Value for Key: NO_KEY
+  private transient volatile Object _val_1; // Value for Key: NO_KEY
 
   // Time since last resize
   private transient long _last_resize_milli;
@@ -448,7 +448,7 @@ public class NonBlockingHashMapLong<TypeV>
     private static final AtomicReferenceFieldUpdater<CHM,CHM> _newchmUpdater =
       AtomicReferenceFieldUpdater.newUpdater(CHM.class,CHM.class, "_newchm");
     // Set the _newchm field if we can.  AtomicUpdaters do not fail spuriously.
-    boolean CAS_newchm( CHM newchm ) {
+    final boolean CAS_newchm( CHM newchm ) {
       return _newchmUpdater.compareAndSet(this,null,newchm);
     }
     // Sometimes many threads race to create a new very large table.  Only 1
