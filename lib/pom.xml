@@ -175,12 +175,6 @@ DO NOT MODIFIY - GENERATED CODE
       </exclusions>
     </dependency>
   </dependencies>
-  <repositories>
-    <repository>
-      <id>gem-staging</id>
-      <url>http://oss.sonatype.org/content/repositories/staging</url>
-    </repository>
-  </repositories>
   <build>
     <resources>
       <resource>
