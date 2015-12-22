@@ -529,6 +529,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             public int getLine() {
                 return -1;
             }
+
+            @Override
+            public String[] getParameterList() {
+                return ANON_REST_PARAMETER_LIST;
+            }
         };
 
         return RubyProc.newProc(context.runtime,

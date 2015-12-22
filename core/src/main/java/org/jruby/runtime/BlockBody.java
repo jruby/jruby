@@ -53,6 +53,7 @@ public abstract class BlockBody {
     public static final int SINGLE_RESTARG = 3;
 
     public static final String[] EMPTY_PARAMETER_LIST = new String[0];
+    public static final String[] ANON_REST_PARAMETER_LIST = {"r"};
     
     protected final int argumentType;
 
