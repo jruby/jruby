@@ -162,6 +162,7 @@ public class NonBlockingHashMapLong<TypeV>
 
   // --- dump ----------------------------------------------------------------
   /** Verbose printout of table internals, useful for debugging.  */
+  /*
   public final void print() {
     System.out.println("=========");
     print_impl(-99,NO_KEY,_val_1);
@@ -173,18 +174,7 @@ public class NonBlockingHashMapLong<TypeV>
     Object V2 = Prime.unbox(V);
     String VS = (V2 == TOMBSTONE) ? "tombstone" : V2.toString();
     System.out.println("["+i+"]=("+K+","+p+VS+")");
-  }
-
-  private final void print2() {
-    System.out.println("=========");
-    print2_impl(-99,NO_KEY,_val_1);
-    _chm.print();
-    System.out.println("=========");
-  }
-  private static final void print2_impl(final int i, final long K, final Object V) {
-    if( V != null && Prime.unbox(V) != TOMBSTONE )
-      print_impl(i,K,V);
-  }
+  } */
 
   // Count of reprobes
   private transient Counter _reprobes = new Counter();
@@ -321,8 +311,7 @@ public class NonBlockingHashMapLong<TypeV>
   /** Removes all of the mappings from this map. */
   public void clear() {         // Smack a new empty table down
     CHM newchm = new CHM(this,new Counter(),MIN_SIZE_LOG);
-    while( !CAS(_chm_offset,_chm,newchm) ) // Spin until the clear works
-      ;
+    while( !CAS(_chm_offset,_chm,newchm) ) ; // Spin until the clear works
     CAS(_val_1_offset,_val_1,TOMBSTONE);
   }
 
@@ -370,14 +359,14 @@ public class NonBlockingHashMapLong<TypeV>
   /** Auto-boxing version of {@link #containsKey(long)}. */
   public boolean containsKey( Object key          ) { return (key instanceof Long) ? containsKey(((Long)key).longValue()) : false; }
   /** Auto-boxing version of {@link #putIfAbsent}. */
-  public TypeV   putIfAbsent( Long key, TypeV val ) { return putIfAbsent( ((Long)key).longValue(), val ); }
+  public TypeV   putIfAbsent( Long key, TypeV val ) { return putIfAbsent( key.longValue(), val ); }
   /** Auto-boxing version of {@link #replace}. */
-  public TypeV   replace( Long key, TypeV Val     ) { return replace(((Long)key).longValue(), Val);  }
+  public TypeV   replace( Long key, TypeV Val     ) { return replace( key.longValue(), Val );  }
   /** Auto-boxing version of {@link #put}. */
-  public TypeV   put    ( Long key, TypeV val     ) { return put(key.longValue(),val); }
+  public TypeV   put    ( Long key, TypeV val     ) { return put( key.longValue(), val ); }
   /** Auto-boxing version of {@link #replace}. */
   public boolean replace( Long key, TypeV oldValue, TypeV newValue ) {
-    return replace(((Long)key).longValue(), oldValue, newValue);
+    return replace( key.longValue(), oldValue, newValue );
   }
 
   // --- help_copy -----------------------------------------------------------
@@ -470,6 +459,7 @@ public class NonBlockingHashMapLong<TypeV>
     }
 
     // --- print innards
+    /*
     private final void print() {
       for( int i=0; i<_keys.length; i++ ) {
         long K = _keys[i];
@@ -481,21 +471,7 @@ public class NonBlockingHashMapLong<TypeV>
         System.out.println("----");
         newchm.print();
       }
-    }
-
-    // --- print only the live objects
-    private final void print2( ) {
-      for( int i=0; i<_keys.length; i++ ) {
-        long K = _keys[i];
-        if( K != NO_KEY )       // key is sane
-          print2_impl(i,K,_vals[i]);
-      }
-      CHM newchm = _newchm;     // New table, if any
-      if( newchm != null ) {
-        System.out.println("----");
-        newchm.print2();
-      }
-    }
+    } */
 
     // --- get_impl ----------------------------------------------------------
     // Never returns a Prime nor a Tombstone.
@@ -967,7 +943,7 @@ public class NonBlockingHashMapLong<TypeV>
 
 
   // --- Snapshot ------------------------------------------------------------
-  private class SnapshotV implements Iterator<TypeV>, Enumeration<TypeV> {
+  private final class SnapshotV implements Iterator<TypeV>, Enumeration<TypeV> {
     final CHM _sschm;
     public SnapshotV() {
       CHM topchm;
@@ -1059,7 +1035,7 @@ public class NonBlockingHashMapLong<TypeV>
   /** A class which implements the {@link Iterator} and {@link Enumeration}
    *  interfaces, generified to the {@link Long} class and supporting a
    *  <strong>non-auto-boxing</strong> {@link #nextLong} function.  */
-  public class IteratorLong implements LongIterator, Enumeration<Long> {
+  public class IteratorLong implements Iterator<Long>, Enumeration<Long> {
     private final SnapshotV _ss;
     /** A new IteratorLong */
     public IteratorLong() { _ss = new SnapshotV(); }
@@ -1194,3 +1170,281 @@ public class NonBlockingHashMapLong<TypeV>
   }
 
 }  // End NonBlockingHashMapLong class
+
+
+/**
+ * A simple high-performance counter.  Merely renames the extended {@link
+ * org.cliffc.high_scale_lib.ConcurrentAutoTable} class to be more obvious.
+ * {@link org.cliffc.high_scale_lib.ConcurrentAutoTable} already has a decent
+ * counting API.
+ *
+ * @since 1.5
+ * @author Cliff Click
+ */
+final class Counter extends ConcurrentAutoTable { }
+
+/**
+ * An auto-resizing table of {@code longs}, supporting low-contention CAS
+ * operations.  Updates are done with CAS's to no particular table element.
+ * The intent is to support highly scalable counters, r/w locks, and other
+ * structures where the updates are associative, loss-free (no-brainer), and
+ * otherwise happen at such a high volume that the cache contention for
+ * CAS'ing a single word is unacceptable.
+ *
+ * <p>This API is overkill for simple counters (e.g. no need for the 'mask')
+ * and is untested as an API for making a scalable r/w lock and so is likely
+ * to change!
+ *
+ * @since 1.5
+ * @author Cliff Click
+ */
+class ConcurrentAutoTable implements Serializable {
+
+  // --- public interface ---
+
+  /**
+   * Add the given value to current counter value.  Concurrent updates will
+   * not be lost, but addAndGet or getAndAdd are not implemented because the
+   * total counter value (i.e., {@link #get}) is not atomically updated.
+   * Updates are striped across an array of counters to avoid cache contention
+   * and has been tested with performance scaling linearly up to 768 CPUs.
+   */
+  public void add( long x ) { add_if_mask(  x,0); }
+  /** {@link #add} with -1 */
+  public void decrement()   { add_if_mask(-1L,0); }
+  /** {@link #add} with +1 */
+  public void increment()   { add_if_mask( 1L,0); }
+
+  /** Atomically set the sum of the striped counters to specified value.
+   *  Rather more expensive than a simple store, in order to remain atomic.
+   */
+  public void set( long x ) {
+    CAT newcat = new CAT(null,4,x);
+    // Spin until CAS works
+    while( !CAS_cat(_cat,newcat) );
+  }
+
+  /**
+   * Current value of the counter.  Since other threads are updating furiously
+   * the value is only approximate, but it includes all counts made by the
+   * current thread.  Requires a pass over the internally striped counters.
+   */
+  public long get()       { return      _cat.sum(0); }
+  /** Same as {@link #get}, included for completeness. */
+  public int  intValue()  { return (int)_cat.sum(0); }
+  /** Same as {@link #get}, included for completeness. */
+  public long longValue() { return      _cat.sum(0); }
+
+  /**
+   * A cheaper {@link #get}.  Updated only once/millisecond, but as fast as a
+   * simple load instruction when not updating.
+   */
+  public long estimate_get( ) { return _cat.estimate_sum(0); }
+
+  /**
+   * Return the counter's {@code long} value converted to a string.
+   */
+  public String toString() { return _cat.toString(0); }
+
+  /**
+   * A more verbose print than {@link #toString}, showing internal structure.
+   * Useful for debugging.
+   */
+  /* public void print() { _cat.print(); } */
+
+  /**
+   * Return the internal counter striping factor.  Useful for diagnosing
+   * performance problems.
+   */
+  public int internal_size() { return _cat._t.length; }
+
+  // Only add 'x' to some slot in table, hinted at by 'hash', if bits under
+  // the mask are all zero.  The sum can overflow or 'x' can contain bits in
+  // the mask. Value is CAS'd so no counts are lost.  The CAS is retried until
+  // it succeeds or bits are found under the mask.  Returned value is the old
+  // value - which WILL have zero under the mask on success and WILL NOT have
+  // zero under the mask for failure.
+  private long add_if_mask( long x, long mask ) { return _cat.add_if_mask(x,mask,hash(),this); }
+
+  // The underlying array of concurrently updated long counters
+  private volatile CAT _cat = new CAT(null,4/*Start Small, Think Big!*/,0L);
+  private static final AtomicReferenceFieldUpdater<ConcurrentAutoTable,CAT> _catUpdater =
+    AtomicReferenceFieldUpdater.newUpdater(ConcurrentAutoTable.class,CAT.class, "_cat");
+  private boolean CAS_cat( CAT oldcat, CAT newcat ) { return _catUpdater.compareAndSet(this,oldcat,newcat); }
+
+  // Hash spreader
+  private static final int hash() {
+    int h = System.identityHashCode(Thread.currentThread());
+    // You would think that System.identityHashCode on the current thread
+    // would be a good hash fcn, but actually on SunOS 5.8 it is pretty lousy
+    // in the low bits.
+    h ^= (h>>>20) ^ (h>>>12);   // Bit spreader, borrowed from Doug Lea
+    h ^= (h>>> 7) ^ (h>>> 4);
+    return h<<2;                // Pad out cache lines.  The goal is to avoid cache-line contention
+  }
+
+  // --- CAT -----------------------------------------------------------------
+  private static class CAT implements Serializable {
+
+    // Unsafe crud: get a function which will CAS arrays
+    private static final Unsafe _unsafe = UtilUnsafe.getUnsafe();
+    private static final int _Lbase  = _unsafe.arrayBaseOffset(long[].class);
+    private static final int _Lscale = _unsafe.arrayIndexScale(long[].class);
+    private static long rawIndex(long[] ary, int i) {
+      assert i >= 0 && i < ary.length;
+      return _Lbase + i * _Lscale;
+    }
+    private final static boolean CAS( long[] A, int idx, long old, long nnn ) {
+      return _unsafe.compareAndSwapLong( A, rawIndex(A,idx), old, nnn );
+    }
+
+    volatile long _resizers;    // count of threads attempting a resize
+    static private final AtomicLongFieldUpdater<CAT> _resizerUpdater =
+      AtomicLongFieldUpdater.newUpdater(CAT.class, "_resizers");
+
+    private final CAT _next;
+    private volatile long _sum_cache;
+    private volatile long _fuzzy_sum_cache;
+    private volatile long _fuzzy_time;
+    private static final int MAX_SPIN=2;
+    private long[] _t;            // Power-of-2 array of longs
+
+    CAT( CAT next, int sz, long init ) {
+      _next = next;
+      _sum_cache = Long.MIN_VALUE;
+      _t = new long[sz];
+      _t[0] = init;
+    }
+
+    // Only add 'x' to some slot in table, hinted at by 'hash', if bits under
+    // the mask are all zero.  The sum can overflow or 'x' can contain bits in
+    // the mask.  Value is CAS'd so no counts are lost.  The CAS is attempted
+    // ONCE.
+    public long add_if_mask( long x, long mask, int hash, ConcurrentAutoTable master ) {
+      long[] t = _t;
+      int idx = hash & (t.length-1);
+      // Peel loop; try once fast
+      long old = t[idx];
+      boolean ok = CAS( t, idx, old&~mask, old+x );
+      if( _sum_cache != Long.MIN_VALUE )
+        _sum_cache = Long.MIN_VALUE; // Blow out cache
+      if( ok ) return old;      // Got it
+      if( (old&mask) != 0 ) return old; // Failed for bit-set under mask
+      // Try harder
+      int cnt=0;
+      while( true ) {
+        old = t[idx];
+        if( (old&mask) != 0 ) return old; // Failed for bit-set under mask
+        if( CAS( t, idx, old, old+x ) ) break; // Got it!
+        cnt++;
+      }
+      if( cnt < MAX_SPIN ) return old; // Allowable spin loop count
+      if( t.length >= 1024*1024 ) return old; // too big already
+
+      // Too much contention; double array size in an effort to reduce contention
+      long r = _resizers;
+      int newbytes = (t.length<<1)<<3/*word to bytes*/;
+      while( !_resizerUpdater.compareAndSet(this,r,r+newbytes) )
+        r = _resizers;
+      r += newbytes;
+      if( master._cat != this ) return old; // Already doubled, don't bother
+      if( (r>>17) != 0 ) {      // Already too much allocation attempts?
+        // TODO - use a wait with timeout, so we'll wakeup as soon as the new
+        // table is ready, or after the timeout in any case.  Annoyingly, this
+        // breaks the non-blocking property - so for now we just briefly sleep.
+        //synchronized( this ) { wait(8*megs); }         // Timeout - we always wakeup
+        try { Thread.sleep(r>>17); } catch( InterruptedException e ) { }
+        if( master._cat != this ) return old;
+      }
+
+      CAT newcat = new CAT(this,t.length*2,0);
+      // Take 1 stab at updating the CAT with the new larger size.  If this
+      // fails, we assume some other thread already expanded the CAT - so we
+      // do not need to retry until it succeeds.
+      master.CAS_cat(this,newcat);
+      return old;
+    }
+
+
+    // Return the current sum of all things in the table, stripping off mask
+    // before the add.  Writers can be updating the table furiously, so the
+    // sum is only locally accurate.
+    public long sum( long mask ) {
+      long sum = _sum_cache;
+      if( sum != Long.MIN_VALUE ) return sum;
+      sum = _next == null ? 0 : _next.sum(mask); // Recursively get cached sum
+      long[] t = _t;
+      for( int i=0; i<t.length; i++ )
+        sum += t[i]&(~mask);
+      _sum_cache = sum;         // Cache includes recursive counts
+      return sum;
+    }
+
+    // Fast fuzzy version.  Used a cached value until it gets old, then re-up
+    // the cache.
+    public long estimate_sum( long mask ) {
+      // For short tables, just do the work
+      if( _t.length <= 64 ) return sum(mask);
+      // For bigger tables, periodically freshen a cached value
+      long millis = System.currentTimeMillis();
+      if( _fuzzy_time != millis ) { // Time marches on?
+        _fuzzy_sum_cache = sum(mask); // Get sum the hard way
+        _fuzzy_time = millis;   // Indicate freshness of cached value
+      }
+      return _fuzzy_sum_cache;  // Return cached sum
+    }
+
+    // Update all table slots with CAS.
+    public void all_or ( long mask ) {
+      long[] t = _t;
+      for( int i=0; i<t.length; i++ ) {
+        boolean done = false;
+        while( !done ) {
+          long old = t[i];
+          done = CAS(t,i, old, old|mask );
+        }
+      }
+      if( _next != null ) _next.all_or(mask);
+      if( _sum_cache != Long.MIN_VALUE )
+        _sum_cache = Long.MIN_VALUE; // Blow out cache
+    }
+
+    public void all_and( long mask ) {
+      long[] t = _t;
+      for( int i=0; i<t.length; i++ ) {
+        boolean done = false;
+        while( !done ) {
+          long old = t[i];
+          done = CAS(t,i, old, old&mask );
+        }
+      }
+      if( _next != null ) _next.all_and(mask);
+      if( _sum_cache != Long.MIN_VALUE )
+        _sum_cache = Long.MIN_VALUE; // Blow out cache
+    }
+
+    // Set/stomp all table slots.  No CAS.
+    public void all_set( long val ) {
+      long[] t = _t;
+      for( int i=0; i<t.length; i++ )
+        t[i] = val;
+      if( _next != null ) _next.all_set(val);
+      if( _sum_cache != Long.MIN_VALUE )
+        _sum_cache = Long.MIN_VALUE; // Blow out cache
+    }
+
+    String toString( long mask ) { return Long.toString(sum(mask)); }
+
+    /*
+    public void print() {
+      long[] t = _t;
+      System.out.print("[sum="+_sum_cache+","+t[0]);
+      for( int i=1; i<t.length; i++ )
+        System.out.print(","+t[i]);
+      System.out.print("]");
+      if( _next != null ) _next.print();
+    } */
+
+  }
+
+}
