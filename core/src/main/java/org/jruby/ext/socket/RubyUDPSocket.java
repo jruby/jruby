@@ -93,15 +93,15 @@ public class RubyUDPSocket extends RubyIPSocket {
         try {
             DatagramChannel channel = DatagramChannel.open();
             initSocket(newChannelFD(runtime, channel));
-
-        } catch (ConnectException e) {
+        }
+        catch (ConnectException e) {
             throw runtime.newErrnoECONNREFUSEDError();
-
-        } catch (UnknownHostException e) {
+        }
+        catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
-
-        } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+        }
+        catch (IOException e) {
+            throw sockerr(runtime, "initialize: name or service not known", e);
         }
 
         return this;
@@ -115,31 +115,33 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     @JRubyMethod
     public IRubyObject bind(ThreadContext context, IRubyObject host, IRubyObject _port) {
-        Ruby runtime = context.runtime;
-        InetSocketAddress addr = null;
+        final Ruby runtime = context.runtime;
 
+        final InetSocketAddress addr;
+        final int port = SocketUtils.portToInt(_port);
         try {
-            Channel channel = getChannel();
-            int port = SocketUtils.portToInt(_port);
+            final Channel channel = getChannel();
 
-            if (host.isNil()
-                || ((host instanceof RubyString)
-                && ((RubyString) host).isEmpty())) {
-
+            if ( host.isNil() ||
+                 ( (host instanceof RubyString) && ((RubyString) host).isEmpty() ) ) {
                 // host is nil or the empty string, bind to INADDR_ANY
                 addr = new InetSocketAddress(port);
-
-            } else if (host instanceof RubyFixnum) {
-
+            }
+            else if (host instanceof RubyFixnum) {
                 // passing in something like INADDR_ANY
-                int intAddr = RubyNumeric.fix2int(host);
-                RubyModule socketMod = runtime.getModule("Socket");
-                if (intAddr == RubyNumeric.fix2int(socketMod.getConstant("INADDR_ANY"))) {
+                final int intAddr = RubyNumeric.fix2int(host);
+                final RubyModule Socket = runtime.getModule("Socket");
+                if (intAddr == RubyNumeric.fix2int(Socket.getConstant("INADDR_ANY"))) {
                     addr = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), port);
                 }
-
-            } else {
-                // passing in something like INADDR_ANY
+                else {
+                    if (multicastStateManager == null) {
+                        throw runtime.newNotImplementedError("bind with host: " + intAddr);
+                    }
+                    else addr = null;
+                }
+            }
+            else {
                 addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), port);
             }
 
@@ -150,27 +152,32 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
 
             return RubyFixnum.zero(runtime);
-
-        } catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "bind: name or service not known");
-
-        } catch (SocketException e) {
-            throw SocketUtils.sockerr(runtime, "bind: name or service not known");
-
-        } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "bind: name or service not known");
-
-        } catch (Error e) {
-
-            // Workaround for a bug in Sun's JDK 1.5.x, see
-            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
-            if (e.getCause() instanceof SocketException) {
-                throw SocketUtils.sockerr(runtime, "bind: name or service not known");
-            } else {
-                throw e;
-            }
-
         }
+        catch (UnknownHostException e) {
+            throw SocketUtils.sockerr(runtime, "bind: name or service not known");
+        }
+        catch (SocketException e) {
+            final String message = e.getMessage();
+            if ( message != null ) {
+                switch ( message ) {
+                    case "Permission denied" :
+                        throw runtime.newErrnoEACCESError("bind(2) for " + host.inspect() + " port " + port);
+                }
+            }
+            throw sockerr(runtime, "bind: name or service not known", e);
+        }
+        catch (IOException e) {
+            throw sockerr(runtime, "bind: name or service not known", e);
+        }
+        //catch (Error e) {
+        //    // Workaround for a bug in Sun's JDK 1.5.x, see
+        //    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
+        //    if (e.getCause() instanceof SocketException) {
+        //        throw SocketUtils.sockerr(runtime, "bind: name or service not known");
+        //    } else {
+        //        throw e;
+        //    }
+        //}
     }
 
     @JRubyMethod
@@ -183,14 +190,14 @@ public class RubyUDPSocket extends RubyIPSocket {
             ((DatagramChannel) this.getChannel()).connect(addr);
 
             return RubyFixnum.zero(runtime);
-
-        } catch (UnknownHostException e) {
+        }
+        catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "connect: name or service not known");
-
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
-
-        } catch (Exception e) {
+        }
+        catch (IllegalArgumentException e) {
             throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         }
     }
@@ -219,7 +226,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
         catch (RaiseException e) { throw e; }
         catch (Exception e) {
-            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
+            throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
     }
 
@@ -255,7 +262,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
         catch (RaiseException e) { throw e; }
         catch (Exception e) {
-            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
+            throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
     }
 
@@ -329,7 +336,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
         catch (RaiseException e) { throw e; }
         catch (Exception e) {
-            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
+            throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
     }
 
@@ -378,7 +385,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
         catch (RaiseException e) { throw e; }
         catch (Exception e) {
-            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
+            throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
     }
 
@@ -406,7 +413,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
         catch (RaiseException e) { throw e; }
         catch (Exception e) {
-            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
+            throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
     }
 
