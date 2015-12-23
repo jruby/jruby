@@ -36,6 +36,7 @@ import org.jruby.truffle.runtime.object.ObjectGraphNode;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ModuleFields implements ModuleChain, ObjectGraphNode {
@@ -286,15 +287,13 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     public void setConstantInternal(RubyContext context, Node currentNode, String name, Object value, boolean autoload) {
         checkFrozen(context, currentNode);
+        // TODO(CS): warn when redefining a constant
+        // TODO (nirvdrum 18-Feb-15): But don't warn when redefining an autoloaded constant.
 
-        RubyConstant previous = constants.get(name);
-        if (previous == null) {
-            constants.put(name, new RubyConstant(rubyModuleObject, value, false, autoload));
-        } else {
-            // TODO(CS): warn when redefining a constant
-            // TODO (nirvdrum 18-Feb-15): But don't warn when redefining an autoloaded constant.
-            constants.put(name, new RubyConstant(rubyModuleObject, value, previous.isPrivate(), autoload));
-        }
+        final RubyConstant previous = constants.get(name);
+        final boolean isPrivate = previous != null && previous.isPrivate();
+
+        constants.put(name, new RubyConstant(rubyModuleObject, value, isPrivate, autoload));
 
         newLexicalVersion();
     }
@@ -333,7 +332,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (context.getCoreLibrary().isLoadingRubyCore()) {
             final InternalMethod currentMethod = methods.get(method.getName());
 
-            if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection() instanceof CoreSourceSection) {
+            if (currentMethod != null && CoreSourceSection.isCoreSourceSection(currentMethod.getSharedMethodInfo().getSourceSection())) {
                 return;
             }
         }
@@ -505,8 +504,12 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return unmodifiedAssumption.getAssumption();
     }
 
-    public Map<String, RubyConstant> getConstants() {
-        return constants;
+    public Iterable<Entry<String, RubyConstant>> getConstants() {
+        return constants.entrySet();
+    }
+
+    public RubyConstant getConstant(String name) {
+        return constants.get(name);
     }
 
     public Map<String, InternalMethod> getMethods() {
@@ -616,6 +619,17 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         if (lexicalParent != null) {
             adjacent.add(lexicalParent);
+        }
+
+        for (DynamicObject module : prependedAndIncludedModules()) {
+            adjacent.add(module);
+        }
+
+        if (Layouts.CLASS.isClass(rubyModuleObject)) {
+            DynamicObject superClass = ClassNodes.getSuperClass(rubyModuleObject);
+            if (superClass != null) {
+                adjacent.add(superClass);
+            }
         }
 
         for (RubyConstant constant : constants.values()) {

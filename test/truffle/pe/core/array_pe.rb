@@ -10,7 +10,4 @@ example "[3, 1, 2][1]", 1
 
 example "[3, 1, 2].sort[1]", 2
 
-# why does this fail but the next one work?
-tagged_example "[14].pack('C').getbyte(0)", 14
-
-example "[14].pack('C').getbyte(0) * 2", 28
+example "[14].pack('C').getbyte(0)", 14

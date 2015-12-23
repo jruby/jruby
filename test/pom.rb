@@ -303,6 +303,9 @@ project 'JRuby Integration Tests' do
 
   profile 'truffle-test-pe' do
 
+    # Don't run the unit tests.
+    properties :skipTests => 'true'
+
     plugin :antrun do
       execute_goals( 'run',
                      :id => 'rake',
@@ -312,6 +315,8 @@ project 'JRuby Integration Tests' do
                         '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
                           '<arg value="-J-server" />' +
                           '<arg value="-X+T" />' +
+                          '<arg value="-J-Djvmci.option.TruffleIterativePartialEscape=true" />' +
+                          '<arg value="-J-Djvmci.option.TruffleCompilationExceptionsAreThrown=true" />' +
                           '<arg value="test/truffle/pe/pe.rb" />' +
                         '</exec>' +
                       '</target>' ) ] )
@@ -321,6 +326,8 @@ project 'JRuby Integration Tests' do
 
 
   profile 'truffle-mri-tests' do
+
+    plugin :surefire, '2.15', :skipTests => true
 
     plugin :antrun do
       execute_goals('run',

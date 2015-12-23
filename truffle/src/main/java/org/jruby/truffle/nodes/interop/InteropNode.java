@@ -9,48 +9,60 @@
  */
 package org.jruby.truffle.nodes.interop;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.interop.ForeignAccessArguments;
-import com.oracle.truffle.interop.messages.Execute;
-import com.oracle.truffle.interop.messages.Read;
-import com.oracle.truffle.interop.messages.Write;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
+import java.util.List;
 
 public abstract class InteropNode extends RubyNode {
+
     public InteropNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public static InteropNode createRead(RubyContext context, SourceSection sourceSection, Read read) {
-        return new UnresolvedInteropReadNode(context, sourceSection, read);
+    public static InteropNode createRead(RubyContext context, SourceSection sourceSection) {
+        return new UnresolvedInteropReadNode(context, sourceSection);
     }
 
-    public static InteropNode createWrite(RubyContext context, SourceSection sourceSection, Write write) {
-        return new UnresolvedInteropWriteNode(context, sourceSection, write);
+    public static InteropNode createWrite(RubyContext context, SourceSection sourceSection) {
+        return new UnresolvedInteropWriteNode(context, sourceSection);
     }
 
-    public static InteropNode createExecuteAfterRead(RubyContext context, SourceSection sourceSection, Execute execute) {
-        return new UnresolvedInteropExecuteAfterReadNode(context, sourceSection, execute);
+    public static InteropNode createExecuteAfterRead(RubyContext context, SourceSection sourceSection, int arity) {
+        return new UnresolvedInteropExecuteAfterReadNode(context, sourceSection, arity);
     }
 
     public static InteropNode createIsExecutable(final RubyContext context, final SourceSection sourceSection) {
         return new InteropIsExecutable(context, sourceSection);
+    }
+    
+    public static InteropNode createExecute(final RubyContext context, final SourceSection sourceSection) {
+        return new InteropExecute(context, sourceSection);
     }
 
     public static InteropNode createIsBoxedPrimitive(final RubyContext context, final SourceSection sourceSection) {
@@ -77,14 +89,110 @@ public abstract class InteropNode extends RubyNode {
         return new InteropStringIsBoxed(context, sourceSection);
     }
 
-    public static RubyNode createStringRead(RubyContext context, final SourceSection sourceSection, Read read) {
-        return new UnresolvedInteropStringReadNode(context, sourceSection, read);
+    public static RubyNode createStringRead(RubyContext context, final SourceSection sourceSection) {
+        return new UnresolvedInteropStringReadNode(context, sourceSection);
     }
 
     public static RubyNode createStringUnbox(RubyContext context, final SourceSection sourceSection) {
         return new InteropStringUnboxNode(context, sourceSection);
     }
+    
+    private static class InteropExecute extends InteropNode {
+        @Child private ExecuteMethodNode execute;
+        
+        public InteropExecute(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            this.execute = InteropNodeFactory.ExecuteMethodNodeGen.create(context, sourceSection, null);
+        }
 
+        @Override
+        public Object execute(VirtualFrame frame) {
+            Object result = execute.executeWithTarget(frame, ForeignAccess.getReceiver(frame));
+            return result;
+        }
+    }
+    
+    protected static abstract class AbstractExecuteMethodNode extends InteropNode {
+        public AbstractExecuteMethodNode(RubyContext context,
+                SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract Object executeWithTarget(VirtualFrame frame, Object method);
+    }
+    
+    @NodeChild(value="method", type = InteropNode.class)
+    protected static abstract class ExecuteMethodNode extends AbstractExecuteMethodNode {
+        @Child private IndirectCallNode callNode;
+        public ExecuteMethodNode(RubyContext context,
+                SourceSection sourceSection) {
+            super(context, sourceSection);
+            callNode = Truffle.getRuntime().createIndirectCallNode();
+        }
+        
+        @Specialization(guards = {"isRubyProc(proc)", "proc == cachedProc"})
+        protected Object doCallProc(VirtualFrame frame, DynamicObject proc,
+                                @Cached("proc") DynamicObject cachedProc,
+                                @Cached("create(getCallTarget(cachedProc))") DirectCallNode callNode) {
+            final List<Object> faArgs = ForeignAccess.getArguments(frame);
+            Object[] args = faArgs.toArray();
+            return callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(cachedProc), Layouts.PROC.getDeclarationFrame(cachedProc), null, Layouts.PROC.getSelf(cachedProc), null, DeclarationContext.METHOD, args));
+        }
+        
+        @Specialization(guards = "isRubyProc(proc)")
+        protected Object doCallProc(VirtualFrame frame, DynamicObject proc) {
+            final List<Object> faArgs = ForeignAccess.getArguments(frame);
+            Object[] args = faArgs.toArray();
+            return callNode.call(frame, Layouts.PROC.getCallTargetForType(proc), RubyArguments.pack(
+                    Layouts.PROC.getMethod(proc),
+                    Layouts.PROC.getDeclarationFrame(proc),
+                    null,
+                    Layouts.PROC.getSelf(proc),
+                    null,
+                    DeclarationContext.METHOD,
+                    args));
+        }
+        
+        @Specialization(guards = {"isRubyMethod(method)", "method == cachedMethod"})
+        protected Object doCall(VirtualFrame frame, DynamicObject method,
+                                @Cached("method") DynamicObject cachedMethod,
+                                @Cached("getMethod(cachedMethod)") InternalMethod internalMethod,
+                                @Cached("create(getMethod(cachedMethod).getCallTarget())") DirectCallNode callNode) {
+            final List<Object> faArgs = ForeignAccess.getArguments(frame);
+            
+            Object[] args = faArgs.subList(0, faArgs.size()).toArray();
+            return callNode.call(frame, RubyArguments.pack(internalMethod, null, null, Layouts.METHOD.getReceiver(cachedMethod), null, DeclarationContext.METHOD, args));
+        }
+        
+        @Specialization(guards = "isRubyMethod(method)")
+        protected Object doCall(VirtualFrame frame, DynamicObject method) {
+            final InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
+            final List<Object> faArgs = ForeignAccess.getArguments(frame);
+            
+            Object[] args = faArgs.subList(0, faArgs.size()).toArray();
+            return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(
+                    internalMethod,
+                    null,
+                    null,
+                    Layouts.METHOD.getReceiver(method),
+                    null,
+                    DeclarationContext.METHOD,
+                    args));
+        }
+
+        protected InternalMethod getMethodFromProc(DynamicObject proc) {
+            return Layouts.PROC.getMethod(proc);
+        }
+
+        protected CallTarget getCallTarget(DynamicObject proc) {
+            return Layouts.PROC.getCallTargetForType(proc);
+        }
+
+        protected InternalMethod getMethod(DynamicObject method) {
+            return Layouts.METHOD.getMethod(method);
+        }
+
+    }
 
     private static class InteropIsExecutable extends InteropNode {
         public InteropIsExecutable(RubyContext context, SourceSection sourceSection) {
@@ -93,7 +201,8 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return false;
+            final Object receiver = ForeignAccess.getReceiver(frame);
+            return RubyGuards.isRubyMethod(receiver) || RubyGuards.isRubyProc(receiver);
         }
 
     }
@@ -117,7 +226,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return ForeignAccessArguments.getReceiver(frame.getArguments()) == nil();
+            return ForeignAccess.getReceiver(frame) == nil();
         }
     }
 
@@ -153,7 +262,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return head.dispatch(frame, ForeignAccessArguments.getReceiver(frame.getArguments()), "size", null, new Object[] {});
+            return head.dispatch(frame, ForeignAccess.getReceiver(frame), "size", null, new Object[] {});
         }
     }
 
@@ -165,11 +274,10 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            Object o = ForeignAccessArguments.getReceiver(frame.getArguments());
-            return RubyGuards.isRubyString(o) && StringOperations.getByteList((DynamicObject) o).length() == 1;
+            Object o = ForeignAccess.getReceiver(frame);
+            return RubyGuards.isRubyString(o) && StringOperations.getByteList(((DynamicObject) o)).length() == 1;
         }
     }
-
 
     private static class InteropStringUnboxNode extends RubyNode {
 
@@ -179,23 +287,22 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return StringOperations.getByteList((DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments())).get(0);
+            return StringOperations.getByteList(((DynamicObject) ForeignAccess.getReceiver(frame))).get(0);
         }
     }
-
 
     private static class UnresolvedInteropReadNode extends InteropNode {
 
         private final int labelIndex;
 
-        public UnresolvedInteropReadNode(RubyContext context, SourceSection sourceSection, Read read) {
+        public UnresolvedInteropReadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.labelIndex = 0;
         }
 
         @Override
         public Object execute(VirtualFrame frame) {
-            Object label = ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
+            Object label = ForeignAccess.getArguments(frame).get(labelIndex);
             if (label instanceof  String || RubyGuards.isRubySymbol(label) || label instanceof Integer) {
                 if (label instanceof  String) {
                     String name = (String) label;
@@ -203,7 +310,7 @@ public abstract class InteropNode extends RubyNode {
                         return this.replace(new InteropInstanceVariableReadNode(getContext(), getSourceSection(), name, labelIndex)).execute(frame);
                     }
                 }
-                DynamicObject receiver = (DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments());
+                DynamicObject receiver = (DynamicObject) ForeignAccess.getReceiver(frame);
                 InternalMethod labelMethod = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), label.toString());
                 InternalMethod indexedSetter = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), "[]=");
                 if (labelMethod == null && indexedSetter != null) {
@@ -227,14 +334,14 @@ public abstract class InteropNode extends RubyNode {
 
         private final int labelIndex;
 
-        public UnresolvedInteropStringReadNode(RubyContext context, SourceSection sourceSection, Read read) {
+        public UnresolvedInteropStringReadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.labelIndex = 0;
         }
 
         @Override
         public Object execute(VirtualFrame frame) {
-            Object label = ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
+            Object label = ForeignAccess.getArguments(frame).get(labelIndex);
             if (label instanceof  String || RubyGuards.isRubySymbol(label) || label instanceof Integer) {
                 if (label instanceof  String) {
                     String name = (String) label;
@@ -271,9 +378,9 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (RubyGuards.isRubyString(ForeignAccessArguments.getReceiver(frame.getArguments()))) {
-                final DynamicObject string = (DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments());
-                final int index = (int) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
+            if (RubyGuards.isRubyString(ForeignAccess.getReceiver(frame))) {
+                final DynamicObject string = (DynamicObject) ForeignAccess.getReceiver(frame);
+                final int index = (int) ForeignAccess.getArguments(frame).get(labelIndex);
                 if (index >= StringOperations.getByteList(string).length()) {
                     return 0;
                 } else {
@@ -303,8 +410,8 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            Object index = toRubyIndex.executeWithTarget(frame, ForeignAccessArguments.getArgument(frame.getArguments(), indexIndex));
-            return head.dispatch(frame, ForeignAccessArguments.getReceiver(frame.getArguments()), name, null, new Object[] {index});
+            Object index = toRubyIndex.executeWithTarget(frame, ForeignAccess.getArguments(frame).get(indexIndex));
+            return head.dispatch(frame, ForeignAccess.getReceiver(frame), name, null, new Object[] {index});
         }
     }
 
@@ -323,7 +430,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals((String) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex))) {
+            if (name.equals((String) ForeignAccess.getArguments(frame).get(labelIndex))) {
                 return read.execute(frame);
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -347,7 +454,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals((String) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex))) {
+            if (name.equals((String) ForeignAccess.getArguments(frame).get(labelIndex))) {
                 return write.execute(frame);
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -363,7 +470,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return ForeignAccessArguments.getReceiver(frame.getArguments());
+            return ForeignAccess.getReceiver(frame);
         }
     }
 
@@ -378,7 +485,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return ForeignAccessArguments.getArgument(frame.getArguments(), index);
+            return ForeignAccess.getArguments(frame).get(index);
         }
     }
 
@@ -397,8 +504,8 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals(ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex))) {
-                return head.dispatch(frame, ForeignAccessArguments.getReceiver(frame.getArguments()), name, null, new Object[]{});
+            if (name.equals(ForeignAccess.getArguments(frame).get(labelIndex))) {
+                return head.dispatch(frame, ForeignAccess.getReceiver(frame), name, null, new Object[]{});
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new IllegalStateException("Name changed");
@@ -421,8 +528,8 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals(ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex))) {
-                return head.dispatch(frame, ForeignAccessArguments.getReceiver(frame.getArguments()), name, null, new Object[]{});
+            if (name.equals(ForeignAccess.getArguments(frame).get(labelIndex))) {
+                return head.dispatch(frame, ForeignAccess.getReceiver(frame), name, null, new Object[]{});
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new IllegalStateException("Name changed");
@@ -435,7 +542,7 @@ public abstract class InteropNode extends RubyNode {
         private final int labelIndex;
         private final int valueIndex;
 
-        public UnresolvedInteropWriteNode(RubyContext context, SourceSection sourceSection, Write write) {
+        public UnresolvedInteropWriteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.labelIndex = 0;
             this.valueIndex = 1;
@@ -443,7 +550,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            Object label = ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
+            Object label = ForeignAccess.getArguments(frame).get(labelIndex);
             if (label instanceof  String || RubyGuards.isRubySymbol(label) || label instanceof Integer) {
                 if (label instanceof  String) {
                     String name = (String) label;
@@ -451,7 +558,7 @@ public abstract class InteropNode extends RubyNode {
                         return this.replace(new InteropInstanceVariableWriteNode(getContext(), getSourceSection(), name, labelIndex, valueIndex)).execute(frame);
                     }
                 }
-                DynamicObject receiver = (DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments());
+                DynamicObject receiver = (DynamicObject) ForeignAccess.getReceiver(frame);
                 InternalMethod labelMethod = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), label.toString());
                 InternalMethod indexedSetter = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), "[]=");
                 if (labelMethod == null && indexedSetter != null) {
@@ -470,7 +577,6 @@ public abstract class InteropNode extends RubyNode {
             }
         }
     }
-
 
     private static class ResolvedInteropIndexedWriteNode extends RubyNode {
 
@@ -491,9 +597,9 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            Object index = toRubyIndex.executeWithTarget(frame, ForeignAccessArguments.getArgument(frame.getArguments(), indexIndex));
-            Object value = ForeignAccessArguments.getArgument(frame.getArguments(), valueIndex);
-            return head.dispatch(frame, ForeignAccessArguments.getReceiver(frame.getArguments()), name, null, new Object[] {index, value});
+            Object index = toRubyIndex.executeWithTarget(frame, ForeignAccess.getArguments(frame).get(indexIndex));
+            Object value = ForeignAccess.getArguments(frame).get(valueIndex);
+            return head.dispatch(frame, ForeignAccess.getReceiver(frame), name, null, new Object[] {index, value});
         }
     }
 
@@ -516,16 +622,15 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals(ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex))) {
-                Object value = ForeignAccessArguments.getArgument(frame.getArguments(), valueIndex);
-                return head.dispatch(frame, ForeignAccessArguments.getReceiver(frame.getArguments()), accessName, null, new Object[]{value});
+            if (name.equals(ForeignAccess.getArguments(frame).get(labelIndex))) {
+                Object value = ForeignAccess.getArguments(frame).get(valueIndex);
+                return head.dispatch(frame, ForeignAccess.getReceiver(frame), accessName, null, new Object[]{value});
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new IllegalStateException("Name changed");
             }
         }
     }
-
 
     private static class ResolvedInteropWriteToSymbolNode extends InteropNode {
 
@@ -546,9 +651,9 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals(ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex))) {
-                Object value = ForeignAccessArguments.getArgument(frame.getArguments(), valueIndex);
-                return head.dispatch(frame, ForeignAccessArguments.getReceiver(frame.getArguments()), accessName, null, new Object[]{value});
+            if (name.equals(ForeignAccess.getArguments(frame).get(labelIndex))) {
+                Object value = ForeignAccess.getArguments(frame).get(valueIndex);
+                return head.dispatch(frame, ForeignAccess.getReceiver(frame), accessName, null, new Object[]{value});
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new IllegalStateException("Name changed");
@@ -558,22 +663,22 @@ public abstract class InteropNode extends RubyNode {
 
     private static class UnresolvedInteropExecuteAfterReadNode extends InteropNode {
 
-        private final Execute execute;
+        private final int arity;
         private final int labelIndex;
 
-        public UnresolvedInteropExecuteAfterReadNode(RubyContext context, SourceSection sourceSection, Execute execute) {
+        public UnresolvedInteropExecuteAfterReadNode(RubyContext context, SourceSection sourceSection, int arity){
             super(context, sourceSection);
-            this.execute = execute;
+            this.arity = arity;
             this.labelIndex = 0;
         }
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex) instanceof  String) {
-                return this.replace(new ResolvedInteropExecuteAfterReadNode(getContext(), getSourceSection(), (String) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex), execute)).execute(frame);
+            if (ForeignAccess.getArguments(frame).get(labelIndex) instanceof  String) {
+                return this.replace(new ResolvedInteropExecuteAfterReadNode(getContext(), getSourceSection(), (String) ForeignAccess.getArguments(frame).get(labelIndex), arity)).execute(frame);
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new IllegalStateException(ForeignAccessArguments.getArgument(frame.getArguments(), 0) + " not allowed as name");
+                throw new IllegalStateException(ForeignAccess.getArguments(frame).get(0) + " not allowed as name");
             }
         }
     }
@@ -586,28 +691,27 @@ public abstract class InteropNode extends RubyNode {
         private final int labelIndex;
         private final int receiverIndex;
 
-        public ResolvedInteropExecuteAfterReadNode(RubyContext context, SourceSection sourceSection, String name, Execute message) {
+        public ResolvedInteropExecuteAfterReadNode(RubyContext context, SourceSection sourceSection, String name, int arity) {
             super(context, sourceSection);
             this.name = name;
             this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
-            this.arguments = new InteropArgumentsNode(context, sourceSection, message); // [0] is label, [1] is the receiver
-            this.labelIndex = 0;
-            this.receiverIndex = 1;
+            this.arguments = new InteropArgumentsNode(context, sourceSection, arity); // [0] is receiver, [1] is the label
+            this.labelIndex = 1;
+            this.receiverIndex = 0;
         }
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals(ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex))) {
+            if (name.equals(frame.getArguments()[labelIndex])) {
                 Object[] args = new Object[arguments.getCount(frame)];
                 arguments.executeFillObjectArray(frame, args);
-                return head.dispatch(frame, ForeignAccessArguments.getArgument(frame.getArguments(), receiverIndex), ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex), null, args);
+                return head.dispatch(frame, frame.getArguments()[receiverIndex], frame.getArguments()[labelIndex], null, args);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new IllegalStateException("Name changed");
             }
         }
     }
-
 
     private static class InteropArgumentNode extends RubyNode {
         private final int index;
@@ -618,7 +722,7 @@ public abstract class InteropNode extends RubyNode {
         }
 
         public Object execute(VirtualFrame frame) {
-            return ForeignAccessArguments.extractUserArguments(frame.getArguments())[index];
+            return ForeignAccess.getArguments(frame).get(index);
         }
 
     }
@@ -627,14 +731,12 @@ public abstract class InteropNode extends RubyNode {
 
         @Children private final InteropArgumentNode[] arguments;
 
-        public InteropArgumentsNode(RubyContext context, SourceSection sourceSection, Execute message) {
+        public InteropArgumentsNode(RubyContext context, SourceSection sourceSection, int arity) {
             super(context, sourceSection);
-            this.arguments = new InteropArgumentNode[message.getArity() - 1]; // exclude the receiver
-            // Execute(Read(receiver, label), a0 (which is the receiver), a1, a2)
-            // the arguments array looks like:
-            // label, a0 (which is the receiver), a1, a2, ...
-            for (int i = 2; i < 2 + message.getArity() - 1; i++) {
-                arguments[i - 2] = new InteropArgumentNode(context, sourceSection, i);
+            this.arguments = new InteropArgumentNode[arity]; 
+            // index 0 is the lable
+            for (int i = 1; i < 1 + arity; i++) {
+                arguments[i - 1] = new InteropArgumentNode(context, sourceSection, i);
             }
         }
 

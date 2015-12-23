@@ -36,7 +36,7 @@ public abstract class ArrayReflector {
             return reflect((long[]) array);
         } else if (array instanceof double[]) {
             return reflect((double[]) array);
-        } else if (array instanceof Object[]) {
+        } else if (array.getClass() == Object[].class) {
             return reflect((Object[]) array);
         } else {
             throw new UnsupportedOperationException();

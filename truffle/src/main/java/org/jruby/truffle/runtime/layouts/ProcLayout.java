@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
@@ -43,6 +44,7 @@ public interface ProcLayout extends BasicObjectLayout {
             Object self,
             @Nullable DynamicObject block);
 
+    boolean isProc(ObjectType objectType);
     boolean isProc(DynamicObject object);
     boolean isProc(Object object);
 

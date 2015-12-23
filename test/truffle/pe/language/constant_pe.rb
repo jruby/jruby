@@ -17,7 +17,7 @@ module ConstantFixtures
     A
   end
 
-  def self.get_const_get(name)
+  def self.const_get_in_scope(name)
     ConstantFixtures.const_get(name)
   end
 
@@ -50,10 +50,9 @@ end
 
 example "ConstantFixtures.get_existing", Proc
 example "ConstantFixtures.get", 1
-example "ConstantFixtures.get_const_get(:A)", 1
+example "ConstantFixtures.const_get_in_scope(:A)", 1
 
-# Internal Graal compiler error
-tagged_example "ConstantFixtures.get_const_get('A')", 1
+example "ConstantFixtures.const_get_in_scope('A')", 1
 
 example "ConstantFixtures::Nested.get_nested", 1
 example "ConstantFixtures::Child.get_inherited", 2

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -56,7 +57,7 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static Map<String, RubyConstant> getAllConstants(DynamicObject module) {
+    public static Iterable<Entry<String, RubyConstant>> getAllConstants(DynamicObject module) {
         CompilerAsserts.neverPartOfCompilation();
 
         assert RubyGuards.isRubyModule(module);
@@ -64,18 +65,20 @@ public abstract class ModuleOperations {
         final Map<String, RubyConstant> constants = new HashMap<>();
 
         // Look in the current module
-        constants.putAll(Layouts.MODULE.getFields(module).getConstants());
+        for (Map.Entry<String, RubyConstant> constant : Layouts.MODULE.getFields(module).getConstants()) {
+            constants.put(constant.getKey(), constant.getValue());
+        }
 
         // Look in ancestors
         for (DynamicObject ancestor : Layouts.MODULE.getFields(module).prependedAndIncludedModules()) {
-            for (Map.Entry<String, RubyConstant> constant : Layouts.MODULE.getFields(ancestor).getConstants().entrySet()) {
+            for (Map.Entry<String, RubyConstant> constant : Layouts.MODULE.getFields(ancestor).getConstants()) {
                 if (!constants.containsKey(constant.getKey())) {
                     constants.put(constant.getKey(), constant.getValue());
                 }
             }
         }
 
-        return constants;
+        return constants.entrySet();
     }
 
     @TruffleBoundary
@@ -84,14 +87,14 @@ public abstract class ModuleOperations {
         assert RubyGuards.isRubyModule(module);
 
         // Look in the current module
-        RubyConstant constant = Layouts.MODULE.getFields(module).getConstants().get(name);
+        RubyConstant constant = Layouts.MODULE.getFields(module).getConstant(name);
         if (constant != null) {
             return constant;
         }
 
         // Look in ancestors
         for (DynamicObject ancestor : Layouts.MODULE.getFields(module).parentAncestors()) {
-            constant = Layouts.MODULE.getFields(ancestor).getConstants().get(name);
+            constant = Layouts.MODULE.getFields(ancestor).getConstant(name);
             if (constant != null) {
                 return constant;
             }
@@ -106,13 +109,13 @@ public abstract class ModuleOperations {
         if (!RubyGuards.isRubyClass(module)) {
             final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
 
-            RubyConstant constant = Layouts.MODULE.getFields(objectClass).getConstants().get(name);
+            RubyConstant constant = Layouts.MODULE.getFields(objectClass).getConstant(name);
             if (constant != null) {
                 return constant;
             }
 
             for (DynamicObject ancestor : Layouts.MODULE.getFields(objectClass).prependedAndIncludedModules()) {
-                constant = Layouts.MODULE.getFields(ancestor).getConstants().get(name);
+                constant = Layouts.MODULE.getFields(ancestor).getConstant(name);
                 if (constant != null) {
                     return constant;
                 }
@@ -141,7 +144,7 @@ public abstract class ModuleOperations {
 
         // Look in lexical scope
         while (lexicalScope != context.getRootLexicalScope()) {
-            constant = Layouts.MODULE.getFields(lexicalScope.getLiveModule()).getConstants().get(name);
+            constant = Layouts.MODULE.getFields(lexicalScope.getLiveModule()).getConstant(name);
             if (constant != null) {
                 return constant;
             }
@@ -195,7 +198,7 @@ public abstract class ModuleOperations {
         if (inherit) {
             return ModuleOperations.lookupConstantAndObject(context, module, name);
         } else {
-            return Layouts.MODULE.getFields(module).getConstants().get(name);
+            return Layouts.MODULE.getFields(module).getConstant(name);
         }
     }
 

@@ -17,6 +17,7 @@ import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.RubyLanguage;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
@@ -30,14 +31,12 @@ public class RubyRootNode extends RootNode {
     @Child private RubyNode body;
     private final boolean needsDeclarationFrame;
 
-    private boolean instrumentationApplied = false;
-
     public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {
         this(context, sourceSection, frameDescriptor, sharedMethodInfo, body, false);
     }
 
     public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body, boolean needsDeclarationFrame) {
-        super(sourceSection, frameDescriptor);
+        super(RubyLanguage.class, sourceSection, frameDescriptor);
         assert body != null;
         this.context = context;
         this.body = body;
@@ -76,14 +75,6 @@ public class RubyRootNode extends RootNode {
     @Override
     public ExecutionContext getExecutionContext() {
         return context;
-    }
-
-    @Override
-    public void applyInstrumentation() {
-        if (!instrumentationApplied) {
-            Probe.applyASTProbers(body);
-            instrumentationApplied = true;
-        }
     }
 
     public boolean needsDeclarationFrame() {

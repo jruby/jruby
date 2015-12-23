@@ -9,11 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -31,7 +29,6 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.format.parser.PrintfCompiler;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -52,7 +49,6 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFacto
 import org.jruby.truffle.nodes.core.ProcNodes.ProcNewNode;
 import org.jruby.truffle.nodes.core.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
@@ -289,8 +285,9 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean blockGiven(MaterializedFrame callerFrame) {
-            return RubyArguments.getBlock(callerFrame.getArguments()) != null;
+        public boolean blockGiven(MaterializedFrame callerFrame,
+                                  @Cached("createBinaryProfile()") ConditionProfile blockProfile) {
+            return blockProfile.profile(RubyArguments.getBlock(callerFrame.getArguments()) != null);
         }
 
         @TruffleBoundary
@@ -653,7 +650,7 @@ public abstract class KernelNodes {
 
             final TranslatorDriver translator = new TranslatorDriver(getContext());
 
-            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, ParserContext.EVAL, parentFrame, true, this));
+            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, ParserContext.EVAL, null, parentFrame, true, this));
         }
 
         protected boolean parseDependsOnDeclarationFrame(RootNodeWrapper rootNode) {
@@ -760,15 +757,11 @@ public abstract class KernelNodes {
 
         public KernelFreezeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            freezeNode = FreezeNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
         public Object freeze(Object self) {
-            if (freezeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                freezeNode = insert(FreezeNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
-            }
-
             return freezeNode.executeFreeze(self);
         }
 
@@ -1142,56 +1135,24 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = { "is_a?", "kind_of?" }, required = 1)
-    public abstract static class IsANode extends CoreMethodArrayArgumentsNode {
+    public abstract static class KernelIsANode extends CoreMethodArrayArgumentsNode {
 
-        @Child MetaClassNode metaClassNode;
+        @Child IsANode isANode;
 
-        public IsANode(RubyContext context, SourceSection sourceSection) {
+        public KernelIsANode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
         }
 
-        public abstract boolean executeIsA(VirtualFrame frame, Object self, DynamicObject rubyClass);
-
-        @Specialization(
-                limit = "getCacheLimit()",
-                guards = { "isRubyModule(module)", "getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule" },
-                assumptions = "getUnmodifiedAssumption(cachedModule)")
-        public boolean isACached(VirtualFrame frame,
-                                 Object self,
-                                 DynamicObject module,
-                                 @Cached("getMetaClass(frame, self)") DynamicObject cachedMetaClass,
-                                 @Cached("module") DynamicObject cachedModule,
-                                 @Cached("isA(cachedMetaClass, cachedModule)") boolean result) {
-            return result;
-        }
-
-        public Assumption getUnmodifiedAssumption(DynamicObject module) {
-            return Layouts.MODULE.getFields(module).getUnmodifiedAssumption();
-        }
-
-        @Specialization(guards = "isRubyModule(module)")
-        public boolean isAUncached(VirtualFrame frame, Object self, DynamicObject module) {
-            return isA(getMetaClass(frame, self), module);
+        @Specialization
+        public boolean isA(Object self, DynamicObject module) {
+            return isANode.executeIsA(self, module);
         }
 
         @Specialization(guards = "!isRubyModule(module)")
-        public boolean isATypeError(VirtualFrame frame, Object self, Object module) {
+        public boolean isATypeError(Object self, Object module) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("class or module required", this));
-        }
-
-        @TruffleBoundary
-        protected boolean isA(DynamicObject metaClass, DynamicObject module) {
-            return ModuleOperations.assignableTo(metaClass, module);
-        }
-
-        protected DynamicObject getMetaClass(VirtualFrame frame, Object object) {
-            return metaClassNode.executeMetaClass(frame, object);
-        }
-
-        protected int getCacheLimit() {
-            return getContext().getOptions().IS_A_CACHE;
         }
 
     }
@@ -1289,13 +1250,13 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject method(VirtualFrame frame, Object self, DynamicObject name) {
             final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
-            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
+            InternalMethod method = lookupMethodNode.executeLookupMethod(self, normalizedName);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
 
                 if (respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true)) {
-                    final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(frame, self, "method_missing").withName(normalizedName);
+                    final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(self, "method_missing").withName(normalizedName);
                     final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
                     final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
@@ -1355,9 +1316,9 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "regular")
-        public DynamicObject methodsRegular(VirtualFrame frame, Object self, boolean regular,
+        public DynamicObject methodsRegular(Object self, boolean regular,
                                             @Cached("createMetaClassNode()") MetaClassNode metaClassNode) {
-            final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+            final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), regular, MethodFilter.PUBLIC_PROTECTED).toArray();
@@ -1413,8 +1374,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject privateMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+        public DynamicObject privateMethods(Object self, boolean includeAncestors) {
+            DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PRIVATE).toArray();
@@ -1460,8 +1421,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject protectedMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+        public DynamicObject protectedMethods(Object self, boolean includeAncestors) {
+            final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PROTECTED).toArray();
@@ -1490,8 +1451,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject publicMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+        public DynamicObject publicMethods(Object self, boolean includeAncestors) {
+            final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PUBLIC).toArray();
@@ -1536,40 +1497,24 @@ public abstract class KernelNodes {
             return getContext().getRandom().nextDouble();
         }
 
-        @Specialization(guards = "isZero(max)")
+        @Specialization(guards = "max == 0")
         public double randZero(int max) {
             return getContext().getRandom().nextDouble();
         }
 
-        @Specialization(guards = "isNonZero(max)")
+        @Specialization(guards = "max != 0")
         public int randNonZero(int max) {
             return getContext().getRandom().nextInt(max);
         }
 
-        @Specialization(guards = "isZero(max)")
+        @Specialization(guards = "max == 0")
         public double randZero(long max) {
             return getContext().getRandom().nextDouble();
         }
 
-        @Specialization(guards = "isNonZero(max)")
+        @Specialization(guards = "max != 0")
         public long randNonZero(long max) {
-            return getContext().getRandom().nextLong() % max;
-        }
-
-        protected boolean isZero(int max) {
-            return max == 0;
-        }
-
-        protected boolean isNonZero(int max) {
-            return max != 0;
-        }
-
-        protected boolean isZero(long max) {
-            return max == 0;
-        }
-
-        protected boolean isNonZero(long max) {
-            return max != 0;
+            return getContext().getRandom().nextLong(max);
         }
 
     }
@@ -1595,30 +1540,17 @@ public abstract class KernelNodes {
             final String feature = featureString.toString();
 
             // Pysch loads either the jar or the so - we need to intercept
-
-            if (feature.equals("psych.so") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
-                    .getEncapsulatingSourceSection().getSource().getName().endsWith("psych.rb")) {
+            if (feature.equals("psych.so") && callerIs("psych.rb")) {
                 try {
                     getContext().getFeatureLoader().require("truffle/psych.rb", this);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-
                 return true;
             }
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
-
-            if (feature.equals("strscan") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
-                    .getEncapsulatingSourceSection().getSource().getName().endsWith("erb.rb")) {
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
-            }
-
-            // TODO CS 19-May-15 securerandom will use openssl if it's there, but we've only shimmed it
-
-            if (feature.equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
-                    .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
-                Layouts.MODULE.getFields(getContext().getCoreLibrary().getObjectClass()).getConstants().remove("OpenSSL");
+            if (feature.equals("strscan") && callerIs("erb.rb")) {
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
             }
 
@@ -1627,6 +1559,11 @@ public abstract class KernelNodes {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        private boolean callerIs(String caller) {
+            return RubyCallStack.getCallerFrame(getContext()).getCallNode()
+                    .getEncapsulatingSourceSection().getSource().getName().endsWith(caller);
         }
     }
 
@@ -1824,8 +1761,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
+        public DynamicObject singletonMethods(Object self, boolean includeAncestors) {
+            final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             if (!Layouts.CLASS.getIsSingleton(metaClass)) {
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
@@ -1961,6 +1898,7 @@ public abstract class KernelNodes {
                 DynamicObject format,
                 Object[] arguments,
                 @Cached("privatizeByteList(format)") ByteList cachedFormat,
+                @Cached("byteListLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final PackResult result;
 
@@ -1971,7 +1909,7 @@ public abstract class KernelNodes {
                 throw handleException(e);
             }
 
-            return finishFormat(cachedFormat, result);
+            return finishFormat(cachedFormatLength, result);
         }
 
         @Specialization(guards = "isRubyString(format)", contains = "formatCached")
@@ -1989,7 +1927,7 @@ public abstract class KernelNodes {
                 throw handleException(e);
             }
 
-            return finishFormat(StringOperations.getByteList(format), result);
+            return finishFormat(StringOperations.getByteList(format).length(), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2010,10 +1948,10 @@ public abstract class KernelNodes {
             }
         }
 
-        private DynamicObject finishFormat(ByteList format, PackResult result) {
-            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+        private DynamicObject finishFormat(int formatLength, PackResult result) {
+            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength(), false));
 
-            if (format.length() == 0) {
+            if (formatLength == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {

@@ -31,11 +31,11 @@ public class LayoutModel {
                        boolean hasObjectTypeGuard, boolean hasObjectGuard, boolean hasDynamicObjectGuard,
                        Collection<PropertyModel> properties, String interfaceFullName,
                        boolean hasShapeProperties) {
-        assert objectTypeSuperclass != null;
-        assert name != null;
-        assert packageName != null;
-        assert interfaceFullName != null;
-        assert properties != null;
+        // assert objectTypeSuperclass != null;
+        // assert name != null;
+        // assert packageName != null;
+        // assert interfaceFullName != null;
+        // assert properties != null;
 
         this.objectTypeSuperclass = objectTypeSuperclass;
         this.superLayout = superLayout;

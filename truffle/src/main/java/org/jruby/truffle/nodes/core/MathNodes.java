@@ -15,11 +15,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.RubyMath;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.objects.IsANode;
+import org.jruby.truffle.nodes.objects.IsANodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -312,12 +314,12 @@ public abstract class MathNodes {
     @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
     public abstract static class FrExpNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private KernelNodes.IsANode isANode;
+        @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
 
         public FrExpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
             floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
@@ -363,7 +365,7 @@ public abstract class MathNodes {
 
         @Fallback
         public DynamicObject frexp(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return frexp(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -443,13 +445,13 @@ public abstract class MathNodes {
     @CoreMethod(names = "ldexp", isModuleFunction = true, required = 2)
     public abstract static class LdexpNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private KernelNodes.IsANode isANode;
+        @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatANode;
         @Child private CallDispatchHeadNode integerBNode;
 
         protected LdexpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
             floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
             integerBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
@@ -521,7 +523,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return function(
                         floatANode.callFloat(frame, a, "to_f", null),
                         integerBNode.callLongFixnum(frame, b, "to_int", null));
@@ -538,12 +540,12 @@ public abstract class MathNodes {
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private KernelNodes.IsANode isANode;
+        @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
             floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
@@ -578,7 +580,7 @@ public abstract class MathNodes {
 
         @Fallback
         public DynamicObject lgamma(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return lgamma(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -617,7 +619,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(VirtualFrame frame, Object a, NotProvided b) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return doFunction(floatANode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -758,12 +760,12 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleMonadicMathNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private KernelNodes.IsANode isANode;
+        @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
 
         protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
             floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
@@ -795,7 +797,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass())) {
                 return doFunction(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -807,13 +809,13 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleDyadicMathNode extends CoreMethodArrayArgumentsNode {
 
-        @Child protected KernelNodes.IsANode isANode;
+        @Child protected IsANode isANode;
         @Child protected CallDispatchHeadNode floatANode;
         @Child protected CallDispatchHeadNode floatBNode;
 
         protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
             floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
             floatBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
@@ -906,7 +908,8 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeIsA(frame, b, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(a, getContext().getCoreLibrary().getNumericClass()) &&
+                    isANode.executeIsA(b, getContext().getCoreLibrary().getNumericClass())) {
                 return doFunction(
                         floatANode.callFloat(frame, a, "to_f", null),
                         floatBNode.callFloat(frame, b, "to_f", null));

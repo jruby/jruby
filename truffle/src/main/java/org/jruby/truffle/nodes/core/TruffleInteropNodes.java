@@ -9,22 +9,36 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.interop.messages.*;
-import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.layouts.StringLayout;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
+
+import java.io.IOException;
 
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
+
+    // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class InteropToRubyNode extends CoreMethodArrayArgumentsNode {
@@ -78,16 +92,16 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public IsExecutableNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(IsExecutable.create(Receiver.create()));
+            this.node = Message.IS_EXECUTABLE.createNode();
         }
 
         @Specialization
         public boolean isExecutable(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) node.executeForeign(frame, receiver);
+            return (boolean) ForeignAccess.execute(node, frame, receiver, receiver);
         }
 
     }
@@ -95,16 +109,16 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "boxed_primitive?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsBoxedPrimitiveNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public IsBoxedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(IsBoxed.create(Receiver.create()));
+            this.node = Message.IS_BOXED.createNode();
         }
 
         @Specialization
         public boolean isBoxedPrimitive(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) node.executeForeign(frame, receiver);
+            return (boolean) ForeignAccess.execute(node, frame, receiver);
         }
 
     }
@@ -112,16 +126,16 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsNullNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public IsNullNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(IsNull.create(Receiver.create()));
+            this.node = Message.IS_NULL.createNode();
         }
 
         @Specialization
         public boolean isNull(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) node.executeForeign(frame, receiver);
+            return (boolean) ForeignAccess.execute(node, frame, receiver);
         }
 
     }
@@ -129,104 +143,119 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "has_size_property?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class HasSizePropertyNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public HasSizePropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(HasSize.create(Receiver.create()));
+            this.node = Message.HAS_SIZE.createNode();
         }
 
         @Specialization
         public boolean hasSizeProperty(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) node.executeForeign(frame, receiver);
+            return (boolean) ForeignAccess.execute(node, frame, receiver);
         }
 
     }
 
     @CoreMethod(names = "read_property", isModuleFunction = true, needsSelf = false, required = 2)
+    @ImportStatic(StringCachingGuards.class)
     public abstract static class ReadPropertyNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private ForeignObjectAccessNode node;
 
         public ReadPropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(Read.create(Receiver.create(), Argument.create()));
+        }
+
+        // TODO CS 21-Dec-15 should Truffle provide foreign access for strings?
+
+        @Specialization
+        public Object readProperty(String receiver, int identifier) {
+            return receiver.charAt(identifier);
         }
 
         @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, int identifier) {
-            return node.executeForeign(frame, receiver, identifier);
+        public Object readProperty(String receiver, long identifier) {
+            return receiver.charAt((int) identifier);
         }
 
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, long identifier) {
-            return node.executeForeign(frame, receiver, identifier);
+        @Specialization(guards = {"!isRubySymbol(identifier)", "!isRubyString(identifier)"})
+        public Object readProperty(VirtualFrame frame,
+                                   TruffleObject receiver,
+                                   Object identifier,
+                                   @Cached("createReadNode()") Node readNode) {
+            return ForeignAccess.execute(readNode, frame, receiver, identifier);
         }
 
-        @CompilationFinal private String identifier;
-
-        @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
-            if (this.identifier == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = Layouts.SYMBOL.getString(identifier).intern();
-            }
-            return node.executeForeign(frame, receiver, this.identifier);
+        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
+        public Object readProperty(VirtualFrame frame,
+                                   TruffleObject receiver,
+                                   DynamicObject identifier,
+                                   @Cached("identifier") DynamicObject cachedIdentifier,
+                                   @Cached("identifier.toString()") String identifierString,
+                                   @Cached("createReadNode()") Node readNode) {
+            return ForeignAccess.execute(readNode, frame, receiver, identifierString);
         }
 
-        @Specialization(guards = "isRubyString(identifier)")
-        public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
-            return node.executeForeign(frame, receiver, slowPathToString(identifier));
+        @Specialization(guards = {"isRubyString(identifier)", "byteListsEqual(identifier, cachedIdentifier)"})
+        public Object readProperty(VirtualFrame frame,
+                                   TruffleObject receiver,
+                                   DynamicObject identifier,
+                                   @Cached("privatizeByteList(identifier)") ByteList cachedIdentifier,
+                                   @Cached("identifier.toString()") String identifierString,
+                                   @Cached("createReadNode()") Node readNode) {
+            return ForeignAccess.execute(readNode, frame, receiver, identifierString);
         }
 
-        @TruffleBoundary
-        private static String slowPathToString(DynamicObject identifier) {
-            assert RubyGuards.isRubyString(identifier);
-            return identifier.toString();
+        protected static Node createReadNode() {
+            return Message.READ.createNode();
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().EVAL_CACHE;
         }
 
     }
 
     @CoreMethod(names = "write_property", isModuleFunction = true, needsSelf = false, required = 3)
+    @ImportStatic(StringCachingGuards.class)
     public abstract static class WritePropertyNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private ForeignObjectAccessNode node;
 
         public WritePropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(Write.create(Receiver.create(), Argument.create(), Argument.create()));
         }
 
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, int identifier,  Object value) {
-            return node.executeForeign(frame, receiver, identifier, value);
+        @Specialization(guards = {"!isRubySymbol(identifier)", "!isRubyString(identifier)"})
+        public Object writeProperty(VirtualFrame frame,
+                                    TruffleObject receiver,
+                                    Object identifier,
+                                    Object value,
+                                    @Cached("createWriteNode()") Node writeNode) {
+            return ForeignAccess.execute(writeNode, frame, receiver, identifier, value);
         }
 
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, long identifier,  Object value) {
-            return node.executeForeign(frame, receiver, identifier, value);
+        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
+        public Object writeProperty(VirtualFrame frame,
+                                    TruffleObject receiver,
+                                    DynamicObject identifier,
+                                    Object value,
+                                    @Cached("identifier") DynamicObject cachedIdentifier,
+                                    @Cached("identifier.toString()") String identifierString,
+                                    @Cached("createWriteNode()") Node writeNode) {
+            return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
         }
 
-        @CompilationFinal private String identifier;
-
-        @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier,  Object value) {
-            if (this.identifier == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = Layouts.SYMBOL.getString(identifier).intern();
-            }
-            return node.executeForeign(frame, receiver, this.identifier, value);
+        @Specialization(guards = {"isRubyString(identifier)", "byteListsEqual(identifier, cachedIdentifier)"})
+        public Object writeProperty(VirtualFrame frame,
+                                    TruffleObject receiver,
+                                    DynamicObject identifier,
+                                    Object value,
+                                    @Cached("privatizeByteList(identifier)") ByteList cachedIdentifier,
+                                    @Cached("identifier.toString()") String identifierString,
+                                    @Cached("createWriteNode()") Node writeNode) {
+            return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
         }
 
-        @Specialization(guards = "isRubyString(identifier)")
-        public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier, Object value) {
-            return node.executeForeign(frame, receiver, slowPathToString(identifier), value);
-        }
-
-        @TruffleBoundary
-        private static String slowPathToString(DynamicObject identifier) {
-            assert RubyGuards.isRubyString(identifier);
-            return identifier.toString();
+        protected static Node createWriteNode() {
+            return Message.WRITE.createNode();
         }
 
     }
@@ -234,16 +263,16 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "unbox_value", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class UnboxValueNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public UnboxValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(Unbox.create(Receiver.create()));
+            this.node = Message.UNBOX.createNode();
         }
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
-            return node.executeForeign(frame, receiver);
+            return ForeignAccess.execute(node, frame, receiver);
         }
 
     }
@@ -251,19 +280,19 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public ExecuteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, Object[] arguments) {
+        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, Object[] args) {
             if (node == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.node = ForeignObjectAccessNode.getAccess(Execute.create(Receiver.create(), arguments.length));
+                this.node = Message.createExecute(args.length).createNode();
             }
-            return node.executeForeign(frame, receiver, arguments);
+            return ForeignAccess.execute(node, frame, receiver, args);
         }
 
     }
@@ -271,11 +300,11 @@ public abstract class TruffleInteropNodes {
     @CoreMethod(names = "size", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class GetSizeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ForeignObjectAccessNode node;
+        @Child private Node node;
 
         public GetSizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignObjectAccessNode.getAccess(GetSize.create(Receiver.create()));
+            this.node = Message.GET_SIZE.createNode();
         }
 
         @Specialization
@@ -285,7 +314,106 @@ public abstract class TruffleInteropNodes {
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
-            return node.executeForeign(frame, receiver);
+            return ForeignAccess.execute(node, frame, receiver);
+        }
+
+    }
+
+    @CoreMethod(names = "export", isModuleFunction = true, needsSelf = false, required = 2)
+    public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
+
+        public ExportNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(name)")
+        public Object export(VirtualFrame frame, DynamicObject name, TruffleObject object) {
+            getContext().exportObject(name, object);
+            return object;
+        }
+
+        protected static String rubyStringToString(DynamicObject rubyString) {
+            return rubyString.toString();
+        }
+    }
+
+    @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
+
+
+        public ImportNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name)")
+        public Object importObject(DynamicObject name) {
+            return getContext().importObject(name);
+        }
+
+    }
+
+    @CoreMethod(names = "eval", isModuleFunction = true, needsSelf = false, required = 2)
+    @ImportStatic(StringCachingGuards.class)
+    public abstract static class EvalNode extends CoreMethodArrayArgumentsNode {
+
+        public EvalNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = {
+                "isRubyString(mimeType)",
+                "isRubyString(source)",
+                "byteListsEqual(mimeType, cachedMimeType)",
+                "byteListsEqual(source, cachedSource)"
+        }, limit = "getCacheLimit()")
+        public Object evalCached(
+                VirtualFrame frame,
+                DynamicObject mimeType,
+                DynamicObject source,
+                @Cached("privatizeByteList(mimeType)") ByteList cachedMimeType,
+                @Cached("privatizeByteList(source)") ByteList cachedSource,
+                @Cached("create(parse(mimeType, source))") DirectCallNode callNode
+        ) {
+            return callNode.call(frame, new Object[]{});
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = {"isRubyString(mimeType)", "isRubyString(source)"}, contains = "evalCached")
+        public Object evalUncached(DynamicObject mimeType, DynamicObject source) {
+            return parse(mimeType, source).call();
+        }
+
+        protected CallTarget parse(DynamicObject mimeType, DynamicObject source) {
+            final String mimeTypeString = mimeType.toString();
+            final Source sourceObject = Source.fromText(source.toString(), "(eval)").withMimeType(mimeTypeString);
+
+            try {
+                return getContext().getEnv().parse(sourceObject);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().EVAL_CACHE;
+        }
+
+    }
+
+    // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
+
+    @CoreMethod(names = "java_string_to_ruby", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class JavaStringToRubyNode extends CoreMethodArrayArgumentsNode {
+
+        public JavaStringToRubyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        @TruffleBoundary
+        public DynamicObject javaStringToRuby(String string) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ByteList.create(string), StringSupport.CR_UNKNOWN, null);
         }
 
     }

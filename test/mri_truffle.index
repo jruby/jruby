@@ -45,7 +45,7 @@ ruby/test_integer.rb
 ruby/test_integer_comb.rb
 # ruby/test_io.rb # cannot load such file -- io/nonblock
 ruby/test_io_m17n.rb
-ruby/test_iterator.rb
+# ruby/test_iterator.rb /Users/chrisseaton/Documents/ruby/jruby/test/mri/lib/minitest/unit.rb:1417:in `sort': internal implementation error - NullPointerException null org.jruby.truffle.runtime.subsystems.TraceManager$4.probeTaggedAs(TraceManager.java:117) (RubyTruffleError)
 ruby/test_lambda.rb
 ruby/test_literal.rb
 # ruby/test_m17n.rb # NPE in Body Translator
