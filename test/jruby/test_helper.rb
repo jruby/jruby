@@ -8,7 +8,12 @@ module TestHelper
   SEPARATOR = WINDOWS ? '\\' : '/'
   # using the classloader setup to determine whether it runs inside
   # ScriptingContainer or via commandline
-  IS_COMMAND_LINE_EXECUTION = JRuby.runtime.jruby_class_loader == java.lang.Thread.current_thread.context_class_loader
+  if defined?(JRUBY_VERSION)
+    IS_COMMAND_LINE_EXECUTION = JRuby.runtime.jruby_class_loader == java.lang.Thread.current_thread.context_class_loader
+  else
+    IS_COMMAND_LINE_EXECUTION = true
+  end
+
   IS_JAR_EXECUTION = RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
   RUBY = if IS_JAR_EXECUTION
            exe = 'java'

@@ -430,11 +430,13 @@ public abstract class StringNodes {
         @Child private CallDispatchHeadNode dupNode;
         @Child private SizeNode sizeNode;
         @Child private StringPrimitiveNodes.StringSubstringPrimitiveNode substringNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
@@ -490,7 +492,7 @@ public abstract class StringNodes {
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
                     byteList.setEncoding(StringOperations.getByteList(string).getEncoding());
-                    return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), byteList, StringSupport.CR_UNKNOWN, null);
+                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), byteList, StringSupport.CR_UNKNOWN, null);
                 }
 
                 end = StringOperations.normalizeIndex(stringLength, end);
@@ -1037,9 +1039,11 @@ public abstract class StringNodes {
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 
         @Child private TaintResultNode taintResultNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public EachCharNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization(guards = "isValidOr7BitEncoding(string)")
@@ -1107,7 +1111,7 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), substringBytes, StringSupport.CR_UNKNOWN, null);
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringBytes, StringSupport.CR_UNKNOWN, null);
 
             return taintResultNode.maybeTaint(string, ret);
         }
@@ -1646,7 +1650,7 @@ public abstract class StringNodes {
             outputBytes.append((byte) '"');
             outputBytes.append((byte) ')');
 
-            final DynamicObject result = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), outputBytes, StringSupport.CR_UNKNOWN, null);
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, StringSupport.CR_UNKNOWN, null);
             StringOperations.getByteList(result).setEncoding(ASCIIEncoding.INSTANCE);
             Layouts.STRING.setCodeRange(result, StringSupport.CR_7BIT);
 
@@ -1819,17 +1823,20 @@ public abstract class StringNodes {
     @CoreMethod(names = "succ", taintFromSelf = true)
     public abstract static class SuccNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public SuccNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject succ(DynamicObject string) {
             if (Layouts.STRING.getByteList(string).realSize() > 0) {
-                return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)), StringSupport.CR_UNKNOWN, null);
+                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)), StringSupport.CR_UNKNOWN, null);
             } else {
-                return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), new ByteList(), StringSupport.CR_UNKNOWN, null);
+                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
         }
     }

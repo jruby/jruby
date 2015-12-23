@@ -95,7 +95,7 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject addr) {
-        InetSocketAddress iaddr = null;
+        final InetSocketAddress iaddr;
 
         if (addr instanceof Addrinfo) {
             Addrinfo addrInfo = (Addrinfo) addr;
@@ -110,7 +110,7 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject addr, IRubyObject backlog) {
-        InetSocketAddress iaddr = null;
+        final InetSocketAddress iaddr;
 
         if (addr instanceof Addrinfo) {
             Addrinfo addrInfo = (Addrinfo) addr;
@@ -137,19 +137,17 @@ public class RubyServerSocket extends RubySocket {
         Channel channel;
 
         try {
-            if(soType == Sock.SOCK_STREAM) {
+            if (soType == Sock.SOCK_STREAM) {
                 channel = ServerSocketChannel.open();
-
-            } else {
+            }
+            else {
                 throw runtime.newArgumentError("unsupported server socket type `" + soType + "'");
-
             }
 
             return newChannelFD(runtime, channel);
-
-        } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
-
+        }
+        catch (IOException e) {
+            throw sockerr(runtime, "initialize: " + e.toString(), e);
         }
     }
 
@@ -175,14 +173,13 @@ public class RubyServerSocket extends RubySocket {
                         selectable.configureBlocking(oldBlocking);
                     }
                 }
-            } else {
-                throw getRuntime().newErrnoENOPROTOOPTError();
-
             }
-
-        } catch (IOException e) {
-            throw SocketUtils.sockerr(context.runtime, e.getLocalizedMessage());
-
+            else {
+                throw context.runtime.newErrnoENOPROTOOPTError();
+            }
+        }
+        catch (IOException e) {
+            throw sockerr(context.runtime, e.getLocalizedMessage(), e);
         }
     }
 
@@ -206,18 +203,15 @@ public class RubyServerSocket extends RubySocket {
                 rubySocket.initFromServer(runtime, this, socket);
 
                 return rubySocket;
-
-            } else {
-                throw runtime.newErrnoENOPROTOOPTError();
             }
-
-        } catch (IllegalBlockingModeException ibme) {
+            throw runtime.newErrnoENOPROTOOPTError();
+        }
+        catch (IllegalBlockingModeException e) {
             // indicates that no connection is available in non-blocking mode
             throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
-
-        } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
-
+        }
+        catch (IOException e) {
+            throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
     }
 
@@ -228,23 +222,22 @@ public class RubyServerSocket extends RubySocket {
             if (channel instanceof ServerSocketChannel) {
                 ServerSocket socket = ((ServerSocketChannel)channel).socket();
                 socket.bind(iaddr, backlog);
-
-            } else {
+            }
+            else {
                 throw runtime.newErrnoENOPROTOOPTError();
             }
-
-        } catch (UnknownHostException e) {
+        }
+        catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
-
-        } catch (SocketException e) {
-            handleSocketException(runtime, "bind", e);
-
-        } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "bind(2): name or service not known");
-
-        } catch (IllegalArgumentException iae) {
-            throw SocketUtils.sockerr(runtime, iae.getMessage());
-
+        }
+        catch (SocketException e) {
+            handleSocketException(runtime, e, "bind(2)", iaddr);
+        }
+        catch (IOException e) {
+            throw sockerr(runtime, "bind(2): name or service not known", e);
+        }
+        catch (IllegalArgumentException e) {
+            throw sockerr(runtime, e.getMessage(), e);
         }
     }
 }// RubySocket
