@@ -521,9 +521,6 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
         data.next_argv(context);
-        if (isClosed(context, data.currentFile)) {
-            throw context.runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
-        }
 
         argf_close(context, data.currentFile);
 
