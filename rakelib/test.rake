@@ -59,6 +59,8 @@ namespace :test do
   compile_flags = {
     :default => :int,
     :int => ["-X-C"],
+    # Note: jit.background=false is implied by jit.threshold=0, but we add it here to be sure
+    :fullint => ["-X-C", "-Xjit.threshold=0", "-Xjit.background=false"],
     :jit => ["-Xjit.threshold=0", "-Xjit.background=false", "-J-XX:MaxPermSize=512M"],
     :aot => ["-X+C", "-J-XX:MaxPermSize=512M"],
     :all => [:int, :jit, :aot]
@@ -79,7 +81,7 @@ namespace :test do
       ruby "-X-C -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
-    task :int_full do
+    task :fullint do
       ruby "-Xjit.threshold=0 -Xjit.background=false -X-C -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 

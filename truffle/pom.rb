@@ -11,7 +11,7 @@ project 'JRuby Truffle' do
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'
-  jar 'org.antlr:antlr4-runtime:4.5'
+  jar 'org.antlr:antlr4-runtime:4.5.1-1'
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
@@ -22,7 +22,7 @@ project 'JRuby Truffle' do
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
   jar 'junit:junit', :scope => 'test'
 
-  plugin 'org.antlr:antlr4-maven-plugin', '4.5' do
+  plugin 'org.antlr:antlr4-maven-plugin', '4.5.1-1' do
     execute_goal :antlr4
   end
 
