@@ -77,47 +77,47 @@ class Range
 
     last_true = nil
 
-    if max < 0 and min < 0
-      value = min + (max - min) / 2
-    elsif min < -max
-      value = -((-1 - min - max) / 2 + 1)
-    else
-      value = (min + max) / 2
-    end
+    seeker = Proc.new do |current|
+      x = yield current
 
-    while min < max
-      x = yield value
-
-      return value if x == 0
+      return current if x == 0
 
       case x
       when Numeric
         if x > 0
-          min = value + 1
+          min = current + 1
         else
-          max = value
+          max = current
         end
       when true
-        last_true = value
-        max = value
+        last_true = current
+        max = current
       when false, nil
-        min = value + 1
+        min = current + 1
       else
         raise TypeError, "Range#bsearch block must return Numeric or boolean"
       end
+    end
 
+    while min < max
       if max < 0 and min < 0
-        value = min + (max - min) / 2
+        mid = min + (max - min) / 2
       elsif min < -max
-        value = -((-1 - min - max) / 2 + 1)
+        mid = -((-1 - min - max) / 2 + 1)
       else
-        value = (min + max) / 2
-      end
+        mid = (min + max) / 2
+      end      
+      
+      seeker.call mid
+    end
+    
+    if min == max
+      seeker.call min
     end
 
     if min < max
-      return @begin if value == start
-      return @begin.kind_of?(Float) ? value.to_f : value
+      return @begin if mid == start
+      return @begin.kind_of?(Float) ? mid.to_f : mid
     end
 
     if last_true

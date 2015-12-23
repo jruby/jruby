@@ -809,8 +809,8 @@ module Kernel
   end
   module_function :sprintf
 
-  alias_method :formatBacktrace, :sprintf
-  module_function :formatBacktrace
+  alias_method :format, :sprintf
+  module_function :format
 
   def sleep(duration=undefined)
     Rubinius.primitive :vm_sleep
