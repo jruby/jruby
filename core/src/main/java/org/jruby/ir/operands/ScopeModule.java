@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
@@ -45,6 +46,13 @@ public class ScopeModule extends Operand {
 
     @Override
     public Operand cloneForInlining(CloneInfo ii) {
+        if (ii instanceof InlineCloneInfo) {
+            if (scopeModuleDepth == 0) { // replace scope with inlined candidate receiver
+                return ((InlineCloneInfo) ii).getRenamedSelfVariable(null);
+            } else {                     // otherwise we only lost one scope from inlining...subtract one.
+                return ModuleFor(scopeModuleDepth - 1);
+            }
+        }
         return this;
     }
 

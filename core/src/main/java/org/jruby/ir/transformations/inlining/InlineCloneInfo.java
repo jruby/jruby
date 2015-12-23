@@ -150,7 +150,7 @@ public class InlineCloneInfo extends CloneInfo {
         return getHostScope().getNewLabel();
     }
 
-    protected Variable getRenamedSelfVariable(Variable self) {
+    public Variable getRenamedSelfVariable(Variable self) {
         return callReceiver;
     }
 
