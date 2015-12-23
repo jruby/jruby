@@ -541,13 +541,22 @@ public class RubyObject extends RubyBasicObject {
     static IRubyObject dig(ThreadContext context, IRubyObject obj, IRubyObject[] args, int idx) {
         if ( obj.isNil() ) return context.nil;
         if ( obj instanceof RubyArray ) {
-            return ((RubyArray) obj).dig(context, args, idx);
+            // TODO: cache somewhere
+            if (obj.getMetaClass().searchMethod("dig").isBuiltin()) {
+                return ((RubyArray) obj).dig(context, args, idx);
+            }
         }
         if ( obj instanceof RubyHash ) {
-            return ((RubyHash) obj).dig(context, args, idx);
+            // TODO: cache somewhere
+            if (obj.getMetaClass().searchMethod("dig").isBuiltin()) {
+                return ((RubyHash) obj).dig(context, args, idx);
+            }
         }
         if ( obj instanceof RubyStruct ) {
-            return ((RubyStruct) obj).dig(context, args, idx);
+            // TODO: cache somewhere
+            if (obj.getMetaClass().searchMethod("dig").isBuiltin()) {
+                return ((RubyStruct) obj).dig(context, args, idx);
+            }
         }
         if ( obj.respondsTo("dig") ) {
             final int len = args.length - idx;
