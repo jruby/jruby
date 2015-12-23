@@ -38,13 +38,13 @@ module Utilities
     graal_locations = [
       ENV['GRAAL_BIN'],
       ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
-      "graalvm-jdk1.8.0/bin/java",
-      "../graalvm-jdk1.8.0/bin/java",
-      "../../graalvm-jdk1.8.0/bin/java",
+      "GraalVM-0.9/jre/bin/javao",
+      "../GraalVM-0.9/jre/bin/javao",
+      "../../GraalVM-0.9/jre/bin/javao",
     ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
     not_found = -> {
-      raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the JRuby repository or parent directory"
+      raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
     }
 
     graal_locations.find(not_found) do |location|
