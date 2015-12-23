@@ -111,10 +111,14 @@ public class RubyDir extends RubyObject {
     }
 
     private final void checkDir() {
-        testFrozen("Dir");
-        update();
+        checkDirIgnoreClosed();
 
         if (!isOpen) throw getRuntime().newIOError("closed directory");
+    }
+
+    private final void checkDirIgnoreClosed() {
+        testFrozen("Dir");
+        update();
     }
 
     private void update() {
@@ -514,7 +518,7 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = "close")
     public IRubyObject close() {
         // Make sure any read()s after close fail.
-        checkDir();
+        checkDirIgnoreClosed();
 
         isOpen = false;
 
