@@ -78,7 +78,7 @@ public class TryNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         for (RescueNode rescue : rescueParts) {
-            if (rescue.canHandle(frame, (DynamicObject) exception.getRubyException())) {
+            if (rescue.canHandle(frame, exception.getRubyException())) {
                 return setLastExceptionAndRunRescue(frame, exception, rescue);
             }
         }

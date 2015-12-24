@@ -94,7 +94,7 @@ public abstract class ObjectPrimitiveNodes {
                 return newId;
             }
 
-            return (long) id;
+            return id;
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {

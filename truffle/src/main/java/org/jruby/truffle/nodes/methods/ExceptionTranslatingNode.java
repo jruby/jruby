@@ -153,7 +153,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public DynamicObject translate(Throwable throwable) {
-        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA || (boolean) getContext().getOptions().EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA || getContext().getOptions().EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
             throwable.printStackTrace();
         }
 

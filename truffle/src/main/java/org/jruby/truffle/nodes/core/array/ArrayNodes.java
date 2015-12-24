@@ -355,7 +355,7 @@ public abstract class ArrayNodes {
                 readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 
-            return readNode.executeRead(frame, (DynamicObject) array, index);
+            return readNode.executeRead(frame, array, index);
         }
 
         @Specialization
@@ -703,7 +703,7 @@ public abstract class ArrayNodes {
                 readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 
-            return readNode.executeRead(frame, (DynamicObject) array, index);
+            return readNode.executeRead(frame, array, index);
         }
 
     }
@@ -838,7 +838,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isRubyArray(other)", "!isNullArray(other)"})
         public DynamicObject concat(DynamicObject array, DynamicObject other) {
-            appendManyNode.executeAppendMany((DynamicObject) array, Layouts.ARRAY.getSize(other), Layouts.ARRAY.getStore(other));
+            appendManyNode.executeAppendMany(array, Layouts.ARRAY.getSize(other), Layouts.ARRAY.getStore(other));
             return array;
         }
 
@@ -2510,7 +2510,7 @@ public abstract class ArrayNodes {
                 popOneNode = insert(PopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
 
-            return popOneNode.executePopOne((DynamicObject) array);
+            return popOneNode.executePopOne(array);
         }
 
         @Specialization(guards = { "isEmptyArray(array)", "wasProvided(object)" })
