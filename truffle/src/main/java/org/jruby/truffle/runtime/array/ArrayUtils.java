@@ -359,6 +359,10 @@ public abstract class ArrayUtils {
     private static final int INITIAL_CAPACITY = 16;
 
     public static int capacity(int current, int needed) {
+        if (needed == 0) {
+            return 0;
+        }
+
         assert current < needed;
 
         if (needed < INITIAL_CAPACITY) {
