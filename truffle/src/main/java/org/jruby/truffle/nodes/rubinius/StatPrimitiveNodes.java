@@ -23,7 +23,6 @@ import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 public abstract class StatPrimitiveNodes {

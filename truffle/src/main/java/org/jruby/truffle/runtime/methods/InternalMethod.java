@@ -9,17 +9,16 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import java.util.HashSet;
-import java.util.Set;
-
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectGraphNode;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.DynamicObject;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A Ruby method: either a method in a module,

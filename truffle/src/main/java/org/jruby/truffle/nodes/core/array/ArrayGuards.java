@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.core.array;
 
 import com.oracle.truffle.api.object.DynamicObject;
-
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.layouts.Layouts;
 

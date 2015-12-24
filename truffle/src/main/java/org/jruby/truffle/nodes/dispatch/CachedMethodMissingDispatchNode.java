@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
-
 import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNode;
 import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNodeGen;
 import org.jruby.truffle.runtime.RubyContext;

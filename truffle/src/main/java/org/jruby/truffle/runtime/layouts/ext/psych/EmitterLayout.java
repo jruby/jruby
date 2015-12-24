@@ -16,8 +16,6 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.layouts.BasicObjectLayout;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.emitter.Emitter;
-import org.yaml.snakeyaml.events.Event;
-import org.yaml.snakeyaml.parser.Parser;
 
 @Layout
 public interface EmitterLayout extends BasicObjectLayout {

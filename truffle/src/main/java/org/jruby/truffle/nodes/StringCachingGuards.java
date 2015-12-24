@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 public abstract class StringCachingGuards {

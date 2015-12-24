@@ -17,9 +17,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
-import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {

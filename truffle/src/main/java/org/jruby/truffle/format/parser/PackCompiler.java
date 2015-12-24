@@ -17,9 +17,6 @@ import org.jruby.truffle.format.nodes.PackRootNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-import org.jruby.truffle.format.parser.PackLexer;
-import org.jruby.truffle.format.parser.PackParser;
-
 public class PackCompiler {
 
     private final RubyContext context;

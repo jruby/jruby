@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
