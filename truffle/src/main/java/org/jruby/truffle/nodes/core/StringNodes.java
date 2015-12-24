@@ -416,7 +416,12 @@ public abstract class StringNodes {
             return string;
         }
 
-        private DynamicObject charRangeException(Number value) {
+        private DynamicObject charRangeException(int value) {
+            return getContext().getCoreLibrary().rangeError(
+                    String.format("%d out of char range", value), this);
+        }
+
+        private DynamicObject charRangeException(long value) {
             return getContext().getCoreLibrary().rangeError(
                     String.format("%d out of char range", value), this);
         }
