@@ -13,8 +13,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.om.dsl.api.Layout;
 
-import java.math.BigInteger;
-
 @Layout
 public interface HandleLayout extends BasicObjectLayout {
 

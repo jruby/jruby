@@ -12,8 +12,6 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.SourceSection;
-
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.locals.ReadLocalNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;

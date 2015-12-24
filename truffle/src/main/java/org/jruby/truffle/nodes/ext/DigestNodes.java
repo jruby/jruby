@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

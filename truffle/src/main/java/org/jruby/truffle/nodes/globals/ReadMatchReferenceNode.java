@@ -18,9 +18,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
-
-import java.util.Arrays;
 
 public class ReadMatchReferenceNode extends RubyNode {
 

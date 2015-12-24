@@ -9,17 +9,16 @@
  */
 package org.jruby.truffle.format.nodes.read;
 
-import org.jruby.truffle.format.nodes.PackNode;
-import org.jruby.truffle.format.nodes.SourceNode;
-import org.jruby.truffle.format.nodes.type.ToIntegerNode;
-import org.jruby.truffle.format.nodes.type.ToIntegerNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
-
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.format.nodes.PackNode;
+import org.jruby.truffle.format.nodes.SourceNode;
+import org.jruby.truffle.format.nodes.type.ToIntegerNode;
+import org.jruby.truffle.format.nodes.type.ToIntegerNodeGen;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Read a {@code int} value from the source.

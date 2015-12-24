@@ -44,11 +44,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
-
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;

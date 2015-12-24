@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
@@ -70,6 +69,7 @@ import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -80,8 +80,6 @@ import org.jruby.util.KeyValuePair;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import org.jruby.truffle.runtime.core.StringOperations;
 
 /**
  * A JRuby parser node visitor which translates JRuby AST nodes into truffle Nodes. Therefore there is some namespace
