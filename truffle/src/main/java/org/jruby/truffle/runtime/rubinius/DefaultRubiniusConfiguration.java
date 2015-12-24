@@ -45,11 +45,9 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import org.jruby.util.ByteList;
 
 public abstract class DefaultRubiniusConfiguration {
 

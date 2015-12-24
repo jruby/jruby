@@ -13,11 +13,7 @@ import org.jruby.truffle.om.dsl.processor.layout.model.LayoutModel;
 import org.jruby.truffle.om.dsl.processor.layout.model.NameUtils;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
-import com.oracle.truffle.api.object.Layout;
-import com.oracle.truffle.api.object.Layout.ImplicitCast;
-
 import javax.lang.model.type.TypeKind;
-
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;

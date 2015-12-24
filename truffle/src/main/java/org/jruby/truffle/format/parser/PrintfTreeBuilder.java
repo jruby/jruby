@@ -11,7 +11,6 @@ package org.jruby.truffle.format.parser;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.misc.Interval;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.nodes.SourceNode;
 import org.jruby.truffle.format.nodes.control.SequenceNode;
@@ -25,9 +24,7 @@ import org.jruby.truffle.format.nodes.write.WriteByteNode;
 import org.jruby.truffle.format.nodes.write.WriteBytesNodeGen;
 import org.jruby.truffle.format.nodes.write.WritePaddedBytesNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.List;

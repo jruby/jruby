@@ -11,8 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
-
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.array.ArrayUtils;

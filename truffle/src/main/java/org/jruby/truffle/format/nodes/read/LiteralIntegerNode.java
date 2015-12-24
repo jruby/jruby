@@ -1,9 +1,8 @@
 package org.jruby.truffle.format.nodes.read;
 
+import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.runtime.RubyContext;
-
-import com.oracle.truffle.api.frame.VirtualFrame;
 
 public class LiteralIntegerNode extends PackNode {
 

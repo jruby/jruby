@@ -15,12 +15,10 @@ import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.format.runtime.PackEncoding;
 import org.jruby.truffle.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.format.runtime.PackResult;
 import org.jruby.truffle.runtime.RubyLanguage;
-import org.jruby.truffle.runtime.array.ArrayUtils;
 
 /**
  * The node at the root of a pack expression.

@@ -1,0 +1,1 @@
+fails:ObjectSpace.each_object doesn't find an object stored in a WeakRef that should have been cleared
