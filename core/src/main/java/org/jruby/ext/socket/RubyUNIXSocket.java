@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -66,7 +66,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     static void createUNIXSocket(Ruby runtime) {
         RubyClass rb_cUNIXSocket = runtime.defineClass("UNIXSocket", runtime.getClass("BasicSocket"), UNIXSOCKET_ALLOCATOR);
         runtime.getObject().setConstant("UNIXsocket", rb_cUNIXSocket);
-        
+
         rb_cUNIXSocket.defineAnnotatedMethods(RubyUNIXSocket.class);
     }
 
@@ -232,7 +232,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                 if (!fpathFile.exists()) {
                     throw runtime.newErrnoENOENTError("unix socket");
                 }
-                
+
                 UnixSocketChannel channel = UnixSocketChannel.open();
 
                 channel.connect(new UnixSocketAddress(fpathFile));
@@ -248,7 +248,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     protected void init_sock(Ruby runtime, Channel channel, String path) {
         MakeOpenFile();
-        
+
         ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
 
         openFile.setFD(newChannelFD(runtime, channel));
@@ -261,9 +261,9 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         init_sock(runtime, channel, null);
     }
 
-    private UnixSocketChannel asUnixSocket() {
-        return (UnixSocketChannel)getOpenFile().fd().ch;
-    }
+    //private UnixSocketChannel asUnixSocket() {
+    //    return (UnixSocketChannel)getOpenFile().fd().ch;
+    //}
 
     protected final static int F_GETFL = Fcntl.F_GETFL.intValue();
     protected final static int F_SETFL = Fcntl.F_SETFL.intValue();

@@ -16,12 +16,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.KernelNodes;
-import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.objects.IsANode;
+import org.jruby.truffle.nodes.objects.IsANodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 
@@ -31,14 +32,14 @@ import org.jruby.truffle.runtime.control.RaiseException;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class NumericToFloatNode extends RubyNode {
 
-    @Child private KernelNodes.IsANode isANode;
+    @Child private IsANode isANode;
     @Child CallDispatchHeadNode toFloatCallNode;
 
     private final String method;
 
     public NumericToFloatNode(RubyContext context, SourceSection sourceSection, String method) {
         super(context, sourceSection);
-        isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
+        isANode = IsANodeGen.create(context, sourceSection, null, null);
         this.method = method;
     }
 
@@ -71,7 +72,7 @@ public abstract class NumericToFloatNode extends RubyNode {
     }
 
     protected boolean isNumeric(VirtualFrame frame, Object value) {
-        return isANode.executeIsA(frame, value, getContext().getCoreLibrary().getNumericClass());
+        return isANode.executeIsA(value, getContext().getCoreLibrary().getNumericClass());
     }
 
 }

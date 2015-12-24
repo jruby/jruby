@@ -301,26 +301,9 @@ project 'JRuby Integration Tests' do
 
   end
 
-  profile 'truffle-test-pe' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml(
-                      '<target>' +
-                        '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
-                          '<arg value="-J-server" />' +
-                          '<arg value="-X+T" />' +
-                          '<arg value="test/truffle/pe/pe.rb" />' +
-                        '</exec>' +
-                      '</target>' ) ] )
-    end
-
-  end
-
-
   profile 'truffle-mri-tests' do
+
+    plugin :surefire, '2.15', :skipTests => true
 
     plugin :antrun do
       execute_goals('run',

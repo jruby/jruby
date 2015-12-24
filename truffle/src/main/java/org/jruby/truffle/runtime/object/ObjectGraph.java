@@ -136,6 +136,12 @@ public abstract class ObjectGraph {
                         reachable.add((DynamicObject) element);
                     }
                 }
+            } else if (propertyValue instanceof Collection<?>) {
+                for (Object element : ((Collection<?>) propertyValue)) {
+                    if (element instanceof DynamicObject) {
+                        reachable.add((DynamicObject) element);
+                    }
+                }
             } else if (propertyValue instanceof Frame) {
                 reachable.addAll(getObjectsInFrame((Frame) propertyValue));
             } else if (propertyValue instanceof ObjectGraphNode) {
@@ -149,10 +155,23 @@ public abstract class ObjectGraph {
     public static Set<DynamicObject> getObjectsInFrame(Frame frame) {
         final Set<DynamicObject> objects = new HashSet<>();
 
-        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(frame.getArguments());
+        final Object[] arguments = frame.getArguments();
+        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(arguments);
         if (lexicalParentFrame != null) {
             objects.addAll(getObjectsInFrame(lexicalParentFrame));
         }
+
+        final Object self = RubyArguments.tryGetSelf(arguments);
+        if (self instanceof DynamicObject) {
+            objects.add((DynamicObject) self);
+        }
+
+        final DynamicObject block = RubyArguments.tryGetBlock(arguments);
+        if (block != null) {
+            objects.add(block);
+        }
+
+        // Other frame arguments are either only internal or user arguments which appear in slots.
 
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
             final Object slotValue = frame.getValue(slot);

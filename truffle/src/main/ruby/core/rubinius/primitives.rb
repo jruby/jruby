@@ -33,6 +33,16 @@ module Rubinius
 
     Truffle::Primitive.install_rubinius_primitive method(:module_mirror)
 
+    if Truffle::Primitive.substrate?
+
+      def self.vm_gc_start(force)
+        Truffle::Interop.execute(Truffle::Interop.read_property(Truffle::Java::System, :gc))
+      end
+
+      Truffle::Primitive.install_rubinius_primitive method(:vm_gc_start)
+
+    end
+
     def self.vm_spawn(options, command, arguments)
       options ||= {}
       env     = options[:unsetenv_others] ? {} : ENV.to_hash

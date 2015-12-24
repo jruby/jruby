@@ -1351,7 +1351,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, optional = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 2, raiseIfFrozenSelf = true, lowerFixnumParameters = 0)
     @ImportStatic(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
@@ -1400,8 +1400,7 @@ public abstract class ArrayNodes {
             }
 
         }
-
-
+        
         @Specialization
         public DynamicObject initialize(DynamicObject array, NotProvided size, NotProvided defaultValue, NotProvided block) {
             return initialize(array, 0, nil(), block);
@@ -1440,7 +1439,9 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size >= 0")
         public DynamicObject initialize(DynamicObject array, int size, int defaultValue, NotProvided block) {
             final int[] store = new int[size];
-            Arrays.fill(store, defaultValue);
+            if (defaultValue != 0) {
+                Arrays.fill(store, defaultValue);
+            }
             Layouts.ARRAY.setStore(array, store);
             Layouts.ARRAY.setSize(array, size);
             return array;
@@ -1455,7 +1456,9 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size >= 0")
         public DynamicObject initialize(DynamicObject array, int size, long defaultValue, NotProvided block) {
             final long[] store = new long[size];
-            Arrays.fill(store, defaultValue);
+            if (defaultValue != 0L) {
+                Arrays.fill(store, defaultValue);
+            }
             Layouts.ARRAY.setStore(array, store);
             Layouts.ARRAY.setSize(array, size);
             return array;
@@ -1470,7 +1473,9 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size >= 0")
         public DynamicObject initialize(DynamicObject array, int size, double defaultValue, NotProvided block) {
             final double[] store = new double[size];
-            Arrays.fill(store, defaultValue);
+            if (defaultValue != 0.0) {
+                Arrays.fill(store, defaultValue);
+            }
             Layouts.ARRAY.setStore(array, store);
             Layouts.ARRAY.setSize(array, size);
             return array;
@@ -2201,7 +2206,7 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MaxBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", "max");
+            final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "max");
 
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
@@ -2321,7 +2326,7 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MinBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", "min");
+            final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "min");
 
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
@@ -2369,6 +2374,7 @@ public abstract class ArrayNodes {
                 DynamicObject array,
                 DynamicObject format,
                 @Cached("privatizeByteList(format)") ByteList cachedFormat,
+                @Cached("byteListLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final PackResult result;
 
@@ -2379,7 +2385,7 @@ public abstract class ArrayNodes {
                 throw handleException(e);
             }
 
-            return finishPack(cachedFormat, result);
+            return finishPack(cachedFormatLength, result);
         }
 
         @Specialization(contains = "packCached", guards = "isRubyString(format)")
@@ -2397,7 +2403,7 @@ public abstract class ArrayNodes {
                 throw handleException(e);
             }
 
-            return finishPack(StringOperations.getByteList(format), result);
+            return finishPack(StringOperations.getByteList(format).length(), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2418,10 +2424,10 @@ public abstract class ArrayNodes {
             }
         }
 
-        private DynamicObject finishPack(ByteList format, PackResult result) {
+        private DynamicObject finishPack(int formatLength, PackResult result) {
             final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
 
-            if (format.length() == 0) {
+            if (formatLength == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {
@@ -4232,7 +4238,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isIntArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,
+                @Cached("createBinaryProfile()") ConditionProfile sameLengthProfile) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final int[] b = (int[]) Layouts.ARRAY.getStore(other);
@@ -4241,9 +4248,7 @@ public abstract class ArrayNodes {
             final int zippedLength = Layouts.ARRAY.getSize(array);
             final Object[] zipped = new Object[zippedLength];
 
-            final boolean areSameLength = bLength == zippedLength;
-
-            if (areSameLength) {
+            if (sameLengthProfile.profile(zippedLength == bLength)) {
                 for (int n = 0; n < zippedLength; n++) {
                     zipped[n] = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{a[n], b[n]}, 2);
                 }
@@ -4261,7 +4266,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isObjectArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,
+                @Cached("createBinaryProfile()") ConditionProfile sameLengthProfile) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final Object[] b = (Object[]) Layouts.ARRAY.getStore(other);
@@ -4270,9 +4276,7 @@ public abstract class ArrayNodes {
             final int zippedLength = Layouts.ARRAY.getSize(array);
             final Object[] zipped = new Object[zippedLength];
 
-            final boolean areSameLength = bLength == zippedLength;
-
-            if (areSameLength) {
+            if (sameLengthProfile.profile(zippedLength == bLength)) {
                 for (int n = 0; n < zippedLength; n++) {
                     zipped[n] = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{a[n], b[n]}, 2);
                 }

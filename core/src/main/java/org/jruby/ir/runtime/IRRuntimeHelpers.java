@@ -1516,43 +1516,33 @@ public class IRRuntimeHelpers {
     }
 
     private static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
-        // This is the placeholder for scenarios
-        // not handled by specialized instructions.
         if (args == null) {
             args = IRubyObject.NULL_ARRAY;
         }
 
-        boolean isLambda = block.type == Block.Type.LAMBDA;
         boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
-        if (isProcCall) {
-            if (isLambda) {
-                block.getBody().getSignature().checkArity(context.runtime, args);
-                return args;
-            } else {
-                return prepareProcArgs(context, block, args);
+        org.jruby.runtime.Signature sig = block.getBody().getSignature();
+        if (block.type == Block.Type.LAMBDA) {
+            if (!isProcCall && sig.arityValue() != -1 && sig.required() != 1) {
+                args = toAry(context, args);
             }
+            sig.checkArity(context.runtime, args);
+            return args;
         }
 
-        BlockBody body = block.getBody();
-        org.jruby.runtime.Signature sig = body.getSignature();
+        if (isProcCall) {
+            return prepareProcArgs(context, block, args);
+        }
+
         int arityValue = sig.arityValue();
-        if (isLambda && (arityValue == -1 || sig.required() == 1)) {
-            block.getBody().getSignature().checkArity(context.runtime, args);
-            return args;
-        } else if (!isLambda && arityValue >= -1 && arityValue <= 1) {
+        if (arityValue >= -1 && arityValue <= 1) {
             return args;
         }
 
-        // We get here only when we have both required and optional/rest args
+        // We get here only when we need both required and optional/rest args
         // (keyword or non-keyword in either case).
         // So, convert a single value to an array if possible.
         args = toAry(context, args);
-
-        // Nothing more to do for lambdas
-        if (isLambda) {
-            block.getBody().getSignature().checkArity(context.runtime, args);
-            return args;
-        }
 
         // Deal with keyword args that needs special handling
         int needsKwargs = sig.hasKwargs() ? 1 - sig.getRequiredKeywordForArityCount() : 0;
@@ -1593,53 +1583,14 @@ public class IRRuntimeHelpers {
      */
     @Interp @JIT
     public static IRubyObject[] prepareNoBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
-        if (block.type == Block.Type.LAMBDA) {
-            block.getSignature().checkArity(context.runtime, args);
-        }
-        return args;
-    }
-
-    @Interp @JIT
-    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
-        args = prepareBlockArgsInternal(context, block, args);
-        if (usesKwArgs) {
-            frobnicateKwargsArgument(context, block.getBody().getSignature().required(), args);
-        }
-        return args;
-    }
-
-    @Interp @JIT
-    public static IRubyObject[] prepareFixedBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) {
             args = IRubyObject.NULL_ARRAY;
         }
 
-        boolean isLambda = block.type == Block.Type.LAMBDA;
-        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
-        if (isProcCall) {
-            if (isLambda) {
-                block.getBody().getSignature().checkArity(context.runtime, args);
-                return args;
-            } else {
-                return prepareProcArgs(context, block, args);
-            }
+        if (block.type == Block.Type.LAMBDA) {
+            block.getSignature().checkArity(context.runtime, args);
         }
 
-        // SSS FIXME: This check here is not required as long as
-        // the single-instruction cases always uses PrepareSingleBlockArgInstr
-        // But, including this here for robustness for now.
-        if (block.getBody().getSignature().arityValue() == 1) {
-            if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
-            return args;
-        }
-
-        // Since we have more than 1 required arg,
-        // convert a single value to an array if possible.
-        args = IRRuntimeHelpers.toAry(context, args);
-
-        if (isLambda) block.getBody().getSignature().checkArity(context.runtime, args);
-
-        // If there are insufficient args, ReceivePreReqdInstr will return nil
         return args;
     }
 
@@ -1651,8 +1602,11 @@ public class IRRuntimeHelpers {
 
         if (block.type == Block.Type.LAMBDA) {
             block.getBody().getSignature().checkArity(context.runtime, args);
-        } else if (context.getCurrentBlockType() == Block.Type.PROC) {
-            // Deal with proc calls
+            return args;
+        }
+
+        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        if (isProcCall) {
             if (args.length == 0) {
                 args = context.runtime.getSingleNilArray();
             } else if (args.length == 1) {
@@ -1662,9 +1616,44 @@ public class IRRuntimeHelpers {
             }
         }
 
-
-        // Nothing more to do! Hurray!
         // If there are insufficient args, ReceivePreReqdInstr will return nil
+        return args;
+    }
+
+    @Interp @JIT
+    public static IRubyObject[] prepareFixedBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
+        if (args == null) {
+            args = IRubyObject.NULL_ARRAY;
+        }
+
+        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        org.jruby.runtime.Signature sig = block.getBody().getSignature();
+        if (block.type == Block.Type.LAMBDA) {
+            // We don't need to check for the 1 required arg case here
+            // since that goes down the prepareSingleBlockArgs route
+            if (!isProcCall && sig.arityValue() != 1) {
+                args = toAry(context, args);
+            }
+            sig.checkArity(context.runtime, args);
+            return args;
+        }
+
+        if (isProcCall) {
+            return prepareProcArgs(context, block, args);
+        }
+
+        // If we need more than 1 reqd arg, convert a single value to an array if possible.
+        // If there are insufficient args, ReceivePreReqdInstr will return nil
+        return toAry(context, args);
+    }
+
+    // This is the placeholder for scenarios not handled by specialized instructions.
+    @Interp @JIT
+    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
+        args = prepareBlockArgsInternal(context, block, args);
+        if (usesKwArgs) {
+            frobnicateKwargsArgument(context, block.getBody().getSignature().required(), args);
+        }
         return args;
     }
 

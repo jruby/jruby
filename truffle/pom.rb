@@ -11,14 +11,18 @@ project 'JRuby Truffle' do
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'
-  jar 'org.antlr:antlr4-runtime:4.5'
+  jar 'org.antlr:antlr4-runtime:4.5.1-1'
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  jar 'com.oracle:truffle:0.7'
-  jar 'com.oracle:truffle-dsl-processor:0.7', :scope => 'provided'
+  truffle_version = '0.10'
+  jar 'com.oracle.truffle:truffle-api:' + truffle_version
+  jar 'com.oracle.truffle:truffle-debug:' + truffle_version
+  jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
+  jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
+  jar 'junit:junit', :scope => 'test'
 
-  plugin 'org.antlr:antlr4-maven-plugin', '4.5' do
+  plugin 'org.antlr:antlr4-maven-plugin', '4.5.1-1' do
     execute_goal :antlr4
   end
 
@@ -42,7 +46,8 @@ project 'JRuby Truffle' do
                    :phase => 'compile',
                    'annotationProcessors' => [ 'org.jruby.truffle.om.dsl.processor.OMProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',
-                                               'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor' ],
+                                               'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor',
+                                               'com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',

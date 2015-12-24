@@ -367,10 +367,6 @@ public final class Ruby implements Constantizable {
         return globalRuntime != null;
     }
 
-    public static boolean isSubstrateVM() {
-        return false;
-    }
-
     /**
      * Set the global runtime to the given runtime only if it has no been set.
      *
@@ -843,7 +839,7 @@ public final class Ruby implements Constantizable {
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
             assert self == getTopSelf();
-            final TruffleContextInterface truffleContext = getTruffleContext();
+            final JRubyTruffleInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
             truffleContext.execute((RootNode) rootNode);
             Main.printTruffleTimeMetric("after-run");
@@ -884,40 +880,46 @@ public final class Ruby implements Constantizable {
         return jitCompiler;
     }
 
-    public TruffleContextInterface getTruffleContext() {
+    public JRubyTruffleInterface getTruffleContext() {
         synchronized (truffleContextMonitor) {
             if (truffleContext == null) {
-                truffleContext = loadTruffleContext();
+                truffleContext = loadTruffle();
             }
             return truffleContext;
         }
     }
 
-    private TruffleContextInterface loadTruffleContext() {
+    private JRubyTruffleInterface loadTruffle() {
         Main.printTruffleTimeMetric("before-load-truffle-context");
 
         final Class<?> clazz;
 
         try {
-            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.runtime.RubyContext");
+            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.JRubyTruffleImpl");
         } catch (Exception e) {
             throw new RuntimeException("Truffle backend not available", e);
         }
 
-        final TruffleContextInterface truffleContext;
+        final JRubyTruffleInterface truffleContext;
 
         try {
             Constructor<?> con = clazz.getConstructor(Ruby.class);
-            truffleContext = (TruffleContextInterface) con.newInstance(this);
+            truffleContext = (JRubyTruffleInterface) con.newInstance(this);
         } catch (Exception e) {
             throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
         }
 
-        truffleContext.initialize();
-
         Main.printTruffleTimeMetric("after-load-truffle-context");
 
         return truffleContext;
+    }
+
+    public void shutdownTruffleContextIfRunning() {
+        synchronized (truffleContextMonitor) {
+            if (truffleContext != null) {
+                truffleContext.dispose();
+            }
+        }
     }
 
     /**
@@ -3582,6 +3584,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("ECONNREFUSED"), "Connection refused");
     }
 
+    public RaiseException newErrnoECONNREFUSEDError(String message) {
+        return newRaiseException(getErrno().getClass("ECONNREFUSED"), message);
+    }
+
     public RaiseException newErrnoECONNRESETError() {
         return newRaiseException(getErrno().getClass("ECONNRESET"), "Connection reset by peer");
     }
@@ -3958,40 +3964,43 @@ public final class Ruby implements Constantizable {
      * TODO: Should ECONNABORTED get thrown earlier in the descriptor itself or is it ok to handle this late?
      * TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
      */
-    public RaiseException newIOErrorFromException(IOException e) {
-        if (e instanceof ClosedChannelException || "Bad file descriptor".equals(e.getMessage())) {
-            throw newErrnoEBADFError();
-        }
-
-        // TODO: this is kinda gross
-        if(e.getMessage() != null) {
-            String errorMessage = e.getMessage();
+    public RaiseException newIOErrorFromException(final IOException ex) {
+        final String errorMessage = ex.getMessage();
+        if ( errorMessage != null ) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
-            if ("File not open".equals(errorMessage)) {
-                return newIOError(e.getMessage());
-            } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
-                return newErrnoECONNABORTEDError();
-            } else if (e.getMessage().equals("Broken pipe")) {
-                return newErrnoEPIPEError();
-            } else if ("Connection reset by peer".equals(e.getMessage())
-                    || "An existing connection was forcibly closed by the remote host".equals(e.getMessage()) ||
-                    (Platform.IS_WINDOWS && e.getMessage().contains("connection was aborted"))) {
-                return newErrnoECONNRESETError();
-            } else if ("Too many levels of symbolic links".equals(e.getMessage())) {
-                return newErrnoELOOPError();
-            } else if ("Too many open files".equals(e.getMessage())) {
-                return newErrnoEMFILEError();
-            } else if ("Too many open files in system".equals(e.getMessage())) {
-                return newErrnoENFILEError();
-            } else if ("Network is unreachable".equals(e.getMessage())) {
-                return newErrnoENETUNREACHError();
+            switch ( errorMessage ) {
+                case "Bad file descriptor" :
+                    if ( ex instanceof ClosedChannelException ) throw newErrnoEBADFError();
+                    break;
+                case "File not open" :
+                    return newIOError(errorMessage);
+                case "An established connection was aborted by the software in your host machine" :
+                    return newErrnoECONNABORTEDError();
+                case "Broken pipe" :
+                    return newErrnoEPIPEError();
+                case "Connection reset by peer" :
+                case "An existing connection was forcibly closed by the remote host" :
+                    return newErrnoECONNRESETError();
+                case "Too many levels of symbolic links" :
+                    return newErrnoELOOPError();
+                case "Too many open files" :
+                    return newErrnoEMFILEError();
+                case "Too many open files in system" :
+                    return newErrnoENFILEError();
+                case "Network is unreachable" :
+                    return newErrnoENETUNREACHError();
+                default :
+                    if ( Platform.IS_WINDOWS ) {
+                        if ( errorMessage.contains("connection was aborted") ) {
+                            return newErrnoECONNRESETError();
+                        }
+                    }
             }
-            return newRaiseException(getIOError(), e.getMessage());
-        } else {
-            return newRaiseException(getIOError(), "IO Error");
+            return newRaiseException(getIOError(), errorMessage);
         }
+        return newRaiseException(getIOError(), "IO Error");
     }
 
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
@@ -4951,7 +4960,7 @@ public final class Ruby implements Constantizable {
     // Compilation
     private final JITCompiler jitCompiler;
 
-    private TruffleContextInterface truffleContext;
+    private JRubyTruffleInterface truffleContext;
     private final Object truffleContextMonitor = new Object();
 
     // Note: this field and the following static initializer

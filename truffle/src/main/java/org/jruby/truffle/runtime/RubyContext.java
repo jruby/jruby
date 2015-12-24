@@ -17,13 +17,12 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
-import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.tools.CoverageTracker;
+import com.oracle.truffle.tools.CoverageTracker;
 
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Runtime;
@@ -35,7 +34,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
-import org.jruby.TruffleContextInterface;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
@@ -77,6 +75,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
@@ -84,7 +84,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * The global state of a running Ruby system.
  */
-public class RubyContext extends ExecutionContext implements TruffleContextInterface {
+public class RubyContext extends ExecutionContext {
 
     private static volatile RubyContext latestInstance;
 
@@ -121,12 +121,18 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     private final PrintStream debugStandardOut;
 
-    public RubyContext(Ruby runtime) {
+    private final Map<String, TruffleObject> exported = new HashMap<>();
+    private final TruffleLanguage.Env env;
+
+    private org.jruby.ast.RootNode initialJRubyRootNode;
+
+    public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         options = new Options();
 
         latestInstance = this;
 
         assert runtime != null;
+        this.env = env;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -138,13 +144,16 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
         }
 
-        // TODO CS 28-Feb-15 this is global
-        Probe.registerASTProber(new RubyDefaultASTProber());
+        env.instrumenter().registerASTProber(new RubyDefaultASTProber(env.instrumenter()));
 
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
-        if (options.COVERAGE) {
+        if (options.COVERAGE || options.COVERAGE_GLOBAL) {
             coverageTracker = new CoverageTracker();
+
+            if (options.COVERAGE_GLOBAL) {
+                env.instrumenter().install(coverageTracker);
+            }
         } else {
             coverageTracker = null;
         }
@@ -174,12 +183,11 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         coreLibrary.initialize();
 
         featureLoader = new FeatureLoader(this);
-        traceManager = new TraceManager();
+        traceManager = new TraceManager(this);
         atExitManager = new AtExitManager(this);
 
         threadManager = new ThreadManager(this);
         threadManager.initialize();
-
 
         rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
         rubiniusPrimitiveManager.addAnnotatedPrimitives();
@@ -199,6 +207,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
+
+        initialize();
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -259,8 +269,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return evalFrame;
     }
 
-    @Override
-    public void initialize() {
+    private void initialize() {
         // Give the core library manager a chance to tweak some of those methods
 
         coreLibrary.initializeAfterMethodsAdded();
@@ -401,7 +410,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     @TruffleBoundary
     private RubyRootNode parse(Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         final TranslatorDriver translator = new TranslatorDriver(this);
-        return translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode);
+        return translator.parse(this, source, defaultEncoding, parserContext, null, parentFrame, ownScopeForAssignments, currentNode);
     }
 
     @TruffleBoundary
@@ -440,6 +449,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return newTupleNode.call(frame, getCoreLibrary().getTupleClass(), "create", null, values);
     }
 
+    @TruffleBoundary
     public IRubyObject toJRuby(Object object) {
         if (object == getCoreLibrary().getNilObject()) {
             return runtime.getNil();
@@ -454,11 +464,13 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
     }
 
+    @TruffleBoundary
     public IRubyObject toJRubyEncoding(DynamicObject encoding) {
         assert RubyGuards.isRubyEncoding(encoding);
         return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(Layouts.ENCODING.getName(encoding)));
     }
 
+    @TruffleBoundary
     public org.jruby.RubyString toJRubyString(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
@@ -473,6 +485,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return jrubyString;
     }
 
+    @TruffleBoundary
     public Object toTruffle(IRubyObject object) {
         if (object instanceof RubyNil) {
             return getCoreLibrary().getNilObject();
@@ -498,6 +511,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
     }
 
+    @TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyArray array) {
         final Object[] store = new Object[array.size()];
 
@@ -508,6 +522,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return Layouts.ARRAY.createArray(coreLibrary.getArrayFactory(), store, store.length);
     }
 
+    @TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyString jrubyString) {
         final DynamicObject truffleString = StringOperations.createString(this, jrubyString.getByteList().dup());
 
@@ -518,6 +533,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return truffleString;
     }
 
+    @TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
@@ -557,11 +573,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return atExitManager;
     }
 
-    @Override
-    public String getLanguageShortName() {
-        return "ruby";
-    }
-
     public TraceManager getTraceManager() {
         return traceManager;
     }
@@ -574,7 +585,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return safepointManager;
     }
 
-    public Random getRandom() {
+    public ThreadLocalRandom getRandom() {
         return ThreadLocalRandom.current();
     }
 
@@ -588,17 +599,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public RubiniusPrimitiveManager getRubiniusPrimitiveManager() {
         return rubiniusPrimitiveManager;
-    }
-
-    // TODO(mg): we need to find a better place for this:
-    private TruffleObject multilanguageObject;
-
-    public TruffleObject getMultilanguageObject() {
-        return multilanguageObject;
-    }
-
-    public void setMultilanguageObject(TruffleObject multilanguageObject) {
-        this.multilanguageObject = multilanguageObject;
     }
 
     public CoverageTracker getCoverageTracker() {
@@ -633,7 +633,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return libCClockGetTime;
     }
 
-    @Override
     public Object execute(final org.jruby.ast.RootNode rootNode) {
         coreLibrary.getGlobalVariablesObject().define("$0", toTruffle(runtime.getGlobalVariables().get("$0")), 0);
 
@@ -669,7 +668,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return atExitManager.runAtExitHooks();
     }
 
-    @Override
     public void shutdown() {
         atExitManager.runSystemExitHooks();
 
@@ -678,10 +676,28 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
 
         threadManager.shutdown();
+
+        if (options.COVERAGE_GLOBAL) {
+            coverageTracker.print(System.out);
+        }
     }
 
     public PrintStream getDebugStandardOut() {
         return debugStandardOut;
+    }
+
+    public void exportObject(DynamicObject name, TruffleObject object) {
+        assert RubyGuards.isRubyString(name);
+        exported.put(name.toString(), object);
+    }
+
+    public Object findExportedObject(String name) {
+        return exported.get(name);
+    }
+
+    public Object importObject(DynamicObject name) {
+        assert RubyGuards.isRubyString(name);
+        return env.importSymbol(name.toString());
     }
 
     public Options getOptions() {
@@ -690,6 +706,18 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public MemoryManager getMemoryManager() {
         return memoryManager;
+    }
+
+    public TruffleLanguage.Env getEnv() {
+        return env;
+    }
+
+    public void setInitialJRubyRootNode(org.jruby.ast.RootNode initialJRubyRootNode) {
+        this.initialJRubyRootNode = initialJRubyRootNode;
+    }
+
+    public org.jruby.ast.RootNode getInitialJRubyRootNode() {
+        return initialJRubyRootNode;
     }
 
     public DynamicObject createHandle(Object object) {

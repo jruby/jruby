@@ -96,8 +96,9 @@ public abstract class HashNodes {
                     }
 
                     final DynamicObject pairArray = (DynamicObject) pair;
+                    final Object pairStore = Layouts.ARRAY.getStore(pairArray);
 
-                    if (!(Layouts.ARRAY.getStore(pairArray) instanceof Object[])) {
+                    if (pairStore != null && pairStore.getClass() != Object[].class) {
                         return constructFallback(frame, hashClass, args);
                     }
 
@@ -105,10 +106,10 @@ public abstract class HashNodes {
                         return constructFallback(frame, hashClass, args);
                     }
 
-                    final Object[] pairStore = (Object[]) Layouts.ARRAY.getStore(pairArray);
+                    final Object[] pairObjectStore = (Object[]) pairStore;
 
-                    final Object key = pairStore[0];
-                    final Object value = pairStore[1];
+                    final Object key = pairObjectStore[0];
+                    final Object value = pairObjectStore[1];
 
                     final int hashed = hashNode.hash(frame, key);
 
@@ -136,14 +137,15 @@ public abstract class HashNodes {
             }
 
             final DynamicObject array = (DynamicObject) arg;
+            final Object store = Layouts.ARRAY.getStore(array);
 
-            if (!(Layouts.ARRAY.getStore(array) instanceof Object[])) {
+            if (store == null || store.getClass() != Object[].class) {
                 return false;
             }
 
-            final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
+            final Object[] objectStore = (Object[]) store;
 
-            if (store.length > getContext().getOptions().HASH_PACKED_ARRAY_MAX) {
+            if (objectStore.length > getContext().getOptions().HASH_PACKED_ARRAY_MAX) {
                 return false;
             }
 
