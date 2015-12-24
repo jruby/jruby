@@ -257,6 +257,7 @@ module Commands
   end
 
   def rebuild
+    FileUtils.cp('bin/jruby.bash', 'bin/jruby')
     clean
     build
   end
