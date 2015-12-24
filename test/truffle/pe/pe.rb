@@ -24,7 +24,7 @@
 #
 # Run with:
 #
-#   jt run --graal -J-Djvmci.option.TraceTruffleCompilation=true -J-Djvmci.option.TruffleCompilationExceptionsAreFatal=true -J-Djvmci.option.TruffleIterativePartialEscape=true test.rb
+#   jt run --graal -J-G:+TraceTruffleCompilation -J-G:+TruffleCompilationExceptionsAreFatal -J-G:+TruffleIterativePartialEscape test.rb
 
 TIMEOUT = 10
 

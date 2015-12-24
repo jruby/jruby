@@ -1,4 +1,4 @@
-# -J-Djvmci.option.TruffleCompilationExceptionsAreFatal=true
+# -J-G:+TruffleCompilationExceptionsAreFatal
 
 def foo
   foo = 14
