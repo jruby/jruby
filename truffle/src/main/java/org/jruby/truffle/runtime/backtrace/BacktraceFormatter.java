@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.loader.SourceLoader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -94,7 +95,7 @@ public class BacktraceFormatter {
 
             return lines;
         } catch (Exception e) {
-            return Arrays.asList(String.format("(exception while constructing backtrace: %s %s)", e.getMessage(), e.getStackTrace()[0].toString()));
+            return Collections.singletonList(String.format("(exception while constructing backtrace: %s %s)", e.getMessage(), e.getStackTrace()[0].toString()));
         }
     }
 

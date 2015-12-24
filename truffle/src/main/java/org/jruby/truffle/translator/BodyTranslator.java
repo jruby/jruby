@@ -699,7 +699,7 @@ public class BodyTranslator extends Translator {
                 if (when.getExpressionNodes() instanceof org.jruby.ast.ListNode && !(when.getExpressionNodes() instanceof org.jruby.ast.ArrayNode)) {
                     expressions = when.getExpressionNodes().childNodes();
                 } else {
-                    expressions = Arrays.asList(when.getExpressionNodes());
+                    expressions = Collections.singletonList(when.getExpressionNodes());
                 }
 
                 final List<RubyNode> comparisons = new ArrayList<>();
@@ -756,7 +756,7 @@ public class BodyTranslator extends Translator {
                 if (when.getExpressionNodes() instanceof org.jruby.ast.ListNode) {
                     expressions = when.getExpressionNodes().childNodes();
                 } else {
-                    expressions = Arrays.asList(when.getExpressionNodes());
+                    expressions = Collections.singletonList(when.getExpressionNodes());
                 }
 
                 final List<RubyNode> tests = new ArrayList<>();
