@@ -13,8 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
-import com.oracle.truffle.api.utilities.ValueProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
+import com.oracle.truffle.api.profiles.ValueProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -28,7 +28,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
     private final int minimum;
     private final String name;
     private final int kwIndex;
-    private final ValueProfile argumentValueProfile = ValueProfile.createPrimitiveProfile();
+    private final ValueProfile argumentValueProfile = ValueProfile.createEqualityProfile();
 
     private final ConditionProfile optimizedProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile defaultProfile = ConditionProfile.createBinaryProfile();

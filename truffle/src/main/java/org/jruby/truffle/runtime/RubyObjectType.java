@@ -43,16 +43,16 @@ public class RubyObjectType extends ObjectType {
     }
 
     @Override
-    public ForeignAccess getForeignAccessFactory() {
-        if (Layouts.METHOD.isMethod(this)) {
+    public ForeignAccess getForeignAccessFactory(DynamicObject object) {
+        if (Layouts.METHOD.isMethod(object)) {
             return RubyMethodForeignAccessFactory.create(getContext());
-        } else if (Layouts.PROC.isProc(this)) {
+        } else if (Layouts.PROC.isProc(object)) {
             return RubyMethodForeignAccessFactory.create(getContext());
-        } else if (Layouts.ARRAY.isArray(this)) {
+        } else if (Layouts.ARRAY.isArray(object)) {
             return ArrayForeignAccessFactory.create(getContext());
-        } else if (Layouts.HASH.isHash(this)) {
+        } else if (Layouts.HASH.isHash(object)) {
             return HashForeignAccessFactory.create(getContext());
-        } else if (Layouts.STRING.isString(this)) {
+        } else if (Layouts.STRING.isString(object)) {
             return StringForeignAccessFactory.create(getContext());
         } else {
             return BasicForeignAccessFactory.create(getContext());

@@ -11,8 +11,8 @@ package org.jruby.truffle.nodes.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
-import com.oracle.truffle.api.utilities.ValueProfile;
+import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ValueProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -28,7 +28,7 @@ public class ReadPreArgumentNode extends RubyNode {
     private final BranchProfile outOfRangeProfile = BranchProfile.create();
     private final MissingArgumentBehaviour missingArgumentBehaviour;
 
-    private final ValueProfile argumentValueProfile = ValueProfile.createPrimitiveProfile();
+    private final ValueProfile argumentValueProfile = ValueProfile.createEqualityProfile();
 
     public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index, MissingArgumentBehaviour missingArgumentBehaviour) {
         super(context, sourceSection);
