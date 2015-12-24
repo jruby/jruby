@@ -97,7 +97,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     @Specialization(guards = {"!isNil(object)", "!isRubyBignum(object)", "!isRubyArray(object)"})
     public Object cast(VirtualFrame frame, DynamicObject object) {
-        final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
+        final Object result = toArrayNode.call(frame, object, "to_ary", null);
 
         if (result == DispatchNode.MISSING) {
             return nil();

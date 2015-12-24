@@ -3153,7 +3153,7 @@ public abstract class ArrayNodes {
 
                     CompilerDirectives.transferToInterpreter();
 
-                    if (! yieldIsTruthy(frame, block,  new Object[]{value})) {
+                    if (! yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
                         selectedSize++;
                     }
@@ -3544,7 +3544,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    if (yieldIsTruthy(frame, block,  new Object[]{value})) {
+                    if (yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
                         selectedSize++;
                     }
