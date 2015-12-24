@@ -6,7 +6,7 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# Use -J-Djvmci.option.TruffleIterativePartialEscape=true
+# Use -J-G:+TruffleIterativePartialEscape
 
 unless Truffle.graal?
   puts 'You need Graal to run this'
