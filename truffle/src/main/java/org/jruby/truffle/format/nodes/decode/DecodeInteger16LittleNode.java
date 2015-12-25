@@ -21,6 +21,9 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 @NodeChildren({
         @NodeChild(value = "bytes", type = PackNode.class),
 })
@@ -42,7 +45,9 @@ public abstract class DecodeInteger16LittleNode extends PackNode {
 
     @Specialization
     public short decode(VirtualFrame frame, byte[] bytes) {
-        return (short) (bytes[0] | bytes[1] << 8);
+        final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        return buffer.getShort();
     }
 
 }

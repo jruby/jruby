@@ -42,7 +42,9 @@ public abstract class DecodeInteger16BigNode extends PackNode {
 
     @Specialization
     public short decode(VirtualFrame frame, byte[] bytes) {
-        return (short) (bytes[1] | bytes[0] << 8);
+        final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        return buffer.getShort();
     }
 
 }

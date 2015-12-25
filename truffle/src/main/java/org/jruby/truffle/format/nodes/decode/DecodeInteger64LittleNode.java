@@ -18,6 +18,9 @@ import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.runtime.MissingValue;
 import org.jruby.truffle.runtime.RubyContext;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 @NodeChildren({
         @NodeChild(value = "bytes", type = PackNode.class),
 })
@@ -39,7 +42,9 @@ public abstract class DecodeInteger64LittleNode extends PackNode {
 
     @Specialization
     public long decode(VirtualFrame frame, byte[] bytes) {
-        return bytes[0] | bytes[1] << 8 | bytes[2] << 16 | bytes[3] << 24 | bytes[4] << 32 | bytes[5] << 40 | bytes[6] << 48 | bytes[7] << 56;
+        final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        return buffer.getLong();
     }
 
 }

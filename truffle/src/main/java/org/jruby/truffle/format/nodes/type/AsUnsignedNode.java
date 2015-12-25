@@ -17,14 +17,19 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.runtime.MissingValue;
+import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+
+import java.math.BigInteger;
 
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class AsUnsignedNode extends PackNode {
+
+    @Child private FixnumOrBignumNode fixnumOrBignumNode;
 
     public AsUnsignedNode(RubyContext context) {
         super(context);
@@ -42,7 +47,35 @@ public abstract class AsUnsignedNode extends PackNode {
 
     @Specialization
     public int asUnsigned(VirtualFrame frame, short value) {
-        return (int) value & 0xffff;
+        return value & 0xffff;
+    }
+
+    @Specialization
+    public long asUnsigned(VirtualFrame frame, int value) {
+        return value & 0xffffffffL;
+    }
+
+    @Specialization
+    public Object asUnsigned(VirtualFrame frame, long value) {
+        if (fixnumOrBignumNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            fixnumOrBignumNode = insert(FixnumOrBignumNode.create(getContext(), getSourceSection()));
+        }
+
+        return fixnumOrBignumNode.fixnumOrBignum(asUnsigned(value));
+    }
+
+    private static final long UNSIGNED_LONG_MASK = 0x7fffffffffffffffL;
+
+    @CompilerDirectives.TruffleBoundary
+    private BigInteger asUnsigned(long value) {
+        BigInteger bigIntegerValue = BigInteger.valueOf(value & UNSIGNED_LONG_MASK);
+
+        if (value < 0) {
+            bigIntegerValue = bigIntegerValue.setBit(Long.SIZE - 1);
+        }
+
+        return bigIntegerValue;
     }
 
 

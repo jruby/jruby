@@ -2145,29 +2145,13 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "unpack", required = 1)
-    public abstract static class UnpackNode extends ArrayCoreMethodNode {
-
-        public UnpackNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(format)")
-        public DynamicObject unpack(DynamicObject string, DynamicObject format) {
-            final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), StringOperations.getByteList(string), StringOperations.getByteList(format));
-            return getContext().toTruffle(jrubyArray);
-        }
-
-    }
-
-    @CoreMethod(names = "xunpack", required = 1, taintFromParameter = 0)
+    @CoreMethod(names = "unpack", required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
-    public abstract static class XUnpackNode extends ArrayCoreMethodNode {
+    public abstract static class UnpackNode extends ArrayCoreMethodNode {
 
         @Child private TaintNode taintNode;
 
-        public XUnpackNode(RubyContext context, SourceSection sourceSection) {
+        public UnpackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 

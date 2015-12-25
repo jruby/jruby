@@ -166,7 +166,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     }
 
     public void integer(int size, ByteOrder byteOrder, PackParser.CountContext count, boolean signed) {
-        appendNode(applyCount(count, readInteger(16, ByteOrder.nativeOrder(), consumePartial(count), !signed)));
+        appendNode(applyCount(count, readInteger(size, byteOrder, consumePartial(count), signed)));
     }
 
     @Override
@@ -429,12 +429,12 @@ public class UnpackTreeBuilder extends PackBaseListener {
         return ctx != null && ctx.INT() == null;
     }
 
-    private PackNode readInteger(int size, ByteOrder byteOrder, boolean consumePartial, boolean unsigned) {
+    private PackNode readInteger(int size, ByteOrder byteOrder, boolean consumePartial, boolean signed) {
         final PackNode readNode = ReadBytesNodeGen.create(context, size / 8, consumePartial, new SourceNode());
-        return readInteger(size, byteOrder, readNode, unsigned);
+        return readInteger(size, byteOrder, readNode, signed);
     }
 
-    private PackNode readInteger(int size, ByteOrder byteOrder, PackNode readNode, boolean unsigned) {
+    private PackNode readInteger(int size, ByteOrder byteOrder, PackNode readNode, boolean signed) {
         PackNode convert;
 
         switch (size) {
@@ -463,7 +463,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
                 throw new UnsupportedOperationException();
         }
 
-        if (unsigned) {
+        if (!signed) {
             convert = AsUnsignedNodeGen.create(context, convert);
         }
 

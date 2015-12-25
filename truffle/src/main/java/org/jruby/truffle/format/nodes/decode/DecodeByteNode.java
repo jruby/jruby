@@ -37,9 +37,9 @@ public abstract class DecodeByteNode extends PackNode {
     @Specialization
     public int decode(VirtualFrame frame, byte value) {
         if (signed) {
-            return value & 0xff;
-        } else {
             return value;
+        } else {
+            return value & 0xff;
         }
     }
 
