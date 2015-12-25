@@ -31,6 +31,9 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import org.jruby.truffle.format.parser.PackBaseListener;
+import org.jruby.truffle.format.parser.PackParser;
+
 public class PackTreeBuilder extends PackBaseListener {
 
     private final RubyContext context;
@@ -57,68 +60,107 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitCharacter(PackParser.CharacterContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(8, ByteOrder.nativeOrder())));
+    public void exitInt8(PackParser.Int8Context ctx) {
+        integer(8, null, ctx.count());
     }
 
     @Override
-    public void exitShortLittle(PackParser.ShortLittleContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(16, ByteOrder.LITTLE_ENDIAN)));
+    public void exitUint8(PackParser.Uint8Context ctx) {
+        integer(8, null, ctx.count());
     }
 
     @Override
-    public void exitShortBig(PackParser.ShortBigContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(16, ByteOrder.BIG_ENDIAN)));
+    public void exitInt16Little(PackParser.Int16LittleContext ctx) {
+        integer(16, ByteOrder.LITTLE_ENDIAN, ctx.count());
     }
 
     @Override
-    public void exitShortNative(PackParser.ShortNativeContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(16, ByteOrder.nativeOrder())));
+    public void exitInt16Big(PackParser.Int16BigContext ctx) {
+        integer(16, ByteOrder.BIG_ENDIAN, ctx.count());
     }
 
     @Override
-    public void exitIntLittle(PackParser.IntLittleContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.LITTLE_ENDIAN)));
+    public void exitInt16Native(PackParser.Int16NativeContext ctx) {
+        integer(16, ByteOrder.nativeOrder(), ctx.count());
     }
 
     @Override
-    public void exitIntBig(PackParser.IntBigContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.BIG_ENDIAN)));
+    public void exitUint16Little(PackParser.Uint16LittleContext ctx) {
+        integer(16, ByteOrder.LITTLE_ENDIAN, ctx.count());
     }
 
     @Override
-    public void exitIntNative(PackParser.IntNativeContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.nativeOrder())));
+    public void exitUint16Big(PackParser.Uint16BigContext ctx) {
+        integer(16, ByteOrder.BIG_ENDIAN, ctx.count());
     }
 
     @Override
-    public void exitLongLittle(PackParser.LongLittleContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.LITTLE_ENDIAN)));
+    public void exitUint16Native(PackParser.Uint16NativeContext ctx) {
+        integer(16, ByteOrder.nativeOrder(), ctx.count());
     }
 
     @Override
-    public void exitLongBig(PackParser.LongBigContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.BIG_ENDIAN)));
+    public void exitInt32Little(PackParser.Int32LittleContext ctx) {
+        integer(32, ByteOrder.LITTLE_ENDIAN, ctx.count());
     }
 
     @Override
-    public void exitLongNative(PackParser.LongNativeContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(32, ByteOrder.nativeOrder())));
+    public void exitInt32Big(PackParser.Int32BigContext ctx) {
+        integer(32, ByteOrder.BIG_ENDIAN, ctx.count());
     }
 
     @Override
-    public void exitQuadLittle(PackParser.QuadLittleContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(64, ByteOrder.LITTLE_ENDIAN)));
+    public void exitInt32Native(PackParser.Int32NativeContext ctx) {
+        integer(32, ByteOrder.nativeOrder(), ctx.count());
     }
 
     @Override
-    public void exitQuadBig(PackParser.QuadBigContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(64, ByteOrder.BIG_ENDIAN)));
+    public void exitUint32Little(PackParser.Uint32LittleContext ctx) {
+        integer(32, ByteOrder.LITTLE_ENDIAN, ctx.count());
     }
 
     @Override
-    public void exitQuadNative(PackParser.QuadNativeContext ctx) {
-        appendNode(applyCount(ctx.count(), writeInteger(64, ByteOrder.nativeOrder())));
+    public void exitUint32Big(PackParser.Uint32BigContext ctx) {
+        integer(32, ByteOrder.BIG_ENDIAN, ctx.count());
+    }
+
+    @Override
+    public void exitUint32Native(PackParser.Uint32NativeContext ctx) {
+        integer(32, ByteOrder.nativeOrder(), ctx.count());
+    }
+
+    @Override
+    public void exitInt64Little(PackParser.Int64LittleContext ctx) {
+        integer(64, ByteOrder.LITTLE_ENDIAN, ctx.count());
+    }
+
+    @Override
+    public void exitInt64Big(PackParser.Int64BigContext ctx) {
+        integer(64, ByteOrder.BIG_ENDIAN, ctx.count());
+    }
+
+    @Override
+    public void exitInt64Native(PackParser.Int64NativeContext ctx) {
+        integer(64, ByteOrder.nativeOrder(), ctx.count());
+    }
+
+    @Override
+    public void exitUint64Little(PackParser.Uint64LittleContext ctx) {
+        integer(64, ByteOrder.LITTLE_ENDIAN, ctx.count());
+    }
+
+    @Override
+    public void exitUint64Big(PackParser.Uint64BigContext ctx) {
+        integer(64, ByteOrder.BIG_ENDIAN, ctx.count());
+    }
+
+    @Override
+    public void exitUint64Native(PackParser.Uint64NativeContext ctx) {
+        integer(64, ByteOrder.nativeOrder(), ctx.count());
+    }
+
+    public void integer(int size, ByteOrder byteOrder, PackParser.CountContext count) {
+        appendNode(applyCount(count, writeInteger(size, byteOrder)));
     }
 
     @Override
@@ -138,7 +180,7 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitDoubleNative(PackParser.DoubleNativeContext ctx) {
+    public void exitF64Native(PackParser.F64NativeContext ctx) {
         appendNode(applyCount(ctx.count(),
                 writeInteger(64, ByteOrder.nativeOrder(),
                         ReinterpretLongNodeGen.create(context,
@@ -146,7 +188,7 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitFloatNative(PackParser.FloatNativeContext ctx) {
+    public void exitF32Native(PackParser.F32NativeContext ctx) {
         appendNode(applyCount(ctx.count(),
                 writeInteger(32, ByteOrder.nativeOrder(),
                         ReinterpretLongNodeGen.create(context,
@@ -155,7 +197,7 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitDoubleLittle(PackParser.DoubleLittleContext ctx) {
+    public void exitF64Little(PackParser.F64LittleContext ctx) {
         appendNode(applyCount(ctx.count(),
                 writeInteger(64, ByteOrder.LITTLE_ENDIAN,
                         ReinterpretLongNodeGen.create(context,
@@ -163,7 +205,7 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitFloatLittle(PackParser.FloatLittleContext ctx) {
+    public void exitF32Little(PackParser.F32LittleContext ctx) {
         appendNode(applyCount(ctx.count(),
                 writeInteger(32, ByteOrder.LITTLE_ENDIAN,
                         ReinterpretLongNodeGen.create(context,
@@ -172,7 +214,7 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitDoubleBig(PackParser.DoubleBigContext ctx) {
+    public void exitF64Big(PackParser.F64BigContext ctx) {
         appendNode(applyCount(ctx.count(),
                 writeInteger(64, ByteOrder.BIG_ENDIAN,
                         ReinterpretLongNodeGen.create(context,
@@ -180,7 +222,7 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitFloatBig(PackParser.FloatBigContext ctx) {
+    public void exitF32Big(PackParser.F32BigContext ctx) {
         appendNode(applyCount(ctx.count(),
                 writeInteger(32, ByteOrder.BIG_ENDIAN,
                         ReinterpretLongNodeGen.create(context,

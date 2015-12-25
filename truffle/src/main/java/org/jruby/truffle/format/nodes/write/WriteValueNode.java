@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.format.nodes.PackNode;
+import org.jruby.truffle.format.runtime.MissingValue;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.Arrays;
@@ -29,6 +30,11 @@ public abstract class WriteValueNode extends PackNode {
     }
 
     @Specialization
+    public Object doWrite(VirtualFrame frame, MissingValue value) {
+        return null;
+    }
+
+    @Specialization(guards = "!isMissingValue(value)")
     public Object doWrite(VirtualFrame frame, Object value) {
         Object[] output = ensureCapacity(frame, 1);
         final int outputPosition = getOutputPosition(frame);
@@ -50,6 +56,10 @@ public abstract class WriteValueNode extends PackNode {
         }
 
         return output;
+    }
+
+    protected boolean isMissingValue(Object object) {
+        return object instanceof MissingValue;
     }
 
 }

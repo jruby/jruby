@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.nodes.SourceNode;
+import org.jruby.truffle.format.runtime.MissingValue;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.Arrays;
@@ -26,10 +27,12 @@ import java.util.Arrays;
 public abstract class ReadBytesNode extends PackNode {
 
     private final int count;
+    private final boolean consumePartial;
 
-    public ReadBytesNode(RubyContext context, int count) {
+    public ReadBytesNode(RubyContext context, int count, boolean consumePartial) {
         super(context);
         this.count = count;
+        this.consumePartial = consumePartial;
     }
 
     @Specialization(guards = "isNull(source)")
@@ -43,8 +46,17 @@ public abstract class ReadBytesNode extends PackNode {
     }
 
     @Specialization
-    public byte[] read(VirtualFrame frame, byte[] source) {
-        int index = advanceSourcePosition(frame, count);
+    public Object read(VirtualFrame frame, byte[] source) {
+        int index = advanceSourcePositionNoThrow(frame, count, consumePartial);
+
+        if (index == -1) {
+            if (consumePartial) {
+                return MissingValue.INSTANCE;
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
         return Arrays.copyOfRange(source, index, index + count);
     }
 

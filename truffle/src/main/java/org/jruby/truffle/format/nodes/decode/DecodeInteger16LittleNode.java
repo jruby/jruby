@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.format.nodes.PackNode;
+import org.jruby.truffle.format.runtime.MissingValue;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -30,8 +31,18 @@ public abstract class DecodeInteger16LittleNode extends PackNode {
     }
 
     @Specialization
-    public int decode(VirtualFrame frame, byte[] bytes) {
-        return bytes[0] | bytes[1] << 8;
+    public MissingValue decode(VirtualFrame frame, MissingValue missingValue) {
+        return missingValue;
+    }
+
+    @Specialization(guards = "isNil(nil)")
+    public DynamicObject decode(VirtualFrame frame, DynamicObject nil) {
+        return nil;
+    }
+
+    @Specialization
+    public short decode(VirtualFrame frame, byte[] bytes) {
+        return (short) (bytes[0] | bytes[1] << 8);
     }
 
 }

@@ -7,8 +7,9 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.format.nodes.decode;
+package org.jruby.truffle.format.nodes.type;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -16,33 +17,33 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.runtime.MissingValue;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 @NodeChildren({
-        @NodeChild(value = "bytes", type = PackNode.class),
+        @NodeChild(value = "value", type = PackNode.class),
 })
-public abstract class DecodeInteger16BigNode extends PackNode {
+public abstract class AsUnsignedNode extends PackNode {
 
-    public DecodeInteger16BigNode(RubyContext context) {
+    public AsUnsignedNode(RubyContext context) {
         super(context);
     }
 
     @Specialization
-    public MissingValue decode(VirtualFrame frame, MissingValue missingValue) {
+    public MissingValue asUnsigned(VirtualFrame frame, MissingValue missingValue) {
         return missingValue;
     }
 
     @Specialization(guards = "isNil(nil)")
-    public DynamicObject decode(VirtualFrame frame, DynamicObject nil) {
+    public DynamicObject asUnsigned(VirtualFrame frame, DynamicObject nil) {
         return nil;
     }
 
     @Specialization
-    public short decode(VirtualFrame frame, byte[] bytes) {
-        return (short) (bytes[1] | bytes[0] << 8);
+    public int asUnsigned(VirtualFrame frame, short value) {
+        return (int) value & 0xffff;
     }
+
 
 }

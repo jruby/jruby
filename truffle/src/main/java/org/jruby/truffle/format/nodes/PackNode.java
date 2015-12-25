@@ -93,6 +93,28 @@ public abstract class PackNode extends Node {
         return sourcePosition;
     }
 
+    protected int advanceSourcePositionNoThrow(VirtualFrame frame) {
+        return advanceSourcePositionNoThrow(frame, 1, false);
+    }
+
+    protected int advanceSourcePositionNoThrow(VirtualFrame frame, int count, boolean consumePartial) {
+        final int sourcePosition = getSourcePosition(frame);
+
+        final int sourceLength = getSourceLength(frame);
+
+        if (sourcePosition + count > sourceLength) {
+            if (consumePartial) {
+                setSourcePosition(frame, sourceLength);
+            }
+
+            return -1;
+        }
+
+        setSourcePosition(frame, sourcePosition + count);
+
+        return sourcePosition;
+    }
+
     /**
      * Get the output array we are writing to.
      */

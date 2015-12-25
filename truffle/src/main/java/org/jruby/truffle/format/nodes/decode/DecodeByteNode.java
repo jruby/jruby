@@ -15,24 +15,18 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.format.nodes.PackNode;
-import org.jruby.truffle.format.runtime.MissingValue;
 import org.jruby.truffle.runtime.RubyContext;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 @NodeChildren({
-        @NodeChild(value = "bytes", type = PackNode.class),
+        @NodeChild(value = "value", type = PackNode.class),
 })
-public abstract class DecodeInteger16BigNode extends PackNode {
+public abstract class DecodeByteNode extends PackNode {
 
-    public DecodeInteger16BigNode(RubyContext context) {
+    public boolean signed;
+
+    public DecodeByteNode(RubyContext context, boolean signed) {
         super(context);
-    }
-
-    @Specialization
-    public MissingValue decode(VirtualFrame frame, MissingValue missingValue) {
-        return missingValue;
+        this.signed = signed;
     }
 
     @Specialization(guards = "isNil(nil)")
@@ -41,8 +35,12 @@ public abstract class DecodeInteger16BigNode extends PackNode {
     }
 
     @Specialization
-    public short decode(VirtualFrame frame, byte[] bytes) {
-        return (short) (bytes[1] | bytes[0] << 8);
+    public int decode(VirtualFrame frame, byte value) {
+        if (signed) {
+            return value & 0xff;
+        } else {
+            return value;
+        }
     }
 
 }

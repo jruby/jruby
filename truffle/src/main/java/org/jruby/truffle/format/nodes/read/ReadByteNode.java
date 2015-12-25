@@ -40,8 +40,14 @@ public abstract class ReadByteNode extends PackNode {
     }
 
     @Specialization
-    public byte read(VirtualFrame frame, byte[] source) {
-        return source[advanceSourcePosition(frame)];
+    public Object read(VirtualFrame frame, byte[] source) {
+        int index = advanceSourcePositionNoThrow(frame);
+
+        if (index == -1) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        return source[index];
     }
 
 }
