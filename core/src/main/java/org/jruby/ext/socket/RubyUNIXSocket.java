@@ -74,6 +74,18 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         super(runtime, type);
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject for_fd(ThreadContext context, IRubyObject recv, IRubyObject _fileno) {
+        Ruby runtime = context.runtime;
+        int fileno = (int)_fileno.convertToInteger().getLongValue();
+
+        RubyClass klass = (RubyClass)recv;
+        RubyUNIXSocket unixSocket = (RubyUNIXSocket)(Helpers.invoke(context, klass, "allocate"));
+        UnixSocketChannel channel = UnixSocketChannel.fromFD(fileno);
+        unixSocket.init_sock(runtime, channel);
+        return unixSocket;
+    }
+
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
         init_unixsock(context.runtime, path, false);
