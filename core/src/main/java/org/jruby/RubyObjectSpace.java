@@ -136,8 +136,7 @@ public class RubyObjectSpace {
             runtime.eachModule(new Function1<Object, IRubyObject>() {
                 public Object apply(IRubyObject arg1) {
                     if (rubyClass.isInstance(arg1)) {
-                        if (arg1 instanceof IncludedModule ||
-                                (arg1 instanceof RubyClass && ((RubyClass)arg1).isSingleton())) {
+                        if (arg1 instanceof IncludedModule) {
                             // do nothing for included wrappers or singleton classes
                         } else {
                             count[0]++;
@@ -158,7 +157,7 @@ public class RubyObjectSpace {
             block.yield(context, attached);
             if (attached instanceof RubyClass) {
                 for (RubyClass child : ((RubyClass)attached).subclasses(true)) {
-                    if (child instanceof IncludedModule || child.isSingleton()) {
+                    if (child instanceof IncludedModule) {
                         // do nothing for included wrappers or singleton classes
                     } else {
                         block.yield(context, child);
