@@ -1213,14 +1213,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     private boolean hash_le(RubyHash other) {
-        RubyArray keys = keys();
-        for (Object key : keys) {
-            Object otherValue = other.get(key);
-            if (otherValue == null || !otherValue.equals( get(key) )) {
-                return false;
-            }
-        }
-        return true;
+        return other.directEntrySet().containsAll(directEntrySet());
     }
 
     @JRubyMethod(name = "<", required = 1)
