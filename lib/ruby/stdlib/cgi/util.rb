@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 class CGI; module Util; end; extend Util; end
 module CGI::Util
   @@accept_charset="UTF-8" unless defined?(@@accept_charset)
@@ -35,6 +36,11 @@ module CGI::Util
   #      # => "Usage: foo &quot;bar&quot; &lt;baz&gt;"
   def escapeHTML(string)
     string.gsub(/['&\"<>]/, TABLE_FOR_ESCAPE_HTML__)
+  end
+
+  begin
+    require 'cgi/escape'
+  rescue LoadError
   end
 
   # Unescape a string that has been HTML-escaped

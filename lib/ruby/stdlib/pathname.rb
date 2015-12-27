@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 #
 # = pathname.rb
 #
@@ -13,13 +14,8 @@ require 'pathname.so'
 
 class Pathname
 
-  # :stopdoc:
-  if RUBY_VERSION < "1.9"
-    TO_PATH = :to_str
-  else
-    # to_path is implemented so Pathname objects are usable with File.open, etc.
-    TO_PATH = :to_path
-  end
+  # to_path is implemented so Pathname objects are usable with File.open, etc.
+  TO_PATH = :to_path
 
   SAME_PATHS = if File::FNM_SYSCASE.nonzero?
     # Avoid #zero? here because #casecmp can return nil.
@@ -290,13 +286,6 @@ class Pathname
   #   enum.each { |e| ... }
   #     # yields Pathnames /, /usr, /usr/bin, and /usr/bin/ruby.
   #
-  # Returns an Enumerator if no block was given.
-  #
-  #   enum = Pathname.new("/usr/bin/ruby").ascend
-  #     # ... do stuff ...
-  #   enum.each { |e| ... }
-  #     # yields Pathnames /usr/bin/ruby, /usr/bin, /usr, and /.
-  #
   # It doesn't access the filesystem.
   #
   def descend
@@ -322,6 +311,13 @@ class Pathname
   #     #<Pathname:path/to/some>
   #     #<Pathname:path/to>
   #     #<Pathname:path>
+  #
+  # Returns an Enumerator if no block was given.
+  #
+  #   enum = Pathname.new("/usr/bin/ruby").ascend
+  #     # ... do stuff ...
+  #   enum.each { |e| ... }
+  #     # yields Pathnames /usr/bin/ruby, /usr/bin, /usr, and /.
   #
   # It doesn't access the filesystem.
   #
