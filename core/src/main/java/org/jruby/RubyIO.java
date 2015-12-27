@@ -270,7 +270,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public OpenFile getOpenFileChecked() {
+        checkInitialized();
         openFile.checkClosed();
+        return openFile;
+    }
+
+    // MRI: rb_io_get_fptr
+    public OpenFile getOpenFileInitialized() {
+        checkInitialized();
         return openFile;
     }
 
@@ -2040,7 +2047,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO write_io;
 
         write_io = GetWriteIO();
-        fptr = write_io.getOpenFileChecked();
+        fptr = write_io.getOpenFileInitialized();
+        if (!fptr.isOpen()) return context.nil;
+
         boolean locked = fptr.lock();
         try {
             if (fptr.socketChannel() != null) {
@@ -2055,7 +2064,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 return context.nil;
             }
 
-            if (fptr.isReadable()) {
+            if (fptr.isReadable() && !fptr.isDuplex()) {
                 throw runtime.newIOError("closing non-duplex IO for writing");
             }
         } finally {
@@ -2064,12 +2073,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
 
         if (this != write_io) {
-            fptr = getOpenFileChecked();
+            fptr = getOpenFileInitialized();
 
             locked = fptr.lock();
             try {
                 fptr.tiedIOForWriting = null;
-                fptr.setMode(fptr.getMode() & ~OpenFile.DUPLEX);
             } finally {
                 if (locked) fptr.unlock();
             }
@@ -2085,7 +2093,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         OpenFile fptr;
         RubyIO write_io;
 
-        fptr = getOpenFileChecked();
+        fptr = getOpenFileInitialized();
+        if (!fptr.isOpen()) return context.nil;
 
         boolean locked = fptr.lock();
         try {
@@ -2104,7 +2113,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             write_io = GetWriteIO();
             if (this != write_io) {
                 OpenFile wfptr;
-                wfptr = write_io.getOpenFileChecked();
+                wfptr = write_io.getOpenFileInitialized();
 
                 boolean locked2 = wfptr.lock();
                 try {
@@ -2115,7 +2124,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     this.openFile = wfptr;
                     /* bind to write_io temporarily to get rid of memory/fd leak */
                     fptr.tiedIOForWriting = null;
-                    fptr.setMode(fptr.getMode() & ~OpenFile.DUPLEX);
                     write_io.openFile = fptr;
                     fptr.cleanup(runtime, false);
                     /* should not finalize fptr because another thread may be reading it */
@@ -2125,7 +2133,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 }
             }
 
-            if (fptr.isWritable()) {
+            if (fptr.isWritable() && !fptr.isDuplex()) {
                 throw runtime.newIOError("closing non-duplex IO for reading");
             }
         } finally {
