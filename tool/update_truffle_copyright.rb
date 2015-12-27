@@ -1,12 +1,42 @@
 # Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
-# 
+#
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
 require 'rugged'
+
+RB_COPYRIGHT = <<-EOS
+# Copyright (c) #{Time.now.year} Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
+EOS
+
+JAVA_COPYRIGHT = <<-EOS
+/*
+ * Copyright (c) #{Time.now.year} Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
+EOS
+
+NEW_COPYRIGHT = {
+  '.rb' => RB_COPYRIGHT,
+  '.java' => JAVA_COPYRIGHT
+}
+
+EXTENSIONS = %w[.java .rb]
 
 COPYRIGHT = /Copyright \(c\) (?<year1>\d{4})(?:, (?<year2>\d{4}))? Oracle\b/
 
@@ -15,13 +45,14 @@ OTHER_COPYRIGHTS = [
   /Copyright \(c\) \d{4}(?:-\d{4})?,? Evan Phoenix/
 ]
 
-EXTENSIONS = %w[.java .rb]
-
 truffle_paths = %w[
-  truffle/src/main/java/org/jruby/truffle
-  truffle/src/main/ruby
-  test/truffle/pe/pe.rb
+  truffle/src
+  test/truffle
 ] + [__FILE__]
+
+excludes = %w[
+  test/truffle/pack-real-usage.rb
+]
 
 truffle_paths.each do |path|
   puts "WARNING: incorrect path #{path}" unless File.exist? path
@@ -53,7 +84,9 @@ diff = first_commit.diff(head_commit)
 paths = diff.each_delta.to_a.map { |delta|
   delta.new_file[:path]
 }.select { |path|
-  EXTENSIONS.include?(File.extname(path)) and truffle_paths.any? { |prefix| path.start_with? prefix }
+  EXTENSIONS.include?(File.extname(path)) &&
+    truffle_paths.any? { |prefix| path.start_with? prefix } &&
+    excludes.none? { |prefix| path.start_with? prefix }
 }
 
 paths.each do |file|
@@ -63,8 +96,8 @@ paths.each do |file|
 
   unless COPYRIGHT =~ header
     if OTHER_COPYRIGHTS.none? { |copyright| copyright =~ header }
-      puts "WARNING: No copyright in #{file}"
-      puts header
+      puts "Adding copyright in #{file}"
+      File.write(file, NEW_COPYRIGHT[File.extname(file)]+File.read(file))
     end
     next
   end
