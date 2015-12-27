@@ -29,9 +29,9 @@ describe "IO#close_read" do
 
   ruby_version_is '2.3' do
     it "doesn't raise an IOError on subsequent invocations" do
-      @io.close_write
+      @io.close_read
 
-      lambda { @io.close_write }.should_not raise_error(IOError)
+      lambda { @io.close_read }.should_not raise_error(IOError)
     end
   end
 
