@@ -42,12 +42,14 @@ COPYRIGHT = /Copyright \(c\) (?<year1>\d{4})(?:, (?<year2>\d{4}))? Oracle\b/
 
 OTHER_COPYRIGHTS = [
   /Copyright \(c\) \d{4} Software Architecture Group, Hasso Plattner Institute/,
-  /Copyright \(c\) \d{4}(?:-\d{4})?,? Evan Phoenix/
+  /Copyright \(c\) \d{4}(?:-\d{4})?,? Evan Phoenix/,
+  /Copyright \(c\) \d{4} Engine Yard/
 ]
 
 truffle_paths = %w[
   truffle/src
   test/truffle
+  spec/truffle
 ] + [__FILE__]
 
 excludes = %w[
