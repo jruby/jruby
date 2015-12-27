@@ -14,7 +14,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.profiles.ConditionProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
@@ -94,7 +94,7 @@ public abstract class ObjectPrimitiveNodes {
                 return newId;
             }
 
-            return (long) id;
+            return id;
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {

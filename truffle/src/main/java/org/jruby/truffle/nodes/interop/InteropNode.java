@@ -430,7 +430,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals((String) ForeignAccess.getArguments(frame).get(labelIndex))) {
+            if (name.equals(ForeignAccess.getArguments(frame).get(labelIndex))) {
                 return read.execute(frame);
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -454,7 +454,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals((String) ForeignAccess.getArguments(frame).get(labelIndex))) {
+            if (name.equals(ForeignAccess.getArguments(frame).get(labelIndex))) {
                 return write.execute(frame);
             } else {
                 CompilerDirectives.transferToInterpreter();

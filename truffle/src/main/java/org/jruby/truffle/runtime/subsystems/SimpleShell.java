@@ -24,6 +24,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.StringTokenizer;
 
 public class SimpleShell {
@@ -108,7 +109,7 @@ public class SimpleShell {
                 System.console().writer().printf("%3d", n);
             }
 
-            System.console().writer().println(BacktraceFormatter.createDefaultFormatter(context).formatLine(Arrays.asList(activation), 0));
+            System.console().writer().println(BacktraceFormatter.createDefaultFormatter(context).formatLine(Collections.singletonList(activation), 0));
             n++;
         }
     }

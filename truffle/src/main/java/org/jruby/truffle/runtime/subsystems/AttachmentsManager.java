@@ -125,7 +125,7 @@ public class AttachmentsManager {
                 }
             }
 
-            callNode.call(frame, ProcNodes.packArguments(block, new Object[] { binding }));
+            callNode.call(frame, ProcNodes.packArguments(block, binding));
 
             return null;
         }
