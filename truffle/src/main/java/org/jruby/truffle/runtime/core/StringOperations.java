@@ -28,7 +28,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-
 import org.jcodings.Encoding;
 import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;

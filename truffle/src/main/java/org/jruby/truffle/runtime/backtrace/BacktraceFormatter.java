@@ -11,13 +11,11 @@ package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.SourceLoader;
@@ -25,6 +23,7 @@ import org.jruby.truffle.runtime.loader.SourceLoader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -96,7 +95,7 @@ public class BacktraceFormatter {
 
             return lines;
         } catch (Exception e) {
-            return Arrays.asList(String.format("(exception while constructing backtrace: %s %s)", e.getMessage(), e.getStackTrace()[0].toString()));
+            return Collections.singletonList(String.format("(exception while constructing backtrace: %s %s)", e.getMessage(), e.getStackTrace()[0].toString()));
         }
     }
 
@@ -181,10 +180,10 @@ public class BacktraceFormatter {
 
         final StringBuilder builder = new StringBuilder();
 
-        if (reportedSourceSection instanceof NullSourceSection) {
-            builder.append(reportedSourceSection.getShortDescription());
-        } else if (reportedSourceSection == null) {
+        if (reportedSourceSection == null) {
             builder.append("???");
+        } else if (reportedSourceSection.getSource() == null) {
+            builder.append(reportedSourceSection.getShortDescription());
         } else {
             builder.append(reportedSourceSection.getSource().getName());
             builder.append(":");
@@ -212,7 +211,7 @@ public class BacktraceFormatter {
     }
 
     private boolean isCore(SourceSection sourceSection) {
-        return sourceSection instanceof NullSourceSection || sourceSection.getSource().getPath().startsWith(SourceLoader.TRUFFLE_SCHEME);
+        return sourceSection == null || sourceSection.getSource() == null || (sourceSection.getSource().getPath() != null && sourceSection.getSource().getPath().startsWith(SourceLoader.TRUFFLE_SCHEME));
     }
 
 }

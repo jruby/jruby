@@ -33,15 +33,15 @@ public class PropertyModel {
                          TypeMirror type, boolean nullable,
                          boolean volatileSemantics, boolean hasCompareAndSet, boolean hasGetAndSet,
                          boolean hasIdentifier, boolean isShapeProperty) {
-        assert name != null;
-        assert type != null;
+        // assert name != null;
+        // assert type != null;
 
-        if (hasFactoryGetter || hasFactorySetter || hasObjectTypeGetter) {
-            assert isShapeProperty;
-        }
+        //if (hasFactoryGetter || hasFactorySetter || hasObjectTypeGetter) {
+        //    assert isShapeProperty;
+        //}
 
-        assert !(volatileSemantics && isShapeProperty);
-        assert !(volatileSemantics && hasUnsafeSetter);
+        // assert !(volatileSemantics && isShapeProperty);
+        // assert !(volatileSemantics && hasUnsafeSetter);
 
         this.name = name;
         this.hasObjectTypeGetter = hasObjectTypeGetter;

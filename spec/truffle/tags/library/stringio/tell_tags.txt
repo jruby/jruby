@@ -1,0 +1,1 @@
+graalvm:StringIO#tell returns the current byte offset

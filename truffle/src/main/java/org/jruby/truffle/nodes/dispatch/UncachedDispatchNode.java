@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
-
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeGen;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
@@ -66,7 +65,7 @@ public class UncachedDispatchNode extends DispatchNode {
             Object[] argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
-        final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
+        final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name), ignoreVisibility);
 

@@ -6,6 +6,10 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example "'abc'.length", 3
+simple_string = 'test'
 
-example "'abc' == 'abc'", true
+example "Truffle::Primitive.create_simple_string.length", simple_string.length
+example "Truffle::Primitive.create_simple_string.getbyte(0)", simple_string.getbyte(0)
+
+example "'abc'.length", 3
+tagged_example "'abc' == 'abc'", true # seems to fail sometimes

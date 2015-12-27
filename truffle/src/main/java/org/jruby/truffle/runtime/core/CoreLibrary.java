@@ -12,14 +12,16 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.java.JavaInterop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.Layout;
+import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Errno;
-
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
@@ -35,7 +37,10 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
-import org.jruby.truffle.nodes.ext.*;
+import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory;
+import org.jruby.truffle.nodes.ext.DigestNodesFactory;
+import org.jruby.truffle.nodes.ext.EtcNodesFactory;
+import org.jruby.truffle.nodes.ext.ObjSpaceNodesFactory;
 import org.jruby.truffle.nodes.ext.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.nodes.ext.psych.PsychParserNodes;
 import org.jruby.truffle.nodes.ext.psych.PsychParserNodesFactory;
@@ -68,6 +73,8 @@ import java.util.Map;
 public class CoreLibrary {
 
     private static final String CLI_RECORD_SEPARATOR = org.jruby.util.cli.Options.CLI_RECORD_SEPARATOR.load();
+
+    private static final Property ALWAYS_FROZEN_PROPERTY = Property.create(Layouts.FROZEN_IDENTIFIER, Layout.createLayout().createAllocator().constantLocation(true), 0);
 
     private final RubyContext context;
 
@@ -184,6 +191,8 @@ public class CoreLibrary {
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
 
+    private static final Object systemObject = TruffleOptions.AOT ? null : JavaInterop.asTruffleObject(System.class);
+
     public String getCoreLoadPath() {
         String path = context.getOptions().CORE_LOAD_PATH;
 
@@ -240,7 +249,7 @@ public class CoreLibrary {
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
-        this.node = new CoreLibraryNode(context, new CoreSourceSection("CoreLibrary", "initialize"));
+        this.node = new CoreLibraryNode(context, CoreSourceSection.createCoreSourceSection("CoreLibrary", "initialize"));
 
         // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
         // Therefore, only initialize the core classes and modules here.
@@ -346,7 +355,7 @@ public class CoreLibrary {
         integerClass = defineClass(numericClass, "Integer");
         fixnumClass = defineClass(integerClass, "Fixnum");
         bignumClass = defineClass(integerClass, "Bignum");
-        bignumFactory = Layouts.BIGNUM.createBignumShape(bignumClass, bignumClass);
+        bignumFactory = alwaysFrozen(Layouts.BIGNUM.createBignumShape(bignumClass, bignumClass));
         Layouts.CLASS.setInstanceFactoryUnsafe(bignumClass, bignumFactory);
         rationalClass = defineClass(numericClass, "Rational");
 
@@ -395,7 +404,7 @@ public class CoreLibrary {
         stringFactory = Layouts.STRING.createStringShape(stringClass, stringClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(stringClass, stringFactory);
         symbolClass = defineClass("Symbol");
-        Layouts.CLASS.setInstanceFactoryUnsafe(symbolClass, Layouts.SYMBOL.createSymbolShape(symbolClass, symbolClass));
+        Layouts.CLASS.setInstanceFactoryUnsafe(symbolClass, alwaysFrozen(Layouts.SYMBOL.createSymbolShape(symbolClass, symbolClass)));
         threadClass = defineClass("Thread");
         Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, Layouts.THREAD.createThreadShape(threadClass, threadClass));
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
@@ -492,7 +501,7 @@ public class CoreLibrary {
         // Create some key objects
 
         mainObject = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
-        nilObject = Layouts.CLASS.getInstanceFactory(nilClass).newInstance();
+        nilObject = alwaysFrozen(Layouts.CLASS.getInstanceFactory(nilClass)).newInstance();
         argv = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0);
         rubiniusUndefined = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
 
@@ -500,6 +509,10 @@ public class CoreLibrary {
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
+    }
+
+    private static DynamicObjectFactory alwaysFrozen(DynamicObjectFactory factory) {
+        return factory.getShape().addProperty(ALWAYS_FROZEN_PROPERTY).createFactory();
     }
 
     private void includeModules(DynamicObject comparableModule) {
@@ -663,6 +676,10 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF8", PsychParserNodes.YAMLEncoding.YAML_UTF8_ENCODING.ordinal());
         Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16LE", PsychParserNodes.YAMLEncoding.YAML_UTF16LE_ENCODING.ordinal());
         Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16BE", PsychParserNodes.YAMLEncoding.YAML_UTF16BE_ENCODING.ordinal());
+
+        // Java interop
+        final DynamicObject javaModule = defineModule(truffleModule, "Java");
+        Layouts.MODULE.getFields(javaModule).setConstant(context, node, "System", systemObject);
     }
 
     private void initializeSignalConstants() {
@@ -1464,7 +1481,7 @@ public class CoreLibrary {
     }
 
     public DynamicObject getENV() {
-        return (DynamicObject) Layouts.MODULE.getFields(objectClass).getConstants().get("ENV").getValue();
+        return (DynamicObject) Layouts.MODULE.getFields(objectClass).getConstant("ENV").getValue();
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

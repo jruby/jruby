@@ -17,9 +17,6 @@ import org.jruby.truffle.format.nodes.PackRootNode;
 import org.jruby.truffle.format.runtime.PackEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-
-import org.jruby.truffle.format.parser.PrintfLexer;
-import org.jruby.truffle.format.parser.PrintfParser;
 import org.jruby.util.ByteList;
 
 public class PrintfCompiler {

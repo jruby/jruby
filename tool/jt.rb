@@ -18,6 +18,7 @@ JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
+JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 
 # wait for sub-processes to handle the interrupt
@@ -37,13 +38,13 @@ module Utilities
     graal_locations = [
       ENV['GRAAL_BIN'],
       ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
-      "graalvm-jdk1.8.0/bin/java",
-      "../graalvm-jdk1.8.0/bin/java",
-      "../../graalvm-jdk1.8.0/bin/java",
+      "GraalVM-0.9/jre/bin/javao",
+      "../GraalVM-0.9/jre/bin/javao",
+      "../../GraalVM-0.9/jre/bin/javao",
     ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
     not_found = -> {
-      raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the JRuby repository or parent directory"
+      raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
     }
 
     graal_locations.find(not_found) do |location|
@@ -59,19 +60,28 @@ module Utilities
     name.upcase.tr('-', '_')
   end
 
+  def self.find_graal_parent
+    graal = File.expand_path('../../../../../graal-compiler', find_graal)
+    raise "couldn't find graal - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless Dir.exist?(graal)
+    graal
+  end
+
   def self.find_graal_mx
-    mx = File.expand_path('../../../../mx.sh', find_graal)
-    raise "couldn't find mx.sh - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless File.executable?(mx)
+    mx = File.expand_path('../../../../../../mx/mx', find_graal)
+    raise "couldn't find mx - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless File.executable?(mx)
     mx
   end
 
   def self.igv_running?
-    `ps a`.lines.any? { |p| p.include? 'mxtool/mx.py igv' }
+    `ps a`.include? 'IdealGraphVisualizer'
   end
 
   def self.ensure_igv_running
     unless igv_running?
-      spawn "#{find_graal_mx} igv", pgroup: true
+      Dir.chdir(find_graal_parent + "/../jvmci") do
+        spawn "#{find_graal_mx} --vm server igv", pgroup: true
+      end
+
       sleep 5
       puts
       puts
@@ -179,6 +189,7 @@ module Commands
     puts '    --no-tests       don\'t run JUnit unit tests'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
+    puts 'jt rebuild                                     clean and build'
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --asm           show assembly (implies --graal)'
@@ -190,6 +201,7 @@ module Commands
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
     puts 'jt test                                        run all mri tests and specs'
+    puts 'jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests'
     puts 'jt test mri                                    run mri tests'
     puts 'jt test specs                                  run all specs'
     puts 'jt test specs fast                             run all specs except sub-processes, GC, sleep, ...'
@@ -223,7 +235,7 @@ module Commands
     sh 'git', 'checkout', branch
     rebuild
   end
-
+  
   def build(project = nil)
     opts = %w[-DskipTests]
     case project
@@ -244,9 +256,10 @@ module Commands
     run(*%w[-S irb], *args)
   end
 
-  def rebuild(*args)
+  def rebuild
+    FileUtils.cp('bin/jruby.bash', 'bin/jruby')
     clean
-    build *args
+    build
   end
 
   def run(*args)
@@ -330,10 +343,17 @@ module Commands
 
     case path
     when nil
+      test_tck
       test_specs('run')
       test_mri
     when 'pe' then test_pe(*rest)
     when 'specs' then test_specs('run', *rest)
+    when 'tck' then
+      args = []
+      if rest.include? '--jdebug'
+        args << JDEBUG_TEST
+      end
+      test_tck *args
     when 'mri' then test_mri(*rest)
     else
       if File.expand_path(path).start_with?("#{JRUBY_DIR}/test")
@@ -346,6 +366,8 @@ module Commands
 
   def test_pe(*args)
     file = args.pop if args.last and File.exist?(args.last)
+    args.push('-J-G:+TruffleIterativePartialEscape')
+    args.push('-J-G:+TruffleCompilationExceptionsAreThrown')
     run('--graal', *args, 'test/truffle/pe/pe.rb', *file)
   end
   private :test_pe
@@ -390,6 +412,11 @@ module Commands
     mspec env_vars, command, *options, *args
   end
   private :test_specs
+
+  def test_tck(*args)
+    mvn *args + ['test']
+  end
+  private :test_tck
 
   def tag(path, *args)
     return tag_all(*args) if path == 'all'
@@ -521,14 +548,13 @@ class JT
       exit
     end
 
-    if ['build', 'rebuild'].include? args.first
-      build_args = [args.shift]
-
-      while ['truffle', '--no-tests'].include? args.first
-        build_args << args.shift
-      end
-
-      send(*build_args)
+    case args.first
+    when "rebuild"
+      send(args.shift)
+    when "build"
+      command = [args.shift]
+      command << args.shift if args.first == "truffle"
+      send(*command)
     end
 
     return if args.empty?
@@ -548,5 +574,8 @@ class JT
     end
   end
 end
+
+# tool/jruby_eclipse only works on release currently
+ENV.delete("JRUBY_ECLIPSE") unless Utilities.graal_version
 
 JT.new.main(ARGV)

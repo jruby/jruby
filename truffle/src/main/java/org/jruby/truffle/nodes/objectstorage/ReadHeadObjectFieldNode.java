@@ -11,12 +11,16 @@ package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.*;
-
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.nodes.ShapeCachingGuards;
 import org.jruby.truffle.runtime.Options;
 
+@ImportStatic(ShapeCachingGuards.class)
 public abstract class ReadHeadObjectFieldNode extends Node {
     private final Object defaultValue;
     protected final Object name;
@@ -46,8 +50,13 @@ public abstract class ReadHeadObjectFieldNode extends Node {
         }
     }
 
+    @Specialization(guards = "updateShape(object)")
+    public Object updateShapeAndRead(DynamicObject object) {
+        return execute(object);
+    }
+
     @TruffleBoundary
-    @Specialization
+    @Specialization(contains = { "readObjectFieldCached", "updateShapeAndRead" })
     protected Object readObjectFieldUncached(DynamicObject receiver) {
         return receiver.get(name, defaultValue);
     }

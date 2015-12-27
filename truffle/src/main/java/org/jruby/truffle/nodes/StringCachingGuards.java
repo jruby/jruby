@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 public abstract class StringCachingGuards {
@@ -27,10 +26,15 @@ public abstract class StringCachingGuards {
 
     public static boolean byteListsEqual(DynamicObject string, ByteList byteList) {
         if (RubyGuards.isRubyString(string)) {
+            // TODO CS 8-Nov-15 this code goes off into the woods - need to break it apart and branch profile it
             return StringOperations.getByteList(string).equal(byteList);
         } else {
             return false;
         }
+    }
+
+    public static int byteListLength(ByteList byteList) {
+        return byteList.length();
     }
 
 }

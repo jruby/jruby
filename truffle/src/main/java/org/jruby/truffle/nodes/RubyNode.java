@@ -9,13 +9,9 @@
  */
 package org.jruby.truffle.nodes;
 
-import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.instrument.ProbeNode;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -23,28 +19,13 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
-
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
-import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
-
-import com.oracle.truffle.api.dsl.ImportStatic;
-import com.oracle.truffle.api.dsl.TypeSystemReference;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.ProbeNode;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.USASCIIEncoding;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
@@ -144,7 +125,7 @@ public abstract class RubyNode extends Node {
     public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
-        if (value instanceof Object[]) {
+        if (value.getClass() == Object[].class) {
             return (Object[]) value;
         } else {
             throw new UnexpectedResultException(value);
@@ -197,18 +178,6 @@ public abstract class RubyNode extends Node {
 
     protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
         return Layouts.CLASS.getInstanceFactory(rubyClass);
-    }
-
-    // Instrumentation
-
-    @Override
-    public boolean isInstrumentable() {
-        return true;
-    }
-
-    @Override
-    public ProbeNode.WrapperNode createWrapperNode() {
-        return new RubyWrapperNode(this);
     }
 
     public void setAtNewline() {

@@ -18,11 +18,10 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.Translator;
-import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,7 +49,7 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
                 rhs, frameDepth, readFrameSlotNode.getFrameSlot());
     }
 
-    public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$~"));
+    public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Collections.singletonList("$~"));
 
     @Override
     public Object isDefined(VirtualFrame frame) {

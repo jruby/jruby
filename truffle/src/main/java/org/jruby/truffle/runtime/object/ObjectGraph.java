@@ -17,18 +17,13 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
-
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public abstract class ObjectGraph {
 
@@ -136,6 +131,12 @@ public abstract class ObjectGraph {
                         reachable.add((DynamicObject) element);
                     }
                 }
+            } else if (propertyValue instanceof Collection<?>) {
+                for (Object element : ((Collection<?>) propertyValue)) {
+                    if (element instanceof DynamicObject) {
+                        reachable.add((DynamicObject) element);
+                    }
+                }
             } else if (propertyValue instanceof Frame) {
                 reachable.addAll(getObjectsInFrame((Frame) propertyValue));
             } else if (propertyValue instanceof ObjectGraphNode) {
@@ -149,10 +150,23 @@ public abstract class ObjectGraph {
     public static Set<DynamicObject> getObjectsInFrame(Frame frame) {
         final Set<DynamicObject> objects = new HashSet<>();
 
-        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(frame.getArguments());
+        final Object[] arguments = frame.getArguments();
+        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(arguments);
         if (lexicalParentFrame != null) {
             objects.addAll(getObjectsInFrame(lexicalParentFrame));
         }
+
+        final Object self = RubyArguments.tryGetSelf(arguments);
+        if (self instanceof DynamicObject) {
+            objects.add((DynamicObject) self);
+        }
+
+        final DynamicObject block = RubyArguments.tryGetBlock(arguments);
+        if (block != null) {
+            objects.add(block);
+        }
+
+        // Other frame arguments are either only internal or user arguments which appear in slots.
 
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
             final Object slotValue = frame.getValue(slot);

@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.ast.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -108,13 +107,13 @@ public class MethodTranslator extends BodyTranslator {
                 NodeUtil.cloneNode(loadArguments));
 
         // Procs
-        final RubyNode bodyProc = new CatchForProcNode(context, sourceSection, composeBody(preludeProc, body));
+        final RubyNode bodyProc = new CatchForProcNode(context, sourceSection, composeBody(preludeProc, NodeUtil.cloneNode(body)));
 
         final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
-        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection, composeBody(preludeLambda, body), environment.getReturnID());
+        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection, composeBody(preludeLambda, body /* no copy, last usage */), environment.getReturnID());
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
                 context, sourceSection,
@@ -122,8 +121,9 @@ public class MethodTranslator extends BodyTranslator {
                 bodyLambda,
                 environment.needsDeclarationFrame());
 
-        final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
+        // TODO CS 23-Nov-15 only the second one will get instrumented properly!
         final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeForLambdas);
+        final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
 
         return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
                 callTargetAsProc, callTargetAsLambda, environment.getBreakID());

@@ -44,11 +44,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
-
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -61,6 +59,8 @@ import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
+import org.jruby.truffle.nodes.objects.IsANode;
+import org.jruby.truffle.nodes.objects.IsANodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -231,16 +231,16 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_object_kind_of", needsSelf = false)
     public static abstract class VMObjectKindOfPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private KernelNodes.IsANode isANode;
+        @Child private IsANode isANode;
 
         public VMObjectKindOfPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{ null, null });
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization(guards = "isRubyModule(rubyClass)")
-        public boolean vmObjectKindOf(VirtualFrame frame, Object object, DynamicObject rubyClass) {
-            return isANode.executeIsA(frame, object, rubyClass);
+        @Specialization
+        public boolean vmObjectKindOf(Object object, DynamicObject rubyClass) {
+            return isANode.executeIsA(object, rubyClass);
         }
 
     }
@@ -590,5 +590,6 @@ public abstract class VMPrimitiveNodes {
         }
 
     }
+
 
 }

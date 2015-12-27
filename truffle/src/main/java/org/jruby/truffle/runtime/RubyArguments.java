@@ -13,7 +13,6 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
-
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.MarkerNode;
@@ -150,6 +149,26 @@ public final class RubyArguments {
         }
 
         return null;
+    }
+
+    public static Object tryGetSelf(Object[] arguments) {
+        if (SELF_INDEX >= arguments.length) {
+            return null;
+        }
+        return arguments[SELF_INDEX];
+    }
+
+    public static DynamicObject tryGetBlock(Object[] arguments) {
+        if (BLOCK_INDEX >= arguments.length) {
+            return null;
+        }
+
+        final Object block = arguments[BLOCK_INDEX];
+        if (block instanceof DynamicObject) {
+            return (DynamicObject) block;
+        } else {
+            return null;
+        }
     }
 
     public static MaterializedFrame getCallerFrame(Object[] arguments) {

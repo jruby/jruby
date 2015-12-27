@@ -14,14 +14,10 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
-import org.jruby.truffle.nodes.constants.RestartableReadConstantNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-
-import java.util.Arrays;
 
 /*
  * TODO(CS): how does this work when when multithreaded? Could a node get replaced by someone else and
@@ -63,7 +59,7 @@ public abstract class ArrayBuilderNode extends Node {
         // The store type cannot be assumed if multiple threads use the same builder,
         // so just use the generic box() since anyway this is slow path.
         final Object[] newStore;
-        if (store instanceof Object[]) {
+        if (store.getClass() == Object[].class) {
             newStore = (Object[]) store;
         } else {
             newStore = ArrayUtils.box(store);
@@ -445,7 +441,7 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
-            if (hasAppendedObjectArray && otherStore instanceof Object[]) {
+            if (hasAppendedObjectArray && otherStore.getClass() == Object[].class) {
                 System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
@@ -488,7 +484,7 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
-            if (otherStore instanceof Object[]) {
+            if (otherStore.getClass() == Object[].class) {
                 hasAppendedObjectArray = true;
                 System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;

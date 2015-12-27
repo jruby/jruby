@@ -24,7 +24,7 @@
 #
 # Run with:
 #
-#   jt run --graal -J-G:+TraceTruffleCompilation -J-G:+TruffleCompilationExceptionsAreFatal test.rb
+#   jt run --graal -J-G:+TraceTruffleCompilation -J-G:+TruffleCompilationExceptionsAreFatal -J-G:+TruffleIterativePartialEscape test.rb
 
 TIMEOUT = 10
 

@@ -367,10 +367,6 @@ public final class Ruby implements Constantizable {
         return globalRuntime != null;
     }
 
-    public static boolean isSubstrateVM() {
-        return false;
-    }
-
     /**
      * Set the global runtime to the given runtime only if it has no been set.
      *
@@ -843,7 +839,7 @@ public final class Ruby implements Constantizable {
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
             assert self == getTopSelf();
-            final TruffleContextInterface truffleContext = getTruffleContext();
+            final JRubyTruffleInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
             truffleContext.execute((RootNode) rootNode);
             Main.printTruffleTimeMetric("after-run");
@@ -884,40 +880,46 @@ public final class Ruby implements Constantizable {
         return jitCompiler;
     }
 
-    public TruffleContextInterface getTruffleContext() {
+    public JRubyTruffleInterface getTruffleContext() {
         synchronized (truffleContextMonitor) {
             if (truffleContext == null) {
-                truffleContext = loadTruffleContext();
+                truffleContext = loadTruffle();
             }
             return truffleContext;
         }
     }
 
-    private TruffleContextInterface loadTruffleContext() {
+    private JRubyTruffleInterface loadTruffle() {
         Main.printTruffleTimeMetric("before-load-truffle-context");
 
         final Class<?> clazz;
 
         try {
-            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.runtime.RubyContext");
+            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.JRubyTruffleImpl");
         } catch (Exception e) {
             throw new RuntimeException("Truffle backend not available", e);
         }
 
-        final TruffleContextInterface truffleContext;
+        final JRubyTruffleInterface truffleContext;
 
         try {
             Constructor<?> con = clazz.getConstructor(Ruby.class);
-            truffleContext = (TruffleContextInterface) con.newInstance(this);
+            truffleContext = (JRubyTruffleInterface) con.newInstance(this);
         } catch (Exception e) {
             throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
         }
 
-        truffleContext.initialize();
-
         Main.printTruffleTimeMetric("after-load-truffle-context");
 
         return truffleContext;
+    }
+
+    public void shutdownTruffleContextIfRunning() {
+        synchronized (truffleContextMonitor) {
+            if (truffleContext != null) {
+                truffleContext.dispose();
+            }
+        }
     }
 
     /**
@@ -4959,7 +4961,7 @@ public final class Ruby implements Constantizable {
     // Compilation
     private final JITCompiler jitCompiler;
 
-    private TruffleContextInterface truffleContext;
+    private JRubyTruffleInterface truffleContext;
     private final Object truffleContextMonitor = new Object();
 
     // Note: this field and the following static initializer

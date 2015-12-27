@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -21,21 +22,22 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class ReadBlockNode extends RubyNode {
 
-    private final Object valueIfNotPresent;
+    private final ConditionProfile hasBlockProfile = ConditionProfile.createBinaryProfile();
+    private final Object valueIfAbsent;
 
-    public ReadBlockNode(RubyContext context, SourceSection sourceSection, Object valueIfNotPresent) {
+    public ReadBlockNode(RubyContext context, SourceSection sourceSection, Object valueIfAbsent) {
         super(context, sourceSection);
-        this.valueIfNotPresent = valueIfNotPresent;
+        this.valueIfAbsent = valueIfAbsent;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final DynamicObject block = RubyArguments.getBlock(frame.getArguments());
 
-        if (block == null) {
-            return valueIfNotPresent;
-        } else {
+        if (hasBlockProfile.profile(block != null)) {
             return block;
+        } else {
+            return valueIfAbsent;
         }
     }
 

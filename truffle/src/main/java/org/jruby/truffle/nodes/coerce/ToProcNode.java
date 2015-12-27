@@ -10,12 +10,12 @@
 package org.jruby.truffle.nodes.coerce;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -30,11 +30,8 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 @NodeChild("child")
 public abstract class ToProcNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toProc;
-
     public ToProcNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toProc = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     @Specialization(guards = "isNil(nil)")
@@ -48,7 +45,8 @@ public abstract class ToProcNode extends RubyNode {
     }
 
     @Specialization(guards = "!isRubyProc(object)")
-    public DynamicObject doObject(VirtualFrame frame, Object object) {
+    public DynamicObject doObject(VirtualFrame frame, Object object,
+            @Cached("createCallNode()") CallDispatchHeadNode toProc) {
         final Object coerced;
         try {
             coerced = toProc.call(frame, object, "to_proc", null);
@@ -67,6 +65,10 @@ public abstract class ToProcNode extends RubyNode {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "Proc", "to_proc", coerced, this));
         }
+    }
+
+    protected CallDispatchHeadNode createCallNode() {
+        return DispatchHeadNodeFactory.createMethodCall(getContext());
     }
 
 }

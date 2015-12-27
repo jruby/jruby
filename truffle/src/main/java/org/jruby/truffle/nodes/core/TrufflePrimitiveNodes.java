@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -25,12 +26,9 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -48,7 +46,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
-import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.io.IOException;
@@ -252,7 +249,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public boolean substrate() {
-            return Ruby.isSubstrateVM();
+            return TruffleOptions.AOT;
         }
 
     }
@@ -345,7 +342,7 @@ public abstract class TrufflePrimitiveNodes {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
 
-            getContext().getCoverageTracker().install();
+            getContext().getEnv().instrumenter().install(getContext().getCoverageTracker());
             return getContext().getCoreLibrary().getNilObject();
         }
 
@@ -742,6 +739,19 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
+    @CoreMethod(names = "context", onSingleton = true)
+    public abstract static class ContextNode extends CoreMethodArrayArgumentsNode {
+
+        public ContextNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyContext context() {
+            return getContext();
+        }
+    }
+
     @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
 
@@ -769,6 +779,37 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization(guards = "isRubyString(file)")
         public boolean load(DynamicObject file, NotProvided wrap) {
             return load(file, false);
+        }
+    }
+
+    @CoreMethod(names = "run_jruby_root", onSingleton = true)
+    public abstract static class RunJRubyRootNode extends CoreMethodArrayArgumentsNode {
+
+        public RunJRubyRootNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object runJRubyRootNode() {
+            return getContext().execute(getContext().getInitialJRubyRootNode());
+        }
+    }
+
+    /*
+     * Truffle::Primitive.create_simple_string creates a string 'test' without any part of the string escaping. Useful
+     * for testing compilation of String becuase most other ways to construct a string can currently escape.
+     */
+
+    @CoreMethod(names = "create_simple_string", onSingleton = true)
+    public abstract static class CreateSimpleStringNode extends CoreMethodArrayArgumentsNode {
+
+        public CreateSimpleStringNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject createSimpleString() {
+            return createString(new ByteList(new byte[]{'t', 'e', 's', 't'}, false));
         }
     }
 

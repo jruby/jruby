@@ -1,0 +1,4 @@
+graalvm:StringScanner#search_full returns the number of bytes advanced
+graalvm:StringScanner#search_full returns the number of bytes advanced and advances the scan pointer if the second argument is true
+graalvm:StringScanner#search_full returns the matched string if the third argument is true
+graalvm:StringScanner#search_full returns the matched string if the third argument is true and advances the scan pointer if the second argument is true

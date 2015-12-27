@@ -20,7 +20,6 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
@@ -50,9 +49,14 @@ public abstract class BindingNodes {
                         RubyArguments.getBlock(arguments),
                         RubyArguments.getDeclarationContext(arguments),
                         RubyArguments.extractUserArguments(arguments)),
-                new FrameDescriptor(context.getCoreLibrary().getNilObject()));
+                newFrameDescriptor(context));
 
         return Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), bindingFrame);
+    }
+
+    @TruffleBoundary
+    private static FrameDescriptor newFrameDescriptor(RubyContext context) {
+        return new FrameDescriptor(context.getCoreLibrary().getNilObject());
     }
 
     public static FrameDescriptor getFrameDescriptor(DynamicObject binding) {

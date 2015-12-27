@@ -173,7 +173,7 @@ public class LayoutGenerator {
         }
 
         if (layout.getSuperLayout() == null) {
-            stream.println("    protected static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);");
+            stream.println("    protected static final Layout LAYOUT = Layout.newLayout().addAllowedImplicitCast(Layout.ImplicitCast.IntToLong).build();");
             stream.printf("    protected static final Shape.Allocator %S_ALLOCATOR = LAYOUT.createAllocator();%n", NameUtils.identifierToConstant(layout.getName()));
         } else {
             stream.printf("    protected static final Shape.Allocator %S_ALLOCATOR = LAYOUT.createAllocator();%n", NameUtils.identifierToConstant(layout.getName()));
@@ -637,7 +637,7 @@ public class LayoutGenerator {
                 stream.println("    ");
             }
 
-            assert !(property.hasSetter() && property.hasUnsafeSetter());
+            // assert !(property.hasSetter() && property.hasUnsafeSetter());
 
             if (property.hasSetter() || property.hasUnsafeSetter()) {
                 addUncheckedCastWarning(stream, property);

@@ -15,16 +15,18 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.utilities.ValueProfile;
-
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
@@ -46,7 +48,6 @@ import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGe
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
@@ -67,7 +68,6 @@ import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 @CoreClass(name = "Module")
@@ -89,29 +89,18 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class ContainsInstanceNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private MetaClassNode metaClassNode;
+        @Child private IsANode isANode;
 
         public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
-        public boolean containsInstance(DynamicObject module, DynamicObject instance) {
-            return includes(Layouts.BASIC_OBJECT.getMetaClass(instance), module);
+        public boolean containsInstance(DynamicObject module, Object instance) {
+            return isANode.executeIsA(instance, module);
         }
 
-        @Specialization(guards = "!isDynamicObject(instance)")
-        public boolean containsInstance(VirtualFrame frame, DynamicObject module, Object instance) {
-            return includes(metaClassNode.executeMetaClass(frame, instance), module);
-        }
-
-        @TruffleBoundary
-        public boolean includes(DynamicObject metaClass, DynamicObject module) {
-            assert RubyGuards.isRubyModule(metaClass);
-            assert RubyGuards.isRubyModule(module);
-            return ModuleOperations.includesModule(metaClass, module);
-        }
     }
 
     @CoreMethod(names = "<", required = 1)
@@ -556,7 +545,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
             }
 
-            if (alreadyLoaded.profile(Layouts.MODULE.getFields(module).getConstants().get(name) != null)) {
+            if (alreadyLoaded.profile(Layouts.MODULE.getFields(module).getConstant(name) != null)) {
                 return nil();
             }
 
@@ -834,14 +823,14 @@ public abstract class ModuleNodes {
 
             final List<DynamicObject> constantsArray = new ArrayList<>();
 
-            final Map<String, RubyConstant> constants;
+            final Iterable<Entry<String, RubyConstant>> constants;
             if (inherit) {
                 constants = ModuleOperations.getAllConstants(module);
             } else {
                 constants = Layouts.MODULE.getFields(module).getConstants();
             }
 
-            for (Entry<String, RubyConstant> constant : constants.entrySet()) {
+            for (Entry<String, RubyConstant> constant : constants) {
                 if (!constant.getValue().isPrivate()) {
                     constantsArray.add(getSymbol(constant.getKey()));
                 }

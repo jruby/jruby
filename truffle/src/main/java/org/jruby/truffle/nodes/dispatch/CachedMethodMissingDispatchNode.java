@@ -15,33 +15,35 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNode;
+import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
+public class CachedMethodMissingDispatchNode extends CachedDispatchNode {
 
-    private final Shape expectedShape;
+    private final DynamicObject expectedClass;
     private final Assumption unmodifiedAssumption;
     private final InternalMethod method;
 
+    @Child private MetaClassWithShapeCacheNode metaClassNode;
     @Child private DirectCallNode callNode;
 
-    public CachedBoxedMethodMissingDispatchNode(
+    public CachedMethodMissingDispatchNode(
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            Shape expectedShape,
             DynamicObject expectedClass,
             InternalMethod method,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, dispatchAction);
 
-        this.expectedShape = expectedShape;
+        this.expectedClass = expectedClass;
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.method = method;
+        this.metaClassNode = MetaClassWithShapeCacheNodeGen.create(context, getSourceSection(), null);
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
         /*
@@ -65,8 +67,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
     @Override
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof DynamicObject) &&
-                ((DynamicObject) receiver).getShape() == expectedShape;
+                metaClassNode.executeMetaClass(receiver) == expectedClass;
     }
 
     @Override
@@ -76,17 +77,6 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             Object methodName,
             DynamicObject blockObject,
             Object[] argumentsObjects) {
-        if (!guard(methodName, receiverObject)) {
-            return next.executeDispatch(
-                    frame,
-                    receiverObject,
-                    methodName,
-                    blockObject,
-                    argumentsObjects);
-        }
-
-        // Check the class has not been modified
-
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
@@ -97,6 +87,15 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                     blockObject,
                     argumentsObjects,
                     "class modified");
+        }
+
+        if (!guard(methodName, receiverObject)) {
+            return next.executeDispatch(
+                    frame,
+                    receiverObject,
+                    methodName,
+                    blockObject,
+                    argumentsObjects);
         }
 
         switch (getDispatchAction()) {

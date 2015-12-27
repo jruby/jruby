@@ -19,6 +19,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.format.runtime.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.util.ByteList;
 
 import java.util.Arrays;
@@ -187,7 +188,7 @@ public abstract class PackNode extends Node {
             // If we ran out of output byte[], deoptimize and next time we'll allocate more
 
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            output = Arrays.copyOf(output, (output.length + length) * 2);
+            output = Arrays.copyOf(output, ArrayUtils.capacity(output.length, outputPosition + length));
             setOutput(frame, output);
         }
 

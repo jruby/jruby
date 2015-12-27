@@ -13,8 +13,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.KernelNodes;
-import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.objects.IsANode;
+import org.jruby.truffle.nodes.objects.IsANodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
@@ -22,16 +22,16 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class RescueAnyNode extends RescueNode {
 
-    @Child private KernelNodes.IsANode isANode;
+    @Child private IsANode isANode;
 
     public RescueAnyNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection, body);
-        isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, null);
+        isANode = IsANodeGen.create(context, sourceSection, null, null);
     }
 
     @Override
     public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
-        return isANode.executeIsA(frame, exception, getContext().getCoreLibrary().getStandardErrorClass());
+        return isANode.executeIsA(exception, getContext().getCoreLibrary().getStandardErrorClass());
     }
 
 }

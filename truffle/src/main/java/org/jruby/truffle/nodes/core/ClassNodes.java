@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -33,6 +34,7 @@ public abstract class ClassNodes {
     private final static com.oracle.truffle.api.object.Layout LAYOUT = com.oracle.truffle.api.object.Layout.createLayout();
 
     /** Special constructor for class Class */
+    @TruffleBoundary
     public static DynamicObject createClassClass(RubyContext context) {
         final ModuleFields model = new ModuleFields(context, null, "Class");
 
@@ -61,6 +63,7 @@ public abstract class ClassNodes {
      * This constructor supports initialization and solves boot-order problems and should not
      * normally be used from outside this class.
      */
+    @TruffleBoundary
     public static DynamicObject createBootClass(RubyContext context, DynamicObject classClass, DynamicObject superclass, String name) {
         assert RubyGuards.isRubyClass(classClass);
         assert superclass == null || RubyGuards.isRubyClass(superclass);
@@ -91,6 +94,7 @@ public abstract class ClassNodes {
         return rubyClass;
     }
 
+    @TruffleBoundary
     public static DynamicObject createSingletonClassOfObject(RubyContext context, DynamicObject superclass, DynamicObject attached, String name) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
@@ -100,12 +104,14 @@ public abstract class ClassNodes {
         return ensureSingletonConsistency(context, createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached));
     }
 
+    @TruffleBoundary
     public static DynamicObject createRubyClass(RubyContext context, DynamicObject lexicalParent, DynamicObject superclass, String name) {
         final DynamicObject rubyClass = createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), lexicalParent, superclass, name, false, null);
         ensureSingletonConsistency(context, rubyClass);
         return rubyClass;
     }
 
+    @TruffleBoundary
     public static DynamicObject createRubyClass(RubyContext context, DynamicObject classClass, DynamicObject lexicalParent, DynamicObject superclass, String name, boolean isSingleton, DynamicObject attached) {
         final ModuleFields model = new ModuleFields(context, lexicalParent, name);
 
@@ -138,7 +144,7 @@ public abstract class ClassNodes {
         return rubyClass;
     }
 
-
+    @TruffleBoundary
     public static void initialize(RubyContext context, DynamicObject rubyClass, DynamicObject superclass) {
         assert RubyGuards.isRubyClass(superclass);
 

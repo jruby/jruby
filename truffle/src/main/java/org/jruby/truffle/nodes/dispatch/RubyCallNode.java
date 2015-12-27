@@ -36,7 +36,6 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -206,7 +205,7 @@ public class RubyCallNode extends RubyNode {
             return ArrayUtils.boxUntil((long[]) store, size);
         } else if (seenFloatInUnsplat && store instanceof double[]) {
             return ArrayUtils.boxUntil((double[]) store, size);
-        } else if (seenObjectInUnsplat && store instanceof Object[]) {
+        } else if (seenObjectInUnsplat && store != null && store.getClass() == Object[].class) {
             return ArrayUtils.extractRange((Object[]) store, 0, size);
         }
 
@@ -224,7 +223,7 @@ public class RubyCallNode extends RubyNode {
         } else if (store instanceof double[]) {
             seenFloatInUnsplat = true;
             return ArrayUtils.boxUntil((double[]) store, size);
-        } else if (store instanceof Object[]) {
+        } else if (store.getClass() == Object[].class) {
             seenObjectInUnsplat = true;
             return ArrayUtils.extractRange((Object[]) store, 0, size);
         }

@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -28,7 +27,7 @@ public abstract class MetaClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract DynamicObject executeMetaClass(VirtualFrame frame, Object value);
+    public abstract DynamicObject executeMetaClass(Object value);
 
     @Specialization(guards = "value")
     protected DynamicObject singletonClassTrue(boolean value) {

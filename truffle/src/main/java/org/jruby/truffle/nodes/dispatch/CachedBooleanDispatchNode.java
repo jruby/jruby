@@ -73,6 +73,19 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             Object methodName,
             DynamicObject blockObject,
             Object[] argumentsObjects) {
+        try {
+            trueUnmodifiedAssumption.check();
+            falseUnmodifiedAssumption.check();
+        } catch (InvalidAssumptionException e) {
+            return resetAndDispatch(
+                    frame,
+                    receiverObject,
+                    methodName,
+                    blockObject,
+                    argumentsObjects,
+                    "class modified");
+        }
+
         if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
@@ -85,18 +98,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
         if ((boolean) receiverObject) {
             trueProfile.enter();
 
-            try {
-                trueUnmodifiedAssumption.check();
-            } catch (InvalidAssumptionException e) {
-                return resetAndDispatch(
-                        frame,
-                        receiverObject,
-                        methodName,
-                        blockObject,
-                        argumentsObjects,
-                        "class modified");
-            }
-
             switch (getDispatchAction()) {
                 case CALL_METHOD:
                     return call(trueCallDirect, frame, trueMethod, receiverObject, blockObject, argumentsObjects);
@@ -108,18 +109,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             }
         } else {
             falseProfile.enter();
-
-            try {
-                falseUnmodifiedAssumption.check();
-            } catch (InvalidAssumptionException e) {
-                return resetAndDispatch(
-                        frame,
-                        receiverObject,
-                        methodName,
-                        blockObject,
-                        argumentsObjects,
-                        "class modified");
-            }
 
             switch (getDispatchAction()) {
                 case CALL_METHOD:

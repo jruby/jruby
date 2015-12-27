@@ -31,6 +31,7 @@ public interface BasicObjectLayout {
     void setLogicalClass(DynamicObject object, DynamicObject value);
 
     DynamicObjectFactory setMetaClass(DynamicObjectFactory factory, DynamicObject value);
+    DynamicObject getMetaClass(ObjectType objectType);
     DynamicObject getMetaClass(DynamicObject object);
     void setMetaClass(DynamicObject object, DynamicObject value);
 }

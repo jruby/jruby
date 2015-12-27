@@ -12,15 +12,12 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
-import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
@@ -40,7 +37,7 @@ public class ThreadBacktraceLocationNodes {
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
-            if (sourceSection instanceof NullSourceSection) {
+            if (sourceSection.getSource() == null) {
                 return createString(StringOperations.encodeByteList(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
             }
 
@@ -84,7 +81,7 @@ public class ThreadBacktraceLocationNodes {
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
-            if (sourceSection instanceof NullSourceSection) {
+            if (sourceSection.getSource() == null) {
                 return createString(StringOperations.encodeByteList(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
             }
 
