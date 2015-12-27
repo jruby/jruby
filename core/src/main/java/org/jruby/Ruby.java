@@ -1272,13 +1272,21 @@ public final class Ruby implements Constantizable {
         // out of base boot mode
         bootingCore = false;
 
-        // init Ruby-based kernel
         if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+            // init Ruby-based kernel
             initRubyKernel();
-        }
 
-        // everything booted, so SizedQueue should be available; set up root fiber
-        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+            // Define blank modules for feature detection in preludes
+            if (!config.isDisableGems()) {
+                defineModule("Gem");
+            }
+            if (!config.isDisableDidYouMean()) {
+                defineModule("DidYouMean");
+            }
+
+            initRubyPreludes();
+
+            // everything booted, so SizedQueue should be available; set up root fiber
             ThreadFiber.initRootFiber(tc);
         }
 
@@ -1782,6 +1790,14 @@ public final class Ruby implements Constantizable {
 
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
+    }
+
+    private void initRubyPreludes() {
+        // We cannot load any .rb and debug new parser features
+        if (RubyInstanceConfig.DEBUG_PARSER) return;
+
+        // load Ruby parts of core
+        loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
     }
 
     private void addLazyBuiltin(String name, String shortName, String className) {

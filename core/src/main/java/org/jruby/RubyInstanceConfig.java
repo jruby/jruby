@@ -1188,6 +1188,13 @@ public class RubyInstanceConfig {
     }
 
     /**
+     * @see Options#CLI_DID_YOU_MEAN_ENABLE
+     */
+    public boolean isDisableDidYouMean() {
+        return disableGems;
+    }
+
+    /**
      * @see Options#CLI_RUBYOPT_ENABLE
      */
     public void setDisableRUBYOPT(boolean dr) {
@@ -1199,6 +1206,13 @@ public class RubyInstanceConfig {
      */
     public void setDisableGems(boolean dg) {
         this.disableGems = dg;
+    }
+
+    /**
+     * @see Options#CLI_DID_YOU_MEAN_ENABLE
+     */
+    public void setDisableDidYouMean(boolean ddym) {
+        this.disableDidYouMean = ddym;
     }
 
     /**
@@ -1536,6 +1550,7 @@ public class RubyInstanceConfig {
     private String threadDumpSignal = null;
     private boolean hardExit = false;
     private boolean disableGems = !Options.CLI_RUBYGEMS_ENABLE.load();
+    private boolean disableDidYouMean = !Options.CLI_DID_YOU_MEAN_ENABLE.load();
     private boolean disableRUBYOPT = !Options.CLI_RUBYOPT_ENABLE.load();
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
