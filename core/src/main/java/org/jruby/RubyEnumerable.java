@@ -552,7 +552,7 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         if (block.isGiven()) {
-            callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
+            callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(ctx, largs);
                     if (pattern.callMethod(ctx, "===", larg).isTrue() == isPresent) {
