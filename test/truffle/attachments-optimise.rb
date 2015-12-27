@@ -13,7 +13,7 @@ def foo
   foo * 2
 end
 
-Truffle::Attachments.attach __FILE__, 5 do |binding|
+Truffle::Attachments.attach __FILE__, 13 do |binding|
   binding.local_variable_set(:foo, 100)
 end
 
