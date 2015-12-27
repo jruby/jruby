@@ -81,17 +81,17 @@ public abstract class RangeNodes {
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object eachInt(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             int result;
-            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
-                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range));
+            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range)) {
+                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
             } else {
-                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)) + 1;
+                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range) + 1;
             }
             final int exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (int n = Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)); n < exclusiveEnd; n++) {
+                for (int n = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range); n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -110,17 +110,17 @@ public abstract class RangeNodes {
         @Specialization(guards = "isLongFixnumRange(range)")
         public Object eachLong(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             long result;
-            if (Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
-                result = Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range));
+            if (Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(range)) {
+                result = Layouts.LONG_FIXNUM_RANGE.getEnd(range);
             } else {
-                result = Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range)) + 1;
+                result = Layouts.LONG_FIXNUM_RANGE.getEnd(range) + 1;
             }
             final long exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (long n = Layouts.LONG_FIXNUM_RANGE.getBegin(((DynamicObject) range)); n < exclusiveEnd; n++) {
+                for (long n = Layouts.LONG_FIXNUM_RANGE.getBegin(range); n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -171,17 +171,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public boolean excludeEndInt(DynamicObject range) {
-            return Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range));
+            return Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range);
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public boolean excludeEndLong(DynamicObject range) {
-            return Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range));
+            return Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(range);
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public boolean excludeEndObject(DynamicObject range) {
-            return Layouts.OBJECT_RANGE.getExcludedEnd(((DynamicObject) range));
+            return Layouts.OBJECT_RANGE.getExcludedEnd(range);
         }
 
     }
@@ -195,17 +195,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int eachInt(DynamicObject range) {
-            return Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range));
+            return Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public long eachLong(DynamicObject range) {
-            return Layouts.LONG_FIXNUM_RANGE.getBegin(((DynamicObject) range));
+            return Layouts.LONG_FIXNUM_RANGE.getBegin(range);
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object eachObject(DynamicObject range) {
-            return Layouts.OBJECT_RANGE.getBegin(((DynamicObject) range));
+            return Layouts.OBJECT_RANGE.getBegin(range);
         }
 
     }
@@ -259,17 +259,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int lastInt(DynamicObject range) {
-            return Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range));
+            return Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public long lastLong(DynamicObject range) {
-            return Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range));
+            return Layouts.LONG_FIXNUM_RANGE.getEnd(range);
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object lastObject(DynamicObject range) {
-            return Layouts.OBJECT_RANGE.getEnd(((DynamicObject) range));
+            return Layouts.OBJECT_RANGE.getEnd(range);
         }
 
     }
@@ -289,12 +289,12 @@ public abstract class RangeNodes {
 
             try {
                 int result;
-                if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
-                    result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range));
+                if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range)) {
+                    result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
                 } else {
-                    result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)) + 1;
+                    result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range) + 1;
                 }
-                for (int n = Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)); n < result; n += step) {
+                for (int n = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range); n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -316,12 +316,12 @@ public abstract class RangeNodes {
 
             try {
                 long result;
-                if (Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
-                    result = Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range));
+                if (Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(range)) {
+                    result = Layouts.LONG_FIXNUM_RANGE.getEnd(range);
                 } else {
-                    result = Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range)) + 1;
+                    result = Layouts.LONG_FIXNUM_RANGE.getEnd(range) + 1;
                 }
-                for (long n = Layouts.LONG_FIXNUM_RANGE.getBegin(((DynamicObject) range)); n < result; n += step) {
+                for (long n = Layouts.LONG_FIXNUM_RANGE.getBegin(range); n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }

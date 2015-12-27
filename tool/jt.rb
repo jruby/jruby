@@ -257,6 +257,7 @@ module Commands
   end
 
   def rebuild
+    FileUtils.cp('bin/jruby.bash', 'bin/jruby')
     clean
     build
   end
@@ -294,9 +295,9 @@ module Commands
       warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
       if args.delete('--full')
-        jruby_args += %w[-J-Djvmci.option.Dump=Truffle]
+        jruby_args += %w[-J-G:Dump=Truffle]
       else
-        jruby_args += %w[-J-Djvmci.option.Dump=TrufflePartialEscape]
+        jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
       end
     end
 
@@ -365,8 +366,8 @@ module Commands
 
   def test_pe(*args)
     file = args.pop if args.last and File.exist?(args.last)
-    args.push('-J-Djvmci.option.TruffleIterativePartialEscape=true')
-    args.push('-J-Djvmci.option.TruffleCompilationExceptionsAreThrown=true')
+    args.push('-J-G:+TruffleIterativePartialEscape')
+    args.push('-J-G:+TruffleCompilationExceptionsAreThrown')
     run('--graal', *args, 'test/truffle/pe/pe.rb', *file)
   end
   private :test_pe
@@ -444,11 +445,11 @@ module Commands
     bench_args = ["#{bench_dir}/bin/bench9000"]
     case command
     when 'debug'
-      vm_args = ['-Djvmci.option.TraceTruffleCompilation=true', '-Djvmci.option.DumpOnError=true']
+      vm_args = ['-G:+TraceTruffleCompilation', '-G:+DumpOnError']
       if args.delete '--ruby-backtrace'
-        vm_args.push '-Djvmci.option.TruffleCompilationExceptionsAreThrown=true'
+        vm_args.push '-G:+TruffleCompilationExceptionsAreThrown'
       else
-        vm_args.push '-Djvmci.option.TruffleCompilationExceptionsAreFatal=true'
+        vm_args.push '-G:+TruffleCompilationExceptionsAreFatal'
       end
       remaining_args = []
       args.each do |arg|

@@ -1,0 +1,4 @@
+<factorypath>
+    <factorypathentry kind="VARJAR" id="M2_REPO/com/oracle/truffle/truffle-api/0.10/truffle-api-0.10.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="VARJAR" id="M2_REPO/com/oracle/truffle/truffle-dsl-processor/0.10/truffle-dsl-processor-0.10.jar" enabled="true" runInBatchMode="false"/>
+</factorypath>

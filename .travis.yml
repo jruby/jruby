@@ -78,6 +78,8 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/truffle/integration-tests.sh
       jdk: oraclejdk8
+  allow_failures:
+    - env: PHASE='-Prake -Dtask=test:mri:fullint'
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required

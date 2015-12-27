@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
@@ -78,7 +78,7 @@ public class TryNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         for (RescueNode rescue : rescueParts) {
-            if (rescue.canHandle(frame, (DynamicObject) exception.getRubyException())) {
+            if (rescue.canHandle(frame, exception.getRubyException())) {
                 return setLastExceptionAndRunRescue(frame, exception, rescue);
             }
         }

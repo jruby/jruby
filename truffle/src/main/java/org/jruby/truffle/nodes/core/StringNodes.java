@@ -32,8 +32,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.profiles.ConditionProfile;
+import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
@@ -421,7 +421,12 @@ public abstract class StringNodes {
             return string;
         }
 
-        private DynamicObject charRangeException(Number value) {
+        private DynamicObject charRangeException(int value) {
+            return getContext().getCoreLibrary().rangeError(
+                    String.format("%d out of char range", value), this);
+        }
+
+        private DynamicObject charRangeException(long value) {
             return getContext().getCoreLibrary().rangeError(
                     String.format("%d out of char range", value), this);
         }

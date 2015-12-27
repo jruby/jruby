@@ -384,7 +384,7 @@ public abstract class ModuleOperations {
 
         // If singleton class, check attached module.
         if (RubyGuards.isRubyClass(module)) {
-            DynamicObject klass = (DynamicObject) module;
+            DynamicObject klass = module;
             if (Layouts.CLASS.getIsSingleton(klass) && Layouts.CLASS.getAttached(klass) != null) {
                 module = Layouts.CLASS.getAttached(klass);
 

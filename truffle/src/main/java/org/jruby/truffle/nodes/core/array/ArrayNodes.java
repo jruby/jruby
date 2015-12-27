@@ -22,8 +22,8 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.profiles.ConditionProfile;
+import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -355,7 +355,7 @@ public abstract class ArrayNodes {
                 readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 
-            return readNode.executeRead(frame, (DynamicObject) array, index);
+            return readNode.executeRead(frame, array, index);
         }
 
         @Specialization
@@ -703,7 +703,7 @@ public abstract class ArrayNodes {
                 readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 
-            return readNode.executeRead(frame, (DynamicObject) array, index);
+            return readNode.executeRead(frame, array, index);
         }
 
     }
@@ -838,7 +838,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isRubyArray(other)", "!isNullArray(other)"})
         public DynamicObject concat(DynamicObject array, DynamicObject other) {
-            appendManyNode.executeAppendMany((DynamicObject) array, Layouts.ARRAY.getSize(other), Layouts.ARRAY.getStore(other));
+            appendManyNode.executeAppendMany(array, Layouts.ARRAY.getSize(other), Layouts.ARRAY.getStore(other));
             return array;
         }
 
@@ -2510,7 +2510,7 @@ public abstract class ArrayNodes {
                 popOneNode = insert(PopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
 
-            return popOneNode.executePopOne((DynamicObject) array);
+            return popOneNode.executePopOne(array);
         }
 
         @Specialization(guards = { "isEmptyArray(array)", "wasProvided(object)" })
@@ -3153,7 +3153,7 @@ public abstract class ArrayNodes {
 
                     CompilerDirectives.transferToInterpreter();
 
-                    if (! yieldIsTruthy(frame, block,  new Object[]{value})) {
+                    if (! yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
                         selectedSize++;
                     }
@@ -3544,7 +3544,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    if (yieldIsTruthy(frame, block,  new Object[]{value})) {
+                    if (yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
                         selectedSize++;
                     }
