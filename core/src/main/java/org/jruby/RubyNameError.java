@@ -219,8 +219,8 @@ public class RubyNameError extends RubyException {
 
     @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
-        if (name instanceof RubyNameErrorMessage) {
-            return ((RubyNameErrorMessage)name).object;
+        if (message instanceof RubyNameErrorMessage) {
+            return ((RubyNameErrorMessage)message).object;
         }
 
         throw context.runtime.newArgumentError("no receiver is available");
