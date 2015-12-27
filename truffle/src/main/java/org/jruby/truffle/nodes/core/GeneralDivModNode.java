@@ -59,6 +59,10 @@ public class GeneralDivModNode extends RubyNode {
         return divMod(a, b);
     }
 
+    public DynamicObject execute(BigInteger a, double b) {
+        return divMod(a.doubleValue(), b);
+    }
+
     public DynamicObject execute(double a, long b) {
         return divMod(a, b);
     }
