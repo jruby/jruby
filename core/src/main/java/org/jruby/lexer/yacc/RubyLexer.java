@@ -2588,8 +2588,8 @@ public class RubyLexer {
                     break;
                 default :
                     pushback(c);
-                    yaccValue = new FixnumNode(getPosition(), 0);
-                    return Tokens.tINTEGER;
+                    numberBuffer.append('0');
+                    return getIntegerToken(numberBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
             }
         }
 
