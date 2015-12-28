@@ -1059,7 +1059,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     private void ungetbyteCommon(RubyString ungetBytes) {
         ByteList ungetByteList = ungetBytes.getByteList();
         int len = ungetByteList.getRealSize();
-        int start = ptr.pos;
+        final int start; // = ptr.pos;
 
         if (len == 0) return;
 
