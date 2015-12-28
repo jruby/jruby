@@ -128,6 +128,19 @@ public class Numeric {
         return x.callMethod(context, "*", y);
     }
 
+    // MRI: safe_mul
+    public static IRubyObject safe_mul(ThreadContext context, IRubyObject a, IRubyObject b, boolean az, boolean bz) {
+        Ruby runtime = context.runtime;
+        double v;
+        if (!az && bz && a instanceof RubyFloat && !Double.isNaN(v = ((RubyFloat)a).getDoubleValue())) {
+            a = v < 0.0d ? runtime.newFloat(-1.0d) : runtime.newFloat(1.0d);
+        }
+        if (!bz && az && b instanceof RubyFloat && !Double.isNaN(v = ((RubyFloat)b).getDoubleValue())) {
+            b = v < 0.0d ? runtime.newFloat(-1.0) : runtime.newFloat(1.0);
+        }
+        return f_mul(context, a, b);
+    }
+
     /** f_sub
      * 
      */
