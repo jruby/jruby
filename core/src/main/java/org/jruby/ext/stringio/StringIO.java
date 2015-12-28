@@ -870,7 +870,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return string;
     }
 
-    @JRubyMethod(name="read_nonblock", optional = 3)
+    @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
