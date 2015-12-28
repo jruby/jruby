@@ -1177,6 +1177,15 @@ public class RubyKernel {
         return runtime.getNil();
     }
 
+    @JRubyMethod(module = true, required = 1, rest = true, visibility = PRIVATE)
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject... messages) {
+        Ruby runtime = context.runtime;
+
+        for (IRubyObject message : messages) warn(context, recv, message);
+
+        return runtime.getNil();
+    }
+
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject set_trace_func(ThreadContext context, IRubyObject recv, IRubyObject trace_func, Block block) {
         if (trace_func.isNil()) {
