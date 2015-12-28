@@ -54,6 +54,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -199,54 +200,51 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject length) {
-        return recv_nonblock(context, length, null, null);
+        return recv_nonblock(context, length, context.nil, context.nil, false);
     }
 
-    @JRubyMethod(required = 2, optional = 1) // (length) required = 1 handled above
+    @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
-        IRubyObject length; RubyString str; IRubyObject flags;
+        Ruby runtime = context.runtime;
+        int argc = args.length;
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
+        if (!opts.isNil()) argc--;
 
-        switch (args.length) {
+        IRubyObject length = context.nil;
+        IRubyObject flags = length;
+        IRubyObject str = length;
+
+        switch (argc) {
             case 3:
-                length = args[0];
-                str = (RubyString) args[1];
-                flags = args[2].convertToHash();
-                break;
+                str = args[3];
             case 2:
-                length = args[0];
-                flags = TypeConverter.checkHashType(context.runtime, args[1]);
-                str = flags.isNil() ? (RubyString) args[1] : null;
-                break;
+                flags = args[2];
             case 1:
-                length = args[0];
-                str = null; flags = null;
-                break;
-            default:
-                length = context.nil;
-                str = null; flags = null;
+                length = args[1];
         }
 
-        return recv_nonblock(context, length, str, flags);
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
+
+        return recv_nonblock(context, length, flags, str, exception);
     }
 
-    @Deprecated
-    public IRubyObject recv_nonblock(ThreadContext context, IRubyObject length, IRubyObject flags) {
-        return recv_nonblock(context, new IRubyObject[] { length, flags });
-    }
+    protected IRubyObject recv_nonblock(ThreadContext context, IRubyObject length,
+        IRubyObject flags, IRubyObject str, boolean ex) {
+        Ruby runtime = context.runtime;
 
-    private IRubyObject recv_nonblock(ThreadContext context, IRubyObject length,
-        RubyString str, IRubyObject flags) {
         // TODO: implement flags
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
         ByteList bytes = doReceiveNonblock(context, buffer);
 
         if (bytes == null) {
+            if (!ex) return runtime.newSymbol("wait_readable");
             throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
         }
 
-        if (str != null) {
-            str.setValue(bytes);
+        if (str != null && !str.isNil()) {
+            str = str.convertToString();
+            ((RubyString)str).setValue(bytes);
             return str;
         }
         return RubyString.newString(context.runtime, bytes);

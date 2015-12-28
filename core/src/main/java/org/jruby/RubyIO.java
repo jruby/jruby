@@ -1337,18 +1337,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         IRubyObject str;
         IRubyObject opts = context.nil;
-        boolean no_exceptions = false;
 
-        int argc = Arity.checkArgumentCount(context, argv, 1, 2);
-        if (argc == 2) {
-            opts = argv[1].convertToHash();
-        }
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", argv) != runtime.getFalse();
+
         str = argv[0];
 
-        if (!opts.isNil() && runtime.getFalse() == ((RubyHash)opts).op_aref(context, runtime.newSymbol("exception")))
-            no_exceptions = true;
-
-        return ioWriteNonblock(context, runtime, str, no_exceptions);
+        return ioWriteNonblock(context, runtime, str, !exception);
     }
 
     // MRI: io_write_nonblock
@@ -2776,18 +2770,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // MRI: io_read_nonblock
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean useException) {
         final Ruby runtime = context.runtime;
-        boolean noException = !useException;
 
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", args) != runtime.getFalse();
 
-        if ( ! opts.isNil() &&
-            runtime.getFalse() == ((RubyHash) opts).op_aref(context, runtime.newSymbol("exception")) ) {
-            noException = true;
-        }
+        IRubyObject ret = getPartial(context, args, true, !exception);
 
-        IRubyObject ret = getPartial(context, args, true, noException);
-
-        return ret.isNil() ? nonblockEOF(runtime, noException) : ret;
+        return ret.isNil() ? nonblockEOF(runtime, !exception) : ret;
     }
 
     // MRI: io_nonblock_eof(VALUE opts)

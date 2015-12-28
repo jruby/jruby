@@ -44,6 +44,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -861,12 +862,19 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return str;
     }
 
-    @JRubyMethod(name="read_nonblock", optional = 2)
+    @JRubyMethod(name="read_nonblock", optional = 3)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
-        // TODO: nonblock exception option
+        Ruby runtime = context.runtime;
+
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
+
+        if (!opts.isNil()) args = Arrays.copyOf(args, args.length - 1);
+
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
 
         IRubyObject val = read(context, args);
         if (val.isNil()) {
+            if (!exception) return runtime.newSymbol("wait_readable");
             throw context.runtime.newEOFError();
         }
 
@@ -1105,7 +1113,10 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "write_nonblock", required = 1, optional = 1)
     public IRubyObject syswrite_nonblock(ThreadContext context, IRubyObject[] args) {
-        // TODO: handle opts?
+        Ruby runtime = context.runtime;
+
+        ArgsUtil.getOptionsArg(runtime, args); // ignored as in MRI
+
         return syswrite(context, args[0]);
     }
 
