@@ -188,59 +188,32 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitF64Native(PackParser.F64NativeContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(),
-        //        writeInteger(64, ByteOrder.nativeOrder(),
-        //                ReinterpretLongNodeGen.create(context,
-        //                        ReadDoubleNodeGen.create(context, new SourceNode())))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat64NodeGen.create(context, readIntegerX(64, ByteOrder.nativeOrder(), consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF32Native(PackParser.F32NativeContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(),
-        //        writeInteger(32, ByteOrder.nativeOrder(),
-        //                ReinterpretLongNodeGen.create(context,
-        //                        AsSinglePrecisionNodeGen.create(context,
-        //                                ReadDoubleNodeGen.create(context, new SourceNode()))))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat32NodeGen.create(context, readIntegerX(32, ByteOrder.nativeOrder(), consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF64Little(PackParser.F64LittleContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(),
-        //        writeInteger(64, ByteOrder.LITTLE_ENDIAN,
-        //                ReinterpretLongNodeGen.create(context,
-        //                        ReadDoubleNodeGen.create(context, new SourceNode())))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat64NodeGen.create(context, readIntegerX(64, ByteOrder.LITTLE_ENDIAN, consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF32Little(PackParser.F32LittleContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(),
-        //        writeInteger(32, ByteOrder.LITTLE_ENDIAN,
-        //                ReinterpretLongNodeGen.create(context,
-        //                        AsSinglePrecisionNodeGen.create(context,
-        //                            ReadDoubleNodeGen.create(context, new SourceNode()))))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat32NodeGen.create(context, readIntegerX(32, ByteOrder.LITTLE_ENDIAN, consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF64Big(PackParser.F64BigContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(),
-        //        writeInteger(64, ByteOrder.BIG_ENDIAN,
-        //                ReinterpretLongNodeGen.create(context,
-        //                        ReadDoubleNodeGen.create(context, new SourceNode())))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat64NodeGen.create(context, readIntegerX(64, ByteOrder.BIG_ENDIAN, consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF32Big(PackParser.F32BigContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(),
-        //        writeInteger(32, ByteOrder.BIG_ENDIAN,
-        //                ReinterpretLongNodeGen.create(context,
-        //                        AsSinglePrecisionNodeGen.create(context,
-        //                            ReadDoubleNodeGen.create(context, new SourceNode()))))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat32NodeGen.create(context, readIntegerX(32, ByteOrder.BIG_ENDIAN, consumePartial(ctx.count()), true)))));
     }
 
     @Override
@@ -434,6 +407,11 @@ public class UnpackTreeBuilder extends PackBaseListener {
         return readInteger(size, byteOrder, readNode, signed);
     }
 
+    private PackNode readIntegerX(int size, ByteOrder byteOrder, boolean consumePartial, boolean signed) {
+        final PackNode readNode = ReadBytesNodeGen.create(context, size / 8, consumePartial, new SourceNode());
+        return readIntegerX(size, byteOrder, readNode, signed);
+    }
+
     private PackNode readInteger(int size, ByteOrder byteOrder, PackNode readNode, boolean signed) {
         PackNode convert;
 
@@ -468,6 +446,42 @@ public class UnpackTreeBuilder extends PackBaseListener {
         }
 
         return WriteValueNodeGen.create(context, convert);
+    }
+
+    private PackNode readIntegerX(int size, ByteOrder byteOrder, PackNode readNode, boolean signed) {
+        PackNode convert;
+
+        switch (size) {
+            case 16:
+                if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                    convert = DecodeInteger16LittleNodeGen.create(context, readNode);
+                } else {
+                    convert = DecodeInteger16BigNodeGen.create(context, readNode);
+                }
+                break;
+            case 32:
+                if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                    convert = DecodeInteger32LittleNodeGen.create(context, readNode);
+                } else {
+                    convert = DecodeInteger32BigNodeGen.create(context, readNode);
+                }
+                break;
+            case 64:
+                if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                    convert = DecodeInteger64LittleNodeGen.create(context, readNode);
+                } else {
+                    convert = DecodeInteger64BigNodeGen.create(context, readNode);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException();
+        }
+
+        if (!signed) {
+            convert = AsUnsignedNodeGen.create(context, convert);
+        }
+
+        return convert;
     }
 
     private void binaryString(byte padding, boolean padOnNull, boolean appendNull, PackParser.CountContext count) {
