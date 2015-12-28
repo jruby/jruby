@@ -261,8 +261,14 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject close_read(ThreadContext context) {
-        checkReadable();
-        flags &= ~STRIO_READABLE;
+        // ~ checkReadable() :
+        checkInitialized();
+        if ( (ptr.flags & OpenFile.READABLE) == 0 ) {
+            throw context.runtime.newIOError("not opened for reading");
+        }
+        if ( ( flags & STRIO_READABLE ) != 0 ) {
+            flags &= ~STRIO_READABLE;
+        }
         return context.nil;
     }
 
@@ -274,8 +280,14 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject close_write(ThreadContext context) {
-        checkWritable();
-        flags &= ~STRIO_WRITABLE;
+        // ~ checkWritable() :
+        checkInitialized();
+        if ( (ptr.flags & OpenFile.WRITABLE) == 0 ) {
+            throw context.runtime.newIOError("not opened for writing");
+        }
+        if ( ( flags & STRIO_WRITABLE ) != 0 ) {
+            flags &= ~STRIO_WRITABLE;
+        }
         return context.nil;
     }
 
