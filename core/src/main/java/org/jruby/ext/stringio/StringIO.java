@@ -292,8 +292,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         IRubyObject line;
 
-        if (args.length > 0 && !args[args.length - 1].isNil() && args[args.length - 1].checkStringType19().isNil() &&
-                RubyNumeric.num2long(args[args.length - 1]) == 0) {
+        if ( checkLastArg0(args) ) {
             throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
         }
 
@@ -302,6 +301,14 @@ public class StringIO extends RubyObject implements EncodingCapable {
             block.yieldSpecific(context, line);
         }
         return this;
+    }
+
+    private static boolean checkLastArg0(final IRubyObject[] args) {
+        final int len = args.length;
+        return len > 0 &&
+            ! args[len - 1].isNil() &&
+            args[len - 1].checkStringType19().isNil() &&
+            RubyNumeric.num2long( args[len - 1] ) == 0 ;
     }
 
     @JRubyMethod(name = "each_line", optional = 2, writes = FrameField.LASTLINE)
@@ -778,19 +785,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
     }
 
-    // Make string based on internal data encoding (which ironically is its
-    // external encoding.  This seems messy and we should consider a more
-    // uniform method for makeing strings (we have a slightly different variant
-    // of this in RubyIO.
-    private RubyString makeString(Ruby runtime, ByteList buf, boolean setEncoding) {
-        if (runtime.is1_9() && setEncoding) buf.setEncoding(ptr.string.getEncoding());
-
-        RubyString str = RubyString.newString(runtime, buf);
-        str.setTaint(true);
-
-        return str;
-    }
-
     @JRubyMethod(name = "read", optional = 2)
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {
         checkReadable();
@@ -911,8 +905,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        if (args.length > 0 && !args[args.length - 1].isNil() && args[args.length - 1].checkStringType19().isNil() &&
-                RubyNumeric.num2long(args[args.length - 1]) == 0) {
+        if ( checkLastArg0(args) ) {
             throw runtime.newArgumentError("invalid limit: 0 for each_line");
         }
 
