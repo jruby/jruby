@@ -874,7 +874,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         IRubyObject val = read(context, args);
         if (val.isNil()) {
-            if (!exception) return runtime.newSymbol("wait_readable");
+            if (!exception) return context.nil;
             throw context.runtime.newEOFError();
         }
 
