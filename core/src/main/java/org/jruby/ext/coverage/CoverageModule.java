@@ -62,7 +62,7 @@ public class CoverageModule {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject peekResult(ThreadContext context, IRubyObject self) {
+    public static IRubyObject peek_result(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
 
         if (!runtime.getCoverageData().isCoverageEnabled()) {
