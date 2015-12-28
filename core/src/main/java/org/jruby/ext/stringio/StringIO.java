@@ -245,7 +245,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     @JRubyMethod
     public IRubyObject close(ThreadContext context) {
         checkInitialized();
-        checkOpen();
+        if ( closed() ) return context.nil;
 
         // NOTE: This is 2.0 behavior to allow dup'ed StringIO to remain open when original is closed
         flags &= ~STRIO_READWRITE;
