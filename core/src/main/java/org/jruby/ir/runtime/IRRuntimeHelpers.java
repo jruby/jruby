@@ -1698,4 +1698,28 @@ public class IRRuntimeHelpers {
 
         return self;
     }
+
+    /**
+     * Create a new Symbol.to_proc for the given symbol name and encoding.
+     *
+     * @param context
+     * @param symbol
+     * @return
+     */
+    @Interp
+    public static RubyProc newSymbolProc(ThreadContext context, String symbol, Encoding encoding) {
+        return (RubyProc)context.runtime.newSymbol(symbol, encoding).to_proc(context);
+    }
+
+    /**
+     * Create a new Symbol.to_proc for the given symbol name and encoding.
+     *
+     * @param context
+     * @param symbol
+     * @return
+     */
+    @JIT
+    public static RubyProc newSymbolProc(ThreadContext context, String symbol, String encoding) {
+        return newSymbolProc(context, symbol, retrieveJCodingsEncoding(context, encoding));
+    }
 }
