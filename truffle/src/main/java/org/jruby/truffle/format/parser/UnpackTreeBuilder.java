@@ -171,12 +171,12 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitUtf8Character(PackParser.Utf8CharacterContext ctx) {
-        throw new UnsupportedOperationException();
         //unify(PackEncoding.UTF_8);
 
-        //appendNode(applyCount(ctx.count(), WriteUTF8CharacterNodeGen.create(context,
-        //        ToLongNodeGen.create(context,
-        //                ReadValueNodeGen.create(context, new SourceNode())))));
+        appendNode(applyCount(ctx.count(),
+                WriteValueNodeGen.create(context,
+                        ReadUTF8CharacterNodeGen.create(context,
+                                new SourceNode()))));
     }
 
     @Override

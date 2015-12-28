@@ -1390,7 +1390,7 @@ public class Pack {
 
     /** utf8_to_uv
      */
-    private static int utf8Decode(ByteBuffer buffer) {        
+    private static int utf8Decode(ByteBuffer buffer) {
         int c = buffer.get() & 0xFF;
         int uv = c;
         int n;
