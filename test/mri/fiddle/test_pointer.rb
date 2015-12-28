@@ -1,6 +1,6 @@
+# frozen_string_literal: false
 begin
   require_relative 'helper'
-  require_relative '../ruby/envutil'
 rescue LoadError
 end
 
@@ -106,7 +106,7 @@ module Fiddle
       ptr2 = Pointer.to_ptr Struct.new(:to_ptr).new(ptr)
       assert_equal ptr, ptr2
 
-      assert_raises(Fiddle::DLError) do
+      assert_raise(Fiddle::DLError) do
         Pointer.to_ptr Struct.new(:to_ptr).new(nil)
       end
     end

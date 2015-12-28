@@ -1,6 +1,6 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'uri'
-require_relative '../ruby/envutil'
 
 module URI
 

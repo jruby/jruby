@@ -1,5 +1,5 @@
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestFloat < Test::Unit::TestCase
   include EnvUtil
@@ -355,6 +355,30 @@ class TestFloat < Test::Unit::TestCase
   def test_zero_p
     assert_predicate(0.0, :zero?)
     assert_not_predicate(1.0, :zero?)
+  end
+
+  def test_positive_p
+    assert_predicate(+1.0, :positive?)
+    assert_not_predicate(+0.0, :positive?)
+    assert_not_predicate(-0.0, :positive?)
+    assert_not_predicate(-1.0, :positive?)
+    assert_predicate(+(0.0.next_float), :positive?)
+    assert_not_predicate(-(0.0.next_float), :positive?)
+    assert_predicate(Float::INFINITY, :positive?)
+    assert_not_predicate(-Float::INFINITY, :positive?)
+    assert_not_predicate(Float::NAN, :positive?)
+  end
+
+  def test_negative_p
+    assert_predicate(-1.0, :negative?)
+    assert_not_predicate(-0.0, :negative?)
+    assert_not_predicate(+0.0, :negative?)
+    assert_not_predicate(+1.0, :negative?)
+    assert_predicate(-(0.0.next_float), :negative?)
+    assert_not_predicate(+(0.0.next_float), :negative?)
+    assert_predicate(-Float::INFINITY, :negative?)
+    assert_not_predicate(Float::INFINITY, :negative?)
+    assert_not_predicate(Float::NAN, :negative?)
   end
 
   def test_infinite_p

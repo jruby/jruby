@@ -1,4 +1,5 @@
 # -*- coding: us-ascii -*-
+# frozen_string_literal: false
 require 'test/unit'
 
 class TestMethod < Test::Unit::TestCase
@@ -918,5 +919,38 @@ class TestMethod < Test::Unit::TestCase
     assert_equal(123, b.local_variable_get(:foo))
     assert_equal(456, b.local_variable_get(:bar))
     assert_equal([:bar, :foo], b.local_variables.sort)
+  end
+
+  class MethodInMethodClass
+    def m1
+      def m2
+      end
+
+      self.class.send(:define_method, :m3){} # [Bug #11754]
+    end
+    private
+  end
+
+  def test_method_in_method_visibility_should_be_public
+    assert_equal([:m1].sort, MethodInMethodClass.public_instance_methods(false).sort)
+    assert_equal([].sort, MethodInMethodClass.private_instance_methods(false).sort)
+
+    MethodInMethodClass.new.m1
+    assert_equal([:m1, :m2, :m3].sort, MethodInMethodClass.public_instance_methods(false).sort)
+    assert_equal([].sort, MethodInMethodClass.private_instance_methods(false).sort)
+  end
+
+  def test_define_method_with_symbol
+    assert_normal_exit %q{
+      define_method(:foo, &:to_s)
+      define_method(:bar, :to_s.to_proc)
+    }, '[Bug #11850]'
+    c = Class.new{
+      define_method(:foo, &:to_s)
+      define_method(:bar, :to_s.to_proc)
+    }
+    obj = c.new
+    assert_equal('1', obj.foo(1))
+    assert_equal('1', obj.bar(1))
   end
 end

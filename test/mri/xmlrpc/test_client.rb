@@ -1,4 +1,5 @@
-require 'minitest/autorun'
+# frozen_string_literal: false
+require 'test/unit'
 require 'xmlrpc/client'
 require 'net/http'
 begin
@@ -7,7 +8,7 @@ rescue LoadError
 end
 
 module XMLRPC
-  class ClientTest < MiniTest::Unit::TestCase
+  class ClientTest < Test::Unit::TestCase
     module Fake
       class HTTP
         attr_accessor :read_timeout, :open_timeout, :use_ssl
@@ -182,13 +183,13 @@ module XMLRPC
     end
 
     def test_new2_bad_protocol
-      assert_raises(ArgumentError) do
+      assert_raise(ArgumentError) do
         XMLRPC::Client.new2 'ftp://example.org'
       end
     end
 
     def test_new2_bad_uri
-      assert_raises(ArgumentError) do
+      assert_raise(ArgumentError) do
         XMLRPC::Client.new2 ':::::'
       end
     end

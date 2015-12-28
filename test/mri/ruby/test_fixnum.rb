@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 
 class TestFixnum < Test::Unit::TestCase
@@ -311,5 +312,22 @@ class TestFixnum < Test::Unit::TestCase
   def test_remainder
     assert_equal(1, 5.remainder(4))
     assert_predicate(4.remainder(Float::NAN), :nan?)
+  end
+
+  def test_zero_p
+    assert_predicate(0, :zero?)
+    assert_not_predicate(1, :zero?)
+  end
+
+  def test_positive_p
+    assert_predicate(1, :positive?)
+    assert_not_predicate(0, :positive?)
+    assert_not_predicate(-1, :positive?)
+  end
+
+  def test_negative_p
+    assert_predicate(-1, :negative?)
+    assert_not_predicate(0, :negative?)
+    assert_not_predicate(1, :negative?)
   end
 end

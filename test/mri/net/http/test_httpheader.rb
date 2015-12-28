@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'net/http'
 require 'test/unit'
 
@@ -138,6 +139,14 @@ class HTTPHeaderTest < Test::Unit::TestCase
     @c['my-header'] = ['a', 'b']
     @c.each_capitalized do |k,v|
       assert_equal 'My-Header', k
+      assert_equal 'a, b', v
+    end
+  end
+
+  def test_each_capitalized_with_symbol
+    @c[:my_header] = ['a', 'b']
+    @c.each_capitalized do |k,v|
+      assert_equal "My_header", k
       assert_equal 'a, b', v
     end
   end

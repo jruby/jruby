@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'ostruct'
 
@@ -7,6 +8,19 @@ class TC_OpenStruct < Test::Unit::TestCase
     assert_equal h, OpenStruct.new(h).to_h
     assert_equal h, OpenStruct.new(OpenStruct.new(h)).to_h
     assert_equal h, OpenStruct.new(Struct.new(*h.keys).new(*h.values)).to_h
+  end
+
+  def test_respond_to
+    o = OpenStruct.new
+    o.a = 1
+    assert_respond_to(o, :a)
+    assert_respond_to(o, :a=)
+  end
+
+  def test_respond_to_with_lazy_getter
+    o = OpenStruct.new a: 1
+    assert_respond_to(o, :a)
+    assert_respond_to(o, :a=)
   end
 
   def test_equality
@@ -103,7 +117,7 @@ class TC_OpenStruct < Test::Unit::TestCase
     os2.child = [42]
     assert_equal :bar, os1.dig("child", :foo)
     assert_nil os1.dig("parent", :foo)
-    assert_nil os1.dig("child", 0)
+    assert_raise(TypeError) { os1.dig("child", 0) }
   end
 
   def test_to_h

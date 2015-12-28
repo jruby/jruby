@@ -1,12 +1,20 @@
+# frozen_string_literal: false
 require "test/unit"
 require "net/http"
 require "webrick"
 require_relative "utils"
 
 class TestWEBrickHTTPServer < Test::Unit::TestCase
+  empty_log = Object.new
+  def empty_log.<<(str)
+    assert_equal('', str)
+    self
+  end
+  NoLog = WEBrick::Log.new(empty_log, WEBrick::BasicLog::WARN)
+
   def test_mount
     httpd = WEBrick::HTTPServer.new(
-      :Logger => WEBrick::Log.new(TestWEBrick::NullWriter),
+      :Logger => NoLog,
       :DoNotListen=>true
     )
     httpd.mount("/", :Root)
@@ -17,50 +25,50 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
     serv, opts, script_name, path_info = httpd.search_servlet("/")
     assert_equal(:Root, serv)
     assert_equal([], opts)
-    assert_equal(script_name, "")
-    assert_equal(path_info, "/")
+    assert_equal("", script_name)
+    assert_equal("/", path_info)
 
     serv, opts, script_name, path_info = httpd.search_servlet("/sub")
     assert_equal(:Root, serv)
     assert_equal([], opts)
-    assert_equal(script_name, "")
-    assert_equal(path_info, "/sub")
+    assert_equal("", script_name)
+    assert_equal("/sub", path_info)
 
     serv, opts, script_name, path_info = httpd.search_servlet("/sub/")
     assert_equal(:Root, serv)
     assert_equal([], opts)
-    assert_equal(script_name, "")
-    assert_equal(path_info, "/sub/")
+    assert_equal("", script_name)
+    assert_equal("/sub/", path_info)
 
     serv, opts, script_name, path_info = httpd.search_servlet("/foo")
     assert_equal(:Foo, serv)
     assert_equal([], opts)
-    assert_equal(script_name, "/foo")
-    assert_equal(path_info, "")
+    assert_equal("/foo", script_name)
+    assert_equal("", path_info)
 
     serv, opts, script_name, path_info = httpd.search_servlet("/foo/")
     assert_equal(:Foo, serv)
     assert_equal([], opts)
-    assert_equal(script_name, "/foo")
-    assert_equal(path_info, "/")
+    assert_equal("/foo", script_name)
+    assert_equal("/", path_info)
 
     serv, opts, script_name, path_info = httpd.search_servlet("/foo/sub")
     assert_equal(:Foo, serv)
     assert_equal([], opts)
-    assert_equal(script_name, "/foo")
-    assert_equal(path_info, "/sub")
+    assert_equal("/foo", script_name)
+    assert_equal("/sub", path_info)
 
     serv, opts, script_name, path_info = httpd.search_servlet("/foo/bar")
     assert_equal(:Bar, serv)
     assert_equal([:bar1], opts)
-    assert_equal(script_name, "/foo/bar")
-    assert_equal(path_info, "")
+    assert_equal("/foo/bar", script_name)
+    assert_equal("", path_info)
 
     serv, opts, script_name, path_info = httpd.search_servlet("/foo/bar/baz")
     assert_equal(:Baz, serv)
     assert_equal([:baz1, :baz2], opts)
-    assert_equal(script_name, "/foo/bar/baz")
-    assert_equal(path_info, "")
+    assert_equal("/foo/bar/baz", script_name)
+    assert_equal("", path_info)
   end
 
   class Req
@@ -75,7 +83,7 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
 
   def httpd(addr, port, host, ali)
     config ={
-      :Logger      => WEBrick::Log.new(TestWEBrick::NullWriter),
+      :Logger      => NoLog,
       :DoNotListen => true,
       :BindAddress => addr,
       :Port        => port,
@@ -223,22 +231,26 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
       :StopCallback => Proc.new{ stopped += 1 },
       :RequestCallback => Proc.new{|req, res| requested0 += 1 },
     }
-    TestWEBrick.start_httpserver(config){|server, addr, port, log|
+    log_tester = lambda {|log, access_log|
+      assert(log.find {|s| %r{ERROR `/' not found\.} =~ s })
+      assert_equal([], log.reject {|s| %r{ERROR `/' not found\.} =~ s })
+    }
+    TestWEBrick.start_httpserver(config, log_tester){|server, addr, port, log|
       vhost_config = {
         :ServerName => "myhostname",
         :BindAddress => addr,
         :Port => port,
         :DoNotListen => true,
-        :Logger => WEBrick::Log.new(TestWEBrick::NullWriter),
+        :Logger => NoLog,
         :AccessLog => [],
         :RequestCallback => Proc.new{|req, res| requested1 += 1 },
       }
       server.virtual_host(WEBrick::HTTPServer.new(vhost_config))
 
       Thread.pass while server.status != :Running
-      assert_equal(started, 1, log.call)
-      assert_equal(stopped, 0, log.call)
-      assert_equal(accepted, 0, log.call)
+      assert_equal(1, started, log.call)
+      assert_equal(0, stopped, log.call)
+      assert_equal(0, accepted, log.call)
 
       http = Net::HTTP.new(addr, port)
       req = Net::HTTP::Get.new("/")
@@ -326,7 +338,11 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
     config = {
       :ServerName => "localhost"
     }
-    TestWEBrick.start_httpserver(config){|server, addr, port, log|
+    log_tester = lambda {|log, access_log|
+      assert_equal(1, log.length)
+      assert_match(/WARN  Could not determine content-length of response body./, log[0])
+    }
+    TestWEBrick.start_httpserver(config, log_tester){|server, addr, port, log|
       server.mount_proc("/", lambda { |req, res|
         r,w = IO.pipe
         # Test for not setting chunked...
@@ -340,7 +356,7 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
       req = Net::HTTP::Get.new("/")
       req['Connection'] = 'Keep-Alive'
       begin
-        timeout(2) do
+        Timeout.timeout(2) do
           http.request(req){|res| assert_equal("foo", res.body) }
         end
       rescue Timeout::Error
@@ -355,7 +371,12 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
       :ServerName => "localhost",
       :RequestHandler => Proc.new{|req, res| requested += 1 },
     }
-    TestWEBrick.start_httpserver(config){|server, addr, port, log|
+    log_tester = lambda {|log, access_log|
+      assert_equal(2, log.length)
+      assert_match(/WARN  :RequestHandler is deprecated, please use :RequestCallback/, log[0])
+      assert_match(%r{ERROR `/' not found\.}, log[1])
+    }
+    TestWEBrick.start_httpserver(config, log_tester){|server, addr, port, log|
       Thread.pass while server.status != :Running
 
       http = Net::HTTP.new(addr, port)
@@ -364,7 +385,7 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
       http.request(req){|res| assert_equal("404", res.code, log.call)}
       assert_match(%r{:RequestHandler is deprecated, please use :RequestCallback$}, log.call, log.call)
     }
-    assert_equal(requested, 1)
+    assert_equal(1, requested)
   end
 
   def test_shutdown_with_busy_keepalive_connection

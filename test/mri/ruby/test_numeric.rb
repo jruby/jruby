@@ -1,10 +1,7 @@
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestNumeric < Test::Unit::TestCase
-  class DummyNumeric < Numeric
-  end
-
   def test_coerce
     a, b = 1.coerce(2)
     assert_equal(Fixnum, a.class)
@@ -33,53 +30,46 @@ class TestNumeric < Test::Unit::TestCase
       assert_raise_with_message(TypeError, /:"\\u3042"/) {1|:"\u{3042}"}
       assert_raise_with_message(TypeError, /:"\\u3042"/) {1^:"\u{3042}"}
     end
+
+    bug10711 = '[ruby-core:67405] [Bug #10711]'
+    exp = "1.2 can't be coerced into Fixnum"
+    assert_raise_with_message(TypeError, exp, bug10711) { 1 & 1.2 }
   end
 
   def test_dummynumeric
-    a = DummyNumeric.new
-
-    DummyNumeric.class_eval do
+    a = Class.new(Numeric) do
       def coerce(x); nil; end
-    end
+    end.new
     assert_raise(TypeError) { -a }
     assert_nil(1 <=> a)
     assert_raise(ArgumentError) { 1 <= a }
 
-    DummyNumeric.class_eval do
-      remove_method :coerce
+    a = Class.new(Numeric) do
       def coerce(x); 1.coerce(x); end
-    end
+    end.new
     assert_equal(2, 1 + a)
     assert_equal(0, 1 <=> a)
     assert_operator(1, :<=, a)
 
-    DummyNumeric.class_eval do
-      remove_method :coerce
+    a = Class.new(Numeric) do
       def coerce(x); [x, 1]; end
-    end
+    end.new
     assert_equal(-1, -a)
 
     bug7688 = '[ruby-core:51389] [Bug #7688]'
-    DummyNumeric.class_eval do
-      remove_method :coerce
+    a = Class.new(Numeric) do
       def coerce(x); raise StandardError; end
-    end
+    end.new
     assert_raise_with_message(TypeError, /can't be coerced into /) { 1 + a }
     warn = /will no more rescue exceptions of #coerce.+ in the next release/m
     assert_warn(warn, bug7688) { assert_raise(ArgumentError) { 1 < a } }
 
-    DummyNumeric.class_eval do
-      remove_method :coerce
+    a = Class.new(Numeric) do
       def coerce(x); :bad_return_value; end
-    end
+    end.new
     assert_raise_with_message(TypeError, "coerce must return [x, y]") { 1 + a }
     warn = /Bad return value for #coerce.+next release will raise an error/m
     assert_warn(warn, bug7688) { assert_raise(ArgumentError) { 1 < a } }
-
-  ensure
-    DummyNumeric.class_eval do
-      remove_method :coerce
-    end
   end
 
   def test_singleton_method
@@ -99,42 +89,31 @@ class TestNumeric < Test::Unit::TestCase
   end
 
   def test_quo
-    assert_raise(TypeError) {DummyNumeric.new.quo(1)}
+    a = Numeric.new
+    assert_raise(TypeError) {a.quo(1)}
   end
 
   def test_quo_ruby_core_41575
-    x = DummyNumeric.new
     rat = 84.quo(1)
-    DummyNumeric.class_eval do
+    x = Class.new(Numeric) do
       define_method(:to_r) { rat }
-    end
+    end.new
     assert_equal(2.quo(1), x.quo(42), '[ruby-core:41575]')
-  ensure
-    DummyNumeric.class_eval do
-      remove_method :to_r
-    end
   end
 
   def test_divmod
 =begin
-    DummyNumeric.class_eval do
+    x = Class.new(Numeric) do
       def /(x); 42.0; end
       def %(x); :mod; end
-    end
+    end.new
 
-    assert_equal(42, DummyNumeric.new.div(1))
-    assert_equal(:mod, DummyNumeric.new.modulo(1))
-    assert_equal([42, :mod], DummyNumeric.new.divmod(1))
+    assert_equal(42, x.div(1))
+    assert_equal(:mod, x.modulo(1))
+    assert_equal([42, :mod], x.divmod(1))
 =end
 
     assert_kind_of(Integer, 11.divmod(3.5).first, '[ruby-dev:34006]')
-
-=begin
-  ensure
-    DummyNumeric.class_eval do
-      remove_method :/, :%
-    end
-=end
   end
 
   def test_real_p
@@ -146,51 +125,58 @@ class TestNumeric < Test::Unit::TestCase
   end
 
   def test_abs
-    a = DummyNumeric.new
-    DummyNumeric.class_eval do
+    a = Class.new(Numeric) do
       def -@; :ok; end
       def <(x); true; end
-    end
+    end.new
 
     assert_equal(:ok, a.abs)
 
-    DummyNumeric.class_eval do
-      remove_method :<
+    a = Class.new(Numeric) do
       def <(x); false; end
-    end
+    end.new
 
     assert_equal(a, a.abs)
-
-  ensure
-    DummyNumeric.class_eval do
-      remove_method :-@, :<
-    end
   end
 
   def test_zero_p
-    DummyNumeric.class_eval do
+    a = Class.new(Numeric) do
       def ==(x); true; end
-    end
+    end.new
 
-    assert_predicate(DummyNumeric.new, :zero?)
+    assert_predicate(a, :zero?)
+  end
 
-  ensure
-    DummyNumeric.class_eval do
-      remove_method :==
-    end
+  def test_positive_p
+    a = Class.new(Numeric) do
+      def >(x); true; end
+    end.new
+    assert_predicate(a, :positive?)
+
+    a = Class.new(Numeric) do
+      def >(x); false; end
+    end.new
+    assert_not_predicate(a, :positive?)
+  end
+
+  def test_negative_p
+    a = Class.new(Numeric) do
+      def <(x); true; end
+    end.new
+    assert_predicate(a, :negative?)
+
+    a = Class.new(Numeric) do
+      def <(x); false; end
+    end.new
+    assert_not_predicate(a, :negative?)
   end
 
   def test_to_int
-    DummyNumeric.class_eval do
+    a = Class.new(Numeric) do
       def to_i; :ok; end
-    end
+    end.new
 
-    assert_equal(:ok, DummyNumeric.new.to_int)
-
-  ensure
-    DummyNumeric.class_eval do
-      remove_method :to_i
-    end
+    assert_equal(:ok, a.to_int)
   end
 
   def test_cmp
@@ -200,42 +186,32 @@ class TestNumeric < Test::Unit::TestCase
   end
 
   def test_floor_ceil_round_truncate
-    DummyNumeric.class_eval do
+    a = Class.new(Numeric) do
       def to_f; 1.5; end
-    end
+    end.new
 
-    a = DummyNumeric.new
     assert_equal(1, a.floor)
     assert_equal(2, a.ceil)
     assert_equal(2, a.round)
     assert_equal(1, a.truncate)
 
-    DummyNumeric.class_eval do
-      remove_method :to_f
+    a = Class.new(Numeric) do
       def to_f; 1.4; end
-    end
+    end.new
 
-    a = DummyNumeric.new
     assert_equal(1, a.floor)
     assert_equal(2, a.ceil)
     assert_equal(1, a.round)
     assert_equal(1, a.truncate)
 
-    DummyNumeric.class_eval do
-      remove_method :to_f
+    a = Class.new(Numeric) do
       def to_f; -1.5; end
-    end
+    end.new
 
-    a = DummyNumeric.new
     assert_equal(-2, a.floor)
     assert_equal(-1, a.ceil)
     assert_equal(-2, a.round)
     assert_equal(-1, a.truncate)
-
-  ensure
-    DummyNumeric.class_eval do
-      remove_method :to_f
-    end
   end
 
   def assert_step(expected, (from, *args), inf: false)

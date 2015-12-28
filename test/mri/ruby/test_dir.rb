@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 
 require 'tmpdir'
@@ -10,7 +11,7 @@ class TestDir < Test::Unit::TestCase
     $VERBOSE = nil
     @root = File.realpath(Dir.mktmpdir('__test_dir__'))
     @nodir = File.join(@root, "dummy")
-    for i in ?a..?z
+    for i in "a".."z"
       if i.ord % 2 == 0
         FileUtils.touch(File.join(@root, i))
       else
@@ -126,18 +127,19 @@ class TestDir < Test::Unit::TestCase
   def test_close
     d = Dir.open(@root)
     d.close
+    assert_nothing_raised(IOError) { d.close }
     assert_raise(IOError) { d.read }
   end
 
   def test_glob
-    assert_equal((%w(. ..) + (?a..?z).to_a).map{|f| File.join(@root, f) },
+    assert_equal((%w(. ..) + ("a".."z").to_a).map{|f| File.join(@root, f) },
                  Dir.glob(File.join(@root, "*"), File::FNM_DOTMATCH).sort)
-    assert_equal([@root] + (?a..?z).map {|f| File.join(@root, f) }.sort,
+    assert_equal([@root] + ("a".."z").map {|f| File.join(@root, f) }.sort,
                  Dir.glob([@root, File.join(@root, "*")]).sort)
-    assert_equal([@root] + (?a..?z).map {|f| File.join(@root, f) }.sort,
+    assert_equal([@root] + ("a".."z").map {|f| File.join(@root, f) }.sort,
                  Dir.glob(@root + "\0\0\0" + File.join(@root, "*")).sort)
 
-    assert_equal((?a..?z).step(2).map {|f| File.join(File.join(@root, f), "") }.sort,
+    assert_equal(("a".."z").step(2).map {|f| File.join(File.join(@root, f), "") }.sort,
                  Dir.glob(File.join(@root, "*/")).sort)
     assert_equal([File.join(@root, '//a')], Dir.glob(@root + '//a'))
 
@@ -148,7 +150,12 @@ class TestDir < Test::Unit::TestCase
     assert_equal([], Dir.glob(File.join(@root, '[a-\\')))
 
     assert_equal([File.join(@root, "a")], Dir.glob(File.join(@root, 'a\\')))
-    assert_equal((?a..?f).map {|f| File.join(@root, f) }.sort, Dir.glob(File.join(@root, '[abc/def]')).sort)
+    assert_equal(("a".."f").map {|f| File.join(@root, f) }.sort, Dir.glob(File.join(@root, '[abc/def]')).sort)
+
+    open(File.join(@root, "}}{}"), "wb") {}
+    open(File.join(@root, "}}a"), "wb") {}
+    assert_equal(%w(}}{} }}a).map {|f| File.join(@root, f)}, Dir.glob(File.join(@root, '}}{\{\},a}')))
+    assert_equal(%w(}}{} }}a b c).map {|f| File.join(@root, f)}, Dir.glob(File.join(@root, '{\}\}{\{\},a},b,c}')))
   end
 
   def test_glob_recursive
@@ -177,8 +184,17 @@ class TestDir < Test::Unit::TestCase
     end
   end
 
+  def assert_entries(entries)
+    entries.sort!
+    assert_equal(%w(. ..) + ("a".."z").to_a, entries)
+  end
+
+  def test_entries
+    assert_entries(Dir.open(@root) {|dir| dir.entries})
+  end
+
   def test_foreach
-    assert_equal(Dir.foreach(@root).to_a.sort, %w(. ..) + (?a..?z).to_a)
+    assert_entries(Dir.foreach(@root).to_a)
   end
 
   def test_dir_enc
@@ -210,18 +226,19 @@ class TestDir < Test::Unit::TestCase
 
   def test_symlink
     begin
-      ["dummy", *?a..?z].each do |f|
+      ["dummy", *"a".."z"].each do |f|
 	File.symlink(File.join(@root, f),
 		     File.join(@root, "symlink-#{ f }"))
       end
-    rescue NotImplementedError
+    rescue NotImplementedError, Errno::EACCES
       return
     end
 
-    assert_equal([*?a..?z, *"symlink-a".."symlink-z"].each_slice(2).map {|f, _| File.join(@root, f + "/") }.sort,
+    assert_equal([*"a".."z", *"symlink-a".."symlink-z"].each_slice(2).map {|f, _| File.join(@root, f + "/") }.sort,
 		 Dir.glob(File.join(@root, "*/")).sort)
 
-    Dir.glob(File.join(@root, "**/"))
+    assert_equal([@root + "/", *[*"a".."z"].each_slice(2).map {|f, _| File.join(@root, f + "/") }.sort],
+                 Dir.glob(File.join(@root, "**/")).sort)
   end
 
   def test_glob_metachar
@@ -237,16 +254,8 @@ class TestDir < Test::Unit::TestCase
       return unless File.exist?("filewithcases")
       assert_equal(%w"FileWithCases", Dir.glob("filewithcases"), feature5994)
     end
-    Dir.chdir(File.join(@root, "c")) do
-      open("FileWithCases", "w") {}
-      mode = File.stat(".").mode
-      begin
-        File.chmod(mode & ~0444, ".")
-        return if mode == File.stat(".").mode
-        assert_equal(%w"filewithcases", Dir.glob("filewithcases"), feature5994)
-      ensure
-        File.chmod(mode, ".")
-      end
+    Dir.chdir(@root) do
+      assert_equal(%w"a/FileWithCases", Dir.glob("A/filewithcases"), feature5994)
     end
   end
 
@@ -254,6 +263,24 @@ class TestDir < Test::Unit::TestCase
     bug9648 = '[ruby-core:61552] [Bug #9648]'
     roots = Dir.glob("/*")
     assert_equal(roots.map {|n| "/..#{n}"}, Dir.glob("/../*"), bug9648)
+  end
+
+  if /mswin|mingw/ =~ RUBY_PLATFORM
+    def test_glob_legacy_short_name
+      bug10819 = '[ruby-core:67954] [Bug #10819]'
+      bug11206 = '[ruby-core:69435] [Bug #11206]'
+      skip unless /\A\w:/ =~ ENV["ProgramFiles"]
+      short = "#$&/PROGRA~1"
+      skip unless File.directory?(short)
+      entries = Dir.glob("#{short}/Common*")
+      assert_not_empty(entries, bug10819)
+      long = File.expand_path(short)
+      assert_equal(Dir.glob("#{long}/Common*"), entries, bug10819)
+      wild = short.sub(/1\z/, '*')
+      assert_not_include(Dir.glob(wild), long, bug11206)
+      assert_include(Dir.glob(wild, File::FNM_SHORTNAME), long, bug10819)
+      assert_empty(entries - Dir.glob("#{wild}/Common*", File::FNM_SHORTNAME), bug10819)
+    end
   end
 
   def test_home
@@ -282,7 +309,7 @@ class TestDir < Test::Unit::TestCase
       Dir.chdir(dirname) do
         begin
           File.symlink('some-dir', 'dir-symlink')
-        rescue NotImplementedError
+        rescue NotImplementedError, Errno::EACCES
           return
         end
 

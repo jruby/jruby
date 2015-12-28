@@ -1,8 +1,8 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'fiber'
-require 'continuation'
+EnvUtil.suppress_warning {require 'continuation'}
 require 'tmpdir'
-require_relative './envutil'
 
 class TestFiber < Test::Unit::TestCase
   def test_normal
@@ -118,7 +118,7 @@ class TestFiber < Test::Unit::TestCase
   end
 
   def test_throw
-    assert_raise(ArgumentError){
+    assert_raise(UncaughtThrowError){
       Fiber.new do
         throw :a
       end.resume

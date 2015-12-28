@@ -114,7 +114,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   end
 
   def test_connect_and_close
-    start_server(OpenSSL::SSL::VERIFY_NONE, true) { |server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       sock = TCPSocket.new("127.0.0.1", port)
       ssl = OpenSSL::SSL::SSLSocket.new(sock)
       assert(ssl.connect)
@@ -132,7 +132,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   end
 
   def test_read_and_write
-    start_server(OpenSSL::SSL::VERIFY_NONE, true) { |server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       server_connect(port) { |ssl|
         # syswrite and sysread
         ITERATIONS.times{|i|
@@ -195,8 +195,8 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
 
   def test_client_auth_failure
     vflag = OpenSSL::SSL::VERIFY_PEER|OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
-    start_server(vflag, true, :ignore_listener_error => true) { |server, port|
-      assert_raise(OpenSSL::SSL::SSLError, Errno::ECONNRESET) {
+    start_server(vflag, true, :ignore_listener_error => true){|server, port|
+      assert_raise(OpenSSL::SSL::SSLError, Errno::ECONNRESET){
         sock = TCPSocket.new("127.0.0.1", port)
         ssl = OpenSSL::SSL::SSLSocket.new(sock)
         ssl.sync_close = true
@@ -430,7 +430,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
         assert_raise_with_message(sslerr,msg){ssl.post_connection_check("localhost.localdomain")}
       }
     }
-  end # if OpenSSL::ExtConfig::TLS_DH_anon_WITH_AES_256_GCM_SHA384
+  end if OpenSSL::ExtConfig::TLS_DH_anon_WITH_AES_256_GCM_SHA384
 
   def test_post_connection_check
     sslerr = OpenSSL::SSL::SSLError
@@ -675,12 +675,11 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   end
 
   def socketpair
-    # JRuby: does not handle jnr.unixsocket.UnixSocketChannel right
-    #if defined? UNIXSocket
-    #  UNIXSocket.pair
-    #else
+    if defined? UNIXSocket
+      UNIXSocket.pair
+    else
       Socket.pair(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-    #end
+    end
   end
 
   def test_servername_cb_sets_context_on_the_socket

@@ -1,9 +1,9 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'timeout'
 require 'tmpdir'
 require 'tempfile'
 require 'fileutils'
-require_relative 'envutil'
 
 class TestArgf < Test::Unit::TestCase
   def setup
@@ -473,7 +473,7 @@ class TestArgf < Test::Unit::TestCase
 
   def test_readpartial
     ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
-      s = "".dup
+      s = ""
       begin
         loop do
           s << ARGF.readpartial(1)
