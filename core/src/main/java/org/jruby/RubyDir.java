@@ -37,7 +37,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -113,15 +113,11 @@ public class RubyDir extends RubyObject {
 
     private final void checkDirIgnoreClosed() {
         testFrozen("Dir");
-        update();
-    }
-
-    private void update() {
+        // update snapshot (if changed) :
         if (snapshot == null || dir.exists() && dir.lastModified() > lastModified) {
             lastModified = dir.lastModified();
-            List<String> snapshotList = new ArrayList<String>();
-            snapshotList.addAll(getContents(dir));
-            snapshot = snapshotList.toArray(new String[snapshotList.size()]);
+            final List<String> contents = getContents(dir);
+            snapshot = contents.toArray(new String[contents.size()]);
         }
     }
 
@@ -734,13 +730,18 @@ public class RubyDir extends RubyObject {
      * <code>ArrayList</code> containing the names of the files as Java Strings.
      */
     protected static List<String> getContents(FileResource directory) {
-        String[] contents = directory.list();
-        List<String> result = new ArrayList<String>();
+        final String[] contents = directory.list();
 
+        final List<String> result;
         // If an IO exception occurs (something odd, but possible)
         // A directory may return null.
-        if (contents != null) result.addAll(Arrays.asList(contents));
-
+        if (contents != null) {
+            result = new ArrayList<String>(contents.length);
+            Collections.addAll(result, contents);
+        }
+        else {
+             result = Collections.emptyList();
+        }
         return result;
     }
 
@@ -749,12 +750,19 @@ public class RubyDir extends RubyObject {
      * <code>ArrayList</code> containing the names of the files as Ruby Strings.
      */
     protected static List<RubyString> getContents(FileResource directory, Ruby runtime) {
-        List<RubyString> result = new ArrayList<RubyString>();
-        String[] contents = directory.list();
+        final String[] contents = directory.list();
 
-        for (int i = 0; i < contents.length; i++) {
-            result.add(runtime.newString(contents[i]));
+        final List<RubyString> result;
+        if (contents != null) {
+            result = new ArrayList<RubyString>(contents.length);
+            for (int i = 0; i < contents.length; i++) {
+                result.add( runtime.newString(contents[i]) );
+            }
         }
+        else {
+            result = Collections.emptyList();
+        }
+
         return result;
     }
 
