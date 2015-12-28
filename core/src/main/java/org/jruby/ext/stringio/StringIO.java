@@ -158,7 +158,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 } else {
                     String m = args[1].convertToString().toString();
                     ptr.flags = OpenFile.ioModestrFmode(runtime, m);
-                    trunc = m.charAt(0) == 'w';
+                    trunc = m.length() > 0 && m.charAt(0) == 'w';
                 }
                 string = args[0].convertToString();
                 if ((ptr.flags & OpenFile.WRITABLE) != 0 && string.isFrozen()) {
