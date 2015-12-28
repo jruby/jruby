@@ -39,7 +39,6 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF16BEEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -47,7 +46,6 @@ import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -60,10 +58,8 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
-import org.jruby.util.PerlHash;
 import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
-import org.jruby.util.SipHashInline;
 import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
