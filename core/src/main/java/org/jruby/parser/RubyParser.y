@@ -534,7 +534,7 @@ command_call    : command
 // Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command   : block_call
                 | block_call call_op2 operation2 command_args {
-                    $$ = support.new_call($1, $3, $4, null);
+                    $$ = support.new_call($1, $2, $3, $4, null);
                 }
 
 // :brace_block - [!null]
@@ -1758,13 +1758,13 @@ block_call      : command do_block {
                     $<Node>$.setPosition($1.getPosition());
                 }
                 | block_call call_op2 operation2 opt_paren_args {
-                    $$ = support.new_call($1, $3, $4, null);
+                    $$ = support.new_call($1, $2, $3, $4, null);
                 }
                 | block_call call_op2 operation2 opt_paren_args brace_block {
-                    $$ = support.new_call($1, $3, $4, $5);
+                    $$ = support.new_call($1, $2, $3, $4, $5);
                 }
                 | block_call call_op2 operation2 command_args do_block {
-                    $$ = support.new_call($1, $3, $4, $5);
+                    $$ = support.new_call($1, $2, $3, $4, $5);
                 }
 
 // [!null]
