@@ -1191,7 +1191,7 @@ public class RubyInstanceConfig {
      * @see Options#CLI_DID_YOU_MEAN_ENABLE
      */
     public boolean isDisableDidYouMean() {
-        return disableGems;
+        return disableDidYouMean;
     }
 
     /**
