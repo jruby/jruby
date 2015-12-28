@@ -571,7 +571,7 @@ public class RubyObject extends RubyBasicObject {
                     return obj.callMethod(context, "dig", rest);
             }
         }
-        return context.nil; // can not dig further (there's still args left)
+        throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
     }
 
     /**
