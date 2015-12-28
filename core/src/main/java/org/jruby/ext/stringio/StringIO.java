@@ -304,7 +304,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         IRubyObject line;
 
-        if ( checkLastArg0(args) ) {
+        if ( isLastArg0(args) ) {
             throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
         }
 
@@ -315,7 +315,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    private static boolean checkLastArg0(final IRubyObject[] args) {
+    private static boolean isLastArg0(final IRubyObject[] args) {
         final int len = args.length;
         return len > 0 &&
             ! args[len - 1].isNil() &&
@@ -792,7 +792,8 @@ public class StringIO extends RubyObject implements EncodingCapable {
         try {
             runtime.registerInspecting(array);
             return puts(context, maybeIO, array.toJavaArray());
-        } finally {
+        }
+        finally {
             runtime.unregisterInspecting(array);
         }
     }
@@ -801,28 +802,28 @@ public class StringIO extends RubyObject implements EncodingCapable {
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {
         checkReadable();
 
-        Ruby runtime = context.runtime;
-        IRubyObject str = runtime.getNil();
+        final Ruby runtime = context.runtime;
+        IRubyObject str = context.nil;
         int len;
         boolean binary = false;
 
         switch (args.length) {
         case 2:
             str = args[1];
-            if (!str.isNil()) {
+            if ( ! str.isNil() ) {
                 str = str.convertToString();
-                ((RubyString)str).modify();
+                ((RubyString) str).modify();
             }
         case 1:
-            if (!args[0].isNil()) {
+            if ( ! args[0].isNil() ) {
                 len = RubyNumeric.fix2int(args[0]);
 
                 if (len < 0) {
-                    throw getRuntime().newArgumentError("negative length " + len + " given");
+                    throw runtime.newArgumentError("negative length " + len + " given");
                 }
                 if (len > 0 && isEndOfString()) {
-                    if (!str.isNil()) ((RubyString)str).resize(0);
-                    return getRuntime().getNil();
+                    if ( ! str.isNil() ) ((RubyString) str).resize(0);
+                    return context.nil;
                 }
                 binary = true;
                 break;
@@ -832,39 +833,41 @@ public class StringIO extends RubyObject implements EncodingCapable {
             if (len <= ptr.pos) {
                 if (str.isNil()) {
                     str = runtime.newString();
-                } else {
-                    ((RubyString)str).resize(0);
                 }
-
+                else {
+                    ((RubyString) str).resize(0);
+                }
                 return str;
             } else {
                 len -= ptr.pos;
             }
             break;
         default:
-            throw getRuntime().newArgumentError(args.length, 0);
+            throw runtime.newArgumentError(args.length, 0);
         }
 
+        final RubyString string;
         if (str.isNil()) {
-            str = strioSubstr(runtime, ptr.pos, len);
-            if (binary) ((RubyString)str).setEncoding(ASCIIEncoding.INSTANCE);
+            string = strioSubstr(runtime, ptr.pos, len);
+            if (binary) string.setEncoding(ASCIIEncoding.INSTANCE);
         } else {
+            string = (RubyString) str;
             int rest = ptr.string.size() - ptr.pos;
             if (len > rest) len = rest;
-            ((RubyString)str).resize(len);
-            ByteList strByteList = ((RubyString)str).getByteList();
+            string.resize(len);
+            ByteList strByteList = string.getByteList();
             byte[] strBytes = strByteList.getUnsafeBytes();
             ByteList dataByteList = ptr.string.getByteList();
             byte[] dataBytes = dataByteList.getUnsafeBytes();
             System.arraycopy(dataBytes, dataByteList.getBegin() + ptr.pos, strBytes, strByteList.getBegin(), len);
             if (binary) {
-                ((RubyString)str).setEncoding(ASCIIEncoding.INSTANCE);
+                string.setEncoding(ASCIIEncoding.INSTANCE);
             } else {
-                ((RubyString)str).setEncoding(ptr.string.getEncoding());
+                string.setEncoding(ptr.string.getEncoding());
             }
         }
-        ptr.pos += ((RubyString)str).size();
-        return str;
+        ptr.pos += string.size();
+        return string;
     }
 
     @JRubyMethod(name="read_nonblock", optional = 3)
@@ -890,25 +893,25 @@ public class StringIO extends RubyObject implements EncodingCapable {
     public IRubyObject readchar(ThreadContext context) {
         IRubyObject c = callMethod(context, "getc");
 
-        if (c.isNil()) throw getRuntime().newEOFError();
+        if (c.isNil()) throw context.runtime.newEOFError();
 
         return c;
     }
 
     @JRubyMethod(name = "readbyte")
     public IRubyObject readbyte(ThreadContext context) {
-        IRubyObject c = callMethod(context, "getbyte");
+        IRubyObject b = callMethod(context, "getbyte");
 
-        if (c.isNil()) throw getRuntime().newEOFError();
+        if (b.isNil()) throw context.runtime.newEOFError();
 
-        return c;
+        return b;
     }
 
     @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         IRubyObject line = callMethod(context, "gets", args);
 
-        if (line.isNil()) throw getRuntime().newEOFError();
+        if (line.isNil()) throw context.runtime.newEOFError();
 
         return line;
     }
@@ -917,16 +920,16 @@ public class StringIO extends RubyObject implements EncodingCapable {
     public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        if ( checkLastArg0(args) ) {
+        if ( isLastArg0(args) ) {
             throw runtime.newArgumentError("invalid limit: 0 for each_line");
         }
+
+        checkReadable();
 
         RubyArray ary = runtime.newArray();
         IRubyObject line;
 
-        checkReadable();
-
-        while (!(line = getline(context, args)).isNil()) {
+        while ( ! ( line = getline(context, args) ).isNil() ) {
             ary.append(line);
         }
         return ary;
