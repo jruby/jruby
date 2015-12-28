@@ -38,14 +38,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
 
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -61,7 +57,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 import org.jruby.util.Dir;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
@@ -190,8 +185,9 @@ public class RubyDir extends RubyObject {
             return runtime.getCurrentDirectory();
         }
         try {
-            return new org.jruby.util.NormalizedFile(runtime.getCurrentDirectory()).getCanonicalPath();
-        } catch (Exception e) {
+            return new JRubyFile(runtime.getCurrentDirectory()).getCanonicalPath();
+        }
+        catch (Exception e) {
             return runtime.getCurrentDirectory();
         }
     }
@@ -312,8 +308,8 @@ public class RubyDir extends RubyObject {
             getHomeDirectoryPath(context);
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
-        String realPath = null;
-        String oldCwd = runtime.getCurrentDirectory();
+        final String realPath;
+        final String oldCwd = runtime.getCurrentDirectory();
         if (PROTOCOL_PATTERN.matcher(adjustedPath).matches()) {
             realPath = adjustedPath;
         }

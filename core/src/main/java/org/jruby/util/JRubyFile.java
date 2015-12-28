@@ -36,16 +36,16 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 
 import jnr.posix.JavaSecuredFile;
-import jnr.posix.POSIX;
 
 import org.jruby.Ruby;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 
 /**
- * <p>This file acts as an alternative to NormalizedFile, due to the problems with current working
- * directory.</p>
- *
+ * <p>
+ * This file acts as an alternative to NormalizedFile, due to the problems with
+ * current working directory.
+ * </p>
  */
 public class JRubyFile extends JavaSecuredFile {
     private static final long serialVersionUID = 435364547567567L;
@@ -124,7 +124,7 @@ public class JRubyFile extends JavaSecuredFile {
         if (pathname == null || pathname.length() == 0 || Ruby.isSecurityRestricted()) {
             return JRubyNonExistentFile.NOT_EXIST;
         }
-        if(pathname.startsWith("file:")) {
+        if (pathname.startsWith("file:")) {
             pathname = pathname.substring(5);
         }
         File internal = new JavaSecuredFile(pathname);
@@ -149,8 +149,12 @@ public class JRubyFile extends JavaSecuredFile {
         this(file.getAbsolutePath());
     }
 
-    protected JRubyFile(String filename) {
+    public JRubyFile(String filename) {
         super(filename);
+    }
+
+    public JRubyFile(String parent, String child) {
+        super(parent, child);
     }
 
     @Override
@@ -177,7 +181,7 @@ public class JRubyFile extends JavaSecuredFile {
 
     @Override
     public String getPath() {
-	return normalizeSeps(super.getPath());
+        return normalizeSeps(super.getPath());
     }
 
     @Override
