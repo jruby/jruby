@@ -20,6 +20,7 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.truffle.nodes.LazyRubyRootNode;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -63,7 +64,9 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
         final Ruby runtime;
 
         if (runtimeWrapper == null) {
-            runtime = Ruby.newInstance();
+            RubyInstanceConfig config = new RubyInstanceConfig();
+            config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
+            runtime = Ruby.newInstance(config);
         } else {
             runtime = runtimeWrapper.getRuby();
         }
