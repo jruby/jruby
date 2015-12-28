@@ -322,8 +322,8 @@ class TestMath < Test::Unit::TestCase
       end
     end
 
-    check(Math.exp((0r + 1)._to_f), Math.exp(0r))
-    check(Math.log((0r + 1)._to_f), Math.log(0r))
+    check(Math.exp((0.0r + 1)._to_f), Math.exp(0.0r))
+    check(Math.log((0.0r + 1)._to_f), Math.log(0.0r))
 
     Rational.class_eval { alias to_f _to_f }
   end
