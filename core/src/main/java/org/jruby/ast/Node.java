@@ -139,6 +139,10 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
 
         builder.append("(").append(getNodeName());
 
+        String moreState = toStringInternal();
+
+        if (moreState != null) builder.append("[").append(moreState).append("]");
+
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
 
         builder.append(" ").append(getPosition().getLine());
@@ -170,6 +174,19 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
         builder.append(")");
 
         return builder.toString();
+    }
+
+    /**
+     * Overridden by nodes that have additional internal state to be displated in toString.
+     *
+     * For nodes that have it, name is handled separately, by implementing INameNode.
+     *
+     * Child nodes are handled via iterating #childNodes.
+     *
+     * @return A string representing internal node state, or null if none.
+     */
+    protected String toStringInternal() {
+        return null;
     }
 
     private static void indent(int indentation, StringBuilder builder) {

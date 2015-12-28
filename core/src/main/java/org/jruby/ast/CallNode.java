@@ -134,4 +134,9 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode, iterNode);
     }
+
+    @Override
+    protected String toStringInternal() {
+        return isLazy ? "lazy" : null;
+    }
 }
