@@ -181,9 +181,9 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitBerInteger(PackParser.BerIntegerContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(applyCount(ctx.count(),
-        //        WriteBERNodeGen.create(context, ReadLongOrBigIntegerNodeGen.create(context, new SourceNode()))));
+        appendNode(applyCount(ctx.count(),
+                WriteValueNodeGen.create(context,
+                    ReadBERNodeGen.create(context, 0, false, new SourceNode()))));
     }
 
     @Override
