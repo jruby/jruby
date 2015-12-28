@@ -3,7 +3,7 @@
 
 require "optparse"
 require "rbconfig"
-require "leakchecker"
+#require "leakchecker"
 
 ##
 # Minimal (mostly drop-in) replacement for test-unit.
@@ -929,7 +929,7 @@ module MiniTest
         filter === m || filter === "#{suite}##{m}"
       }
 
-      leakchecker = LeakChecker.new
+      # leakchecker = LeakChecker.new
 
       assertions = filtered_test_methods.map { |method|
         inst = suite.new method
@@ -945,7 +945,7 @@ module MiniTest
         puts if @verbose
         $stdout.flush
 
-        leakchecker.check("#{inst.class}\##{inst.__name__}")
+        # leakchecker.check("#{inst.class}\##{inst.__name__}")
 
         inst._assertions
       }
