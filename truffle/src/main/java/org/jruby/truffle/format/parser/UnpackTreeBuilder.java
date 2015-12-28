@@ -280,8 +280,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitUuString(PackParser.UuStringContext ctx) {
-        throw new UnsupportedOperationException();
-        /*unify(PackEncoding.US_ASCII);
+        //unify(PackEncoding.US_ASCII);
 
         final int length;
         final boolean ignoreStar;
@@ -297,9 +296,10 @@ public class UnpackTreeBuilder extends PackBaseListener {
             ignoreStar = false;
         }
 
-        appendNode(WriteUUStringNodeGen.create(context, length, ignoreStar,
-                ReadStringNodeGen.create(context, false, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));*/
+        appendNode(
+                WriteValueNodeGen.create(context,
+                        ReadUUStringNodeGen.create(context, length, ignoreStar,
+                                new SourceNode())));
     }
 
     @Override
