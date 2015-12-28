@@ -2383,25 +2383,27 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         modify();
 
-        int newLength = 0;
-        IRubyObject[] aux = new IRubyObject[values.length];
+        int i1, i2, len0, len1;
 
-        for (int oldIndex = 0; oldIndex < realLength; oldIndex++) {
-            // Do not coarsen the "safe" check, since it will misinterpret
-            // AIOOBE from the yield (see JRUBY-5434)
-            IRubyObject value = safeArrayRef(values, begin + oldIndex);
+        len0 = len1 = 0;
 
-            if (!block.yield(context, value).isTrue()) continue;
+        try {
+            for (i1 = i2 = 0; i1 < size(); len0 = ++i1) {
+                // Do not coarsen the "safe" check, since it will misinterpret
+                // AIOOBE from the yield (see JRUBY-5434)
+                IRubyObject value = safeArrayRef(values, begin + i1);
 
-            aux[begin + newLength++] = value;
+                if (!block.yield(context, value).isTrue()) continue;
+
+                if (i1 != i2) {
+                    store(i2, value);
+                }
+                len1 = ++i2;
+            }
+            return (i1 == i2) ? context.nil : this;
+        } finally {
+            selectBangEnsure(len0, len1);
         }
-
-        if (realLength == newLength) return runtime.getNil(); // No change
-
-        safeArrayCopy(aux, begin, values, begin, newLength);
-        realLength = newLength;
-
-        return this;
     }
 
     @JRubyMethod
@@ -2517,28 +2519,43 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return block.isGiven() ? rejectCommon(context, block) : enumeratorizeWithSize(context, this, "reject", enumLengthFn());
     }
 
-    /** rb_ary_reject_bang
-     *
-     */
+    // MRI: ary_reject_bang and reject_bang_i
     public IRubyObject rejectBang(ThreadContext context, Block block) {
-        if (!block.isGiven()) throw context.runtime.newLocalJumpErrorNoBlock();
-
-        IRubyObject result = context.runtime.getNil();
         modify();
 
-        for (int i = 0; i < realLength; /* we adjust i in the loop */) {
-            // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
-            // See JRUBY-5434
-            IRubyObject v = safeArrayRef(values, begin + i);
-            if (block.yield(context, v).isTrue()) {
-                delete_at(i);
-                result = this;
-            } else {
-                i++;
-            }
-        }
+        int i1, i2, len0, len1;
 
-        return result;
+        len0 = len1 = 0;
+
+        try {
+            for (i1 = i2 = 0; i1 < realLength; len0 = ++i1) {
+                // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
+                // See JRUBY-5434
+                IRubyObject v = safeArrayRef(values, begin + i1);
+                if (block.yield(context, v).isTrue()) continue;
+                if (i1 != i2) {
+                    store(i2, v);
+                }
+                len1 = ++i2;
+            }
+
+            return (i1 == i2) ? context.nil : this;
+        } finally {
+            selectBangEnsure(len0, len1);
+        }
+    }
+
+    // MRI: select_bang_ensure
+    private void selectBangEnsure(int len0, int len1) {
+        int len = size();
+        int i1 = len0, i2 = len1;
+
+        if (i2 < i1) {
+            if (i1 < len) {
+                System.arraycopy(values, begin + i1, values, begin + i2, len - i1);
+            }
+            realLength = len - i1 + i2;
+        }
     }
 
     @JRubyMethod(name = "reject!")
