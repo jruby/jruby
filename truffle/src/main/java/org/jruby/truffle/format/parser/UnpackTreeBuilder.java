@@ -218,12 +218,26 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitBinaryStringSpacePadded(PackParser.BinaryStringSpacePaddedContext ctx) {
-        //binaryString((byte) ' ', true, false, ctx.count());
+        if (ctx.count() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, 1, true, true, new SourceNode())));
+        } else if (ctx.count().INT() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, -1, true, true, new SourceNode())));
+        } else {
+            final int count = Integer.parseInt(ctx.count().INT().getSymbol().getText());
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, count, true, true, new SourceNode())));
+        }
     }
 
     @Override
     public void exitBinaryStringNullPadded(PackParser.BinaryStringNullPaddedContext ctx) {
-        //binaryString((byte) 0, true, false, ctx.count());
+        if (ctx.count() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, 1, false, false, new SourceNode())));
+        } else if (ctx.count().INT() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, -1, false, false, new SourceNode())));
+        } else {
+            final int count = Integer.parseInt(ctx.count().INT().getSymbol().getText());
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, count, false, false, new SourceNode())));
+        }
     }
 
     @Override
