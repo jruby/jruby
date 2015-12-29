@@ -30,13 +30,15 @@ import java.util.Arrays;
 public abstract class ReadBinaryStringNode extends PackNode {
 
     final boolean readToEnd;
+    final boolean readToNull;
     final int count;
     final boolean trimTrailingSpaces;
     final boolean trimTrailingNulls;
 
-    public ReadBinaryStringNode(RubyContext context, boolean readToEnd, int count, boolean trimTrailingSpaces, boolean trimTrailingNulls) {
+    public ReadBinaryStringNode(RubyContext context, boolean readToEnd, boolean readToNull, int count, boolean trimTrailingSpaces, boolean trimTrailingNulls) {
         super(context);
         this.readToEnd = readToEnd;
+        this.readToNull = readToNull;
         this.count = count;
         this.trimTrailingSpaces = trimTrailingSpaces;
         this.trimTrailingNulls = trimTrailingNulls;
@@ -62,7 +64,13 @@ public abstract class ReadBinaryStringNode extends PackNode {
         if (readToEnd) {
             length = 0;
 
-            while (start + length < getSourceLength(frame)) {
+            while (start + length < getSourceLength(frame) && (!readToNull || (start + length < getSourceLength(frame) && source[start + length] != 0))) {
+                length++;
+            }
+        } else if (readToNull) {
+            length = 0;
+
+            while (start + length < getSourceLength(frame) && length < count && (!readToNull || (start + length < getSourceLength(frame) && source[start + length] != 0))) {
                 length++;
             }
         } else {
