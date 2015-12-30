@@ -43,7 +43,7 @@ public class ZSuperOutsideMethodNode extends RubyNode {
                     "implicit argument passing of super from method defined by define_method() is not supported." +
                             " Specify all arguments explicitly.", this));
         } else {
-            throw new RaiseException(getContext().getCoreLibrary().noSuperMethodError(this));
+            throw new RaiseException(getContext().getCoreLibrary().noSuperMethodOutsideMethodError(this));
         }
     }
 

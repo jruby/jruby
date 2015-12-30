@@ -1167,11 +1167,16 @@ public class CoreLibrary {
         return noMethodError;
     }
 
-    public DynamicObject noSuperMethodError(Node currentNode) {
+    public DynamicObject noSuperMethodOutsideMethodError(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         DynamicObject noMethodError = noMethodError("super called outside of method", "<unknown>", currentNode);
         noMethodError.define("@name", nilObject, 0); // FIXME: the name of the method is not known in this case currently
         return noMethodError;
+    }
+
+    public DynamicObject noSuperMethodError(String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return noMethodError(String.format("super: no superclass method `%s'", name), name, currentNode);
     }
 
     public DynamicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
