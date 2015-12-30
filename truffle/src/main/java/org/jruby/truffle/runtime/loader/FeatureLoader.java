@@ -196,11 +196,12 @@ public class FeatureLoader {
 
             return expanded.asJavaString();
         } else {
-            return expandPath(fileName, null);
+            String dir = new File(fileName).isAbsolute() ? null : context.getRuntime().getCurrentDirectory();
+            return expandPath(fileName, dir);
         }
     }
 
-    public static String expandPath(String fileName, String dir) {
+    private static String expandPath(String fileName, String dir) {
         /*
          * TODO(cs): this isn't quite correct - I think we want to collapse .., but we don't want to
          * resolve symlinks etc. This might be where we want to start borrowing JRuby's
