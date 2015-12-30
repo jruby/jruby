@@ -20,6 +20,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -257,6 +258,18 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
 
                 adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, String.class, Encoding.class));
+            }
+        });
+    }
+
+    public void pushSymbolProc(final String name, final Encoding encoding) {
+        cacheValuePermanently("symbolProc", RubyProc.class, null, new Runnable() {
+            @Override
+            public void run() {
+                loadContext();
+                adapter.ldc(name);
+                adapter.ldc(encoding.toString());
+                invokeIRHelper("newSymbolProc", sig(RubyProc.class, ThreadContext.class, String.class, String.class));
             }
         });
     }
