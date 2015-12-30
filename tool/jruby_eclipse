@@ -2,9 +2,14 @@
 # A JRuby launcher, in Ruby, and using the class files from Eclipse
 # Currently needs the core and stdlib jar, so build them again when they change.
 
-TRUFFLEJAR = "#{Dir.home}/.m2/repository/com/oracle/truffle/0.7/truffle-0.7.jar"
-SNAKEYAMLJAR = "#{Dir.home}/.m2/repository/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
-ANTLR4JAR = "#{Dir.home}/.m2/repository/org/antlr/antlr4-runtime/4.5/antlr4-runtime-4.5.jar"
+M2REPO = "#{Dir.home}/.m2/repository"
+
+TRUFFLEJARS = %w[
+  /com/oracle/truffle/truffle-api/0.10/truffle-api-0.10.jar
+  /com/oracle/truffle/truffle-debug/0.10/truffle-debug-0.10.jar
+].map { |jar| "#{M2REPO}/#{jar}" }
+SNAKEYAMLJAR = "#{M2REPO}/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
+ANTLR4JAR = "#{M2REPO}/org/antlr/antlr4-runtime/4.5/antlr4-runtime-4.5.jar"
 
 JRUBY = File.expand_path('../..', __FILE__)
 
@@ -34,7 +39,7 @@ classpath = []
 bootclasspath << "#{JRUBY}/lib/jruby.jar"
 classpath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
 if rest.include?('-X+T')
-  bootclasspath << TRUFFLEJAR
+  bootclasspath += TRUFFLEJARS
   classpath << SNAKEYAMLJAR
   classpath << ANTLR4JAR
   classpath << "#{JRUBY}/truffle/build.eclipse"

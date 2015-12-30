@@ -641,11 +641,12 @@ public abstract class KernelNodes {
             final DynamicObject callerBinding = getCallerBinding(frame);
             final MaterializedFrame parentFrame = Layouts.BINDING.getFrame(callerBinding);
 
+            final Encoding encoding = StringOperations.getByteList(sourceText).getEncoding();
             final Source source = Source.fromText(sourceText.toString(), "(eval)");
 
             final TranslatorDriver translator = new TranslatorDriver(getContext());
 
-            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, ParserContext.EVAL, null, parentFrame, true, this));
+            return new RootNodeWrapper(translator.parse(getContext(), source, encoding, ParserContext.EVAL, null, parentFrame, true, this));
         }
 
         protected boolean parseDependsOnDeclarationFrame(RootNodeWrapper rootNode) {

@@ -15,18 +15,20 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -45,6 +47,8 @@ public class GeneralSuperReCallNode extends RubyNode {
     @Child ProcOrNullNode procOrNullNode;
     @Child LookupSuperMethodNode lookupSuperMethodNode;
     @Child CallMethodNode callMethodNode;
+
+    @Child CallDispatchHeadNode callMethodMissingNode;
 
     public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean hasRestParameter, RubyNode[] reloadNodes, RubyNode block) {
         super(context, sourceSection);
@@ -96,14 +100,17 @@ public class GeneralSuperReCallNode extends RubyNode {
         if (superMethod == null) {
             CompilerDirectives.transferToInterpreter();
             final String name = RubyArguments.getMethod(frame.getArguments()).getSharedMethodInfo().getName(); // use the original name
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), name, this));
+            final Object[] methodMissingArguments = new Object[1 + superArguments.length];
+            methodMissingArguments[0] = getContext().getSymbol(name);
+            ArrayUtils.arraycopy(superArguments, 0, methodMissingArguments, 1, superArguments.length);
+            return callMethodMissing(frame, self, blockObject, methodMissingArguments);
         }
 
         final Object[] frameArguments = RubyArguments.pack(
                 superMethod,
                 RubyArguments.getDeclarationFrame(originalArguments),
                 null,
-                RubyArguments.getSelf(originalArguments),
+                self,
                 blockObject,
                 DeclarationContext.METHOD,
                 superArguments);
@@ -121,6 +128,14 @@ public class GeneralSuperReCallNode extends RubyNode {
         } else {
             return create7BitString(StringOperations.encodeByteList("super", UTF8Encoding.INSTANCE));
         }
+    }
+
+    private Object callMethodMissing(VirtualFrame frame, Object receiver, DynamicObject block, Object[] arguments) {
+        if (callMethodMissingNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            callMethodMissingNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+        }
+        return callMethodMissingNode.call(frame, receiver, "method_missing", block, arguments);
     }
 
 }

@@ -1,1 +1,0 @@
-fails:The super keyword calls method_missing when a superclass method is not found
