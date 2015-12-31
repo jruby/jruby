@@ -16,9 +16,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.util.Arrays;
+
 import org.jruby.RubyString;
 import org.jruby.ext.socket.SocketUtils;
 import org.jruby.runtime.Helpers;
@@ -57,6 +64,9 @@ public class Sockaddr {
         InetSocketAddress iaddr;
         if (arg instanceof Addrinfo) {
             Addrinfo addrinfo = (Addrinfo)arg;
+            if (!addrinfo.ip_p(context).isTrue()) {
+                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrinfo);
+            }
             iaddr = new InetSocketAddress(addrinfo.getInetAddress(), addrinfo.getPort());
         } else {
             iaddr = addressFromSockaddr_in(context, arg);
@@ -116,6 +126,18 @@ public class Sockaddr {
             return Sockaddr.pack_sockaddr_in(context, 0, "");
         } else {
             return Sockaddr.pack_sockaddr_in(context, sock);
+        }
+    }
+
+    public static IRubyObject pack_sockaddr_un(ThreadContext context, String path) {
+        ByteArrayOutputStream bufS = new ByteArrayOutputStream();
+        try {
+            DataOutputStream ds = new DataOutputStream(bufS);
+            writeSockaddrHeader(AddressFamily.AF_UNIX, ds);
+            ds.writeUTF(path);
+            return context.runtime.newString(new ByteList(bufS.toByteArray(), false));
+        } catch (IOException e) {
+            throw sockerr(context.runtime, "pack_sockaddr_in: internal error");
         }
     }
 
@@ -233,5 +255,34 @@ public class Sockaddr {
 
     private static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
+    }
+
+    public static SocketAddress sockaddrFromBytes(Ruby runtime, byte[] val) throws IOException {
+        AddressFamily afamily = AddressFamily.valueOf(uint16(val[0], val[1]));
+
+        if (afamily == null || afamily == AddressFamily.__UNKNOWN_CONSTANT__) {
+            throw runtime.newArgumentError("can't resolve socket address of wrong type");
+        }
+
+        int port;
+        switch (afamily) {
+            case AF_INET:
+                port = uint16(val[2], val[3]);
+                Inet4Address inet4Address = (Inet4Address)InetAddress.getByAddress(Helpers.subseq(val, 4, 4));
+                return new InetSocketAddress(inet4Address, port);
+            case AF_INET6:
+                port = uint16(val[2], val[3]);
+                Inet6Address inet6Address = (Inet6Address)InetAddress.getByAddress(Helpers.subseq(val, 4, 16));
+                return new InetSocketAddress(inet6Address, port);
+            case AF_UNIX:
+                String path = new String(val, 2, val.length - 2);
+                return new UnixSocketAddress(new File(path));
+            default:
+                throw runtime.newArgumentError("can't resolve socket address of wrong type");
+        }
+    }
+
+    private static int uint16(byte high, byte low) {
+        return ((high & 0xFF) << 8) + (low & 0xFF);
     }
 }

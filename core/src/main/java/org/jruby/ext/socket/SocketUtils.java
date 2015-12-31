@@ -51,6 +51,7 @@ import org.jruby.util.io.Sockaddr;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -267,15 +268,15 @@ public class SocketUtils {
 
                 if (sock_dgram) {
                     l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
-                            address,
-                            port,
+                            new InetSocketAddress(address, port),
+                            Sock.SOCK_DGRAM,
                             SocketType.DATAGRAM));
                 }
 
                 if (sock_stream) {
                     l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
-                            address,
-                            port,
+                            new InetSocketAddress(address, port),
+                            Sock.SOCK_STREAM,
                             SocketType.SOCKET));
                 }
             }
@@ -569,6 +570,7 @@ public class SocketUtils {
     private static final String ANY = "<any>";
     private static final byte[] INADDR_ANY = new byte[] {0,0,0,0}; // 0.0.0.0
 
+    // MRI: address family part of rsock_family_to_int
     static AddressFamily addressFamilyFromArg(IRubyObject domain) {
         IRubyObject maybeString = TypeConverter.checkStringType(domain.getRuntime(), domain);
 
@@ -613,6 +615,7 @@ public class SocketUtils {
         }
     }
 
+    // MRI: protocol family part of rsock_family_to_int
     static ProtocolFamily protocolFamilyFromArg(IRubyObject protocol) {
         IRubyObject maybeString = TypeConverter.checkStringType(protocol.getRuntime(), protocol);
 
