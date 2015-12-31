@@ -641,11 +641,12 @@ public abstract class KernelNodes {
             final DynamicObject callerBinding = getCallerBinding(frame);
             final MaterializedFrame parentFrame = Layouts.BINDING.getFrame(callerBinding);
 
+            final Encoding encoding = StringOperations.getByteList(sourceText).getEncoding();
             final Source source = Source.fromText(sourceText.toString(), "(eval)");
 
             final TranslatorDriver translator = new TranslatorDriver(getContext());
 
-            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, ParserContext.EVAL, null, parentFrame, true, this));
+            return new RootNodeWrapper(translator.parse(getContext(), source, encoding, ParserContext.EVAL, null, parentFrame, true, this));
         }
 
         protected boolean parseDependsOnDeclarationFrame(RootNodeWrapper rootNode) {
@@ -1283,11 +1284,7 @@ public abstract class KernelNodes {
             @Override
             public Object execute(VirtualFrame frame) {
                 final Object[] originalUserArguments = RubyArguments.extractUserArguments(frame.getArguments());
-                final Object[] newUserArguments = new Object[originalUserArguments.length + 1];
-
-                newUserArguments[0] = methodName;
-                System.arraycopy(originalUserArguments, 0, newUserArguments, 1, originalUserArguments.length);
-
+                final Object[] newUserArguments = ArrayUtils.unshift(originalUserArguments, methodName);
                 return methodMissing.call(frame, RubyArguments.getSelf(frame.getArguments()), "method_missing", RubyArguments.getBlock(frame.getArguments()), newUserArguments);
             }
         }

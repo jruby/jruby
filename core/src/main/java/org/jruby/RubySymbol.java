@@ -44,6 +44,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -462,73 +463,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
-        final CallSite site = new FunctionalCachingCallSite(symbol);
-        BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL) {
-            private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
-                if (array.isEmpty()) {
-                    throw context.runtime.newArgumentError("no receiver given");
-                }
-
-                IRubyObject self = array.shift(context);
-
-                return site.call(context, self, self, array.toJavaArray(), blockArg);
-            }
-
-            @Override
-            public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
-                RubyProc.prepareArgs(context, block.type, blockArg.getBody(), args);
-                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), blockArg);
-            }
-
-            @Override
-            public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), blockArg);
-            }
-
-            @Override
-            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
-            }
-
-            @Override
-            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
-            }
-
-            @Override
-            public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-                return site.call(context, arg0, arg0);
-            }
-
-            @Override
-            public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-                return site.call(context, arg0, arg0, arg1);
-            }
-
-            @Override
-            public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-                return site.call(context, arg0, arg0, arg1, arg2);
-            }
-
-            @Override
-            public String getFile() {
-                return symbol;
-            }
-
-            @Override
-            public int getLine() {
-                return -1;
-            }
-
-            @Override
-            public ArgumentDescriptor[] getArgumentDescriptors() {
-                return ArgumentDescriptor.ANON_REST;
-            }
-        };
+        BlockBody body = new SymbolProcBody(context.runtime, symbol);
 
         return RubyProc.newProc(context.runtime,
-                                new Block(body, context.currentBinding()),
+                                new Block(body, Binding.DUMMY),
                                 Block.Type.PROC);
     }
 
@@ -1069,6 +1007,76 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             return ((RubyString)object).getByteList().toString();
         } else {
             return object.convertToString().getByteList().toString();
+        }
+    }
+
+    private static class SymbolProcBody extends ContextAwareBlockBody {
+        private final CallSite site;
+
+        public SymbolProcBody(Ruby runtime, String symbol) {
+            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
+            this.site = new FunctionalCachingCallSite(symbol);
+        }
+
+        private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
+            if (array.isEmpty()) {
+                throw context.runtime.newArgumentError("no receiver given");
+            }
+
+            IRubyObject self = array.shift(context);
+
+            return site.call(context, self, self, array.toJavaArray(), blockArg);
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+            RubyProc.prepareArgs(context, block.type, blockArg.getBody(), args);
+            return yieldInner(context, context.runtime.newArrayNoCopyLight(args), blockArg);
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
+            return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), blockArg);
+        }
+
+        @Override
+        protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
+            return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
+        }
+
+        @Override
+        protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+            return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
+            return site.call(context, arg0, arg0);
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
+            return site.call(context, arg0, arg0, arg1);
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            return site.call(context, arg0, arg0, arg1, arg2);
+        }
+
+        @Override
+        public String getFile() {
+            return site.methodName;
+        }
+
+        @Override
+        public int getLine() {
+            return -1;
+        }
+
+        @Override
+        public ArgumentDescriptor[] getArgumentDescriptors() {
+            return ArgumentDescriptor.ANON_REST;
         }
     }
 }

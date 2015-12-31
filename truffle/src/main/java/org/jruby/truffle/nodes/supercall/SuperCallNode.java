@@ -9,91 +9,74 @@
  */
 package org.jruby.truffle.nodes.supercall;
 
-import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-/**
- * Represents a super call with explicit arguments.
- */
-public class GeneralSuperCallNode extends RubyNode {
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 
-    private final boolean isSplatted;
+public class SuperCallNode extends RubyNode {
 
+    @Child private RubyNode arguments;
     @Child private RubyNode block;
-    @Children private final RubyNode[] arguments;
-
     @Child ProcOrNullNode procOrNullNode;
+
     @Child LookupSuperMethodNode lookupSuperMethodNode;
     @Child CallMethodNode callMethodNode;
+    @Child CallDispatchHeadNode callMethodMissingNode;
 
-    public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
+    public SuperCallNode(RubyContext context, SourceSection sourceSection, RubyNode arguments, RubyNode block) {
         super(context, sourceSection);
-        assert arguments != null;
-        assert !isSplatted || arguments.length == 1;
-        this.block = block;
         this.arguments = arguments;
-        this.isSplatted = isSplatted;
-
-        procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
-        lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, sourceSection, null);
-        callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
+        this.block = block;
+        this.procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
+        this.lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, sourceSection, null);
+        this.callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
     }
 
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        CompilerAsserts.compilationConstant(arguments.length);
-
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         // Execute the arguments
-        final Object[] argumentsObjects = new Object[arguments.length];
-        for (int i = 0; i < arguments.length; i++) {
-            argumentsObjects[i] = arguments[i].execute(frame);
-        }
+        final Object[] superArguments = (Object[]) arguments.execute(frame);
 
         // Execute the block
-        final DynamicObject blockObject;
-        if (block != null) {
-            blockObject = procOrNullNode.executeProcOrNull(block.execute(frame));
-        } else {
-            blockObject = RubyArguments.getBlock(frame.getArguments());
-        }
-
-        final Object[] argumentsArray;
-        if (isSplatted) {
-            // TODO(CS): need something better to splat the arguments array
-            argumentsArray = ArrayOperations.toObjectArray((DynamicObject) argumentsObjects[0]);
-        } else {
-            argumentsArray = argumentsObjects;
-        }
+        final DynamicObject blockObject = procOrNullNode.executeProcOrNull(block.execute(frame));
 
         final InternalMethod superMethod = lookupSuperMethodNode.executeLookupSuperMethod(frame, self);
 
         if (superMethod == null) {
             CompilerDirectives.transferToInterpreter();
             final String name = RubyArguments.getMethod(frame.getArguments()).getSharedMethodInfo().getName(); // use the original name
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), name, this));
+            final Object[] methodMissingArguments = ArrayUtils.unshift(superArguments, getContext().getSymbol(name));
+            return callMethodMissing(frame, self, blockObject, methodMissingArguments);
         }
 
-        final Object[] frameArguments = RubyArguments.pack(superMethod, null, null, self, blockObject, DeclarationContext.METHOD, argumentsArray);
+        final Object[] frameArguments = RubyArguments.pack(
+                superMethod,
+                null,
+                null,
+                self,
+                blockObject,
+                DeclarationContext.METHOD,
+                superArguments);
 
         return callMethodNode.executeCallMethod(frame, superMethod, frameArguments);
     }
@@ -108,6 +91,14 @@ public class GeneralSuperCallNode extends RubyNode {
         } else {
             return create7BitString(StringOperations.encodeByteList("super", UTF8Encoding.INSTANCE));
         }
+    }
+
+    private Object callMethodMissing(VirtualFrame frame, Object receiver, DynamicObject block, Object[] arguments) {
+        if (callMethodMissingNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            callMethodMissingNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+        }
+        return callMethodMissingNode.call(frame, receiver, "method_missing", block, arguments);
     }
 
 }

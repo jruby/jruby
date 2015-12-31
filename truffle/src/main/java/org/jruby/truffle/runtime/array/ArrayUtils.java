@@ -402,4 +402,11 @@ public abstract class ArrayUtils {
         return copy;
     }
 
+    public static Object[] unshift(Object[] array, Object element) {
+        final Object[] newArray = new Object[1 + array.length];
+        newArray[0] = element;
+        arraycopy(array, 0, newArray, 1, array.length);
+        return newArray;
+    }
+
 }
