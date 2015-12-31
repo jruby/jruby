@@ -29,8 +29,10 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketOption;
 import jnr.unixsocket.UnixServerSocketChannel;
+import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
@@ -237,6 +239,14 @@ public enum SocketType {
 
         public void shutdownOutput(Channel channel) throws IOException {
             toSocket(channel).shutdownOutput();
+        }
+
+        public SocketAddress getRemoteSocketAddress(Channel channel) {
+            return toSocket(channel).getRemoteSocketAddress();
+        }
+
+        public SocketAddress getLocalSocketAddress(Channel channel) {
+            return new UnixSocketAddress(new File("empty-path"));
         }
     },
 
