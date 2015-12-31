@@ -76,6 +76,11 @@ public class RubyTCPSocket extends RubyIPSocket {
         super(runtime, type);
     }
 
+    @Override
+    public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
+        return null;
+    }
+
     @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;

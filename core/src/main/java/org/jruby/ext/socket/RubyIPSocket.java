@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2007-2010 JRuby Team <team@jruby.org>
  * Copyright (C) 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -46,20 +46,14 @@ import java.net.InetSocketAddress;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @JRubyClass(name="IPSocket", parent="BasicSocket")
-public class RubyIPSocket extends RubyBasicSocket {
+public abstract class RubyIPSocket extends RubyBasicSocket {
     static void createIPSocket(Ruby runtime) {
-        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), IPSOCKET_ALLOCATOR);
-        
+        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+
         rb_cIPSocket.defineAnnotatedMethods(RubyIPSocket.class);
 
         runtime.getObject().setConstant("IPsocket",rb_cIPSocket);
     }
-    
-    private static ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyIPSocket(runtime, klass);
-        }
-    };
 
     public RubyIPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -68,12 +62,12 @@ public class RubyIPSocket extends RubyBasicSocket {
     public IRubyObject addr(ThreadContext context) {
         return addrCommon(context, true);
     }
-    
+
     @JRubyMethod(name = "addr")
     public IRubyObject addr19(ThreadContext context) {
         return addrCommon(context, true);
     }
-    
+
     @JRubyMethod(name = "addr")
     public IRubyObject addr19(ThreadContext context, IRubyObject reverse) {
         return addrCommon(context, reverse.isTrue());
@@ -82,12 +76,12 @@ public class RubyIPSocket extends RubyBasicSocket {
     public IRubyObject peeraddr(ThreadContext context) {
         return peeraddrCommon(context, true);
     }
-    
+
     @JRubyMethod(name = "peeraddr")
     public IRubyObject peeraddr19(ThreadContext context) {
         return peeraddrCommon(context, true);
     }
-    
+
     @JRubyMethod(name = "peeraddr")
     public IRubyObject peeraddr19(ThreadContext context, IRubyObject reverse) {
         return peeraddrCommon(context, reverse.isTrue());
@@ -102,35 +96,31 @@ public class RubyIPSocket extends RubyBasicSocket {
     public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
         Ruby runtime = context.runtime;
 
-        try {
-            IRubyObject result = recv(context, _length);
-            InetSocketAddress sender = getRemoteSocket();
+        IRubyObject result = recv(context, _length);
+        InetSocketAddress sender = getInetRemoteSocket();
 
-            int port;
-            String hostName;
-            String hostAddress;
+        int port;
+        String hostName;
+        String hostAddress;
 
-            if (sender == null) {
-                port = 0;
-                hostName = hostAddress = "0.0.0.0";
-            } else {
-                port = sender.getPort();
-                hostName = sender.getHostName();
-                hostAddress = sender.getAddress().getHostAddress();
-            }
-
-            IRubyObject addressArray = RubyArray.newArray(
-                    runtime,
-                    runtime.newString("AF_INET"),
-                    runtime.newFixnum(port),
-                    runtime.newString(hostName),
-                    runtime.newString(hostAddress));
-
-            return RubyArray.newArray(runtime, result, addressArray);
-
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
+        if (sender == null) {
+            port = 0;
+            hostName = hostAddress = "0.0.0.0";
+        } else {
+            port = sender.getPort();
+            hostName = sender.getHostName();
+            hostAddress = sender.getAddress().getHostAddress();
         }
+
+        IRubyObject addressArray = context.runtime.newArray(
+                new IRubyObject[]{
+                        runtime.newString("AF_INET"),
+                        runtime.newFixnum(port),
+                        runtime.newString(hostName),
+                        runtime.newString(hostAddress)
+                });
+
+        return runtime.newArray(result, addressArray);
     }
 
     @JRubyMethod
@@ -146,56 +136,36 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     @Override
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
-        try {
-            InetSocketAddress sock = getSocketAddress();
+        InetSocketAddress sock = getInetSocketAddress();
 
-            return Sockaddr.packSockaddrFromAddress(context, sock);
-
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        }
+        return Sockaddr.packSockaddrFromAddress(context, sock);
     }
 
     @Override
     public IRubyObject getpeername(ThreadContext context) {
-        try {
-            InetSocketAddress sock = getRemoteSocket();
+        InetSocketAddress sock = getInetRemoteSocket();
 
-            return Sockaddr.packSockaddrFromAddress(context, sock);
-
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        }
+        return Sockaddr.packSockaddrFromAddress(context, sock);
     }
 
     private IRubyObject addrCommon(ThreadContext context, boolean reverse) {
-        try {
-            InetSocketAddress address = getSocketAddress();
+            InetSocketAddress address = getInetSocketAddress();
 
             if (address == null) {
                 throw context.runtime.newErrnoENOTSOCKError("Not socket or not connected");
             }
 
             return addrFor(context, address, reverse);
-
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        }
     }
 
     private IRubyObject peeraddrCommon(ThreadContext context, boolean reverse) {
-        try {
-            InetSocketAddress address = getRemoteSocket();
+        InetSocketAddress address = getInetRemoteSocket();
 
-            if (address == null) {
-                throw context.runtime.newErrnoENOTSOCKError("Not socket or not connected");
-            }
-
-            return addrFor(context, address, reverse);
-
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
+        if (address == null) {
+            throw context.runtime.newErrnoENOTSOCKError("Not socket or not connected");
         }
+
+        return addrFor(context, address, reverse);
     }
 
     @Deprecated
