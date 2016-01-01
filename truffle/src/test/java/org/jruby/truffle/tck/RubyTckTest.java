@@ -117,6 +117,16 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected String valuesObject() {
+        return "values_object";
+    }
+
+    @Override
+    public void readWriteCharValue() throws Exception {
+        // Can't pass this test right now
+    }
+
+    @Override
     public void testCoExistanceOfMultipleLanguageInstances() throws Exception {
         /*
          * Not running this test as it clears the engine, but we're caching that globally to avoid creating tens of

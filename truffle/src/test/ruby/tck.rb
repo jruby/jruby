@@ -110,3 +110,35 @@ def complex_copy(a, b)
 end
 
 Truffle::Interop.export_method(:complex_copy)
+
+class ValuesClass
+
+  attr_accessor :byteValue
+  attr_accessor :shortValue
+  attr_accessor :intValue
+  attr_accessor :longValue
+  attr_accessor :floatValue
+  attr_accessor :doubleValue
+  attr_accessor :charValue
+  attr_accessor :stringValue
+  attr_accessor :booleanValue
+
+  def initialize
+    @byteValue = 0
+    @shortValue = 0
+    @intValue = 0
+    @longValue = 0
+    @floatValue = 0.0
+    @doubleValue = 0.0
+    @charValue = '0'
+    @stringValue = ''
+    @booleanValue = false
+  end
+
+end
+
+def values_object
+  ValuesClass.new
+end
+
+Truffle::Interop.export_method(:values_object)
