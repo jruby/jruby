@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -254,12 +254,12 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitBitStringMSBFirst(PackParser.BitStringMSBFirstContext ctx) {
-        //bitString(ByteOrder.BIG_ENDIAN, ctx.count());
+        bitString(ByteOrder.BIG_ENDIAN, ctx.count());
     }
 
     @Override
     public void exitBitStringMSBLast(PackParser.BitStringMSBLastContext ctx) {
-        //bitString(ByteOrder.LITTLE_ENDIAN, ctx.count());
+        bitString(ByteOrder.LITTLE_ENDIAN, ctx.count());
     }
 
     @Override
@@ -554,9 +554,8 @@ public class UnpackTreeBuilder extends PackBaseListener {
             length = Integer.parseInt(ctx.INT().getText());
         }
 
-        appendNode(WriteBitStringNodeGen.create(context, byteOrder, star, length,
-                ReadStringNodeGen.create(context, true, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+        appendNode(WriteValueNodeGen.create(context,
+                ReadBitStringNodeGen.create(context, byteOrder, star, length, new SourceNode())));
     }
 
     private void hexString(ByteOrder byteOrder, PackParser.CountContext ctx) {
