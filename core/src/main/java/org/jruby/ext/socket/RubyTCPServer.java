@@ -28,6 +28,8 @@
 package org.jruby.ext.socket;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -267,8 +269,41 @@ public class RubyTCPServer extends RubyTCPSocket {
         }
     }
 
+    private static volatile Method listenFunction;
+    static {
+        Method listen = null;
+        try {
+            listen = Class.forName("sun.nio.ch.Net").getDeclaredMethod("listen", int.class);
+            listen.setAccessible(true);
+        } catch (Exception e) {
+            // can't use listen, backlog will be a no-op
+        }
+        listenFunction = listen;
+    }
+
     @JRubyMethod(name = "listen", required = 1)
-    public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
+    public IRubyObject listen(ThreadContext context, IRubyObject _backlog) {
+        int backlog = _backlog.convertToInteger().getIntValue();
+
+        if (listenFunction != null) {
+            int ret = 0;
+            try {
+                listenFunction.invoke(FilenoUtil.getDescriptorFromChannel(getServerSocketChannel()), backlog);
+            } catch (InvocationTargetException ite) {
+                // We should only get IOException from this, or else something else is wrong
+                if (ite.getTargetException() instanceof IOException) {
+                    IOException ioe = (IOException) ite.getTargetException();
+                    throw context.runtime.newIOErrorFromException(ioe);
+                }
+
+                // give up attempting to use this function
+                listenFunction = null;
+            } catch (IllegalAccessException iae) {
+                // give up attempting to use this function
+                listenFunction = null;
+            }
+        }
+
         return RubyFixnum.zero(context.runtime);
     }
 
