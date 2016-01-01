@@ -651,6 +651,12 @@ public class SocketUtils {
     }
 
     public static int portToInt(IRubyObject port) {
-        return port.isNil() ? 0 : RubyNumeric.fix2int(port);
+        if (port.isNil()) return 0;
+
+        Ruby runtime = port.getRuntime();
+
+        IRubyObject maybeStr = TypeConverter.checkStringType(runtime, port);
+        if (!maybeStr.isNil()) return RubyNumeric.fix2int(maybeStr.convertToString().to_i());
+        return RubyNumeric.fix2int(port);
     }
 }
