@@ -16,11 +16,13 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.ast.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.arguments.ReadBlockNode;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.arguments.ShouldDestructureNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
@@ -31,8 +33,9 @@ import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.locals.FlipFlopStateNode;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
-import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
+import org.jruby.truffle.nodes.supercall.ReadSuperArgumentsNode;
+import org.jruby.truffle.nodes.supercall.ReadZSuperArgumentsNode;
+import org.jruby.truffle.nodes.supercall.SuperCallNode;
 import org.jruby.truffle.nodes.supercall.ZSuperOutsideMethodNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
@@ -261,7 +264,9 @@ public class MethodTranslator extends BodyTranslator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), environment.getNamedMethodName());
 
-        return new GeneralSuperCallNode(context, sourceSection, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
+        final RubyNode arguments = new ReadSuperArgumentsNode(context, sourceSection, argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
+        final RubyNode block = executeOrInheritBlock(sourceSection, argumentsAndBlock.getBlock());
+        return new SuperCallNode(context, sourceSection, arguments, block);
     }
 
     @Override
@@ -293,16 +298,24 @@ public class MethodTranslator extends BodyTranslator {
             methodArgumentsTranslator = (MethodTranslator) methodArgumentsTranslator.parent;
         }
 
-        final ReloadArgumentsTranslator reloadTranslator = new ReloadArgumentsTranslator(
-                currentNode, context, source, this);
+        final ReloadArgumentsTranslator reloadTranslator = new ReloadArgumentsTranslator(currentNode, context, source, this);
 
         final ArgsNode argsNode = methodArgumentsTranslator.argsNode;
         final SequenceNode reloadSequence = (SequenceNode) reloadTranslator.visitArgsNode(argsNode);
 
-        return new GeneralSuperReCallNode(context, sourceSection,
+        final RubyNode arguments = new ReadZSuperArgumentsNode(context, sourceSection,
                 reloadTranslator.isSplatted(),
-                reloadSequence.getSequence(),
-                blockNode);
+                reloadSequence.getSequence());
+        final RubyNode block = executeOrInheritBlock(sourceSection, blockNode);
+        return new SuperCallNode(context, sourceSection, arguments, block);
+    }
+
+    private RubyNode executeOrInheritBlock(SourceSection sourceSection, RubyNode blockNode) {
+        if (blockNode != null) {
+            return blockNode;
+        } else {
+            return new ReadBlockNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+        }
     }
 
     @Override

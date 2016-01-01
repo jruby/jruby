@@ -26,6 +26,10 @@ public abstract class StringCachingGuards {
 
     public static boolean byteListsEqual(DynamicObject string, ByteList byteList) {
         if (RubyGuards.isRubyString(string)) {
+            // equal below does not check encoding
+            if (StringOperations.getByteList(string).getEncoding() != byteList.getEncoding()) {
+                return false;
+            }
             // TODO CS 8-Nov-15 this code goes off into the woods - need to break it apart and branch profile it
             return StringOperations.getByteList(string).equal(byteList);
         } else {

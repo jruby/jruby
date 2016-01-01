@@ -101,10 +101,7 @@ public class CachedMethodMissingDispatchNode extends CachedDispatchNode {
         switch (getDispatchAction()) {
             case CALL_METHOD:
                 // When calling #method_missing we need to prepend the symbol
-
-                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
-                modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
-                ArrayUtils.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
+                final Object[] modifiedArgumentsObjects = ArrayUtils.unshift(argumentsObjects, getCachedNameAsSymbol());
 
                 return call(callNode, frame, method, receiverObject, blockObject, modifiedArgumentsObjects);
 

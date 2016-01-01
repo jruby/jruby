@@ -43,7 +43,8 @@ public enum OperandType {
     WRAPPED_IR_CLOSURE((byte) 'w'),
     FROZEN_STRING((byte) 'z'),
     NULL_BLOCK((byte) 'o'),
-    FILENAME((byte) 'm')
+    FILENAME((byte) 'm'),
+    SYMBOL_PROC((byte) 'P')
     ;
 
     private final byte coded;

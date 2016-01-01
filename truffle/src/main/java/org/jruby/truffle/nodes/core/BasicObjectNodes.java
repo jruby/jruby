@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
@@ -29,6 +30,7 @@ import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.nodes.supercall.SuperCallNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
@@ -208,13 +210,20 @@ public abstract class BasicObjectNodes {
         private Object methodMissing(Object self, DynamicObject nameObject, Object[] args, DynamicObject block) {
             final String name = nameObject.toString();
 
-            if (lastCallWasCallingPrivateMethod(self, name)) {
+            if (lastCallWasSuper()) {
+                throw new RaiseException(getContext().getCoreLibrary().noSuperMethodError(name, this));
+            } else if (lastCallWasCallingPrivateMethod(self, name)) {
                 throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, self, this));
             } else if (lastCallWasVCall()) {
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(name, self, this));
             }
+        }
+
+        private boolean lastCallWasSuper() {
+            final SuperCallNode superCallNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), SuperCallNode.class);
+            return superCallNode != null;
         }
 
         /**
