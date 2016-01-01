@@ -78,7 +78,7 @@ public class Pack {
     private static final String sTooFew = "too few arguments";
     private static final byte[] uu_table;
     private static final byte[] b64_table;
-    private static final byte[] sHexDigits;
+    public static final byte[] sHexDigits;
     private static final int[] b64_xtable = new int[256];
     private static final Converter[] converters = new Converter[256];
 

@@ -264,12 +264,12 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitHexStringHighFirst(PackParser.HexStringHighFirstContext ctx) {
-        //hexString(ByteOrder.BIG_ENDIAN, ctx.count());
+        hexString(ByteOrder.BIG_ENDIAN, ctx.count());
     }
 
     @Override
     public void exitHexStringLowFirst(PackParser.HexStringLowFirstContext ctx) {
-        //hexString(ByteOrder.LITTLE_ENDIAN, ctx.count());
+        hexString(ByteOrder.LITTLE_ENDIAN, ctx.count());
     }
 
     @Override
@@ -559,19 +559,22 @@ public class UnpackTreeBuilder extends PackBaseListener {
     }
 
     private void hexString(ByteOrder byteOrder, PackParser.CountContext ctx) {
+        final boolean star;
         final int length;
 
         if (ctx == null) {
+            star = false;
             length = 1;
         } else if (ctx.INT() == null) {
-            length = -1;
+            star = true;
+            length = 0;
         } else {
+            star = false;
             length = Integer.parseInt(ctx.INT().getText());
         }
 
-        appendNode(WriteHexStringNodeGen.create(context, byteOrder, length,
-                ReadStringNodeGen.create(context, true, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+        appendNode(WriteValueNodeGen.create(context,
+                ReadHexStringNodeGen.create(context, byteOrder, star, length, new SourceNode())));
 
     }
 
