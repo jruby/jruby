@@ -123,7 +123,10 @@ public class RubyTckTest extends TruffleTCK {
 
     @Override
     public void readWriteCharValue() throws Exception {
-        // Can't pass this test right now
+        /*
+         * This test requires a Ruby method to return a Java char. We can't do that. We can return something which
+         * would unbox to a char, but currently this isn't good enough.
+         */
     }
 
     @Override
