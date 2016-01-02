@@ -17,20 +17,37 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class BackUnpackNode extends PackNode {
 
-    public BackUnpackNode(RubyContext context) {
+    private boolean star;
+
+    public BackUnpackNode(RubyContext context, boolean star) {
         super(context);
+        this.star = star;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final int position = getSourcePosition(frame);
 
-        if (position == 0) {
-            CompilerDirectives.transferToInterpreter();
-            throw new OutsideOfStringException();
+        if (star) {
+            final int remaining = getSourceLength(frame) - position;
+
+            final int target = position - remaining;
+
+            if (target < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new OutsideOfStringException();
+            }
+
+            setSourcePosition(frame, target);
+        } else {
+            if (position == 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new OutsideOfStringException();
+            }
+
+            setSourcePosition(frame, position - 1);
         }
 
-        setSourcePosition(frame, position - 1);
 
         return null;
     }

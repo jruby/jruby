@@ -17,13 +17,27 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class ForwardUnpackNode extends PackNode {
 
-    public ForwardUnpackNode(RubyContext context) {
+    private boolean toEnd;
+
+    public ForwardUnpackNode(RubyContext context, boolean toEnd) {
         super(context);
+        this.toEnd = toEnd;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        setSourcePosition(frame, getSourcePosition(frame) + 1);
+        if (toEnd) {
+            setSourcePosition(frame, getSourceLength(frame));
+        } else {
+            final int position = getSourcePosition(frame);
+
+            if (position + 1 > getSourceLength(frame)) {
+                throw new OutsideOfStringException();
+            }
+
+            setSourcePosition(frame, getSourcePosition(frame) + 1);
+        }
+
         return null;
     }
 

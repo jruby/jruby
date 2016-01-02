@@ -361,15 +361,19 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitBack(PackParser.BackContext ctx) {
-        if (ctx.count() == null || ctx.count().INT() != null) {
-            appendNode(applyCount(ctx.count(), new BackUnpackNode(context)));
+        if (ctx.count() != null && ctx.count().INT() == null) {
+            appendNode(new BackUnpackNode(context, true));
+        } else if (ctx.count() == null || ctx.count().INT() != null) {
+            appendNode(applyCount(ctx.count(), new BackUnpackNode(context, false)));
         }
     }
 
     @Override
     public void exitNullByte(PackParser.NullByteContext ctx) {
-        if (ctx.count() == null || ctx.count().INT() != null) {
-            appendNode(applyCount(ctx.count(), new ForwardUnpackNode(context)));
+        if (ctx.count() != null && ctx.count().INT() == null) {
+            appendNode(new ForwardUnpackNode(context, true));
+        } else if (ctx.count() == null || ctx.count().INT() != null) {
+            appendNode(applyCount(ctx.count(), new ForwardUnpackNode(context, false)));
         }
     }
 
