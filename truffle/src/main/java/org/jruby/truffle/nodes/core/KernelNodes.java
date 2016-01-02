@@ -1941,7 +1941,7 @@ public abstract class KernelNodes {
         }
 
         private DynamicObject finishFormat(int formatLength, PackResult result) {
-            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength(), false));
+            final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
 
             if (formatLength == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);

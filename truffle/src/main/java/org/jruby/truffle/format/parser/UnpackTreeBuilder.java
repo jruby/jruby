@@ -13,14 +13,15 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.nodes.SourceNode;
 import org.jruby.truffle.format.nodes.control.*;
-import org.jruby.truffle.format.nodes.read.ReadDoubleNodeGen;
-import org.jruby.truffle.format.nodes.read.ReadLongOrBigIntegerNodeGen;
-import org.jruby.truffle.format.nodes.read.ReadStringNodeGen;
-import org.jruby.truffle.format.nodes.read.ReadValueNodeGen;
+import org.jruby.truffle.format.nodes.decode.*;
+import org.jruby.truffle.format.nodes.read.*;
 import org.jruby.truffle.format.nodes.type.AsSinglePrecisionNodeGen;
+import org.jruby.truffle.format.nodes.type.AsUnsignedNodeGen;
 import org.jruby.truffle.format.nodes.type.ReinterpretLongNodeGen;
 import org.jruby.truffle.format.nodes.type.ToLongNodeGen;
 import org.jruby.truffle.format.nodes.write.*;
+import org.jruby.truffle.format.parser.PackBaseListener;
+import org.jruby.truffle.format.parser.PackParser;
 import org.jruby.truffle.format.runtime.PackEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -31,10 +32,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-import org.jruby.truffle.format.parser.PackBaseListener;
-import org.jruby.truffle.format.parser.PackParser;
-
-public class PackTreeBuilder extends PackBaseListener {
+public class UnpackTreeBuilder extends PackBaseListener {
 
     private final RubyContext context;
     private final Node currentNode;
@@ -42,7 +40,7 @@ public class PackTreeBuilder extends PackBaseListener {
     private PackEncoding encoding = PackEncoding.DEFAULT;
     private final Deque<List<PackNode>> sequenceStack = new ArrayDeque<>();
 
-    public PackTreeBuilder(RubyContext context, Node currentNode) {
+    public UnpackTreeBuilder(RubyContext context, Node currentNode) {
         this.context = context;
         this.currentNode = currentNode;
         pushSequence();
@@ -61,188 +59,197 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitInt8(PackParser.Int8Context ctx) {
-        integer(8, null, ctx.count());
+        appendNode(applyCount(ctx.count(),
+                WriteValueNodeGen.create(context,
+                        DecodeByteNodeGen.create(context, true,
+                                ReadByteNodeGen.create(context,
+                                        new SourceNode())))));
     }
 
     @Override
     public void exitUint8(PackParser.Uint8Context ctx) {
-        integer(8, null, ctx.count());
+        appendNode(applyCount(ctx.count(),
+                WriteValueNodeGen.create(context,
+                        DecodeByteNodeGen.create(context, false,
+                                ReadByteNodeGen.create(context,
+                                        new SourceNode())))));
     }
 
     @Override
     public void exitInt16Little(PackParser.Int16LittleContext ctx) {
-        integer(16, ByteOrder.LITTLE_ENDIAN, ctx.count());
+        integer(16, ByteOrder.LITTLE_ENDIAN, ctx.count(), true);
     }
 
     @Override
     public void exitInt16Big(PackParser.Int16BigContext ctx) {
-        integer(16, ByteOrder.BIG_ENDIAN, ctx.count());
+        integer(16, ByteOrder.BIG_ENDIAN, ctx.count(), true);
     }
 
     @Override
     public void exitInt16Native(PackParser.Int16NativeContext ctx) {
-        integer(16, ByteOrder.nativeOrder(), ctx.count());
+        integer(16, ByteOrder.nativeOrder(), ctx.count(), true);
     }
 
     @Override
     public void exitUint16Little(PackParser.Uint16LittleContext ctx) {
-        integer(16, ByteOrder.LITTLE_ENDIAN, ctx.count());
+        integer(16, ByteOrder.LITTLE_ENDIAN, ctx.count(), false);
     }
 
     @Override
     public void exitUint16Big(PackParser.Uint16BigContext ctx) {
-        integer(16, ByteOrder.BIG_ENDIAN, ctx.count());
+        integer(16, ByteOrder.BIG_ENDIAN, ctx.count(), false);
     }
 
     @Override
     public void exitUint16Native(PackParser.Uint16NativeContext ctx) {
-        integer(16, ByteOrder.nativeOrder(), ctx.count());
+        integer(16, ByteOrder.nativeOrder(), ctx.count(), false);
     }
 
     @Override
     public void exitInt32Little(PackParser.Int32LittleContext ctx) {
-        integer(32, ByteOrder.LITTLE_ENDIAN, ctx.count());
+        integer(32, ByteOrder.LITTLE_ENDIAN, ctx.count(), true);
     }
 
     @Override
     public void exitInt32Big(PackParser.Int32BigContext ctx) {
-        integer(32, ByteOrder.BIG_ENDIAN, ctx.count());
+        integer(32, ByteOrder.BIG_ENDIAN, ctx.count(), true);
     }
 
     @Override
     public void exitInt32Native(PackParser.Int32NativeContext ctx) {
-        integer(32, ByteOrder.nativeOrder(), ctx.count());
+        integer(32, ByteOrder.nativeOrder(), ctx.count(), true);
     }
 
     @Override
     public void exitUint32Little(PackParser.Uint32LittleContext ctx) {
-        integer(32, ByteOrder.LITTLE_ENDIAN, ctx.count());
+        integer(32, ByteOrder.LITTLE_ENDIAN, ctx.count(), false);
     }
 
     @Override
     public void exitUint32Big(PackParser.Uint32BigContext ctx) {
-        integer(32, ByteOrder.BIG_ENDIAN, ctx.count());
+        integer(32, ByteOrder.BIG_ENDIAN, ctx.count(), false);
     }
 
     @Override
     public void exitUint32Native(PackParser.Uint32NativeContext ctx) {
-        integer(32, ByteOrder.nativeOrder(), ctx.count());
+        integer(32, ByteOrder.nativeOrder(), ctx.count(), false);
     }
 
     @Override
     public void exitInt64Little(PackParser.Int64LittleContext ctx) {
-        integer(64, ByteOrder.LITTLE_ENDIAN, ctx.count());
+        integer(64, ByteOrder.LITTLE_ENDIAN, ctx.count(), true);
     }
 
     @Override
     public void exitInt64Big(PackParser.Int64BigContext ctx) {
-        integer(64, ByteOrder.BIG_ENDIAN, ctx.count());
+        integer(64, ByteOrder.BIG_ENDIAN, ctx.count(), true);
     }
 
     @Override
     public void exitInt64Native(PackParser.Int64NativeContext ctx) {
-        integer(64, ByteOrder.nativeOrder(), ctx.count());
+        integer(64, ByteOrder.nativeOrder(), ctx.count(), true);
     }
 
     @Override
     public void exitUint64Little(PackParser.Uint64LittleContext ctx) {
-        integer(64, ByteOrder.LITTLE_ENDIAN, ctx.count());
+        integer(64, ByteOrder.LITTLE_ENDIAN, ctx.count(), false);
     }
 
     @Override
     public void exitUint64Big(PackParser.Uint64BigContext ctx) {
-        integer(64, ByteOrder.BIG_ENDIAN, ctx.count());
+        integer(64, ByteOrder.BIG_ENDIAN, ctx.count(), false);
     }
 
     @Override
     public void exitUint64Native(PackParser.Uint64NativeContext ctx) {
-        integer(64, ByteOrder.nativeOrder(), ctx.count());
+        integer(64, ByteOrder.nativeOrder(), ctx.count(), false);
     }
 
-    public void integer(int size, ByteOrder byteOrder, PackParser.CountContext count) {
-        appendNode(applyCount(count, writeInteger(size, byteOrder)));
+    public void integer(int size, ByteOrder byteOrder, PackParser.CountContext count, boolean signed) {
+        appendNode(applyCount(count, readInteger(size, byteOrder, consumePartial(count), signed)));
     }
 
     @Override
     public void exitUtf8Character(PackParser.Utf8CharacterContext ctx) {
-        unify(PackEncoding.UTF_8);
+        //unify(PackEncoding.UTF_8);
 
-        appendNode(applyCount(ctx.count(), WriteUTF8CharacterNodeGen.create(context,
-                ToLongNodeGen.create(context,
-                        ReadValueNodeGen.create(context, new SourceNode())))));
+        appendNode(applyCount(ctx.count(),
+                WriteValueNodeGen.create(context,
+                        ReadUTF8CharacterNodeGen.create(context,
+                                new SourceNode()))));
     }
 
     @Override
     public void exitBerInteger(PackParser.BerIntegerContext ctx) {
         appendNode(applyCount(ctx.count(),
-                WriteBERNodeGen.create(context, ReadLongOrBigIntegerNodeGen.create(context, new SourceNode()))));
-
+                WriteValueNodeGen.create(context,
+                    ReadBERNodeGen.create(context, 0, false, new SourceNode()))));
     }
 
     @Override
     public void exitF64Native(PackParser.F64NativeContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(64, ByteOrder.nativeOrder(),
-                        ReinterpretLongNodeGen.create(context,
-                                ReadDoubleNodeGen.create(context, new SourceNode())))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat64NodeGen.create(context, readIntegerX(64, ByteOrder.nativeOrder(), consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF32Native(PackParser.F32NativeContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(32, ByteOrder.nativeOrder(),
-                        ReinterpretLongNodeGen.create(context,
-                                AsSinglePrecisionNodeGen.create(context,
-                                        ReadDoubleNodeGen.create(context, new SourceNode()))))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat32NodeGen.create(context, readIntegerX(32, ByteOrder.nativeOrder(), consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF64Little(PackParser.F64LittleContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(64, ByteOrder.LITTLE_ENDIAN,
-                        ReinterpretLongNodeGen.create(context,
-                                ReadDoubleNodeGen.create(context, new SourceNode())))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat64NodeGen.create(context, readIntegerX(64, ByteOrder.LITTLE_ENDIAN, consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF32Little(PackParser.F32LittleContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(32, ByteOrder.LITTLE_ENDIAN,
-                        ReinterpretLongNodeGen.create(context,
-                                AsSinglePrecisionNodeGen.create(context,
-                                    ReadDoubleNodeGen.create(context, new SourceNode()))))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat32NodeGen.create(context, readIntegerX(32, ByteOrder.LITTLE_ENDIAN, consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF64Big(PackParser.F64BigContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(64, ByteOrder.BIG_ENDIAN,
-                        ReinterpretLongNodeGen.create(context,
-                                ReadDoubleNodeGen.create(context, new SourceNode())))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat64NodeGen.create(context, readIntegerX(64, ByteOrder.BIG_ENDIAN, consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitF32Big(PackParser.F32BigContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(32, ByteOrder.BIG_ENDIAN,
-                        ReinterpretLongNodeGen.create(context,
-                                AsSinglePrecisionNodeGen.create(context,
-                                    ReadDoubleNodeGen.create(context, new SourceNode()))))));
+        appendNode(applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat32NodeGen.create(context, readIntegerX(32, ByteOrder.BIG_ENDIAN, consumePartial(ctx.count()), true)))));
     }
 
     @Override
     public void exitBinaryStringSpacePadded(PackParser.BinaryStringSpacePaddedContext ctx) {
-        binaryString((byte) ' ', true, false, ctx.count());
+        if (ctx.count() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, 1, true, true, new SourceNode())));
+        } else if (ctx.count().INT() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, false, -1, true, true, new SourceNode())));
+        } else {
+            final int count = Integer.parseInt(ctx.count().INT().getSymbol().getText());
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, count, true, true, new SourceNode())));
+        }
     }
 
     @Override
     public void exitBinaryStringNullPadded(PackParser.BinaryStringNullPaddedContext ctx) {
-        binaryString((byte) 0, true, false, ctx.count());
+        if (ctx.count() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, 1, false, false, new SourceNode())));
+        } else if (ctx.count().INT() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, false, -1, false, false, new SourceNode())));
+        } else {
+            final int count = Integer.parseInt(ctx.count().INT().getSymbol().getText());
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, count, false, false, new SourceNode())));
+        }
     }
 
     @Override
     public void exitBinaryStringNullStar(PackParser.BinaryStringNullStarContext ctx) {
-        binaryString((byte) 0, true, ctx.count() != null && ctx.count().INT() == null, ctx.count());
+        if (ctx.count() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, true, 1, false, false, new SourceNode())));
+        } else if (ctx.count().INT() == null) {
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, true, -1, false, false, new SourceNode())));
+        } else {
+            final int count = Integer.parseInt(ctx.count().INT().getSymbol().getText());
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, true, count, false, false, new SourceNode())));
+        }
     }
 
     @Override
@@ -267,7 +274,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitUuString(PackParser.UuStringContext ctx) {
-        unify(PackEncoding.US_ASCII);
+        //unify(PackEncoding.US_ASCII);
 
         final int length;
         final boolean ignoreStar;
@@ -283,14 +290,15 @@ public class PackTreeBuilder extends PackBaseListener {
             ignoreStar = false;
         }
 
-        appendNode(WriteUUStringNodeGen.create(context, length, ignoreStar,
-                ReadStringNodeGen.create(context, false, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+        appendNode(
+                WriteValueNodeGen.create(context,
+                        ReadUUStringNodeGen.create(context, length, ignoreStar,
+                                new SourceNode())));
     }
 
     @Override
     public void exitMimeString(PackParser.MimeStringContext ctx) {
-        unify(PackEncoding.US_ASCII);
+        //unify(PackEncoding.US_ASCII);
 
         int length;
 
@@ -304,15 +312,14 @@ public class PackTreeBuilder extends PackBaseListener {
             }
         }
 
-        appendNode(WriteMIMEStringNodeGen.create(context, length,
-                ReadStringNodeGen.create(context, true, "to_s",
-                        true, context.getCoreLibrary().getNilObject(), new SourceNode())));
+        appendNode(WriteValueNodeGen.create(context,
+                ReadMIMEStringNodeGen.create(context, length, new SourceNode())));
 
     }
 
     @Override
     public void exitBase64String(PackParser.Base64StringContext ctx) {
-        unify(PackEncoding.US_ASCII);
+        //unify(PackEncoding.US_ASCII);
 
         final int length;
         final boolean ignoreStar;
@@ -328,16 +335,13 @@ public class PackTreeBuilder extends PackBaseListener {
             ignoreStar = false;
         }
 
-        appendNode(WriteBase64StringNodeGen.create(context, length, ignoreStar,
-                ReadStringNodeGen.create(context, false, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+        appendNode(WriteValueNodeGen.create(context,
+                ReadBase64StringNodeGen.create(context, length, new SourceNode())));
     }
 
     @Override
     public void exitPointer(PackParser.PointerContext ctx) {
-        appendNode(writeInteger(64, ByteOrder.nativeOrder(),
-                new PNode(context)));
-
+        // Just do nothing
     }
 
     @Override
@@ -345,26 +349,32 @@ public class PackTreeBuilder extends PackBaseListener {
         final int position;
 
         if (ctx.count() == null) {
-            position = 1;
+            position = 0;
         } else if (ctx.count() != null && ctx.count().INT() == null) {
-            throw new UnsupportedOperationException();
+            return;
         } else {
             position = Integer.parseInt(ctx.count().INT().getText());
         }
 
-        appendNode(new AtNode(context, position));
+        appendNode(new AtUnpackNode(context, position));
     }
 
     @Override
     public void exitBack(PackParser.BackContext ctx) {
-        if (ctx.count() == null || ctx.count().INT() != null) {
-            appendNode(applyCount(ctx.count(), new BackNode(context)));
+        if (ctx.count() != null && ctx.count().INT() == null) {
+            appendNode(new BackUnpackNode(context, true));
+        } else if (ctx.count() == null || ctx.count().INT() != null) {
+            appendNode(applyCount(ctx.count(), new BackUnpackNode(context, false)));
         }
     }
 
     @Override
     public void exitNullByte(PackParser.NullByteContext ctx) {
-        appendNode((applyCount(ctx.count(), new WriteByteNode(context, (byte) 0))));
+        if (ctx.count() != null && ctx.count().INT() == null) {
+            appendNode(new ForwardUnpackNode(context, true));
+        } else if (ctx.count() == null || ctx.count().INT() != null) {
+            appendNode(applyCount(ctx.count(), new ForwardUnpackNode(context, false)));
+        }
     }
 
     @Override
@@ -409,37 +419,90 @@ public class PackTreeBuilder extends PackBaseListener {
         sequenceStack.peek().add(node);
     }
 
-    private PackNode writeInteger(int size, ByteOrder byteOrder) {
-        final PackNode readNode = ToLongNodeGen.create(context,
-                ReadValueNodeGen.create(context, new SourceNode()));
-        return writeInteger(size, byteOrder, readNode);
+    private boolean consumePartial(PackParser.CountContext ctx) {
+        return ctx != null && ctx.INT() == null;
     }
 
-    private PackNode writeInteger(int size, ByteOrder byteOrder, PackNode readNode) {
+    private PackNode readInteger(int size, ByteOrder byteOrder, boolean consumePartial, boolean signed) {
+        final PackNode readNode = ReadBytesNodeGen.create(context, size / 8, consumePartial, new SourceNode());
+        return readInteger(size, byteOrder, readNode, signed);
+    }
+
+    private PackNode readIntegerX(int size, ByteOrder byteOrder, boolean consumePartial, boolean signed) {
+        final PackNode readNode = ReadBytesNodeGen.create(context, size / 8, consumePartial, new SourceNode());
+        return readIntegerX(size, byteOrder, readNode, signed);
+    }
+
+    private PackNode readInteger(int size, ByteOrder byteOrder, PackNode readNode, boolean signed) {
+        PackNode convert;
+
         switch (size) {
-            case 8:
-                return Write8NodeGen.create(context, readNode);
             case 16:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return Write16LittleNodeGen.create(context, readNode);
+                    convert = DecodeInteger16LittleNodeGen.create(context, readNode);
                 } else {
-                    return Write16BigNodeGen.create(context, readNode);
+                    convert = DecodeInteger16BigNodeGen.create(context, readNode);
                 }
+                break;
             case 32:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return Write32LittleNodeGen.create(context, readNode);
+                    convert = DecodeInteger32LittleNodeGen.create(context, readNode);
                 } else {
-                    return Write32BigNodeGen.create(context, readNode);
+                    convert = DecodeInteger32BigNodeGen.create(context, readNode);
                 }
+                break;
             case 64:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return Write64LittleNodeGen.create(context, readNode);
+                    convert = DecodeInteger64LittleNodeGen.create(context, readNode);
                 } else {
-                    return Write64BigNodeGen.create(context, readNode);
+                    convert = DecodeInteger64BigNodeGen.create(context, readNode);
                 }
+                break;
             default:
                 throw new UnsupportedOperationException();
         }
+
+        if (!signed) {
+            convert = AsUnsignedNodeGen.create(context, convert);
+        }
+
+        return WriteValueNodeGen.create(context, convert);
+    }
+
+    private PackNode readIntegerX(int size, ByteOrder byteOrder, PackNode readNode, boolean signed) {
+        PackNode convert;
+
+        switch (size) {
+            case 16:
+                if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                    convert = DecodeInteger16LittleNodeGen.create(context, readNode);
+                } else {
+                    convert = DecodeInteger16BigNodeGen.create(context, readNode);
+                }
+                break;
+            case 32:
+                if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                    convert = DecodeInteger32LittleNodeGen.create(context, readNode);
+                } else {
+                    convert = DecodeInteger32BigNodeGen.create(context, readNode);
+                }
+                break;
+            case 64:
+                if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                    convert = DecodeInteger64LittleNodeGen.create(context, readNode);
+                } else {
+                    convert = DecodeInteger64BigNodeGen.create(context, readNode);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException();
+        }
+
+        if (!signed) {
+            convert = AsUnsignedNodeGen.create(context, convert);
+        }
+
+        return convert;
     }
 
     private void binaryString(byte padding, boolean padOnNull, boolean appendNull, PackParser.CountContext count) {
@@ -491,25 +554,27 @@ public class PackTreeBuilder extends PackBaseListener {
             length = Integer.parseInt(ctx.INT().getText());
         }
 
-        appendNode(WriteBitStringNodeGen.create(context, byteOrder, star, length,
-                ReadStringNodeGen.create(context, true, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+        appendNode(WriteValueNodeGen.create(context,
+                ReadBitStringNodeGen.create(context, byteOrder, star, length, new SourceNode())));
     }
 
     private void hexString(ByteOrder byteOrder, PackParser.CountContext ctx) {
+        final boolean star;
         final int length;
 
         if (ctx == null) {
+            star = false;
             length = 1;
         } else if (ctx.INT() == null) {
-            length = -1;
+            star = true;
+            length = 0;
         } else {
+            star = false;
             length = Integer.parseInt(ctx.INT().getText());
         }
 
-        appendNode(WriteHexStringNodeGen.create(context, byteOrder, length,
-                ReadStringNodeGen.create(context, true, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+        appendNode(WriteValueNodeGen.create(context,
+                ReadHexStringNodeGen.create(context, byteOrder, star, length, new SourceNode())));
 
     }
 

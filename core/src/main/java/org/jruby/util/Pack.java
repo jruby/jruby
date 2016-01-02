@@ -78,8 +78,8 @@ public class Pack {
     private static final String sTooFew = "too few arguments";
     private static final byte[] uu_table;
     private static final byte[] b64_table;
-    private static final byte[] sHexDigits;
-    private static final int[] b64_xtable = new int[256];
+    public static final byte[] sHexDigits;
+    public static final int[] b64_xtable = new int[256];
     private static final Converter[] converters = new Converter[256];
 
     private static long num2quad(IRubyObject arg) {
@@ -1390,7 +1390,7 @@ public class Pack {
 
     /** utf8_to_uv
      */
-    private static int utf8Decode(ByteBuffer buffer) {        
+    private static int utf8Decode(ByteBuffer buffer) {
         int c = buffer.get() & 0xFF;
         int uv = c;
         int n;
@@ -1451,7 +1451,7 @@ public class Pack {
         0x80000000,                 /* 7 */
     };
 
-    private static int safeGet(ByteBuffer encode) {
+    public static int safeGet(ByteBuffer encode) {
         while (encode.hasRemaining()) {
             int got = encode.get() & 0xff;
             
