@@ -532,8 +532,6 @@ public class RubyContext extends ExecutionContext {
                 return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
             case "Encoding::CompatibilityError":
                 return getCoreLibrary().encodingCompatibilityError(jrubyException.getMessage().toString(), currentNode);
-            case "TypeError":
-                return getCoreLibrary().typeError(jrubyException.getMessage().toString(), currentNode);
             case "RegexpError":
                 return getCoreLibrary().regexpError(jrubyException.getMessage().toString(), currentNode);
         }
