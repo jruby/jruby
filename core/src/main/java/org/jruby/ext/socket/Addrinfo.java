@@ -203,9 +203,9 @@ public class Addrinfo extends RubyObject {
 
                     int _port = service.convertToInteger().getIntValue();
                     try {
-                        socketAddress = new InetSocketAddress(SocketUtils.getRubyInetAddress(nodename.convertToString().getByteList()), _port);
+                        socketAddress = new InetSocketAddress(SocketUtils.getRubyInetAddresses(nodename.convertToString().getByteList())[0], _port);
                     } catch (UnknownHostException uhe) {
-                        socketAddress = new InetSocketAddress(SocketUtils.getRubyInetAddress(numericnode.convertToString().getByteList()), _port);
+                        socketAddress = new InetSocketAddress(SocketUtils.getRubyInetAddresses(numericnode.convertToString().getByteList())[0], _port);
                     }
 
                     // fall through below to finish setting up
@@ -220,7 +220,7 @@ public class Addrinfo extends RubyObject {
                 InetAddress inetAddress = null;
 
                 try {
-                    inetAddress = SocketUtils.getRubyInetAddress(sockaddrString.getByteList());
+                    inetAddress = SocketUtils.getRubyInetAddresses(sockaddrString.getByteList())[0];
 
                     int _port;
                     if (port != null) {

@@ -32,6 +32,7 @@ import java.net.BindException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
 import java.net.PortUnreachableException;
 import java.net.ProtocolFamily;
 import java.net.SocketAddress;
@@ -65,6 +66,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.Sockaddr;
+
 
 /**
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
@@ -317,11 +320,6 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    @JRubyMethod
-    public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags, IRubyObject _to) {
-        return send(context, _mesg, _flags);
-    }
-
     @JRubyMethod(required = 2, optional = 2)
     public IRubyObject send(ThreadContext context, IRubyObject[] args) {
         // TODO: implement flags
@@ -332,58 +330,83 @@ public class RubyUDPSocket extends RubyIPSocket {
         try {
             int written;
 
-            if (args.length == 2 || args.length == 3) {
+            if (args.length == 2) {
                 return send(context, _mesg, _flags);
             }
 
-            IRubyObject _host = args[2];
-            IRubyObject _port = args[3];
+            InetAddress[] addrs;
+            int port;
+            if (args.length == 3) {
+                InetSocketAddress sockAddress;
+                IRubyObject sockaddr = args[2];
+                if (sockaddr instanceof Addrinfo) {
+                    sockAddress = ((Addrinfo) sockaddr).getInetSocketAddress();
+                    if (sockAddress == null) {
+                        throw SocketUtils.sockerr(runtime, "need AF_INET or AF_INET6 address");
+                    }
+                } else {
+                    sockAddress = Sockaddr.addressFromSockaddr_in(context, sockaddr);
+                }
+                addrs = new InetAddress[] {sockAddress.getAddress()};
+                port = sockAddress.getPort();
+            } else { // args.length >= 4
+                IRubyObject _host = args[2];
+                IRubyObject _port = args[3];
 
-            RubyString nameStr = _host.convertToString();
+                RubyString nameStr = _host.convertToString();
+
+                if (_port instanceof RubyString) {
+
+                    Service service = Service.getServiceByName(_port.asJavaString(), "udp");
+
+                    if (service != null) {
+                        port = service.getPort();
+                    } else {
+                        port = (int) _port.convertToInteger("to_i").getLongValue();
+                    }
+
+                } else {
+                    port = (int) _port.convertToInteger().getLongValue();
+                }
+
+                addrs = SocketUtils.getRubyInetAddresses(nameStr.getByteList());
+            }
+
             RubyString data = _mesg.convertToString();
-            ByteList dataBL = data.getByteList();
-            ByteBuffer buf = ByteBuffer.wrap(dataBL.unsafeBytes(), dataBL.begin(), dataBL.realSize());
+            ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
 
             byte[] buf2 = data.getBytes();
             DatagramPacket sendDP;
 
-            int port;
-            if (_port instanceof RubyString) {
+            for (int i = 0; i < addrs.length; i++) {
+                InetAddress inetAddress = addrs[i];
+                InetSocketAddress addr = new InetSocketAddress(inetAddress, port);
 
-                Service service = Service.getServiceByName(_port.asJavaString(), "udp");
+                try {
+                    if (this.multicastStateManager == null) {
+                        written = ((DatagramChannel) this.getChannel()).send(buf, addr);
 
-                if (service != null) {
-                    port = service.getPort();
-                } else {
-                    port = (int)_port.convertToInteger("to_i").getLongValue();
+                    } else {
+                        sendDP = new DatagramPacket(buf2, buf2.length, addr);
+                        multicastStateManager.rebindToPort(addr.getPort());
+                        MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
+
+                        ms.send(sendDP);
+                        written = sendDP.getLength();
+                    }
+
+                    return runtime.newFixnum(written);
+                } catch (NoRouteToHostException nrthe) {
+                    if (i+1 < addrs.length) {
+                        continue;
+                    }
+                    throw nrthe;
                 }
-
-            } else {
-                port = (int)_port.convertToInteger().getLongValue();
             }
-
-            InetAddress address = SocketUtils.getRubyInetAddress(nameStr.getByteList());
-            InetSocketAddress addr = new InetSocketAddress(address, port);
-
-            if (this.multicastStateManager == null) {
-                written = ((DatagramChannel) this.getChannel()).send(buf, addr);
-
-            } else {
-                sendDP = new DatagramPacket(buf2, buf2.length, address, port);
-                multicastStateManager.rebindToPort(port);
-                MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
-
-                ms.send(sendDP);
-                written = sendDP.getLength();
-            }
-
-            return runtime.newFixnum(written);
-
-        }
-        catch (UnknownHostException e) {
+            return context.nil;
+        } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "send: name or service not known");
-        }
-        catch (IOException e) { // SocketException
+        } catch (IOException e) { // SocketException
             throw runtime.newIOErrorFromException(e);
         }
         catch (RaiseException e) { throw e; }
