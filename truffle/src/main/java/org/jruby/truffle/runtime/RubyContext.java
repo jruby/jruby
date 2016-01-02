@@ -499,13 +499,7 @@ public class RubyContext extends ExecutionContext {
 
     @TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyString jrubyString) {
-        final DynamicObject truffleString = StringOperations.createString(this, jrubyString.getByteList().dup());
-
-        if (jrubyString.isTaint()) {
-            truffleString.define(Layouts.TAINTED_IDENTIFIER, true, 0);
-        }
-
-        return truffleString;
+        return StringOperations.createString(this, jrubyString.getByteList().dup());
     }
 
     @TruffleBoundary
