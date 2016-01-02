@@ -479,9 +479,7 @@ public class RubyContext extends ExecutionContext {
 
     @TruffleBoundary
     public Object toTruffle(IRubyObject object) {
-        if (object instanceof RubyNil) {
-            return getCoreLibrary().getNilObject();
-        } else if (object instanceof org.jruby.RubyFixnum) {
+        if (object instanceof org.jruby.RubyFixnum) {
             final long value = ((org.jruby.RubyFixnum) object).getLongValue();
 
             if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
@@ -489,29 +487,14 @@ public class RubyContext extends ExecutionContext {
             }
 
             return (int) value;
-        } else if (object instanceof org.jruby.RubyFloat) {
-            return ((org.jruby.RubyFloat) object).getDoubleValue();
         } else if (object instanceof org.jruby.RubyBignum) {
             final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
             return Layouts.BIGNUM.createBignum(coreLibrary.getBignumFactory(), value);
         } else if (object instanceof org.jruby.RubyString) {
             return toTruffle((org.jruby.RubyString) object);
-        } else if (object instanceof org.jruby.RubyException) {
-            return toTruffle((org.jruby.RubyException) object, null);
         } else {
-            throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " (" + object.getClass().getName()  + ") to Truffle");
+            throw new UnsupportedOperationException();
         }
-    }
-
-    @TruffleBoundary
-    public DynamicObject toTruffle(org.jruby.RubyArray array) {
-        final Object[] store = new Object[array.size()];
-
-        for (int n = 0; n < store.length; n++) {
-            store[n] = toTruffle(array.entry(n));
-        }
-
-        return Layouts.ARRAY.createArray(coreLibrary.getArrayFactory(), store, store.length);
     }
 
     @TruffleBoundary
