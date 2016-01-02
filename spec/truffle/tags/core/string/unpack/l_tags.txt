@@ -1,5 +1,3 @@
-fails:String#unpack with format 'L' calls #to_str to coerce the directives string
-fails:String#unpack with format 'l' calls #to_str to coerce the directives string
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes one int for a single format character
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes two ints for two format characters
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes the number of ints requested by the count modifier
