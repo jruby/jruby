@@ -31,11 +31,8 @@ import java.nio.ByteOrder;
 })
 public abstract class ReadMIMEStringNode extends PackNode {
 
-    private final int length;
-
-    public ReadMIMEStringNode(RubyContext context, int length) {
+    public ReadMIMEStringNode(RubyContext context) {
         super(context);
-        this.length = length;
     }
 
     @Specialization
@@ -43,8 +40,6 @@ public abstract class ReadMIMEStringNode extends PackNode {
         // Bit string logic copied from jruby.util.Pack - see copyright and authorship there
 
         final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
-
-        int occurrences = length;
 
         byte[] lElem = new byte[Math.max(encode.remaining(),0)];
         int index = 0;

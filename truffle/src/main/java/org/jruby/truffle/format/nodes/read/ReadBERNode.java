@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -38,14 +38,9 @@ public abstract class ReadBERNode extends PackNode {
 
     @Child private FixnumOrBignumNode fixnumOrBignumNode;
 
-    private final int length;
-    private final boolean ignoreStar;
-
-    public ReadBERNode(RubyContext context, int length, boolean ignoreStar) {
+    public ReadBERNode(RubyContext context) {
         super(context);
         fixnumOrBignumNode = FixnumOrBignumNode.create(context, null);
-        this.length = length;
-        this.ignoreStar = ignoreStar;
     }
 
     @Specialization
