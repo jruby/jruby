@@ -298,8 +298,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitMimeString(PackParser.MimeStringContext ctx) {
-        throw new UnsupportedOperationException();
-        /*unify(PackEncoding.US_ASCII);
+        //unify(PackEncoding.US_ASCII);
 
         int length;
 
@@ -313,16 +312,14 @@ public class UnpackTreeBuilder extends PackBaseListener {
             }
         }
 
-        appendNode(WriteMIMEStringNodeGen.create(context, length,
-                ReadStringNodeGen.create(context, true, "to_s",
-                        true, context.getCoreLibrary().getNilObject(), new SourceNode())));*/
+        appendNode(WriteValueNodeGen.create(context,
+                ReadMIMEStringNodeGen.create(context, length, new SourceNode())));
 
     }
 
     @Override
     public void exitBase64String(PackParser.Base64StringContext ctx) {
-        throw new UnsupportedOperationException();
-        /*unify(PackEncoding.US_ASCII);
+        //unify(PackEncoding.US_ASCII);
 
         final int length;
         final boolean ignoreStar;
@@ -338,9 +335,8 @@ public class UnpackTreeBuilder extends PackBaseListener {
             ignoreStar = false;
         }
 
-        appendNode(WriteBase64StringNodeGen.create(context, length, ignoreStar,
-                ReadStringNodeGen.create(context, false, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));*/
+        appendNode(WriteValueNodeGen.create(context,
+                ReadBase64StringNodeGen.create(context, length, new SourceNode())));
     }
 
     @Override

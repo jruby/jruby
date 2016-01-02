@@ -79,7 +79,7 @@ public class Pack {
     private static final byte[] uu_table;
     private static final byte[] b64_table;
     public static final byte[] sHexDigits;
-    private static final int[] b64_xtable = new int[256];
+    public static final int[] b64_xtable = new int[256];
     private static final Converter[] converters = new Converter[256];
 
     private static long num2quad(IRubyObject arg) {
@@ -1451,7 +1451,7 @@ public class Pack {
         0x80000000,                 /* 7 */
     };
 
-    private static int safeGet(ByteBuffer encode) {
+    public static int safeGet(ByteBuffer encode) {
         while (encode.hasRemaining()) {
             int got = encode.get() & 0xff;
             
