@@ -153,7 +153,12 @@ public class Sockaddr {
         try {
             DataOutputStream ds = new DataOutputStream(bufS);
 
-            writeSockaddrHeader(AddressFamily.AF_INET, ds);
+            InetAddress inet = sock.getAddress();
+            if (inet instanceof Inet4Address) {
+                writeSockaddrHeader(AddressFamily.AF_INET, ds);
+            } else {
+                writeSockaddrHeader(AddressFamily.AF_INET6, ds);
+            }
             writeSockaddrPort(ds, sock);
 
             String host = sock.getAddress().getHostAddress();
