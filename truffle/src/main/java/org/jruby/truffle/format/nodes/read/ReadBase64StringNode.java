@@ -33,11 +33,8 @@ import java.nio.ByteOrder;
 })
 public abstract class ReadBase64StringNode extends PackNode {
 
-    private final int requestedLength;
-
-    public ReadBase64StringNode(RubyContext context, int requestedLength) {
+    public ReadBase64StringNode(RubyContext context) {
         super(context);
-        this.requestedLength = requestedLength;
     }
 
     @Specialization
@@ -46,7 +43,7 @@ public abstract class ReadBase64StringNode extends PackNode {
 
         final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
 
-        int occurrences = requestedLength;
+        int occurrences = encode.remaining();
 
         int length = encode.remaining()*3/4;
         byte[] lElem = new byte[length];
