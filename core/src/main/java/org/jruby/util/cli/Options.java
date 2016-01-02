@@ -253,7 +253,8 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_METHODMISSING_ALWAYS_CLONE = bool(TRUFFLE, "truffle.method_missing.always_clone", TRUFFLE_CLONE_DEFAULT.load(), "Always clone #method_missing.");
     public static final Option<Boolean> TRUFFLE_METHODMISSING_ALWAYS_INLINE = bool(TRUFFLE, "truffle.method_missing.always_inline", TRUFFLE_INLINE_DEFAULT.load(), "Always inline #method_missing.");
 
-    public static final Option<Integer> TRUFFLE_PACK_UNROLL_LIMIT = integer(TRUFFLE, "truffle.pack.unroll", 4, "If a pack expression has a loop less than this many iterations, unroll it.");
+    public static final Option<Integer> TRUFFLE_PACK_UNROLL_LIMIT = integer(TRUFFLE, "truffle.pack.unroll", 4, "If a pack or unpack expression has a loop less than this many iterations, unroll it.");
+    public static final Option<Integer> TRUFFLE_PACK_RECOVER_LOOP_MIN = integer(TRUFFLE, "truffle.pack.recover", 32, "If a pack or unpack expression is longer than this, attempt to recover loops.");
 
     public static final Option<Integer> TRUFFLE_INSTRUMENTATION_SERVER_PORT = integer(TRUFFLE, "truffle.instrumentation_server_port", 0, "Port number to run an HTTP server on that provides instrumentation services");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");

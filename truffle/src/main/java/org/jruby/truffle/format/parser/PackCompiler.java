@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -28,7 +28,7 @@ public class PackCompiler {
     }
 
     public CallTarget compile(String format) {
-        if (format.length() > 32) {
+        if (format.length() > context.getOptions().PACK_RECOVER_LOOP_MIN) {
             format = recoverLoop(format);
         }
 
