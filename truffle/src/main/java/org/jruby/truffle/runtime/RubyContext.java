@@ -88,7 +88,6 @@ public class RubyContext extends ExecutionContext {
     private final POSIX posix;
     private final NativeSockets nativeSockets;
     private final LibCClockGetTime libCClockGetTime;
-    private final MemoryManager memoryManager = Runtime.getSystemRuntime().getMemoryManager();
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -695,10 +694,6 @@ public class RubyContext extends ExecutionContext {
 
     public Options getOptions() {
         return options;
-    }
-
-    public MemoryManager getMemoryManager() {
-        return memoryManager;
     }
 
     public TruffleLanguage.Env getEnv() {
