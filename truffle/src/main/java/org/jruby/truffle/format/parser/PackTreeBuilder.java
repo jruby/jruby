@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -344,10 +344,12 @@ public class PackTreeBuilder extends PackBaseListener {
     public void exitAt(PackParser.AtContext ctx) {
         final int position;
 
-        if (ctx.INT() == null) {
+        if (ctx.count() == null) {
             position = 1;
+        } else if (ctx.count() != null && ctx.count().INT() == null) {
+            throw new UnsupportedOperationException();
         } else {
-            position = Integer.parseInt(ctx.INT().getText());
+            position = Integer.parseInt(ctx.count().INT().getText());
         }
 
         appendNode(new AtNode(context, position));

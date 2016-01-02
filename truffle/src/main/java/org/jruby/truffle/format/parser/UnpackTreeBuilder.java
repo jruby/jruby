@@ -346,29 +346,31 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitAt(PackParser.AtContext ctx) {
-        throw new UnsupportedOperationException();
-        /*final int position;
+        final int position;
 
-        if (ctx.INT() == null) {
-            position = 1;
+        if (ctx.count() == null) {
+            position = 0;
+        } else if (ctx.count() != null && ctx.count().INT() == null) {
+            return;
         } else {
-            position = Integer.parseInt(ctx.INT().getText());
+            position = Integer.parseInt(ctx.count().INT().getText());
         }
 
-        appendNode(new AtNode(context, position));*/
+        appendNode(new AtUnpackNode(context, position));
     }
 
     @Override
     public void exitBack(PackParser.BackContext ctx) {
         if (ctx.count() == null || ctx.count().INT() != null) {
-            appendNode(applyCount(ctx.count(), new BackNode(context)));
+            appendNode(applyCount(ctx.count(), new BackUnpackNode(context)));
         }
     }
 
     @Override
     public void exitNullByte(PackParser.NullByteContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode((applyCount(ctx.count(), new WriteByteNode(context, (byte) 0))));
+        if (ctx.count() == null || ctx.count().INT() != null) {
+            appendNode(applyCount(ctx.count(), new ForwardUnpackNode(context)));
+        }
     }
 
     @Override
