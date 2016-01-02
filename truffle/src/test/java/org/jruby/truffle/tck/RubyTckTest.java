@@ -122,7 +122,6 @@ public class RubyTckTest extends TruffleTCK {
          * Not running this test as it clears the engine, but we're caching that globally to avoid creating tens of
          * engines concurrently.
          */
-
     }
 
 }
