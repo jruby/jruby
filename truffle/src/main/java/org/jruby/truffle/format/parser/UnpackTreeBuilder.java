@@ -341,9 +341,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitPointer(PackParser.PointerContext ctx) {
-        throw new UnsupportedOperationException();
-        //appendNode(writeInteger(64, ByteOrder.nativeOrder(),
-        //        new PNode(context)));
+        // Just do nothing
     }
 
     @Override
