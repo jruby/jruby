@@ -294,22 +294,8 @@ public class UnpackTreeBuilder extends PackBaseListener {
     public void exitBase64String(PackParser.Base64StringContext ctx) {
         //unify(PackEncoding.US_ASCII);
 
-        final int length;
-        final boolean ignoreStar;
-
-        if (ctx.count() == null) {
-            length = 1;
-            ignoreStar = false;
-        } else if (ctx.count().INT() == null) {
-            length = 0;
-            ignoreStar = true;
-        } else {
-            length = Integer.parseInt(ctx.count().INT().getText());
-            ignoreStar = false;
-        }
-
         appendNode(WriteValueNodeGen.create(context,
-                ReadBase64StringNodeGen.create(context, length, new SourceNode())));
+                ReadBase64StringNodeGen.create(context, new SourceNode())));
     }
 
     @Override
