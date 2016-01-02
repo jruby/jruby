@@ -183,7 +183,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     public void exitBerInteger(PackParser.BerIntegerContext ctx) {
         appendNode(applyCount(ctx.count(),
                 WriteValueNodeGen.create(context,
-                    ReadBERNodeGen.create(context, 0, false, new SourceNode()))));
+                    ReadBERNodeGen.create(context, new SourceNode()))));
     }
 
     @Override
@@ -276,23 +276,9 @@ public class UnpackTreeBuilder extends PackBaseListener {
     public void exitUuString(PackParser.UuStringContext ctx) {
         //unify(PackEncoding.US_ASCII);
 
-        final int length;
-        final boolean ignoreStar;
-
-        if (ctx.count() == null) {
-            length = 1;
-            ignoreStar = false;
-        } else if (ctx.count().INT() == null) {
-            length = 0;
-            ignoreStar = true;
-        } else {
-            length = Integer.parseInt(ctx.count().INT().getText());
-            ignoreStar = false;
-        }
-
         appendNode(
                 WriteValueNodeGen.create(context,
-                        ReadUUStringNodeGen.create(context, length, ignoreStar,
+                        ReadUUStringNodeGen.create(context,
                                 new SourceNode())));
     }
 
@@ -300,21 +286,8 @@ public class UnpackTreeBuilder extends PackBaseListener {
     public void exitMimeString(PackParser.MimeStringContext ctx) {
         //unify(PackEncoding.US_ASCII);
 
-        int length;
-
-        if (ctx.INT() == null) {
-            length = 72;
-        } else {
-            length = Integer.parseInt(ctx.INT().getText());
-
-            if (length <= 1) {
-                length = 72;
-            }
-        }
-
         appendNode(WriteValueNodeGen.create(context,
-                ReadMIMEStringNodeGen.create(context, length, new SourceNode())));
-
+                ReadMIMEStringNodeGen.create(context, new SourceNode())));
     }
 
     @Override
@@ -505,40 +478,6 @@ public class UnpackTreeBuilder extends PackBaseListener {
         return convert;
     }
 
-    private void binaryString(byte padding, boolean padOnNull, boolean appendNull, PackParser.CountContext count) {
-        unify(PackEncoding.ASCII_8BIT);
-
-        final boolean pad;
-        final int width;
-
-        if (count != null && count.INT() != null) {
-            pad = true;
-            width = Integer.parseInt(count.INT().getText());
-        } else {
-            pad = false;
-
-            if (count != null && count.INT() == null) {
-                padOnNull = false;
-            }
-
-            width = 1;
-        }
-
-        final boolean takeAll;
-
-        if (count != null && count.INT() == null) {
-            takeAll = true;
-        } else {
-            takeAll = false;
-        }
-
-        appendNode(WriteBinaryStringNodeGen.create(context, pad, padOnNull,
-                width, padding, takeAll, appendNull,
-                ReadStringNodeGen.create(context, true, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
-
-    }
-
     private void bitString(ByteOrder byteOrder, PackParser.CountContext ctx) {
         final boolean star;
         final int length;
@@ -586,10 +525,6 @@ public class UnpackTreeBuilder extends PackBaseListener {
         } else {
             return new StarNode(context, node);
         }
-    }
-    
-    private void unify(PackEncoding other) {
-        encoding = encoding.unifyWith(other);
     }
 
 }

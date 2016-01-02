@@ -97,10 +97,10 @@ public abstract class ReadBase64StringNode extends PackNode {
 
             if (a != -1 && b != -1) {
                 if (c == -1 && s == '=') {
-                    if ((b & 15) > 0) throw new FormatException("invalid base64");
+                    if ((b & 15) != 0) throw new FormatException("invalid base64");
                     lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                 } else if(c != -1 && s == '=') {
-                    if ((c & 3) > 0) throw new FormatException("invalid base64");
+                    if ((c & 3) != 0) throw new FormatException("invalid base64");
                     lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                     lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                 }
