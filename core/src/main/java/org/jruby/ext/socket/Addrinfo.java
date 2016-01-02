@@ -13,13 +13,10 @@ import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
 import java.io.ByteArrayOutputStream;
@@ -33,8 +30,8 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
-import java.net.SocketException;
 import java.util.regex.Pattern;
+
 import org.jruby.exceptions.RaiseException;
 
 import org.jruby.util.TypeConverter;
