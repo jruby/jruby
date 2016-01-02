@@ -61,7 +61,7 @@ DO NOT MODIFIY - GENERATED CODE
           </execution>
         </executions>
         <configuration>
-          <finalName>jruby-dist-1.7.23</finalName>
+          <finalName>jruby-dist-1.7.24-SNAPSHOT</finalName>
           <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
             <descriptor>src/main/assembly/jruby.xml</descriptor>
