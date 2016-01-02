@@ -452,7 +452,7 @@ public class RubyContext extends ExecutionContext {
         } else if (RubyGuards.isRubyEncoding(object)) {
             return toJRubyEncoding((DynamicObject) object);
         } else {
-            throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -504,7 +504,7 @@ public class RubyContext extends ExecutionContext {
                 return getCoreLibrary().regexpError(jrubyException.getMessage().toString(), currentNode);
         }
 
-        throw new UnsupportedOperationException("Don't know how to translate " + jrubyException.getMetaClass().getName());
+        throw new UnsupportedOperationException();
     }
 
     public Ruby getRuntime() {
