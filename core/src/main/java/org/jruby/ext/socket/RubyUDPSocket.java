@@ -101,10 +101,10 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _family) {
-        int family = _family.convertToInteger().getIntValue();
-        if (family == AddressFamily.AF_INET.intValue()) {
+        AddressFamily family = SocketUtils.addressFamilyFromArg(_family);
+        if (family == AddressFamily.AF_INET) {
             return initialize(context, StandardProtocolFamily.INET);
-        } else if (family == AddressFamily.AF_INET6.intValue()) {
+        } else if (family == AddressFamily.AF_INET6) {
             return initialize(context, StandardProtocolFamily.INET6);
         }
         throw SocketUtils.sockerr(context.runtime, "invalid family for UDPSocket: " + _family);
