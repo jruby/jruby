@@ -77,14 +77,40 @@ public abstract class PackNode extends Node {
      * element.
      */
     protected int advanceSourcePosition(VirtualFrame frame) {
+        return advanceSourcePosition(frame, 1);
+    }
+
+    protected int advanceSourcePosition(VirtualFrame frame, int count) {
         final int sourcePosition = getSourcePosition(frame);
 
-        if (sourcePosition == getSourceLength(frame)) {
+        if (sourcePosition + count > getSourceLength(frame)) {
             CompilerDirectives.transferToInterpreter();
             throw new TooFewArgumentsException();
         }
 
-        setSourcePosition(frame, sourcePosition + 1);
+        setSourcePosition(frame, sourcePosition + count);
+
+        return sourcePosition;
+    }
+
+    protected int advanceSourcePositionNoThrow(VirtualFrame frame) {
+        return advanceSourcePositionNoThrow(frame, 1, false);
+    }
+
+    protected int advanceSourcePositionNoThrow(VirtualFrame frame, int count, boolean consumePartial) {
+        final int sourcePosition = getSourcePosition(frame);
+
+        final int sourceLength = getSourceLength(frame);
+
+        if (sourcePosition + count > sourceLength) {
+            if (consumePartial) {
+                setSourcePosition(frame, sourceLength);
+            }
+
+            return -1;
+        }
+
+        setSourcePosition(frame, sourcePosition + count);
 
         return sourcePosition;
     }
@@ -92,9 +118,9 @@ public abstract class PackNode extends Node {
     /**
      * Get the output array we are writing to.
      */
-    protected byte[] getOutput(VirtualFrame frame) {
+    protected Object getOutput(VirtualFrame frame) {
         try {
-            return (byte[]) frame.getObject(PackFrameDescriptor.OUTPUT_SLOT);
+            return frame.getObject(PackFrameDescriptor.OUTPUT_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }
@@ -105,7 +131,7 @@ public abstract class PackNode extends Node {
      * compiled code - having to change the output array to resize is is a
      * deoptimizing action.
      */
-    protected void setOutput(VirtualFrame frame, byte[] output) {
+    protected void setOutput(VirtualFrame frame, Object output) {
         CompilerAsserts.neverPartOfCompilation();
         frame.setObject(PackFrameDescriptor.OUTPUT_SLOT, output);
     }
@@ -181,7 +207,7 @@ public abstract class PackNode extends Node {
     }
 
     private byte[] ensureCapacity(VirtualFrame frame, int length) {
-        byte[] output = getOutput(frame);
+        byte[] output = (byte[]) getOutput(frame);
         final int outputPosition = getOutputPosition(frame);
 
         if (outputPosition + length > output.length) {

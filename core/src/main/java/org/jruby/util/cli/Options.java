@@ -240,6 +240,7 @@ public class Options {
     public static final Option<Integer> TRUFFLE_SYMBOL_TO_PROC_CACHE = integer(TRUFFLE, "truffle.symbol_to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Symbol#to_proc cache size");
     public static final Option<Integer> TRUFFLE_ALLOCATE_CLASS_CACHE = integer(TRUFFLE, "truffle.allocate_class.cache", TRUFFLE_DEFAULT_CACHE.load(), "Allocation size class cache size");
     public static final Option<Integer> TRUFFLE_PACK_CACHE = integer(TRUFFLE, "truffle.pack.cache", TRUFFLE_DEFAULT_CACHE.load(), "Array#pack cache size");
+    public static final Option<Integer> TRUFFLE_UNPACK_CACHE = integer(TRUFFLE, "truffle.unpack.cache", TRUFFLE_DEFAULT_CACHE.load(), "String#unpack cache size");
     public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", TRUFFLE_DEFAULT_CACHE.load(), "eval lookup cache size");
     public static final Option<Integer> ENCODING_COMPATIBLE_QUERY_CACHE = integer(TRUFFLE, "truffle.encoding_compatible_query.cache", TRUFFLE_DEFAULT_CACHE.load(), "Encoding.compatible? cache size");
 
