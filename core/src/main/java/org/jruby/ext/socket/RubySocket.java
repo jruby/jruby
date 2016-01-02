@@ -404,7 +404,33 @@ public class RubySocket extends RubyBasicSocket {
             throw context.runtime.newErrnoEOPNOTSUPPError("Socket.socketpair only supports streaming UNIX sockets");
         }
 
-        return RubyUNIXSocket.socketpair(context, recv, arrayOf(domain, type));
+        final Ruby runtime = context.runtime;
+
+        // TODO: type and protocol
+
+        UnixSocketChannel[] sp;
+
+        try {
+            sp = UnixSocketChannel.pair();
+
+            final RubyClass socketClass = runtime.getClass("Socket");
+            RubySocket sock = new RubySocket(runtime, socketClass);
+            sock.soDomain = AddressFamily.AF_UNIX;
+            sock.soType = Sock.SOCK_STREAM;
+            sock.soProtocolFamily = ProtocolFamily.PF_UNIX;
+            sock.initSocket(newChannelFD(runtime, sp[0]));
+
+            RubySocket sock2 = new RubySocket(runtime, socketClass);
+            sock2.soDomain = AddressFamily.AF_UNIX;
+            sock2.soType = Sock.SOCK_STREAM;
+            sock2.soProtocolFamily = ProtocolFamily.PF_UNIX;
+            sock.initSocket(newChannelFD(runtime, sp[1]));
+
+            return runtime.newArray(sock, sock2);
+
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
     }
 
     private void initFieldsFromDescriptor(Ruby runtime, ChannelFD fd) {
