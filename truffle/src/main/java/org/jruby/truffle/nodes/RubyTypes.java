@@ -16,22 +16,32 @@ import com.oracle.truffle.api.dsl.TypeSystem;
 public abstract class RubyTypes {
 
     @ImplicitCast
-    public static int promote(byte value) {
+    public static int promoteToInt(byte value) {
         return value;
     }
 
     @ImplicitCast
-    public static int promote(short value) {
+    public static int promoteToInt(short value) {
         return value;
     }
 
     @ImplicitCast
-    public static long promote(int value) {
+    public static long promoteToLong(byte value) {
         return value;
     }
 
     @ImplicitCast
-    public static double promote(float value) {
+    public static long promoteToLong(short value) {
+        return value;
+    }
+
+    @ImplicitCast
+    public static long promoteToLong(int value) {
+        return value;
+    }
+
+    @ImplicitCast
+    public static double promoteToDouble(float value) {
         return value;
     }
 
