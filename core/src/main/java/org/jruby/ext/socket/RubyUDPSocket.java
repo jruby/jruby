@@ -30,6 +30,8 @@ package org.jruby.ext.socket;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ConnectException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NoRouteToHostException;
@@ -105,12 +107,16 @@ public class RubyUDPSocket extends RubyIPSocket {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _family) {
         AddressFamily family = SocketUtils.addressFamilyFromArg(_family);
+
         if (family == AddressFamily.AF_INET) {
+            explicitFamily = Inet4Address.class;
             return initialize(context, StandardProtocolFamily.INET);
         } else if (family == AddressFamily.AF_INET6) {
+            explicitFamily = Inet6Address.class;
             return initialize(context, StandardProtocolFamily.INET6);
         }
-        throw SocketUtils.sockerr(context.runtime, "invalid family for UDPSocket: " + _family);
+
+        throw context.runtime.newErrnoEAFNOSUPPORTError("invalid family for UDPSocket: " + _family);
     }
 
     public IRubyObject initialize(ThreadContext context, ProtocolFamily family) {
@@ -199,15 +205,30 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     @JRubyMethod
-    public IRubyObject connect(ThreadContext context, IRubyObject host, IRubyObject port) {
+    public IRubyObject connect(ThreadContext context, IRubyObject _host, IRubyObject port) {
         Ruby runtime = context.runtime;
 
         try {
-            InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), SocketUtils.portToInt(port));
+            String host = _host.isNil() ? "localhost" : _host.convertToString().toString();
+            InetAddress[] addrs = InetAddress.getAllByName(host);
 
-            ((DatagramChannel) this.getChannel()).connect(addr);
+            for (int i = 0; i < addrs.length; i++) {
+                InetAddress a = addrs[i];
 
-            return RubyFixnum.zero(runtime);
+                // If an explicit family is specified, don't try all addresses
+                if (explicitFamily != null && !explicitFamily.isInstance(a)) continue;
+
+                try {
+                    InetSocketAddress addr = new InetSocketAddress(addrs[i], SocketUtils.portToInt(port));
+
+                    ((DatagramChannel) this.getChannel()).connect(addr);
+
+                    return RubyFixnum.zero(runtime);
+                } catch (NoRouteToHostException nrthe) {
+                    if (i+1 < addrs.length) continue;
+                    throw nrthe;
+                }
+            }
         }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "connect: name or service not known");
@@ -218,6 +239,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         catch (IllegalArgumentException e) {
             throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         }
+
+        // should not get here
+        return context.nil;
     }
 
     private DatagramChannel getDatagramChannel() {
@@ -403,7 +427,6 @@ public class RubyUDPSocket extends RubyIPSocket {
                     throw nrthe;
                 }
             }
-            return context.nil;
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "send: name or service not known");
         } catch (IOException e) { // SocketException
@@ -413,6 +436,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         catch (Exception e) {
             throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
+
+        // should not get here
+        return context.nil;
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -586,6 +612,8 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         return result;
     }
+
+    private volatile Class<? extends InetAddress> explicitFamily;
 
     @Deprecated
     public IRubyObject bind(IRubyObject host, IRubyObject port) {
