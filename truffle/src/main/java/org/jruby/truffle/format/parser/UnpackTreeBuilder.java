@@ -243,12 +243,12 @@ public class UnpackTreeBuilder extends PackBaseListener {
     @Override
     public void exitBinaryStringNullStar(PackParser.BinaryStringNullStarContext ctx) {
         if (ctx.count() == null) {
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, true, 1, false, false, new SourceNode())));
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, true, 1, false, true, new SourceNode())));
         } else if (ctx.count().INT() == null) {
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, true, -1, false, false, new SourceNode())));
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, true, -1, false, true, new SourceNode())));
         } else {
             final int count = Integer.parseInt(ctx.count().INT().getSymbol().getText());
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, true, count, false, false, new SourceNode())));
+            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, count, false, true, new SourceNode())));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -67,10 +67,18 @@ public abstract class ReadBinaryStringNode extends PackNode {
             while (start + length < getSourceLength(frame) && (!readToNull || (start + length < getSourceLength(frame) && source[start + length] != 0))) {
                 length++;
             }
+
+            if (start + length < getSourceLength(frame) && source[start + length] == 0) {
+                length++;
+            }
         } else if (readToNull) {
             length = 0;
 
             while (start + length < getSourceLength(frame) && length < count && (!readToNull || (start + length < getSourceLength(frame) && source[start + length] != 0))) {
+                length++;
+            }
+
+            if (start + length < getSourceLength(frame) && source[start + length] == 0) {
                 length++;
             }
         } else {
@@ -88,6 +96,12 @@ public abstract class ReadBinaryStringNode extends PackNode {
         }
 
         result = new ByteList(source, start, usedLength, true);
+
+        final int firstNull = result.indexOf(0);
+
+        if (firstNull != -1 && trimTrailingNulls) {
+            result.realSize(firstNull);
+        }
 
         setSourcePosition(frame, start + length);
 
