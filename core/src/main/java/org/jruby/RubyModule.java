@@ -2665,10 +2665,6 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
         IRubyObject constant = setConstant(validateConstant(symbol.asJavaString()).intern(), value);
-
-        if (constant instanceof RubyModule) {
-            ((RubyModule)constant).calculateName();
-        }
         return constant;
     }
 
@@ -3137,23 +3133,29 @@ public class RubyModule extends RubyObject {
                 if (warn) {
                     getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
+                setParentForModule(name, value);
                 storeConstant(name, value);
             }
-        } else {
+        }
+        else {
+            setParentForModule(name, value);
             storeConstant(name, value);
         }
 
         invalidateConstantCache(name);
+        return value;
+    }
 
+    private void setParentForModule(final String name, final IRubyObject value) {
         // if adding a module under a constant name, set that module's basename to the constant name
-        if (value instanceof RubyModule) {
-            RubyModule module = (RubyModule)value;
+        if ( value instanceof RubyModule ) {
+            RubyModule module = (RubyModule) value;
             if (module != this && module.getBaseName() == null) {
                 module.setBaseName(name);
                 module.setParent(this);
             }
+            module.calculateName();
         }
-        return value;
     }
 
     @Deprecated
