@@ -465,16 +465,7 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     public org.jruby.RubyString toJRubyString(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-
-        final org.jruby.RubyString jrubyString = runtime.newString(StringOperations.getByteList(string).dup());
-
-        final Object tainted = string.get(Layouts.TAINTED_IDENTIFIER, coreLibrary.getNilObject());
-
-        if (tainted instanceof Boolean && (boolean) tainted) {
-            jrubyString.setTaint(true);
-        }
-
-        return jrubyString;
+        return runtime.newString(StringOperations.getByteList(string).dup());
     }
 
     @TruffleBoundary
