@@ -20,14 +20,11 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.CoverageTracker;
 import jnr.ffi.LibraryLoader;
-import jnr.ffi.Runtime;
-import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
-import org.jruby.RubyNil;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
@@ -450,16 +447,10 @@ public class RubyContext extends ExecutionContext {
         } else if (RubyGuards.isRubyString(object)) {
             return toJRubyString((DynamicObject) object);
         } else if (RubyGuards.isRubyEncoding(object)) {
-            return toJRubyEncoding((DynamicObject) object);
+            return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(Layouts.ENCODING.getName((DynamicObject) object)));
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @TruffleBoundary
-    public IRubyObject toJRubyEncoding(DynamicObject encoding) {
-        assert RubyGuards.isRubyEncoding(encoding);
-        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(Layouts.ENCODING.getName(encoding)));
     }
 
     @TruffleBoundary
@@ -482,15 +473,10 @@ public class RubyContext extends ExecutionContext {
             final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
             return Layouts.BIGNUM.createBignum(coreLibrary.getBignumFactory(), value);
         } else if (object instanceof org.jruby.RubyString) {
-            return toTruffle((org.jruby.RubyString) object);
+            return StringOperations.createString(this, ((org.jruby.RubyString) object).getByteList().dup());
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @TruffleBoundary
-    public DynamicObject toTruffle(org.jruby.RubyString jrubyString) {
-        return StringOperations.createString(this, jrubyString.getByteList().dup());
     }
 
     @TruffleBoundary
