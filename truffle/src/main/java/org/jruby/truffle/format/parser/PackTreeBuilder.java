@@ -294,10 +294,10 @@ public class PackTreeBuilder extends PackBaseListener {
 
         int length;
 
-        if (ctx.INT() == null) {
+        if (ctx.count() == null || ctx.count().INT() == null) {
             length = 72;
         } else {
-            length = Integer.parseInt(ctx.INT().getText());
+            length = Integer.parseInt(ctx.count().INT().getText());
 
             if (length <= 1) {
                 length = 72;

@@ -1,2 +1,0 @@
-fails:String#unpack with format 'M' ignores the count or '*' modifier and decodes the entire string
-fails:String#unpack with format 'm' ignores the count or '*' modifier and decodes the entire string

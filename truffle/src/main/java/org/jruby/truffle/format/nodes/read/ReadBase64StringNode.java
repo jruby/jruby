@@ -46,7 +46,7 @@ public abstract class ReadBase64StringNode extends PackNode {
 
         final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
 
-        int occurrences = requestedLength;
+        int occurrences = encode.remaining();
 
         int length = encode.remaining()*3/4;
         byte[] lElem = new byte[length];

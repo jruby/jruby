@@ -34,14 +34,16 @@ public abstract class ReadBinaryStringNode extends PackNode {
     final int count;
     final boolean trimTrailingSpaces;
     final boolean trimTrailingNulls;
+    final boolean trimToFirstNull;
 
-    public ReadBinaryStringNode(RubyContext context, boolean readToEnd, boolean readToNull, int count, boolean trimTrailingSpaces, boolean trimTrailingNulls) {
+    public ReadBinaryStringNode(RubyContext context, boolean readToEnd, boolean readToNull, int count, boolean trimTrailingSpaces, boolean trimTrailingNulls, boolean trimToFirstNull) {
         super(context);
         this.readToEnd = readToEnd;
         this.readToNull = readToNull;
         this.count = count;
         this.trimTrailingSpaces = trimTrailingSpaces;
         this.trimTrailingNulls = trimTrailingNulls;
+        this.trimToFirstNull = trimToFirstNull;
     }
 
     @Specialization(guards = "isNull(source)")
@@ -97,10 +99,12 @@ public abstract class ReadBinaryStringNode extends PackNode {
 
         result = new ByteList(source, start, usedLength, true);
 
-        final int firstNull = result.indexOf(0);
+        if (trimToFirstNull) {
+            final int firstNull = result.indexOf(0);
 
-        if (firstNull != -1 && trimTrailingNulls) {
-            result.realSize(firstNull);
+            if (firstNull != -1 && trimTrailingNulls) {
+                result.realSize(firstNull);
+            }
         }
 
         setSourcePosition(frame, start + length);
