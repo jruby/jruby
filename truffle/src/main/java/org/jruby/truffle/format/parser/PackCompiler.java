@@ -88,9 +88,9 @@ public class PackCompiler {
         // Keep going until we reach the end of hte format string
 
         while (index < format.length()) {
-            // If we're in a number or a *, step forward one
+            // If we aren't at the start of a new directive, step forward one
 
-            if ("0123456789*".indexOf(format.charAt(index)) != -1) {
+            if ("CSLQcslqInNvVUwDdFfEeFfAaZBbHhuMmpPXx@".indexOf(format.charAt(index)) == -1) {
                 index++;
                 continue;
             }
