@@ -131,13 +131,13 @@ public class RaiseException extends JumpException {
         preRaise(context, backtrace);
     }
 
-    public RaiseException(RubyException exception, boolean isNativeException) {
+    public RaiseException(RubyException exception, boolean nativeException) {
         super(exception.message.toString());
         if (DEBUG) {
             Thread.dumpStack();
         }
-        this.nativeException = isNativeException;
-        setException(exception, isNativeException);
+        this.nativeException = nativeException;
+        setException(exception, nativeException);
         preRaise(exception.getRuntime().getCurrentContext());
     }
 
@@ -201,7 +201,7 @@ public class RaiseException extends JumpException {
         doSetLastError(context);
         doCallEventHook(context);
 
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
         if (requiresBacktrace(context)) {
             exception.prepareIntegratedBacktrace(context, javaTrace);
@@ -213,7 +213,7 @@ public class RaiseException extends JumpException {
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         return context.exceptionRequiresBacktrace ||
                 (debugMode != null && debugMode.isTrue()) ||
-                !exception.kind_of_p(context, context.runtime.getStandardError()).isTrue();
+                ! context.runtime.getStandardError().isInstance(exception);
     }
 
     private void preRaise(ThreadContext context, IRubyObject backtrace) {
@@ -221,7 +221,7 @@ public class RaiseException extends JumpException {
         doSetLastError(context);
         doCallEventHook(context);
 
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         if (requiresBacktrace(context)) {
@@ -229,6 +229,7 @@ public class RaiseException extends JumpException {
                 exception.prepareBacktrace(context, nativeException);
             } else {
                 exception.forceBacktrace(backtrace);
+                if ( backtrace.isNil() ) return;
             }
 
             // call Throwable.setStackTrace so that when RaiseException appears nested inside another exception,

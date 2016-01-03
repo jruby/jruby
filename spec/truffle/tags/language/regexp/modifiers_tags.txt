@@ -1,1 +1,0 @@
-fails(inherited):Regexps with modifers supports ASII/Unicode modifiers

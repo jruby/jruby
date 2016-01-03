@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,13 +43,26 @@ public class RealClassGenerator {
     private static final boolean DEBUG = false;
 
     private static Map<String, List<Method>> buildSimpleToAllMap(Class[] interfaces, String[] superTypeNames) throws SecurityException {
-        Map<String, List<Method>> simpleToAll = new HashMap<String, List<Method>>();
+        Map<String, List<Method>> simpleToAll = new LinkedHashMap<String, List<Method>>();
+        // we're use the map's order to work-around bug when there's too getters for a property :
+        // getFoo and isFoo in which case we make sure getFoo will come after isFoo in the map
+        // so that the installed "foo" alias always triggers getFoo regardless of getMethods order
         for (int i = 0; i < interfaces.length; i++) {
             superTypeNames[i] = p(interfaces[i]);
-            for (Method method : interfaces[i].getMethods()) {
-                List<Method> methods = simpleToAll.get(method.getName());
+            for ( Method method : interfaces[i].getMethods() ) {
+                final String name = method.getName();
+                List<Method> methods = simpleToAll.get(name);
                 if (methods == null) {
-                    simpleToAll.put(method.getName(), methods = new ArrayList<Method>());
+                    simpleToAll.put(name, methods = new ArrayList<Method>(6));
+
+                    if ( name.startsWith("is") && name.length() > 2 ) {
+                        final String getName = "get" + name.substring(2);
+                        List<Method> getMethods = simpleToAll.get(getName);
+                        if ( getMethods != null ) { // remove and re-add so that getFoo is after isFoo
+                            simpleToAll.remove(getName);
+                            simpleToAll.put(getName, getMethods);
+                        }
+                    }
                 }
                 methods.add(method);
             }
@@ -59,9 +73,9 @@ public class RealClassGenerator {
     public static Class createOldStyleImplClass(Class[] superTypes, RubyClass rubyClass, Ruby ruby, String name, ClassDefiningClassLoader classLoader) {
         String[] superTypeNames = new String[superTypes.length];
         Map<String, List<Method>> simpleToAll = buildSimpleToAllMap(superTypes, superTypeNames);
-        
+
         Class newClass = defineOldStyleImplClass(ruby, name, superTypeNames, simpleToAll, classLoader);
-        
+
         return newClass;
     }
 
@@ -73,11 +87,11 @@ public class RealClassGenerator {
 
         return newClass;
     }
-    
+
     /**
      * This variation on defineImplClass uses all the classic type coercion logic
      * for passing args and returning results.
-     * 
+     *
      * @param ruby
      * @param name
      * @param superTypeNames
@@ -127,12 +141,13 @@ public class RealClassGenerator {
 
                 // for each simple method name, implement the complex methods, calling the simple version
                 for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
-                    String simpleName = entry.getKey();
-                    Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
+                    final String simpleName = entry.getKey();
+                    final List<Method> methods = entry.getValue();
+                    Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, methods);
 
                     implementedNames.clear();
 
-                    for (Method method : entry.getValue()) {
+                    for (Method method : methods) {
                         Class[] paramTypes = method.getParameterTypes();
                         Class returnType = method.getReturnType();
 
@@ -258,7 +273,7 @@ public class RealClassGenerator {
                 try {fos.close();} catch (Exception e) {}
             }
         }
-        
+
         return newClass;
     }
 
@@ -287,7 +302,7 @@ public class RealClassGenerator {
             String[] plusIRubyObject = new String[superTypeNames.length + 1];
             plusIRubyObject[0] = p(IRubyObject.class);
             System.arraycopy(superTypeNames, 0, plusIRubyObject, 1, superTypeNames.length);
-            
+
             cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(superClass), plusIRubyObject);
         }
         cw.visitSource(pathName + ".gen", null);
@@ -352,12 +367,14 @@ public class RealClassGenerator {
 
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
-            String simpleName = entry.getKey();
-            Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
+            final String simpleName = entry.getKey();
+            final List<Method> methods = entry.getValue();
+            Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, methods);
 
             implementedNames.clear();
 
-            for (Method method : entry.getValue()) {
+            for (int i = 0; i < methods.size(); i++) {
+                final Method method = methods.get(i);
                 Class[] paramTypes = method.getParameterTypes();
                 Class returnType = method.getReturnType();
 
@@ -402,7 +419,7 @@ public class RealClassGenerator {
                     mv.line(5);
 
                     int cacheIndex = cacheSize++;
-                    
+
                     // prepare temp locals
                     mv.aload(0);
                     mv.invokeinterface(p(IRubyObject.class), "getRuntime", sig(Ruby.class));
@@ -417,7 +434,7 @@ public class RealClassGenerator {
                     }
                     mv.invokevirtual(p(RuntimeCache.class), "searchWithCache",
                             sig(DynamicMethod.class, params(IRubyObject.class, int.class, String.class, nameSet.size())));
-                    
+
                     // get current context
                     mv.aload(rubyIndex);
                     mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));

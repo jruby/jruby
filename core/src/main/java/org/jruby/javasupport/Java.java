@@ -53,7 +53,6 @@ import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 
 import org.jcodings.Encoding;
 
@@ -104,6 +103,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
+import org.jruby.util.collections.NonBlockingHashMapLong;
 
 import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
 import org.jruby.java.invokers.RubyToJavaInvoker;

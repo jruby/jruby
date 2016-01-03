@@ -63,31 +63,63 @@ public class TraceType {
     }
 
     public static void logBacktrace(RubyStackTraceElement[] trace) {
-        LOG.info("Backtrace generated:");
-        for (RubyStackTraceElement element : trace) {
-            LOG.info("  " + element.getFileName() + ":" + element.getLineNumber() + " in " + element.getMethodName());
+        if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
+        final StringBuilder buffer = new StringBuilder(128);
+        renderBacktraceJRuby(trace, buffer, false);
+        final int len = buffer.length();
+        if ( len > 0 && buffer.charAt(len - 1) == '\n' ) {
+            buffer.setLength(len - 1); // remove last '\n'
         }
+        LOG.info("Backtrace generated:\n{}", buffer);
     }
 
-    public static void dumpException(RubyException exception) {
+    public static void logException(RubyException exception) {
         LOG.info("Exception raised: {} : {}", exception.getMetaClass(), exception);
+    }
+
+    /**
+     * @deprecated use {@link #logException(org.jruby.RubyException)}
+     */
+    public static void dumpException(RubyException exception) {
+        logException(exception);
     }
 
     public static void dumpBacktrace(RubyException exception) {
         Ruby runtime = exception.getRuntime();
-        System.err.println("Backtrace generated:\n" + Format.JRUBY.printBacktrace(exception, runtime.getPosix().isatty(FileDescriptor.err)));
+        System.err.println("Backtrace generated:\n" + printBacktraceJRuby(exception, runtime.getPosix().isatty(FileDescriptor.err)));
     }
 
+    public static void logCaller(RubyArray trace) {
+        LOG.info("Caller backtrace generated:\n{}", trace);
+    }
+
+    /**
+     * @deprecated use {@link #logCaller(org.jruby.RubyArray)}
+     */
     public static void dumpCaller(RubyArray trace) {
-        LOG.info("Caller backtrace generated:\n" + trace);
+        logCaller(trace);
     }
 
+    public static void logCaller(RubyStackTraceElement[] trace) {
+        LOG.info("Caller backtrace generated:\n{}", Arrays.toString(trace));
+    }
+
+    /**
+     * @deprecated use {@link #logCaller(org.jruby.runtime.backtrace.RubyStackTraceElement[]) }
+     */
     public static void dumpCaller(RubyStackTraceElement[] trace) {
-        LOG.info("Caller backtrace generated:\n" + Arrays.toString(trace));
+        logCaller(trace);
     }
 
+    public static void logWarning(RubyStackTraceElement[] trace) {
+        LOG.info("Warning backtrace generated:\n{}", Arrays.toString(trace));
+    }
+
+    /**
+     * @deprecated use {@link #logWarning(org.jruby.runtime.backtrace.RubyStackTraceElement[])
+     */
     public static void dumpWarning(RubyStackTraceElement[] trace) {
-        LOG.info("Warning backtrace generated:\n" + Arrays.toString(trace));
+        logWarning(trace);
     }
 
     public static TraceType traceTypeFor(String style) {

@@ -1,1 +1,0 @@
-fails:Invoking a method expands an array to arguments grouped in parentheses which in turn takes rest arguments

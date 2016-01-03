@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -198,8 +198,42 @@ public abstract class RegexpNodes {
         }
     }
 
+    public static ByteList shimModifiers(ByteList bytes) {
+        // Joni doesn't support (?u) etc but we can shim some common cases
+
+        String bytesString = bytes.toString();
+
+        if (bytesString.startsWith("(?u)") || bytesString.startsWith("(?d)") || bytesString.startsWith("(?a)")) {
+            final char modifier = (char) bytes.get(2);
+            bytesString = bytesString.substring(4);
+
+            switch (modifier) {
+                case 'u': {
+                    bytesString = bytesString.replace("\\w", "[[:alpha:]]");
+                } break;
+
+                case 'd': {
+
+                } break;
+
+                case 'a': {
+                    bytesString = bytesString.replace("[[:alpha:]]", "[a-zA-Z]");
+                } break;
+
+                default:
+                    throw new UnsupportedOperationException();
+            }
+
+            bytes = ByteList.create(bytesString);
+        }
+
+        return bytes;
+    }
+
     @TruffleBoundary
     public static Regex compile(Node currentNode, RubyContext context, ByteList bytes, RegexpOptions options) {
+        bytes = shimModifiers(bytes);
+
         try {
             /*
                     // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
