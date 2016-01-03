@@ -339,12 +339,14 @@ public class LoadArgumentsTranslator extends Translator {
             childNodes = node.childNodes().get(0).childNodes();
         }
 
-        final List<RubyNode> notNilSequence = new ArrayList<>();
+        // The load to use when the array is not nil and the length is smaller than the number of required arguments
+
+        final List<RubyNode> notNilSmallerSequence = new ArrayList<>();
 
         if (node.getPre() != null) {
             index = 0;
             for (org.jruby.ast.Node child : node.getPre().children()) {
-                notNilSequence.add(child.accept(this));
+                notNilSmallerSequence.add(child.accept(this));
                 index++;
             }
         }
@@ -352,7 +354,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (node.getRest() != null) {
             index = node.getPreCount();
             indexFromEnd = -node.getPostCount();
-            notNilSequence.add(node.getRest().accept(this));
+            notNilSmallerSequence.add(node.getRest().accept(this));
             indexFromEnd = 1;
         }
 
@@ -360,13 +362,52 @@ public class LoadArgumentsTranslator extends Translator {
             org.jruby.ast.Node[] children = node.getPost().children();
             index = -1;
             for (int i = children.length - 1; i >= 0; i--) {
-                notNilSequence.add(children[i].accept(this));
+                notNilSmallerSequence.add(children[i].accept(this));
                 required++;
                 index--;
             }
         }
 
-        final RubyNode notNil = SequenceNode.sequence(context, sourceSection, notNilSequence);
+        final RubyNode notNilSmaller = SequenceNode.sequence(context, sourceSection, notNilSmallerSequence);
+
+        if (notNilSmaller == null) {
+            throw new UnsupportedOperationException();
+        }
+
+        // The load to use when the array is not nil and the length is bigger or equal to the number of required arguments
+
+        final List<RubyNode> notNilBiggerSequence = new ArrayList<>();
+
+        if (node.getPre() != null) {
+            index = 0;
+            for (org.jruby.ast.Node child : node.getPre().children()) {
+                notNilBiggerSequence.add(child.accept(this));
+                index++;
+            }
+        }
+
+        if (node.getRest() != null) {
+            index = node.getPreCount();
+            indexFromEnd = -node.getPostCount();
+            notNilBiggerSequence.add(node.getRest().accept(this));
+            indexFromEnd = 1;
+        }
+
+        if (node.getPost() != null) {
+            org.jruby.ast.Node[] children = node.getPost().children();
+            index = -1;
+            for (int i = children.length - 1; i >= 0; i--) {
+                notNilBiggerSequence.add(children[i].accept(this));
+                required++;
+                index--;
+            }
+        }
+
+        final RubyNode notNilBigger = SequenceNode.sequence(context, sourceSection, notNilBiggerSequence);
+
+        if (notNilBigger == null) {
+            throw new UnsupportedOperationException();
+        }
 
         popArraySlot(arraySlot);
 
@@ -417,7 +458,10 @@ public class LoadArgumentsTranslator extends Translator {
                 new IfNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
                         nil,
-                        notNil == null ? nilNode(sourceSection) : notNil));
+                        new IfNode(context, sourceSection,
+                                new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
+                                notNilBigger,
+                                notNilSmaller)));
     }
 
     @Override
