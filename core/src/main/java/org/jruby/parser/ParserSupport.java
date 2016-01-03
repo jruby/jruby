@@ -185,6 +185,14 @@ public class ParserSupport {
     }
     
     public Node addRootNode(Node topOfAST) {
+        final int endPosition;
+
+        if (lexer.isEndSeen()) {
+            endPosition = lexer.getLineOffset();
+        } else {
+            endPosition = -1;
+        }
+
         if (result.getBeginNodes().isEmpty()) {
             ISourcePosition position;
             if (topOfAST == null) {
@@ -194,7 +202,7 @@ public class ParserSupport {
                 position = topOfAST.getPosition();
             }
             
-            return new RootNode(position, result.getScope(), topOfAST, lexer.getFile());
+            return new RootNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition);
         }
 
         ISourcePosition position = topOfAST != null ? topOfAST.getPosition() : result.getBeginNodes().get(0).getPosition();
@@ -206,7 +214,7 @@ public class ParserSupport {
         // Add real top to new top (unless this top is empty [only begin/end nodes or truly empty])
         if (topOfAST != null) newTopOfAST.add(topOfAST);
         
-        return new RootNode(position, result.getScope(), newTopOfAST, lexer.getFile());
+        return new RootNode(position, result.getScope(), newTopOfAST, lexer.getFile(), endPosition);
     }
     
     /* MRI: block_append */

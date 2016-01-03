@@ -605,6 +605,11 @@ public class RubyContext extends ExecutionContext {
 
         final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
 
+        if (rootNode.hasEndPosition()) {
+            final Object data = inlineRubyHelper(null, "Truffle::Primitive.get_data(file, offset)", "file", StringOperations.createString(this, ByteList.create(inputFile)), "offset", rootNode.getEndPosition());
+            Layouts.MODULE.getFields(coreLibrary.getObjectClass()).setConstant(this, null, "DATA", data);
+        }
+
         return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, coreLibrary.getMainObject());
     }
 
