@@ -1277,6 +1277,10 @@ public class ParserSupport {
     }    
 
     protected void checkRegexpSyntax(ByteList value, RegexpOptions options) {
+        final String stringValue = value.toString();
+        // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
+        if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
+            return;
         RubyRegexp.newRegexp(getConfiguration().getRuntime(), value, options);
     }
 
