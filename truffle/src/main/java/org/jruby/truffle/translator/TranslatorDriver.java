@@ -45,7 +45,7 @@ import java.util.List;
 
 public class TranslatorDriver {
 
-    public static enum ParserContext {
+    public enum ParserContext {
         TOP_LEVEL, SHELL, MODULE, EVAL, INLINE
     }
 
@@ -202,11 +202,6 @@ public class TranslatorDriver {
         // Shell result
 
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
-    }
-
-    private Object getData(RubyContext context) {
-        // TODO CS 18-Apr-15 restore the DATA functionality
-        return null;
     }
 
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {
