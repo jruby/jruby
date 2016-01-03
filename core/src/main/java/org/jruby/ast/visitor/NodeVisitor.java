@@ -130,6 +130,7 @@ public interface NodeVisitor<T> {
     public T visitSClassNode(SClassNode iVisited);
     public T visitSelfNode(SelfNode iVisited);
     public T visitSplatNode(SplatNode iVisited);
+    public T visitStarNode(StarNode iVisited);
     public T visitStrNode(StrNode iVisited);
     public T visitSuperNode(SuperNode iVisited);
     public T visitSValueNode(SValueNode iVisited);

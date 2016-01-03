@@ -19,6 +19,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
+import org.jruby.ast.StarNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
@@ -2774,6 +2775,11 @@ public class BodyTranslator extends Translator {
 
         final RubyNode ret = new ReadMatchReferenceNode(context, translate(node.getPosition()), index);
         return addNewlineIfNeeded(node, ret);
+    }
+
+    @Override
+    public RubyNode visitStarNode(org.jruby.ast.StarNode star) {
+        return nilNode(translate(star.getPosition()));
     }
 
     protected RubyNode initFlipFlopStates(SourceSection sourceSection) {

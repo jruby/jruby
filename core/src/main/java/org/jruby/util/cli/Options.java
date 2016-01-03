@@ -241,6 +241,7 @@ public class Options {
     public static final Option<Integer> TRUFFLE_SYMBOL_TO_PROC_CACHE = integer(TRUFFLE, "truffle.symbol_to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Symbol#to_proc cache size");
     public static final Option<Integer> TRUFFLE_ALLOCATE_CLASS_CACHE = integer(TRUFFLE, "truffle.allocate_class.cache", TRUFFLE_DEFAULT_CACHE.load(), "Allocation size class cache size");
     public static final Option<Integer> TRUFFLE_PACK_CACHE = integer(TRUFFLE, "truffle.pack.cache", TRUFFLE_DEFAULT_CACHE.load(), "Array#pack cache size");
+    public static final Option<Integer> TRUFFLE_UNPACK_CACHE = integer(TRUFFLE, "truffle.unpack.cache", TRUFFLE_DEFAULT_CACHE.load(), "String#unpack cache size");
     public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", TRUFFLE_DEFAULT_CACHE.load(), "eval lookup cache size");
     public static final Option<Integer> ENCODING_COMPATIBLE_QUERY_CACHE = integer(TRUFFLE, "truffle.encoding_compatible_query.cache", TRUFFLE_DEFAULT_CACHE.load(), "Encoding.compatible? cache size");
 
@@ -253,7 +254,8 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_METHODMISSING_ALWAYS_CLONE = bool(TRUFFLE, "truffle.method_missing.always_clone", TRUFFLE_CLONE_DEFAULT.load(), "Always clone #method_missing.");
     public static final Option<Boolean> TRUFFLE_METHODMISSING_ALWAYS_INLINE = bool(TRUFFLE, "truffle.method_missing.always_inline", TRUFFLE_INLINE_DEFAULT.load(), "Always inline #method_missing.");
 
-    public static final Option<Integer> TRUFFLE_PACK_UNROLL_LIMIT = integer(TRUFFLE, "truffle.pack.unroll", 4, "If a pack expression has a loop less than this many iterations, unroll it.");
+    public static final Option<Integer> TRUFFLE_PACK_UNROLL_LIMIT = integer(TRUFFLE, "truffle.pack.unroll", 4, "If a pack or unpack expression has a loop less than this many iterations, unroll it.");
+    public static final Option<Integer> TRUFFLE_PACK_RECOVER_LOOP_MIN = integer(TRUFFLE, "truffle.pack.recover", 32, "If a pack or unpack expression is longer than this, attempt to recover loops.");
 
     public static final Option<Integer> TRUFFLE_INSTRUMENTATION_SERVER_PORT = integer(TRUFFLE, "truffle.instrumentation_server_port", 0, "Port number to run an HTTP server on that provides instrumentation services");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");

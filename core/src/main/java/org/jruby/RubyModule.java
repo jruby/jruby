@@ -38,6 +38,24 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
 import org.jruby.anno.JRubyClass;
@@ -97,24 +115,8 @@ import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
 import static org.jruby.anno.FrameField.*;
+import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.runtime.Visibility.*;
 
 
@@ -3119,10 +3121,6 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
         IRubyObject constant = setConstant(validateConstant(symbol).intern(), value);
-
-        if (constant instanceof RubyModule) {
-            ((RubyModule)constant).calculateName();
-        }
         return constant;
     }
 
@@ -3635,27 +3633,32 @@ public class RubyModule extends RubyObject {
                 if (warn) {
                     getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
+                setParentForModule(name, value);
                 // might just call storeConstant(name, value, hidden) but to maintain
                 // backwards compatibility with calling #storeConstant overrides
                 if (hidden) storeConstant(name, value, true);
                 else storeConstant(name, value);
             }
         } else {
+            setParentForModule(name, value);
             if (hidden) storeConstant(name, value, true);
             else storeConstant(name, value);
         }
 
         invalidateConstantCache(name);
+        return value;
+    }
 
+    private void setParentForModule(final String name, final IRubyObject value) {
         // if adding a module under a constant name, set that module's basename to the constant name
-        if (value instanceof RubyModule) {
-            RubyModule module = (RubyModule)value;
+        if ( value instanceof RubyModule ) {
+            RubyModule module = (RubyModule) value;
             if (module != this && module.getBaseName() == null) {
                 module.setBaseName(name);
                 module.setParent(this);
             }
+            module.calculateName();
         }
-        return value;
     }
 
     @Deprecated

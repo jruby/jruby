@@ -359,6 +359,10 @@ public abstract class ArrayUtils {
     private static final int INITIAL_CAPACITY = 16;
 
     public static int capacity(int current, int needed) {
+        if (needed == 0) {
+            return 0;
+        }
+
         assert current < needed;
 
         if (needed < INITIAL_CAPACITY) {
@@ -396,6 +400,13 @@ public abstract class ArrayUtils {
         final Object[] copy = new Object[array.length];
         System.arraycopy(array, 0, copy, 0, array.length);
         return copy;
+    }
+
+    public static Object[] unshift(Object[] array, Object element) {
+        final Object[] newArray = new Object[1 + array.length];
+        newArray[0] = element;
+        arraycopy(array, 0, newArray, 1, array.length);
+        return newArray;
     }
 
 }

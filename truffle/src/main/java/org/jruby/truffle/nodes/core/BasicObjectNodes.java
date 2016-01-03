@@ -30,7 +30,7 @@ import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
+import org.jruby.truffle.nodes.supercall.SuperCallNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
@@ -222,8 +222,8 @@ public abstract class BasicObjectNodes {
         }
 
         private boolean lastCallWasSuper() {
-            final GeneralSuperReCallNode callNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), GeneralSuperReCallNode.class);
-            return callNode != null;
+            final SuperCallNode superCallNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), SuperCallNode.class);
+            return superCallNode != null;
         }
 
         /**

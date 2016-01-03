@@ -2844,6 +2844,8 @@ public class IRBuilder {
         Label l;
         Variable readerValue = createTemporaryVariable();
         Variable writerValue = createTemporaryVariable();
+        Node receiver = opAsgnNode.getReceiverNode();
+        CallType callType = receiver instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
 
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode());
@@ -2855,7 +2857,7 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, v1));
         }
 
-        addInstr(CallInstr.create(scope, readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
+        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -2866,7 +2868,7 @@ public class IRBuilder {
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode());
-            addInstr(CallInstr.create(scope, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {v2}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {v2}, null));
             // It is readerValue = v2.
             // readerValue = writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
@@ -2883,7 +2885,7 @@ public class IRBuilder {
             addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorName(), readerValue, new Operand[]{v2}, null));
 
             // set attr
-            addInstr(CallInstr.create(scope, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
             // Returning writerValue is incorrect becuase the assignment method
             // might return something else other than the value being set!
             if (!opAsgnNode.isLazy()) return setValue;
@@ -2965,16 +2967,18 @@ public class IRBuilder {
     }
 
     private Operand buildOpElementAsgnWith(OpElementAsgnNode opElementAsgnNode, Boolean truthy) {
-        Operand array = buildWithOrder(opElementAsgnNode.getReceiverNode(), opElementAsgnNode.containsVariableAssignment());
+        Node receiver = opElementAsgnNode.getReceiverNode();
+        CallType callType = receiver instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
+        Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
         Label endLabel = getNewLabel();
         Variable elt = createTemporaryVariable();
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
-        addInstr(CallInstr.create(scope, elt, "[]", array, argList, null));
+        addInstr(CallInstr.create(scope, callType, elt, "[]", array, argList, null));
         addInstr(BEQInstr.create(elt, truthy, endLabel));
         Operand value = build(opElementAsgnNode.getValueNode());
 
         argList = addArg(argList, value);
-        addInstr(CallInstr.create(scope, elt, "[]=", array, argList, null));
+        addInstr(CallInstr.create(scope, callType, elt, "[]=", array, argList, null));
         addInstr(new CopyInstr(elt, value));
 
         addInstr(new LabelInstr(endLabel));
@@ -2983,18 +2987,20 @@ public class IRBuilder {
 
     // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
     public Operand buildOpElementAsgnWithMethod(OpElementAsgnNode opElementAsgnNode) {
-        Operand array = buildWithOrder(opElementAsgnNode.getReceiverNode(), opElementAsgnNode.containsVariableAssignment());
+        Node receiver = opElementAsgnNode.getReceiverNode();
+        CallType callType = receiver instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
+        Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
         Variable elt = createTemporaryVariable();
-        addInstr(CallInstr.create(scope, elt, "[]", array, argList, null)); // elt = a[args]
+        addInstr(CallInstr.create(scope, callType, elt, "[]", array, argList, null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode());                                       // Load 'value'
         String  operation = opElementAsgnNode.getOperatorName();
-        addInstr(CallInstr.create(scope, elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
+        addInstr(CallInstr.create(scope, callType, elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = createTemporaryVariable();
         argList = addArg(argList, elt);
-        addInstr(CallInstr.create(scope, tmp, "[]=", array, argList, null));   // a[args] = elt
+        addInstr(CallInstr.create(scope, callType, tmp, "[]=", array, argList, null));   // a[args] = elt
         return elt;
     }
 

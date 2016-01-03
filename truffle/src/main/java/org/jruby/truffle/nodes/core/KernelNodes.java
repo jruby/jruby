@@ -1284,11 +1284,7 @@ public abstract class KernelNodes {
             @Override
             public Object execute(VirtualFrame frame) {
                 final Object[] originalUserArguments = RubyArguments.extractUserArguments(frame.getArguments());
-                final Object[] newUserArguments = new Object[originalUserArguments.length + 1];
-
-                newUserArguments[0] = methodName;
-                System.arraycopy(originalUserArguments, 0, newUserArguments, 1, originalUserArguments.length);
-
+                final Object[] newUserArguments = ArrayUtils.unshift(originalUserArguments, methodName);
                 return methodMissing.call(frame, RubyArguments.getSelf(frame.getArguments()), "method_missing", RubyArguments.getBlock(frame.getArguments()), newUserArguments);
             }
         }
@@ -1945,7 +1941,7 @@ public abstract class KernelNodes {
         }
 
         private DynamicObject finishFormat(int formatLength, PackResult result) {
-            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength(), false));
+            final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
 
             if (formatLength == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);

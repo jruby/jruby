@@ -1,2 +1,0 @@
-fails:String#unpack with format 'H' calls #to_str to coerce the directives string
-fails:String#unpack with format 'h' calls #to_str to coerce the directives string

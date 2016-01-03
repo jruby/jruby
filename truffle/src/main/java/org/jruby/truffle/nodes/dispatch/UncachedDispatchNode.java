@@ -98,9 +98,8 @@ public class UncachedDispatchNode extends DispatchNode {
         }
 
         if (dispatchAction == DispatchAction.CALL_METHOD) {
-            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
-            modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, name);
-            ArrayUtils.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
+            final DynamicObject nameSymbol = toSymbolNode.executeRubySymbol(frame, name);
+            final Object[] modifiedArgumentsObjects = ArrayUtils.unshift(argumentsObjects, nameSymbol);
 
             return call(frame, missingMethod, receiverObject, blockObject, modifiedArgumentsObjects);
         } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {

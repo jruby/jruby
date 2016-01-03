@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -28,7 +28,7 @@ public class PackCompiler {
     }
 
     public CallTarget compile(String format) {
-        if (format.length() > 32) {
+        if (format.length() > context.getOptions().PACK_RECOVER_LOOP_MIN) {
             format = recoverLoop(format);
         }
 
@@ -80,51 +80,84 @@ public class PackCompiler {
      * that pattern is repeated. If it is we have the loop. Nothing more
      * complicated than that.
      */
-    private String recoverLoop(String format) {
-        int break_point = 0;
+    public static String recoverLoop(String format) {
+        // The index is the point in the format string where we look backwards for loops from
 
-        while (break_point < format.length()) {
-            if ("0123456789*".indexOf(format.charAt(break_point)) != -1) {
-                break_point++;
+        int index = 0;
+
+        // Keep going until we reach the end of hte format string
+
+        while (index < format.length()) {
+            // If we aren't at the start of a new directive, step forward one
+
+            if ("CSLQcslqInNvVUwDdFfEeFfAaZBbHhuMmpPXx@".indexOf(format.charAt(index)) == -1) {
+                index++;
                 continue;
             }
 
-            int repeated_length = 1;
-            int max_repeated_length = -1;
+            // The length of the string that will be tried to be looped - initially trying just one character
 
-            while (repeated_length <= break_point && break_point + repeated_length <= format.length()) {
-                if (format.substring(break_point - repeated_length, break_point)
-                        .equals(format.substring(break_point, break_point + repeated_length))) {
-                    max_repeated_length = repeated_length;
+            int tryLengthOfLoopedString = 1;
+
+            // The length of the string that will be looped, where there was actually a loop found
+
+            int successfulLengthOfLoopedString = -1;
+
+            // Increase the size of the string that will be tried to belooped - but only as far as there is that much
+            // string both before and after the index
+
+            while (tryLengthOfLoopedString <= index && index + tryLengthOfLoopedString <= format.length()) {
+                // If that length of string exists both before and after the index then that's a successful length
+                // to use for looping
+
+                final String beforeIndex = format.substring(index - tryLengthOfLoopedString, index);
+                final String afterIndex = format.substring(index, index + tryLengthOfLoopedString);
+
+                if (beforeIndex.equals(afterIndex)) {
+                    successfulLengthOfLoopedString = tryLengthOfLoopedString;
                 }
 
-                repeated_length++;
+                tryLengthOfLoopedString++;
             }
 
-            if (max_repeated_length == -1) {
-                break_point++;
+            // Were any lengths of looped string we tried successful?
+
+            if (successfulLengthOfLoopedString == -1) {
+                // None were - just move onto the next character and try again
+
+                index++;
             } else {
-                final String repeated = format.substring(break_point, break_point + max_repeated_length);
+                final String repeated = format.substring(index, index + successfulLengthOfLoopedString);
 
-                int count = 2;
-                int rep_point = break_point + max_repeated_length;
+                // The number of times to repeat - 2 initially - before and after the index
 
-                while (rep_point + max_repeated_length <= format.length()) {
-                    if (!format.substring(rep_point, rep_point + max_repeated_length).equals(repeated)) {
+                int repetitionsCount = 2;
+
+                // Where in the string the 2 repititions end
+
+                int indexOfEndOfRepititions = index + successfulLengthOfLoopedString;
+
+                // Loop to find out how many times the string appears after the 2 initial instances
+
+                while (indexOfEndOfRepititions + successfulLengthOfLoopedString <= format.length()) {
+                    if (!format.substring(indexOfEndOfRepititions, indexOfEndOfRepititions + successfulLengthOfLoopedString).equals(repeated)) {
                         break;
                     }
 
-                    count++;
-                    rep_point += max_repeated_length;
+                    repetitionsCount++;
+                    indexOfEndOfRepititions += successfulLengthOfLoopedString;
                 }
 
+                // Replace 'nnn' with 'n3'
+
                 final StringBuilder builder = new StringBuilder();
-                builder.append(format.substring(0, break_point - max_repeated_length));
+                builder.append(format.substring(0, index - successfulLengthOfLoopedString));
                 builder.append('(');
                 builder.append(repeated);
                 builder.append(')');
-                builder.append(count);
-                builder.append(format.substring(rep_point));
+                builder.append(repetitionsCount);
+                builder.append(format.substring(indexOfEndOfRepititions));
+
                 format = builder.toString();
             }
 
