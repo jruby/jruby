@@ -42,7 +42,7 @@ project 'JRuby Dist' do
 
   phase :package do
     plugin( :assembly, '2.4',
-            'finalName' => "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/, '')}",
+            'finalName' => "#{model.artifact_id}-${project.version}}",
             'tarLongFileMode' =>  'gnu',
             'descriptors' => [ 'src/main/assembly/jruby.xml' ] ) do
       execute_goals( 'single' )
