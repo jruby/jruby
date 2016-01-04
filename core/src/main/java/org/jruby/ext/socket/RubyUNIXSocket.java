@@ -124,7 +124,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         return runtime.newArray(
                 runtime.newString("AF_UNIX"),
-                runtime.newString(openFile.getPath()));
+                runtime.newString(getUnixRemoteSocket().path()));
     }
 
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
