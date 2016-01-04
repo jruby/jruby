@@ -692,4 +692,13 @@ public class RubyContext extends ExecutionContext {
     public CrtExterns getCrtExterns() {
         return crtExterns;
     }
+
+    public static void writeToFile(String fileName, String message) {
+        try (PrintStream stream = new PrintStream(fileName)) {
+            stream.println(message);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
