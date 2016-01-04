@@ -393,7 +393,8 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod
     public IRubyObject canonname(ThreadContext context) {
         if (socketAddress instanceof InetSocketAddress) {
-            return context.runtime.newString(getInetSocketAddress().getAddress().getCanonicalHostName());
+            String canonName = getInetSocketAddress().getAddress().getCanonicalHostName();
+            return context.runtime.newString(canonName);
         } else if (socketAddress instanceof UnixSocketAddress) {
             return context.runtime.newString(getUnixSocketAddress().path());
         }
