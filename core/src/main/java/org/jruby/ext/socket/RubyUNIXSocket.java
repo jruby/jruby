@@ -119,8 +119,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
         final Ruby runtime = context.runtime;
-
-        final RubyString path = openFile.getPath() == null ? RubyString.newEmptyString(runtime) : runtime.newString(openFile.getPath());
+        final String _path = getUnixRemoteSocket().path();
+        final RubyString path = (_path == null) ? RubyString.newEmptyString(runtime) : runtime.newString(_path);
         return runtime.newArray( runtime.newString("AF_UNIX"), path );
     }
 
