@@ -32,13 +32,11 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
-import java.net.PortUnreachableException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
@@ -47,7 +45,10 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.AddressFamily;
@@ -71,8 +72,6 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -81,7 +80,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.Sockaddr;
 
@@ -566,6 +564,8 @@ public class RubySocket extends RubyBasicSocket {
 
             initSocket(fd);
 
+            lazyOptions();
+
             lazyBind(context);
         }
     }
@@ -686,6 +686,12 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
+    protected void lazyOptions() {
+        for (Runnable runnable : lazySocketOptions) {
+            runnable.run();
+        }
+    }
+
     static void handleSocketException(final Ruby runtime, final SocketException ex,
         final String caller, final SocketAddress addr) {
 
@@ -763,6 +769,22 @@ public class RubySocket extends RubyBasicSocket {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod
+    public IRubyObject setsockopt(ThreadContext context, final IRubyObject _level, final IRubyObject _opt, final IRubyObject val) {
+        // if not yet created channel, defer these until later
+        if (getOpenFile() == null) {
+            lazySocketOptions.add(new Runnable() {
+                @Override
+                public void run() {
+                    RubySocket.super.setsockopt(_level.getRuntime().getCurrentContext(), _level, _opt, val);
+                }
+            });
+            return context.nil;
+        } else {
+            return super.setsockopt(context, _level, _opt, val);
+        }
+    }
+
     @Override
     public RubyBoolean closed_p(ThreadContext context) {
         if (getOpenFile() == null) return context.runtime.getFalse();
@@ -797,6 +819,7 @@ public class RubySocket extends RubyBasicSocket {
     protected ProtocolFamily soProtocolFamily;
     protected Sock soType;
     protected Protocol soProtocol = Protocol.getProtocolByNumber(0);
+    protected List<Runnable> lazySocketOptions = Collections.synchronizedList(new ArrayList<Runnable>());
 
     private static final String JRUBY_SERVER_SOCKET_ERROR =
             "use ServerSocket for servers (http://wiki.jruby.org/ServerSocket)";
