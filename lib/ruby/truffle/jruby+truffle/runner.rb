@@ -71,7 +71,7 @@ class JRubyTruffleRunner
         },
         run:    {
             help:            ['-h', '--help', 'Show this message', assign_new_value, false],
-            test:            ['-t', '--test', "Use conventional JRuby instead of #{BRANDING}", assign_new_value, false],
+            no_truffle:      ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", assign_new_value, false],
             graal:           ['-g', '--graal', 'Run on graal', assign_new_value, false],
             build:           ['-b', '--build', 'Run `jt build` using conventional JRuby', assign_new_value, false],
             rebuild:         ['--rebuild', 'Run `jt rebuild` using conventional JRuby', assign_new_value, false],
@@ -376,12 +376,12 @@ class JRubyTruffleRunner
     truffle_options = [
         ('-X+T'),
         ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core]),
-        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception] && !@options[:run][:test]),
+        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
         (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug])
     ]
 
     cmd_options = [
-        *(truffle_options unless @options[:run][:test]),
+        *(truffle_options unless @options[:run][:no_truffle]),
         *ruby_options,
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
         *@options[:run][:load_path].flat_map { |v| ['-I', v] },
