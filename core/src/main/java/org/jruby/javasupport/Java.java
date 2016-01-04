@@ -33,11 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.java.util.BlankSlateWrapper;
-import org.jruby.java.util.SystemPropertiesMap;
-import org.jruby.java.proxies.JavaInterfaceTemplate;
-import org.jruby.java.addons.KernelJavaAddons;
-
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Map;
@@ -84,6 +79,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.addons.IOJavaAddons;
+import org.jruby.java.addons.KernelJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.dispatch.CallableSelector;
@@ -92,14 +88,18 @@ import org.jruby.java.proxies.ArrayJavaProxyCreator;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.MapJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
+import org.jruby.java.proxies.JavaInterfaceTemplate;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
+import org.jruby.java.util.BlankSlateWrapper;
+import org.jruby.java.util.SystemPropertiesMap;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
@@ -1188,81 +1188,92 @@ public class Java implements Library {
 
     public static IRubyObject newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
         final Ruby runtime = wrapper.getRuntime();
-        ClassDefiningClassLoader classLoader;
 
         Class[] tmp_interfaces = interfaces;
         interfaces = new Class[tmp_interfaces.length + 1];
         System.arraycopy(tmp_interfaces, 0, interfaces, 0, tmp_interfaces.length);
         interfaces[tmp_interfaces.length] = RubyObjectHolderProxy.class;
 
-        // hashcode is a combination of the interfaces and the Ruby class we're using
-        // to implement them
-        if (!RubyInstanceConfig.INTERFACES_USE_PROXY) {
-            int interfacesHashCode = interfacesHashCode(interfaces);
-            // if it's a singleton class and the real class is proc, we're doing closure conversion
-            // so just use Proc's hashcode
-            if (wrapper.getMetaClass().isSingleton() && wrapper.getMetaClass().getRealClass() == runtime.getProc()) {
-                interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
-                classLoader = runtime.getJRubyClassLoader();
-            } else {
-                // normal new class implementing interfaces
-                interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().getRealClass().hashCode();
-                classLoader = new OneShotClassLoader(runtime.getJRubyClassLoader());
-            }
-            String implClassName = "org.jruby.gen.InterfaceImpl" + Math.abs(interfacesHashCode);
-            Class<?> proxyImplClass;
-            try {
-                proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
-            } catch (ClassNotFoundException cnfe) {
-                proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, classLoader);
-            }
-
-            try {
-                Constructor<?> proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
-                return JavaObject.wrap(runtime, proxyConstructor.newInstance(wrapper));
-            }
-            catch (InvocationTargetException e) {
-                throw mapGeneratedProxyException(runtime, e);
-            }
-            catch (ReflectiveOperationException e) {
-                throw mapGeneratedProxyException(runtime, e);
-            }
-        } else {
-            Object proxyObject = Proxy.newProxyInstance(runtime.getJRubyClassLoader(), interfaces, new InvocationHandler() {
-
-                private final Map<Method, Class[]> parameterTypeCache = new ConcurrentHashMap<Method, Class[]>();
-
-                public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
-                    String methodName = method.getName();
-                    int length = nargs == null ? 0 : nargs.length;
-
-                    // FIXME: wtf is this? Why would these use the class?
-                    if (methodName.equals("toString") && length == 0) {
-                        return proxy.getClass().getName();
-                    } else if (methodName.equals("hashCode") && length == 0) {
-                        return Integer.valueOf(proxy.getClass().hashCode());
-                    } else if (methodName.equals("equals") && length == 1) {
-                        Class[] parameterTypes = parameterTypeCache.get(method);
-                        if (parameterTypes == null) {
-                            parameterTypes = method.getParameterTypes();
-                            parameterTypeCache.put(method, parameterTypes);
-                        }
-                        if (parameterTypes[0].equals(Object.class)) {
-                            return Boolean.valueOf(proxy == nargs[0]);
-                        }
-                    } else if (methodName == "__ruby_object" && length == 0) {
-                        return wrapper;
-                    }
-
-                    IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
-                    try {
-                        return Helpers.invoke(runtime.getCurrentContext(), wrapper, methodName, rubyArgs).toJava(method.getReturnType());
-                    }
-                    catch (RuntimeException e) { e.printStackTrace(); throw e; }
-                }
-            });
-            return JavaObject.wrap(runtime, proxyObject);
+        if ( RubyInstanceConfig.INTERFACES_USE_PROXY ) {
+            return JavaObject.wrap(runtime, mewProxyInterfaceImpl(runtime, wrapper, interfaces));
         }
+
+        final JRubyClassLoader jrubyClassLoader = runtime.getJRubyClassLoader();
+
+        final ClassDefiningClassLoader classLoader;
+        // hashcode is a combination of the interfaces and the Ruby class we're using to implement them
+        int interfacesHashCode = interfacesHashCode(interfaces);
+        // if it's a singleton class and the real class is proc, we're doing closure conversion
+        // so just use Proc's hashcode
+        if (wrapper.getMetaClass().isSingleton() && wrapper.getMetaClass().getRealClass() == runtime.getProc()) {
+            interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
+            classLoader = jrubyClassLoader;
+        }
+        else { // normal new class implementing interfaces
+            interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().getRealClass().hashCode();
+            classLoader = new OneShotClassLoader(jrubyClassLoader);
+        }
+        final String implClassName = "org.jruby.gen.InterfaceImpl" + Math.abs(interfacesHashCode);
+        Class<?> proxyImplClass;
+        try {
+            proxyImplClass = Class.forName(implClassName, true, jrubyClassLoader);
+        }
+        catch (ClassNotFoundException ex) {
+            proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, classLoader);
+        }
+
+        try {
+            Constructor<?> proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
+            return JavaObject.wrap(runtime, proxyConstructor.newInstance(wrapper));
+        }
+        catch (InvocationTargetException e) {
+            throw mapGeneratedProxyException(runtime, e);
+        }
+        catch (ReflectiveOperationException e) {
+            throw mapGeneratedProxyException(runtime, e);
+        }
+    }
+
+    private static Object mewProxyInterfaceImpl(final Ruby runtime, final IRubyObject wrapper, final Class[] interfaces) {
+        return Proxy.newProxyInstance(runtime.getJRubyClassLoader(), interfaces, new InvocationHandler() {
+
+            private final Map<Method, Class[]> parameterTypeCache = new ConcurrentHashMap<Method, Class[]>();
+
+            public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
+                final String methodName = method.getName();
+                final int length = nargs == null ? 0 : nargs.length;
+
+                // FIXME: wtf is this? Why would these use the class?
+                if (methodName.equals("toString") && length == 0) {
+                    return proxy.getClass().getName();
+                }
+                else if (methodName.equals("hashCode") && length == 0) {
+                    return Integer.valueOf(proxy.getClass().hashCode());
+                }
+                else if (methodName.equals("equals") && length == 1) {
+                    Class[] parameterTypes = parameterTypeCache.get(method);
+                    if (parameterTypes == null) {
+                        parameterTypes = method.getParameterTypes();
+                        parameterTypeCache.put(method, parameterTypes);
+                    }
+                    if (parameterTypes[0].equals(Object.class)) {
+                        return Boolean.valueOf(proxy == nargs[0]);
+                    }
+                }
+                else if (methodName == "__ruby_object" && length == 0) {
+                    return wrapper;
+                }
+
+                IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
+                try {
+                    return Helpers.invoke(runtime.getCurrentContext(), wrapper, methodName, rubyArgs).toJava(method.getReturnType());
+                }
+                catch (RuntimeException e) {
+                    e.printStackTrace(); throw e;
+                }
+            }
+
+        });
     }
 
     @SuppressWarnings("unchecked")
