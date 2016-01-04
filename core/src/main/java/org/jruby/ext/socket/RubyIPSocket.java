@@ -42,6 +42,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.Sockaddr;
 
+import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 
 /**
@@ -195,6 +196,25 @@ public abstract class RubyIPSocket extends RubyBasicSocket {
                 default: throw runtime.newArgumentError("invalid reverse_lookup flag: " + noreverse);
             }
         }
+    }
+
+    protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
+        final Ruby runtime = context.runtime;
+        IRubyObject[] ret = new IRubyObject[4];
+        if (addr.getAddress() instanceof Inet6Address) {
+            ret[0] = runtime.newString("AF_INET6");
+        } else {
+            ret[0] = runtime.newString("AF_INET");
+        }
+        ret[1] = runtime.newFixnum(addr.getPort());
+        String hostAddress = addr.getAddress().getHostAddress();
+        if (!reverse || doNotReverseLookup(context)) {
+            ret[2] = runtime.newString(hostAddress);
+        } else {
+            ret[2] = runtime.newString(addr.getHostName());
+        }
+        ret[3] = runtime.newString(hostAddress);
+        return runtime.newArrayNoCopy(ret);
     }
 
     @Deprecated

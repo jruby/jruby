@@ -713,24 +713,7 @@ public abstract class RubyBasicSocket extends RubyIO {
         return val.isTrue();
     }
 
-    protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
-        final Ruby runtime = context.runtime;
-        IRubyObject ret0, ret1, ret2, ret3;
-        if (addr.getAddress() instanceof Inet6Address) {
-            ret0 = runtime.newString("AF_INET6");
-        } else {
-            ret0 = runtime.newString("AF_INET");
-        }
-        ret1 = runtime.newFixnum(addr.getPort());
-        String hostAddress = addr.getAddress().getHostAddress();
-        if (!reverse || doNotReverseLookup(context)) {
-            ret2 = runtime.newString(hostAddress);
-        } else {
-            ret2 = runtime.newString(addr.getHostName());
-        }
-        ret3 = runtime.newString(hostAddress);
-        return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
-    }
+    protected abstract IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse);
 
     @Deprecated
     public IRubyObject recv(IRubyObject[] args) {
