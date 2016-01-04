@@ -41,7 +41,6 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.format.parser.PackCompiler;
 import org.jruby.truffle.format.parser.UnpackCompiler;
 import org.jruby.truffle.format.runtime.PackResult;
 import org.jruby.truffle.format.runtime.exceptions.*;
