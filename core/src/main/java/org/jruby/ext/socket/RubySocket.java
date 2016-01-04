@@ -485,34 +485,35 @@ public class RubySocket extends RubyBasicSocket {
 
         try {
             Channel channel;
-            switch (soType) {
-                case SOCK_STREAM:
-                    if ( soProtocolFamily == ProtocolFamily.PF_UNIX ||
-                         soProtocolFamily == ProtocolFamily.PF_LOCAL ) {
-                        if (server) {
-                            channel = UnixServerSocketChannel.open();
-                        } else {
-                            channel = UnixSocketChannel.open();
-                        }
-                    }
-                    else if ( soProtocolFamily == ProtocolFamily.PF_INET ||
-                              soProtocolFamily == ProtocolFamily.PF_INET6 ||
-                              soProtocolFamily == ProtocolFamily.PF_UNSPEC ) {
-                        if (server) {
-                            channel = ServerSocketChannel.open();
-                        } else {
-                            channel = SocketChannel.open();
-                        }
-                    }
-                    else {
-                        throw runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
+            switch (soProtocolFamily) {
+                case PF_UNIX:
+                case PF_LOCAL:
+                    if (server) {
+                        channel = UnixServerSocketChannel.open();
+                    } else {
+                        channel = UnixSocketChannel.open();
                     }
                     break;
-                case SOCK_DGRAM:
-                    channel = DatagramChannel.open();
+                case PF_INET:
+                case PF_INET6:
+                case PF_UNSPEC:
+                    switch (soType) {
+                        case SOCK_STREAM:
+                            if (server) {
+                                channel = ServerSocketChannel.open();
+                            } else {
+                                channel = SocketChannel.open();
+                            }
+                            break;
+                        case SOCK_DGRAM:
+                            channel = DatagramChannel.open();
+                            break;
+                        default:
+                            throw runtime.newArgumentError("unsupported socket type `" + soType + "'");
+                    }
                     break;
                 default:
-                    throw runtime.newArgumentError("unsupported socket type `" + soType + "'");
+                    throw runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
             }
 
             return newChannelFD(runtime, channel);
@@ -656,10 +657,23 @@ public class RubySocket extends RubyBasicSocket {
     protected void doBind(ThreadContext context, SocketAddress iaddr) {
         bindAddress = iaddr;
 
-        if ((soProtocolFamily == ProtocolFamily.PF_INET || soProtocolFamily == ProtocolFamily.PF_INET6) && soType == Sock.SOCK_DGRAM) {
+        if (canBindImmediately()) {
             // datagram sockets can be initialized immediately after bind
             lazyInit(context, false);
         }
+    }
+
+    private boolean canBindImmediately() {
+        switch (soProtocolFamily) {
+            case PF_INET:
+            case PF_INET6:
+                if (soType == Sock.SOCK_DGRAM) return true;
+                break;
+            case PF_UNIX:
+                if (soType == Sock.SOCK_DGRAM) return true;
+                break;
+        }
+        return false;
     }
 
     protected void lazyBind(ThreadContext context) {
@@ -680,6 +694,14 @@ public class RubySocket extends RubyBasicSocket {
                     socket.bind(bindAddress);
                 } else {
                     socket.bind(bindAddress, backlog);
+                }
+            }
+            else if (channel instanceof UnixServerSocketChannel) {
+                UnixServerSocket unixServer = ((UnixServerSocketChannel) channel).socket();
+                if (backlog == -1) {
+                    unixServer.bind(bindAddress);
+                } else {
+                    unixServer.bind(bindAddress, backlog);
                 }
             }
             else if (channel instanceof UnixSocketChannel) {
