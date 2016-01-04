@@ -405,6 +405,10 @@ public class RubyBasicSocket extends RubyIO {
             String howString = null;
             if (args[0] instanceof RubyString || args[0] instanceof RubySymbol) {
                 howString = args[0].asJavaString();
+            } else {
+                Ruby runtime = context.runtime;
+                IRubyObject maybeString = TypeConverter.checkStringType(runtime, args[0]);
+                if (!maybeString.isNil()) howString = maybeString.toString();
             }
             if (howString != null) {
                 if (howString.equals("RD") || howString.equals("SHUT_RD")) {
