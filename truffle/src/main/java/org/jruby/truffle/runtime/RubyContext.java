@@ -127,7 +127,9 @@ public class RubyContext extends ExecutionContext {
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
         if (!onGraal()) {
-            System.err.println("JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
+            System.err.println("WARNING: JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. " +
+                    "The compilation is disabled Without the Graal compiler and it runs much slower. " +
+                    "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
@@ -253,7 +255,7 @@ public class RubyContext extends ExecutionContext {
                         RubyArguments.getSelf(frame.getArguments()),
                         null,
                         DeclarationContext.INSTANCE_EVAL,
-                        new Object[] {}),
+                        new Object[]{}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
 
         if (arguments.length % 2 == 1) {
@@ -400,7 +402,7 @@ public class RubyContext extends ExecutionContext {
 
     @TruffleBoundary
     public Object parseAndExecute(Source source, Encoding defaultEncoding, ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments,
-            DeclarationContext declarationContext, Node currentNode) {
+                                  DeclarationContext declarationContext, Node currentNode) {
         final RubyRootNode rootNode = parse(source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode);
         return execute(parserContext, declarationContext, rootNode, parentFrame, self);
     }
@@ -428,7 +430,7 @@ public class RubyContext extends ExecutionContext {
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
                 declaringModule, Visibility.PUBLIC, callTarget);
 
-        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, new Object[] {}));
+        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, new Object[]{}));
     }
 
     public long getNextObjectID() {
