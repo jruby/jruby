@@ -54,16 +54,10 @@ public abstract class RubiniusLastStringWriteNode extends RubyNode {
         }
 
         try {
-            Object foo = callerFrame.getObject(slot);
+            Object currentValue = callerFrame.getObject(slot);
 
-            if (foo instanceof ThreadLocalObject) {
-                ThreadLocalObject threadLocalObject = (ThreadLocalObject) foo;
-
-                if (threadLocalObject == null) {
-                    threadLocalObject = new ThreadLocalObject(getContext());
-                    callerFrame.setObject(slot, threadLocalObject);
-                }
-
+            if (currentValue instanceof ThreadLocalObject) {
+                ThreadLocalObject threadLocalObject = (ThreadLocalObject) currentValue;
                 threadLocalObject.set(value);
             } else {
                 callerFrame.setObject(slot, value);
