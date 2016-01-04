@@ -120,8 +120,17 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.setConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
         rb_mConstants.setConstant("MSG_WAITALL", runtime.newFixnum(MSG_WAITALL));
 
-        // constants webrick crashes without
         rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(1));
+        rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(2));
+        rb_mConstants.setConstant("AI_NUMERICHOST", runtime.newFixnum(4));
+        rb_mConstants.setConstant("AI_ALL", runtime.newFixnum(256));
+        rb_mConstants.setConstant("AI_V4MAPPED_CFG", runtime.newFixnum(512));
+        rb_mConstants.setConstant("AI_ADDRCONFIG", runtime.newFixnum(1024));
+        rb_mConstants.setConstant("AI_V4MAPPED", runtime.newFixnum(2048));
+        rb_mConstants.setConstant("AI_NUMERICSERV", runtime.newFixnum(4096));
+
+        rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(1536));
+        rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(5127));
 
         // More constants needed by specs
         rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
