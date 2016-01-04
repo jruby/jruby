@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -100,13 +99,12 @@ public class RealClassGenerator {
      */
     public static Class defineOldStyleImplClass(Ruby ruby, String name, String[] superTypeNames, Map<String, List<Method>> simpleToAll, ClassDefiningClassLoader classLoader) {
         Class newClass;
-        byte[] bytes;
-
         synchronized (classLoader) {
             // try to load the specified name; only if that fails, try to define the class
             try {
                 newClass = classLoader.loadClass(name);
-            } catch (ClassNotFoundException cnfe) {
+            }
+            catch (ClassNotFoundException ex) {
                 ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
                 String pathName = name.replace('.', '/');
 
@@ -147,9 +145,10 @@ public class RealClassGenerator {
 
                     implementedNames.clear();
 
-                    for (Method method : methods) {
-                        Class[] paramTypes = method.getParameterTypes();
-                        Class returnType = method.getReturnType();
+                    for (int i = 0; i < methods.size(); i++) {
+                        final Method method = methods.get(i);
+                        final Class[] paramTypes = method.getParameterTypes();
+                        final Class returnType = method.getReturnType();
 
                         String fullName = simpleName + prettyParams(paramTypes);
                         if (implementedNames.contains(fullName)) continue;
@@ -172,31 +171,16 @@ public class RealClassGenerator {
                         mv.start();
                         mv.line(1);
 
-                        // TODO: this code should really check if a Ruby equals method is implemented or not.
-                        if (simpleName.equals("equals") && paramTypes.length == 1 && paramTypes[0] == Object.class && returnType == Boolean.TYPE) {
-                            mv.line(2);
-                            mv.aload(0);
-                            mv.aload(1);
-                            mv.invokespecial(p(Object.class), "equals", sig(Boolean.TYPE, params(Object.class)));
-                            mv.ireturn();
-                        } else if (simpleName.equals("hashCode") && paramTypes.length == 0 && returnType == Integer.TYPE) {
-                            mv.line(3);
-                            mv.aload(0);
-                            mv.invokespecial(p(Object.class), "hashCode", sig(Integer.TYPE));
-                            mv.ireturn();
-                        } else if (simpleName.equals("toString") && paramTypes.length == 0 && returnType == String.class) {
-                            mv.line(4);
-                            mv.aload(0);
-                            mv.invokespecial(p(Object.class), "toString", sig(String.class));
-                            mv.areturn();
-                        } else if (simpleName.equals("__ruby_object") && paramTypes.length == 0 && returnType == IRubyObject.class) {
+                        if ( simpleName.equals("__ruby_object") && paramTypes.length == 0 && returnType == IRubyObject.class ) {
                             mv.aload(0);
                             mv.getfield(pathName, "$self", ci(IRubyObject.class));
                             mv.areturn();
-                        } else {
+                        }
+                        else if ( ! defineIfCommonMethod(mv, simpleName, paramTypes, returnType) ) {
+
                             mv.line(5);
 
-                            int cacheIndex = cacheSize++;
+                            final int cacheIndex = cacheSize++;
 
                             // prepare temp locals
                             mv.aload(0);
@@ -256,21 +240,9 @@ public class RealClassGenerator {
                 cw.visitEnd();
 
                 // create the class
-                bytes = cw.toByteArray();
-
-                newClass = classLoader.defineClass(name, cw.toByteArray());
-            }
-        }
-
-        if (DEBUG) {
-            FileOutputStream fos = null;
-            try {
-                fos = new FileOutputStream(name + ".class");
-                fos.write(bytes);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            } finally {
-                try {fos.close();} catch (Exception e) {}
+                final byte[] bytecode = cw.toByteArray();
+                newClass = classLoader.defineClass(name, bytecode);
+                if ( DEBUG ) writeClassFile(name, bytecode);
             }
         }
 
@@ -297,7 +269,8 @@ public class RealClassGenerator {
         if (isRubyHierarchy) {
             // Ruby hierarchy...just extend it
             cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(superClass), superTypeNames);
-        } else {
+        }
+        else {
             // Non-Ruby hierarchy; add IRubyObject
             String[] plusIRubyObject = new String[superTypeNames.length + 1];
             plusIRubyObject[0] = p(IRubyObject.class);
@@ -320,7 +293,8 @@ public class RealClassGenerator {
             // superclass is in the Ruby object hierarchy; invoke typical Ruby superclass constructor
             initMethod.aloadMany(0, 1, 2);
             initMethod.invokespecial(p(superClass), "<init>", sig(void.class, Ruby.class, RubyClass.class));
-        } else {
+        }
+        else {
             // superclass is not in Ruby hierarchy; store objects and call no-arg super constructor
             cw.visitField(ACC_FINAL | ACC_PRIVATE, "$ruby", ci(Ruby.class), null, null).visitEnd();
             cw.visitField(ACC_FINAL | ACC_PRIVATE, "$rubyClass", ci(RubyClass.class), null, null).visitEnd();
@@ -337,14 +311,13 @@ public class RealClassGenerator {
         initMethod.voidreturn();
         initMethod.end();
 
-        if (isRubyHierarchy) {
-            // override toJava
+        if (isRubyHierarchy) { // override toJava
             SkinnyMethodAdapter toJavaMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "toJava", sig(Object.class, Class.class), null, null);
             toJavaMethod.aload(0);
             toJavaMethod.areturn();
             toJavaMethod.end();
-        } else {
-            // decorate with stubbed IRubyObject methods
+        }
+        else { // decorate with stubbed IRubyObject methods
             BasicObjectStubGenerator.addBasicObjectStubsToClass(cw);
 
             // add getRuntime and getMetaClass impls based on captured fields
@@ -375,8 +348,8 @@ public class RealClassGenerator {
 
             for (int i = 0; i < methods.size(); i++) {
                 final Method method = methods.get(i);
-                Class[] paramTypes = method.getParameterTypes();
-                Class returnType = method.getReturnType();
+                final Class[] paramTypes = method.getParameterTypes();
+                final Class returnType = method.getReturnType();
 
                 String fullName = simpleName + prettyParams(paramTypes);
                 if (implementedNames.contains(fullName)) continue;
@@ -391,34 +364,17 @@ public class RealClassGenerator {
                         baseIndex += 1;
                     }
                 }
-                int rubyIndex = baseIndex + 1;
+                final int rubyIndex = baseIndex + 1;
 
                 SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
                         cw, ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null);
                 mv.start();
                 mv.line(1);
 
-                // TODO: this code should really check if a Ruby equals method is implemented or not.
-                if(simpleName.equals("equals") && paramTypes.length == 1 && paramTypes[0] == Object.class && returnType == Boolean.TYPE) {
-                    mv.line(2);
-                    mv.aload(0);
-                    mv.aload(1);
-                    mv.invokespecial(p(Object.class), "equals", sig(Boolean.TYPE, params(Object.class)));
-                    mv.ireturn();
-                } else if(simpleName.equals("hashCode") && paramTypes.length == 0 && returnType == Integer.TYPE) {
-                    mv.line(3);
-                    mv.aload(0);
-                    mv.invokespecial(p(Object.class), "hashCode", sig(Integer.TYPE));
-                    mv.ireturn();
-                } else if(simpleName.equals("toString") && paramTypes.length == 0 && returnType == String.class) {
-                    mv.line(4);
-                    mv.aload(0);
-                    mv.invokespecial(p(Object.class), "toString", sig(String.class));
-                    mv.areturn();
-                } else {
+                if ( ! defineIfCommonMethod(mv, simpleName, paramTypes, returnType) ) {
                     mv.line(5);
 
-                    int cacheIndex = cacheSize++;
+                    final int cacheIndex = cacheSize++;
 
                     // prepare temp locals
                     mv.aload(0);
@@ -475,33 +431,69 @@ public class RealClassGenerator {
         cw.visitEnd();
 
         // create the class
-        byte[] bytes = cw.toByteArray();
-        Class newClass;
-        ClassDefiningJRubyClassLoader loader;
+        final ClassDefiningJRubyClassLoader loader;
         if (superClass.getClassLoader() instanceof ClassDefiningJRubyClassLoader) {
             loader = new ClassDefiningJRubyClassLoader(superClass.getClassLoader());
         } else {
             loader = new ClassDefiningJRubyClassLoader(ruby.getJRubyClassLoader());
         }
+
+        Class newClass;
         try {
             newClass = loader.loadClass(name);
-        } catch (ClassNotFoundException cnfe) {
-            newClass = loader.defineClass(name, cw.toByteArray());
         }
-
-        if (DEBUG) {
-            FileOutputStream fos = null;
-            try {
-                fos = new FileOutputStream(name + ".class");
-                fos.write(bytes);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            } finally {
-                try {fos.close();} catch (Exception e) {}
-            }
+        catch (ClassNotFoundException ex) {
+            final byte[] bytecode = cw.toByteArray();
+            newClass = loader.defineClass(name, bytecode);
+            if ( DEBUG ) writeClassFile(name, bytecode);
         }
 
         return newClass;
+    }
+
+    private static boolean defineIfCommonMethod(SkinnyMethodAdapter mv,
+        final String simpleName, final Class[] paramTypes, final Class returnType) {
+        switch ( simpleName ) {
+            // TODO: this code should really check if a Ruby equals method is implemented or not.
+            case "equals" :
+                if (paramTypes.length == 1 && paramTypes[0] == Object.class && returnType == Boolean.TYPE) {
+                    mv.line(2);
+                    mv.aload(0);
+                    mv.aload(1);
+                    mv.invokespecial(p(Object.class), "equals", sig(Boolean.TYPE, params(Object.class)));
+                    mv.ireturn();
+                    return true;
+                }
+            case "hashCode" :
+                if (paramTypes.length == 0 && returnType == Integer.TYPE) {
+                    mv.line(3);
+                    mv.aload(0);
+                    mv.invokespecial(p(Object.class), "hashCode", sig(Integer.TYPE));
+                    mv.ireturn();
+                    return true;
+                }
+            case "toString" :
+                if (paramTypes.length == 0 && returnType == String.class) {
+                    mv.line(4);
+                    mv.aload(0);
+                    mv.invokespecial(p(Object.class), "toString", sig(String.class));
+                    mv.areturn();
+                    return true;
+                }
+        }
+        return false;
+    }
+
+    private static void writeClassFile(final String name, final byte[] bytecode) {
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(name + ".class");
+            fos.write(bytecode);
+        }
+        catch (IOException ex) { ex.printStackTrace(); }
+        finally {
+            try { if ( fos != null ) fos.close(); } catch (Exception e) {}
+        }
     }
 
     public static void coerceArgumentsToRuby(SkinnyMethodAdapter mv, Class[] paramTypes, int rubyIndex) {
