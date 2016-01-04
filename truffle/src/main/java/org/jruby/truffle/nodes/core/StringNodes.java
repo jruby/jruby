@@ -2205,6 +2205,8 @@ public abstract class StringNodes {
         private RuntimeException handleException(PackException exception) {
             try {
                 throw exception;
+            } catch (FormatException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             } catch (TooFewArgumentsException e) {
                 return new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
             } catch (NoImplicitConversionException e) {
