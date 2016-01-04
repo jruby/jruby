@@ -1,5 +1,6 @@
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.AddressFamily;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
@@ -7,6 +8,8 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -42,7 +45,7 @@ public class Option extends RubyObject {
     }
 
     public Option(Ruby runtime, ProtocolFamily family, SocketLevel level, SocketOption option, int data) {
-        this(runtime, (RubyClass)runtime.getClassFromPath("Socket::Option"), family, level, option, data);
+        this(runtime, (RubyClass) runtime.getClassFromPath("Socket::Option"), family, level, option, data);
     }
 
     public Option(Ruby runtime, RubyClass klass, ProtocolFamily family, SocketLevel level, SocketOption option, int data) {
@@ -51,18 +54,15 @@ public class Option extends RubyObject {
         this.family = family;
         this.level = level;
         this.option = option;
-        this.intData = data;
-        ByteList result = new ByteList(4);
-        this.data = Pack.packInt_i(result, data);
+        this.data = packInt(data);
     }
     
     @JRubyMethod(required = 4, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        family = ProtocolFamily.valueOf(args[0].convertToInteger().getLongValue());
-        level = SocketLevel.valueOf(args[1].convertToInteger().getLongValue());
-        option = SocketOption.valueOf(args[2].convertToInteger().getLongValue());
+        family = SocketUtils.protocolFamilyFromArg(args[0]);
+        level = SocketUtils.socketLevelFromArg(args[1]);
+        option = SocketUtils.socketOptionFromArg(args[2]);
         data = args[3].convertToString().getByteList();
-        intData = Pack.unpackInt_i(ByteBuffer.wrap(data.bytes()));
         return context.nil;
     }
     
@@ -78,7 +78,7 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject optname(ThreadContext context) {
-        return context.runtime.newFixnum(option.longValue());
+        return context.runtime.newFixnum(option.intValue());
     }
 
     @JRubyMethod
@@ -132,6 +132,7 @@ public class Option extends RubyObject {
 
     // from rb_sockopt_inspect
     private String optionValue() {
+        int intData;
         switch (option) {
             case SO_DEBUG:
             case SO_ACCEPTCONN:
@@ -144,55 +145,126 @@ public class Option extends RubyObject {
             case SO_DONTROUTE:
             case SO_RCVLOWAT:
             case SO_SNDLOWAT:
+                intData = Pack.unpackInt_i(ByteBuffer.wrap(data.unsafeBytes(), data.begin(), data.realSize()));
                 return String.valueOf(intData);
 
             case SO_LINGER:
+                intData = Pack.unpackInt_i(ByteBuffer.wrap(data.unsafeBytes(), data.begin(), data.realSize()));
                 return intData == -1 ? "off" :
                         intData == 0 ? "on" :
                                 "on(" + intData + ")";
 
             case SO_RCVTIMEO:
             case SO_SNDTIMEO:
+                intData = Pack.unpackInt_i(ByteBuffer.wrap(data.unsafeBytes(), data.begin(), data.realSize()));
                 return Sprintf.getNumberFormat(Locale.getDefault()).format(intData / 1000.0);
 
             case SO_ERROR:
+                intData = Pack.unpackInt_i(ByteBuffer.wrap(data.unsafeBytes(), data.begin(), data.realSize()));
                 return Errno.valueOf(intData).description();
 
             case SO_TYPE:
+                intData = Pack.unpackInt_i(ByteBuffer.wrap(data.unsafeBytes(), data.begin(), data.realSize()));
                 return Sock.valueOf(intData).description();
         }
 
         return "";
     }
 
-    @JRubyMethod(meta = true)
-    public IRubyObject rb_int(ThreadContext context, IRubyObject self) {
-        return context.nil;
-    }
-    
-    @JRubyMethod(name = "int")
-    public IRubyObject asInt(ThreadContext context) {
-        return context.getRuntime().newFixnum((int) intData);
+    public static ByteList packInt(int i) {
+        ByteList result = new ByteList(4);
+        Pack.packInt_i(result, i);
+        return result;
     }
 
-    @JRubyMethod(meta = true)
-    public IRubyObject bool(ThreadContext context, IRubyObject self) {
-        return context.nil;
+    public static ByteList packLinger(int vonoff, int vsecs) {
+        ByteList result = new ByteList(8);
+        Pack.packInt_i(result, vonoff);
+        Pack.packInt_i(result, vsecs);
+        return result;
+    }
+
+    public int[] unpackLinger() {
+        ByteList result = new ByteList(8);
+        ByteBuffer buf = ByteBuffer.wrap(data.unsafeBytes(), data.begin(), data.realSize());
+        int vonoff = Pack.unpackInt_i(buf);
+        int vsecs = Pack.unpackInt_i(buf);
+        return new int[] {vonoff, vsecs};
+    }
+
+    @JRubyMethod(name = {"int", "byte"}, required = 4, meta = true)
+    public static IRubyObject rb_int(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
+        Option option = new Option(runtime, (RubyClass) self);
+        args[3] = runtime.newString(Pack.packInt_i(new ByteList(), args[3].convertToInteger().getIntValue()));
+        option.initialize(context, args);
+
+        return option;
+    }
+
+    @JRubyMethod(name = {"int", "byte"})
+    public IRubyObject asInt(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        if (data == null || data.realSize() != 4) {
+            throw runtime.newTypeError("size differ.  expected as sizeof(int)=4 but " + data.realSize());
+        }
+
+        int intData = Pack.unpackInt_i(ByteBuffer.wrap(data.unsafeBytes(), data.begin(), data.realSize()));
+        return runtime.newFixnum(intData);
+    }
+
+    @JRubyMethod(required = 4, meta = true)
+    public static IRubyObject bool(ThreadContext context, IRubyObject self, IRubyObject args[]) {
+        Ruby runtime = context.runtime;
+
+        Option option = new Option(runtime, (RubyClass) self);
+        args[3] = runtime.newString(packInt(args[3].isTrue() ? 1 : 0));
+        option.initialize(context, args);
+
+        return option;
     }
 
     @JRubyMethod
     public IRubyObject bool(ThreadContext context) {
-        return context.nil;
+        Ruby runtime = context.runtime;
+
+        if (data.realSize() != 4) {
+            throw runtime.newTypeError("size differ.  expected as sizeof(int)=4 but " + data.realSize());
+        }
+
+        int intData = Pack.unpackInt_i(ByteBuffer.wrap(data.unsafeBytes(), data.begin(), data.realSize()));
+        return intData == 0 ? runtime.getFalse() : runtime.getTrue();
     }
 
     @JRubyMethod(meta = true)
-    public IRubyObject linger(ThreadContext context, IRubyObject self) {
-        return context.nil;
+    public static IRubyObject linger(ThreadContext context, IRubyObject self, IRubyObject vonoff, IRubyObject vsecs) {
+        Ruby runtime = context.runtime;
+        Option option = new Option(runtime, (RubyClass) self);
+        option.initialize(
+                context,
+                new IRubyObject[]{
+                        runtime.newFixnum(AddressFamily.AF_UNSPEC.intValue()),
+                        runtime.newFixnum(SocketLevel.SOL_SOCKET.intValue()),
+                        runtime.newFixnum(SocketOption.SO_LINGER.intValue()),
+                        runtime.newString(packLinger(vonoff.isTrue() ? 1 : 0, vsecs.convertToInteger().getIntValue()))
+                }
+        );
+        return option;
     }
 
     @JRubyMethod
     public IRubyObject linger(ThreadContext context) {
-        return context.nil;
+        Ruby runtime = context.runtime;
+
+        if (data == null || data.realSize() != 8) {
+            throw runtime.newTypeError("size differ.  expected as sizeof(int)=8 but " + data.realSize());
+        }
+
+        int[] linger = unpackLinger();
+
+        return runtime.newArray(linger[0] == 0 ? runtime.getFalse() : runtime.getTrue(), runtime.newFixnum(linger[1]));
     }
 
     @JRubyMethod
@@ -209,5 +281,4 @@ public class Option extends RubyObject {
     private SocketLevel level;
     private SocketOption option;
     private ByteList data;
-    private long intData;
 }

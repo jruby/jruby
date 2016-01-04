@@ -29,6 +29,8 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.AddressFamily;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
+import jnr.constants.platform.SocketLevel;
+import jnr.constants.platform.SocketOption;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
 import org.jruby.Ruby;
@@ -619,6 +621,48 @@ public class SocketUtils {
             return Sock.valueOf(typeInt);
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(type.getRuntime(), "invalid socket type: " + type);
+        }
+    }
+
+    static SocketLevel socketLevelFromArg(IRubyObject level) {
+        IRubyObject maybeString = TypeConverter.checkStringType(level.getRuntime(), level);
+
+        if (!maybeString.isNil()) {
+            level = maybeString;
+        }
+
+        try {
+            if(level instanceof RubyString || level instanceof RubySymbol) {
+                String levelString = level.toString();
+                if (levelString.startsWith("SOL_")) return SocketLevel.valueOf(levelString.toString());
+                return SocketLevel.valueOf("SOL_" + levelString);
+            }
+
+            int typeInt = RubyNumeric.fix2int(level);
+            return SocketLevel.valueOf(typeInt);
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(level.getRuntime(), "invalid socket level: " + level);
+        }
+    }
+
+    static SocketOption socketOptionFromArg(IRubyObject option) {
+        IRubyObject maybeString = TypeConverter.checkStringType(option.getRuntime(), option);
+
+        if (!maybeString.isNil()) {
+            option = maybeString;
+        }
+
+        try {
+            if(option instanceof RubyString || option instanceof RubySymbol) {
+                String optionString = option.toString();
+                if (optionString.startsWith("SO_")) return SocketOption.valueOf(optionString.toString());
+                return SocketOption.valueOf("SO_" + optionString);
+            }
+
+            int typeInt = RubyNumeric.fix2int(option);
+            return SocketOption.valueOf(typeInt);
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(option.getRuntime(), "invalid socket option: " + option);
         }
     }
 
