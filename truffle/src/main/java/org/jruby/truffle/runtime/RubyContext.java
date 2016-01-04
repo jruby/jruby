@@ -62,10 +62,7 @@ import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -697,7 +694,7 @@ public class RubyContext extends ExecutionContext {
     public static void writeToFile(String fileName, String message) {
         try (PrintStream stream = new PrintStream(fileName, StandardCharsets.UTF_8.name())) {
             stream.println(message);
-        } catch (Exception e) {
+        } catch (FileNotFoundException | UnsupportedEncodingException e) {
             e.printStackTrace();
         }
     }
