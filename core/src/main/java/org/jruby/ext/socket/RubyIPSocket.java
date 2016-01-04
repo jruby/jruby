@@ -31,12 +31,14 @@ package org.jruby.ext.socket;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.Sockaddr;
 
@@ -65,12 +67,12 @@ public abstract class RubyIPSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = "addr")
     public IRubyObject addr19(ThreadContext context) {
-        return addrCommon(context, true);
+        return addrCommon(context, !context.getRuntime().isDoNotReverseLookupEnabled());
     }
 
     @JRubyMethod(name = "addr")
     public IRubyObject addr19(ThreadContext context, IRubyObject reverse) {
-        return addrCommon(context, reverse.isTrue());
+        return addrCommon(context, reverse);
     }
 
     public IRubyObject peeraddr(ThreadContext context) {
@@ -79,12 +81,12 @@ public abstract class RubyIPSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = "peeraddr")
     public IRubyObject peeraddr19(ThreadContext context) {
-        return peeraddrCommon(context, true);
+        return peeraddrCommon(context, !context.getRuntime().isDoNotReverseLookupEnabled());
     }
 
     @JRubyMethod(name = "peeraddr")
     public IRubyObject peeraddr19(ThreadContext context, IRubyObject reverse) {
-        return peeraddrCommon(context, reverse.isTrue());
+        return peeraddrCommon(context, reverse);
     }
 
     @JRubyMethod(meta = true)
@@ -148,24 +150,59 @@ public abstract class RubyIPSocket extends RubyBasicSocket {
         return Sockaddr.packSockaddrFromAddress(context, sock);
     }
 
+    private IRubyObject addrCommon(ThreadContext context, IRubyObject reverse) {
+        Boolean doReverse = doReverseLookup(context, reverse);
+        if (doReverse == null) doReverse = false;
+
+        return addrCommon(context, doReverse);
+    }
+
     private IRubyObject addrCommon(ThreadContext context, boolean reverse) {
-            InetSocketAddress address = getInetSocketAddress();
+        InetSocketAddress address = getInetSocketAddress();
 
-            if (address == null) {
-                throw context.runtime.newErrnoENOTSOCKError("Not socket or not connected");
-            }
+        checkAddress(context, address);
 
-            return addrFor(context, address, reverse);
+        return addrFor(context, address, reverse);
+    }
+
+    private void checkAddress(ThreadContext context, InetSocketAddress address) {
+        if (address == null) {
+            throw context.runtime.newErrnoENOTSOCKError("Not socket or not connected");
+        }
+    }
+
+    private IRubyObject peeraddrCommon(ThreadContext context, IRubyObject reverse) {
+        Boolean doReverse = doReverseLookup(context, reverse);
+        if (doReverse == null) doReverse = !context.runtime.isDoNotReverseLookupEnabled();
+
+        return peeraddrCommon(context, doReverse);
     }
 
     private IRubyObject peeraddrCommon(ThreadContext context, boolean reverse) {
         InetSocketAddress address = getInetRemoteSocket();
 
-        if (address == null) {
-            throw context.runtime.newErrnoENOTSOCKError("Not socket or not connected");
-        }
+        checkAddress(context, address);
 
         return addrFor(context, address, reverse);
+    }
+
+    private Boolean doReverseLookup(ThreadContext context, IRubyObject noreverse) {
+        Ruby runtime = context.runtime;
+
+        if (noreverse == runtime.getTrue()) {
+            return false;
+        } else if (noreverse == runtime.getFalse()) {
+            return true;
+        } else if (noreverse == context.nil) {
+            return null;
+        } else {
+            TypeConverter.checkType(context, noreverse, runtime.getSymbol());
+            switch (noreverse.toString()) {
+                case "numeric": return true;
+                case "hostname": return false;
+                default: throw runtime.newArgumentError("invalid reverse_lookup flag: " + noreverse);
+            }
+        }
     }
 
     @Deprecated
