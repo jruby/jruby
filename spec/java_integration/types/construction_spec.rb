@@ -3,6 +3,7 @@ require File.dirname(__FILE__) + "/../spec_helper"
 java_import "java_integration.fixtures.ArrayReceiver"
 java_import "java_integration.fixtures.ArrayReturningInterface"
 java_import "java_integration.fixtures.ArrayReturningInterfaceConsumer"
+java_import "java_integration.fixtures.CachedInJava"
 java_import "java_integration.fixtures.PublicConstructor"
 java_import "java_integration.fixtures.ProtectedConstructor"
 java_import "java_integration.fixtures.PackageConstructor"
@@ -837,3 +838,14 @@ describe "A Ruby class extending a Java class" do
 
 end
 
+describe "A Java class being constructed from Ruby" do
+  before(:all) { CachedInJava.__persistent__ = true }
+
+  it "should be stored in proxy cache" do
+    object = CachedInJava.new
+    def object.answer; 42; end
+    expect(object.answer).to eq(42)
+    expect(CachedInJava.last_instance).to eq(object)
+    expect(CachedInJava.last_instance.answer).to eq(42)
+  end
+end
