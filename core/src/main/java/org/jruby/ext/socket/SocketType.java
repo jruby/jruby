@@ -246,7 +246,7 @@ public enum SocketType {
         }
 
         public SocketAddress getLocalSocketAddress(Channel channel) {
-            return new UnixSocketAddress(new File("empty-path"));
+            return new UnixSocketAddress(new File(""));
         }
     },
 
