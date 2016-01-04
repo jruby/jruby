@@ -1483,6 +1483,7 @@ public class BodyTranslator extends Translator {
             RubyNode assignment = localVarNode.makeWriteNode(rhs);
 
             if (name.equals("$_")) {
+                // TODO CS 4-Jan-16 I can't work out why this is a *get* node
                 assignment = GetFromThreadLocalNodeGen.create(context, sourceSection, assignment);
             }
 
