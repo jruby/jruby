@@ -61,31 +61,23 @@ public abstract class RubyIPSocket extends RubyBasicSocket {
         super(runtime, type);
     }
 
-    public IRubyObject addr(ThreadContext context) {
-        return addrCommon(context, true);
-    }
-
     @JRubyMethod(name = "addr")
-    public IRubyObject addr19(ThreadContext context) {
+    public IRubyObject addr(ThreadContext context) {
         return addrCommon(context, !context.getRuntime().isDoNotReverseLookupEnabled());
     }
 
     @JRubyMethod(name = "addr")
-    public IRubyObject addr19(ThreadContext context, IRubyObject reverse) {
+    public IRubyObject addr(ThreadContext context, IRubyObject reverse) {
         return addrCommon(context, reverse);
     }
 
-    public IRubyObject peeraddr(ThreadContext context) {
-        return peeraddrCommon(context, true);
-    }
-
     @JRubyMethod(name = "peeraddr")
-    public IRubyObject peeraddr19(ThreadContext context) {
+    public IRubyObject peeraddr(ThreadContext context) {
         return peeraddrCommon(context, !context.getRuntime().isDoNotReverseLookupEnabled());
     }
 
     @JRubyMethod(name = "peeraddr")
-    public IRubyObject peeraddr19(ThreadContext context, IRubyObject reverse) {
+    public IRubyObject peeraddr(ThreadContext context, IRubyObject reverse) {
         return peeraddrCommon(context, reverse);
     }
 
