@@ -67,6 +67,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
@@ -124,6 +125,10 @@ public class RubyContext extends ExecutionContext {
         this.env = env;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
+
+        if (!onGraal()) {
+            System.err.println("JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
+        }
 
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
             compilerOptions.setOption("MinTimeThreshold", 100000000);
@@ -198,6 +203,10 @@ public class RubyContext extends ExecutionContext {
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
         initialize();
+    }
+
+    public boolean onGraal() {
+        return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
