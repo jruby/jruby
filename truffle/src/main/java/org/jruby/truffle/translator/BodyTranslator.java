@@ -60,9 +60,7 @@ import org.jruby.truffle.nodes.literal.StringLiteralNode;
 import org.jruby.truffle.nodes.locals.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.rubinius.RubiniusLastStringReadNode;
-import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
-import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
+import org.jruby.truffle.nodes.rubinius.*;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.ConstantReplacer;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -1434,7 +1432,13 @@ public class BodyTranslator extends Translator {
         } else if (name.equals("$,")) {
             rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$_")) {
-            rhs = WrapInThreadLocalNodeGen.create(context, sourceSection, rhs);
+            if (getSourcePath(sourceSection).endsWith("truffle/rubysl/rubysl-stringio/lib/rubysl/stringio/stringio.rb")) {
+                rhs = RubiniusLastStringWriteNodeGen.create(context, sourceSection, rhs);
+            } else {
+                rhs = WrapInThreadLocalNodeGen.create(context, sourceSection, rhs);
+            }
+
+            environment.declareVar("$_");
         } else if (name.equals("$stdout")) {
             rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$VERBOSE")) {
