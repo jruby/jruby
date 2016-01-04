@@ -67,6 +67,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -694,9 +695,9 @@ public class RubyContext extends ExecutionContext {
     }
 
     public static void writeToFile(String fileName, String message) {
-        try (PrintStream stream = new PrintStream(fileName)) {
+        try (PrintStream stream = new PrintStream(fileName, StandardCharsets.UTF_8.name())) {
             stream.println(message);
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
