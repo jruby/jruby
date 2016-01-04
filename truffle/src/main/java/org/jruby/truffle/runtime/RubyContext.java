@@ -53,6 +53,7 @@ import org.jruby.truffle.runtime.loader.SourceCache;
 import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.runtime.platform.CrtExterns;
 import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
@@ -62,6 +63,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
@@ -86,6 +88,7 @@ public class RubyContext extends ExecutionContext {
     private final POSIX posix;
     private final NativeSockets nativeSockets;
     private final LibCClockGetTime libCClockGetTime;
+    private CrtExterns crtExterns;
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -162,6 +165,12 @@ public class RubyContext extends ExecutionContext {
         posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
 
         nativeSockets = LibraryLoader.create(NativeSockets.class).library("c").load();
+
+        try {
+            crtExterns = LibraryLoader.create(CrtExterns.class).failImmediately().library("libSystem.B.dylib").load();
+        } catch (UnsatisfiedLinkError e) {
+            crtExterns = null;
+        }
 
         if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
             libCClockGetTime = LibraryLoader.create(LibCClockGetTime.class).library("c").load();
@@ -680,4 +689,7 @@ public class RubyContext extends ExecutionContext {
         return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
     }
 
+    public CrtExterns getCrtExterns() {
+        return crtExterns;
+    }
 }

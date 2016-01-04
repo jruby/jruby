@@ -1488,7 +1488,17 @@ public class BodyTranslator extends Translator {
 
             return addNewlineIfNeeded(node, assignment);
         } else {
-            return addNewlineIfNeeded(node, new WriteGlobalVariableNode(context, sourceSection, name, rhs));
+            final RubyNode writeGlobalVariableNode = new WriteGlobalVariableNode(context, sourceSection, name, rhs);
+
+            final RubyNode translated;
+
+            if (name.equals("$0")) {
+                translated = WriteProgramNameNodeGen.create(context, sourceSection, writeGlobalVariableNode);
+            } else {
+                translated = writeGlobalVariableNode;
+            }
+
+            return addNewlineIfNeeded(node, translated);
         }
     }
 
