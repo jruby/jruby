@@ -1,7 +1,13 @@
+require 'rbconfig'
+
 class MSpecScript
 
-  def windows?
+  def self.windows?
     ENV.key?('WINDIR') || ENV.key?('windir')
+  end
+
+  def self.linux?
+    RbConfig::CONFIG['host_os'] == 'linux'
   end
 
   set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
@@ -59,6 +65,11 @@ class MSpecScript
   if windows?
     # exclude specs tagged with 'windows'
     set :xtags, (get(:xtags) || []) + ['windows']
+  end
+
+  if linux?
+    # exclude specs tagged with 'linux'
+    set :xtags, (get(:xtags) || []) + ['linux']
   end
 
   # Enable features
