@@ -1189,28 +1189,39 @@ public class Java implements Library {
     public static IRubyObject newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
         final Ruby runtime = wrapper.getRuntime();
 
-        Class[] tmp_interfaces = interfaces;
-        interfaces = new Class[tmp_interfaces.length + 1];
-        System.arraycopy(tmp_interfaces, 0, interfaces, 0, tmp_interfaces.length);
-        interfaces[tmp_interfaces.length] = RubyObjectHolderProxy.class;
-
-        if ( RubyInstanceConfig.INTERFACES_USE_PROXY ) {
-            return JavaObject.wrap(runtime, mewProxyInterfaceImpl(runtime, wrapper, interfaces));
+        final int length = interfaces.length;
+        switch ( length ) {
+            case 1 :
+                interfaces = new Class[] { interfaces[0], RubyObjectHolderProxy.class };
+            case 2 :
+                interfaces = new Class[] { interfaces[0], interfaces[1], RubyObjectHolderProxy.class };
+            default :
+                final Class[] tmp_interfaces = interfaces;
+                interfaces = new Class[length + 1];
+                System.arraycopy(tmp_interfaces, 0, interfaces, 0, length);
+                interfaces[length] = RubyObjectHolderProxy.class;
         }
 
+        final RubyClass wrapperClass = wrapper.getMetaClass();
+        final boolean isProc = wrapperClass.isSingleton() && wrapperClass.getRealClass() == runtime.getProc();
+
         final JRubyClassLoader jrubyClassLoader = runtime.getJRubyClassLoader();
+
+        if ( RubyInstanceConfig.INTERFACES_USE_PROXY ) {
+            return JavaObject.wrap(runtime, newProxyInterfaceImpl(wrapper, interfaces, jrubyClassLoader));
+        }
 
         final ClassDefiningClassLoader classLoader;
         // hashcode is a combination of the interfaces and the Ruby class we're using to implement them
         int interfacesHashCode = interfacesHashCode(interfaces);
         // if it's a singleton class and the real class is proc, we're doing closure conversion
         // so just use Proc's hashcode
-        if (wrapper.getMetaClass().isSingleton() && wrapper.getMetaClass().getRealClass() == runtime.getProc()) {
+        if ( isProc ) {
             interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
             classLoader = jrubyClassLoader;
         }
         else { // normal new class implementing interfaces
-            interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().getRealClass().hashCode();
+            interfacesHashCode = 31 * interfacesHashCode + wrapperClass.getRealClass().hashCode();
             classLoader = new OneShotClassLoader(jrubyClassLoader);
         }
         final String implClassName = "org.jruby.gen.InterfaceImpl" + Math.abs(interfacesHashCode);
@@ -1219,7 +1230,7 @@ public class Java implements Library {
             proxyImplClass = Class.forName(implClassName, true, jrubyClassLoader);
         }
         catch (ClassNotFoundException ex) {
-            proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, classLoader);
+            proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapperClass, runtime, implClassName, classLoader);
         }
 
         try {
@@ -1234,46 +1245,80 @@ public class Java implements Library {
         }
     }
 
-    private static Object mewProxyInterfaceImpl(final Ruby runtime, final IRubyObject wrapper, final Class[] interfaces) {
-        return Proxy.newProxyInstance(runtime.getJRubyClassLoader(), interfaces, new InvocationHandler() {
+    // NOTE: only used when java.lang.reflect.Proxy is to be used for interface impls (by default its not)
+    private static Object newProxyInterfaceImpl(final IRubyObject wrapper, final Class[] interfaces, final ClassLoader loader) {
+        return Proxy.newProxyInstance(loader, interfaces, new InterfaceProxyHandler(wrapper, interfaces));
+    }
 
-            private final Map<Method, Class[]> parameterTypeCache = new ConcurrentHashMap<Method, Class[]>();
+    private static final class InterfaceProxyHandler implements InvocationHandler {
 
-            public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
-                final String methodName = method.getName();
-                final int length = nargs == null ? 0 : nargs.length;
+        final IRubyObject wrapper;
+        //private final String[] superTypeNames;
 
-                // FIXME: wtf is this? Why would these use the class?
-                if (methodName.equals("toString") && length == 0) {
-                    return proxy.getClass().getName();
-                }
-                else if (methodName.equals("hashCode") && length == 0) {
-                    return Integer.valueOf(proxy.getClass().hashCode());
-                }
-                else if (methodName.equals("equals") && length == 1) {
-                    Class[] parameterTypes = parameterTypeCache.get(method);
-                    if (parameterTypes == null) {
-                        parameterTypes = method.getParameterTypes();
-                        parameterTypeCache.put(method, parameterTypes);
+        InterfaceProxyHandler(final IRubyObject wrapper, final Class[] interfaces) {
+            this.wrapper = wrapper;
+            //this.superTypeNames = new String[interfaces.length];
+        }
+
+        public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
+            final String methodName = method.getName();
+            final int length = nargs == null ? 0 : nargs.length;
+
+            switch ( methodName ) {
+                case "toString" :
+                    if ( length == 0 ) return proxy.getClass().getName();
+                    break;
+                case "hashCode" :
+                    if ( length == 0 ) return proxy.getClass().hashCode();
+                    break;
+                case "equals" :
+                    if ( length == 1 ) {
+                        Class[] parameterTypes = getParameterTypes(method);
+                        if ( parameterTypes[0] == Object.class ) return proxy == nargs[0];
                     }
-                    if (parameterTypes[0].equals(Object.class)) {
-                        return Boolean.valueOf(proxy == nargs[0]);
-                    }
-                }
-                else if (methodName == "__ruby_object" && length == 0) {
-                    return wrapper;
-                }
-
-                IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
-                try {
-                    return Helpers.invoke(runtime.getCurrentContext(), wrapper, methodName, rubyArgs).toJava(method.getReturnType());
-                }
-                catch (RuntimeException e) {
-                    e.printStackTrace(); throw e;
-                }
+                    break;
+                case "__ruby_object" :
+                    if ( length == 0 ) return wrapper;
+                    break;
             }
 
-        });
+            final Ruby runtime = wrapper.getRuntime();
+            final ThreadContext context = runtime.getCurrentContext();
+
+            //try {
+                switch ( length ) {
+                    case 0 :
+                        return Helpers.invoke(context, wrapper, methodName).toJava(method.getReturnType());
+                    case 1 :
+                        IRubyObject arg = JavaUtil.convertJavaToUsableRubyObject(runtime, nargs[0]);
+                        return Helpers.invoke(context, wrapper, methodName, arg).toJava(method.getReturnType());
+                    default :
+                        IRubyObject[] args = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
+                        return Helpers.invoke(context, wrapper, methodName, args).toJava(method.getReturnType());
+                }
+            //}
+            //catch (RuntimeException e) {
+            //    e.printStackTrace(); throw e;
+            //}
+        }
+
+        private Map<Method, Class[]> parameterTypeCache;
+
+        private Class[] getParameterTypes(final Method method) {
+            Map<Method, Class[]> parameterTypeCache = this.parameterTypeCache;
+            if (parameterTypeCache == null) {
+                parameterTypeCache = new ConcurrentHashMap<Method, Class[]>(4);
+                this.parameterTypeCache = parameterTypeCache;
+            }
+
+            Class[] parameterTypes = parameterTypeCache.get(method);
+            if (parameterTypes == null) {
+                parameterTypes = method.getParameterTypes();
+                parameterTypeCache.put(method, parameterTypes);
+            }
+            return parameterTypes;
+        }
+
     }
 
     @SuppressWarnings("unchecked")
