@@ -4125,6 +4125,8 @@ public final class Ruby implements Constantizable {
                     return newErrnoENFILEError();
                 case "Network is unreachable" :
                     return newErrnoENETUNREACHError();
+                case "Address already in use" :
+                    return newErrnoEADDRINUSEError();
                 default :
                     if ( Platform.IS_WINDOWS ) {
                         if ( errorMessage.contains("connection was aborted") ) {
