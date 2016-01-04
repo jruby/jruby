@@ -107,6 +107,7 @@ public class BodyTranslator extends Translator {
             Arrays.asList("$:", "$LOAD_PATH", "$-I", "$\"", "$LOADED_FEATURES", "$<", "$FILENAME", "$?", "$-a", "$-l", "$-p", "$!"));
 
     private static final Map<String, String> GLOBAL_VARIABLE_ALIASES = new HashMap<String, String>();
+
     static {
         Map<String, String> m = GLOBAL_VARIABLE_ALIASES;
         m.put("$-I", "$LOAD_PATH");
@@ -817,6 +818,7 @@ public class BodyTranslator extends Translator {
      * for self, which is the module or class object that is being defined. Therefore for a module or
      * class definition we translate into a special method. We run that method with self set to be the
      * newly allocated module or class.
+     * </p>
      */
     private MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode) {
         RubyNode body;
@@ -1151,7 +1153,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode,
-            boolean isDefs) {
+                                                 boolean isDefs) {
         final Arity arity = MethodTranslator.getArity(argsNode);
         final ArgumentDescriptor[] argumentDescriptors = Helpers.argsNodeToArgumentDescriptors(argsNode);
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), arity, methodName, false, argumentDescriptors, false, false, false);
@@ -1629,7 +1631,7 @@ public class BodyTranslator extends Translator {
             }
         } else if (path.equals(corePath + "rubinius/bootstrap/string.rb") || path.equals(corePath + "rubinius/common/string.rb")) {
             if (name.equals("@hash")) {
-                ret = StringNodesFactory.ModifyBangNodeFactory.create(context, sourceSection, new RubyNode[] {});
+                ret = StringNodesFactory.ModifyBangNodeFactory.create(context, sourceSection, new RubyNode[]{});
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "rubinius/common/range.rb")) {
@@ -1692,7 +1694,7 @@ public class BodyTranslator extends Translator {
                 ret = new RubyCallNode(context, sourceSection, "full", self, null, false);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@regexp")) {
-                ret = MatchDataNodesFactory.RegexpNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = MatchDataNodesFactory.RegexpNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@names")) {
                 ret = RegexpNodesFactory.RubiniusNamesNodeGen.create(context, sourceSection, self);
@@ -1700,10 +1702,10 @@ public class BodyTranslator extends Translator {
             }
         } else if (path.equals(corePath + "rubinius/bootstrap/string.rb") || path.equals(corePath + "rubinius/common/string.rb")) {
             if (name.equals("@num_bytes")) {
-                ret = StringNodesFactory.ByteSizeNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = StringNodesFactory.ByteSizeNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@data")) {
-                final RubyNode bytes = StringNodesFactory.BytesNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                final RubyNode bytes = StringNodesFactory.BytesNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 // Wrap in a StringData instance, see shims.
                 LiteralNode stringDataClass = new LiteralNode(context, sourceSection, context.getCoreLibrary().getStringDataClass());
                 ret = new RubyCallNode(context, sourceSection, "new", stringDataClass, null, false, bytes);
@@ -1722,21 +1724,21 @@ public class BodyTranslator extends Translator {
                 ret = HashNodesFactory.DefaultValueNodeFactory.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@default_proc")) {
-                ret = HashNodesFactory.DefaultProcNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = HashNodesFactory.DefaultProcNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@size")) {
-                ret = HashNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = HashNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "rubinius/common/range.rb") || path.equals(corePath + "rubinius/api/shims/range.rb")) {
             if (name.equals("@begin")) {
-                ret = RangeNodesFactory.BeginNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = RangeNodesFactory.BeginNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@end")) {
-                ret = RangeNodesFactory.EndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = RangeNodesFactory.EndNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@excl")) {
-                ret = RangeNodesFactory.ExcludeEndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = RangeNodesFactory.ExcludeEndNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             }
         }
@@ -2409,7 +2411,7 @@ public class BodyTranslator extends Translator {
         return new RubyCallNode(
                 context, sourceSection, "convert",
                 new ReadLiteralConstantNode(context, sourceSection, moduleNode, name),
-                null, false, true, new RubyNode[]{a, b});
+                null, false, true, new RubyNode[]{ a, b });
     }
 
     @Override
@@ -2634,9 +2636,9 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
 
-        final RubyNode ret = UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[] {
+        final RubyNode ret = UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[]{
                 new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection)),
-                new LiteralNode(context, sourceSection, new Object[] { nameSymbol })
+                new LiteralNode(context, sourceSection, new Object[]{ nameSymbol })
         });
         return addNewlineIfNeeded(node, ret);
     }

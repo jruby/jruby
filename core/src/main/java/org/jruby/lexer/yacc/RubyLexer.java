@@ -420,6 +420,7 @@ public class RubyLexer {
     private int ruby_sourceline = 0;
     private int heredoc_end = 0;
     private int line_count = 0;
+    private int line_offset = 0;
 
     /**
      * Has lexing started yet?
@@ -438,6 +439,8 @@ public class RubyLexer {
 
     public int nextc() {
         if (lex_p == lex_pend) {
+            line_offset += lex_pend;
+
             ByteList v = lex_nextline;
             lex_nextline = null;
 
@@ -1501,6 +1504,7 @@ public class RubyLexer {
                 return at();
             case '_':
                 if (was_bol() && whole_match_p(END_MARKER, false)) {
+                    line_offset += lex_pend;
                     __end__seen = true;
                     eofp = true;
 
@@ -2955,4 +2959,9 @@ public class RubyLexer {
 
         return value;
     }
+
+    public int getLineOffset() {
+        return line_offset;
+    }
+
 }

@@ -90,7 +90,7 @@ public abstract class PsychParserNodes {
         YAML_ANY_ENCODING(UTF8Encoding.INSTANCE),
         YAML_UTF8_ENCODING(UTF8Encoding.INSTANCE),
         YAML_UTF16LE_ENCODING(UTF16LEEncoding.INSTANCE),
-        YAML_UTF16BE_ENCODING(UTF16BEEncoding.INSTANCE), ;
+        YAML_UTF16BE_ENCODING(UTF16BEEncoding.INSTANCE);
 
         YAMLEncoding(Encoding encoding) {
             this.encoding = encoding;
@@ -163,7 +163,7 @@ public abstract class PsychParserNodes {
                         Object notExplicit = !((DocumentEndEvent) event).getExplicit();
                         invoke(handler, "end_document", notExplicit);
                     } else if (event.is(Event.ID.Alias)) {
-                        Object alias = stringOrNilFor(((AliasEvent)event).getAnchor(), tainted);
+                        Object alias = stringOrNilFor(((AliasEvent) event).getAnchor(), tainted);
                         invoke(handler, "alias", alias);
                     } else if (event.is(Event.ID.Scalar)) {
                         handleScalar((ScalarEvent) event, tainted, handler);
@@ -239,14 +239,14 @@ public abstract class PsychParserNodes {
             DumperOptions.Version _version = dse.getVersion();
             Integer[] versionInts = _version == null ? null : _version.getArray();
             Object version = versionInts == null ?
-                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0):
-                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{versionInts[0], versionInts[1]}, 2);
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0) :
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{ versionInts[0], versionInts[1] }, 2);
 
             Map<String, String> tagsMap = dse.getTags();
             DynamicObject tags = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
             if (tagsMap != null && tagsMap.size() > 0) {
                 for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
-                    Object key   = stringFor(tag.getKey(), tainted);
+                    Object key = stringFor(tag.getKey(), tainted);
                     Object value = stringFor(tag.getValue(), tainted);
                     ruby("tags.push [key, value]", "tags", tags, "key", key, "value", value);
                 }
@@ -317,12 +317,18 @@ public abstract class PsychParserNodes {
             if (style == null) return 0; // any
 
             switch (style) {
-                case 0: return 1; // plain
-                case '\'': return 2; // single-quoted
-                case '"': return 3; // double-quoted
-                case '|': return 4; // literal
-                case '>': return 5; // folded
-                default: return 0; // any
+                case 0:
+                    return 1; // plain
+                case '\'':
+                    return 2; // single-quoted
+                case '"':
+                    return 3; // double-quoted
+                case '|':
+                    return 4; // literal
+                case '>':
+                    return 5; // folded
+                default:
+                    return 0; // any
             }
         }
 
