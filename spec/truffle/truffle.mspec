@@ -1,6 +1,6 @@
 class MSpecScript
 
-  def self.windows?
+  def windows?
     ENV.key?('WINDIR') || ENV.key?('windir')
   end
 
