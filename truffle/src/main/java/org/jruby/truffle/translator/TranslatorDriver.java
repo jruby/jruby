@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -45,7 +45,7 @@ import java.util.List;
 
 public class TranslatorDriver {
 
-    public static enum ParserContext {
+    public enum ParserContext {
         TOP_LEVEL, SHELL, MODULE, EVAL, INLINE
     }
 
@@ -146,14 +146,6 @@ public class TranslatorDriver {
             }
         }
 
-        // Get the DATA constant
-
-        final Object data = getData(context);
-
-        if (data != null) {
-            Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, currentNode, "DATA", data);
-        }
-
         // Translate to Ruby Truffle nodes
 
         final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
@@ -210,11 +202,6 @@ public class TranslatorDriver {
         // Shell result
 
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
-    }
-
-    private Object getData(RubyContext context) {
-        // TODO CS 18-Apr-15 restore the DATA functionality
-        return null;
     }
 
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {

@@ -67,6 +67,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
@@ -124,6 +125,12 @@ public class RubyContext extends ExecutionContext {
         this.env = env;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
+
+        if (!onGraal()) {
+            System.err.println("WARNING: JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. " +
+                    "The compilation is disabled Without the Graal compiler and it runs much slower. " +
+                    "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
+        }
 
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
             compilerOptions.setOption("MinTimeThreshold", 100000000);
@@ -200,6 +207,10 @@ public class RubyContext extends ExecutionContext {
         initialize();
     }
 
+    public boolean onGraal() {
+        return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
+    }
+
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -244,7 +255,7 @@ public class RubyContext extends ExecutionContext {
                         RubyArguments.getSelf(frame.getArguments()),
                         null,
                         DeclarationContext.INSTANCE_EVAL,
-                        new Object[] {}),
+                        new Object[]{}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
 
         if (arguments.length % 2 == 1) {
@@ -391,7 +402,7 @@ public class RubyContext extends ExecutionContext {
 
     @TruffleBoundary
     public Object parseAndExecute(Source source, Encoding defaultEncoding, ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments,
-            DeclarationContext declarationContext, Node currentNode) {
+                                  DeclarationContext declarationContext, Node currentNode) {
         final RubyRootNode rootNode = parse(source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode);
         return execute(parserContext, declarationContext, rootNode, parentFrame, self);
     }
@@ -419,7 +430,7 @@ public class RubyContext extends ExecutionContext {
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
                 declaringModule, Visibility.PUBLIC, callTarget);
 
-        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, new Object[] {}));
+        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, new Object[]{}));
     }
 
     public long getNextObjectID() {
@@ -604,6 +615,11 @@ public class RubyContext extends ExecutionContext {
                                 originalRootNode.getBody()));
 
         final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
+
+        if (rootNode.hasEndPosition()) {
+            final Object data = inlineRubyHelper(null, "Truffle::Primitive.get_data(file, offset)", "file", StringOperations.createString(this, ByteList.create(inputFile)), "offset", rootNode.getEndPosition());
+            Layouts.MODULE.getFields(coreLibrary.getObjectClass()).setConstant(this, null, "DATA", data);
+        }
 
         return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, coreLibrary.getMainObject());
     }
