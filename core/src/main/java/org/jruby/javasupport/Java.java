@@ -102,11 +102,8 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
-import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
-import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
-import org.jruby.java.invokers.RubyToJavaInvoker;
 import static org.jruby.java.invokers.RubyToJavaInvoker.convertArguments;
 import static org.jruby.runtime.Visibility.*;
 
@@ -1223,14 +1220,12 @@ public class Java implements Library {
             try {
                 Constructor<?> proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
                 return JavaObject.wrap(runtime, proxyConstructor.newInstance(wrapper));
-            } catch (NoSuchMethodException nsme) {
-                throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
-            } catch (InvocationTargetException ite) {
-                throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ite);
-            } catch (InstantiationException ie) {
-                throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ie);
-            } catch (IllegalAccessException iae) {
-                throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + iae);
+            }
+            catch (InvocationTargetException e) {
+                throw mapGeneratedProxyException(runtime, e);
+            }
+            catch (ReflectiveOperationException e) {
+                throw mapGeneratedProxyException(runtime, e);
             }
         } else {
             Object proxyObject = Proxy.newProxyInstance(runtime.getJRubyClassLoader(), interfaces, new InvocationHandler() {
@@ -1292,7 +1287,7 @@ public class Java implements Library {
         try {
             proxyImplClass = (Class<? extends IRubyObject>) Class.forName(implClassName, true, runtime.getJRubyClassLoader());
         }
-        catch (ClassNotFoundException cnfe) {
+        catch (ClassNotFoundException ex) {
             // try to use super's reified class; otherwise, RubyObject (for now)
             Class<? extends IRubyObject> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
             if ( superClass == null ) superClass = RubyObject.class;
@@ -1319,38 +1314,51 @@ public class Java implements Library {
     public static Constructor getRealClassConstructor(final Ruby runtime, Class<?> proxyImplClass) {
         try {
             return proxyImplClass.getConstructor(Ruby.class, RubyClass.class);
-        } catch (NoSuchMethodException nsme) {
-            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
+        }
+        catch (NoSuchMethodException e) {
+            throw mapGeneratedProxyException(runtime, e);
         }
     }
 
     public static IRubyObject constructProxy(Ruby runtime, Constructor proxyConstructor, RubyClass clazz) {
         try {
-            return (IRubyObject)proxyConstructor.newInstance(runtime, clazz);
-        } catch (InvocationTargetException ite) {
-            ite.printStackTrace();
-            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ite);
-        } catch (InstantiationException ie) {
-            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ie);
-        } catch (IllegalAccessException iae) {
-            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + iae);
+            return (IRubyObject) proxyConstructor.newInstance(runtime, clazz);
+        }
+        catch (InvocationTargetException e) {
+            throw mapGeneratedProxyException(runtime, e);
+        }
+        catch (ReflectiveOperationException e) {
+            throw mapGeneratedProxyException(runtime, e);
         }
     }
 
+    private static RaiseException mapGeneratedProxyException(final Ruby runtime, final ReflectiveOperationException e) {
+        RaiseException ex = runtime.newTypeError("Exception instantiating generated interface impl:\n" + e);
+        ex.initCause(e);
+        return ex;
+    }
+
+    private static RaiseException mapGeneratedProxyException(final Ruby runtime, final InvocationTargetException e) {
+        RaiseException ex = runtime.newTypeError("Exception instantiating generated interface impl:\n" + e.getTargetException());
+        ex.initCause(e);
+        return ex;
+    }
+
     public static IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
+        final Ruby runtime = clazz.getRuntime();
         // Arrays are never stored in OPC
-        if (clazz.getSuperClass() == clazz.getRuntime().getJavaSupport().getArrayProxyClass()) {
-            return new ArrayJavaProxy(clazz.getRuntime(), clazz, javaObject, JavaUtil.getJavaConverter(javaObject.getClass().getComponentType()));
+        if ( clazz.getSuperClass() == runtime.getJavaSupport().getArrayProxyClass() ) {
+            return new ArrayJavaProxy(runtime, clazz, javaObject, JavaUtil.getJavaConverter(javaObject.getClass().getComponentType()));
         }
 
-        IRubyObject proxy = clazz.allocate();
-        if (proxy instanceof JavaProxy) {
-            ((JavaProxy)proxy).setObject(javaObject);
-        } else {
-            JavaObject wrappedObject = JavaObject.wrap(clazz.getRuntime(), javaObject);
+        final IRubyObject proxy = clazz.allocate();
+        if ( proxy instanceof JavaProxy ) {
+            ((JavaProxy) proxy).setObject(javaObject);
+        }
+        else {
+            JavaObject wrappedObject = JavaObject.wrap(runtime, javaObject);
             proxy.dataWrapStruct(wrappedObject);
         }
-
         return proxy;
     }
 
