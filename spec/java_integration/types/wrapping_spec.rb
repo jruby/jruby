@@ -83,20 +83,25 @@ describe "Java::newInterfaceImpl" do
     def run
     end
   end
-  class Bolt
-    def run
-    end
-  end
+
   it "should use the same generated class for wrapping, on different classloaders" do
     expected1 = InterfaceWrapper.give_me_back(BugTest.new)
     expected2 = InterfaceWrapper.give_me_back(BugTest.new)
-    expect(expected1.java_class.class_loader).not_to eq(expected2.java_class.class_loader)
+    unless java.lang.reflect.Proxy.isProxyClass(expected1.java_class)
+      expect(expected1.java_class.class_loader).not_to eq(expected2.java_class.class_loader)
+    end
     expect(expected1.java_class.to_s).to eq(expected2.java_class.to_s)
   end
 
   it "should not mix classes when generating new types for interfaces" do
+    a_klass = Class.new { def run; end }
     expected1 = InterfaceWrapper.give_me_back(BugTest.new)
-    expected2 = InterfaceWrapper.give_me_back(Bolt.new)
-    expect(expected1.java_class).not_to eq(expected2.java_class)
+    expected2 = InterfaceWrapper.give_me_back(a_klass.new)
+    expect(expected1.to_java.equals(expected2.to_java)).to be false
+    # in case of proxy based interface implementations this won't hold
+    # generated java-class might be the same (instances using different handlers)
+    unless java.lang.reflect.Proxy.isProxyClass(expected1.java_class)
+      expect(expected1.java_class).not_to eq(expected2.java_class)
+    end
   end
 end
