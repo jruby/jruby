@@ -97,11 +97,12 @@ describe "Java::newInterfaceImpl" do
     a_klass = Class.new { def run; end }
     expected1 = InterfaceWrapper.give_me_back(BugTest.new)
     expected2 = InterfaceWrapper.give_me_back(a_klass.new)
-    expect(expected1.to_java.equals(expected2.to_java)).to be false
     # in case of proxy based interface implementations this won't hold
     # generated java-class might be the same (instances using different handlers)
     unless java.lang.reflect.Proxy.isProxyClass(expected1.java_class)
       expect(expected1.java_class).not_to eq(expected2.java_class)
     end
+    expect(expected1.to_java.equals(expected2.to_java)).to be false
+    expect(expected1.to_java.hashCode).not_to eql expected2.to_java.hashCode
   end
 end
