@@ -268,6 +268,14 @@ module Truffle::Primitive
   def self.get_data(path, offset)
     file = File.open(path)
     file.seek(offset)
+
+    # I think if the file can't be locked then we just silently ignore
+    file.flock(File::LOCK_EX | File::LOCK_NB)
+
+    Truffle::Primitive.at_exit true do
+      file.flock(File::LOCK_UN)
+    end
+
     file
   end
 end
