@@ -1,5 +1,4 @@
 fails:Marshal.dump dumps an extended_object
-fails:Marshal.dump with a Float dumps a Float
 fails:Marshal.dump with a String dumps a String extended with a Module
 fails:Marshal.dump with a Regexp dumps a Regexp
 fails:Marshal.dump with a Regexp dumps a Regexp with flags

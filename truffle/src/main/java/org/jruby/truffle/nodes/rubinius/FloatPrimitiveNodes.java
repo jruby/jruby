@@ -39,19 +39,28 @@ public abstract class FloatPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject dToA(double value) {
-            String string = String.format(Locale.ENGLISH, "%.9f", value);
+            // Large enough to print all digits of Float::MIN.
+            String string = String.format(Locale.ENGLISH, "%.1022f", value);
 
             if (string.toLowerCase(Locale.ENGLISH).contains("e")) {
                 throw new UnsupportedOperationException();
             }
 
             string = string.replace("-", "");
+            while (string.charAt(string.length() - 1) == '0') {
+                string = string.substring(0, string.length() - 1);
+            }
 
-            final int decimal;
+            int decimal;
 
             if (string.startsWith("0.")) {
                 string = string.replace("0.", "");
                 decimal = 0;
+
+                while (string.charAt(0) == '0') {
+                    string = string.substring(1, string.length());
+                    --decimal;
+                }
             } else {
                 decimal = string.indexOf('.');
 
