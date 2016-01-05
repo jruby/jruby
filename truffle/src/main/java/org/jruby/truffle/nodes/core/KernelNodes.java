@@ -1102,30 +1102,19 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "instance_variables", "__instance_variables__" })
+    @CoreMethod(names = "instance_variables")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private BasicObjectNodes.InstanceVariablesNode instanceVariablesNode;
 
         public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            instanceVariablesNode = BasicObjectNodesFactory.InstanceVariablesNodeFactory.create(context, sourceSection, new RubyNode[] {});
         }
 
-        @TruffleBoundary
         @Specialization
-        public DynamicObject instanceVariables(DynamicObject self) {
-            List<Object> keys = self.getShape().getKeyList();
-            final Object[] instanceVariableNames = keys.toArray(new Object[keys.size()]);
-
-            Arrays.sort(instanceVariableNames);
-
-            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-
-            for (Object name : instanceVariableNames) {
-                if (name instanceof String) {
-                    ArrayOperations.append(array, getSymbol((String) name));
-                }
-            }
-
-            return array;
+        public DynamicObject instanceVariables(VirtualFrame frame, DynamicObject self) {
+            return instanceVariablesNode.executeObject(self);
         }
 
     }
