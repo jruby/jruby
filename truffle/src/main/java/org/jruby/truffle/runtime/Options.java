@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -54,9 +54,10 @@ public class Options {
     public final boolean METHODMISSING_ALWAYS_CLONE = org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_CLONE.load();
     public final boolean METHODMISSING_ALWAYS_INLINE = org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_INLINE.load();
 
-    // Other optimisations
+    // Other tuning parameteres
 
     public final int PACK_UNROLL_LIMIT = org.jruby.util.cli.Options.TRUFFLE_PACK_UNROLL_LIMIT.load();
+    public final int PACK_RECOVER_LOOP_MIN = org.jruby.util.cli.Options.TRUFFLE_PACK_RECOVER_LOOP_MIN.load();
 
     // Debugging
 
@@ -65,5 +66,10 @@ public class Options {
     public final boolean EXCEPTIONS_PRINT_UNCAUGHT_JAVA = org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA.load();
     public final boolean BACKTRACES_HIDE_CORE_FILES = org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_HIDE_CORE_FILES.load();
     public final boolean INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = org.jruby.util.cli.Options.TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC.load();
+
+    // Call garph
+
+    public final boolean CALL_GRAPH = org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH.load();
+    public final String CALL_GRAPH_WRITE = org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH_WRITE.load();
 
 }

@@ -3,9 +3,6 @@ fails:Marshal.load calls the proc for recursively visited data
 fails:Marshal.load loads an array containing objects having _dump method, and with proc
 fails:Marshal.load loads an array containing objects having marshal_dump method, and with proc
 fails:Marshal.load loads an Array with proc
-fails:Marshal.load loads a 1..2
-fails:Marshal.load loads a 1...2
-fails:Marshal.load loads a 'a'..'b'
 fails:Marshal.load loads a Random
 fails:Marshal.load for an Array loads an array containing the same objects
 fails:Marshal.load for an Exception loads a marshalled exception with no message
@@ -20,5 +17,4 @@ fails:Marshal.load when called with a proc returns the value of the proc
 fails:Marshal.load when called with a proc calls the proc for recursively visited data
 fails:Marshal.load when called with a proc loads an Array with proc
 fails:Marshal.load for a Hash loads an extended hash object containing a user-marshaled object
-fails:Marshal.load for a Time loads the zone
 fails:Marshal.load when a class does not exist in the namespace raises an ArgumentError

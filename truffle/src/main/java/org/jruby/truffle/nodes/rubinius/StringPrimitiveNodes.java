@@ -263,7 +263,8 @@ public abstract class StringPrimitiveNodes {
                 length = bytes.length() - normalizedIndex;
             }
 
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length), StringSupport.CR_UNKNOWN, null);
+            final int codeRange = Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN;
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length), codeRange, null);
 
             return taintResultNode.maybeTaint(string, result);
         }
@@ -633,7 +634,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_7BIT, null);
 
             return propagate(string, ret);
         }
@@ -659,7 +660,7 @@ public abstract class StringPrimitiveNodes {
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
                 ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, clen), StringSupport.CR_UNKNOWN, null);
             } else {
-                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_UNKNOWN, null);
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_7BIT, null);
             }
 
             return propagate(string, ret);

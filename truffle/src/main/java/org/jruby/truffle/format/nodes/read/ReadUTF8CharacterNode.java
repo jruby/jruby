@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.nodes.SourceNode;
 import org.jruby.truffle.format.runtime.MissingValue;
+import org.jruby.truffle.format.runtime.exceptions.FormatException;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.nio.ByteBuffer;
@@ -81,7 +82,7 @@ public abstract class ReadUTF8CharacterNode extends PackNode {
         }
 
         if (index + length > sourceLength) {
-            return MissingValue.INSTANCE;
+            throw new FormatException(String.format("malformed UTF-8 character (expected %d bytes, given %d bytes)", length, sourceLength - index));
         }
 
         for (int n = 1; n < length; n++) {

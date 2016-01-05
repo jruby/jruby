@@ -235,7 +235,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public boolean graal() {
-            return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
+            return getContext().onGraal();
         }
 
     }

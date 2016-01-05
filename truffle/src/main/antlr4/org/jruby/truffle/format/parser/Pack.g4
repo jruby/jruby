@@ -47,7 +47,7 @@ directive : 'c' count?                                          # int8
           | 'H' count?                                          # hexStringHighFirst
           | 'h' count?                                          # hexStringLowFirst
           | 'u' count?                                          # uuString
-          | 'M' INT?                                            # mimeString
+          | 'M' count?                                          # mimeString
           | 'm' count?                                          # base64String
           | ('p' | 'P')                                         # pointer
           | '@' count?                                          # at

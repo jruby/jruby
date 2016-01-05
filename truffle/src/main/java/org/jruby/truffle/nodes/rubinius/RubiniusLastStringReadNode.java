@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -33,17 +33,15 @@ public class RubiniusLastStringReadNode extends RubyNode {
         // to look to the caller's frame to get the correct value, otherwise it will be nil.
         final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true).materialize();
 
+        // TODO CS 4-Jan-16 - but it could be in higher frames!
         final FrameSlot slot = callerFrame.getFrameDescriptor().findFrameSlot("$_");
+
         try {
             final ThreadLocalObject threadLocalObject = (ThreadLocalObject) callerFrame.getObject(slot);
-            return getThreadLocal(threadLocalObject);
+            return threadLocalObject.get();
         } catch (FrameSlotTypeException e) {
             throw new UnsupportedOperationException(e);
         }
     }
 
-    @TruffleBoundary
-    private static Object getThreadLocal(ThreadLocalObject threadLocalObject) {
-        return threadLocalObject.get();
-    }
 }

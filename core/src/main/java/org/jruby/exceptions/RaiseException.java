@@ -201,7 +201,7 @@ public class RaiseException extends JumpException {
         doSetLastError(context);
         doCallEventHook(context);
 
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
         if (requiresBacktrace(context)) {
             exception.prepareIntegratedBacktrace(context, javaTrace);
@@ -221,7 +221,7 @@ public class RaiseException extends JumpException {
         doSetLastError(context);
         doCallEventHook(context);
 
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         if (requiresBacktrace(context)) {

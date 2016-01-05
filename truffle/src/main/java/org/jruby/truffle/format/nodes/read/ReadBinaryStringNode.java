@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -34,14 +34,16 @@ public abstract class ReadBinaryStringNode extends PackNode {
     final int count;
     final boolean trimTrailingSpaces;
     final boolean trimTrailingNulls;
+    final boolean trimToFirstNull;
 
-    public ReadBinaryStringNode(RubyContext context, boolean readToEnd, boolean readToNull, int count, boolean trimTrailingSpaces, boolean trimTrailingNulls) {
+    public ReadBinaryStringNode(RubyContext context, boolean readToEnd, boolean readToNull, int count, boolean trimTrailingSpaces, boolean trimTrailingNulls, boolean trimToFirstNull) {
         super(context);
         this.readToEnd = readToEnd;
         this.readToNull = readToNull;
         this.count = count;
         this.trimTrailingSpaces = trimTrailingSpaces;
         this.trimTrailingNulls = trimTrailingNulls;
+        this.trimToFirstNull = trimToFirstNull;
     }
 
     @Specialization(guards = "isNull(source)")
@@ -67,10 +69,18 @@ public abstract class ReadBinaryStringNode extends PackNode {
             while (start + length < getSourceLength(frame) && (!readToNull || (start + length < getSourceLength(frame) && source[start + length] != 0))) {
                 length++;
             }
+
+            if (start + length < getSourceLength(frame) && source[start + length] == 0) {
+                length++;
+            }
         } else if (readToNull) {
             length = 0;
 
             while (start + length < getSourceLength(frame) && length < count && (!readToNull || (start + length < getSourceLength(frame) && source[start + length] != 0))) {
+                length++;
+            }
+
+            if (start + length < getSourceLength(frame) && source[start + length] == 0) {
                 length++;
             }
         } else {
@@ -88,6 +98,14 @@ public abstract class ReadBinaryStringNode extends PackNode {
         }
 
         result = new ByteList(source, start, usedLength, true);
+
+        if (trimToFirstNull) {
+            final int firstNull = result.indexOf(0);
+
+            if (firstNull != -1 && trimTrailingNulls) {
+                result.realSize(firstNull);
+            }
+        }
 
         setSourcePosition(frame, start + length);
 

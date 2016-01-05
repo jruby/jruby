@@ -53,7 +53,7 @@ project 'JRuby Core' do
 
   jar 'org.jruby.joni:joni:2.1.8'
   jar 'org.jruby.extras:bytelist:1.0.13'
-  jar 'org.jruby.jcodings:jcodings:1.0.13'
+  jar 'org.jruby.jcodings:jcodings:1.0.16-SNAPSHOT'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.5'
@@ -72,8 +72,6 @@ project 'JRuby Core' do
   # joda timezone must be before joda-time to be packed correctly
   jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
   jar 'joda-time:joda-time:${joda.time.version}'
-
-  jar 'com.boundary:high-scale-lib:1.0.6'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',

@@ -13,7 +13,13 @@ require 'fileutils'
 require 'shellwords'
 require 'pathname'
 
-# TODO (pitr 01-Sep-2015): add pre stored run options combinations like -S irb, -I test
+require 'rubygems'
+begin
+  require 'bundler'
+rescue LoadError => e
+  puts "Bundler has to be installed.\n"
+  raise e
+end
 
 class JRubyTruffleRunner
   attr_reader :options
@@ -59,7 +65,7 @@ class JRubyTruffleRunner
                                   assign_new_value, 'mocks'],
             use_fs_core:         ['--[no-]use-fs-core', 'Use core from the filesystem rather than the JAR',
                                   assign_new_value, true],
-            bundle_cmd:          ['--bundle-cmd CMD', 'Command to run for bundle', assign_new_value, 'bundle'],
+            bundle_options:      ['--bundle-options OPTIONS', 'bundle options separated by space', assign_new_value, ''],
             configuration:       ['--config GEM_NAME', 'Load configuration for specified gem', assign_new_value, nil],
             dir:                 ['--dir DIRECTORY', 'Set working directory', assign_new_value, Dir.pwd],
         },
@@ -71,7 +77,7 @@ class JRubyTruffleRunner
         },
         run:    {
             help:            ['-h', '--help', 'Show this message', assign_new_value, false],
-            test:            ['-t', '--test', "Use conventional JRuby instead of #{BRANDING}", assign_new_value, false],
+            no_truffle:      ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", assign_new_value, false],
             graal:           ['-g', '--graal', 'Run on graal', assign_new_value, false],
             build:           ['-b', '--build', 'Run `jt build` using conventional JRuby', assign_new_value, false],
             rebuild:         ['--rebuild', 'Run `jt rebuild` using conventional JRuby', assign_new_value, false],
@@ -306,21 +312,15 @@ class JRubyTruffleRunner
     end
   end
 
-  # TODO (pitr 24-Nov-2015): use correct gem and bundler commands, do not pick them up from PATH
   def subcommand_setup(rest)
-    bundle_cmd  = @options[:global][:bundle_cmd].split(' ')
-    bundle_path = File.expand_path(@options[:global][:truffle_bundle_path])
+    bundle_options = @options[:global][:bundle_options].split(' ')
+    bundle_path    = File.expand_path(@options[:global][:truffle_bundle_path])
 
-    if bundle_cmd == ['bundle']
-      bundle_installed = execute_cmd 'command -v bundle 2>/dev/null 1>&2', fail: false
-      execute_cmd 'gem install bundler' unless bundle_installed
-    end
-
-    execute_cmd [*bundle_cmd,
-                 'install',
-                 '--standalone',
-                 '--path', bundle_path,
-                 *(['--without', @options[:setup][:without].join(' ')] unless @options[:setup][:without].empty?)]
+    bundle_cli([*bundle_options,
+                'install',
+                '--standalone',
+                '--path', bundle_path,
+                *(['--without', @options[:setup][:without].join(' ')] unless @options[:setup][:without].empty?)])
 
     link_path = "#{bundle_path}/jruby+truffle"
     FileUtils.rm link_path if File.exist? link_path
@@ -341,6 +341,14 @@ class JRubyTruffleRunner
 
     @options[:setup][:after].each do |cmd|
       execute_cmd cmd
+    end
+  end
+
+  def bundle_cli(argv)
+    require 'bundler/friendly_errors'
+    Bundler.with_friendly_errors do
+      require 'bundler/cli'
+      Bundler::CLI.start(argv, :debug => true)
     end
   end
 
@@ -376,12 +384,12 @@ class JRubyTruffleRunner
     truffle_options = [
         ('-X+T'),
         ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core]),
-        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception] && !@options[:run][:test]),
+        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
         (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug])
     ]
 
     cmd_options = [
-        *(truffle_options unless @options[:run][:test]),
+        *(truffle_options unless @options[:run][:no_truffle]),
         *ruby_options,
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
         *@options[:run][:load_path].flat_map { |v| ['-I', v] },

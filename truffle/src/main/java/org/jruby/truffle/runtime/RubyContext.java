@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,18 +20,17 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.CoverageTracker;
 import jnr.ffi.LibraryLoader;
-import jnr.ffi.Runtime;
-import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
-import org.jruby.RubyNil;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.callgraph.CallGraph;
+import org.jruby.truffle.callgraph.SimpleWriter;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -56,6 +55,7 @@ import org.jruby.truffle.runtime.loader.SourceCache;
 import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.runtime.platform.CrtExterns;
 import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
@@ -64,12 +64,12 @@ import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
@@ -88,7 +88,7 @@ public class RubyContext extends ExecutionContext {
     private final POSIX posix;
     private final NativeSockets nativeSockets;
     private final LibCClockGetTime libCClockGetTime;
-    private final MemoryManager memoryManager = Runtime.getSystemRuntime().getMemoryManager();
+    private CrtExterns crtExterns;
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -107,6 +107,7 @@ public class RubyContext extends ExecutionContext {
     private final AttachmentsManager attachmentsManager;
     private final SourceCache sourceCache;
     private final RubiniusConfiguration rubiniusConfiguration;
+    private final CallGraph callGraph;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -122,12 +123,24 @@ public class RubyContext extends ExecutionContext {
     public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         options = new Options();
 
+        if (options.CALL_GRAPH) {
+            callGraph = new CallGraph();
+        } else {
+            callGraph = null;
+        }
+
         latestInstance = this;
 
         assert runtime != null;
         this.env = env;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
+
+        if (!onGraal()) {
+            System.err.println("WARNING: JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. " +
+                    "The compilation is disabled Without the Graal compiler and it runs much slower. " +
+                    "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
+        }
 
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
             compilerOptions.setOption("MinTimeThreshold", 100000000);
@@ -159,6 +172,12 @@ public class RubyContext extends ExecutionContext {
         posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
 
         nativeSockets = LibraryLoader.create(NativeSockets.class).library("c").load();
+
+        try {
+            crtExterns = LibraryLoader.create(CrtExterns.class).failImmediately().library("libSystem.B.dylib").load();
+        } catch (UnsatisfiedLinkError e) {
+            crtExterns = null;
+        }
 
         if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
             libCClockGetTime = LibraryLoader.create(LibCClockGetTime.class).library("c").load();
@@ -202,6 +221,10 @@ public class RubyContext extends ExecutionContext {
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
         initialize();
+    }
+
+    public boolean onGraal() {
+        return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -248,7 +271,7 @@ public class RubyContext extends ExecutionContext {
                         RubyArguments.getSelf(frame.getArguments()),
                         null,
                         DeclarationContext.INSTANCE_EVAL,
-                        new Object[] {}),
+                        new Object[]{}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
 
         if (arguments.length % 2 == 1) {
@@ -395,7 +418,7 @@ public class RubyContext extends ExecutionContext {
 
     @TruffleBoundary
     public Object parseAndExecute(Source source, Encoding defaultEncoding, ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments,
-            DeclarationContext declarationContext, Node currentNode) {
+                                  DeclarationContext declarationContext, Node currentNode) {
         final RubyRootNode rootNode = parse(source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode);
         return execute(parserContext, declarationContext, rootNode, parentFrame, self);
     }
@@ -423,7 +446,7 @@ public class RubyContext extends ExecutionContext {
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
                 declaringModule, Visibility.PUBLIC, callTarget);
 
-        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, new Object[] {}));
+        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, new Object[]{}));
     }
 
     public long getNextObjectID() {
@@ -451,38 +474,21 @@ public class RubyContext extends ExecutionContext {
         } else if (RubyGuards.isRubyString(object)) {
             return toJRubyString((DynamicObject) object);
         } else if (RubyGuards.isRubyEncoding(object)) {
-            return toJRubyEncoding((DynamicObject) object);
+            return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(Layouts.ENCODING.getName((DynamicObject) object)));
         } else {
-            throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
+            throw new UnsupportedOperationException();
         }
-    }
-
-    @TruffleBoundary
-    public IRubyObject toJRubyEncoding(DynamicObject encoding) {
-        assert RubyGuards.isRubyEncoding(encoding);
-        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(Layouts.ENCODING.getName(encoding)));
     }
 
     @TruffleBoundary
     public org.jruby.RubyString toJRubyString(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-
-        final org.jruby.RubyString jrubyString = runtime.newString(StringOperations.getByteList(string).dup());
-
-        final Object tainted = string.get(Layouts.TAINTED_IDENTIFIER, coreLibrary.getNilObject());
-
-        if (tainted instanceof Boolean && (boolean) tainted) {
-            jrubyString.setTaint(true);
-        }
-
-        return jrubyString;
+        return runtime.newString(StringOperations.getByteList(string).dup());
     }
 
     @TruffleBoundary
     public Object toTruffle(IRubyObject object) {
-        if (object instanceof RubyNil) {
-            return getCoreLibrary().getNilObject();
-        } else if (object instanceof org.jruby.RubyFixnum) {
+        if (object instanceof org.jruby.RubyFixnum) {
             final long value = ((org.jruby.RubyFixnum) object).getLongValue();
 
             if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
@@ -490,40 +496,14 @@ public class RubyContext extends ExecutionContext {
             }
 
             return (int) value;
-        } else if (object instanceof org.jruby.RubyFloat) {
-            return ((org.jruby.RubyFloat) object).getDoubleValue();
         } else if (object instanceof org.jruby.RubyBignum) {
             final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
             return Layouts.BIGNUM.createBignum(coreLibrary.getBignumFactory(), value);
         } else if (object instanceof org.jruby.RubyString) {
-            return toTruffle((org.jruby.RubyString) object);
-        } else if (object instanceof org.jruby.RubyException) {
-            return toTruffle((org.jruby.RubyException) object, null);
+            return StringOperations.createString(this, ((org.jruby.RubyString) object).getByteList().dup());
         } else {
-            throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " (" + object.getClass().getName()  + ") to Truffle");
+            throw new UnsupportedOperationException();
         }
-    }
-
-    @TruffleBoundary
-    public DynamicObject toTruffle(org.jruby.RubyArray array) {
-        final Object[] store = new Object[array.size()];
-
-        for (int n = 0; n < store.length; n++) {
-            store[n] = toTruffle(array.entry(n));
-        }
-
-        return Layouts.ARRAY.createArray(coreLibrary.getArrayFactory(), store, store.length);
-    }
-
-    @TruffleBoundary
-    public DynamicObject toTruffle(org.jruby.RubyString jrubyString) {
-        final DynamicObject truffleString = StringOperations.createString(this, jrubyString.getByteList().dup());
-
-        if (jrubyString.isTaint()) {
-            truffleString.define(Layouts.TAINTED_IDENTIFIER, true, 0);
-        }
-
-        return truffleString;
     }
 
     @TruffleBoundary
@@ -533,13 +513,11 @@ public class RubyContext extends ExecutionContext {
                 return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
             case "Encoding::CompatibilityError":
                 return getCoreLibrary().encodingCompatibilityError(jrubyException.getMessage().toString(), currentNode);
-            case "TypeError":
-                return getCoreLibrary().typeError(jrubyException.getMessage().toString(), currentNode);
             case "RegexpError":
                 return getCoreLibrary().regexpError(jrubyException.getMessage().toString(), currentNode);
         }
 
-        throw new UnsupportedOperationException("Don't know how to translate " + jrubyException.getMetaClass().getName());
+        throw new UnsupportedOperationException();
     }
 
     public Ruby getRuntime() {
@@ -654,6 +632,11 @@ public class RubyContext extends ExecutionContext {
 
         final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
 
+        if (rootNode.hasEndPosition()) {
+            final Object data = inlineRubyHelper(null, "Truffle::Primitive.get_data(file, offset)", "file", StringOperations.createString(this, ByteList.create(inputFile)), "offset", rootNode.getEndPosition());
+            Layouts.MODULE.getFields(coreLibrary.getObjectClass()).setConstant(this, null, "DATA", data);
+        }
+
         return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, coreLibrary.getMainObject());
     }
 
@@ -672,6 +655,18 @@ public class RubyContext extends ExecutionContext {
 
         if (options.COVERAGE_GLOBAL) {
             coverageTracker.print(System.out);
+        }
+
+        if (callGraph != null) {
+            callGraph.resolve();
+
+            if (options.CALL_GRAPH_WRITE != null) {
+                try (PrintStream stream = new PrintStream(options.CALL_GRAPH_WRITE)) {
+                    new SimpleWriter(callGraph, stream).write();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -697,10 +692,6 @@ public class RubyContext extends ExecutionContext {
         return options;
     }
 
-    public MemoryManager getMemoryManager() {
-        return memoryManager;
-    }
-
     public TruffleLanguage.Env getEnv() {
         return env;
     }
@@ -717,4 +708,19 @@ public class RubyContext extends ExecutionContext {
         return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
     }
 
+    public CrtExterns getCrtExterns() {
+        return crtExterns;
+    }
+
+    public static void writeToFile(String fileName, String message) {
+        try (PrintStream stream = new PrintStream(fileName, StandardCharsets.UTF_8.name())) {
+            stream.println(message);
+        } catch (FileNotFoundException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public CallGraph getCallGraph() {
+        return callGraph;
+    }
 }

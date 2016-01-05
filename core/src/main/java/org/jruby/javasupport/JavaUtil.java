@@ -473,10 +473,10 @@ public class JavaUtil {
                 }
             }
             else if (rubyName.startsWith("is_")) {
-                if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
+                if (resultType == boolean.class) {                  // isFoo() => foo?, isFoo(*) => foo(*)
                     final String rubyPropertyName = rubyName.substring(3);
-                    nameSet.add(javaPropertyName);
-                    nameSet.add(rubyPropertyName);
+                    nameSet.add(javaPropertyName); // NOTE: these are really a bad idea - and can cause issues
+                    nameSet.add(rubyPropertyName); // GH-3470 unfortunately due backwards-compat they stay ;(
                     nameSet.add(javaPropertyName + '?');
                     nameSet.add(rubyPropertyName + '?');
                 }
@@ -485,8 +485,8 @@ public class JavaUtil {
             // If not a property, but is boolean add ?-postfixed aliases.
             if (resultType == boolean.class) {
                 // is_something?, contains_thing?
-                    nameSet.add(javaName + '?');
-                    nameSet.add(rubyName + '?');
+                nameSet.add(javaName + '?');
+                nameSet.add(rubyName + '?');
             }
         }
     }

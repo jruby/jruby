@@ -226,7 +226,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = {"/", "__slash__"}, required = 1)
+    @CoreMethod(names = { "/", "__slash__" }, required = 1)
     public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
@@ -558,7 +558,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "==="}, required = 1)
+    @CoreMethod(names = { "==", "===" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode reverseCallNode;
@@ -596,7 +596,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = {
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isRubyBignum(b)"})
+                "!isRubyBignum(b)" })
         public Object equal(VirtualFrame frame, Object a, Object b) {
             return reverseCallNode.call(frame, b, "==", null, a);
         }
@@ -636,10 +636,10 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = {
-            "!isInteger(b)",
-            "!isLong(b)",
-            "!isDouble(b)",
-            "!isRubyBignum(b)"})
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)",
+                "!isRubyBignum(b)" })
         public Object compare(VirtualFrame frame, Object a, Object b) {
             return ruby(frame, "begin; b, a = math_coerce(other, :compare_error); a <=> b; rescue ArgumentError; nil; end", "other", b);
         }
@@ -682,7 +682,7 @@ public abstract class FixnumNodes {
                 "!isRubyBignum(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isDouble(b)"})
+                "!isDouble(b)" })
         public Object greaterEqualCoerced(VirtualFrame frame, long a, Object b) {
             return ruby(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
@@ -725,7 +725,7 @@ public abstract class FixnumNodes {
                 "!isRubyBignum(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isDouble(b)"})
+                "!isDouble(b)" })
         public Object greaterCoerced(VirtualFrame frame, long a, Object b) {
             return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
@@ -875,7 +875,7 @@ public abstract class FixnumNodes {
         public Object leftShiftNeg(VirtualFrame frame, long a, int b) {
             if (rightShiftNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                rightShiftNode = insert(RightShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null }));
+                rightShiftNode = insert(RightShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{ null, null }));
             }
             return rightShiftNode.executeRightShift(frame, a, -b);
         }
@@ -917,7 +917,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "b >= 0")
         public int rightShift(VirtualFrame frame, int a, int b,
-                @Cached("createBinaryProfile()") ConditionProfile profile) {
+                              @Cached("createBinaryProfile()") ConditionProfile profile) {
             if (profile.profile(b >= Integer.SIZE - 1)) {
                 return a < 0 ? -1 : 0;
             } else {
@@ -927,7 +927,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "b >= 0")
         public Object rightShift(VirtualFrame frame, long a, int b,
-                @Cached("createBinaryProfile()") ConditionProfile profile) {
+                                 @Cached("createBinaryProfile()") ConditionProfile profile) {
             if (profile.profile(b >= Long.SIZE - 1)) {
                 return a < 0 ? -1 : 0; // int
             } else {
@@ -939,7 +939,7 @@ public abstract class FixnumNodes {
         public Object rightShiftNeg(VirtualFrame frame, long a, int b) {
             if (leftShiftNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null }));
+                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{ null, null }));
             }
             return leftShiftNode.executeLeftShift(frame, a, -b);
         }
@@ -959,7 +959,7 @@ public abstract class FixnumNodes {
         public Object rightShiftNeg(VirtualFrame frame, long a, DynamicObject b) {
             if (leftShiftNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null }));
+                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{ null, null }));
             }
             return leftShiftNode.executeLeftShift(frame, a, Layouts.BIGNUM.getValue(b).negate());
         }
@@ -979,7 +979,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = {"abs", "magnitude"})
+    @CoreMethod(names = { "abs", "magnitude" })
     public abstract static class AbsNode extends CoreMethodArrayArgumentsNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {

@@ -6,7 +6,7 @@ public class MethodNames {
     public static void camelWithUPPER1() {}
     public static void camelWITHUpper1() {}
     public static void CAMELWithUpper1() {}
-    
+
     public static Object getValue1() {return null;}
     public static Object getValues1(Object otherValue) {return null;}
     public static void setValue1(Object value) {}
@@ -29,7 +29,7 @@ public class MethodNames {
     public void camelWithUPPER2() {}
     public void camelWITHUpper2() {}
     public void CAMELWithUpper2() {}
-    
+
     public Object getValue2() {return null;}
     public Object getValues2(Object something) {return null;}
     public void setValue2(Object value) {}
@@ -56,10 +56,14 @@ public class MethodNames {
     public boolean isSecond2(Object something) {return false;}
     public boolean hasThird2() {return false;}
     public boolean hasFourth2(Object something) {return false;}
-    
+
     public String initialize() {return "foo";}
     public String type() {return "foo";}
     public String __type__() {return "foo";}
     public String id() {return "foo";}
     public String __id__() {return "foo";}
+
+    public int getFoo() { return 42; }
+    public boolean isFoo() { return false; }
+
 }
