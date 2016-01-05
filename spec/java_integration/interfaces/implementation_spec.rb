@@ -134,6 +134,39 @@ describe "Single-method Java interfaces implemented in Ruby" do
     expect( str ).to match(/\:0x[0-9a-f]+>$/)
   end
 
+  it "should use Ruby defined equals/hashCode/toString impls" do
+    klass = Class.new do
+      include java.util.Map
+
+      attr_reader :val
+      def initialize(val); @val = val end
+
+      def equals(obj); obj.respond_to?(:val) ? val == obj.val : false end
+      def hashCode; val == 'a' ? 42 : val.hash end
+
+      def toString; val == 'a' ? raise(NotImplementedError.new('a')) : val end
+    end
+    val_a = klass.new 'a'
+    val_b = klass.new 'b'
+
+    eq = UsesSingleMethodInterface.equals(val_a, val_a)
+    expect(eq).to be true
+    eq = UsesSingleMethodInterface.equals(val_a, nil)
+    expect(eq).to be false
+    eq = UsesSingleMethodInterface.equals(val_a, val_b)
+    expect(eq).to be false
+    eq = UsesSingleMethodInterface.equals(val_a, klass.new(:'a'.to_s))
+    expect(eq).to be true
+
+    hash = UsesSingleMethodInterface.hashCode(val_a)
+    expect( hash ).to eql 42
+
+    str = UsesSingleMethodInterface.toString(val_b)
+    expect( str ).to eql 'b'
+
+    expect { UsesSingleMethodInterface.toString(val_a) }.to raise_error(NotImplementedError)
+  end
+
   it "should allow including the same interface twice" do
     c = Class.new do
       include SingleMethodInterface

@@ -1271,13 +1271,17 @@ public class Java implements Library {
 
             switch ( methodName ) {
                 case "toString" :
-                    if ( length == 0 ) return proxyToString(proxy);
+                    if ( length == 0 && ! wrapper.respondsTo("toString") ) {
+                        return proxyToString(proxy);
+                    }
                     break;
                 case "hashCode" :
-                    if ( length == 0 ) return proxyHashCode(proxy);
+                    if ( length == 0 && ! wrapper.respondsTo("hashCode") ) {
+                        return proxyHashCode(proxy);
+                    }
                     break;
                 case "equals" :
-                    if ( length == 1 ) {
+                    if ( length == 1 && ! wrapper.respondsTo("equals") ) {
                         Class[] parameterTypes = getParameterTypes(method);
                         if ( parameterTypes[0] == Object.class ) return proxyEquals(proxy, nargs[0]);
                     }
