@@ -1979,6 +1979,8 @@ public class BodyTranslator extends Translator {
 
         final RubyNode result;
 
+        // TODO CS 5-Jan-15 we shouldn't be doing this kind of low level optimisation or pattern matching - EA should do it for us
+
         if (preArray != null
                 && node.getPost() == null
                 && node.getRest() == null
