@@ -103,24 +103,35 @@ describe "Single-method Java interfaces implemented in Ruby" do
   end
 
   it "should use Object#equals if there is no Ruby equals defined" do
-    c = Class.new
-    c.send :include, java.util.Map
-    arr = java.util.ArrayList.new
-    v = c.new
-    arr.add(v)
-    expect(arr).to include(v)
+    klass = Class.new
+    klass.send :include, java.util.Map
+    val = klass.new
+
+    arr = java.util.ArrayList.new; arr.add(val)
+    expect(arr).to include(val)
+
+    eq = UsesSingleMethodInterface.equals(val, val)
+    expect(eq).to be true
+    eq = UsesSingleMethodInterface.equals(val, nil)
+    expect(eq).to be false
+    eq = UsesSingleMethodInterface.equals(val, klass.new)
+    expect(eq).to be false
   end
 
   it "should use Object#hashCode if there is no Ruby hashCode defined" do
-    c = Class.new
-    c.send :include, java.util.Map
-    UsesSingleMethodInterface.hashCode(c.new)
+    klass = Class.new
+    klass.send :include, java.util.Map
+
+    hash = UsesSingleMethodInterface.hashCode(val = klass.new)
+    expect( hash ).to eql java.lang.System.identityHashCode(val)
   end
 
   it "should use Object#toString if there is no Ruby toString defined" do
-    c = Class.new
-    c.send :include, java.util.Map
-    UsesSingleMethodInterface.toString(c.new)
+    klass = Class.new
+    klass.send :include, java.util.Map
+
+    str = UsesSingleMethodInterface.toString(klass.new)
+    expect( str ).to match(/\:0x[0-9a-f]+>$/)
   end
 
   it "should allow including the same interface twice" do
