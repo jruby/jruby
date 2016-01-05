@@ -451,10 +451,12 @@ public class Addrinfo extends RubyObject {
         return context.runtime.newFixnum(((InetSocketAddress) socketAddress).getPort());
     }
 
-    @JRubyMethod(name = "ipv4_private?", notImplemented = true)
+    @JRubyMethod(name = "ipv4_private?")
     public IRubyObject ipv4_private_p(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        if (getAddressFamily() == AF_INET) {
+            return context.runtime.newBoolean(getInet4Address().isSiteLocalAddress());
+        }
+        return context.runtime.newBoolean(false);
     }
 
     @JRubyMethod(name = "ipv4_loopback?")
@@ -470,10 +472,12 @@ public class Addrinfo extends RubyObject {
         return context.runtime.newBoolean(getInetSocketAddress().getAddress().isMulticastAddress());
     }
 
-    @JRubyMethod(name = "ipv6_unspecified?", notImplemented = true)
+    @JRubyMethod(name = "ipv6_unspecified?")
     public IRubyObject ipv6_unspecified_p(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        if (getAddressFamily() == AF_INET6) {
+            return context.runtime.newBoolean(getInet6Address().getHostAddress().equals("::"));
+        }
+        return context.runtime.getFalse();
     }
 
     @JRubyMethod(name = "ipv6_loopback?")
