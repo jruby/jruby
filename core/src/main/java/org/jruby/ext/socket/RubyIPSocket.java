@@ -179,7 +179,7 @@ public abstract class RubyIPSocket extends RubyBasicSocket {
         return addrFor(context, address, reverse);
     }
 
-    private Boolean doReverseLookup(ThreadContext context, IRubyObject noreverse) {
+    public static Boolean doReverseLookup(ThreadContext context, IRubyObject noreverse) {
         Ruby runtime = context.runtime;
 
         if (noreverse == runtime.getTrue()) {
