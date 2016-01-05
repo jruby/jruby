@@ -51,8 +51,44 @@ public final class SequenceNode extends RubyNode {
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
-            return new SequenceNode(context, sourceSection, flattened.toArray(new RubyNode[flattened.size()]));
+            final RubyNode[] flatSequence = flattened.toArray(new RubyNode[flattened.size()]);
+            return new SequenceNode(context, enclosing(sourceSection, flatSequence), flatSequence);
         }
+    }
+
+    private static SourceSection enclosing(SourceSection base, RubyNode[] sequence) {
+        if (base.getSource() == null) {
+            return base;
+        }
+
+        int startLine = Integer.MAX_VALUE;
+        int endLine = Integer.MIN_VALUE;
+
+        for (RubyNode node : sequence) {
+            final SourceSection nodeSourceSection = node.getEncapsulatingSourceSection();
+
+            startLine = Math.min(startLine, nodeSourceSection.getStartLine());
+
+            final int nodeEndLine;
+
+            if (nodeSourceSection.getSource() == null) {
+                nodeEndLine = nodeSourceSection.getStartLine();
+            } else {
+                nodeEndLine = nodeSourceSection.getEndLine();
+            }
+
+            endLine = Math.max(endLine, nodeEndLine);
+        }
+
+        final int index = base.getSource().getLineStartOffset(startLine);
+
+        int length = 0;
+
+        for (int n = startLine; n <= endLine; n++) {
+            length += base.getSource().getLineLength(n) + 1;
+        }
+
+        return base.getSource().createSection(base.getIdentifier(), index, length);
     }
 
     private static List<RubyNode> flatten(RubyContext context, List<RubyNode> sequence, boolean allowTrailingNil) {
