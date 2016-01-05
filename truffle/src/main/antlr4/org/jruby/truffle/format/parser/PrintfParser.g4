@@ -18,7 +18,7 @@ directive : CURLY_KEY                  # string
           | ANGLE_KEY?
             flag*
             width=NUMBER?
-            (DOT precision=NUMBER)?
+            (DOT precision=(ZERO|NUMBER))?
             TYPE                       # format ;
 
 flag : SPACE
