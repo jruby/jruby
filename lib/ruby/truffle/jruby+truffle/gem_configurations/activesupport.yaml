@@ -52,9 +52,7 @@
                           FileStoreTest:            :test_two_classes_autoloading,
                           KernelTest:               [:test_silence_stream,
                                                      :test_quietly,
-                                                     :test_capture],
-                          MultibyteCharsExtrasTest: [:test_limit_should_keep_under_the_specified_byte_limit,
-                                                     :test_limit_should_work_on_a_multibyte_string]
+                                                     :test_capture]
                       }.each do |mod_name, tests|
                         unless Object.const_defined? mod_name
                           warn "#{mod_name} not found"
