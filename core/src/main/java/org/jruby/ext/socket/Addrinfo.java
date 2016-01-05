@@ -2,10 +2,13 @@ package org.jruby.ext.socket;
 
 import jnr.constants.platform.AddressFamily;
 import static jnr.constants.platform.AddressFamily.*;
+
+import jnr.constants.platform.NameInfo;
 import jnr.constants.platform.ProtocolFamily;
 import static jnr.constants.platform.ProtocolFamily.*;
 import jnr.constants.platform.Sock;
 import jnr.netdb.Protocol;
+import jnr.netdb.Service;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -31,8 +34,6 @@ import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Pattern;
-
-import org.jruby.exceptions.RaiseException;
 
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
@@ -579,7 +580,7 @@ public class Addrinfo extends RubyObject {
                   ds.writeByte(hw.length);                                 //   unsigned char  sll_halen;    /* Length of address */
                   ds.write(hw);                                            //   unsigned char  sll_addr[8];  /* Physical layer address */
                 } catch (IOException e) {
-                  throw sockerr(context.runtime, "to_sockaddr: " + e.getMessage());
+                    throw SocketUtils.sockerr(context.runtime, "to_sockaddr: " + e.getMessage());
                 }
                 return context.runtime.newString(new ByteList(bufS.toByteArray(), false));
       }
@@ -666,10 +667,35 @@ public class Addrinfo extends RubyObject {
         return IPV6_COMPACT.matcher(fullHost).replaceAll("::$2");
     }
 
-    @JRubyMethod(rest = true, notImplemented = true)
+    @JRubyMethod(optional = 1)
     public IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
-        // unimplemented
-        return context.nil;
+        Ruby runtime = context.runtime;
+
+        RubyString hostname;
+
+        InetSocketAddress inet = getInetSocketAddress();
+        if (inet != null) {
+            hostname = runtime.newString(inet.getHostName());
+        } else {
+            UnixSocketAddress unix = getUnixSocketAddress();
+            hostname = runtime.newString(unix.path());
+        }
+
+        RubyString rubyService = null;
+
+        if (args.length > 0) {
+            int flags = args[0].convertToInteger().getIntValue();
+            if ((flags & NameInfo.NI_NUMERICSERV.intValue()) != 0) {
+                rubyService = runtime.newString(Integer.toString(getPort()));
+            }
+        }
+
+        if (rubyService == null) {
+            Service service = Service.getServiceByPort(getPort(), protocol.getName());
+            rubyService = runtime.newString(service.getName());
+        }
+
+        return runtime.newArray(hostname, rubyService);
     }
 
     @JRubyMethod(notImplemented = true)
