@@ -3,9 +3,6 @@ fails:Marshal.restore calls the proc for recursively visited data
 fails:Marshal.restore loads an array containing objects having _dump method, and with proc
 fails:Marshal.restore loads an array containing objects having marshal_dump method, and with proc
 fails:Marshal.restore loads an Array with proc
-fails:Marshal.restore loads a 1..2
-fails:Marshal.restore loads a 1...2
-fails:Marshal.restore loads a 'a'..'b'
 fails:Marshal.restore loads a Random
 fails:Marshal.restore for an Array loads an array containing the same objects
 fails:Marshal.restore for an Exception loads a marshalled exception with no message

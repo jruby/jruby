@@ -13,8 +13,6 @@ fails:Marshal.dump with a Hash dumps an extended Hash
 fails:Marshal.dump with a Struct dumps an extended Struct
 fails:Marshal.dump with an Object dumps an extended Object
 fails:Marshal.dump with an Object dumps a BasicObject subclass if it defines respond_to?
-fails:Marshal.dump with a Range dumps a Range inclusive of end (with indeterminant order)
-fails:Marshal.dump with a Range dumps a Range exclusive of end (with indeterminant order)
 fails:Marshal.dump with a Time dumps the zone and the offset
 fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC
 fails:Marshal.dump with an Exception dumps the message for the exception
