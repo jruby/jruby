@@ -35,7 +35,9 @@ public class SimpleWriter {
 
     private void write(Method method) {
         final SharedMethodInfo sharedInfo = method.getSharedInfo();
-        final SourceSection sourceSection = sharedInfo.getSourceSection();
+
+        // Can't use the SourceSection from SharedMethodInfo as it is created before we translate and so can make a covering source section
+        final SourceSection sourceSection = method.getVersions().get(0).getRootNode().getSourceSection();
 
         final String sourceName;
 

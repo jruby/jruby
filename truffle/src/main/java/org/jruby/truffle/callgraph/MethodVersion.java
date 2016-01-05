@@ -84,4 +84,7 @@ public class MethodVersion {
         return callSiteVersion;
     }
 
+    public RubyRootNode getRootNode() {
+        return rootNode;
+    }
 }
