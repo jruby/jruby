@@ -89,6 +89,9 @@ public final class SequenceNode extends RubyNode {
             length += base.getSource().getLineLength(n) + 1;
         }
 
+        length = Math.min(length, base.getSource().getLength() - index);
+        length = Math.max(0, length);
+
         return base.getSource().createSection(base.getIdentifier(), index, length);
     }
 
