@@ -321,7 +321,7 @@ public class BodyTranslator extends Translator {
             if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
                 parentSourceSection.push(sourceSection);
             } else {
-                lastLine = Integer.max(lastLine, child.getPosition().getLine() + 1);
+                lastLine = Math.max(lastLine, child.getPosition().getLine() + 1);
             }
 
             final RubyNode translatedChild;
@@ -352,7 +352,7 @@ public class BodyTranslator extends Translator {
                 length += sourceSection.getSource().getLineLength(n);
             }
 
-            length = Integer.min(length + startIndex, sourceSection.getSource().getLength()) - startIndex;
+            length = Math.min(length + startIndex, sourceSection.getSource().getLength()) - startIndex;
 
             ret = SequenceNode.sequence(context, sourceSection.getSource().createSection(sourceSection.getIdentifier(), startIndex, length), translatedChildren.toArray(new RubyNode[translatedChildren.size()]));
         }
