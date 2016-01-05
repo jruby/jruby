@@ -193,23 +193,23 @@ public class MethodTranslator extends BodyTranslator {
                     loadArguments);
         }
 
-        body = SequenceNode.sequence(context, sourceSection, prelude, body);
+        body = SequenceNode.sequence(context, body.getSourceSection(), prelude, body);
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
+            body = SequenceNode.sequence(context, body.getSourceSection(), initFlipFlopStates(sourceSection), body);
         }
 
-        body = new CatchForMethodNode(context, sourceSection, body, environment.getReturnID());
+        body = new CatchForMethodNode(context, body.getSourceSection(), body, environment.getReturnID());
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
-        body = new ExceptionTranslatingNode(context, sourceSection, body);
+        body = new ExceptionTranslatingNode(context, body.getSourceSection(), body);
         return body;
     }
 
     public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         final RubyNode body = compileMethodBody(sourceSection,  methodName, bodyNode, sharedMethodInfo);
         final RubyRootNode rootNode = new RubyRootNode(
-                context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+                context, body.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
         return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
