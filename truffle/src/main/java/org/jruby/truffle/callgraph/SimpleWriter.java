@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.callgraph;
 
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.IdProvider;
@@ -78,6 +79,13 @@ public class SimpleWriter {
 
         for (CallSiteVersion callSiteVersion : version.getCallSiteVersions().values()) {
             write(callSiteVersion);
+        }
+
+        for (FrameSlot slot : version.getRootNode().getFrameDescriptor().getSlots()) {
+            stream.printf("local %d %s %s\n",
+                    ids.getId(version),
+                    slot.getIdentifier(),
+                    slot.getKind());
         }
     }
 
