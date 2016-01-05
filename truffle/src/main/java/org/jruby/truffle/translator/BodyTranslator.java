@@ -314,9 +314,14 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> translatedChildren = new ArrayList<>();
 
+        final int firstLine = node.getPosition().getLine() + 1;
+        int lastLine = firstLine;
+
         for (org.jruby.ast.Node child : node.children()) {
             if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
                 parentSourceSection.push(sourceSection);
+            } else {
+                lastLine = Integer.max(lastLine, child.getPosition().getLine() + 1);
             }
 
             final RubyNode translatedChild;
@@ -339,7 +344,17 @@ public class BodyTranslator extends Translator {
         if (translatedChildren.size() == 1) {
             ret = translatedChildren.get(0);
         } else {
-            ret = SequenceNode.sequence(context, sourceSection, translatedChildren.toArray(new RubyNode[translatedChildren.size()]));
+            final int startIndex = sourceSection.getSource().getLineStartOffset(node.getPosition().getLine() + 1);
+
+            int length = 0;
+
+            for (int n = firstLine; n <= lastLine; n++) {
+                length += sourceSection.getSource().getLineLength(n);
+            }
+
+            length = Integer.min(length + startIndex, sourceSection.getSource().getLength()) - startIndex;
+
+            ret = SequenceNode.sequence(context, sourceSection.getSource().createSection(sourceSection.getIdentifier(), startIndex, length), translatedChildren.toArray(new RubyNode[translatedChildren.size()]));
         }
 
         return addNewlineIfNeeded(node, ret);
