@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -41,6 +41,10 @@ public class RubyRootNode extends RootNode {
         this.body = body;
         this.sharedMethodInfo = sharedMethodInfo;
         this.needsDeclarationFrame = needsDeclarationFrame;
+
+        if (context.getCallGraph() != null) {
+            context.getCallGraph().registerRootNode(this);
+        }
     }
 
     public RubyRootNode withBody(RubyNode body) {
@@ -80,4 +84,14 @@ public class RubyRootNode extends RootNode {
         return needsDeclarationFrame;
     }
 
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        final RubyRootNode cloned = (RubyRootNode) super.clone();
+
+        if (context.getCallGraph() != null) {
+            context.getCallGraph().registerRootNode(cloned);
+        }
+
+        return cloned;
+    }
 }

@@ -67,4 +67,9 @@ public class Options {
     public final boolean BACKTRACES_HIDE_CORE_FILES = org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_HIDE_CORE_FILES.load();
     public final boolean INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = org.jruby.util.cli.Options.TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC.load();
 
+    // Call garph
+
+    public final boolean CALL_GRAPH = org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH.load();
+    public final String CALL_GRAPH_WRITE = org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH_WRITE.load();
+
 }

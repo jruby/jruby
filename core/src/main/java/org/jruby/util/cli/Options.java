@@ -264,6 +264,8 @@ public class Options {
 
     public static final Option<Boolean> TRUFFLE_METRICS_TIME = bool(TRUFFLE, "truffle.metrics.time", false, "Print the time at various stages of VM operation.");
     public static final Option<Boolean> TRUFFLE_METRICS_MEMORY_USED_ON_EXIT = bool(TRUFFLE, "truffle.metrics.memory_used_on_exit", false, "Print the size of heap memory in use on exit.");
+    public static final Option<Boolean> TRUFFLE_CALL_GRAPH = bool(TRUFFLE, "truffle.callgraph", false, "Maintain a call graph.");
+    public static final Option<String> TRUFFLE_CALL_GRAPH_WRITE = string(TRUFFLE, "truffle.callgraph.write", "File to write the call garph to on exit.");
 
     public static String dump() {
         return "# JRuby configuration options with current values\n" +
