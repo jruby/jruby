@@ -294,7 +294,7 @@ public class Sockaddr {
         int low = val.get(1) & 0xff;
 
         return AddressFamily.valueOf((high << 8) + low);
-        }
+    }
 
     private static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);

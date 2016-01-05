@@ -198,7 +198,7 @@ class Addrinfo
 
   # creates a listening socket bound to self.
   def listen(backlog=Socket::SOMAXCONN)
-    sock = ServerSocket.new(self.pfamily, self.socktype, self.protocol)
+    sock = Socket.new(self.pfamily, self.socktype, self.protocol)
     begin
       sock.ipv6only! if self.ipv6?
       sock.setsockopt(:SOCKET, :REUSEADDR, 1)
