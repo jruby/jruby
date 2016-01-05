@@ -18,9 +18,9 @@ public class IdProvider {
     private final Map<Object, Long> ids = new IdentityHashMap<Object, Long>();
 
     public synchronized long getId(Object object) {
-        long id = ids.getOrDefault(object, (long) -1);
+        Long id = ids.get(object);
 
-        if (id == -1) {
+        if (id == null) {
             id = nextId++;
             ids.put(object, id);
         }
