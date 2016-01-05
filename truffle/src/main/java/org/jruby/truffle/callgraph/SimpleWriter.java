@@ -56,7 +56,7 @@ public class SimpleWriter {
             endLine = sourceSection.getEndLine();
         }
 
-        stream.printf("method %d %s %s %d %d\n",
+        stream.printf("method %d %s %s %d %d%n",
                 ids.getId(method),
                 sharedInfo.getName(),
                 sourceName,
@@ -73,7 +73,7 @@ public class SimpleWriter {
     }
 
     private void write(MethodVersion version) {
-        stream.printf("method-version %d %d\n",
+        stream.printf("method-version %d %d%n",
                 ids.getId(version.getMethod()),
                 ids.getId(version));
 
@@ -82,7 +82,7 @@ public class SimpleWriter {
         }
 
         for (FrameSlot slot : version.getRootNode().getFrameDescriptor().getSlots()) {
-            stream.printf("local %d %s %s\n",
+            stream.printf("local %d %s %s%n",
                     ids.getId(version),
                     slot.getIdentifier(),
                     slot.getKind());
@@ -90,14 +90,14 @@ public class SimpleWriter {
     }
 
     private void write(CallSite callSite) {
-        stream.printf("callsite %d %d %d\n",
+        stream.printf("callsite %d %d %d%n",
                 ids.getId(callSite.getMethod()),
                 ids.getId(callSite),
                 callSite.getSourceSection().getStartLine());
     }
 
     private void write(CallSiteVersion version) {
-        stream.printf("callsite-version %d %d\n",
+        stream.printf("callsite-version %d %d%n",
                 ids.getId(version.getCallSite()),
                 ids.getId(version));
 
@@ -108,15 +108,15 @@ public class SimpleWriter {
 
     private void write(CallSiteVersion callSiteVersion, Calls calls) {
         if (calls instanceof CallsMegamorphic) {
-            stream.printf("calls %d mega\n",
+            stream.printf("calls %d mega%n",
                     ids.getId(callSiteVersion));
         } else if (calls instanceof CallsForeign) {
-            stream.printf("calls %d foreign\n",
+            stream.printf("calls %d foreign%n",
                     ids.getId(callSiteVersion));
         } else {
             final CallsMethod callsMethod = (CallsMethod) calls;
 
-            stream.printf("calls %d %d\n",
+            stream.printf("calls %d %d%n",
                     ids.getId(callSiteVersion),
                     ids.getId(callsMethod.getMethodVersion()));
         }
