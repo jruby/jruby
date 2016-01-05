@@ -83,30 +83,30 @@ public class Addrinfo extends RubyObject {
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port, Sock sock) {
         super(runtime, cls);
         this.socketAddress = new InetSocketAddress(inetAddress, port);
-        this.sock = sock;
         this.pfamily = ProtocolFamily.valueOf(getAddressFamily().intValue());
         this.socketType = SocketType.SOCKET;
+        setSockAndProtocol(sock);
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, SocketAddress socketAddress, Sock sock, SocketType socketType) {
         super(runtime, cls);
         this.socketAddress = socketAddress;
-        this.sock = sock;
         this.pfamily = ProtocolFamily.valueOf(getAddressFamily().intValue());
         this.socketType = socketType;
+        setSockAndProtocol(sock);
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port) {
         super(runtime, cls);
         this.socketAddress = new InetSocketAddress(inetAddress, port);
-        this.sock = Sock.SOCK_STREAM;
+        setSockAndProtocol(Sock.SOCK_STREAM);
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, SocketAddress socketAddress) {
         super(runtime, cls);
         this.socketAddress = socketAddress;
         this.pfamily = ProtocolFamily.valueOf(getAddressFamily().intValue());
-        this.sock = Sock.SOCK_STREAM;
+        setSockAndProtocol(Sock.SOCK_STREAM);
     }
 
     public int getPort() {
@@ -246,24 +246,25 @@ public class Addrinfo extends RubyObject {
 
             this.socketType = SocketType.SOCKET;
 
-            if (sock == null) {
-                this.sock = Sock.SOCK_STREAM;
-                if (socketAddress instanceof InetSocketAddress) {
-                    protocol = Protocol.getProtocolByName("tcp");
-                }
-            } else {
-                this.sock = SocketUtils.sockFromArg(sock);
-                if (socketAddress instanceof InetSocketAddress) {
-                    if (this.sock == Sock.SOCK_STREAM) {
-                        protocol = Protocol.getProtocolByName("tcp");
-                    } else if (this.sock == Sock.SOCK_DGRAM) {
-                        protocol = Protocol.getProtocolByName("udp");
-                    }
-                }
-            }
+            setSockAndProtocol(sock);
         } catch (IOException ioe) {
             ioe.printStackTrace();
             throw runtime.newIOErrorFromException(ioe);
+        }
+    }
+
+    private void setSockAndProtocol(IRubyObject sock) {
+        setSockAndProtocol(sock == null ? null : SocketUtils.sockFromArg(sock));
+    }
+
+    private void setSockAndProtocol(Sock sock) {
+        this.sock = sock;
+        if (socketAddress instanceof InetSocketAddress) {
+            if (this.sock == Sock.SOCK_STREAM) {
+                protocol = Protocol.getProtocolByName("tcp");
+            } else if (this.sock == Sock.SOCK_DGRAM) {
+                protocol = Protocol.getProtocolByName("udp");
+            }
         }
     }
 
