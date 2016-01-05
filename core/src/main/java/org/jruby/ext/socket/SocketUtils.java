@@ -284,7 +284,7 @@ public class SocketUtils {
 
             IRubyObject family = args.length > 2 ? args[2] : context.nil;
             IRubyObject socktype = args.length > 3 ? args[3] : context.nil;
-            //IRubyObject protocol = args[4];
+            IRubyObject protocol = args.length > 4 ? args[4] : context.nil;
             IRubyObject flags = args.length > 5 ? args[5] : context.nil;
             IRubyObject reverseArg = args.length > 6 ? args[6] : context.nil;
 
@@ -341,7 +341,7 @@ public class SocketUtils {
             }
 
             if (addrs == null) {
-                addrs = InetAddress.getAllByName(emptyHost ? (is_ipv6 ? "[::1]" : null) : host.convertToString().toString());
+                addrs = InetAddress.getAllByName(emptyHost ? (is_ipv6 ? "[0:0:0:0:0:0:0:1]" : null) : host.convertToString().toString());
             }
 
             for(int i = 0; i < addrs.length; i++) {
