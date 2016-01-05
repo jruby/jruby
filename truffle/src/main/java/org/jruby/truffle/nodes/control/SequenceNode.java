@@ -85,6 +85,7 @@ public final class SequenceNode extends RubyNode {
         int length = 0;
 
         for (int n = startLine; n <= endLine; n++) {
+            // + 1 because the line length doesn't include any newlines
             length += base.getSource().getLineLength(n) + 1;
         }
 
