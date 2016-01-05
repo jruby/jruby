@@ -49,6 +49,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -62,6 +63,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static jnr.constants.platform.AddressFamily.AF_INET;
+import static jnr.constants.platform.AddressFamily.AF_INET6;
 import static jnr.constants.platform.IPProto.IPPROTO_TCP;
 import static jnr.constants.platform.IPProto.IPPROTO_UDP;
 import static jnr.constants.platform.NameInfo.NI_NUMERICHOST;
@@ -277,75 +279,39 @@ public class SocketUtils {
         IRubyObject port = args[1];
         boolean emptyHost = host.isNil() || host.convertToString().isEmpty();
 
+        IRubyObject family = args.length > 2 ? args[2] : context.nil;
+        IRubyObject socktype = args.length > 3 ? args[3] : context.nil;
+        IRubyObject protocol = args.length > 4 ? args[4] : context.nil;
+        IRubyObject flags = args.length > 5 ? args[5] : context.nil;
+        IRubyObject reverseArg = args.length > 6 ? args[6] : context.nil;
+
+        // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
+        // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
+        Boolean reverseLookup = RubyIPSocket.doReverseLookup(context, reverseArg);
+
+        AddressFamily addressFamily = family.isNil() ? null : addressFamilyFromArg(family);
+
+        Sock sock = socktype.isNil() ? SOCK_STREAM : sockFromArg(socktype);
+
+        if(port instanceof RubyString) {
+            port = getservbyname(context, new IRubyObject[]{port});
+        }
+
+        int p = port.isNil() ? 0 : (int)port.convertToInteger().getLongValue();
+
+        // TODO: implement flags
+        int flag = flags.isNil() ? 0 : RubyNumeric.fix2int(flags);
+
         try {
-            if(port instanceof RubyString) {
-                port = getservbyname(context, new IRubyObject[]{port});
-            }
+            // get the addresses for the given host name
+            String hostString = emptyHost ? "localhost" : host.convertToString().toString();
 
-            IRubyObject family = args.length > 2 ? args[2] : context.nil;
-            IRubyObject socktype = args.length > 3 ? args[3] : context.nil;
-            IRubyObject protocol = args.length > 4 ? args[4] : context.nil;
-            IRubyObject flags = args.length > 5 ? args[5] : context.nil;
-            IRubyObject reverseArg = args.length > 6 ? args[6] : context.nil;
-
-            // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
-            // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
-            Boolean reverseLookup = null;
-            if (reverseArg instanceof RubyBoolean) {
-                reverseLookup = reverseArg.isTrue();
-            } else if (reverseArg instanceof RubySymbol) {
-                String reverseString = reverseArg.toString();
-                if ("hostname".equals(reverseString)) {
-                    reverseLookup = true;
-                } else if ("numeric".equals(reverseString)) {
-                    reverseLookup = false;
-                } else {
-                    throw runtime.newArgumentError("invalid reverse_lookup flag: :" +
-                     reverseString);
-                }
-            }
-
-            AddressFamily addressFamily = AF_INET;
-            if (!family.isNil()) {
-                addressFamily = addressFamilyFromArg(family);
-            }
-            boolean is_ipv6 = addressFamily == AddressFamily.AF_INET6;
-            boolean sock_stream = true;
-            boolean sock_dgram = true;
-
-            Sock sock = SOCK_STREAM;
-            if(!socktype.isNil()) {
-                sockFromArg(socktype);
-
-                if(sock == SOCK_STREAM) {
-                    sock_dgram = false;
-
-                } else if (sock == SOCK_DGRAM) {
-                    sock_stream = false;
-
-                }
-            }
-
-            // When Socket::AI_PASSIVE and host is nil, return 'any' address.
-            InetAddress[] addrs = null;
-
-            if(!flags.isNil() && RubyFixnum.fix2int(flags) > 0) {
-                // The value of 1 is for Socket::AI_PASSIVE.
-                int flag = RubyNumeric.fix2int(flags);
-
-                if ((flag == 1) && emptyHost ) {
-                    // use RFC 2732 style string to ensure that we get Inet6Address
-                    addrs = InetAddress.getAllByName(is_ipv6 ? "[::]" : "0.0.0.0");
-                }
-
-            }
-
-            if (addrs == null) {
-                addrs = InetAddress.getAllByName(emptyHost ? (is_ipv6 ? "[0:0:0:0:0:0:0:1]" : null) : host.convertToString().toString());
-            }
+            InetAddress[] addrs = InetAddress.getAllByName(hostString);
 
             for(int i = 0; i < addrs.length; i++) {
-                int p = port.isNil() ? 0 : (int)port.convertToInteger().getLongValue();
+                // filter out unrelated address families if specified
+                if (addressFamily == AF_INET6 && !(addrs[i] instanceof Inet6Address)) continue;
+                if (addressFamily == AF_INET && !(addrs[i] instanceof Inet4Address)) continue;
                 callback.addrinfo(addrs[i], p, sock, reverseLookup);
             }
 
