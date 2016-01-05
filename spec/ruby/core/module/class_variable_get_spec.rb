@@ -32,11 +32,11 @@ describe "Module#class_variable_get" do
   end
 
   it "returns class variables defined in the metaclass and accessed by class methods" do
-    ModuleSpecs::CVars.meta.should == :meta
+    ModuleSpecs::CVars.meta.should == :metainfo
   end
 
   it "returns class variables defined in the metaclass and accessed by instance methods" do
-    ModuleSpecs::CVars.new.meta.should == :meta
+    ModuleSpecs::CVars.new.meta.should == :metainfo
   end
 
   it "returns a class variable defined in a metaclass" do

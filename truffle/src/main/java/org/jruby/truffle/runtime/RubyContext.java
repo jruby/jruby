@@ -29,6 +29,8 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.callgraph.CallGraph;
+import org.jruby.truffle.callgraph.SimpleWriter;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -105,6 +107,7 @@ public class RubyContext extends ExecutionContext {
     private final AttachmentsManager attachmentsManager;
     private final SourceCache sourceCache;
     private final RubiniusConfiguration rubiniusConfiguration;
+    private final CallGraph callGraph;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -119,6 +122,12 @@ public class RubyContext extends ExecutionContext {
 
     public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         options = new Options();
+
+        if (options.CALL_GRAPH) {
+            callGraph = new CallGraph();
+        } else {
+            callGraph = null;
+        }
 
         latestInstance = this;
 
@@ -647,6 +656,18 @@ public class RubyContext extends ExecutionContext {
         if (options.COVERAGE_GLOBAL) {
             coverageTracker.print(System.out);
         }
+
+        if (callGraph != null) {
+            callGraph.resolve();
+
+            if (options.CALL_GRAPH_WRITE != null) {
+                try (PrintStream stream = new PrintStream(options.CALL_GRAPH_WRITE)) {
+                    new SimpleWriter(callGraph, stream).write();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public PrintStream getDebugStandardOut() {
@@ -699,4 +720,7 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
+    public CallGraph getCallGraph() {
+        return callGraph;
+    }
 }
