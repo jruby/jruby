@@ -82,9 +82,10 @@ public class SimpleWriter {
     }
 
     private void write(CallSite callSite) {
-        stream.printf("callsite %d %d\n",
+        stream.printf("callsite %d %d %d\n",
                 ids.getId(callSite.getMethod()),
-                ids.getId(callSite));
+                ids.getId(callSite),
+                callSite.getSourceSection().getStartLine());
     }
 
     private void write(CallSiteVersion version) {

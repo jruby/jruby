@@ -28,4 +28,8 @@ public class CallSite {
     public Method getMethod() {
         return method;
     }
+
+    public SourceSection getSourceSection() {
+        return sourceSection;
+    }
 }
