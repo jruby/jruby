@@ -9,12 +9,17 @@
  */
 package org.jruby.truffle.callgraph;
 
+import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.RubyRootNode;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MethodVersion {
 
     private final Method method;
     private final RubyRootNode rootNode;
+    private final Map<CallSite, CallSiteVersion> callSiteVersions = new HashMap<>();
 
     public MethodVersion(Method method, RubyRootNode rootNode) {
         this.method = method;
@@ -25,4 +30,58 @@ public class MethodVersion {
     public Method getMethod() {
         return method;
     }
+
+    public Map<CallSite, CallSiteVersion> getCallSiteVersions() {
+        return callSiteVersions;
+    }
+
+    public void resolve() {
+        rootNode.accept(new NodeVisitor() {
+
+            @Override
+            public boolean visit(Node node) {
+                resolve(node);
+                return true;
+            }
+
+        });
+    }
+
+    private void resolve(Node node) {
+        if (node instanceof DirectCallNode || node instanceof IndirectCallNode) {
+            final CallSiteVersion callSiteVersion = getCallSiteVersion(node);
+
+            final Calls calls;
+
+            if (node instanceof DirectCallNode) {
+                final DirectCallNode directNode = (DirectCallNode) node;
+                final RootNode rootNode = directNode.getCurrentRootNode();
+
+                if (rootNode instanceof RubyRootNode) {
+                    final MethodVersion methodVersion = method.getCallGraph().rootNodeToMethodVersion((RubyRootNode) rootNode);
+                    calls = new CallsMethod(methodVersion);
+                } else {
+                    calls = CallsForeign.INSTANCE;
+                }
+            } else {
+                calls = CallsMegamorphic.INSTANCE;
+            }
+
+            callSiteVersion.getCalls().add(calls);
+        }
+    }
+
+    private CallSiteVersion getCallSiteVersion(Node node) {
+        final CallSite callSite = method.getCallSite(node);
+
+        CallSiteVersion callSiteVersion = callSiteVersions.get(callSite);
+
+        if (callSiteVersion == null) {
+            callSiteVersion = new CallSiteVersion(callSite);
+            callSiteVersions.put(callSite, callSiteVersion);
+        }
+
+        return callSiteVersion;
+    }
+
 }

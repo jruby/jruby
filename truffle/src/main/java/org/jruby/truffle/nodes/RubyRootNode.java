@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
@@ -85,8 +86,8 @@ public class RubyRootNode extends RootNode {
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
-        final RubyRootNode cloned = (RubyRootNode) super.clone();
+    public Node copy() {
+        final RubyRootNode cloned = (RubyRootNode) super.copy();
 
         if (context.getCallGraph() != null) {
             context.getCallGraph().registerRootNode(cloned);
@@ -94,4 +95,5 @@ public class RubyRootNode extends RootNode {
 
         return cloned;
     }
+
 }

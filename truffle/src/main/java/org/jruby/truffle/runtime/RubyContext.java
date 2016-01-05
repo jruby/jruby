@@ -123,6 +123,12 @@ public class RubyContext extends ExecutionContext {
     public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         options = new Options();
 
+        if (options.CALL_GRAPH) {
+            callGraph = new CallGraph();
+        } else {
+            callGraph = null;
+        }
+
         latestInstance = this;
 
         assert runtime != null;
@@ -213,12 +219,6 @@ public class RubyContext extends ExecutionContext {
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
-
-        if (options.CALL_GRAPH) {
-            callGraph = new CallGraph();
-        } else {
-            callGraph = null;
-        }
 
         initialize();
     }
@@ -657,11 +657,15 @@ public class RubyContext extends ExecutionContext {
             coverageTracker.print(System.out);
         }
 
-        if (callGraph != null && options.CALL_GRAPH_WRITE != null) {
-            try (PrintStream stream = new PrintStream(options.CALL_GRAPH_WRITE)) {
-                new SimpleWriter(callGraph, stream).write();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
+        if (callGraph != null) {
+            callGraph.resolve();
+
+            if (options.CALL_GRAPH_WRITE != null) {
+                try (PrintStream stream = new PrintStream(options.CALL_GRAPH_WRITE)) {
+                    new SimpleWriter(callGraph, stream).write();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

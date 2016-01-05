@@ -60,6 +60,10 @@ public class SimpleWriter {
                 sourceSection.getStartLine(),
                 endLine);
 
+        for (CallSite callSite : method.getCallSites().values()) {
+            write(callSite);
+        }
+
         for (MethodVersion version : method.getVersions()) {
             write(version);
         }
@@ -69,6 +73,42 @@ public class SimpleWriter {
         stream.printf("method-version %d %d\n",
                 ids.getId(version.getMethod()),
                 ids.getId(version));
+
+        for (CallSiteVersion callSiteVersion : version.getCallSiteVersions().values()) {
+            write(callSiteVersion);
+        }
+    }
+
+    private void write(CallSite callSite) {
+        stream.printf("callsite %d %d\n",
+                ids.getId(callSite.getMethod()),
+                ids.getId(callSite));
+    }
+
+    private void write(CallSiteVersion version) {
+        stream.printf("callsite-version %d %d\n",
+                ids.getId(version.getCallSite()),
+                ids.getId(version));
+
+        for (Calls calls : version.getCalls()) {
+            write(version, calls);
+        }
+    }
+
+    private void write(CallSiteVersion callSiteVersion, Calls calls) {
+        if (calls instanceof CallsMegamorphic) {
+            stream.printf("calls %d mega\n",
+                    ids.getId(callSiteVersion));
+        } else if (calls instanceof CallsForeign) {
+            stream.printf("calls %d foreign\n",
+                    ids.getId(callSiteVersion));
+        } else {
+            final CallsMethod callsMethod = (CallsMethod) calls;
+
+            stream.printf("calls %d %d\n",
+                    ids.getId(callSiteVersion),
+                    ids.getId(callsMethod.getMethodVersion()));
+        }
     }
 
 }

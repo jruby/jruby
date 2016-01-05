@@ -26,7 +26,7 @@ public class CallGraph {
         rootNodeToMethodVersion(rootNode);
     }
 
-    public synchronized Method sharedMethodInfoToMethod(SharedMethodInfo sharedMethodInfo) {
+    public Method sharedMethodInfoToMethod(SharedMethodInfo sharedMethodInfo) {
         Method method = sharedMethodInfoToMethod.get(sharedMethodInfo);
 
         if (method == null) {
@@ -37,7 +37,7 @@ public class CallGraph {
         return method;
     }
 
-    public synchronized MethodVersion rootNodeToMethodVersion(RubyRootNode rootNode) {
+    public MethodVersion rootNodeToMethodVersion(RubyRootNode rootNode) {
         MethodVersion methodVersion = rootNodeToMethodVersion.get(rootNode);
 
         if (methodVersion == null) {
@@ -51,4 +51,11 @@ public class CallGraph {
     public Collection<Method> getMethods() {
         return Collections.unmodifiableCollection(sharedMethodInfoToMethod.values());
     }
+
+    public void resolve() {
+        for (MethodVersion methodVersion : rootNodeToMethodVersion.values()) {
+            methodVersion.resolve();
+        }
+    }
+
 }
