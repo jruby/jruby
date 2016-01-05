@@ -1614,6 +1614,7 @@ public abstract class KernelNodes {
 
         @Child private DoesRespondDispatchHeadNode dispatch;
         @Child private DoesRespondDispatchHeadNode dispatchIgnoreVisibility;
+        @Child private DoesRespondDispatchHeadNode dispatchRespondToMissing;
         @Child private CallDispatchHeadNode respondToMissingNode;
         private final ConditionProfile ignoreVisibilityProfile = ConditionProfile.createBinaryProfile();
 
@@ -1622,6 +1623,7 @@ public abstract class KernelNodes {
 
             dispatch = new DoesRespondDispatchHeadNode(context, false);
             dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true);
+            dispatchRespondToMissing = new DoesRespondDispatchHeadNode(context, true);
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);
@@ -1643,8 +1645,10 @@ public abstract class KernelNodes {
 
             if (ret) {
                 return true;
-            } else {
+            } else if (dispatchRespondToMissing.doesRespondTo(frame, "respond_to_missing?", object)) {
                 return respondToMissing(frame, object, name, includeProtectedAndPrivate);
+            } else {
+                return false;
             }
         }
 
@@ -1660,8 +1664,10 @@ public abstract class KernelNodes {
 
             if (ret) {
                 return true;
-            } else {
+            } else if (dispatchRespondToMissing.doesRespondTo(frame, "respond_to_missing?", object)) {
                 return respondToMissing(frame, object, name, includeProtectedAndPrivate);
+            } else {
+                return false;
             }
         }
 
