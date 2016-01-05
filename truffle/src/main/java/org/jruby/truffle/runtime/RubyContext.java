@@ -661,9 +661,9 @@ public class RubyContext extends ExecutionContext {
             callGraph.resolve();
 
             if (options.CALL_GRAPH_WRITE != null) {
-                try (PrintStream stream = new PrintStream(options.CALL_GRAPH_WRITE)) {
+                try (PrintStream stream = new PrintStream(options.CALL_GRAPH_WRITE, StandardCharsets.UTF_8.name())) {
                     new SimpleWriter(callGraph, stream).write();
-                } catch (FileNotFoundException e) {
+                } catch (FileNotFoundException | UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
             }

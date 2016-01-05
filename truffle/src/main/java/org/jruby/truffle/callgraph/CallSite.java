@@ -32,4 +32,8 @@ public class CallSite {
     public SourceSection getSourceSection() {
         return sourceSection;
     }
+
+    public List<CallSiteVersion> getVersions() {
+        return versions;
+    }
 }
