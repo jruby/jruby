@@ -448,7 +448,7 @@ public class RubySocket extends RubyBasicSocket {
             soDomain = AddressFamily.AF_INET;
             soType = Sock.SOCK_STREAM;
             soProtocolFamily = ProtocolFamily.PF_INET;
-            soProtocol = Protocol.getProtocolByName("tcp");
+            soProtocol = IPProto.IPPROTO_TCP;
 
         } else if (mainChannel instanceof UnixSocketChannel) {
             soDomain = AddressFamily.AF_UNIX;
@@ -884,7 +884,7 @@ public class RubySocket extends RubyBasicSocket {
     protected AddressFamily soDomain;
     protected ProtocolFamily soProtocolFamily;
     protected Sock soType;
-    protected Protocol soProtocol = Protocol.getProtocolByNumber(0);
+    protected IPProto soProtocol = IPProto.IPPROTO_IP;
     protected List<Runnable> lazySocketOptions = Collections.synchronizedList(new ArrayList<Runnable>());
 
     private static final String JRUBY_SERVER_SOCKET_ERROR =

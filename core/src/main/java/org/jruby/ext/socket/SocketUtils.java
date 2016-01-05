@@ -27,6 +27,7 @@
 package org.jruby.ext.socket;
 
 import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.IPProto;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
@@ -582,7 +583,7 @@ public class SocketUtils {
         }
     }
 
-    static Protocol protocolFromArg(IRubyObject protocol) {
+    static IPProto protocolFromArg(IRubyObject protocol) {
         IRubyObject maybeString = TypeConverter.checkStringType(protocol.getRuntime(), protocol);
 
         if (!maybeString.isNil()) {
@@ -592,11 +593,11 @@ public class SocketUtils {
         try {
             if(protocol instanceof RubyString || protocol instanceof RubySymbol) {
                 String protocolString = protocol.toString();
-                return Protocol.getProtocolByName(protocolString);
+                return IPProto.valueOf(protocolString);
             }
 
             int protocolInt = RubyNumeric.fix2int(protocol);
-            return Protocol.getProtocolByNumber(protocolInt);
+            return IPProto.valueOf(protocolInt);
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(protocol.getRuntime(), "invalid protocol: " + protocol);
         }
