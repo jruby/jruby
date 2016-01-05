@@ -19,6 +19,7 @@ public class CallSiteVersion {
 
     public CallSiteVersion(CallSite callSite) {
         this.callSite = callSite;
+        callSite.getVersions().add(this);
     }
 
     public CallSite getCallSite() {
