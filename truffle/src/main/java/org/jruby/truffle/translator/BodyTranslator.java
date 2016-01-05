@@ -2073,7 +2073,7 @@ public class BodyTranslator extends Translator {
              * the temp.
              */
 
-            final RubyNode splatCastNode = SplatCastNodeGen.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, environment.findLocalVarNode(tempRHSName, sourceSection));
+            final RubyNode splatCastNode = SplatCastNodeGen.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true, environment.findLocalVarNode(tempRHSName, sourceSection));
 
             final RubyNode writeTemp = environment.findLocalVarNode(tempName, sourceSection).makeWriteNode(splatCastNode);
 
