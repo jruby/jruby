@@ -45,6 +45,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -381,9 +382,8 @@ public class Java implements Library {
 
             if (OBJECT_PROXY_CACHE || forceCache || proxyClass.getCacheProxy()) {
                 return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject, proxyClass);
-            } else {
-                return allocateProxy(rawJavaObject, proxyClass);
             }
+            return allocateProxy(rawJavaObject, proxyClass);
         }
         return runtime.getNil();
     }
@@ -1253,11 +1253,16 @@ public class Java implements Library {
     private static final class InterfaceProxyHandler implements InvocationHandler {
 
         final IRubyObject wrapper;
-        //private final String[] superTypeNames;
+
+        private final String[] ifaceNames; // interface names (sorted)
 
         InterfaceProxyHandler(final IRubyObject wrapper, final Class[] interfaces) {
             this.wrapper = wrapper;
-            //this.superTypeNames = new String[interfaces.length];
+            this.ifaceNames = new String[interfaces.length];
+            for ( int i = 0; i < interfaces.length; i++ ) {
+                ifaceNames[i] = interfaces[i].getName();
+            }
+            Arrays.sort(ifaceNames);
         }
 
         public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
@@ -1266,15 +1271,15 @@ public class Java implements Library {
 
             switch ( methodName ) {
                 case "toString" :
-                    if ( length == 0 ) return proxy.getClass().getName();
+                    if ( length == 0 ) return proxyToString(proxy);
                     break;
                 case "hashCode" :
-                    if ( length == 0 ) return proxy.getClass().hashCode();
+                    if ( length == 0 ) return proxyHashCode(proxy);
                     break;
                 case "equals" :
                     if ( length == 1 ) {
                         Class[] parameterTypes = getParameterTypes(method);
-                        if ( parameterTypes[0] == Object.class ) return proxy == nargs[0];
+                        if ( parameterTypes[0] == Object.class ) return proxyEquals(proxy, nargs[0]);
                     }
                     break;
                 case "__ruby_object" :
@@ -1300,6 +1305,33 @@ public class Java implements Library {
             //catch (RuntimeException e) {
             //    e.printStackTrace(); throw e;
             //}
+        }
+
+        final String proxyToString(final Object proxy) {
+            // com.sun.proxy.$Proxy24{org.jruby.javasupport.Java$InterfaceProxyHandler@71ad51e9}
+            return proxy.getClass().getName() + '{' + this + '}';
+        }
+
+        final boolean proxyEquals(final Object proxy, final Object otherProxy) {
+            if ( proxy == otherProxy ) return true;
+            if ( otherProxy == null ) return false;
+            if ( Proxy.isProxyClass(otherProxy.getClass()) ) {
+                InvocationHandler other = Proxy.getInvocationHandler(otherProxy);
+                if ( other instanceof InterfaceProxyHandler ) {
+                    InterfaceProxyHandler that = (InterfaceProxyHandler) other;
+                    if ( this.wrapper != that.wrapper ) return false;
+                    return Arrays.equals(this.ifaceNames, that.ifaceNames);
+                }
+            }
+            return false;
+        }
+
+        final int proxyHashCode(final Object proxy) {
+            int hash = 11 * this.wrapper.hashCode();
+            for ( String iface : this.ifaceNames ) {
+                hash = 31 * hash + iface.hashCode();
+            }
+            return hash;
         }
 
         private Map<Method, Class[]> parameterTypeCache;
@@ -1350,21 +1382,26 @@ public class Java implements Library {
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
 
             // add a default initialize if one does not already exist and this is a Java-hierarchy class
-            if (NEW_STYLE_EXTENSION &&
-                    !(RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey("initialize"))
-                    ) {
-                clazz.addMethod("initialize", new JavaMethodZero(clazz, PRIVATE) {
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                        return context.nil;
-                    }
-                });
+            if ( NEW_STYLE_EXTENSION &&
+                ! ( RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey("initialize") ) ) {
+                clazz.addMethod("initialize", new DummyInitialize(clazz));
             }
         }
         clazz.setReifiedClass(proxyImplClass);
         clazz.setRubyClassAllocator(proxyImplClass);
 
         return proxyImplClass;
+    }
+
+    private static final class DummyInitialize extends JavaMethodZero {
+
+        DummyInitialize(final RubyClass clazz) { super(clazz, PRIVATE); }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            return context.nil;
+        }
+
     }
 
     public static Constructor getRealClassConstructor(final Ruby runtime, Class<?> proxyImplClass) {
