@@ -1,6 +1,3 @@
-fails:Marshal.dump with an Object dumps a BasicObject subclass if it defines respond_to?
 fails:Marshal.dump with a Time dumps the zone and the offset
 fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC
-fails:Marshal.dump with an Exception dumps the message for the exception
-fails:Marshal.dump with an Exception contains the filename in the backtrace
 fails:Marshal.dump with a Symbol dumps a binary encoded Symbol

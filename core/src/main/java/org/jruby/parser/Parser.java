@@ -32,6 +32,7 @@
 package org.jruby.parser;
 
 import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -95,7 +96,12 @@ public class Parser {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
             RubyArray list = getLines(configuration, runtime, file);
-            RubyIO io = RubyIO.newIO(runtime, Channels.newChannel(content));
+            RubyIO io;
+            if (content instanceof FileInputStream) {
+                io = new RubyFile(runtime, file, ((FileInputStream) content).getChannel());
+            } else {
+                io = RubyIO.newIO(runtime, Channels.newChannel(content));
+            }
             LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io, list, configuration.getDefaultEncoding());
             return parse(file, lexerSource, blockScope, configuration);
         }
@@ -117,17 +123,11 @@ public class Parser {
         parser.setWarnings(runtime.getWarnings());
         try {
             result = parser.parse(configuration);
-            if (result.getEndOffset() >= 0 && configuration.isSaveData()) {
+            if (parser.lexer.isEndSeen() && configuration.isSaveData()) {
                 IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
-                //try {
-                    // FIXME: impl
-                    //runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, lexerSource.getRemainingAsStream()));
-                //} catch (IOException e) { // Not sure how to handle suddenly closed IO here?
-                    runtime.defineGlobalConstant("DATA", runtime.getNil());
-                //}
+                runtime.defineGlobalConstant("DATA", lexerSource.getRemainingAsIO());
                 runtime.setVerbose(verbose);
-            	result.setEndOffset(-1);
             }
         } catch (IOException e) {
             // Enebo: We may want to change this error to be more specific,

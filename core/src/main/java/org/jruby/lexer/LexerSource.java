@@ -34,7 +34,10 @@ package org.jruby.lexer;
 import org.jcodings.Encoding;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+
+import java.nio.channels.Channel;
 
 /**
  * Simple source capable of providing the next line in Ruby source file being lex'd.
@@ -84,4 +87,8 @@ public abstract class LexerSource {
     public abstract ByteList gets();
 
     public abstract int getOffset();
+
+    public abstract Channel getRemainingAsChannel();
+
+    public abstract IRubyObject getRemainingAsIO();
 }

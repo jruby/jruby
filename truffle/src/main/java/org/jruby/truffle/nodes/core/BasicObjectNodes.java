@@ -36,8 +36,13 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+
+import java.util.Arrays;
+import java.util.List;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -179,6 +184,37 @@ public abstract class BasicObjectNodes {
             CompilerDirectives.transferToInterpreter();
 
             throw new RaiseException(getContext().getCoreLibrary().localJumpError("no block given", this));
+        }
+
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "__instance_variables__")
+    public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
+
+        public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract DynamicObject executeObject(DynamicObject self);
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject instanceVariables(DynamicObject self) {
+            List<Object> keys = self.getShape().getKeyList();
+            final Object[] instanceVariableNames = keys.toArray(new Object[keys.size()]);
+
+            Arrays.sort(instanceVariableNames);
+
+            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+
+            for (Object name : instanceVariableNames) {
+                if (name instanceof String) {
+                    ArrayOperations.append(array, getSymbol((String) name));
+                }
+            }
+
+            return array;
         }
 
     }
