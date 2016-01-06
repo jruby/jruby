@@ -802,8 +802,16 @@ public class BodyTranslator extends Translator {
         try {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, null, false, false, false);
 
+            final ReturnID returnId;
+
+            if (sclass) {
+                returnId = environment.getReturnID();
+            } else {
+                returnId = environment.getParseEnvironment().allocateReturnID();
+            }
+
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
-                    environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false, null);
+                    returnId, true, true, sharedMethodInfo, name, false, null);
 
             final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, false);
 
