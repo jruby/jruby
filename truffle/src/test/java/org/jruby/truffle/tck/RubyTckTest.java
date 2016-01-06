@@ -122,14 +122,6 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
-    public void readWriteCharValue() throws Exception {
-        /*
-         * This test requires a Ruby method to return a Java char. We can't do that. We can return something which
-         * would unbox to a char, but currently this isn't good enough.
-         */
-    }
-
-    @Override
     public void testCoExistanceOfMultipleLanguageInstances() throws Exception {
         /*
          * Not running this test as it clears the engine, but we're caching that globally to avoid creating tens of
