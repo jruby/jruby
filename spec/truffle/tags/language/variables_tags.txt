@@ -1,4 +1,3 @@
-fails:Multiple assignment with a single RHS value assigns a MLHS with leading splat
 fails:Multiple assignment with a single RHS value assigns a single LHS splat
 fails:Multiple assignment with a single RHS value assigns an Array when the RHS is an Array subclass
 fails:Multiple assignment with a single RHS value calls #to_ary to convert an Object RHS

@@ -369,10 +369,6 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode notNilSmaller = SequenceNode.sequence(context, sourceSection, notNilSmallerSequence);
 
-        if (notNilSmaller == null) {
-            throw new UnsupportedOperationException();
-        }
-
         // The load to use when the array is not nil and at least as large as the number of required arguments
 
         final List<RubyNode> notNilAtLeastAsLargeSequence = new ArrayList<>();

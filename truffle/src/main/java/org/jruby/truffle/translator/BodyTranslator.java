@@ -29,6 +29,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
+import org.jruby.truffle.nodes.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.nodes.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.coerce.ToProcNodeGen;
@@ -2141,6 +2142,12 @@ public class BodyTranslator extends Translator {
 
             // This is very similar to the case with pre and rest, so unify with that
 
+            final List<RubyNode> sequence = new ArrayList<>();
+
+            final String tempRHSName = environment.allocateLocalTemp("rhs");
+            final RubyNode writeTempRHS = environment.findLocalVarNode(tempRHSName, sourceSection).makeWriteNode(rhsTranslated);
+            sequence.add(writeTempRHS);
+
             /*
              * Create a temp for the array.
              */
@@ -2152,9 +2159,8 @@ public class BodyTranslator extends Translator {
              * the temp.
              */
 
-            final List<RubyNode> sequence = new ArrayList<>();
 
-            final RubyNode splatCastNode = SplatCastNodeGen.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, rhsTranslated);
+            final RubyNode splatCastNode = SplatCastNodeGen.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, environment.findLocalVarNode(tempRHSName, sourceSection));
 
             final RubyNode writeTemp = environment.findLocalVarNode(tempName, sourceSection).makeWriteNode(splatCastNode);
 
@@ -2170,13 +2176,34 @@ public class BodyTranslator extends Translator {
                 sequence.add(translateDummyAssignment(node.getRest(), assignedValue));
             }
 
+            final List<RubyNode> smallerSequence = new ArrayList<>();
+
+            for (int n = 0; n < postArray.size(); n++) {
+                final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + n);
+                smallerSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
+            }
+
+            final RubyNode smaller = SequenceNode.sequence(context, sourceSection, smallerSequence);
+
+            final List<RubyNode> atLeastAsLargeSequence = new ArrayList<>();
+
             for (int n = 0; n < postArray.size(); n++) {
                 final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), -(postArray.size() - n));
 
-                sequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
+                atLeastAsLargeSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
             }
 
-            result = SequenceNode.sequence(context, sourceSection, sequence);
+            final RubyNode atLeastAsLarge = SequenceNode.sequence(context, sourceSection, atLeastAsLargeSequence);
+
+            final RubyNode assignPost =
+                    new IfNode(context, sourceSection,
+                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + node.getPostCount()),
+                            atLeastAsLarge,
+                            smaller);
+
+            sequence.add(assignPost);
+
+            result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
         } else {
             context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
             result = nilNode(sourceSection);
