@@ -1982,6 +1982,10 @@ public class BodyTranslator extends Translator {
 
         // TODO CS 5-Jan-15 we shouldn't be doing this kind of low level optimisation or pattern matching - EA should do it for us
 
+        if (sourceSection.getSource().getName().endsWith("test.rb")) {
+            rhsTranslated = rhsTranslated;
+        }
+
         if (preArray != null
                 && node.getPost() == null
                 && node.getRest() == null
@@ -2093,9 +2097,42 @@ public class BodyTranslator extends Translator {
             }
 
             if (node.getRest() != null) {
-                final ArrayGetTailNode assignedValue = ArrayGetTailNodeGen.create(context, sourceSection, preArray.size(), environment.findLocalVarNode(tempName, sourceSection));
+                RubyNode assignedValue = ArrayGetTailNodeGen.create(context, sourceSection, preArray.size(), environment.findLocalVarNode(tempName, sourceSection));
+
+                if (postArray != null) {
+                    assignedValue = ArrayDropTailNodeGen.create(context, sourceSection, postArray.size(), assignedValue);
+                }
 
                 sequence.add(translateDummyAssignment(node.getRest(), assignedValue));
+            }
+
+            if (postArray != null) {
+                final List<RubyNode> smallerSequence = new ArrayList<>();
+
+                for (int n = 0; n < postArray.size(); n++) {
+                    final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + n);
+                    smallerSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
+                }
+
+                final RubyNode smaller = SequenceNode.sequence(context, sourceSection, smallerSequence);
+
+                final List<RubyNode> atLeastAsLargeSequence = new ArrayList<>();
+
+                for (int n = 0; n < postArray.size(); n++) {
+                    final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), -(postArray.size() - n));
+
+                    atLeastAsLargeSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
+                }
+
+                final RubyNode atLeastAsLarge = SequenceNode.sequence(context, sourceSection, atLeastAsLargeSequence);
+
+                final RubyNode assignPost =
+                        new IfNode(context, sourceSection,
+                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + node.getPostCount()),
+                                atLeastAsLarge,
+                                smaller);
+
+                sequence.add(assignPost);
             }
 
             result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
@@ -2127,7 +2164,7 @@ public class BodyTranslator extends Translator {
                     false, environment.findLocalVarNode(tempRHSName, sourceSection));
 
             sequence.add(translateDummyAssignment(node.getRest(), rhsSplatCast));
-            
+
             result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
         } else if (node.getPre() == null
                 && node.getPost() == null

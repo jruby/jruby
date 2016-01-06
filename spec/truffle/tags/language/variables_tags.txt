@@ -1,13 +1,4 @@
 fails:Multiple assignment with a single RHS value calls #to_ary to convert an Object RHS
-fails:Multiple assignment with a single RHS value calls #to_ary to convert an Object RHS with MLHS
-fails:Multiple assignment with a single RHS value does not mutate a RHS Array
 fails:Multiple assignment with a single RHS value raises a TypeError if #to_ary does not return an Array
-fails:Multiple assignment with a single splatted RHS value calls #to_a to convert an Object RHS with MLHS
 fails:Multiple assignment with a single splatted RHS value calls #to_a to convert nil to an empty Array
-fails:Multiple assignment with a single splatted RHS value does not mutate a RHS Array
-fails:Multiple assignment with a MRHS value calls #to_a to convert a splatted Object value in a MRHS
-fails:Multiple assignment with a MRHS value calls #to_ary to convert a splatted Object when the position receiving the value is a multiple assignment
-fails:Multiple assignment with a MRHS value does not call #to_ary to convert a splatted Object when the position receiving the value is a simple variable
-fails:Multiple assignment with a MRHS value does not call #to_ary to convert an Object when the position receiving the value is a rest variable
 fails:Multiple assignment with a MRHS value raises a TypeError if #to_ary does not return an Array
-fails:Multiple assignment with a RHS assignment value does not mutate a RHS Array
