@@ -1842,19 +1842,16 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
 
     private static int initGlobalJavaVersion() {
-        String specVersion = Options.BYTECODE_VERSION.load();
-
-        // stack map calculation is failing for some compilation scenarios, so
-        // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
-        if (specVersion.equals("1.5")) {// || specVersion.equals("1.6")) {
-           return Opcodes.V1_5;
-        } else if (specVersion.equals("1.6")) {
-            return Opcodes.V1_6;
-        } else if (specVersion.equals("1.7") || specVersion.equals("1.8") || specVersion.equals("1.9") || specVersion.equals("9")) {
-            return Opcodes.V1_7;
-        } else {
-            System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.5");
-            return Opcodes.V1_5;
+        final String specVersion = Options.BYTECODE_VERSION.load();
+        switch ( specVersion ) {
+            case "1.6" : return Opcodes.V1_6;
+            case "1.7" : return Opcodes.V1_7;
+            case "1.8" : return Opcodes.V1_8;
+            // NOTE: JDK 9 now returns "9" instead of "1.9"
+            case "1.9" : case "9" : return Opcodes.V1_8; // +1
+            default :
+                System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.7");
+                return Opcodes.V1_7;
         }
     }
 
