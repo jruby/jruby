@@ -402,7 +402,7 @@ public class RubyInstanceConfig {
                             // return the script between shebang and __END__ or CTRL-Z (0x1A)
                             return findScript(resource.inputStream());
                         }
-                        return new BufferedInputStream(resource.inputStream(), 8192);
+                        return resource.inputStream();
                     }
                     else {
                         throw new FileNotFoundException(script + " (Not a file)");
