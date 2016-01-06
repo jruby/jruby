@@ -2723,7 +2723,7 @@ public final class Ruby implements Constantizable {
 
      private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
          ParserConfiguration parserConfig =
-                 new ParserConfiguration(this, lineNumber, false, true, config);
+                 new ParserConfiguration(this, lineNumber, false, true, isFromMain, config);
          setupSourceEncoding(parserConfig, UTF8Encoding.INSTANCE);
          return parser.parse(file, in, scope, parserConfig);
      }

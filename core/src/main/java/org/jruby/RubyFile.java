@@ -46,6 +46,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -266,6 +267,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     public RubyFile(Ruby runtime, String path, InputStream in) {
         super(runtime, runtime.getFile(), Channels.newChannel(in));
+        this.setPath(path);
+    }
+
+    public RubyFile(Ruby runtime, String path, FileChannel channel) {
+        super(runtime, runtime.getFile(), channel);
         this.setPath(path);
     }
 
