@@ -114,12 +114,7 @@ public class RubyInstanceConfig {
 
         threadDumpSignal = Options.THREAD_DUMP_SIGNAL.load();
 
-        environment = new HashMap<String,String>();
-        try {
-            environment.putAll(System.getenv());
-        } catch (SecurityException se) {
-        }
-        setupEnvironment(getJRubyHome());
+        initEnvironment();
     }
 
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
@@ -141,11 +136,15 @@ public class RubyInstanceConfig {
         profilingService = parentConfig.profilingService;
         profilingMode = parentConfig.profilingMode;
 
-        environment = new HashMap<String, String>();
+        initEnvironment();
+    }
+
+    private void initEnvironment() {
+        environment = new HashMap<String,String>();
         try {
             environment.putAll(System.getenv());
-        } catch (SecurityException se) {
         }
+        catch (SecurityException se) { /* ignore missing getenv permission */ }
         setupEnvironment(getJRubyHome());
     }
 
