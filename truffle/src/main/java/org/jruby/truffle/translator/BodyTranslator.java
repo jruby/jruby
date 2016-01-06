@@ -2115,11 +2115,20 @@ public class BodyTranslator extends Translator {
              *
              * a = *b
              */
+
+            final List<RubyNode> sequence = new ArrayList<>();
+
+            final String tempRHSName = environment.allocateLocalTemp("rhs");
+            final RubyNode writeTempRHS = environment.findLocalVarNode(tempRHSName, sourceSection).makeWriteNode(rhsTranslated);
+            sequence.add(writeTempRHS);
+
             final SplatCastNode rhsSplatCast = SplatCastNodeGen.create(context, sourceSection,
                     translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL,
-                    false, rhsTranslated);
+                    false, environment.findLocalVarNode(tempRHSName, sourceSection));
 
-            result = translateDummyAssignment(node.getRest(), rhsSplatCast);
+            sequence.add(translateDummyAssignment(node.getRest(), rhsSplatCast));
+            
+            result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
         } else if (node.getPre() == null
                 && node.getPost() == null
                 && node.getRest() != null
