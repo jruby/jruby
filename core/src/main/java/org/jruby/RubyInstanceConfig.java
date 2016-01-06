@@ -59,7 +59,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1609,15 +1608,6 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     // Static configuration fields, used as defaults for new JRuby instances.
     ////////////////////////////////////////////////////////////////////////////
-
-    // NOTE: These BigDecimal fields must be initialized before calls to initGlobalJavaVersion
-
-    /** A BigDecimal representing 1.5, for Java spec version matching */
-    private static final BigDecimal BIGDECIMAL_1_5 = new BigDecimal("1.5");
-    /** A BigDecimal representing 1.6, for Java spec version matching */
-    private static final BigDecimal BIGDECIMAL_1_6 = new BigDecimal("1.6");
-    /** A BigDecimal representing 1.7, for Java spec version matching */
-    private static final BigDecimal BIGDECIMAL_1_7 = new BigDecimal("1.7");
 
     /**
      * The version to use for generated classes. Set to current JVM version by default
