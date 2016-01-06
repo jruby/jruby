@@ -418,8 +418,8 @@ public class JITCompiler implements JITCompilerMBean {
             } else {
                 digestString = key;
             }
-            this.className = packageName + "/" + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
-            this.name = this.className.replaceAll("/", ".");
+            this.className = packageName + '/' + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + '_' + digestString;
+            this.name = this.className.replace('/', '.');
             this.methodName = methodName;
             this.method = method;
             this.visitor = visitor;
