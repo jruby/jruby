@@ -137,8 +137,8 @@ public class RubyContext extends ExecutionContext {
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
         if (!onGraal()) {
-            System.err.println("WARNING: JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. " +
-                    "The compilation is disabled Without the Graal compiler and it runs much slower. " +
+            System.err.println("WARNING: JRuby+Truffle is designed to be used with a JVM that has the Graal compiler. " +
+                    "Without the Graal compiler, performance will be drastically reduced. " +
                     "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
