@@ -1982,10 +1982,6 @@ public class BodyTranslator extends Translator {
 
         // TODO CS 5-Jan-15 we shouldn't be doing this kind of low level optimisation or pattern matching - EA should do it for us
 
-        if (sourceSection.getSource().getName().endsWith("test.rb")) {
-            rhsTranslated = rhsTranslated;
-        }
-
         if (preArray != null
                 && node.getPost() == null
                 && node.getRest() == null
