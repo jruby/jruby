@@ -797,7 +797,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    private RubyNode openModule(SourceSection sourceSection, RubyNode defineOrGetNode, String name, org.jruby.ast.Node bodyNode) {
+    private RubyNode openModule(SourceSection sourceSection, RubyNode defineOrGetNode, String name, org.jruby.ast.Node bodyNode, boolean sclass) {
         LexicalScope newLexicalScope = environment.pushLexicalScope();
         try {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, null, false, false, false);
@@ -807,7 +807,7 @@ public class BodyTranslator extends Translator {
 
             final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, false);
 
-            final MethodDefinitionNode definitionMethod = moduleTranslator.compileClassNode(sourceSection, name, bodyNode);
+            final MethodDefinitionNode definitionMethod = moduleTranslator.compileClassNode(sourceSection, name, bodyNode, sclass);
 
             return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod, newLexicalScope);
         } finally {
@@ -824,7 +824,7 @@ public class BodyTranslator extends Translator {
      * newly allocated module or class.
      * </p>
      */
-    private MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode) {
+    private MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode, boolean sclass) {
         RubyNode body;
 
         parentSourceSection.push(sourceSection);
@@ -840,12 +840,15 @@ public class BodyTranslator extends Translator {
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
-        return new MethodDefinitionNode(
+        final MethodDefinitionNode definitionNode = new MethodDefinitionNode(
                 context,
                 sourceSection,
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
-                Truffle.getRuntime().createCallTarget(rootNode));
+                Truffle.getRuntime().createCallTarget(rootNode),
+                sclass);
+
+        return definitionNode;
     }
 
     @Override
@@ -865,7 +868,7 @@ public class BodyTranslator extends Translator {
 
         final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, name, lexicalParent, superClass);
 
-        final RubyNode ret = openModule(sourceSection, defineOrGetClass, name, node.getBodyNode());
+        final RubyNode ret = openModule(sourceSection, defineOrGetClass, name, node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1957,7 +1960,7 @@ public class BodyTranslator extends Translator {
 
         final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, lexicalParent);
 
-        final RubyNode ret = openModule(sourceSection, defineModuleNode, name, node.getBodyNode());
+        final RubyNode ret = openModule(sourceSection, defineModuleNode, name, node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2675,7 +2678,7 @@ public class BodyTranslator extends Translator {
 
         final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, receiverNode);
 
-        final RubyNode ret = openModule(sourceSection, singletonClassNode, "(singleton-def)", node.getBodyNode());
+        final RubyNode ret = openModule(sourceSection, singletonClassNode, "(singleton-def)", node.getBodyNode(), true);
         return addNewlineIfNeeded(node, ret);
     }
 

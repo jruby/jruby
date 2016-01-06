@@ -38,19 +38,24 @@ public class InternalMethod implements ObjectGraphNode {
     private final DynamicObject proc; // only if method is created from a Proc
 
     private final CallTarget callTarget;
+    private final DynamicObject capturedBlock;
 
     public static InternalMethod fromProc(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
             Visibility visibility, DynamicObject proc, CallTarget callTarget) {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, false, proc, callTarget);
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, false, proc, callTarget, null);
     }
 
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
             Visibility visibility, CallTarget callTarget) {
-        this(sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget);
+        this(sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget, null);
+    }
+    public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
+                          Visibility visibility, boolean undefined, DynamicObject proc, CallTarget callTarget) {
+        this(sharedMethodInfo, name, declaringModule, visibility, undefined, proc, callTarget, null);
     }
 
-    private InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
-            Visibility visibility, boolean undefined, DynamicObject proc, CallTarget callTarget) {
+    public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
+                          Visibility visibility, boolean undefined, DynamicObject proc, CallTarget callTarget, DynamicObject capturedBlock) {
         assert RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
@@ -59,6 +64,7 @@ public class InternalMethod implements ObjectGraphNode {
         this.undefined = undefined;
         this.proc = proc;
         this.callTarget = callTarget;
+        this.capturedBlock = capturedBlock;
     }
 
     public SharedMethodInfo getSharedMethodInfo() {
@@ -91,7 +97,7 @@ public class InternalMethod implements ObjectGraphNode {
         if (newDeclaringModule == declaringModule) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, proc, callTarget);
+            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, proc, callTarget, capturedBlock);
         }
     }
 
@@ -99,7 +105,7 @@ public class InternalMethod implements ObjectGraphNode {
         if (newName.equals(name)) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, proc, callTarget);
+            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, proc, callTarget, capturedBlock);
         }
     }
 
@@ -107,12 +113,12 @@ public class InternalMethod implements ObjectGraphNode {
         if (newVisibility == visibility) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, proc, callTarget);
+            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, proc, callTarget, capturedBlock);
         }
     }
 
     public InternalMethod undefined() {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, proc, callTarget);
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, proc, callTarget, capturedBlock);
     }
 
     public boolean isVisibleTo(Node currentNode, DynamicObject callerClass) {
@@ -161,4 +167,7 @@ public class InternalMethod implements ObjectGraphNode {
         return adjacent;
     }
 
+    public DynamicObject getCapturedBlock() {
+        return capturedBlock;
+    }
 }
