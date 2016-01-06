@@ -7,6 +7,14 @@ public class CachedInJava {
         lastInstance.set(this);
     }
 
+    public CachedInJava newInstanceFromInstance() {
+        return new CachedInJava();
+    }
+
+    public static CachedInJava newInstanceFromStatic() {
+        return new CachedInJava();
+    }
+
     public static CachedInJava getLastInstance() {
         return lastInstance.get();
     }
