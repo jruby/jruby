@@ -33,6 +33,29 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+class Exception
+
+  # Custom marshal dumper for Exception. Rubinius exposes the exception message as an instance variable and their
+  # dumper takes advantage of that. This dumper instead calls Exception#message to get the message, but is otherwise
+  # identical.
+  def __marshal__(ms)
+    out = ms.serialize_extended_object self
+    out << "o"
+    cls = Rubinius::Type.object_class self
+    name = Rubinius::Type.module_inspect cls
+    out << ms.serialize(name.to_sym)
+    out << ms.serialize_fixnum(2)
+
+    out << ms.serialize(:mesg)
+    out << ms.serialize(self.message)
+    out << ms.serialize(:bt)
+    out << ms.serialize(self.backtrace)
+
+    out
+  end
+
+end
+
 class Range
 
   # Custom marshal dumper for Range. Rubinius exposes the three main values in Range (begin, end, excl) as
