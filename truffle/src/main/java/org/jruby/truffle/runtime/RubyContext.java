@@ -136,9 +136,9 @@ public class RubyContext extends ExecutionContext {
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
-        if (!onGraal()) {
-            System.err.println("WARNING: JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. " +
-                    "The compilation is disabled Without the Graal compiler and it runs much slower. " +
+        if (!onGraal() && options.GRAAL_WARNING_UNLESS) {
+            System.err.println("WARNING: JRuby+Truffle is designed to be used with a JVM that has the Graal compiler. " +
+                    "Without the Graal compiler, performance will be drastically reduced. " +
                     "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
@@ -712,8 +712,8 @@ public class RubyContext extends ExecutionContext {
         return crtExterns;
     }
 
-    public static void writeToFile(String fileName, String message) {
-        try (PrintStream stream = new PrintStream(fileName, StandardCharsets.UTF_8.name())) {
+    public static void appendToFile(String fileName, String message) {
+        try (PrintStream stream = new PrintStream(new FileOutputStream(fileName, true), true, StandardCharsets.UTF_8.name())) {
             stream.println(message);
         } catch (FileNotFoundException | UnsupportedEncodingException e) {
             e.printStackTrace();

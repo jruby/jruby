@@ -76,6 +76,7 @@ public class ByteListLexerSource extends LexerSource {
 
     @Override
     public IRubyObject getRemainingAsIO() {
+        if (scriptLines == null) return null;
         return new RubyIO(scriptLines.getRuntime(), getRemainingAsChannel());
     }
 }
