@@ -152,7 +152,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     i = instrs.next();
                     // Breaks & non-local returns in blocks will throw exceptions
                     // and pops for them will be handled in the GEB
-                    if (!bb.isExitBB() && i instanceof ReturnInstr) {
+                    if (!bb.isExitBB() && i instanceof ReturnInstr || i instanceof RethrowSavedExcInLambdaInstr) {
                         if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         instrs.previous();
