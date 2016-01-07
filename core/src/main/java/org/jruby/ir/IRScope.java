@@ -89,10 +89,10 @@ public abstract class IRScope implements ParseResult {
     private final StaticScope staticScope;
 
     /** Local variables defined in this scope */
-    private Set<Variable> definedLocalVars;
+    private Set<LocalVariable> definedLocalVars;
 
     /** Local variables used in this scope */
-    private Set<Variable> usedLocalVars;
+    private Set<LocalVariable> usedLocalVars;
 
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
@@ -762,6 +762,13 @@ public abstract class IRScope implements ParseResult {
     }
 
     /**
+     * Get all variables referenced by this scope.
+     */
+    public Set<LocalVariable> getUsedLocalVariables() {
+        return usedLocalVars;
+    }
+
+    /**
      * Set the local variables for this scope. This should only be used by persistence layer.
      */
     // FIXME: Consider making constructor for persistence to pass in all of this stuff
@@ -921,13 +928,13 @@ public abstract class IRScope implements ParseResult {
         for (BasicBlock bb : getCFG().getBasicBlocks()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
-                    if (v instanceof LocalVariable) usedLocalVars.add(v);
+                    if (v instanceof LocalVariable) usedLocalVars.add((LocalVariable) v);
                 }
 
                 if (i instanceof ResultInstr) {
                     Variable v = ((ResultInstr) i).getResult();
 
-                    if (v instanceof LocalVariable) definedLocalVars.add(v);
+                    if (v instanceof LocalVariable) definedLocalVars.add((LocalVariable) v);
                 }
             }
         }
