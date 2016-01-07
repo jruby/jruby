@@ -57,12 +57,12 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void modify() {
-        StringOperations.modify(string);
+        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
     }
 
     @Override
     public final void modify(int length) {
-        StringOperations.modify(string, length);
+        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
     }
 
     @Override
