@@ -495,8 +495,6 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_equal", needsSelf = true)
     public static abstract class StringEqualPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private ReadHeadObjectFieldNode readRopeNode;
-
         public StringEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -527,83 +525,34 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = {
                 "string != other",
                 "isRubyString(other)",
-                "isRope(string)",
-                "isRope(other)",
                 "areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
         })
-        public boolean ropeEqual(DynamicObject string, DynamicObject other,
+        public boolean equal(DynamicObject string, DynamicObject other,
+                                 @Cached("createBinaryProfile()") ConditionProfile sameRopeProfile,
                                  @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
                                  @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
                                  @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
                                  @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
                                  @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
                                  @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
-                                 @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible) {
-            if (readRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
-            }
+                                 @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible,
+                                 @Cached("createBinaryProfile()") ConditionProfile differentSizeProfile) {
 
-            final Rope a = (Rope) readRopeNode.execute(string);
-            final Rope b = (Rope) readRopeNode.execute(other);
+            final Rope a = Layouts.STRING.getRope(string);
+            final Rope b = Layouts.STRING.getRope(other);
 
-            if (a.getEncoding() == b.getEncoding()) {
-                return a.equals(b);
-            }
-
-            if (org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeable(string), StringOperations.getCodeRangeable(other)) == null) {
-                return a.equals(b);
-            }
-
-            return false;
-        }
-
-        @Specialization(guards = {
-                "string != other",
-                "isRubyString(other)",
-                "!isRope(string)",
-                "!isRope(other)",
-                "areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
-        })
-        public boolean stringEqual(DynamicObject string, DynamicObject other,
-                                   @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
-                                   @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible,
-                                   @Cached("createBinaryProfile()") ConditionProfile sameByteListProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile differentHashCodeProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile differentSizeProfile) {
-            final ByteList a = StringOperations.getByteList(string);
-            final ByteList b = StringOperations.getByteList(other);
-
-            if (sameByteListProfile.profile(a == b)) {
+            if (sameRopeProfile.profile(a == b)) {
                 return true;
             }
 
-            if (differentSizeProfile.profile(a.realSize() != b.realSize())) {
+            if (differentSizeProfile.profile(a.byteLength() != b.byteLength())) {
                 return false;
             }
 
-            // We could use the ByteList.hash values here as a quick != check if they are both nonzero,
-            // but we would need to access the field directly as calling hashCode() could cause a traversal.
-
-            final byte[] stringBytes = a.unsafeBytes();
-            final byte[] otherBytes = b.unsafeBytes();
-            final int stringBegin = a.begin();
-            final int otherBegin = b.begin();
-
-            for (int i = 0; i < a.realSize(); i++) {
-                if (stringBytes[i + stringBegin] != otherBytes[i + otherBegin]) {
-                    return false;
-                }
-            }
-
-            return true;
+            return Arrays.equals(a.getBytes(), b.getBytes());
         }
 
+        // TODO (nirvdrum 07-Jan-16) Take a look and see if we can short-circuit even checking if things are comparable by looking at the inner ropes for reference equality.
         protected boolean areComparable(DynamicObject first, DynamicObject second,
                                       ConditionProfile sameEncodingProfile,
                                       ConditionProfile firstStringEmptyProfile,
