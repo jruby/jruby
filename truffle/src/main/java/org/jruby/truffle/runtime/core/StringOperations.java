@@ -38,6 +38,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.LeafRope;
 import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
@@ -45,7 +46,7 @@ import org.jruby.util.io.EncodingUtils;
 
 public abstract class StringOperations {
 
-    public static final Rope EMPTY_UTF8_ROPE = new LeafRope(new byte[] {}, UTF8Encoding.INSTANCE);
+    public static final Rope EMPTY_UTF8_ROPE = RopeOperations.create(new byte[] {}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT);
 
     /** Creates a String from the ByteList, with unknown CR */
     public static DynamicObject createString(RubyContext context, ByteList bytes) {
