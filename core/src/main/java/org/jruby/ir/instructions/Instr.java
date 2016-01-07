@@ -36,13 +36,13 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[0];
 
-    private int ipc; // Interpreter-only: instruction pointer
-    private int rpc; // Interpreter-only: rescue pointer
-    private final Operation operation;
+    private transient int ipc; // Interpreter-only: instruction pointer
+    private transient int rpc; // Interpreter-only: rescue pointer
+    private transient final Operation operation;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
     // we can remove this instruction altogether without affecting program correctness.
-    private boolean isDead;
+    private transient boolean isDead;
 
     public Instr(Operation operation) {
         this.ipc = -1;

@@ -22,20 +22,20 @@ import static org.jruby.ir.IRFlags.*;
 public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
 
-    public final long callSiteId;
+    public transient final long callSiteId;
     private final CallType callType;
     protected String name;
-    protected CallSite callSite;
-    protected int argsCount;
-    protected boolean hasClosure;
+    protected transient CallSite callSite;
+    protected transient int argsCount;
+    protected transient boolean hasClosure;
 
-    private boolean flagsComputed;
-    private boolean canBeEval;
-    private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
-    private boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
-    private boolean dontInline;
-    private boolean containsArgSplat;
-    private boolean procNew;
+    private transient boolean flagsComputed;
+    private transient boolean canBeEval;
+    private transient boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
+    private transient boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
+    private transient boolean dontInline;
+    private transient boolean containsArgSplat;
+    private transient boolean procNew;
     private boolean potentiallyRefined;
 
     protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure,
