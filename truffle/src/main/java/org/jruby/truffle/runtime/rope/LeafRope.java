@@ -14,7 +14,7 @@ import org.jruby.util.ByteList;
 
 import java.util.Arrays;
 
-public class LeafRope extends Rope {
+public abstract class LeafRope extends Rope {
 
     private final byte[] bytes;
     private ByteList byteList;

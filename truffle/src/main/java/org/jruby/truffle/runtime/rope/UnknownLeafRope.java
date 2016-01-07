@@ -7,25 +7,21 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
+
 package org.jruby.truffle.runtime.rope;
 
 import org.jcodings.Encoding;
-import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
-public abstract class Rope {
+public class UnknownLeafRope extends LeafRope {
 
-    public abstract int length();
+    public UnknownLeafRope(byte[] bytes, Encoding encoding) {
+        super(bytes, encoding);
+    }
 
-    public abstract int byteLength();
-
-    public abstract ByteList getByteList();
-
-    public abstract byte[] getBytes();
-
-    public abstract byte[] extractRange(int offset, int length);
-
-    public abstract Encoding getEncoding();
-
-    public abstract int getCodeRange();
+    @Override
+    public int getCodeRange() {
+        return StringSupport.CR_UNKNOWN;
+    }
 
 }

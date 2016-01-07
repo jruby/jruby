@@ -177,9 +177,9 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyString(source);
 
         final ByteList bytes = new ByteList(StringOperations.getByteList(source), start, length);
-        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes), StringSupport.CR_UNKNOWN, null);
+        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
 
-        Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(source));
+        StringOperations.setCodeRange(ret, StringOperations.getCodeRange(source));
 
         return ret;
     }

@@ -26,7 +26,6 @@ public interface StringLayout extends BasicObjectLayout {
 
     DynamicObject createString(DynamicObjectFactory factory,
                                Rope rope,
-                               int codeRange,
                                @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
 
     boolean isString(ObjectType objectType);
@@ -35,9 +34,6 @@ public interface StringLayout extends BasicObjectLayout {
 
     Rope getRope(DynamicObject object);
     void setRope(DynamicObject object, Rope byteList);
-
-    int getCodeRange(DynamicObject object);
-    void setCodeRange(DynamicObject object, int codeRange);
 
     StringCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
     void setCodeRangeableWrapper(DynamicObject object, StringCodeRangeableWrapper codeRangeableWrapper);

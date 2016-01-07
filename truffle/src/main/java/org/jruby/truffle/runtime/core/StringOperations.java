@@ -50,12 +50,12 @@ public abstract class StringOperations {
 
     /** Creates a String from the ByteList, with unknown CR */
     public static DynamicObject createString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes), StringSupport.CR_UNKNOWN, null);
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
     }
 
     /** Creates a String from the ByteList, with 7-bit CR */
     public static DynamicObject create7BitString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes), StringSupport.CR_7BIT, null);
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, StringSupport.CR_7BIT), null);
     }
 
     // Since ByteList.toString does not decode properly
@@ -75,27 +75,40 @@ public abstract class StringOperations {
         return wrapper;
     }
 
+    public static int getCodeRange(DynamicObject string) {
+        return Layouts.STRING.getRope(string).getCodeRange();
+    }
+
+    public static void setCodeRange(DynamicObject string, int codeRange) {
+        // TODO (nirvdrum 07-Jan-16) Code range is now stored in the rope and ropes are immutable -- all calls to this method are suspect.
+        final int existingCodeRange = StringOperations.getCodeRange(string);
+
+        if (existingCodeRange != codeRange) {
+            throw new RuntimeException(String.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
+        }
+    }
+
     public static int scanForCodeRange(DynamicObject string) {
-        int cr = Layouts.STRING.getCodeRange(string);
+        int cr = StringOperations.getCodeRange(string);
 
         if (cr == StringSupport.CR_UNKNOWN) {
             cr = slowCodeRangeScan(string);
-            Layouts.STRING.setCodeRange(string, cr);
+            StringOperations.setCodeRange(string, cr);
         }
 
         return cr;
     }
 
     public static boolean isCodeRangeValid(DynamicObject string) {
-        return Layouts.STRING.getCodeRange(string) == StringSupport.CR_VALID;
+        return StringOperations.getCodeRange(string) == StringSupport.CR_VALID;
     }
 
     public static void clearCodeRange(DynamicObject string) {
-        Layouts.STRING.setCodeRange(string, StringSupport.CR_UNKNOWN);
+        StringOperations.setCodeRange(string, StringSupport.CR_UNKNOWN);
     }
 
     public static void keepCodeRange(DynamicObject string) {
-        if (Layouts.STRING.getCodeRange(string) == StringSupport.CR_BROKEN) {
+        if (StringOperations.getCodeRange(string) == StringSupport.CR_BROKEN) {
             clearCodeRange(string);
         }
     }
@@ -206,7 +219,11 @@ public abstract class StringOperations {
     }
 
     public static Rope ropeFromByteList(ByteList byteList) {
-        return new LeafRope(byteList.bytes(), byteList.getEncoding());
+        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), StringSupport.CR_UNKNOWN);
+    }
+
+    public static Rope ropeFromByteList(ByteList byteList, int codeRange) {
+        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
     }
 
     @TruffleBoundary

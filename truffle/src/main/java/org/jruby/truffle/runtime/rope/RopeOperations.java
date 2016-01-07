@@ -16,10 +16,10 @@ public class RopeOperations {
 
     public static LeafRope create(byte[] bytes, Encoding encoding, int codeRange) {
         switch(codeRange) {
-            case StringSupport.CR_7BIT: return new LeafRope(bytes, encoding);
-            case StringSupport.CR_VALID: return new LeafRope(bytes, encoding);
-            case StringSupport.CR_UNKNOWN: return new LeafRope(bytes, encoding);
-            case StringSupport.CR_BROKEN: return new LeafRope(bytes, encoding);
+            case StringSupport.CR_7BIT: return new AsciiOnlyLeafRope(bytes, encoding);
+            case StringSupport.CR_VALID: return new ValidLeafRope(bytes, encoding);
+            case StringSupport.CR_UNKNOWN: return new UnknownLeafRope(bytes, encoding);
+            case StringSupport.CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: throw new RuntimeException(String.format("Unknown code range type: %d", codeRange));
         }
     }

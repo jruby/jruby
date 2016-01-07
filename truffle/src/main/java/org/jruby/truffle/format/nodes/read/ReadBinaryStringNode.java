@@ -110,7 +110,7 @@ public abstract class ReadBinaryStringNode extends PackNode {
 
         setSourcePosition(frame, start + length);
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result), StringSupport.CR_UNKNOWN, null);
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN), null);
     }
 
 }

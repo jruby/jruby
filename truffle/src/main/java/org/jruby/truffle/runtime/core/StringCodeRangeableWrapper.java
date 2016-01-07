@@ -27,7 +27,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        return Layouts.STRING.getCodeRange(string);
+        return StringOperations.getCodeRange(string);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void setCodeRange(int newCodeRange) {
-        Layouts.STRING.setCodeRange(string, newCodeRange);
+        StringOperations.setCodeRange(string, newCodeRange);
     }
 
     @Override

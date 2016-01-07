@@ -121,13 +121,11 @@ public abstract class StringNodes {
             final Rope b = Layouts.STRING.getRope(other);
 
             final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(other), this);
-            final int codeRange = StringOperations.commonCodeRange(Layouts.STRING.getCodeRange(string), Layouts.STRING.getCodeRange(other));
 
             final Rope concatRope = new ConcatRope(a, b, enc);
 
             final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
                     concatRope,
-                    codeRange,
                     null);
 
             taintResultNode.maybeTaint(string, ret);
@@ -157,7 +155,7 @@ public abstract class StringNodes {
             }
 
             final Rope retRope;
-            int codeRange = Layouts.STRING.getCodeRange(string);
+            int codeRange = StringOperations.getCodeRange(string);
 
             if (times == 0) {
                 retRope = StringOperations.EMPTY_UTF8_ROPE;
@@ -433,7 +431,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization(guards =  { "isRubyString(other)", "!is7Bit(string) || !is7Bit(other)" })
         public DynamicObject concatString(DynamicObject string, DynamicObject other) {
-            final int codeRange = Layouts.STRING.getCodeRange(other);
+            final int codeRange = StringOperations.getCodeRange(other);
             final int[] ptr_cr_ret = { codeRange };
 
             try {
@@ -447,7 +445,7 @@ public abstract class StringNodes {
                 throw e;
             }
 
-            Layouts.STRING.setCodeRange(other, ptr_cr_ret[0]);
+            StringOperations.setCodeRange(other, ptr_cr_ret[0]);
 
             return string;
         }
@@ -829,7 +827,7 @@ public abstract class StringNodes {
 
             StringOperations.getByteList(string).view(0, newLength);
 
-            if (Layouts.STRING.getCodeRange(string) != StringSupport.CR_7BIT) {
+            if (StringOperations.getCodeRange(string) != StringSupport.CR_7BIT) {
                 StringOperations.clearCodeRange(string);
             }
 
@@ -1336,7 +1334,7 @@ public abstract class StringNodes {
 
             // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
             StringOperations.setByteList(self, StringOperations.getByteList(from).dup());
-            Layouts.STRING.setCodeRange(self, Layouts.STRING.getCodeRange(from));
+            StringOperations.setCodeRange(self, StringOperations.getCodeRange(from));
 
             return self;
         }
@@ -1367,7 +1365,7 @@ public abstract class StringNodes {
 
             StringOperations.getByteList(self).replace(StringOperations.getByteList(from).bytes());
             StringOperations.getByteList(self).setEncoding(StringOperations.getByteList(from).getEncoding());
-            Layouts.STRING.setCodeRange(self, Layouts.STRING.getCodeRange(from));
+            StringOperations.setCodeRange(self, StringOperations.getCodeRange(from));
 
             return self;
         }
@@ -1564,7 +1562,7 @@ public abstract class StringNodes {
 
             StringOperations.getByteList(string).replace(StringOperations.getByteList(other).bytes());
             StringOperations.getByteList(string).setEncoding(StringOperations.getByteList(other).getEncoding());
-            Layouts.STRING.setCodeRange(string, Layouts.STRING.getCodeRange(other));
+            StringOperations.setCodeRange(string, StringOperations.getCodeRange(other));
 
             return string;
         }
@@ -1709,7 +1707,7 @@ public abstract class StringNodes {
 
             final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, StringSupport.CR_UNKNOWN, null);
             StringOperations.getByteList(result).setEncoding(StringOperations.getByteList(string).getEncoding());
-            Layouts.STRING.setCodeRange(result, StringSupport.CR_7BIT);
+            StringOperations.setCodeRange(result, StringSupport.CR_7BIT);
 
             return result;
         }
@@ -1733,7 +1731,7 @@ public abstract class StringNodes {
 
             final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, StringSupport.CR_UNKNOWN, null);
             StringOperations.getByteList(result).setEncoding(ASCIIEncoding.INSTANCE);
-            Layouts.STRING.setCodeRange(result, StringSupport.CR_7BIT);
+            StringOperations.setCodeRange(result, StringSupport.CR_7BIT);
 
             return result;
         }
@@ -2127,9 +2125,9 @@ public abstract class StringNodes {
             }
 
             StringOperations.getByteList(string).setUnsafeBytes(obytes);
-            if (Layouts.STRING.getCodeRange(string) == StringSupport.CR_UNKNOWN) {
+            if (StringOperations.getCodeRange(string) == StringSupport.CR_UNKNOWN) {
                 int codeRange = single ? StringSupport.CR_7BIT : StringSupport.CR_VALID;
-                Layouts.STRING.setCodeRange(string, codeRange);
+                StringOperations.setCodeRange(string, codeRange);
             }
 
             return string;

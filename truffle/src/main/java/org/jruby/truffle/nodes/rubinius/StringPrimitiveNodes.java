@@ -215,7 +215,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList bytes = new ByteList(StringOperations.getByteList(source), index, length);
             bytes.setEncoding(StringOperations.getByteList(source).getEncoding());
 
-            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
             taintResultNode.maybeTaint(source, ret);
 
             return ret;
@@ -269,7 +269,7 @@ public abstract class StringPrimitiveNodes {
                 length = bytes.length() - normalizedIndex;
             }
 
-            final int codeRange = Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN;
+            final int codeRange = StringOperations.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN;
             final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length), codeRange, null);
 
             return taintResultNode.maybeTaint(string, result);
@@ -661,7 +661,7 @@ public abstract class StringPrimitiveNodes {
 
         private Object propagate(DynamicObject string, DynamicObject ret) {
             StringOperations.getByteList(ret).setEncoding(StringOperations.getByteList(string).getEncoding());
-            Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(string));
+            StringOperations.setCodeRange(ret, StringOperations.getCodeRange(string));
             return maybeTaint(string, ret);
         }
 
@@ -1461,7 +1461,7 @@ public abstract class StringPrimitiveNodes {
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
                     new ByteList(StringOperations.getByteList(string), beg, len),
-                    Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN,
+                    StringOperations.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN,
                     null);
 
             taintResultNode.maybeTaint(string, ret);
@@ -1486,7 +1486,7 @@ public abstract class StringPrimitiveNodes {
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
                     new SubstringRope(Layouts.STRING.getRope(string), beg, len),
-                    Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN,
+                    StringOperations.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN,
                     null);
 
             taintResultNode.maybeTaint(string, ret);

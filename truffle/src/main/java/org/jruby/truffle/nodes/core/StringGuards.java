@@ -22,12 +22,12 @@ public class StringGuards {
 
     public static boolean isSingleByteOptimizable(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT || Layouts.STRING.getRope(string).getEncoding().maxLength() == 1;
+        return StringOperations.getCodeRange(string) == StringSupport.CR_7BIT || Layouts.STRING.getRope(string).getEncoding().maxLength() == 1;
     }
 
     public static boolean is7Bit(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT;
+        return StringOperations.getCodeRange(string) == StringSupport.CR_7BIT;
     }
 
     public static boolean isAsciiCompatible(DynamicObject string) {
