@@ -30,8 +30,7 @@ public class DeclarationContext {
     private enum DefaultDefinee {
         LEXICAL_SCOPE,
         SINGLETON_CLASS,
-        SELF,
-        CAPTURED
+        SELF
     }
 
     public final Visibility visibility;
