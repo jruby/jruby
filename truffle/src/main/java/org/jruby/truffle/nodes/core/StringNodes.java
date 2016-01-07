@@ -162,7 +162,7 @@ public abstract class StringNodes {
         public DynamicObject add(DynamicObject string, DynamicObject other) {
             final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(other), this);
             final int codeRange = StringOperations.commonCodeRange(Layouts.STRING.getCodeRange(string), Layouts.STRING.getCodeRange(other));
-            final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringSupport.addByteLists(StringOperations.getByteList(string), StringOperations.getByteList(other)), codeRange, null);
+            final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(StringSupport.addByteLists(StringOperations.getByteList(string), StringOperations.getByteList(other))), codeRange, null);
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1429,7 +1429,7 @@ public abstract class StringNodes {
             }
 
             // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
-            Layouts.STRING.setByteList(self, StringOperations.getByteList(from).dup());
+            StringOperations.setByteList(self, StringOperations.getByteList(from).dup());
             Layouts.STRING.setCodeRange(self, Layouts.STRING.getCodeRange(from));
 
             return self;
@@ -2020,7 +2020,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject succ(DynamicObject string) {
-            if (Layouts.STRING.getByteList(string).realSize() > 0) {
+            if (StringOperations.byteLength(string) > 0) {
                 return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)), StringSupport.CR_UNKNOWN, null);
             } else {
                 return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(), StringSupport.CR_UNKNOWN, null);
@@ -2039,7 +2039,7 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject succBang(DynamicObject string) {
             if (StringOperations.getByteList(string).getRealSize() > 0) {
-                Layouts.STRING.setByteList(string, StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)));
+                StringOperations.setByteList(string, StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)));
             }
 
             return string;
@@ -2344,7 +2344,7 @@ public abstract class StringNodes {
                 DynamicObject format,
                 @Cached("privatizeByteList(format)") ByteList cachedFormat,
                 @Cached("create(compileFormat(format))") DirectCallNode callUnpackNode) {
-            final ByteList bytes = Layouts.STRING.getByteList(string);
+            final ByteList bytes = StringOperations.getByteList(string);
 
             final PackResult result;
 
@@ -2365,7 +2365,7 @@ public abstract class StringNodes {
                 DynamicObject string,
                 DynamicObject format,
                 @Cached("create()") IndirectCallNode callUnpackNode) {
-            final ByteList bytes = Layouts.STRING.getByteList(string);
+            final ByteList bytes = StringOperations.getByteList(string);
 
             final PackResult result;
 
@@ -2663,7 +2663,7 @@ public abstract class StringNodes {
         public DynamicObject clear(DynamicObject string) {
             ByteList empty = new ByteList(0);
             empty.setEncoding(StringOperations.getByteList(string).getEncoding());
-            Layouts.STRING.setByteList(string, empty);
+            StringOperations.setByteList(string, empty);
             return string;
         }
     }

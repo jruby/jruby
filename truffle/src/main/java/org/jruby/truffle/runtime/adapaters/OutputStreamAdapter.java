@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.adapaters;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -34,7 +35,7 @@ public class OutputStreamAdapter extends OutputStream {
     @Override
     public void write(int bite) throws IOException {
         context.send(object, "write", null, Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(),
-                new ByteList(new byte[]{(byte) bite}, encoding),
+                StringOperations.ropeFromByteList(new ByteList(new byte[]{(byte) bite}, encoding)),
                 StringSupport.CR_VALID, null));
     }
 

@@ -26,6 +26,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -486,7 +487,7 @@ public abstract class TruffleInteropNodes {
         @Specialization
         @TruffleBoundary
         public DynamicObject javaStringToRuby(String string) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ByteList.create(string), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(string)), StringSupport.CR_UNKNOWN, null);
         }
 
     }

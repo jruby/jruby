@@ -49,12 +49,12 @@ public abstract class StringOperations {
 
     /** Creates a String from the ByteList, with unknown CR */
     public static DynamicObject createString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes), StringSupport.CR_UNKNOWN, null);
     }
 
     /** Creates a String from the ByteList, with 7-bit CR */
     public static DynamicObject create7BitString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_7BIT, null);
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes), StringSupport.CR_7BIT, null);
     }
 
     // Since ByteList.toString does not decode properly
@@ -176,19 +176,15 @@ public abstract class StringOperations {
     }
 
     public static ByteList getByteList(DynamicObject object) {
-        if (RubyGuards.isRope(object)) {
-            return ((Rope) object.get(Layouts.ROPE_IDENTIFIER)).getByteList();
-        }
+        return Layouts.STRING.getRope(object).getByteList();
+    }
 
-        return Layouts.STRING.getByteList(object);
+    public static void setByteList(DynamicObject object, ByteList byteList) {
+        Layouts.STRING.setRope(object, ropeFromByteList(byteList));
     }
 
     public static int byteLength(DynamicObject object) {
-        if (RubyGuards.isRope(object)) {
-            return ((Rope) object.get(Layouts.ROPE_IDENTIFIER)).length();
-        }
-
-        return Layouts.STRING.getByteList(object).length();
+        return Layouts.STRING.getRope(object).getBytes().length;
     }
 
     public static int commonCodeRange(int first, int second) {
@@ -206,6 +202,10 @@ public abstract class StringOperations {
 
         // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
         return StringSupport.CR_VALID;
+    }
+
+    public static Rope ropeFromByteList(ByteList byteList) {
+        return new LeafRope(byteList.bytes(), byteList.getEncoding());
     }
 
     @TruffleBoundary
