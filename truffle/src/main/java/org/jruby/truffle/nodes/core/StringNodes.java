@@ -108,73 +108,38 @@ public abstract class StringNodes {
     })
     public abstract static class AddNode extends CoreMethodNode {
 
-        @Child private ReadHeadObjectFieldNode readRopeNode;
-        @Child private WriteHeadObjectFieldNode writeRopeNode;
         @Child private TaintResultNode taintResultNode;
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = { "isRubyString(other)", "isRope(string)", "isRope(other)"})
-        public DynamicObject addRopes(DynamicObject string, DynamicObject other) {
-            if (readRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
-            }
-
-            final Rope a = (Rope) readRopeNode.execute(string);
-            final Rope b = (Rope) readRopeNode.execute(other);
+        @Specialization(guards = "isRubyString(other)")
+        public DynamicObject add(DynamicObject string, DynamicObject other) {
+            final Rope a = Layouts.STRING.getRope(string);
+            final Rope b = Layouts.STRING.getRope(other);
 
             final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(other), this);
             final int codeRange = StringOperations.commonCodeRange(Layouts.STRING.getCodeRange(string), Layouts.STRING.getCodeRange(other));
 
-            final Rope concattedRope = new ConcatRope(a, b, enc);
+            final Rope concatRope = new ConcatRope(a, b, enc);
 
             final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                    null,
+                    concatRope,
                     codeRange,
                     null);
 
-            if (writeRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeRopeNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER));
-            }
-
-            writeRopeNode.execute(ret, concattedRope);
-
-            if (taintResultNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
-            }
-
             taintResultNode.maybeTaint(string, ret);
             taintResultNode.maybeTaint(other, ret);
 
             return ret;
         }
 
-        @Specialization(guards = { "isRubyString(other)", "!isRope(string)" })
-        public DynamicObject add(DynamicObject string, DynamicObject other) {
-            final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(other), this);
-            final int codeRange = StringOperations.commonCodeRange(Layouts.STRING.getCodeRange(string), Layouts.STRING.getCodeRange(other));
-            final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(StringSupport.addByteLists(StringOperations.getByteList(string), StringOperations.getByteList(other))), codeRange, null);
-
-            if (taintResultNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
-            }
-
-            StringOperations.getByteList(ret).setEncoding(enc);
-            taintResultNode.maybeTaint(string, ret);
-            taintResultNode.maybeTaint(other, ret);
-
-            return ret;
-        }
     }
 
     @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
