@@ -819,34 +819,6 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(names = "string_to_rope", onSingleton = true, required = 1)
-    public abstract static class StringToRopeNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private AllocateObjectNode allocateObjectNode;
-        @Child private WriteHeadObjectFieldNode writeRopeNode;
-
-        public StringToRopeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-            writeRopeNode = WriteHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER);
-        }
-
-        @Specialization(guards = { "isRubyString(string)", "!isRope(string)" })
-        public DynamicObject stringToRope(DynamicObject string) {
-            final ByteList byteList = StringOperations.getByteList(string);
-            final Rope rope = new LeafRope(byteList.bytes(), byteList.getEncoding());
-
-            final DynamicObject ret = allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(),
-                    null,
-                    Layouts.STRING.getCodeRange(string),
-                    null);
-
-            writeRopeNode.execute(ret, rope);
-
-            return ret;
-        }
-    }
-
     @CoreMethod(names = "logical_processors", onSingleton = true)
     public abstract static class LogicalProcessorsNode extends CoreMethodNode {
 
