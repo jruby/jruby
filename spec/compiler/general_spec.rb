@@ -56,7 +56,7 @@ module JITSpecUtils
     end
 
     method = oj.ir.IRBuilder.build_root(JRuby.runtime.getIRManager(), node).scope
-    method.prepareForInitialCompilation
+    method.prepareForCompilation
 
     compiler = oj.ir.targets.JVMVisitor.new
     compiled = compiler.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
