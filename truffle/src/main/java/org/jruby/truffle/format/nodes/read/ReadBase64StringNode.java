@@ -169,7 +169,7 @@ public abstract class ReadBase64StringNode extends PackNode {
         final ByteList result = new ByteList(lElem, 0, index, encoding, false);
         setSourcePosition(frame, encode.position());
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result), StringSupport.CR_UNKNOWN, null);
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN), null);
     }
 
 }

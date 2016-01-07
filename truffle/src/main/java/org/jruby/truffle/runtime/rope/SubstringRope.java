@@ -68,4 +68,10 @@ public class SubstringRope extends Rope {
     public Encoding getEncoding() {
         return child.getEncoding();
     }
+
+    @Override
+    public int getCodeRange() {
+        // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
+        return child.getCodeRange();
+    }
 }

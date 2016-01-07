@@ -487,7 +487,7 @@ public abstract class TruffleInteropNodes {
         @Specialization
         @TruffleBoundary
         public DynamicObject javaStringToRuby(String string) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(string)), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(string), StringSupport.CR_UNKNOWN), null);
         }
 
     }

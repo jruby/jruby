@@ -12,6 +12,8 @@ package org.jruby.truffle.runtime.rope;
 import org.jcodings.Encoding;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeSupport;
+import org.jruby.util.CodeRangeable;
 
 import java.util.Arrays;
 
@@ -87,6 +89,12 @@ public class ConcatRope extends Rope {
         }
 
         return encoding;
+    }
+
+    @Override
+    public int getCodeRange() {
+        // TODO (nirvdrum 07-Jan-16) This method does a bit of branching. We may want to pass a ConditionProfile in to simplify that or do something clever with bit masks.
+        return StringOperations.commonCodeRange(left.getCodeRange(), right.getCodeRange());
     }
 
     @Override
