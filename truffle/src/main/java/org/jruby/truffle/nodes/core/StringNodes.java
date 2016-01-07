@@ -1787,33 +1787,23 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ReadHeadObjectFieldNode readRopeNode;
-
         public SizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public abstract int executeInteger(VirtualFrame frame, DynamicObject string);
 
-        @Specialization(guards = { "isRope(string)", "isSingleByteOptimizable(string)"})
+        @Specialization(guards = "isSingleByteOptimizable(string)")
         public int sizeSingleByteRope(DynamicObject string) {
-            if (readRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
-            }
-
-            return ((Rope) readRopeNode.execute(string)).length();
+            return Layouts.STRING.getRope(string).length();
         }
 
-        @Specialization(guards = { "!isRope(string)", "isSingleByteOptimizable(string)" })
-        public int sizeSingleByte(DynamicObject string) {
-            return StringOperations.getByteList(string).getRealSize();
-        }
-
-        @Specialization(guards = { "!isRope(string)", "!isSingleByteOptimizable(string)" })
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
         public int size(DynamicObject string) {
+            // TODO (nirvdrum Jan.-07-2016) This should be made much more efficient.
             return StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeable(string));
         }
+
     }
 
     @CoreMethod(names = "squeeze!", rest = true, raiseIfFrozenSelf = true)
