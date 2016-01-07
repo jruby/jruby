@@ -1325,8 +1325,6 @@ public abstract class StringPrimitiveNodes {
     public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private AllocateObjectNode allocateNode;
-        @Child private ReadHeadObjectFieldNode readRopeNode;
-        @Child private WriteHeadObjectFieldNode writeRopeNode;
         @Child private TaintResultNode taintResultNode;
 
         public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1335,8 +1333,8 @@ public abstract class StringPrimitiveNodes {
 
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 
-        @Specialization(guards = { "len >= 0" , "isSingleByteOptimizable(string)", "isRope(string)" })
-        public Object stringSubstringRope(DynamicObject string, int beg, int len,
+        @Specialization(guards = { "len >= 0" , "isSingleByteOptimizable(string)" })
+        public Object stringSubstring(DynamicObject string, int beg, int len,
                                                            @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
@@ -1373,50 +1371,12 @@ public abstract class StringPrimitiveNodes {
             return makeRope(string, beg, len);
         }
 
-        @Specialization(guards = { "len >= 0", "isSingleByteOptimizable(string)", "!isRope(string)"})
-        public Object stringSubstringSingleByteOptimizable(DynamicObject string, int beg, int len,
-                                                           @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile tooLargeBeginProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile stillNegativeBeginProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile) {
-            // Taken from org.jruby.RubyString#substr19.
-            final int length = StringOperations.getByteList(string).getRealSize();
-            if (emptyStringProfile.profile(length == 0)) {
-                len = 0;
-            }
-
-            if (tooLargeBeginProfile.profile(beg > length)) {
-                return nil();
-            }
-
-            if (negativeBeginProfile.profile(beg < 0)) {
-                beg += length;
-
-                if (stillNegativeBeginProfile.profile(beg < 0)) {
-                    return nil();
-                }
-            }
-
-            if (tooLargeTotalProfile.profile((beg + len) > length)) {
-                len = length - beg;
-            }
-
-            if (negativeLengthProfile.profile(len <= 0)) {
-                len = 0;
-                beg = 0;
-            }
-
-            return makeSubstring(string, beg, len);
-        }
-
         @TruffleBoundary
         @Specialization(guards = { "len >= 0", "!isSingleByteOptimizable(string)" })
         public Object stringSubstring(DynamicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
 
-            final int length = StringOperations.getByteList(string).getRealSize();
+            final int length = StringOperations.byteLength(string);
             if (length == 0) {
                 len = 0;
             }
@@ -1425,12 +1385,12 @@ public abstract class StringPrimitiveNodes {
                 len = length - beg;
             }
 
-            final ByteList value = StringOperations.getByteList(string);
-            final Encoding enc = value.getEncoding();
+            final Rope rope = Layouts.STRING.getRope(string);
+            final Encoding enc = rope.getEncoding();
             int p;
-            int s = value.getBegin();
+            int s = 0;
             int end = s + length;
-            byte[]bytes = value.getUnsafeBytes();
+            byte[]bytes = rope.getBytes();
 
             if (beg < 0) {
                 if (len > -beg) len = -beg;
@@ -1522,26 +1482,12 @@ public abstract class StringPrimitiveNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            if (readRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
-            }
-
-            if (writeRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeRopeNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER));
-            }
-
             // TODO (nirvdrum Nov. 9, 2015) There's probably a way to guarantee the code range value based on the parent code range.
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
-                    null,
+                    new SubstringRope(Layouts.STRING.getRope(string), beg, len),
                     Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN,
                     null);
-
-            final Rope originalRope = (Rope) readRopeNode.execute(string);
-
-            writeRopeNode.execute(ret, new SubstringRope(originalRope, beg, len));
 
             taintResultNode.maybeTaint(string, ret);
 
