@@ -54,10 +54,7 @@ import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.dispatch.RubyCallNode;
 import org.jruby.truffle.nodes.exceptions.*;
 import org.jruby.truffle.nodes.globals.*;
-import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
-import org.jruby.truffle.nodes.literal.FloatLiteralNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.nodes.literal.StringLiteralNode;
+import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.locals.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.objects.*;
@@ -2162,17 +2159,42 @@ public class BodyTranslator extends Translator {
 
             final List<RubyNode> sequence = new ArrayList<>();
 
+            SplatCastNode.NilBehavior nilBehavior;
+
+            if (translatingNextExpression) {
+                nilBehavior = SplatCastNode.NilBehavior.EMPTY_ARRAY;
+            } else {
+                if (rhsTranslated instanceof SplatCastNode && ((SplatCastNodeGen) rhsTranslated).getChild() instanceof NilNode) {
+                    rhsTranslated = ((SplatCastNodeGen) rhsTranslated).getChild();
+                    nilBehavior = SplatCastNode.NilBehavior.CONVERT;
+                } else {
+                    nilBehavior = SplatCastNode.NilBehavior.ARRAY_WITH_NIL;
+                }
+            }
+
             final String tempRHSName = environment.allocateLocalTemp("rhs");
             final RubyNode writeTempRHS = environment.findLocalVarNode(tempRHSName, sourceSection).makeWriteNode(rhsTranslated);
             sequence.add(writeTempRHS);
 
             final SplatCastNode rhsSplatCast = SplatCastNodeGen.create(context, sourceSection,
-                    translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL,
+                    nilBehavior,
                     true, environment.findLocalVarNode(tempRHSName, sourceSection));
 
-            sequence.add(translateDummyAssignment(node.getRest(), rhsSplatCast));
+            final String tempRHSSplattedName = environment.allocateLocalTemp("rhs");
+            final RubyNode writeTempSplattedRHS = environment.findLocalVarNode(tempRHSSplattedName, sourceSection).makeWriteNode(rhsSplatCast);
+            sequence.add(writeTempSplattedRHS);
 
-            result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
+            sequence.add(translateDummyAssignment(node.getRest(), environment.findLocalVarNode(tempRHSSplattedName, sourceSection)));
+
+            final RubyNode assignmentResult;
+
+            if (nilBehavior == SplatCastNode.NilBehavior.CONVERT) {
+                assignmentResult = environment.findLocalVarNode(tempRHSSplattedName, sourceSection);
+            } else {
+                assignmentResult = environment.findLocalVarNode(tempRHSName, sourceSection);
+            }
+
+            result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), assignmentResult);
         } else if (node.getPre() == null
                 && node.getPost() == null
                 && node.getRest() != null
@@ -2707,7 +2729,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode value = translateNodeOrNil(sourceSection, node.getValue());
-        final RubyNode ret = SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.EMPTY_ARRAY, false, value);
+        final RubyNode ret = SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.CONVERT, false, value);
         return addNewlineIfNeeded(node, ret);
     }
 
