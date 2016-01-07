@@ -136,7 +136,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity) {
-        BasicBlock[] bbs = scope.prepareForInitialCompilation();
+        BasicBlock[] bbs = scope.prepareForCompilation();
 
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 

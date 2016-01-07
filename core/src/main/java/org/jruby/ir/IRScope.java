@@ -530,7 +530,7 @@ public abstract class IRScope implements ParseResult {
         return newInstructions;
     }
 
-    public void prepareFullBuildCommon() {
+    private void prepareFullBuildCommon() {
         // We already made it.
         if (fullInterpreterContext != null) return;
 
@@ -566,8 +566,8 @@ public abstract class IRScope implements ParseResult {
         return fullInterpreterContext;
     }
 
-    /** Run any necessary passes to get the IR ready for compilation */
-    public synchronized BasicBlock[] prepareForInitialCompilation() {
+    /** Run any necessary passes to get the IR ready for compilation (AOT and/or JIT) */
+    public synchronized BasicBlock[] prepareForCompilation() {
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
