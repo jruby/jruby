@@ -76,7 +76,7 @@ public class IRDumper extends IRVisitor {
     public void visit(IRScope scope, boolean recurse) {
         stream.println("begin " + scope.getScopeType().name() + "<" + scope.getName() + ">");
 
-        scope.prepareForInitialCompilation();
+        scope.prepareForCompilation();
         InterpreterContext ic = scope.getInterpreterContext();
 
         if (ic.getStaticScope().getSignature() == null) {
