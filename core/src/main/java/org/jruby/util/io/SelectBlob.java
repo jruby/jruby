@@ -43,6 +43,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import org.jruby.exceptions.RaiseException;
 
 /**
  * This is a reimplementation of MRI's IO#select logic. It has been rewritten
@@ -67,7 +68,7 @@ public class SelectBlob {
                 // Java's select doesn't do anything about this, so we leave it be.
             }
             final boolean has_timeout = args.length > 3 && !args[3].isNil();
-            final long timeout = !has_timeout ? 0 : convertTimeout(runtime, args[3]);
+            final long timeout = !has_timeout ? 0 : convertTimeout(context, args[3]);
 
             if (timeout < 0) {
                 throw runtime.newArgumentError("time interval must be positive");
@@ -229,7 +230,7 @@ public class SelectBlob {
         }
     }
 
-    private static long convertTimeout(final Ruby runtime, IRubyObject timeoutArg) {
+    private static long convertTimeout(final ThreadContext context, IRubyObject timeoutArg) {
         final long timeout;
         if (timeoutArg instanceof RubyFloat) {
             timeout = Math.round(((RubyFloat) timeoutArg).getDoubleValue() * 1000);
@@ -238,10 +239,23 @@ public class SelectBlob {
             timeout = Math.round(((RubyInteger) timeoutArg).getDoubleValue() * 1000);
         }
         else {
-            throw runtime.newTypeError("can't convert " + timeoutArg.getMetaClass().getName() + " into time interval");
+            final Ruby runtime = context.runtime;
+            if ( ! runtime.is1_8() ) {
+                RubyFloat t = null;
+                try {
+                    t = timeoutArg.callMethod(context, "to_f").convertToFloat();
+                }
+                catch (RaiseException e) { /* fallback to TypeError */ }
+
+                timeout = t != null ? Math.round(t.getDoubleValue() * 1000) : -1;
+            }
+            else timeout = -1;
+            if ( timeout == -1 ) {
+                throw runtime.newTypeError("can't convert " + timeoutArg.getMetaClass().getName() + " into time interval");
+            }
         }
 
-        if ( timeout < 0 ) throw runtime.newArgumentError("negative timeout given");
+        if ( timeout < 0 ) throw context.runtime.newArgumentError("negative timeout given");
         return timeout;
     }
 
