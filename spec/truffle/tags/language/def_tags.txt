@@ -1,1 +1,0 @@
-fails:A nested method definition inside an instance_eval creates a singleton method

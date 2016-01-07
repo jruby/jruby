@@ -851,7 +851,8 @@ public class BodyTranslator extends Translator {
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
                 Truffle.getRuntime().createCallTarget(rootNode),
-                sclass);
+                sclass,
+                false);
 
         return definitionNode;
     }

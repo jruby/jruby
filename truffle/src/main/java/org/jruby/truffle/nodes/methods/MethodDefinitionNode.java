@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -31,14 +32,18 @@ public class MethodDefinitionNode extends RubyNode {
     private final SharedMethodInfo sharedMethodInfo;
     private final CallTarget callTarget;
     private final boolean captureBlock;
+    private final boolean captureDefaultDefinee;
+
+    @Child private GetDefaultDefineeNode getDefaultDefineeNode;
 
     public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-                                CallTarget callTarget, boolean captureBlock) {
+                                CallTarget callTarget, boolean captureBlock, boolean captureDefaultDefinee) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
         this.captureBlock = captureBlock;
+        this.captureDefaultDefinee = captureDefaultDefinee;
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
@@ -53,7 +58,20 @@ public class MethodDefinitionNode extends RubyNode {
             capturedBlock = null;
         }
 
-        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, capturedBlock);
+        final DynamicObject capturedDefaultDefinee;
+
+        if (captureDefaultDefinee && RubyArguments.getDeclarationContext(frame.getArguments()) == DeclarationContext.INSTANCE_EVAL) {
+            if (getDefaultDefineeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                getDefaultDefineeNode = insert(new GetDefaultDefineeNode(getContext(), getSourceSection()));
+            }
+
+            capturedDefaultDefinee = getDefaultDefineeNode.execute(frame);
+        } else {
+            capturedDefaultDefinee = null;
+        }
+
+        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, capturedBlock, capturedDefaultDefinee);
     }
 
     @Override
