@@ -11,7 +11,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,7 +28,7 @@ package org.jruby.util.io;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyFloat;
 import org.jruby.RubyIO;
 import org.jruby.RubyThread;
@@ -47,7 +47,7 @@ import java.util.concurrent.Future;
 /**
  * This is a reimplementation of MRI's IO#select logic. It has been rewritten
  * from an earlier version in JRuby to improve performance and readability.
- * 
+ *
  * This version avoids allocating a selector or any data structures to hold
  * data about the channels/IOs being selected unless absolutely necessary. It
  * also uses simple boolean arrays to track characteristics like whether an IO
@@ -66,13 +66,13 @@ public class SelectBlob {
                 checkArrayType(runtime, args[2]);
                 // Java's select doesn't do anything about this, so we leave it be.
             }
-            boolean has_timeout = args.length > 3 && !args[3].isNil();
-            long timeout = !has_timeout ? 0 : getTimeoutFromArg(args[3], runtime);
-            
+            final boolean has_timeout = args.length > 3 && !args[3].isNil();
+            final long timeout = !has_timeout ? 0 : convertTimeout(runtime, args[3]);
+
             if (timeout < 0) {
                 throw runtime.newArgumentError("time interval must be positive");
             }
-            
+
             // If all streams are nil, just sleep the specified time (JRUBY-4699)
             if (args[0].isNil() && args[1].isNil() && args[2].isNil()) {
                 if (timeout > 0) {
@@ -91,7 +91,7 @@ public class SelectBlob {
                 processPendingAndUnselectable();
                 tidyUp();
             }
-            
+
             if (readResults == null && writeResults == null && errorResults == null) {
                 return runtime.getNil();
             }
@@ -129,7 +129,7 @@ public class SelectBlob {
                 for (int i = 0; i < readSize; i++) {
                     RubyIO ioObj = saveReadIO(i, context);
                     saveReadBlocking(ioObj, i);
-                    saveBufferedRead(ioObj, i);                    
+                    saveBufferedRead(ioObj, i);
                     attachment.clear();
                     attachment.put('r', i);
                     trySelectRead(context, attachment, ioObj);
@@ -187,7 +187,7 @@ public class SelectBlob {
                 for (int i = 0; i < writeSize; i++) {
                     RubyIO ioObj = saveWriteIO(i, context);
                     saveWriteBlocking(ioObj, i);
-                    attachment.clear();                    
+                    attachment.clear();
                     attachment.put('w', i);
                     trySelectWrite(context, attachment, ioObj);
                 }
@@ -224,24 +224,24 @@ public class SelectBlob {
                 || !registerSelect(context, getSelector(context, (SelectableChannel)ioObj.getChannel()), attachment, ioObj, SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) {
             selectedReads++;
             if ((ioObj.getOpenFile().getMode() & OpenFile.WRITABLE) != 0) {
-                getUnselectableWrites()[(Integer)attachment.get('w')] = true;
+                getUnselectableWrites()[attachment.get('w')] = true;
             }
         }
     }
 
-    private static long getTimeoutFromArg(IRubyObject timeArg, Ruby runtime) {
-        long timeout = 0;
-        if (timeArg instanceof RubyFloat) {
-            timeout = Math.round(((RubyFloat) timeArg).getDoubleValue() * 1000);
-        } else if (timeArg instanceof RubyFixnum) {
-            timeout = Math.round(((RubyFixnum) timeArg).getDoubleValue() * 1000);
-        } else {
-            // TODO: MRI also can hadle Bignum here
-            throw runtime.newTypeError("can't convert " + timeArg.getMetaClass().getName() + " into time interval");
+    private static long convertTimeout(final Ruby runtime, IRubyObject timeoutArg) {
+        final long timeout;
+        if (timeoutArg instanceof RubyFloat) {
+            timeout = Math.round(((RubyFloat) timeoutArg).getDoubleValue() * 1000);
         }
-        if (timeout < 0) {
-            throw runtime.newArgumentError("negative timeout given");
+        else if (timeoutArg instanceof RubyInteger) {
+            timeout = Math.round(((RubyInteger) timeoutArg).getDoubleValue() * 1000);
         }
+        else {
+            throw runtime.newTypeError("can't convert " + timeoutArg.getMetaClass().getName() + " into time interval");
+        }
+
+        if ( timeout < 0 ) throw runtime.newArgumentError("negative timeout given");
         return timeout;
     }
 
@@ -284,27 +284,27 @@ public class SelectBlob {
             }
         }
     }
-    
+
     private static final int READ_ACCEPT_OPS = SelectionKey.OP_READ | SelectionKey.OP_ACCEPT;
     private static final int WRITE_CONNECT_OPS = SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT;
     private static final int CANCELLED_OPS = SelectionKey.OP_READ | SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT;
-    
+
     private static boolean ready(int ops, int mask) {
         return (ops & mask) != 0;
     }
-    
+
     private static boolean readAcceptReady(int ops) {
         return ready(ops, READ_ACCEPT_OPS);
     }
-    
+
     private static boolean writeConnectReady(int ops) {
         return ready(ops, WRITE_CONNECT_OPS);
     }
-    
+
     private static boolean cancelReady(int ops) {
         return ready(ops, CANCELLED_OPS);
     }
-    
+
     private static boolean writeReady(int ops) {
         return ready(ops, SelectionKey.OP_WRITE);
     }
@@ -312,7 +312,7 @@ public class SelectBlob {
     @SuppressWarnings("unchecked")
     private void processSelectedKeys(Ruby runtime) throws IOException {
         for (Selector selector : selectors.values()) {
-            
+
             for (SelectionKey key : selector.selectedKeys()) {
                 int readIoIndex = 0;
                 int writeIoIndex = 0;
@@ -549,7 +549,7 @@ public class SelectBlob {
             return null;
         }
     }
-    
+
     Ruby runtime;
     RubyArray readArray = null;
     int readSize = 0;
