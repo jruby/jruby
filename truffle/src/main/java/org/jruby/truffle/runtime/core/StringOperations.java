@@ -100,14 +100,13 @@ public abstract class StringOperations {
     }
 
     public static void modify(DynamicObject string) {
-        // TODO (nirvdrum 16-Feb-15): This should check whether the underlying ByteList is being shared and copy if necessary.
-        StringOperations.getByteList(string).invalidate();
+        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
+        // TODO (nirvdrum 07-Jan-16) Remove this method once we've inspected each caller for correctness.
     }
 
     public static void modify(DynamicObject string, int length) {
-        // TODO (nirvdrum Jan. 13, 2015): This should check whether the underlying ByteList is being shared and copy if necessary.
-        StringOperations.getByteList(string).ensure(length);
-        StringOperations.getByteList(string).invalidate();
+        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
+        // TODO (nirvdrum 07-Jan-16) Remove this method once we've inspected each caller for correctness.
     }
 
     public static void modifyAndKeepCodeRange(DynamicObject string) {
