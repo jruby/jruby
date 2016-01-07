@@ -1,4 +1,1 @@
-fails:Multiple assignment with a single RHS value calls #to_ary to convert an Object RHS
-fails:Multiple assignment with a single RHS value raises a TypeError if #to_ary does not return an Array
 fails:Multiple assignment with a single splatted RHS value calls #to_a to convert nil to an empty Array
-fails:Multiple assignment with a MRHS value raises a TypeError if #to_ary does not return an Array

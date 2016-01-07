@@ -2168,7 +2168,7 @@ public class BodyTranslator extends Translator {
 
             final SplatCastNode rhsSplatCast = SplatCastNodeGen.create(context, sourceSection,
                     translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL,
-                    false, environment.findLocalVarNode(tempRHSName, sourceSection));
+                    true, environment.findLocalVarNode(tempRHSName, sourceSection));
 
             sequence.add(translateDummyAssignment(node.getRest(), rhsSplatCast));
 
