@@ -1734,9 +1734,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void RethrowSavedExcInLambdaInstr(RethrowSavedExcInLambdaInstr instr) {
+    public void ReturnOrRethrowSavedExcInstr(ReturnOrRethrowSavedExcInstr instr) {
         jvmMethod().loadContext();
-        jvmMethod().invokeIRHelper("rethrowSavedExcInLambda", sig(void.class, ThreadContext.class));
+        visit(instr.getReturnValue());
+        jvmMethod().invokeIRHelper("returnOrRethrowSavedException", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+        jvmMethod().returnValue();
     }
 
     @Override

@@ -156,10 +156,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         i = instrs.previous();
-                        if (i instanceof RethrowSavedExcInLambdaInstr) {
-                            // back up one more to precede rethrow
-                            i = instrs.previous();
-                        }
                         popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                         if (bb == geb) gebProcessed = true;
                         break;

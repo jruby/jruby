@@ -12,7 +12,11 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class ReturnInstr extends ReturnBase implements FixedArityInstr {
     public ReturnInstr(Operand returnValue) {
-        super(Operation.RETURN, returnValue);
+        this(Operation.RETURN, returnValue);
+    }
+
+    public ReturnInstr(Operation operation, Operand returnValue) {
+        super(operation, returnValue);
     }
 
     @Override

@@ -221,7 +221,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void rethrowSavedExcInLambda(ThreadContext context) {
+    public static IRubyObject returnOrRethrowSavedException(ThreadContext context, IRubyObject value) {
         // This rethrows the exception saved in handleBreakAndReturnsInLambda
         // after additional code to pop frames, bindings, etc. are done.
         Throwable exc = context.getSavedExceptionInLambda();
@@ -230,6 +230,9 @@ public class IRRuntimeHelpers {
             context.setSavedExceptionInLambda(null);
             Helpers.throwException(exc);
         }
+
+        // otherwise, return value
+        return value;
     }
 
     @JIT
