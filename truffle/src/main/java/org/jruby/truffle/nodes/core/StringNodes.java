@@ -147,39 +147,29 @@ public abstract class StringNodes {
 
         @Child private ToIntNode toIntNode;
         @Child private AllocateObjectNode allocateObjectNode;
-        @Child private ReadHeadObjectFieldNode readRopeNode;
-        @Child private WriteHeadObjectFieldNode writeRopeNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization(guards = "isRope(string)")
-        public DynamicObject multiplyRope(DynamicObject string, int times) {
+        @Specialization
+        public DynamicObject multiply(DynamicObject string, int times) {
             if (times < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
 
-            if (readRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
-            }
-
-            if (writeRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeRopeNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER));
-            }
-
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), null, Layouts.STRING.getCodeRange(string), null);
+            final Rope retRope;
+            int codeRange = Layouts.STRING.getCodeRange(string);
 
             if (times == 0) {
-                writeRopeNode.execute(ret, StringOperations.EMPTY_UTF8_ROPE);
+                retRope = StringOperations.EMPTY_UTF8_ROPE;
+                codeRange = StringSupport.CR_7BIT;
             } else if (times == 1) {
-                writeRopeNode.execute(ret, readRopeNode.execute(string));
+                retRope = Layouts.STRING.getRope(string);
             } else {
-                final Rope baseRope = (Rope) readRopeNode.execute(string);
+                final Rope baseRope = Layouts.STRING.getRope(string);
                 final Rope concatLeafRope = new ConcatRope(baseRope, baseRope, baseRope.getEncoding());
 
                 final boolean timesIsPowerOf2 = (times & (times - 1)) == 0;
@@ -242,30 +232,10 @@ public abstract class StringNodes {
                     nextLevel = currentLevel;
                 }
 
-                writeRopeNode.execute(ret, nextLevel[0]);
+                retRope = nextLevel[0];
             }
 
-            return ret;
-        }
-
-        @Specialization(guards = "!isRope(string)")
-        public DynamicObject multiply(DynamicObject string, int times) {
-            if (times < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
-            }
-
-            final ByteList inputBytes = StringOperations.getByteList(string);
-            final ByteList outputBytes = new ByteList(StringOperations.getByteList(string).length() * times);
-
-            for (int n = 0; n < times; n++) {
-                outputBytes.append(inputBytes);
-            }
-
-            outputBytes.setEncoding(inputBytes.getEncoding());
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, Layouts.STRING.getCodeRange(string), null);
-
-            return ret;
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), retRope, codeRange, null);
         }
 
         @Specialization(guards = "isRubyBignum(times)")
