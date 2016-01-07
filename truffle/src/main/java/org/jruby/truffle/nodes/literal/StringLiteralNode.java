@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.rope.LeafRope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 
 public class StringLiteralNode extends RubyNode {
@@ -29,7 +30,7 @@ public class StringLiteralNode extends RubyNode {
     public StringLiteralNode(RubyContext context, SourceSection sourceSection, ByteList byteList, int codeRange) {
         super(context, sourceSection);
         assert byteList != null;
-        this.rope = new LeafRope(byteList.bytes(), byteList.getEncoding());
+        this.rope = RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
         this.codeRange = codeRange;
         allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, false, null, null);
     }
