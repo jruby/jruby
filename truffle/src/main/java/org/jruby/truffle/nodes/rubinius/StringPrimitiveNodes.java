@@ -215,7 +215,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList bytes = new ByteList(StringOperations.getByteList(source), index, length);
             bytes.setEncoding(StringOperations.getByteList(source).getEncoding());
 
-            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), bytes, StringSupport.CR_UNKNOWN, null);
+            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes), StringSupport.CR_UNKNOWN, null);
             taintResultNode.maybeTaint(source, ret);
 
             return ret;

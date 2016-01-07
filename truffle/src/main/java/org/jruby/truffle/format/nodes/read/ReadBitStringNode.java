@@ -17,6 +17,7 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.nodes.SourceNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -83,7 +84,7 @@ public abstract class ReadBitStringNode extends PackNode {
         final ByteList result = new ByteList(lElem, encoding, false);
         setSourcePosition(frame, encode.position());
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), result, StringSupport.CR_UNKNOWN, null);
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result), StringSupport.CR_UNKNOWN, null);
     }
 
 }
