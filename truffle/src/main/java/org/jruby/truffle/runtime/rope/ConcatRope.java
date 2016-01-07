@@ -40,6 +40,11 @@ public class ConcatRope extends Rope {
     }
 
     @Override
+    public int byteLength() {
+        return  left.byteLength() + right.byteLength();
+    }
+
+    @Override
     public ByteList getByteList() {
         if (byteList == null) {
             byteList = new ByteList(getBytes(), getEncoding(), false);

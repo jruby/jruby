@@ -34,6 +34,12 @@ public class SubstringRope extends Rope {
     }
 
     @Override
+    public int byteLength() {
+        // TODO (nirvdrum Jan.-07-2016) This is horribly inefficient.
+        return getBytes().length;
+    }
+
+    @Override
     public ByteList getByteList() {
         if (byteList == null) {
             byteList = new ByteList(getBytes(), getEncoding(), false);

@@ -747,25 +747,13 @@ public abstract class StringNodes {
     @CoreMethod(names = "bytesize")
     public abstract static class ByteSizeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ReadHeadObjectFieldNode readRopeNode;
-
         public ByteSizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards ="isRope(string)")
-        public int byteSizeRope(DynamicObject string) {
-            if (readRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
-            }
-
-            return ((Rope) readRopeNode.execute(string)).length();
-        }
-
-        @Specialization(guards ="!isRope(string)")
+        @Specialization
         public int byteSize(DynamicObject string) {
-            return StringOperations.getByteList(string).length();
+            return Layouts.STRING.getRope(string).byteLength();
         }
 
     }
