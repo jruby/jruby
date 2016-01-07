@@ -33,7 +33,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 @NodeChild("child")
 public abstract class SplatCastNode extends RubyNode {
 
-    public static enum NilBehavior {
+    public enum NilBehavior {
         EMPTY_ARRAY,
         ARRAY_WITH_NIL,
         NIL
