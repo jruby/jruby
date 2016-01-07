@@ -40,7 +40,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure,
                        boolean potentiallyRefined) {
-        super(op, getOperands(receiver, args, closure));
+        super(op, arrayifyOperands(receiver, args, closure));
 
         this.callSiteId = callSiteCounter++;
         argsCount = args.length;
@@ -79,10 +79,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
     private int calculateArity() {
         return hasClosure ? -1*(argsCount + 1) : argsCount;
-    }
-
-    private static Operand[] getOperands(Operand receiver, Operand[] arguments, Operand closure) {
-        return buildAllArgs(receiver, arguments, closure);
     }
 
     public String getName() {
@@ -392,11 +388,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     private final static int REQUIRED_OPERANDS = 1;
-    private static Operand[] buildAllArgs(Operand receiver, Operand[] callArgs, Operand closure) {
+    private static Operand[] arrayifyOperands(Operand receiver, Operand[] callArgs, Operand closure) {
         Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + (closure != null ? 1 : 0)];
 
         assert receiver != null : "RECEIVER is null";
-
 
         allArgs[0] = receiver;
         for (int i = 0; i < callArgs.length; i++) {
