@@ -13,15 +13,19 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.passes.*;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -578,7 +582,19 @@ public abstract class IRScope implements ParseResult {
 
         runCompilerPasses(getManager().getJITPasses(this));
 
-        return fullInterpreterContext.linearizeBasicBlocks();
+        BasicBlock[] bbs = fullInterpreterContext.linearizeBasicBlocks();
+
+        if (Options.IR_PRINT.load()) printIR();
+
+        return bbs;
+    }
+
+    public void printIR() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        IRDumper dumper = new IRDumper(ps, Options.IR_PRINT_COLOR.load());
+        dumper.visit(this, false);
+        LOG.info("Printing final IR for " + getName(), "\n" + new String(baos.toByteArray()));
     }
 
     // FIXME: For inlining, culmulative or extra passes run based on profiled execution we need to re-init data or even

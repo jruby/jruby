@@ -130,17 +130,10 @@ public class JVMVisitor extends IRVisitor {
         emitScriptBody(script);
     }
 
-    private void logScope(IRScope scope) {
-        LOG.info("Starting JVM compilation on scope " + scope);
-        LOG.info("\n\nLinearized instructions for JIT:\n" + scope.toStringInstrs());
-    }
-
     public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity) {
         BasicBlock[] bbs = scope.prepareForCompilation();
 
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
-
-        if (Options.IR_COMPILER_DEBUG.load()) logScope(scope);
 
         emitClosures(scope);
 
