@@ -32,6 +32,11 @@ public class LeafRope extends Rope {
     }
 
     @Override
+    public int byteLength() {
+        return bytes.length;
+    }
+
+    @Override
     public ByteList getByteList() {
         if (byteList == null) {
             byteList = new ByteList(bytes, encoding, false);
