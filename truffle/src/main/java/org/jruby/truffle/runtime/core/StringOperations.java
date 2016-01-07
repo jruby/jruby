@@ -183,6 +183,7 @@ public abstract class StringOperations {
         Layouts.STRING.setRope(object, ropeFromByteList(byteList));
     }
 
+    // TODO (nirdvrum 07-Jan-16) Either remove this method or Rope#byteLength -- the latter doesn't require materializing the full byte array.
     public static int byteLength(DynamicObject object) {
         return Layouts.STRING.getRope(object).getBytes().length;
     }
