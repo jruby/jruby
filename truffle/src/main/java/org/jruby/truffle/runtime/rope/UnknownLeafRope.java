@@ -24,4 +24,9 @@ public class UnknownLeafRope extends LeafRope {
         return StringSupport.CR_UNKNOWN;
     }
 
+    @Override
+    public boolean isSingleByteOptimizable() {
+        return false;
+    }
+
 }

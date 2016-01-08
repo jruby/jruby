@@ -24,4 +24,9 @@ public class InvalidLeafRope extends LeafRope {
         return StringSupport.CR_BROKEN;
     }
 
+    @Override
+    public boolean isSingleByteOptimizable() {
+        return false;
+    }
+
 }

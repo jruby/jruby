@@ -24,4 +24,9 @@ public class ValidLeafRope extends LeafRope {
         return StringSupport.CR_VALID;
     }
 
+    @Override
+    public boolean isSingleByteOptimizable() {
+        return getEncoding().isSingleByte();
+    }
+
 }

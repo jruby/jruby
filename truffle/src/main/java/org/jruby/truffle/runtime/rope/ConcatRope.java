@@ -98,6 +98,11 @@ public class ConcatRope extends Rope {
     }
 
     @Override
+    public boolean isSingleByteOptimizable() {
+        return left.isSingleByteOptimizable() && right.isSingleByteOptimizable();
+    }
+
+    @Override
     public int hashCode() {
         return left.hashCode() + right.hashCode();
     }

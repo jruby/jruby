@@ -28,4 +28,6 @@ public abstract class Rope {
 
     public abstract int getCodeRange();
 
+    public abstract boolean isSingleByteOptimizable();
+
 }
