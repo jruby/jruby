@@ -28,7 +28,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.nio.charset.StandardCharsets;
 
@@ -726,7 +728,7 @@ public abstract class PosixNodes {
             // We just ignore maxSize - I think this is ok
 
             final String path = getContext().getRuntime().getCurrentDirectory();
-            StringOperations.getByteList(resultPath).replace(path.getBytes(StandardCharsets.UTF_8));
+            Layouts.STRING.setRope(resultPath, RopeOperations.create(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), StringSupport.CR_UNKNOWN));
             return resultPath;
         }
 
