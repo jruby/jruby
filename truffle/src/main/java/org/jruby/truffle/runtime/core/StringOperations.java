@@ -244,4 +244,18 @@ public abstract class StringOperations {
     public static ByteList createByteList(CharSequence s) {
         return ByteList.create(s);
     }
+
+    public static Rope rope(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+
+        return Layouts.STRING.getRope(string);
+    }
+
+    public static Encoding encoding(DynamicObject string) {
+        return rope(string).getEncoding();
+    }
+
+    public static int codeRange(DynamicObject string) {
+        return rope(string).getCodeRange();
+    }
 }

@@ -29,7 +29,15 @@ public class RopeOperations {
     }
 
     public static Rope template(Rope originalRope, Encoding newEncoding, int newCodeRange) {
+        if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
+            return originalRope;
+        }
+
         return create(originalRope.getBytes(), newEncoding, newCodeRange);
+    }
+
+    public static Rope template(Rope originalRope, Encoding newEncoding) {
+        return create(originalRope.getBytes(), newEncoding, originalRope.getCodeRange());
     }
 
 }

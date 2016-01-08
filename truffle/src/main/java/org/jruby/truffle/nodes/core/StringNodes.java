@@ -71,11 +71,17 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.ConcatRope;
 import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+
+import static org.jruby.truffle.runtime.core.StringOperations.EMPTY_UTF8_ROPE;
+import static org.jruby.truffle.runtime.core.StringOperations.rope;
+import static org.jruby.truffle.runtime.core.StringOperations.encoding;
+import static org.jruby.truffle.runtime.core.StringOperations.codeRange;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {
@@ -92,7 +98,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, StringOperations.EMPTY_UTF8_ROPE, null);
+            return allocateObjectNode.allocate(rubyClass, EMPTY_UTF8_ROPE, null);
         }
 
     }
@@ -2558,9 +2564,8 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject clear(DynamicObject string) {
-            ByteList empty = new ByteList(0);
-            empty.setEncoding(Layouts.STRING.getRope(string).getEncoding());
-            StringOperations.setByteList(string, empty);
+            Layouts.STRING.setRope(string, RopeOperations.template(EMPTY_UTF8_ROPE, encoding(string)));
+
             return string;
         }
     }
