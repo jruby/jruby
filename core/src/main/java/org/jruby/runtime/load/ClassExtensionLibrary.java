@@ -62,6 +62,9 @@ public class ClassExtensionLibrary implements Library {
      * @return a ClassExtensionLibrary that will boot the ext, or null if none was found
      */
     static ClassExtensionLibrary tryFind(Ruby runtime, String searchName) {
+        // skip obviously wrong class-names/package-names
+        if (searchName.contains("-")) return null;
+
         // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
         String[] all = searchName.split("/");
 
