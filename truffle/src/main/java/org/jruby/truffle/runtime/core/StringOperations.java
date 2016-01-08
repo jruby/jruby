@@ -151,9 +151,8 @@ public abstract class StringOperations {
 
     public static void forceEncoding(DynamicObject string, Encoding encoding) {
         modify(string);
-        clearCodeRange(string);
-        StringSupport.associateEncoding(getCodeRangeable(string), encoding);
-        clearCodeRange(string);
+        final Rope oldRope = Layouts.STRING.getRope(string);
+        Layouts.STRING.setRope(string, RopeOperations.template(oldRope, encoding, StringSupport.CR_UNKNOWN));
     }
 
     public static int normalizeIndex(int length, int index) {

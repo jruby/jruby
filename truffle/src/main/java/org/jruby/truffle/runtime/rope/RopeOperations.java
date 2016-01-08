@@ -24,4 +24,8 @@ public class RopeOperations {
         }
     }
 
+    public static Rope template(Rope originalRope, Encoding newEncoding, int newCodeRange) {
+        return create(originalRope.getBytes(), newEncoding, newCodeRange);
+    }
+
 }
