@@ -18,6 +18,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +44,7 @@ public abstract class Instr {
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
     // we can remove this instruction altogether without affecting program correctness.
-    private transient boolean isDead;
+    private boolean isDead;
 
     public Instr(Operation operation) {
         this.ipc = -1;
@@ -87,6 +89,45 @@ public abstract class Instr {
         buf.append(')');
 
         return buf.toString();
+    }
+
+    private static final Field[] EMPTY_FIELD_ARRAY = new Field[0];
+
+    /**
+     * A ClassValue wrapping an array of dumpable Field references for a given Instr type.
+     */
+    private static final ClassValue<Field[]> dumpableFields = new ClassValue<Field[]>() {
+        @Override
+        protected Field[] computeValue(Class type) {
+            try {
+                Class cls = type;
+                ArrayList<Field> list = new ArrayList<>();
+                while (cls != Instr.class) {
+                    for (Field f : cls.getDeclaredFields()) {
+                        if (Modifier.isTransient(f.getModifiers())) continue;
+                        if (Modifier.isStatic(f.getModifiers())) continue;
+                        if (f.getName().startsWith("$")) continue;
+
+                        try {
+                            f.setAccessible(true);
+                        } catch (SecurityException se) {
+                            continue;
+                        }
+
+                        list.add(f);
+                    }
+                    cls = cls.getSuperclass();
+                }
+
+                return list.toArray(new Field[list.size()]);
+            } catch (Exception e) {
+                return EMPTY_FIELD_ARRAY;
+            }
+        }
+    };
+
+    public Field[] dumpableFields() {
+        return dumpableFields.get(getClass());
     }
 
     private StringBuilder toArgList(StringBuilder buf, Object[] args) {

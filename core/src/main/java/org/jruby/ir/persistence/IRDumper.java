@@ -58,7 +58,6 @@ import org.jruby.util.KeyValuePair;
 
 import java.io.PrintStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -74,55 +73,81 @@ public class IRDumper extends IRVisitor {
     }
 
     public void visit(IRScope scope, boolean recurse) {
-        stream.println("begin " + scope.getScopeType().name() + "<" + scope.getName() + ">");
+        println("begin " + scope.getScopeType().name() + "<" + scope.getName() + ">");
 
         scope.prepareForCompilation();
         InterpreterContext ic = scope.getInterpreterContext();
 
         if (ic.getStaticScope().getSignature() == null) {
-            stream.println(Signature.NO_ARGUMENTS);
+            println(Signature.NO_ARGUMENTS);
         } else {
-            stream.println(ic.getStaticScope().getSignature());
+            println(ic.getStaticScope().getSignature());
         }
 
         Map<String, LocalVariable> localVariables = ic.getScope().getLocalVariables();
+
         if (localVariables != null && !localVariables.isEmpty()) {
-            stream.println("declared variables");
+            println("declared variables");
+
             for (Map.Entry<String, LocalVariable> entry : localVariables.entrySet()) {
-                stream.println(VARIABLE_COLOR + "  " + entry.getValue().toString() + CLEAR_COLOR);
+                println(ansiStr(VARIABLE_COLOR, "  " + entry.getValue().toString()));
             }
         }
 
         Set<LocalVariable> usedVariables = ic.getScope().getUsedLocalVariables();
+
         if (usedVariables != null && !usedVariables.isEmpty()) {
-            stream.println("used variables");
+            println("used variables");
+
             for (LocalVariable var : usedVariables) {
-                stream.print(VARIABLE_COLOR);
-                stream.println("  " + var.toString());
-                stream.print(CLEAR_COLOR);
+                println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
             }
         }
 
         Instr[] instrs = ic.getInstructions();
+
+        // find longest variable name
+        int longest = 0;
+
+        for (Instr i : instrs) {
+            if (i instanceof ResultInstr) {
+                Variable result = ((ResultInstr) i).getResult();
+
+                longest = Math.max(longest, result.getName().length() + ((result instanceof LocalVariable) ? 1 : 0));
+            }
+        }
+
+        int instrLog = (int)Math.log10(instrs.length) + 1;
+
+        String varFormat = ansiStr(VARIABLE_COLOR, "%" + longest + "s") + " := ";
+        String varSpaces = spaces(longest + " := ".length());
+        String ipcFormat = "%0" + instrLog + "d: ";
+
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
 
-            stream.printf("%04d: ", i);
+            printf(ipcFormat, i);
+
             if (instr instanceof ResultInstr) {
                 Variable result = ((ResultInstr) instr).getResult();
                 String sigilName = (result instanceof LocalVariable) ? "*" + result.getName() : result.getName();
-                stream.printf(VARIABLE_COLOR + "%20s" + CLEAR_COLOR + " := ", sigilName);
+
+                printf(varFormat, sigilName);
             } else {
-                stream.printf("%20s    ", "");
+                print(varSpaces);
             }
+
             visit(instrs[i]);
-            stream.println();
+
+            println();
         }
 
         if (recurse && !scope.getClosures().isEmpty()) {
-            stream.println();
+            println();
+
             for (IRClosure closure : scope.getClosures()) {
                 if (closure == scope) continue;
+
                 visit(closure, true);
             }
         }
@@ -130,132 +155,159 @@ public class IRDumper extends IRVisitor {
 
     @Override
     public void visit(Instr instr) {
-        stream.print(INSTR_COLOR);
-        stream.print(instr.getOperation().toString().toLowerCase());
-        stream.print(CLEAR_COLOR);
+        printAnsi(INSTR_COLOR, instr.getOperation().toString().toLowerCase());
+
         boolean comma = false;
+
         for (Operand o : instr.getOperands()) {
-            if (!comma) {
-                stream.print(INSTR_COLOR);
-                stream.print("(");
-                stream.print(CLEAR_COLOR);
-            }
-            if (comma) stream.print(", ");
+            if (!comma) printAnsi(INSTR_COLOR, "(");
+            if (comma) print(", ");
             comma = true;
+
             visit(o);
         }
-        try {
-            Class cls = instr.getClass();
-            while (cls != Instr.class) {
-                for (Field f : cls.getDeclaredFields()) {
-                    if (Modifier.isTransient(f.getModifiers())) continue;
-                    if (Modifier.isStatic(f.getModifiers())) continue;
-                    if (f.getName().startsWith("$")) continue;
-                    if (!comma) {
-                        stream.print(INSTR_COLOR);
-                        stream.print("(");
-                        stream.print(CLEAR_COLOR);
-                    }
-                    if (comma) stream.print(", ");
-                    comma = true;
-                    f.setAccessible(true);
-                    stream.print(FIELD_COLOR + f.getName() + ": " + CLEAR_COLOR + f.get(instr));
-                }
-                cls = cls.getSuperclass();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+
+        for (Field f : instr.dumpableFields()) {
+            if (!comma) printAnsi(INSTR_COLOR, "(");
+            if (comma) print(", ");
+            comma = true;
+
+            f.setAccessible(true);
+
+            printAnsi(FIELD_COLOR, f.getName() + ": ");
+
+            print(get(f, instr));
         }
-        if (comma) {
-            stream.print(INSTR_COLOR);
-            stream.print(")");
-            stream.print(CLEAR_COLOR);
-        }
+
+        if (comma) printAnsi(INSTR_COLOR, ")");
     }
 
     @Override
     public void visit(Operand operand) {
         // Handle variables separately
         if (operand instanceof LocalVariable) {
-            stream.print(VARIABLE_COLOR);
-            stream.print('*');
-            operand.visit(this);
-            stream.print(CLEAR_COLOR);
+            printAnsiOp(VARIABLE_COLOR, "*", operand);
+
         } else if (operand instanceof TemporaryVariable) {
-            stream.print(VARIABLE_COLOR);
-            operand.visit(this);
-            stream.print(CLEAR_COLOR);
+            printAnsiOp(VARIABLE_COLOR, operand);
+
         } else {
             // Other operand forms need type identification
-            stream.print(OPERAND_COLOR);
-            stream.print(operand.getOperandType().shortName() + "<");
-            stream.print(CLEAR_COLOR);
+            printAnsi(OPERAND_COLOR, operand.getOperandType().shortName() + "<");
             operand.visit(this);
-            stream.print(OPERAND_COLOR);
-            stream.print(">");
-            stream.print(CLEAR_COLOR);
+            printAnsi(OPERAND_COLOR, ">");
         }
     }
 
     public void Array(Array array) {
         final boolean[] comma = {false};
         for (Operand o : Arrays.asList(array.getElts())) {
-            if (comma[0]) stream.print(", ");
-            comma[1] = true;
-            o.visit(this);
+            if (comma[0]) print(", ");
+            comma[0] = true;
+
+            visit(o);
         }
     }
     public void AsString(AsString asstring) { visit(asstring.getSource()); }
-    public void Bignum(Bignum bignum) { stream.print(bignum.value); }
-    public void Boolean(org.jruby.ir.operands.Boolean bool) { stream.print(bool.isTrue() ? "t" : "f"); }
-    public void UnboxedBoolean(UnboxedBoolean bool) { stream.print(bool.isTrue() ? "t" : "f"); }
+    public void Bignum(Bignum bignum) { print(bignum.value); }
+    public void Boolean(org.jruby.ir.operands.Boolean bool) { print(bool.isTrue() ? "t" : "f"); }
+    public void UnboxedBoolean(UnboxedBoolean bool) { print(bool.isTrue() ? "t" : "f"); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { LocalVariable(closurelocalvariable); }
     public void Complex(Complex complex) { visit(complex.getNumber()); }
-    public void CurrentScope(CurrentScope currentscope) { stream.print(currentscope.getScopeNestingDepth()); }
-    public void DynamicSymbol(DynamicSymbol dynamicsymbol) { stream.print(dynamicsymbol.getSymbolName()); }
+    public void CurrentScope(CurrentScope currentscope) { print(currentscope.getScopeNestingDepth()); }
+    public void DynamicSymbol(DynamicSymbol dynamicsymbol) { print(dynamicsymbol.getSymbolName()); }
     public void Filename(Filename filename) { }
-    public void Fixnum(Fixnum fixnum) { stream.print(fixnum.getValue()); }
-    public void FrozenString(FrozenString frozen) { stream.print(frozen.getByteList()); }
-    public void UnboxedFixnum(UnboxedFixnum fixnum) { stream.print(fixnum.getValue()); }
-    public void Float(org.jruby.ir.operands.Float flote) { stream.print(flote.getValue()); }
-    public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) { stream.print(flote.getValue()); }
-    public void GlobalVariable(GlobalVariable globalvariable) { stream.print(globalvariable.getName()); }
+    public void Fixnum(Fixnum fixnum) { print(fixnum.getValue()); }
+    public void FrozenString(FrozenString frozen) { print(frozen.getByteList()); }
+    public void UnboxedFixnum(UnboxedFixnum fixnum) { print(fixnum.getValue()); }
+    public void Float(org.jruby.ir.operands.Float flote) { print(flote.getValue()); }
+    public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) { print(flote.getValue()); }
+    public void GlobalVariable(GlobalVariable globalvariable) { print(globalvariable.getName()); }
     public void Hash(Hash hash) {
         List<KeyValuePair<Operand, Operand>> pairs = hash.getPairs();
         boolean comma = false;
         for (KeyValuePair<Operand, Operand> pair: pairs) {
-            if (comma == true) stream.print(',');
+            if (comma == true) print(',');
             comma = true;
             visit(pair.getKey());
-            stream.print("=>");
+            print("=>");
             visit(pair.getValue());
         }
     }
-    public void IRException(IRException irexception) { stream.print(irexception.getType()); }
-    public void Label(Label label) { stream.print(label.toString()); }
-    public void LocalVariable(LocalVariable localvariable) { stream.print(localvariable.getName()); }
+    public void IRException(IRException irexception) { print(irexception.getType()); }
+    public void Label(Label label) { print(label.toString()); }
+    public void LocalVariable(LocalVariable localvariable) { print(localvariable.getName()); }
     public void Nil(Nil nil) { }
-    public void NthRef(NthRef nthref) { stream.print(nthref.getName()); }
+    public void NthRef(NthRef nthref) { print(nthref.getName()); }
     public void NullBlock(NullBlock nullblock) { }
     public void ObjectClass(ObjectClass objectclass) { }
-    public void Rational(Rational rational) { stream.print(rational.getNumerator() + "/" + rational.getDenominator()); }
-    public void Regexp(Regexp regexp) { stream.print(regexp.getSource()); }
-    public void ScopeModule(ScopeModule scopemodule) { stream.print(scopemodule.getScopeModuleDepth()); }
+    public void Rational(Rational rational) { print(rational.getNumerator() + "/" + rational.getDenominator()); }
+    public void Regexp(Regexp regexp) { print(regexp.getSource()); }
+    public void ScopeModule(ScopeModule scopemodule) { print(scopemodule.getScopeModuleDepth()); }
     public void Self(Self self) { LocalVariable(self); }
     public void Splat(Splat splat) { visit(splat.getArray()); }
     public void StandardError(StandardError standarderror) {  }
-    public void StringLiteral(StringLiteral stringliteral) { stream.print(stringliteral.getByteList()); }
+    public void StringLiteral(StringLiteral stringliteral) { print(stringliteral.getByteList()); }
     public void SValue(SValue svalue) { visit(svalue.getArray()); }
     public void Symbol(Symbol symbol) { symbol.getName(); }
-    public void SymbolProc(SymbolProc symbolproc) { stream.print(symbolproc.getName()); }
-    public void TemporaryVariable(TemporaryVariable temporaryvariable) { stream.print(temporaryvariable.getName()); }
+    public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getName()); }
+    public void TemporaryVariable(TemporaryVariable temporaryvariable) { print(temporaryvariable.getName()); }
     public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { TemporaryVariable(temporarylocalvariable); }
     public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) { TemporaryVariable(temporaryfloatvariable); }
     public void TemporaryFixnumVariable(TemporaryFixnumVariable temporaryfixnumvariable) { TemporaryVariable(temporaryfixnumvariable); }
     public void TemporaryBooleanVariable(TemporaryBooleanVariable temporarybooleanvariable) { TemporaryVariable(temporarybooleanvariable); }
     public void UndefinedValue(UndefinedValue undefinedvalue) {  }
     public void UnexecutableNil(UnexecutableNil unexecutablenil) {  }
-    public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) { stream.print(wrappedirclosure.getClosure().getName()); }
+    public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) { print(wrappedirclosure.getClosure().getName()); }
+
+    private static Object get(Field f, Instr i) {
+        try {
+            return f.get(i);
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    private static final String SPACES = "                                                                             " +
+            "                                                                                                          ";
+
+    private static final String spaces(int size) {
+        return SPACES.substring(0, size);
+    }
+
+    private String ansiStr(String c, String mid) {
+        return color ? c + mid + CLEAR_COLOR : mid;
+    }
+
+    private void printAnsi(String c, String mid) {
+        print(ansiStr(c, mid));
+    }
+
+    private void printAnsiOp(String c, Operand op) {
+        if (color) print(c);
+        op.visit(this);
+        if (color) print(CLEAR_COLOR);
+    }
+
+    private void printAnsiOp(String c, String pre, Operand op) {
+        if (color) print(c);
+        print(pre);
+        op.visit(this);
+        if (color) print(CLEAR_COLOR);
+    }
+
+    private void print(Object obj) {
+        stream.print(obj);
+    }
+
+    private void println(Object... objs) {
+        for (Object obj : objs) print(obj);
+        stream.println();
+    }
+
+    private void printf(String format, Object... objs) {
+        stream.printf(format, objs);
+    }
 
     private static final String INSTR_COLOR = "\033[1;36m";
     private static final String OPERAND_COLOR = "\033[1;33m";
