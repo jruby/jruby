@@ -147,6 +147,7 @@ public abstract class StringNodes {
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject multiply(DynamicObject string, int times) {
             if (times < 0) {
@@ -155,7 +156,6 @@ public abstract class StringNodes {
             }
 
             final Rope retRope;
-            int codeRange = StringOperations.getCodeRange(string);
 
             if (times == 0) {
                 retRope = StringOperations.EMPTY_UTF8_ROPE;
