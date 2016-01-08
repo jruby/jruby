@@ -62,11 +62,26 @@ public class ConcatRope extends Rope {
 
     @Override
     public byte[] extractRange(int offset, int length) {
+        byte[] leftBytes;
+        byte[] rightBytes;
+
         if (offset < left.length()) {
-            return left.extractRange(offset, length);
+            leftBytes = left.extractRange(offset, length);
+
+            if (leftBytes.length < length) {
+                rightBytes = right.extractRange(0, length - leftBytes.length);
+
+                final byte[] ret = new byte[length];
+                System.arraycopy(leftBytes, 0, ret, 0, leftBytes.length);
+                System.arraycopy(rightBytes, 0, ret, leftBytes.length, rightBytes.length);
+
+                return ret;
+            }  else {
+                return leftBytes;
+            }
         }
 
-        return right.extractRange(offset - left.length(), length);
+        return right.extractRange(offset - left.byteLength(), length);
     }
 
     @Override
