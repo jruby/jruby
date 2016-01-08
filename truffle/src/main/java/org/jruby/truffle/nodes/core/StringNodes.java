@@ -71,7 +71,6 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.ConcatRope;
 import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
@@ -2396,17 +2395,17 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public DynamicObject upcaseSingleByte(DynamicObject string) {
-            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
-            final ByteList bytes = codeRangeable.getByteList();
+            final Rope rope = Layouts.STRING.getRope(string);
+            final ByteList bytes = rope.toByteListCopy();
 
-            if (bytes.realSize() == 0) {
+            if (rope.isEmpty()) {
                 return nil();
             }
 
-            codeRangeable.modifyAndKeepCodeRange();
-
             final boolean modified = singleByteUpcase(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
             if (modified) {
+                Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
+
                 return string;
             } else {
                 return nil();
@@ -2415,9 +2414,8 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public DynamicObject upcase(DynamicObject string) {
-            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
-            final ByteList bytes = codeRangeable.getByteList();
-            final Encoding encoding = bytes.getEncoding();
+            final Rope rope = Layouts.STRING.getRope(string);
+            final Encoding encoding = rope.getEncoding();
 
             if (encoding.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
@@ -2426,15 +2424,17 @@ public abstract class StringNodes {
                                 String.format("incompatible encoding with this operation: %s", encoding), this));
             }
 
-            if (bytes.realSize() == 0) {
+            if (rope.isEmpty()) {
                 return nil();
             }
 
-            codeRangeable.modifyAndKeepCodeRange();
+            final ByteList bytes = rope.toByteListCopy();
 
             try {
                 final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
                 if (modified) {
+                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
+
                     return string;
                 } else {
                     return nil();
