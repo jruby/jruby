@@ -72,6 +72,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.ConcatRope;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
+import org.jruby.truffle.runtime.rope.SubstringRope;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
@@ -1132,16 +1133,14 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isValidOr7BitEncoding(string)")
         public DynamicObject eachChar(VirtualFrame frame, DynamicObject string, DynamicObject block) {
-            ByteList strByteList = StringOperations.getByteListReadOnly(string);
-            byte[] ptrBytes = strByteList.unsafeBytes();
-            int ptr = strByteList.begin();
-            int len = strByteList.getRealSize();
+            byte[] ptrBytes = rope(string).getBytes();
+            int len = ptrBytes.length;
             Encoding enc = encoding(string);
 
             int n;
 
             for (int i = 0; i < len; i += n) {
-                n = StringSupport.encFastMBCLen(ptrBytes, ptr + i, ptr + len, enc);
+                n = StringSupport.encFastMBCLen(ptrBytes, i, len, enc);
 
                 yield(frame, block, substr(string, i, n));
             }
@@ -1151,16 +1150,14 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isValidOr7BitEncoding(string)")
         public DynamicObject eachCharMultiByteEncoding(VirtualFrame frame, DynamicObject string, DynamicObject block) {
-            ByteList strByteList = StringOperations.getByteListReadOnly(string);
-            byte[] ptrBytes = strByteList.unsafeBytes();
-            int ptr = strByteList.begin();
-            int len = strByteList.getRealSize();
+            byte[] ptrBytes = rope(string).getBytes();
+            int len = ptrBytes.length;
             Encoding enc = encoding(string);
 
             int n;
 
             for (int i = 0; i < len; i += n) {
-                n = multiByteStringLength(enc, ptrBytes, ptr + i, ptr + len);
+                n = multiByteStringLength(enc, ptrBytes, i, len);
 
                 yield(frame, block, substr(string, i, n));
             }
@@ -1175,9 +1172,9 @@ public abstract class StringNodes {
 
         // TODO (nirvdrum 10-Mar-15): This was extracted from JRuby, but likely will need to become a Rubinius primitive.
         private Object substr(DynamicObject string, int beg, int len) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
+            final Rope rope = rope(string);
 
-            int length = bytes.length();
+            int length = rope.byteLength();
             if (len < 0 || beg > length) return nil();
 
             if (beg < 0) {
@@ -1187,8 +1184,7 @@ public abstract class StringNodes {
 
             int end = Math.min(length, beg + len);
 
-            final ByteList substringBytes = new ByteList(bytes, beg, end - beg);
-            substringBytes.setEncoding(bytes.getEncoding());
+            final Rope substringRope = new SubstringRope(rope, beg, end - beg);
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1196,7 +1192,7 @@ public abstract class StringNodes {
             }
 
             // TODO (nirvdrum 08-Jan-16) For CR_7BIT, we should always be able set to CR_7BIT. CR_VALID is trickier because any one character could be 7-bit.
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(substringBytes, StringSupport.CR_UNKNOWN), null);
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringRope, null);
 
             return taintResultNode.maybeTaint(string, ret);
         }
