@@ -20,7 +20,6 @@ public class SubstringRope extends Rope {
     private final int length;
 
     private byte[] bytes;
-    private ByteList byteList;
 
     public SubstringRope(Rope child, int offset, int length) {
         this.child = child;
@@ -37,15 +36,6 @@ public class SubstringRope extends Rope {
     public int byteLength() {
         // TODO (nirvdrum Jan.-07-2016) This is horribly inefficient.
         return getBytes().length;
-    }
-
-    @Override
-    public ByteList getByteList() {
-        if (byteList == null) {
-            byteList = new ByteList(getBytes(), getEncoding(), false);
-        }
-
-        return byteList;
     }
 
     @Override
