@@ -71,6 +71,7 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.ConcatRope;
 import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
@@ -92,7 +93,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, new ByteList(), StringSupport.CR_UNKNOWN, null);
+            return allocateObjectNode.allocate(rubyClass, StringOperations.EMPTY_UTF8_ROPE, null);
         }
 
     }
@@ -159,7 +160,6 @@ public abstract class StringNodes {
 
             if (times == 0) {
                 retRope = StringOperations.EMPTY_UTF8_ROPE;
-                codeRange = StringSupport.CR_7BIT;
             } else if (times == 1) {
                 retRope = Layouts.STRING.getRope(string);
             } else {
@@ -229,7 +229,7 @@ public abstract class StringNodes {
                 retRope = nextLevel[0];
             }
 
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), retRope, codeRange, null);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), retRope, null);
         }
 
         @Specialization(guards = "isRubyBignum(times)")
@@ -571,7 +571,7 @@ public abstract class StringNodes {
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
                     byteList.setEncoding(StringOperations.getByteList(string).getEncoding());
-                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), byteList, StringSupport.CR_UNKNOWN, null);
+                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(byteList, StringSupport.CR_UNKNOWN), null);
                 }
 
                 end = StringOperations.normalizeIndex(stringLength, end);
@@ -1190,7 +1190,8 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringBytes, StringSupport.CR_UNKNOWN, null);
+            // TODO (nirvdrum 08-Jan-16) For CR_7BIT, we should always be able set to CR_7BIT. CR_VALID is trickier because any one character could be 7-bit.
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(substringBytes, StringSupport.CR_UNKNOWN), null);
 
             return taintResultNode.maybeTaint(string, ret);
         }
@@ -1704,10 +1705,9 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#dump
 
             ByteList outputBytes = dumpCommon(string);
+            outputBytes.setEncoding(Layouts.STRING.getRope(string).getEncoding());
 
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, StringSupport.CR_UNKNOWN, null);
-            StringOperations.getByteList(result).setEncoding(StringOperations.getByteList(string).getEncoding());
-            StringOperations.setCodeRange(result, StringSupport.CR_7BIT);
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, StringSupport.CR_7BIT), null);
 
             return result;
         }
@@ -1729,7 +1729,7 @@ public abstract class StringNodes {
             outputBytes.append((byte) '"');
             outputBytes.append((byte) ')');
 
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, StringSupport.CR_UNKNOWN, null);
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, StringSupport.CR_UNKNOWN), null);
             StringOperations.getByteList(result).setEncoding(ASCIIEncoding.INSTANCE);
             StringOperations.setCodeRange(result, StringSupport.CR_7BIT);
 
@@ -1915,9 +1915,9 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject succ(DynamicObject string) {
             if (StringOperations.byteLength(string) > 0) {
-                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)), StringSupport.CR_UNKNOWN, null);
+                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)), StringSupport.CR_UNKNOWN), null);
             } else {
-                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(), StringSupport.CR_UNKNOWN, null);
+                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.EMPTY_UTF8_ROPE, null);
             }
         }
     }
