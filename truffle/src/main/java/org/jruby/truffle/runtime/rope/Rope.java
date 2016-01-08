@@ -30,4 +30,10 @@ public abstract class Rope {
 
     public abstract boolean isSingleByteOptimizable();
 
+    @Override
+    public String toString() {
+        // This should be used for debugging only.
+        return new String(getBytes());
+    }
+
 }
