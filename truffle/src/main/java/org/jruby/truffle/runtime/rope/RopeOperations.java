@@ -15,6 +15,10 @@ import org.jruby.util.StringSupport;
 public class RopeOperations {
 
     public static LeafRope create(byte[] bytes, Encoding encoding, int codeRange) {
+        if (codeRange == StringSupport.CR_UNKNOWN) {
+            codeRange = StringSupport.codeRangeScan(encoding, bytes, 0, bytes.length);
+        }
+
         switch(codeRange) {
             case StringSupport.CR_7BIT: return new AsciiOnlyLeafRope(bytes, encoding);
             case StringSupport.CR_VALID: return new ValidLeafRope(bytes, encoding);
