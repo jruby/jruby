@@ -1508,12 +1508,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject setNumBytes(DynamicObject string, int count) {
-            final Rope rope = rope(string);
-            final ByteList byteList = rope.toByteListCopy();
-
-            byteList.view(0, count);
-
-            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(byteList, rope.getCodeRange()));
+            Layouts.STRING.setRope(string, new SubstringRope(rope(string), 0, count));
 
             return string;
         }
