@@ -270,7 +270,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             final int codeRange = StringOperations.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN;
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length), codeRange, null);
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(new ByteList(bytes, normalizedIndex, length), codeRange), null);
 
             return taintResultNode.maybeTaint(string, result);
         }
@@ -627,7 +627,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_7BIT, null);
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(new ByteList(byteList, offset, 1), StringSupport.CR_7BIT), null);
 
             return propagate(string, ret);
         }
@@ -651,9 +651,9 @@ public abstract class StringPrimitiveNodes {
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
-                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, clen), StringSupport.CR_UNKNOWN, null);
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(new ByteList(byteList, offset, clen), StringSupport.CR_UNKNOWN), null);
             } else {
-                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_7BIT, null);
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(new ByteList(byteList, offset, 1), StringSupport.CR_7BIT), null);
             }
 
             return propagate(string, ret);
@@ -1255,14 +1255,14 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = "value == 0")
         public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
             ByteList bytes = new ByteList(new byte[size]);
-            return allocateObjectNode.allocate(stringClass, bytes, StringSupport.CR_UNKNOWN, null);
+            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
         }
 
         @Specialization(guards = "value != 0")
         public DynamicObject stringPattern(DynamicObject stringClass, int size, int value) {
             final byte[] bytes = new byte[size];
             Arrays.fill(bytes, (byte) value);
-            return allocateObjectNode.allocate(stringClass, new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(new ByteList(bytes), StringSupport.CR_UNKNOWN), null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -1276,7 +1276,7 @@ public abstract class StringPrimitiveNodes {
                 }
             }
 
-            return allocateObjectNode.allocate(stringClass, new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(new ByteList(bytes), StringSupport.CR_UNKNOWN), null);
         }
 
     }
@@ -1445,6 +1445,7 @@ public abstract class StringPrimitiveNodes {
             return nil();
         }
 
+        // TODO (nirvdrum 08-Jan-16) Remove this.
         private DynamicObject makeSubstring(DynamicObject string, int beg, int len) {
             assert RubyGuards.isRubyString(string);
 
@@ -1486,7 +1487,6 @@ public abstract class StringPrimitiveNodes {
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
                     new SubstringRope(Layouts.STRING.getRope(string), beg, len),
-                    StringOperations.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN,
                     null);
 
             taintResultNode.maybeTaint(string, ret);

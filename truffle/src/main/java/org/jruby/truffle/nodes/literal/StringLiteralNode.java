@@ -23,7 +23,6 @@ import org.jruby.util.ByteList;
 public class StringLiteralNode extends RubyNode {
 
     private final LeafRope rope;
-    private final int codeRange;
 
     @Child private AllocateObjectNode allocateObjectNode;
 
@@ -31,13 +30,12 @@ public class StringLiteralNode extends RubyNode {
         super(context, sourceSection);
         assert byteList != null;
         this.rope = RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
-        this.codeRange = codeRange;
         allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, false, null, null);
     }
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        return allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(), rope, codeRange, null);
+        return allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(), rope, null);
     }
 
 }
