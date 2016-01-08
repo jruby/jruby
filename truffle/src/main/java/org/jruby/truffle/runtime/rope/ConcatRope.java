@@ -23,7 +23,6 @@ public class ConcatRope extends Rope {
     private final Rope right;
 
     private byte[] bytes;
-    private ByteList byteList;
     private Encoding encoding;
 
     public ConcatRope(Rope left, Rope right, Encoding encoding) {
@@ -34,6 +33,7 @@ public class ConcatRope extends Rope {
 
     public ConcatRope(Rope left, Rope right) {
         this(left, right, null);
+        getEncoding();
     }
 
     @Override
@@ -44,15 +44,6 @@ public class ConcatRope extends Rope {
     @Override
     public int byteLength() {
         return  left.byteLength() + right.byteLength();
-    }
-
-    @Override
-    public ByteList getByteList() {
-        if (byteList == null) {
-            byteList = new ByteList(getBytes(), getEncoding(), false);
-        }
-
-        return byteList;
     }
 
     @Override

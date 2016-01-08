@@ -17,7 +17,6 @@ import java.util.Arrays;
 public abstract class LeafRope extends Rope {
 
     private final byte[] bytes;
-    private ByteList byteList;
     private final Encoding encoding;
     private int hashCode = -1;
 
@@ -34,15 +33,6 @@ public abstract class LeafRope extends Rope {
     @Override
     public int byteLength() {
         return bytes.length;
-    }
-
-    @Override
-    public ByteList getByteList() {
-        if (byteList == null) {
-            byteList = new ByteList(bytes, encoding, false);
-        }
-
-        return byteList;
     }
 
     @Override

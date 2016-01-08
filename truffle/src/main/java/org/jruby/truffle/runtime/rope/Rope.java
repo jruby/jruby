@@ -18,7 +18,9 @@ public abstract class Rope {
 
     public abstract int byteLength();
 
-    public abstract ByteList getByteList();
+    public final ByteList getByteList() {
+        return new ByteList(getBytes(), getEncoding(), false);
+    }
 
     public abstract byte[] getBytes();
 
