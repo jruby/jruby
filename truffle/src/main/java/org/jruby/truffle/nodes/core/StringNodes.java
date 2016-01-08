@@ -420,16 +420,17 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "isRubyString(other)", "is7Bit(string)", "is7Bit(other)" })
         public DynamicObject concatStringSingleByte(DynamicObject string, DynamicObject other) {
-            final ByteList stringByteList = StringOperations.getByteList(string);
-            final ByteList otherByteList = StringOperations.getByteList(other);
+            final Rope a = Layouts.STRING.getRope(string);
+            final Rope b = Layouts.STRING.getRope(other);
 
-            stringByteList.append(otherByteList);
+            Layouts.STRING.setRope(string, new ConcatRope(a, b, a.getEncoding()));
 
             return string;
         }
 
         @TruffleBoundary
         @Specialization(guards =  { "isRubyString(other)", "!is7Bit(string) || !is7Bit(other)" })
+        // TODO (nirvdrum 08-Jan-16) Rewrite for ropes.
         public DynamicObject concatString(DynamicObject string, DynamicObject other) {
             final int codeRange = StringOperations.getCodeRange(other);
             final int[] ptr_cr_ret = { codeRange };
@@ -456,6 +457,7 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
+        // TODO (nirvdrum 08-Jan-16) Rewrite for ropes.
         private DynamicObject concatNumeric(DynamicObject string, int c) {
             // Taken from org.jruby.RubyString#concatNumeric
 
