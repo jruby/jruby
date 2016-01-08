@@ -538,6 +538,7 @@ public abstract class StringPrimitiveNodes {
             final Rope a = Layouts.STRING.getRope(string);
             final Rope b = Layouts.STRING.getRope(other);
 
+            // TODO (nirvdrum 08-Jan-16) Make this its own specialization to avoid the costly "areComparable" check.
             if (sameRopeProfile.profile(a == b)) {
                 return true;
             }
@@ -549,7 +550,6 @@ public abstract class StringPrimitiveNodes {
             return Arrays.equals(a.getBytes(), b.getBytes());
         }
 
-        // TODO (nirvdrum 07-Jan-16) Take a look and see if we can short-circuit even checking if things are comparable by looking at the inner ropes for reference equality.
         protected boolean areComparable(DynamicObject first, DynamicObject second,
                                       ConditionProfile sameEncodingProfile,
                                       ConditionProfile firstStringEmptyProfile,
@@ -561,18 +561,18 @@ public abstract class StringPrimitiveNodes {
             assert RubyGuards.isRubyString(first);
             assert RubyGuards.isRubyString(second);
 
-            final ByteList firstByteList = StringOperations.getByteListReadOnly(first);
-            final ByteList secondByteList = StringOperations.getByteListReadOnly(second);
+            final Rope firstRope = Layouts.STRING.getRope(first);
+            final Rope secondRope = Layouts.STRING.getRope(second);
 
-            if (sameEncodingProfile.profile(firstByteList.getEncoding() == secondByteList.getEncoding())) {
+            if (sameEncodingProfile.profile(firstRope.getEncoding() == secondRope.getEncoding())) {
                 return true;
             }
 
-            if (firstStringEmptyProfile.profile(firstByteList.realSize() == 0)) {
+            if (firstStringEmptyProfile.profile(firstRope.isEmpty())) {
                 return true;
             }
 
-            if (secondStringEmptyProfile.profile(secondByteList.realSize() == 0)) {
+            if (secondStringEmptyProfile.profile(secondRope.isEmpty())) {
                 return true;
             }
 
@@ -584,13 +584,13 @@ public abstract class StringPrimitiveNodes {
                     return true;
                 }
 
-                if (secondStringAsciiCompatible.profile(secondByteList.getEncoding().isAsciiCompatible())) {
+                if (secondStringAsciiCompatible.profile(secondRope.getEncoding().isAsciiCompatible())) {
                     return true;
                 }
             }
 
             if (secondStringCR7BitProfile.profile(secondCodeRange == StringSupport.CR_7BIT)) {
-                if (firstStringAsciiCompatible.profile(firstByteList.getEncoding().isAsciiCompatible())) {
+                if (firstStringAsciiCompatible.profile(firstRope.getEncoding().isAsciiCompatible())) {
                     return true;
                 }
             }
