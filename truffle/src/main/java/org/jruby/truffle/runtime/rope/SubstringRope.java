@@ -74,4 +74,10 @@ public class SubstringRope extends Rope {
         // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
         return child.getCodeRange();
     }
+
+    @Override
+    public boolean isSingleByteOptimizable() {
+        // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
+        return child.isSingleByteOptimizable();
+    }
 }

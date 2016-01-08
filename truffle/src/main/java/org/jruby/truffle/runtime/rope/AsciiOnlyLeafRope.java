@@ -23,4 +23,9 @@ public class AsciiOnlyLeafRope extends LeafRope {
     public int getCodeRange() {
         return StringSupport.CR_7BIT;
     }
+
+    @Override
+    public boolean isSingleByteOptimizable() {
+        return true;
+    }
 }
