@@ -966,6 +966,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject data(DynamicObject string) {
+            // TODO (nirvdrum 08-Jan-16) ByteArrays might be better served if backed by a byte[] instead of a ByteList.
             return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), StringOperations.getByteListReadOnly(string));
         }
     }
@@ -1106,10 +1107,10 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject eachByte(VirtualFrame frame, DynamicObject string, DynamicObject block) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
+            final byte[] bytes = rope(string).getBytes();
 
-            for (int i = 0; i < bytes.getRealSize(); i++) {
-                yield(frame, block, bytes.get(i) & 0xff);
+            for (int i = 0; i < bytes.length; i++) {
+                yield(frame, block, bytes[i] & 0xff);
             }
 
             return string;
