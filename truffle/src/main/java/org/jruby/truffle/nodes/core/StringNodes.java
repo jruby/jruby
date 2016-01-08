@@ -1278,17 +1278,17 @@ public abstract class StringNodes {
         public Object getByte(DynamicObject string, int index,
                               @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
                               @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
+            final byte[] bytes = rope(string).getBytes();
 
             if (negativeIndexProfile.profile(index < 0)) {
-                index += bytes.getRealSize();
+                index += bytes.length;
             }
 
-            if (indexOutOfBoundsProfile.profile((index < 0) || (index >= bytes.getRealSize()))) {
+            if (indexOutOfBoundsProfile.profile((index < 0) || (index >= bytes.length))) {
                 return nil();
             }
 
-            return bytes.get(index) & 0xff;
+            return bytes[index] & 0xff;
         }
     }
 
