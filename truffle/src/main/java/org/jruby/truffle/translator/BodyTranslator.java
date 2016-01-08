@@ -812,9 +812,9 @@ public class BodyTranslator extends Translator {
 
             final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, false);
 
-            final MethodDefinitionNode definitionMethod = moduleTranslator.compileClassNode(sourceSection, name, bodyNode, sclass);
+            final ModuleBodyDefinitionNode definition = moduleTranslator.compileClassNode(sourceSection, name, bodyNode, sclass);
 
-            return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod, newLexicalScope);
+            return new OpenModuleNode(context, sourceSection, defineOrGetNode, definition, newLexicalScope);
         } finally {
             environment.popLexicalScope();
         }
@@ -829,7 +829,7 @@ public class BodyTranslator extends Translator {
      * newly allocated module or class.
      * </p>
      */
-    private MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode, boolean sclass) {
+    private ModuleBodyDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode, boolean sclass) {
         RubyNode body;
 
         parentSourceSection.push(sourceSection);
@@ -845,14 +845,13 @@ public class BodyTranslator extends Translator {
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
-        final MethodDefinitionNode definitionNode = new MethodDefinitionNode(
+        final ModuleBodyDefinitionNode definitionNode = new ModuleBodyDefinitionNode(
                 context,
                 sourceSection,
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
                 Truffle.getRuntime().createCallTarget(rootNode),
-                sclass,
-                false);
+                sclass);
 
         return definitionNode;
     }
