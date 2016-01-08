@@ -244,7 +244,7 @@ public class IRDumper extends IRVisitor {
     public void Rational(Rational rational) { print(rational.getNumerator() + "/" + rational.getDenominator()); }
     public void Regexp(Regexp regexp) { print(regexp.getSource()); }
     public void ScopeModule(ScopeModule scopemodule) { print(scopemodule.getScopeModuleDepth()); }
-    public void Self(Self self) { LocalVariable(self); }
+    public void Self(Self self) { print("%self"); }
     public void Splat(Splat splat) { visit(splat.getArray()); }
     public void StandardError(StandardError standarderror) {  }
     public void StringLiteral(StringLiteral stringliteral) { print(stringliteral.getByteList()); }

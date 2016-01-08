@@ -743,7 +743,7 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    public LocalVariable getSelf() {
+    public Variable getSelf() {
         return Self.SELF;
     }
 
