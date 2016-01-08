@@ -47,7 +47,8 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int access(DynamicObject path, int mode) {
-            final String pathString = RubyEncoding.decodeUTF8(StringOperations.getByteList(path).getUnsafeBytes(), StringOperations.getByteList(path).getBegin(), StringOperations.getByteList(path).getRealSize());
+            final ByteList byteList = StringOperations.getByteListReadOnly(path);
+            final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
             return posix().access(pathString, mode);
         }
 
@@ -181,7 +182,8 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public DynamicObject getenv(DynamicObject name) {
-            final String nameString = RubyEncoding.decodeUTF8(StringOperations.getByteList(name).getUnsafeBytes(), StringOperations.getByteList(name).getBegin(), StringOperations.getByteList(name).getRealSize());
+            final ByteList byteList = StringOperations.getByteListReadOnly(name);
+            final String nameString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
 
             Object result = posix().getenv(nameString);
 

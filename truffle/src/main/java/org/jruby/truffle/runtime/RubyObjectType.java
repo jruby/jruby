@@ -25,7 +25,7 @@ public class RubyObjectType extends ObjectType {
         CompilerAsserts.neverPartOfCompilation();
 
         if (RubyGuards.isRubyString(object)) {
-            return Helpers.decodeByteList(getContext().getRuntime(), StringOperations.getByteList(object));
+            return Helpers.decodeByteList(getContext().getRuntime(), StringOperations.getByteListReadOnly(object));
         } else if (RubyGuards.isRubySymbol(object)) {
             return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {

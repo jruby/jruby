@@ -2438,7 +2438,7 @@ public abstract class ArrayNodes {
                 throw handleException(e);
             }
 
-            return finishPack(StringOperations.getByteList(format).length(), result);
+            return finishPack(Layouts.STRING.getRope(format).byteLength(), result);
         }
 
         private RuntimeException handleException(PackException exception) {

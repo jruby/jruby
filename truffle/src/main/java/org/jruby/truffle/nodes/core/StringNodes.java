@@ -120,7 +120,7 @@ public abstract class StringNodes {
             final Rope a = Layouts.STRING.getRope(string);
             final Rope b = Layouts.STRING.getRope(other);
 
-            final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(other), this);
+            final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(other), this);
 
             final Rope concatRope = new ConcatRope(a, b, enc);
 
@@ -305,10 +305,10 @@ public abstract class StringNodes {
         public int compare(DynamicObject a, DynamicObject b) {
             // Taken from org.jruby.RubyString#op_cmp
 
-            final int ret = StringOperations.getByteList(a).cmp(StringOperations.getByteList(b));
+            final int ret = StringOperations.getByteListReadOnly(a).cmp(StringOperations.getByteListReadOnly(b));
 
-            if ((ret == 0) && !StringSupport.areComparable(StringOperations.getCodeRangeable(a), StringOperations.getCodeRangeable(b))) {
-                return StringOperations.getByteList(a).getEncoding().getIndex() > StringOperations.getByteList(b).getEncoding().getIndex() ? 1 : -1;
+            if ((ret == 0) && !StringSupport.areComparable(StringOperations.getCodeRangeableReadOnly(a), StringOperations.getCodeRangeableReadOnly(b))) {
+                return Layouts.STRING.getRope(a).getEncoding().getIndex() > Layouts.STRING.getRope(b).getEncoding().getIndex() ? 1 : -1;
             }
 
             return ret;
@@ -435,7 +435,7 @@ public abstract class StringNodes {
             final int[] ptr_cr_ret = { codeRange };
 
             try {
-                EncodingUtils.encCrStrBufCat(getContext().getRuntime(), StringOperations.getCodeRangeable(string), StringOperations.getByteList(other), StringOperations.getByteList(other).getEncoding(), codeRange, ptr_cr_ret);
+                EncodingUtils.encCrStrBufCat(getContext().getRuntime(), StringOperations.getCodeRangeable(string), StringOperations.getByteList(other), Layouts.STRING.getRope(other).getEncoding(), codeRange, ptr_cr_ret);
             } catch (org.jruby.exceptions.RaiseException e) {
                 if (e.getException().getMetaClass() == getContext().getRuntime().getEncodingCompatibilityError()) {
                     CompilerDirectives.transferToInterpreter();
@@ -571,7 +571,7 @@ public abstract class StringNodes {
 
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
-                    byteList.setEncoding(StringOperations.getByteList(string).getEncoding());
+                    byteList.setEncoding(Layouts.STRING.getRope(string).getEncoding());
                     return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(byteList, StringSupport.CR_UNKNOWN), null);
                 }
 
@@ -684,7 +684,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public boolean asciiOnly(DynamicObject string) {
-            final ByteList byteList = StringOperations.getByteList(string);
+            final ByteList byteList = StringOperations.getByteListReadOnly(string);
 
             if (!byteList.getEncoding().isAsciiCompatible()) {
                 return false;
@@ -725,7 +725,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject bytes(VirtualFrame frame, DynamicObject string) {
-            final ByteList byteList = StringOperations.getByteList(string);
+            final ByteList byteList = StringOperations.getByteListReadOnly(string);
             final byte[] bytes = byteList.unsafeBytes();
 
             final int[] store = new int[byteList.realSize()];
@@ -776,7 +776,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            return StringOperations.getByteList(string).caseInsensitiveCmp(StringOperations.getByteList(other));
+            return StringOperations.getByteListReadOnly(string).caseInsensitiveCmp(StringOperations.getByteListReadOnly(other));
         }
 
         @Specialization(guards = {"isRubyString(other)", "!bothSingleByteOptimizable(string, other)"})
@@ -789,7 +789,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            return multiByteCasecmp(encoding, StringOperations.getByteList(string), StringOperations.getByteList(other));
+            return multiByteCasecmp(encoding, StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
         }
 
         @TruffleBoundary
@@ -801,10 +801,7 @@ public abstract class StringNodes {
             assert RubyGuards.isRubyString(string);
             assert RubyGuards.isRubyString(other);
 
-            final boolean stringSingleByteOptimizable = StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), StringOperations.getByteList(string).getEncoding());
-            final boolean otherSingleByteOptimizable = StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(other), StringOperations.getByteList(other).getEncoding());
-
-            return stringSingleByteOptimizable && otherSingleByteOptimizable;
+            return Layouts.STRING.getRope(string).isSingleByteOptimizable() && Layouts.STRING.getRope(other).isSingleByteOptimizable();
         }
     }
 
@@ -854,7 +851,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int count(VirtualFrame frame, DynamicObject string, Object[] args) {
-            if (StringOperations.getByteList(string).getRealSize() == 0) {
+            if (Layouts.STRING.getRope(string).isEmpty()) {
                 return 0;
             }
 
@@ -877,20 +874,20 @@ public abstract class StringNodes {
             assert RubyGuards.isRubyString(string);
 
             DynamicObject otherStr = otherStrings[0];
-            Encoding enc = StringOperations.getByteList(otherStr).getEncoding();
+            Encoding enc = Layouts.STRING.getRope(otherStr).getEncoding();
 
             final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteList(otherStr), getContext().getRuntime(), table, null, true, enc);
+            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getRuntime(), table, null, true, enc);
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
 
                 assert RubyGuards.isRubyString(otherStr);
 
                 enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(otherStr), this);
-                tables = StringSupport.trSetupTable(StringOperations.getByteList(otherStr), getContext().getRuntime(), table, tables, false, enc);
+                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getRuntime(), table, tables, false, enc);
             }
 
-            return StringSupport.countCommon19(StringOperations.getByteList(string), getContext().getRuntime(), table, tables, enc);
+            return StringSupport.countCommon19(StringOperations.getByteListReadOnly(string), getContext().getRuntime(), table, tables, enc);
         }
     }
 
@@ -913,10 +910,10 @@ public abstract class StringNodes {
         public Object crypt(DynamicObject string, DynamicObject salt) {
             // Taken from org.jruby.RubyString#crypt.
 
-            final ByteList value = StringOperations.getByteList(string);
+            final ByteList value = StringOperations.getByteListReadOnly(string);
 
             final Encoding ascii8bit = getContext().getRuntime().getEncodingService().getAscii8bitEncoding();
-            ByteList otherBL = StringOperations.getByteList(salt).dup();
+            ByteList otherBL = StringOperations.getByteListReadOnly(salt).dup();
             final DynamicObject otherStr = createString(otherBL);
 
             StringOperations.modify(otherStr);
@@ -963,7 +960,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject data(DynamicObject string) {
-            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), StringOperations.getByteList(string));
+            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), StringOperations.getByteListReadOnly(string));
         }
     }
 
@@ -979,7 +976,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object deleteBang(VirtualFrame frame, DynamicObject string, Object... args) {
-            if (StringOperations.getByteList(string).length() == 0) {
+            if (Layouts.STRING.getRope(string).byteLength() == 0) {
                 return nil();
             }
 
@@ -1103,7 +1100,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject eachByte(VirtualFrame frame, DynamicObject string, DynamicObject block) {
-            final ByteList bytes = StringOperations.getByteList(string);
+            final ByteList bytes = StringOperations.getByteListReadOnly(string);
 
             for (int i = 0; i < bytes.getRealSize(); i++) {
                 yield(frame, block, bytes.get(i) & 0xff);
@@ -1128,11 +1125,11 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isValidOr7BitEncoding(string)")
         public DynamicObject eachChar(VirtualFrame frame, DynamicObject string, DynamicObject block) {
-            ByteList strByteList = StringOperations.getByteList(string);
+            ByteList strByteList = StringOperations.getByteListReadOnly(string);
             byte[] ptrBytes = strByteList.unsafeBytes();
             int ptr = strByteList.begin();
             int len = strByteList.getRealSize();
-            Encoding enc = StringOperations.getByteList(string).getEncoding();
+            Encoding enc = Layouts.STRING.getRope(string).getEncoding();
 
             int n;
 
@@ -1147,11 +1144,11 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isValidOr7BitEncoding(string)")
         public DynamicObject eachCharMultiByteEncoding(VirtualFrame frame, DynamicObject string, DynamicObject block) {
-            ByteList strByteList = StringOperations.getByteList(string);
+            ByteList strByteList = StringOperations.getByteListReadOnly(string);
             byte[] ptrBytes = strByteList.unsafeBytes();
             int ptr = strByteList.begin();
             int len = strByteList.getRealSize();
-            Encoding enc = StringOperations.getByteList(string).getEncoding();
+            Encoding enc = Layouts.STRING.getRope(string).getEncoding();
 
             int n;
 
@@ -1171,7 +1168,7 @@ public abstract class StringNodes {
 
         // TODO (nirvdrum 10-Mar-15): This was extracted from JRuby, but likely will need to become a Rubinius primitive.
         private Object substr(DynamicObject string, int beg, int len) {
-            final ByteList bytes = StringOperations.getByteList(string);
+            final ByteList bytes = StringOperations.getByteListReadOnly(string);
 
             int length = bytes.length();
             if (len < 0 || beg > length) return nil();
@@ -1247,7 +1244,7 @@ public abstract class StringNodes {
                                                    @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
             final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
 
-            if (differentEncodingProfile.profile(StringOperations.getByteList(string).getEncoding() != encoding)) {
+            if (differentEncodingProfile.profile(Layouts.STRING.getRope(string).getEncoding() != encoding)) {
                 StringOperations.forceEncoding(string, encoding);
             }
 
@@ -1278,7 +1275,7 @@ public abstract class StringNodes {
         public Object getByte(DynamicObject string, int index,
                               @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
                               @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
-            final ByteList bytes = StringOperations.getByteList(string);
+            final ByteList bytes = StringOperations.getByteListReadOnly(string);
 
             if (negativeIndexProfile.profile(index < 0)) {
                 index += bytes.getRealSize();
@@ -1301,7 +1298,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int hash(DynamicObject string) {
-            return StringOperations.getByteList(string).hashCode();
+            return StringOperations.getByteListReadOnly(string).hashCode();
         }
 
     }
@@ -1335,7 +1332,7 @@ public abstract class StringNodes {
             }
 
             // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
-            StringOperations.setByteList(self, StringOperations.getByteList(from).dup());
+            StringOperations.setByteList(self, StringOperations.getByteListReadOnly(from).dup());
             StringOperations.setCodeRange(self, StringOperations.getCodeRange(from));
 
             return self;
@@ -1508,7 +1505,13 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject setNumBytes(DynamicObject string, int count) {
-            StringOperations.getByteList(string).view(0, count);
+            final Rope rope = Layouts.STRING.getRope(string);
+            final ByteList byteList = rope.toByteListCopy();
+
+            byteList.view(0, count);
+
+            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(byteList, rope.getCodeRange()));
+
             return string;
         }
     }
@@ -1522,7 +1525,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int ord(DynamicObject string) {
-            final StringCodeRangeableWrapper codeRangeable = StringOperations.getCodeRangeable(string);
+            final StringCodeRangeableWrapper codeRangeable = StringOperations.getCodeRangeableReadOnly(string);
             final ByteList bytes = codeRangeable.getByteList();
 
             try {
@@ -1561,7 +1564,7 @@ public abstract class StringNodes {
             }
 
             StringOperations.getByteList(string).replace(StringOperations.getByteList(other).bytes());
-            StringOperations.getByteList(string).setEncoding(StringOperations.getByteList(other).getEncoding());
+            StringOperations.getByteList(string).setEncoding(Layouts.STRING.getRope(other).getEncoding());
             StringOperations.setCodeRange(string, StringOperations.getCodeRange(other));
 
             return string;
@@ -1724,7 +1727,7 @@ public abstract class StringNodes {
                 throw new UnsupportedOperationException(e);
             }
 
-            outputBytes.append(StringOperations.getByteList(string).getEncoding().getName());
+            outputBytes.append(Layouts.STRING.getRope(string).getEncoding().getName());
             outputBytes.append((byte) '"');
             outputBytes.append((byte) ')');
 
@@ -1813,7 +1816,7 @@ public abstract class StringNodes {
                                           @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
-            if (StringOperations.getByteList(string).length() == 0) {
+            if (Layouts.STRING.getRope(string).byteLength() == 0) {
                 return nil();
             }
 
@@ -1827,7 +1830,7 @@ public abstract class StringNodes {
                     return nil();
                 }
             } else {
-                if (! squeezeCommonMultiByte(StringOperations.getByteList(string), squeeze, null, StringOperations.getByteList(string).getEncoding(), false)) {
+                if (! squeezeCommonMultiByte(StringOperations.getByteList(string), squeeze, null, Layouts.STRING.getRope(string).getEncoding(), false)) {
                     return nil();
                 }
             }
@@ -1840,7 +1843,7 @@ public abstract class StringNodes {
                                   @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
-            if (StringOperations.getByteList(string).length() == 0) {
+            if (Layouts.STRING.getRope(string).byteLength() == 0) {
                 return nil();
             }
 
@@ -2023,7 +2026,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         private double convertToDouble(DynamicObject string) {
-            return ConvertDouble.byteListToDouble19(StringOperations.getByteList(string), false);
+            return ConvertDouble.byteListToDouble19(StringOperations.getByteListReadOnly(string), false);
         }
     }
 
@@ -2059,7 +2062,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject toSym(DynamicObject string) {
-            return getSymbol(StringOperations.getByteList(string));
+            return getSymbol(StringOperations.getByteListReadOnly(string));
         }
     }
 
@@ -2105,7 +2108,7 @@ public abstract class StringNodes {
             int p = StringOperations.getByteList(string).getBegin();
             final int len = StringOperations.getByteList(string).getRealSize();
 
-            final Encoding enc = StringOperations.getByteList(string).getEncoding();
+            final Encoding enc = Layouts.STRING.getRope(string).getEncoding();
             final int end = p + len;
             int op = len;
             final byte[] obytes = new byte[len];
@@ -2237,7 +2240,7 @@ public abstract class StringNodes {
                 DynamicObject format,
                 @Cached("privatizeByteList(format)") ByteList cachedFormat,
                 @Cached("create(compileFormat(format))") DirectCallNode callUnpackNode) {
-            final ByteList bytes = StringOperations.getByteList(string);
+            final ByteList bytes = StringOperations.getByteListReadOnly(string);
 
             final PackResult result;
 
@@ -2258,7 +2261,7 @@ public abstract class StringNodes {
                 DynamicObject string,
                 DynamicObject format,
                 @Cached("create()") IndirectCallNode callUnpackNode) {
-            final ByteList bytes = StringOperations.getByteList(string);
+            final ByteList bytes = StringOperations.getByteListReadOnly(string);
 
             final PackResult result;
 
@@ -2270,7 +2273,7 @@ public abstract class StringNodes {
                 throw handleException(e);
             }
 
-            return finishUnpack(StringOperations.getByteList(format), result);
+            return finishUnpack(StringOperations.getByteListReadOnly(format), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2556,7 +2559,7 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject clear(DynamicObject string) {
             ByteList empty = new ByteList(0);
-            empty.setEncoding(StringOperations.getByteList(string).getEncoding());
+            empty.setEncoding(Layouts.STRING.getRope(string).getEncoding());
             StringOperations.setByteList(string, empty);
             return string;
         }
