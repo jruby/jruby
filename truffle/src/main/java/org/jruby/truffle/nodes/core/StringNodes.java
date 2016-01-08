@@ -1364,9 +1364,7 @@ public abstract class StringNodes {
                 return self;
             }
 
-            StringOperations.getByteList(self).replace(StringOperations.getByteList(from).bytes());
-            StringOperations.getByteList(self).setEncoding(StringOperations.getByteList(from).getEncoding());
-            StringOperations.setCodeRange(self, StringOperations.getCodeRange(from));
+            Layouts.STRING.setRope(self, Layouts.STRING.getRope(from));
 
             return self;
         }
