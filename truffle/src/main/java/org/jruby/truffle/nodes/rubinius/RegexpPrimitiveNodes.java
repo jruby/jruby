@@ -69,7 +69,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)"})
         public DynamicObject initialize(DynamicObject regexp, DynamicObject pattern, int options) {
-            RegexpNodes.initialize(getContext(), regexp, this, StringOperations.getByteList(pattern), options);
+            RegexpNodes.initialize(getContext(), regexp, this, StringOperations.getByteListReadOnly(pattern), options);
             return regexp;
         }
 
@@ -129,18 +129,18 @@ public abstract class RegexpPrimitiveNodes {
         public Object searchRegionInvalidEncoding(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
-                    String.format("invalid byte sequence in %s", StringOperations.getByteList(string).getEncoding()), this));
+                    String.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding()), this));
         }
 
         @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
         public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
-            final ByteList stringBl = StringOperations.getByteList(string);
+            final ByteList stringBl = StringOperations.getByteListReadOnly(string);
             final ByteList bl = Layouts.REGEXP.getSource(regexp);
-            final Encoding enc = RegexpNodes.checkEncoding(regexp, StringOperations.getCodeRangeable(string), true);
+            final Encoding enc = RegexpNodes.checkEncoding(regexp, StringOperations.getCodeRangeableReadOnly(string), true);
             ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
             preprocessed = RegexpNodes.shimModifiers(preprocessed);
-            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringOperations.getCodeRangeable(string), true));
+            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringOperations.getCodeRangeableReadOnly(string), true));
             final Matcher matcher = r.matcher(stringBl.getUnsafeBytes(), stringBl.begin(), stringBl.begin() + stringBl.realSize());
 
             if (forward) {

@@ -12,13 +12,14 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 public abstract class StringCachingGuards {
 
     public static ByteList privatizeByteList(DynamicObject string) {
         if (RubyGuards.isRubyString(string)) {
-            return StringOperations.getByteList(string).dup();
+            return StringOperations.getByteListReadOnly(string).dup();
         } else {
             return null;
         }
@@ -27,11 +28,11 @@ public abstract class StringCachingGuards {
     public static boolean byteListsEqual(DynamicObject string, ByteList byteList) {
         if (RubyGuards.isRubyString(string)) {
             // equal below does not check encoding
-            if (StringOperations.getByteList(string).getEncoding() != byteList.getEncoding()) {
+            if (Layouts.STRING.getRope(string).getEncoding() != byteList.getEncoding()) {
                 return false;
             }
             // TODO CS 8-Nov-15 this code goes off into the woods - need to break it apart and branch profile it
-            return StringOperations.getByteList(string).equal(byteList);
+            return StringOperations.getByteListReadOnly(string).equal(byteList);
         } else {
             return false;
         }

@@ -154,7 +154,7 @@ public abstract class MatchDataNodes {
 
     @TruffleBoundary
     private static Region createCharOffsets(DynamicObject matchData) {
-        final ByteList source = StringOperations.getByteList(Layouts.MATCH_DATA.getSource(matchData));
+        final ByteList source = StringOperations.getByteListReadOnly(Layouts.MATCH_DATA.getSource(matchData));
         final Encoding enc = source.getEncoding();
         final Region charOffsets = getCharOffsetsManyRegs(matchData, source, enc);
         Layouts.MATCH_DATA.setCharOffsets(matchData, charOffsets);
@@ -213,7 +213,7 @@ public abstract class MatchDataNodes {
         @Specialization(guards = "isRubyString(index)")
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
-                ByteList value = StringOperations.getByteList(index);
+                ByteList value = StringOperations.getByteListReadOnly(index);
                 final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
@@ -421,7 +421,7 @@ public abstract class MatchDataNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
-            final ByteList bytes = StringOperations.getByteList(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
+            final ByteList bytes = StringOperations.getByteListReadOnly(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
             return createString(bytes);
         }
     }

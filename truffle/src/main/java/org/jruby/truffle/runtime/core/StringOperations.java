@@ -31,6 +31,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
+import org.jruby.management.Runtime;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
@@ -61,7 +62,7 @@ public abstract class StringOperations {
     // Since ByteList.toString does not decode properly
     @CompilerDirectives.TruffleBoundary
     public static String getString(RubyContext context, DynamicObject string) {
-        return Helpers.decodeByteList(context.getRuntime(), StringOperations.getByteList(string));
+        return Helpers.decodeByteList(context.getRuntime(), StringOperations.getByteListReadOnly(string));
     }
 
     public static StringCodeRangeableWrapper getCodeRangeable(DynamicObject string) {
@@ -73,6 +74,15 @@ public abstract class StringOperations {
         }
 
         return wrapper;
+    }
+
+    public static StringCodeRangeableWrapper getCodeRangeableReadOnly(final DynamicObject string) {
+        return new StringCodeRangeableWrapper(string) {
+            @Override
+            public ByteList getByteList() {
+                return StringOperations.getByteListReadOnly(string);
+            }
+        };
     }
 
     public static int getCodeRange(DynamicObject string) {
@@ -136,7 +146,7 @@ public abstract class StringOperations {
         if (encoding == null) {
             throw Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime().newEncodingCompatibilityError(
                     String.format("incompatible character encodings: %s and %s",
-                            StringOperations.getByteList(string).getEncoding().toString(),
+                            Layouts.STRING.getRope(string).getEncoding().toString(),
                             other.getByteList().getEncoding().toString()));
         }
 
@@ -161,16 +171,16 @@ public abstract class StringOperations {
 
     public static int clampExclusiveIndex(DynamicObject string, int index) {
         assert RubyGuards.isRubyString(string);
-        return ArrayOperations.clampExclusiveIndex(StringOperations.getByteList(string).length(), index);
+        return ArrayOperations.clampExclusiveIndex(StringOperations.getByteListReadOnly(string).length(), index);
     }
 
     @CompilerDirectives.TruffleBoundary
     public static Encoding checkEncoding(RubyContext context, DynamicObject string, CodeRangeable other, Node node) {
-        final Encoding encoding = StringSupport.areCompatible(getCodeRangeable(string), other);
+        final Encoding encoding = StringSupport.areCompatible(getCodeRangeableReadOnly(string), other);
 
         if (encoding == null) {
             throw new RaiseException(context.getCoreLibrary().encodingCompatibilityErrorIncompatible(
-                    StringOperations.getByteList(string).getEncoding().toString(),
+                    Layouts.STRING.getRope(string).getEncoding().toString(),
                     other.getByteList().getEncoding().toString(),
                     node));
         }
@@ -188,6 +198,10 @@ public abstract class StringOperations {
     }
 
     public static ByteList getByteList(DynamicObject object) {
+        throw new RuntimeException("Replace with read-only call or rope update for String.");
+    }
+
+    public static ByteList getByteListReadOnly(DynamicObject object) {
         return Layouts.STRING.getRope(object).getByteList();
     }
 
@@ -222,6 +236,7 @@ public abstract class StringOperations {
     }
 
     public static Rope ropeFromByteList(ByteList byteList, int codeRange) {
+        // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
         return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
     }
 

@@ -54,13 +54,13 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
 
-        final ByteList sourceByteList = StringOperations.getByteList(source);
+        final ByteList sourceByteList = StringOperations.getByteListReadOnly(source);
 
         final ByteList bl = Layouts.REGEXP.getSource(regexp);
-        final Encoding enc = checkEncoding(regexp, StringOperations.getCodeRangeable(source), true);
+        final Encoding enc = checkEncoding(regexp, StringOperations.getCodeRangeableReadOnly(source), true);
         final ByteList preprocessed = RegexpSupport.preprocess(context.getRuntime(), bl, enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
-        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, StringOperations.getCodeRangeable(source), true));
+        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, StringOperations.getCodeRangeableReadOnly(source), true));
         final Matcher matcher = r.matcher(sourceByteList.unsafeBytes(), sourceByteList.begin(), sourceByteList.begin() + sourceByteList.realSize());
         int range = sourceByteList.begin() + sourceByteList.realSize();
 
@@ -72,7 +72,7 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
 
-        final ByteList bytes = StringOperations.getByteList(source);
+        final ByteList bytes = StringOperations.getByteListReadOnly(source);
 
         final int match = matcher.search(startPos, range, Option.DEFAULT);
 
@@ -176,10 +176,8 @@ public abstract class RegexpNodes {
     private static DynamicObject createSubstring(DynamicObject source, int start, int length) {
         assert RubyGuards.isRubyString(source);
 
-        final ByteList bytes = new ByteList(StringOperations.getByteList(source), start, length);
-        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
-
-        StringOperations.setCodeRange(ret, StringOperations.getCodeRange(source));
+        final ByteList bytes = new ByteList(StringOperations.getByteListReadOnly(source), start, length);
+        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes, StringOperations.getCodeRange(source)), null);
 
         return ret;
     }
@@ -419,7 +417,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(pattern)")
         public DynamicObject escape(DynamicObject pattern) {
-            return createString(StringOperations.encodeByteList(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteList(pattern)), true).toString(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeByteList(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteListReadOnly(pattern)), true).toString(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -468,8 +466,8 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(raw)")
         public DynamicObject quoteString(DynamicObject raw) {
-            boolean isAsciiOnly = StringOperations.getByteList(raw).getEncoding().isAsciiCompatible() && StringOperations.scanForCodeRange(raw) == CR_7BIT;
-            return createString(org.jruby.RubyRegexp.quote19(StringOperations.getByteList(raw), isAsciiOnly));
+            boolean isAsciiOnly = Layouts.STRING.getRope(raw).getEncoding().isAsciiCompatible() && StringOperations.scanForCodeRange(raw) == CR_7BIT;
+            return createString(org.jruby.RubyRegexp.quote19(StringOperations.getByteListReadOnly(raw), isAsciiOnly));
         }
 
         @Specialization(guards = "isRubySymbol(raw)")

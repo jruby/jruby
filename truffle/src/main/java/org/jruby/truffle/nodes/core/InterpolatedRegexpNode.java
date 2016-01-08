@@ -43,7 +43,7 @@ public class InterpolatedRegexpNode extends RubyNode {
 
         for (int n = 0; n < children.length; n++) {
             final Object child = children[n].execute(frame);
-            strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), StringOperations.getByteList((DynamicObject) toS.call(frame, child, "to_s", null)));
+            strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), StringOperations.getByteListReadOnly((DynamicObject) toS.call(frame, child, "to_s", null)));
         }
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);

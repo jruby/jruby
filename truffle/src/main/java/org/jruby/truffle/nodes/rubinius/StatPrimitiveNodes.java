@@ -172,7 +172,7 @@ public abstract class StatPrimitiveNodes {
         @Specialization(guards = "isRubyString(path)")
         public int stat(DynamicObject rubyStat, DynamicObject path) {
             final FileStat stat = posix().allocateStat();
-            final ByteList byteList = StringOperations.getByteList(path);
+            final ByteList byteList = StringOperations.getByteListReadOnly(path);
             final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
             final int code = posix().stat(pathString, stat);
 

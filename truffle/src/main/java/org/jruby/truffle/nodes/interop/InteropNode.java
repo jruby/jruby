@@ -367,7 +367,7 @@ public abstract class InteropNode extends RubyNode {
             if (RubyGuards.isRubyString(ForeignAccess.getReceiver(frame))) {
                 final DynamicObject string = (DynamicObject) ForeignAccess.getReceiver(frame);
                 final int index = (int) ForeignAccess.getArguments(frame).get(labelIndex);
-                if (index >= StringOperations.getByteList(string).length()) {
+                if (index >= Layouts.STRING.getRope(string).byteLength()) {
                     return 0;
                 } else {
                     return (byte) StringOperations.getByteList(string).get(index);
