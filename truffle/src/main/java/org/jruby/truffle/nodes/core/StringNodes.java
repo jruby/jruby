@@ -1207,7 +1207,7 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean empty(DynamicObject string) {
-            return StringOperations.getByteList(string).length() == 0;
+            return Layouts.STRING.getRope(string).isEmpty();
         }
     }
 
