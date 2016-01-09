@@ -851,7 +851,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
         adapter.label(done);
 
-        invokeIRHelper("prepareBlock", sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class));
+        invokeIRHelper("prepareBlock", sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class, BlockBody.class));
     }
 
     private final Map<Object, String> cacheFieldNames = new HashMap<>();
