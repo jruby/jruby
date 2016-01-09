@@ -10,13 +10,19 @@ import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CompiledIRBlockBody;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.GlobalSite;
 import org.jruby.runtime.invokedynamic.MathLinker;
@@ -923,5 +929,23 @@ public class Bootstrap {
 
     public static IRubyObject getGlobalUncached(GlobalVariable variable) throws Throwable {
         return variable.getAccessor().getValue();
+    }
+
+    public static Handle prepareBlock() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "prepareBlock", sig(CallSite.class, Lookup.class, String.class, MethodType.class, MethodHandle.class, MethodHandle.class, long.class));
+    }
+
+    public static CallSite prepareBlock(Lookup lookup, String name, MethodType type, MethodHandle bodyHandle, MethodHandle scopeHandle, long encodedSignature) throws Throwable {
+        IRScope scope = (IRScope)scopeHandle.invokeExact();
+
+        CompiledIRBlockBody body = new CompiledIRBlockBody(bodyHandle, scope, encodedSignature);
+
+        return new ConstantCallSite(Binder.from(type).append(body).invokeStaticQuiet(lookup, Bootstrap.class, "prepareBlock"));
+    }
+
+    public static Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope scope, CompiledIRBlockBody body) throws Throwable {
+        Binding binding = context.currentBinding(self, scope);
+
+        return new Block(body, binding);
     }
 }
