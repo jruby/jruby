@@ -23,17 +23,12 @@ public class ConcatRope extends Rope {
     private final Rope right;
 
     private byte[] bytes;
-    private Encoding encoding;
+    private final Encoding encoding;
 
     public ConcatRope(Rope left, Rope right, Encoding encoding) {
         this.left = left;
         this.right = right;
         this.encoding = encoding;
-    }
-
-    public ConcatRope(Rope left, Rope right) {
-        this(left, right, null);
-        getEncoding();
     }
 
     @Override
@@ -86,14 +81,6 @@ public class ConcatRope extends Rope {
 
     @Override
     public Encoding getEncoding() {
-        if (encoding == null) {
-            if (left.getEncoding() == right.getEncoding()) {
-                encoding = left.getEncoding();
-            } else {
-                throw new IllegalStateException("ConcatRope only supports working with children ropes of the same Encoding");
-            }
-        }
-
         return encoding;
     }
 
