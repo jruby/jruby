@@ -380,10 +380,10 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public DynamicObject stringCheckNullSafe(DynamicObject string) {
-            final ByteList byteList = StringOperations.getByteList(string);
+            final byte[] bytes = rope(string).getBytes();
 
-            for (int i = 0; i < byteList.length(); i++) {
-                if (byteList.get(i) == 0) {
+            for (int i = 0; i < bytes.length; i++) {
+                if (bytes[i] == 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("string contains NULL byte", this));
                 }
