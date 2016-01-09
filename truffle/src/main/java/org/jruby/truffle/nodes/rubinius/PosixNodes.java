@@ -17,7 +17,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
@@ -29,7 +28,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.RopeOperations;
-import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import static org.jruby.truffle.runtime.core.StringOperations.decodeUTF8;
 
