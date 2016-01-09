@@ -42,8 +42,8 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.RubyArray;
 import org.jruby.RubyProc;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -175,11 +175,7 @@ public final class Block {
         // introduce a specialized entry-point when we know that this block has
         // explicit call protocol IR instructions.
         IRubyObject[] args;
-        if (value instanceof RubyArray) {
-            args = value.convertToArray().toJavaArray();
-        } else {
-            args = new IRubyObject[] { value };
-        }
+        args = IRRuntimeHelpers.singleBlockArgToArray(value);
         return body.yield(context, this, args, self);
     }
 

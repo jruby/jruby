@@ -2344,19 +2344,11 @@ public class JVMVisitor extends IRVisitor {
     public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) {
         IRClosure closure = wrappedirclosure.getClosure();
 
-        jvmAdapter().newobj(p(Block.class));
-        jvmAdapter().dup();
+        jvmMethod().loadContext();
+        visit(closure.getSelf());
+        jvmLoadLocal(DYNAMIC_SCOPE);
 
-        jvmMethod().pushBlockBody(closure.getHandle(), closure.getSignature(), jvm.clsData().clsName);
-
-        { // prepare binding
-            jvmMethod().loadContext();
-            visit(closure.getSelf());
-            jvmLoadLocal(DYNAMIC_SCOPE);
-            jvmAdapter().invokevirtual(p(ThreadContext.class), "currentBinding", sig(Binding.class, IRubyObject.class, DynamicScope.class));
-        }
-
-        jvmAdapter().invokespecial(p(Block.class), "<init>", sig(void.class, BlockBody.class, Binding.class));
+        jvmMethod().prepareBlock(closure.getHandle(), closure.getSignature(), jvm.clsData().clsName);
     }
 
     private SkinnyMethodAdapter jvmAdapter() {

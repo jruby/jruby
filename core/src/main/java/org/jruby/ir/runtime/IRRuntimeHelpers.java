@@ -1719,4 +1719,22 @@ public class IRRuntimeHelpers {
     public static RubyProc newSymbolProc(ThreadContext context, String symbol, String encoding) {
         return newSymbolProc(context, symbol, retrieveJCodingsEncoding(context, encoding));
     }
+
+    @JIT
+    public static IRubyObject[] singleBlockArgToArray(IRubyObject value) {
+        IRubyObject[] args;
+        if (value instanceof RubyArray) {
+            args = value.convertToArray().toJavaArray();
+        } else {
+            args = new IRubyObject[] { value };
+        }
+        return args;
+    }
+
+    @JIT
+    public static Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope scope, BlockBody body) {
+        Block block = new Block(body, context.currentBinding(self, scope));
+
+        return block;
+    }
 }
