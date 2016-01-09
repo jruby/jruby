@@ -69,10 +69,8 @@ import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.rope.ConcatRope;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
-import org.jruby.truffle.runtime.rope.SubstringRope;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
@@ -1771,7 +1769,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public int sizeSingleByteRope(DynamicObject string) {
-            return rope(string).length();
+            return rope(string).characterLength();
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")

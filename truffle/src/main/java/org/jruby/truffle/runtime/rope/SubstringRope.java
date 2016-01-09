@@ -28,7 +28,7 @@ public class SubstringRope extends Rope {
     }
 
     @Override
-    public int length() {
+    public int characterLength() {
         return length;
     }
 
