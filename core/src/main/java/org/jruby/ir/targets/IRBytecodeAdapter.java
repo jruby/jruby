@@ -593,6 +593,20 @@ public abstract class IRBytecodeAdapter {
      */
     public abstract void setGlobalVariable(String name);
 
+    /**
+     * Yield argument list to a block.
+     *
+     * Stack required: context, block, argument
+     */
+    public abstract void yield(boolean unwrap);
+
+    /**
+     * Yield to a block.
+     *
+     * Stack required: context, block
+     */
+    public abstract void yieldSpecific();
+
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();

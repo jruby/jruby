@@ -811,5 +811,16 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         invokeHelper("setGlobalVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
     }
 
+    @Override
+    public void yield(boolean unwrap) {
+        adapter.ldc(unwrap);
+        invokeIRHelper("yield", sig(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, boolean.class));
+    }
+
+    @Override
+    public void yieldSpecific() {
+        invokeIRHelper("yieldSpecific", sig(IRubyObject.class, ThreadContext.class, Block.class));
+    }
+
     private final Map<Object, String> cacheFieldNames = new HashMap<>();
 }

@@ -1994,11 +1994,10 @@ public class JVMVisitor extends IRVisitor {
         visit(yieldinstr.getBlockArg());
 
         if (yieldinstr.getYieldArg() == UndefinedValue.UNDEFINED) {
-            jvmMethod().invokeIRHelper("yieldSpecific", sig(IRubyObject.class, ThreadContext.class, Object.class));
+            jvmMethod().yieldSpecific();
         } else {
             visit(yieldinstr.getYieldArg());
-            jvmAdapter().ldc(yieldinstr.isUnwrapArray());
-            jvmMethod().invokeIRHelper("yield", sig(IRubyObject.class, ThreadContext.class, Object.class, Object.class, boolean.class));
+            jvmMethod().yield(yieldinstr.isUnwrapArray());
         }
 
         jvmStoreLocal(yieldinstr.getResult());

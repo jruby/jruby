@@ -296,4 +296,14 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 sig(void.class, ThreadContext.class),
                 Bootstrap.checkpointHandle());
     }
+
+    @Override
+    public void yield(boolean unwrap) {
+        adapter.invokedynamic("yield", sig(JVM.OBJECT, params(ThreadContext.class, Block.class, JVM.OBJECT)), YieldSite.BOOTSTRAP, unwrap ? 1 : 0);
+    }
+
+    @Override
+    public void yieldSpecific() {
+        adapter.invokedynamic("yieldSpecific", sig(JVM.OBJECT, params(ThreadContext.class, Block.class, JVM.OBJECT)), YieldSite.BOOTSTRAP, 0);
+    }
 }
