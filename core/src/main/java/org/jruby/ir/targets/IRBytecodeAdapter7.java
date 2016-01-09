@@ -304,6 +304,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
     @Override
     public void yieldSpecific() {
-        adapter.invokedynamic("yieldSpecific", sig(JVM.OBJECT, params(ThreadContext.class, Block.class, JVM.OBJECT)), YieldSite.BOOTSTRAP, 0);
+        adapter.invokedynamic("yieldSpecific", sig(JVM.OBJECT, params(ThreadContext.class, Block.class)), YieldSite.BOOTSTRAP, 0);
     }
 }
