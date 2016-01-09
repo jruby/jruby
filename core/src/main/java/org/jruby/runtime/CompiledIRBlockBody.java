@@ -36,6 +36,10 @@ public class CompiledIRBlockBody extends IRBlockBody {
         return true;
     }
 
+    public MethodHandle getHandle() {
+        return handle;
+    }
+
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         context.setCurrentBlockType(Block.Type.PROC);
