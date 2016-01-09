@@ -85,6 +85,7 @@ import org.jruby.truffle.runtime.rope.SubstringRope;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
+import static org.jruby.truffle.runtime.core.StringOperations.rope;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,20 +97,26 @@ import java.util.List;
 public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "character_ascii_p")
+    @ImportStatic(StringGuards.class)
     public static abstract class CharacterAsciiPrimitiveNode extends RubiniusPrimitiveNode {
 
         public CharacterAsciiPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "is7Bit(character)")
         public boolean isCharacterAscii(DynamicObject character) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(character);
+            return ! rope(character).isEmpty();
+        }
+
+        @Specialization(guards = "!is7Bit(character)")
+        public boolean isCharacterAsciiMultiByte(DynamicObject character) {
+            final Rope rope = rope(character);
             final int codepoint = StringSupport.preciseCodePoint(
-                    bytes.getEncoding(),
-                    bytes.getUnsafeBytes(),
-                    bytes.getBegin(),
-                    bytes.getBegin() + bytes.getRealSize());
+                    rope.getEncoding(),
+                    rope.getBytes(),
+                    0,
+                    rope.byteLength());
 
             final boolean found = codepoint != -1;
 
