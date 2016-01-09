@@ -49,7 +49,7 @@ public class Binding {
     public static final Binding DUMMY =
             new Binding(
                     RubyBasicObject.NEVER,
-                    new Frame(),
+                    Frame.DUMMY,
                     Visibility.PUBLIC,
                     new NoVarsDynamicScope(StaticScopeFactory.newStaticScope(null, StaticScope.Type.BLOCK, null)),
                     "<dummy>",
