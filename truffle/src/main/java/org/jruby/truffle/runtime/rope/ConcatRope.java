@@ -11,11 +11,6 @@ package org.jruby.truffle.runtime.rope;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeSupport;
-import org.jruby.util.CodeRangeable;
-
-import java.util.Arrays;
 
 public class ConcatRope extends Rope {
 
@@ -32,8 +27,8 @@ public class ConcatRope extends Rope {
     }
 
     @Override
-    public int length() {
-        return left.length() + right.length();
+    public int characterLength() {
+        return left.characterLength() + right.characterLength();
     }
 
     @Override

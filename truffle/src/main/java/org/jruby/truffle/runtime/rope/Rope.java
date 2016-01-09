@@ -14,7 +14,7 @@ import org.jruby.util.ByteList;
 
 public abstract class Rope {
 
-    public abstract int length();
+    public abstract int characterLength();
 
     public abstract int byteLength();
 

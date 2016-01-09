@@ -26,7 +26,7 @@ public abstract class LeafRope extends Rope {
     }
 
     @Override
-    public int length() {
+    public int characterLength() {
         return bytes.length;
     }
 
