@@ -70,24 +70,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if (!explicitCallProtocolSupported(scope)) return null;
 
-        StoreLocalVarPlacementProblem slvpp = scope.getStoreLocalVarPlacementProblem();
-        boolean scopeHasLocalVarStores = false;
-        boolean bindingHasEscaped = scope.bindingHasEscaped();
-
         CFG cfg = scope.getCFG();
 
-        if (slvpp != null && bindingHasEscaped) {
-            scopeHasLocalVarStores = slvpp.scopeHasLocalVarStores();
-        } else {
-            // We dont require local-var load/stores to have been run.
-            // If it is not run, we go conservative and add push/pop binding instrs. everywhere
-            scopeHasLocalVarStores = bindingHasEscaped;
-        }
-
         // For now, we always require frame for closures
-        boolean requireFrame = doesItRequireFrame(scope, bindingHasEscaped);
-        boolean reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        boolean requireBinding = reuseParentDynScope || !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        boolean requireFrame = scope.needsFrame();
+        boolean requireBinding = scope.needsBinding();
 
         if (scope instanceof IRClosure || requireBinding || requireFrame) {
             BasicBlock entryBB = cfg.getEntryBB();
@@ -196,25 +183,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
         (new LiveVariableAnalysis()).invalidate(scope);
 
         return null;
-    }
-
-    private boolean doesItRequireFrame(IRScope scope, boolean bindingHasEscaped) {
-        boolean requireFrame = bindingHasEscaped || scope.usesEval();
-
-        for (IRFlags flag : scope.getFlags()) {
-            switch (flag) {
-                case BINDING_HAS_ESCAPED:
-                case CAN_CAPTURE_CALLERS_BINDING:
-                case REQUIRES_FRAME:
-                case REQUIRES_VISIBILITY:
-                case USES_BACKREF_OR_LASTLINE:
-                case USES_EVAL:
-                case USES_ZSUPER:
-                    requireFrame = true;
-            }
-        }
-
-        return requireFrame;
     }
 
     @Override

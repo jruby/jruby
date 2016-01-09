@@ -1120,4 +1120,32 @@ public abstract class IRScope implements ParseResult {
     public boolean isScriptScope() {
         return false;
     }
+
+    public boolean needsFrame() {
+        boolean bindingHasEscaped = bindingHasEscaped();
+        boolean requireFrame = bindingHasEscaped || usesEval();
+
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case CAN_CAPTURE_CALLERS_BINDING:
+                case REQUIRES_FRAME:
+                case REQUIRES_VISIBILITY:
+                case USES_BACKREF_OR_LASTLINE:
+                case USES_EVAL:
+                case USES_ZSUPER:
+                    requireFrame = true;
+            }
+        }
+
+        return requireFrame;
+    }
+
+    public boolean reuseParentScope() {
+        return getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+    }
+
+    public boolean needsBinding() {
+        return reuseParentScope() || !getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+    }
 }
