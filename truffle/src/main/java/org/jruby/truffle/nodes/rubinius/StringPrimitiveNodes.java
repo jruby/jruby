@@ -241,13 +241,13 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, NotProvided length) {
-            final Object subString = stringByteSubstring(frame, string, index, 1);
+            final DynamicObject subString = (DynamicObject) stringByteSubstring(frame, string, index, 1);
 
             if (subString == nil()) {
                 return subString;
             }
 
-            if (StringOperations.getByteList((DynamicObject) subString).length() == 0) {
+            if (rope(subString).isEmpty()) {
                 return nil();
             }
 
@@ -256,25 +256,24 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, int length) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
-
             if (length < 0) {
                 return nil();
             }
 
+            final Rope rope = rope(string);
             final int stringLength = getSizeNode().executeInteger(frame, string);
             final int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
-            if (normalizedIndex < 0 || normalizedIndex > bytes.length()) {
+            if (normalizedIndex < 0 || normalizedIndex > rope.byteLength()) {
                 return nil();
             }
 
-            if (normalizedIndex + length > bytes.length()) {
-                length = bytes.length() - normalizedIndex;
+            if (normalizedIndex + length > rope.byteLength()) {
+                length = rope.byteLength() - normalizedIndex;
             }
 
-            final int codeRange = StringOperations.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN;
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(new ByteList(bytes, normalizedIndex, length), codeRange), null);
+            final SubstringRope substringRope = new SubstringRope(rope, normalizedIndex, length);
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringRope, null);
 
             return taintResultNode.maybeTaint(string, result);
         }
