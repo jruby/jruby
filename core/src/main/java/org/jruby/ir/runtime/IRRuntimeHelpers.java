@@ -471,18 +471,12 @@ public class IRRuntimeHelpers {
         return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
     }
 
-    public static IRubyObject yield(ThreadContext context, Object blk, Object yieldArg, boolean unwrapArray) {
-        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
-        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        Block b = (Block)blk;
+    public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldArg, boolean unwrapArray) {
         IRubyObject yieldVal = (IRubyObject)yieldArg;
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
-    public static IRubyObject yieldSpecific(ThreadContext context, Object blk) {
-        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
-        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        Block b = (Block)blk;
+    public static IRubyObject yieldSpecific(ThreadContext context, Block b) {
         return b.yieldSpecific(context);
     }
 
