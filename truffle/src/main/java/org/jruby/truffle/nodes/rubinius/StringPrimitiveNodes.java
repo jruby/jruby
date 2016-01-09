@@ -81,6 +81,7 @@ import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.truffle.runtime.rope.SubstringRope;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
@@ -272,7 +273,7 @@ public abstract class StringPrimitiveNodes {
                 length = rope.byteLength() - normalizedIndex;
             }
 
-            final SubstringRope substringRope = new SubstringRope(rope, normalizedIndex, length);
+            final Rope substringRope = RopeOperations.substring(rope, normalizedIndex, length);
             final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringRope, null);
 
             return taintResultNode.maybeTaint(string, result);
@@ -1493,7 +1494,7 @@ public abstract class StringPrimitiveNodes {
             // TODO (nirvdrum Nov. 9, 2015) There's probably a way to guarantee the code range value based on the parent code range.
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
-                    new SubstringRope(Layouts.STRING.getRope(string), beg, len),
+                    RopeOperations.substring(Layouts.STRING.getRope(string), beg, len),
                     null);
 
             taintResultNode.maybeTaint(string, ret);
