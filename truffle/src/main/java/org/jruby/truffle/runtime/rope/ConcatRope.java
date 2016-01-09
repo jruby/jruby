@@ -59,9 +59,16 @@ public class ConcatRope extends Rope {
     public byte[] extractRange(int offset, int length) {
         byte[] leftBytes;
         byte[] rightBytes;
+        final int leftLength = left.byteLength();
 
-        if (offset < left.length()) {
-            leftBytes = left.extractRange(offset, length);
+        if (offset < leftLength) {
+            // The left branch might not be large enough to extract the full byte range we want. In that case,
+            // we'll extract what we can and extract the difference from the right side.
+            if (offset + length > leftLength) {
+                leftBytes = left.extractRange(offset, leftLength - offset);
+            } else {
+                leftBytes = left.extractRange(offset, length);
+            }
 
             if (leftBytes.length < length) {
                 rightBytes = right.extractRange(0, length - leftBytes.length);
@@ -76,7 +83,7 @@ public class ConcatRope extends Rope {
             }
         }
 
-        return right.extractRange(offset - left.byteLength(), length);
+        return right.extractRange(offset - leftLength, length);
     }
 
     @Override

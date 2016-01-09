@@ -42,6 +42,8 @@ public abstract class LeafRope extends Rope {
 
     @Override
     public byte[] extractRange(int offset, int length) {
+        assert offset + length <= bytes.length;
+
         final int trueLength = Math.min(length, byteLength());
         final byte[] ret = new byte[trueLength];
 
