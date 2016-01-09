@@ -1896,10 +1896,14 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject succ(DynamicObject string) {
-            if (StringOperations.byteLength(string) > 0) {
-                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)), StringSupport.CR_UNKNOWN), null);
+            final Rope rope = rope(string);
+
+            if (rope.isEmpty()) {
+                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.template(EMPTY_UTF8_ROPE, rope.getEncoding()), null);
             } else {
-                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.EMPTY_UTF8_ROPE, null);
+                final ByteList succByteList = StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteListReadOnly(string));
+
+                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()), null);
             }
         }
     }
@@ -1914,8 +1918,12 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject succBang(DynamicObject string) {
-            if (StringOperations.getByteList(string).getRealSize() > 0) {
-                StringOperations.setByteList(string, StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)));
+            final Rope rope = rope(string);
+
+            if (! rope.isEmpty()) {
+                final ByteList succByteList = StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteListReadOnly(string));
+
+                Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()));
             }
 
             return string;
