@@ -704,9 +704,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject b(DynamicObject string) {
-            final ByteList bytes = StringOperations.getByteList(string).dup();
-            bytes.setEncoding(ASCIIEncoding.INSTANCE);
-            return createString(bytes);
+            return createString(RopeOperations.template(rope(string), ASCIIEncoding.INSTANCE));
         }
 
     }

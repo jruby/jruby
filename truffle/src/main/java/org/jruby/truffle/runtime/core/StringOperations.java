@@ -59,6 +59,10 @@ public abstract class StringOperations {
         return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, StringSupport.CR_7BIT), null);
     }
 
+    public static DynamicObject createString(RubyContext context, Rope rope) {
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), rope, null);
+    }
+
     // Since ByteList.toString does not decode properly
     @CompilerDirectives.TruffleBoundary
     public static String getString(RubyContext context, DynamicObject string) {
