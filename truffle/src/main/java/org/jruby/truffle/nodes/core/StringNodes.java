@@ -688,23 +688,11 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public boolean asciiOnly(DynamicObject string) {
-            final ByteList byteList = StringOperations.getByteListReadOnly(string);
-
-            if (!byteList.getEncoding().isAsciiCompatible()) {
-                return false;
-            }
-
-            for (int i = 0; i < byteList.length(); i++) {
-                if ((byteList.get(i) & 0x80) != 0) {
-                    return false;
-                }
-            }
-
-            return true;
+            return StringOperations.scanForCodeRange(string) == StringSupport.CR_7BIT;
         }
+
     }
 
     @CoreMethod(names = "b", taintFromSelf = true)
@@ -1793,7 +1781,7 @@ public abstract class StringNodes {
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public int size(DynamicObject string) {
             // TODO (nirvdrum Jan.-07-2016) This should be made much more efficient.
-            return StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeable(string));
+            return StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string));
         }
 
     }
