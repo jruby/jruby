@@ -1320,9 +1320,7 @@ public abstract class StringNodes {
                         getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
             }
 
-            // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
-            StringOperations.setByteList(self, StringOperations.getByteListReadOnly(from).dup());
-            StringOperations.setCodeRange(self, codeRange(from));
+            Layouts.STRING.setRope(self, rope(from));
 
             return self;
         }
