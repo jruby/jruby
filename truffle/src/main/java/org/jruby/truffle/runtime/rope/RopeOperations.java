@@ -9,7 +9,9 @@
  */
 package org.jruby.truffle.runtime.rope;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
+import org.jruby.RubyEncoding;
 import org.jruby.util.StringSupport;
 
 public class RopeOperations {
@@ -38,6 +40,11 @@ public class RopeOperations {
 
     public static Rope template(Rope originalRope, Encoding newEncoding) {
         return create(originalRope.getBytes(), newEncoding, originalRope.getCodeRange());
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public static String decodeUTF8(Rope rope) {
+        return RubyEncoding.decodeUTF8(rope.getBytes(), 0, rope.byteLength());
     }
 
 }
