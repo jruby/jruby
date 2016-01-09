@@ -256,10 +256,20 @@ public abstract class StringOperations {
     }
 
     public static Encoding encoding(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+
         return rope(string).getEncoding();
     }
 
     public static int codeRange(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+
         return rope(string).getCodeRange();
+    }
+
+    public static String decodeUTF8(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+
+        return RopeOperations.decodeUTF8(Layouts.STRING.getRope(string));
     }
 }
