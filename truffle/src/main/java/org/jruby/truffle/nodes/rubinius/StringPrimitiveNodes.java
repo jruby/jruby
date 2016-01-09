@@ -134,10 +134,10 @@ public abstract class StringPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public boolean isCharacterPrintable(DynamicObject character) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(character);
-            final Encoding encoding = bytes.getEncoding();
+            final Rope rope = rope(character);
+            final Encoding encoding = rope.getEncoding();
 
-            final int codepoint = encoding.mbcToCode(bytes.unsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+            final int codepoint = encoding.mbcToCode(rope.getBytes(), 0, rope.byteLength());
 
             return encoding.isPrint(codepoint);
         }
