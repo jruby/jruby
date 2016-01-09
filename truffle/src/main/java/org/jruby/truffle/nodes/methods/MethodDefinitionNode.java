@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -56,7 +57,8 @@ public class MethodDefinitionNode extends RubyNode {
             capturedDefaultDefinee = null;
         }
 
-        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, null, capturedDefaultDefinee);
+        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, null,
+                capturedDefaultDefinee);
     }
 
     @Override
