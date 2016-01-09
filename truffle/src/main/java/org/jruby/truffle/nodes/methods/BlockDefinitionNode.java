@@ -10,13 +10,17 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.ProcNodes.Type;
+import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
+import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 
@@ -38,8 +42,10 @@ public class BlockDefinitionNode extends RubyNode {
 
     private final BreakID breakID;
 
+    @Child private ReadFrameSlotNode readFrameOnStackMarkerNode;
+
     public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, Type type, SharedMethodInfo sharedMethodInfo,
-                               CallTarget callTargetForProcs, CallTarget callTargetForLambdas, BreakID breakID) {
+                               CallTarget callTargetForProcs, CallTarget callTargetForLambdas, BreakID breakID, FrameSlot frameOnStackMarkerSlot) {
         super(context, sourceSection);
         this.type = type;
         this.sharedMethodInfo = sharedMethodInfo;
@@ -47,6 +53,12 @@ public class BlockDefinitionNode extends RubyNode {
         this.callTargetForProcs = callTargetForProcs;
         this.callTargetForLambdas = callTargetForLambdas;
         this.breakID = breakID;
+
+        if (frameOnStackMarkerSlot == null) {
+            readFrameOnStackMarkerNode = null;
+        } else {
+            readFrameOnStackMarkerNode = ReadFrameSlotNodeGen.create(frameOnStackMarkerSlot);
+        }
     }
 
     public BreakID getBreakID() {
@@ -55,11 +67,26 @@ public class BlockDefinitionNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        final FrameOnStackMarker frameOnStackMarker;
+
+        if (readFrameOnStackMarkerNode == null) {
+            frameOnStackMarker = null;
+        } else {
+            final Object frameOnStackMarkerValue = readFrameOnStackMarkerNode.executeRead(frame);
+
+            if (frameOnStackMarkerValue instanceof FrameOnStackMarker) {
+                frameOnStackMarker = (FrameOnStackMarker) frameOnStackMarkerValue;
+            } else {
+                frameOnStackMarker = null;
+            }
+        }
+
         return ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), type, sharedMethodInfo,
                 callTargetForProcs, callTargetForLambdas, frame.materialize(),
                 RubyArguments.getMethod(frame.getArguments()),
                 RubyArguments.getSelf(frame.getArguments()),
-                RubyArguments.getBlock(frame.getArguments()));
+                RubyArguments.getBlock(frame.getArguments()),
+                frameOnStackMarker);
     }
 
 }

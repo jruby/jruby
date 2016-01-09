@@ -368,7 +368,7 @@ public class BodyTranslator extends Translator {
             resultNode = node.getValueNode().accept(this);
         }
 
-        final RubyNode ret = new BreakNode(context, sourceSection, environment.getBreakID(), resultNode);
+        final RubyNode ret = new BreakNode(context, sourceSection, environment.getBreakID(), resultNode, translatingWhile);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -569,6 +569,7 @@ public class BodyTranslator extends Translator {
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
+            translated = new FrameOnStackNode(context, sourceSection, translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
             translated = new CatchBreakNode(context, sourceSection, translated, blockDef.getBreakID());
         }
 
@@ -580,12 +581,14 @@ public class BodyTranslator extends Translator {
         private final RubyNode block;
         private final RubyNode[] arguments;
         private final boolean isSplatted;
+        private final FrameSlot frameOnStackMarkerSlot;
 
-        public ArgumentsAndBlockTranslation(RubyNode block, RubyNode[] arguments, boolean isSplatted) {
+        public ArgumentsAndBlockTranslation(RubyNode block, RubyNode[] arguments, boolean isSplatted, FrameSlot frameOnStackMarkerSlot) {
             super();
             this.block = block;
             this.arguments = arguments;
             this.isSplatted = isSplatted;
+            this.frameOnStackMarkerSlot = frameOnStackMarkerSlot;
         }
 
         public RubyNode getBlock() {
@@ -600,7 +603,14 @@ public class BodyTranslator extends Translator {
             return isSplatted;
         }
 
+        public FrameSlot getFrameOnStackMarkerSlot() {
+            return frameOnStackMarkerSlot;
+        }
     }
+
+    public static final FrameSlot BAD_FRAME_SLOT = new FrameSlot(null, null, null, 0, null);
+
+    public Deque<FrameSlot> frameOnStackMarkerSlotStack = new ArrayDeque<>();
 
     protected ArgumentsAndBlockTranslation translateArgumentsAndBlock(SourceSection sourceSection, org.jruby.ast.Node iterNode, org.jruby.ast.Node argsNode, String nameToSetWhenTranslatingBlock) {
         assert !(argsNode instanceof org.jruby.ast.IterNode);
@@ -648,21 +658,32 @@ public class BodyTranslator extends Translator {
 
         currentCallMethodName = nameToSetWhenTranslatingBlock;
 
+
+        final FrameSlot frameOnStackMarkerSlot;
         RubyNode blockTranslated;
 
         if (blockPassNode != null) {
             blockTranslated = ToProcNodeGen.create(context, sourceSection, blockPassNode.accept(this));
+            frameOnStackMarkerSlot = null;
         } else if (iterNode != null) {
-            blockTranslated = iterNode.accept(this);
+            frameOnStackMarkerSlot = environment.declareVar(environment.allocateLocalTemp("frame_on_stack_marker"));
+            frameOnStackMarkerSlotStack.push(frameOnStackMarkerSlot);
+
+            try {
+                blockTranslated = iterNode.accept(this);
+            } finally {
+                frameOnStackMarkerSlotStack.pop();
+            }
 
             if (blockTranslated instanceof LiteralNode && ((LiteralNode) blockTranslated).getObject() == context.getCoreLibrary().getNilObject()) {
                 blockTranslated = null;
             }
         } else {
             blockTranslated = null;
+            frameOnStackMarkerSlot = null;
         }
 
-        return new ArgumentsAndBlockTranslation(blockTranslated, argumentsTranslated, isSplatted);
+        return new ArgumentsAndBlockTranslation(blockTranslated, argumentsTranslated, isSplatted, frameOnStackMarkerSlot);
     }
 
     @Override
@@ -1813,8 +1834,23 @@ public class BodyTranslator extends Translator {
             methodCompiler.translatingForStatement = translatingForStatement;
         }
 
+        methodCompiler.frameOnStackMarkerSlotStack = frameOnStackMarkerSlotStack;
+
         final Type type = isLambda ? Type.LAMBDA : Type.PROC;
-        final RubyNode definitionNode = methodCompiler.compileBlockNode(sourceSection, sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, type);
+
+        if (isLambda) {
+            frameOnStackMarkerSlotStack.push(BAD_FRAME_SLOT);
+        }
+
+        final RubyNode definitionNode;
+
+        try {
+            definitionNode = methodCompiler.compileBlockNode(sourceSection, sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, type);
+        } finally {
+            if (isLambda) {
+                frameOnStackMarkerSlotStack.pop();
+            }
+        }
 
         return addNewlineIfNeeded(node, definitionNode);
     }
@@ -2811,9 +2847,11 @@ public class BodyTranslator extends Translator {
         translatingWhile = true;
         BreakID oldBreakID = environment.getBreakID();
         environment.setBreakIDForWhile(whileBreakID);
+        frameOnStackMarkerSlotStack.push(BAD_FRAME_SLOT);
         try {
             body = translateNodeOrNil(sourceSection, node.getBodyNode());
         } finally {
+            frameOnStackMarkerSlotStack.pop();
             environment.setBreakIDForWhile(oldBreakID);
             translatingWhile = oldTranslatingWhile;
         }
