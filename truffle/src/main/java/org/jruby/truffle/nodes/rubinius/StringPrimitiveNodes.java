@@ -405,19 +405,18 @@ public abstract class StringPrimitiveNodes {
             stringByteSubstringNode = StringPrimitiveNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {});
         }
 
-        @Specialization
+        @Specialization(guards = "indexOutOfBounds(string, byteIndex)")
+        public Object stringChrAtOutOfBounds(DynamicObject string, int byteIndex) {
+            return false;
+        }
+
+        @Specialization(guards = "!indexOutOfBounds(string, byteIndex)")
         public Object stringChrAt(VirtualFrame frame, DynamicObject string, int byteIndex) {
             // Taken from Rubinius's Character::create_from.
 
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
-
-            if (byteIndex < 0 || byteIndex >= bytes.getRealSize()) {
-                return nil();
-            }
-
-            final int p = bytes.getBegin() + byteIndex;
-            final int end = bytes.getBegin() + bytes.getRealSize();
-            final int c = preciseLength(bytes, p, end);
+            final Rope rope = rope(string);
+            final int end = rope.byteLength();
+            final int c = preciseLength(rope, byteIndex, end);
 
             if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
                 return nil();
@@ -432,8 +431,12 @@ public abstract class StringPrimitiveNodes {
         }
 
         @TruffleBoundary
-        private int preciseLength(final ByteList bytes, final int p, final int end) {
-            return StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
+        private int preciseLength(final Rope rope, final int p, final int end) {
+            return StringSupport.preciseLength(rope.getEncoding(), rope.getBytes(), p, end);
+        }
+
+        protected static boolean indexOutOfBounds(DynamicObject string, int byteIndex) {
+            return ((byteIndex < 0) || (byteIndex >= rope(string).byteLength()));
         }
 
     }
