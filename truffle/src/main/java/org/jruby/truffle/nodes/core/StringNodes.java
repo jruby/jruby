@@ -2069,19 +2069,16 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!reverseIsEqualToSelf(string)", "isSingleByteOptimizable(string)" })
         public DynamicObject reverseSingleByteOptimizable(DynamicObject string) {
-            // Taken from org.jruby.RubyString#reverse!
+            final Rope rope = rope(string);
+            final byte[] originalBytes = rope.getBytes();
+            final int len = originalBytes.length;
+            final byte[] reversedBytes = new byte[len];
 
-            StringOperations.modify(string);
-
-            final byte[] bytes = StringOperations.getByteList(string).getUnsafeBytes();
-            final int p = StringOperations.getByteList(string).getBegin();
-            final int len = StringOperations.getByteList(string).getRealSize();
-
-            for (int i = 0; i < len >> 1; i++) {
-                byte b = bytes[p + i];
-                bytes[p + i] = bytes[p + len - i - 1];
-                bytes[p + len - i - 1] = b;
+            for (int i = 0; i < len; i++) {
+                reversedBytes[len - i - 1] = originalBytes[i];;
             }
+
+            Layouts.STRING.setRope(string, RopeOperations.create(reversedBytes, rope.getEncoding(), rope.getCodeRange()));
 
             return string;
         }
@@ -2090,35 +2087,36 @@ public abstract class StringNodes {
         public DynamicObject reverse(DynamicObject string) {
             // Taken from org.jruby.RubyString#reverse!
 
-            StringOperations.modify(string);
+            final Rope rope = rope(string);
+            final byte[] originalBytes = rope.getBytes();
+            int p = 0;
+            final int len = originalBytes.length;
 
-            final byte[] bytes = StringOperations.getByteList(string).getUnsafeBytes();
-            int p = StringOperations.getByteList(string).getBegin();
-            final int len = StringOperations.getByteList(string).getRealSize();
-
-            final Encoding enc = encoding(string);
+            final Encoding enc = rope.getEncoding();
             final int end = p + len;
             int op = len;
-            final byte[] obytes = new byte[len];
+            final byte[] reversedBytes = new byte[len];
             boolean single = true;
 
             while (p < end) {
-                int cl = StringSupport.length(enc, bytes, p, end);
-                if (cl > 1 || (bytes[p] & 0x80) != 0) {
+                int cl = StringSupport.length(enc, originalBytes, p, end);
+                if (cl > 1 || (originalBytes[p] & 0x80) != 0) {
                     single = false;
                     op -= cl;
-                    System.arraycopy(bytes, p, obytes, op, cl);
+                    System.arraycopy(originalBytes, p, reversedBytes, op, cl);
                     p += cl;
                 } else {
-                    obytes[--op] = bytes[p++];
+                    reversedBytes[--op] = originalBytes[p++];
                 }
             }
 
-            StringOperations.getByteList(string).setUnsafeBytes(obytes);
-            if (codeRange(string) == StringSupport.CR_UNKNOWN) {
-                int codeRange = single ? StringSupport.CR_7BIT : StringSupport.CR_VALID;
-                StringOperations.setCodeRange(string, codeRange);
+            // TODO (nirvdrum 09-Jan-16): If we guarantee no strings can have an unknown code range, this check can be removed.
+            int codeRange = rope.getCodeRange();
+            if (codeRange == StringSupport.CR_UNKNOWN) {
+                codeRange = single ? StringSupport.CR_7BIT : StringSupport.CR_VALID;
             }
+
+            Layouts.STRING.setRope(string, RopeOperations.create(reversedBytes, rope.getEncoding(), codeRange));
 
             return string;
         }
