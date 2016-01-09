@@ -124,12 +124,12 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject add(DynamicObject string, DynamicObject other) {
-            final Rope a = rope(string);
-            final Rope b = rope(other);
+            final Rope left = rope(string);
+            final Rope right = rope(other);
 
             final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(other), this);
 
-            final Rope concatRope = new ConcatRope(a, b, enc);
+            final Rope concatRope = RopeOperations.concat(left, right, enc);
 
             final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
                     concatRope,
@@ -170,7 +170,7 @@ public abstract class StringNodes {
                 retRope = rope(string);
             } else {
                 final Rope baseRope = rope(string);
-                final Rope concatLeafRope = new ConcatRope(baseRope, baseRope, baseRope.getEncoding());
+                final Rope concatLeafRope = RopeOperations.concat(baseRope, baseRope, baseRope.getEncoding());
 
                 final boolean timesIsPowerOf2 = (times & (times - 1)) == 0;
                 final double log2_times = Math.log(times) / Math.log(2);
@@ -209,7 +209,7 @@ public abstract class StringNodes {
                                 canCacheRightTree = false;
                             }
                         } else if (right == null) {
-                            currentLevel[i] = new ConcatRope(left, baseRope, baseRope.getEncoding());
+                            currentLevel[i] = RopeOperations.concat(left, baseRope, baseRope.getEncoding());
 
                             if (i < levelWidth / 2) {
                                 canCacheLeftTree = false;
@@ -219,12 +219,12 @@ public abstract class StringNodes {
                         } else {
                             if ((canCacheLeftTree && i < levelWidth / 2) || (canCacheRightTree && i >= levelWidth / 2)) {
                                 if (cachedRope == null) {
-                                    cachedRope = new ConcatRope(left, right, baseRope.getEncoding());
+                                    cachedRope = RopeOperations.concat(left, right, baseRope.getEncoding());
                                 }
 
                                 currentLevel[i] = cachedRope;
                             } else {
-                                currentLevel[i] = new ConcatRope(left, right, baseRope.getEncoding());
+                                currentLevel[i] = RopeOperations.concat(left, right, baseRope.getEncoding());
                             }
                         }
                     }
@@ -426,10 +426,10 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "isRubyString(other)", "is7Bit(string)", "is7Bit(other)" })
         public DynamicObject concatStringSingleByte(DynamicObject string, DynamicObject other) {
-            final Rope a = rope(string);
-            final Rope b = rope(other);
+            final Rope left = rope(string);
+            final Rope right = rope(other);
 
-            Layouts.STRING.setRope(string, new ConcatRope(a, b, a.getEncoding()));
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, left.getEncoding()));
 
             return string;
         }
@@ -1170,7 +1170,7 @@ public abstract class StringNodes {
 
             int end = Math.min(length, beg + len);
 
-            final Rope substringRope = new SubstringRope(rope, beg, end - beg);
+            final Rope substringRope = RopeOperations.substring(rope, beg, end - beg);
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1492,7 +1492,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject setNumBytes(DynamicObject string, int count) {
-            Layouts.STRING.setRope(string, new SubstringRope(rope(string), 0, count));
+            Layouts.STRING.setRope(string, RopeOperations.substring(rope(string), 0, count));
 
             return string;
         }

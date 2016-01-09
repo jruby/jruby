@@ -30,6 +30,14 @@ public class RopeOperations {
         }
     }
 
+    public static Rope concat(Rope left, Rope right, Encoding encoding) {
+        return new ConcatRope(left, right, encoding);
+    }
+
+    public static Rope substring(Rope base, int offset, int length) {
+        return new SubstringRope(base, offset, length);
+    }
+
     public static Rope template(Rope originalRope, Encoding newEncoding, int newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
