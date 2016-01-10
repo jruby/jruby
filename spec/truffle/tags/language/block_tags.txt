@@ -1,5 +1,4 @@
 fails:A block yielded a single Array assigns elements to mixed argument types
-fails:A block yielded a single Array assigns elements to optional arguments
 fails:A block yielded a single Array assigns elements to required arguments when a keyword rest argument is present
 fails:A block yielded a single Array assigns non-symbol keys to non-keyword arguments
 fails:A block yielded a single Array assigns symbol keys from a Hash returned by #to_hash to keyword arguments

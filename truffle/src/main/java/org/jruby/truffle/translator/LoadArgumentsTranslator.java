@@ -331,7 +331,15 @@ public class LoadArgumentsTranslator extends Translator {
                     minimum += 1;
                 }
 
-                readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
+                if (useArray()) {
+                    // TODO CS 10-Jan-16 we should really hoist this check, or see if Graal does it for us
+                    readNode = new IfNode(context, sourceSection,
+                            new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), minimum),
+                            PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index),
+                            defaultValue);
+                } else {
+                    readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
+                }
             }
         } else {
             readNode = ArraySliceNodeGen.create(context, sourceSection, index, indexFromEnd, loadArray(sourceSection));
