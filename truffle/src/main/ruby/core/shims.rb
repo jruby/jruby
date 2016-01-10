@@ -269,3 +269,12 @@ module Truffle::Primitive
     file
   end
 end
+
+module Truffle::Primitive
+  def self.load_arguments_from_array_kw_helper(array, kwrest_name, binding)
+    array = array.dup
+    kwargs = array.pop.to_hash
+    binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
+    array
+  end
+end

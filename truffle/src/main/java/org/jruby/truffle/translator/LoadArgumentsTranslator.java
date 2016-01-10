@@ -11,6 +11,7 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.MultipleAsgnNode;
@@ -26,6 +27,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
 import org.jruby.truffle.nodes.core.array.ArraySliceNodeGen;
 import org.jruby.truffle.nodes.core.array.PrimitiveArrayNodeFactory;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -88,6 +90,28 @@ public class LoadArgumentsTranslator extends Translator {
 
         final List<RubyNode> sequence = new ArrayList<>();
         final org.jruby.ast.Node[] args = node.getArgs();
+
+        final boolean useHelper = useArray() && node.hasKeyRest();
+
+        if (useHelper) {
+            sequence.add(node.getKeyRest().accept(this));
+
+            final Object keyRestNameOrNil;
+
+            if (node.hasKeyRest()) {
+                final String name = node.getKeyRest().getName();
+                methodBodyTranslator.getEnvironment().declareVar(name);
+                keyRestNameOrNil = context.getSymbol(name);
+            } else {
+                keyRestNameOrNil = context.getCoreLibrary().getNilObject();
+            }
+
+            sequence.add(new IfNode(context, sourceSection,
+                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getOptionalArgsCount() + node.getPostCount() + 1),
+                    new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil),
+                    new NilNode(context, sourceSection)));
+        }
+
         final int preCount = node.getPreCount();
 
         if (preCount > 0) {
@@ -178,7 +202,9 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (node.getKeyRest() != null) {
-            sequence.add(node.getKeyRest().accept(this));
+            if (!useHelper) {
+                sequence.add(node.getKeyRest().accept(this));
+            }
         }
 
         if (node.getBlock() != null) {
@@ -337,7 +363,7 @@ public class LoadArgumentsTranslator extends Translator {
                     if (argsNode.hasKwargs()) {
                         minimum += 1;
                     }
-                    
+
                     readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
                 }
             }
