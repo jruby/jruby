@@ -120,15 +120,48 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         int postCount = node.getPostCount();
+
+        // The load to use when the array is not nil and the length is smaller than the number of required arguments
+
+        final List<RubyNode> notNilSmallerSequence = new ArrayList<>();
+
+        if (postCount > 0) {
+            state = State.POST;
+            org.jruby.ast.Node[] children = node.getPost().children();
+            index = node.getPreCount();
+            for (int i = 0; i < children.length; i++) {
+                notNilSmallerSequence.add(children[i].accept(this));
+                index++;
+            }
+        }
+
+        final RubyNode notNilSmaller = SequenceNode.sequence(context, sourceSection, notNilSmallerSequence);
+
+        // The load to use when the array is not nil and at least as large as the number of required arguments
+
+        final List<RubyNode> notNilAtLeastAsLargeSequence = new ArrayList<>();
+
         if (postCount > 0) {
             state = State.POST;
             index = -1;
             int postIndex = node.getPostIndex();
             for (int i = postCount - 1; i >= 0; i--) {
-                sequence.add(args[postIndex + i].accept(this));
+                notNilAtLeastAsLargeSequence.add(args[postIndex + i].accept(this));
                 required++;
                 index--;
             }
+        }
+
+        final RubyNode notNilAtLeastAsLarge = SequenceNode.sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
+
+        if (useArray()) {
+            sequence.add(new IfNode(context, sourceSection,
+                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
+                    notNilAtLeastAsLarge,
+                    notNilSmaller));
+        } else {
+            // TODO CS 10-Jan-16 needn't have created notNilSmaller
+            sequence.add(notNilAtLeastAsLarge);
         }
 
         if (hasKeywordArguments) {
@@ -399,10 +432,6 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         final RubyNode notNilAtLeastAsLarge = SequenceNode.sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
-
-        if (notNilAtLeastAsLarge == null) {
-            throw new UnsupportedOperationException();
-        }
 
         popArraySlot(arraySlot);
 
