@@ -327,10 +327,6 @@ public class LoadArgumentsTranslator extends Translator {
 
                 int minimum = index + 1 + argsNode.getPostCount();
 
-                if (argsNode.hasKwargs()) {
-                    minimum += 1;
-                }
-
                 if (useArray()) {
                     // TODO CS 10-Jan-16 we should really hoist this check, or see if Graal does it for us
                     readNode = new IfNode(context, sourceSection,
@@ -338,6 +334,10 @@ public class LoadArgumentsTranslator extends Translator {
                             PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index),
                             defaultValue);
                 } else {
+                    if (argsNode.hasKwargs()) {
+                        minimum += 1;
+                    }
+                    
                     readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
                 }
             }
