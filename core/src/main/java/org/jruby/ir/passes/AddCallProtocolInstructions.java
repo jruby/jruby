@@ -52,8 +52,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
         if (requireBinding) instrs.add(new PopBindingInstr());
         if (scope instanceof IRClosure) {
-            instrs.add(new RestoreBindingVisibilityInstr(savedViz));
-            instrs.add(new PopBlockFrameInstr(savedFrame));
+            if (scope.needsFrame()) {
+                instrs.add(new RestoreBindingVisibilityInstr(savedViz));
+                instrs.add(new PopBlockFrameInstr(savedFrame));
+            }
         } else {
             if (requireFrame) instrs.add(new PopMethodFrameInstr());
         }
@@ -83,17 +85,20 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 savedViz = scope.createTemporaryVariable();
                 savedFrame = scope.createTemporaryVariable();
 
-                { // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
-                    int insertIndex = 0;
+                // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
+                int insertIndex = 0;
+
+                if (scope.needsFrame()) {
                     entryBB.insertInstr(insertIndex++, new SaveBindingVisibilityInstr(savedViz));
                     entryBB.insertInstr(insertIndex++, new PushBlockFrameInstr(savedFrame, scope.getName()));
-
-                    // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
-                    if (requireBinding) {
-                        entryBB.insertInstr(insertIndex++, new PushBlockBindingInstr());
-                    }
-                    entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
                 }
+
+                // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
+                if (requireBinding) {
+                    entryBB.insertInstr(insertIndex++, new PushBlockBindingInstr());
+                }
+
+                entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
 
                 Signature sig = ((IRClosure)scope).getSignature();
 
