@@ -273,7 +273,13 @@ end
 module Truffle::Primitive
   def self.load_arguments_from_array_kw_helper(array, kwrest_name, binding)
     array = array.dup
-    kwargs = array.pop.to_hash
+
+    kwargs = array.pop.to_hash.select { |key, value|
+      symbol = key.is_a? Symbol
+      array.push({key => value}) unless symbol
+      symbol
+    }
+
     binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
     array
   end

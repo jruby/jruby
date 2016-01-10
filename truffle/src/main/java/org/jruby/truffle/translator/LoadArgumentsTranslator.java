@@ -107,7 +107,7 @@ public class LoadArgumentsTranslator extends Translator {
             }
 
             sequence.add(new IfNode(context, sourceSection,
-                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getOptionalArgsCount() + node.getPostCount() + 1),
+                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount() + 1),
                     new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil),
                     new NilNode(context, sourceSection)));
         }
