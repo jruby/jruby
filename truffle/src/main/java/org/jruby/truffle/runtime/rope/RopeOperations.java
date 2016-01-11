@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -32,10 +33,26 @@ public class RopeOperations {
     }
 
     public static Rope concat(Rope left, Rope right, Encoding encoding) {
+        if (right.isEmpty()) {
+            return template(left, encoding);
+        }
+
+        if (left.isEmpty()) {
+            return template(right, encoding);
+        }
+
         return new ConcatRope(left, right, encoding);
     }
 
     public static Rope substring(Rope base, int offset, int length) {
+        if (length == 0) {
+            return template(StringOperations.EMPTY_UTF8_ROPE, base.getEncoding());
+        }
+
+        if (length - offset == base.byteLength()) {
+            return base;
+        }
+
         return new SubstringRope(base, offset, length);
     }
 
@@ -48,7 +65,7 @@ public class RopeOperations {
     }
 
     public static Rope template(Rope originalRope, Encoding newEncoding) {
-        return create(originalRope.getBytes(), newEncoding, originalRope.getCodeRange());
+        return template(originalRope, newEncoding, originalRope.getCodeRange());
     }
 
     @CompilerDirectives.TruffleBoundary
