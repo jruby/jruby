@@ -58,6 +58,11 @@ public abstract class LeafRope extends Rope {
     }
 
     @Override
+    public int depth() {
+        return 1;
+    }
+
+    @Override
     public int hashCode() {
         if (hashCode == -1) {
             hashCode = Arrays.hashCode(bytes) + encoding.hashCode();

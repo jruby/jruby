@@ -47,6 +47,8 @@ public abstract class Rope {
 
     public abstract boolean isSingleByteOptimizable();
 
+    public abstract int depth();
+
     @Override
     public String toString() {
         // This should be used for debugging only.
