@@ -288,6 +288,8 @@ module Truffle::Primitive
 
       raise TypeError.new("can't convert #{last_arg.class} to Hash (#{last_arg.class}#to_hash gives #{kwargs.class})") unless kwargs.is_a?(Hash)
 
+      return array + [kwargs] unless kwargs.keys.any? { |k| k.is_a? Symbol }
+
       kwargs.select! do |key, value|
         symbol = key.is_a? Symbol
         array.push({key => value}) unless symbol
