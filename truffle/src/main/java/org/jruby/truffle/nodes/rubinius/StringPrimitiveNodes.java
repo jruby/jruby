@@ -1207,7 +1207,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public DynamicObject stringResizeCapacity(DynamicObject string, int capacity) {
-            StringOperations.getByteList(string).ensure(capacity);
+            // TODO (nirvdrum 11-Jan-16): Any calls to this are suspect now that we use ropes. We don't have a way to preallocate a buffer to mutate.
             return string;
         }
 
