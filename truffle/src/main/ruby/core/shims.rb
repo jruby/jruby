@@ -276,6 +276,12 @@ module Truffle::Primitive
 
     last_arg = array.pop
     kwargs = last_arg.to_hash
+
+    if kwargs.nil?
+      array.push last_arg
+      return array
+    end
+
     raise TypeError.new("can't convert #{last_arg.class} to Hash (#{last_arg.class}#to_hash gives #{kwargs.class})") unless kwargs.is_a?(Hash)
 
     kwargs.select! do |key, value|
