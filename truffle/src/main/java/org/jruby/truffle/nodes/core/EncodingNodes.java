@@ -214,7 +214,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubySymbol(second)"})
         public Object isCompatibleStringSymbol(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeableReadOnly(first), SymbolNodes.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
