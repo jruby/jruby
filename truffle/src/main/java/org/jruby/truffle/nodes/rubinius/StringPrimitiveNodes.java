@@ -1376,11 +1376,12 @@ public abstract class StringPrimitiveNodes {
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile) {
             // Taken from org.jruby.RubyString#substr19.
-            final int length = StringOperations.byteLength(string);
-            if (emptyStringProfile.profile(length == 0)) {
+            final Rope rope = rope(string);
+            if (emptyStringProfile.profile(rope.isEmpty())) {
                 len = 0;
             }
 
+            final int length = rope.byteLength();
             if (tooLargeBeginProfile.profile(beg > length)) {
                 return nil();
             }
@@ -1410,8 +1411,10 @@ public abstract class StringPrimitiveNodes {
         public Object stringSubstring(DynamicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
 
-            final int length = StringOperations.byteLength(string);
-            if (length == 0) {
+            final Rope rope = rope(string);
+            final int length = rope.byteLength();
+
+            if (rope.isEmpty()) {
                 len = 0;
             }
 
@@ -1419,7 +1422,6 @@ public abstract class StringPrimitiveNodes {
                 len = length - beg;
             }
 
-            final Rope rope = Layouts.STRING.getRope(string);
             final Encoding enc = rope.getEncoding();
             int p;
             int s = 0;
@@ -1440,14 +1442,14 @@ public abstract class StringPrimitiveNodes {
                     if (p == -1) {
                         return nil();
                     }
-                    return makeSubstring(string, p - s, e - p);
+                    return makeRope(string, p - s, e - p);
                 } else {
-                    beg += StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeable(string), enc);
+                    beg += StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string), enc);
                     if (beg < 0) {
                         return nil();
                     }
                 }
-            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeable(string), enc)) {
+            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string), enc)) {
                 return nil();
             }
             if (len == 0) {
@@ -1471,37 +1473,12 @@ public abstract class StringPrimitiveNodes {
             } else {
                 len = StringSupport.offset(enc, bytes, p, end, len);
             }
-            return makeSubstring(string, p - s, len);
+            return makeRope(string, p - s, len);
         }
 
         @Specialization(guards = "len < 0")
         public Object stringSubstringNegativeLength(DynamicObject string, int beg, int len) {
             return nil();
-        }
-
-        // TODO (nirvdrum 08-Jan-16) Remove this.
-        private DynamicObject makeSubstring(DynamicObject string, int beg, int len) {
-            assert RubyGuards.isRubyString(string);
-
-            if (allocateNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
-            }
-
-            if (taintResultNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
-            }
-
-            final DynamicObject ret = allocateNode.allocate(
-                    Layouts.BASIC_OBJECT.getLogicalClass(string),
-                    new ByteList(StringOperations.getByteList(string), beg, len),
-                    StringOperations.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN,
-                    null);
-
-            taintResultNode.maybeTaint(string, ret);
-
-            return ret;
         }
 
         private DynamicObject makeRope(DynamicObject string, int beg, int len) {
@@ -1517,7 +1494,6 @@ public abstract class StringPrimitiveNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            // TODO (nirvdrum Nov. 9, 2015) There's probably a way to guarantee the code range value based on the parent code range.
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
                     RopeOperations.substring(Layouts.STRING.getRope(string), beg, len),
