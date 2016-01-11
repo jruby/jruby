@@ -806,10 +806,9 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public int stringCharacterByteIndexMultiByteEncoding(DynamicObject string, int index, int start) {
-            final ByteList bytes = StringOperations.getByteList(string);
+            final Rope rope = rope(string);
 
-            return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin() + start,
-                    bytes.getBegin() + bytes.getRealSize(), index) - bytes.begin();
+            return StringSupport.nth(rope.getEncoding(), rope.getBytes(), start, rope.byteLength(), index);
         }
     }
 
