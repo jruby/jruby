@@ -59,7 +59,7 @@ public class Binding {
     /**
      * frame of method which defined this block
      */
-    private final Frame frame;
+    private Frame frame;
 
     public String method;
     public String filename;
@@ -74,7 +74,7 @@ public class Binding {
     /**
      * A reference to all variable values (and names) that are in-scope for this block.
      */
-    private final DynamicScope dynamicScope;
+    private DynamicScope dynamicScope;
 
     /**
      * Binding-local scope for 1.9 mode.
@@ -123,6 +123,30 @@ public class Binding {
         this.method = method;
         this.filename = filename;
         this.line = line;
+    }
+
+    public Binding(IRubyObject self) {
+        this.self = self;
+    }
+
+    public Binding(IRubyObject self, Frame frame,
+                   Visibility visibility) {
+        this.self = self;
+        this.frame = frame;
+        this.visibility = visibility;
+    }
+
+    public Binding(IRubyObject self, DynamicScope dynamicScope) {
+        this.self = self;
+        this.dynamicScope = dynamicScope;
+    }
+
+    public Binding(IRubyObject self, Frame frame,
+                   Visibility visibility, DynamicScope dynamicScope) {
+        this.self = self;
+        this.frame = frame;
+        this.visibility = visibility;
+        this.dynamicScope = dynamicScope;
     }
     
     private Binding(Binding other) {

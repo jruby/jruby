@@ -22,7 +22,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.GlobalSite;
 import org.jruby.runtime.invokedynamic.MathLinker;
@@ -940,12 +939,60 @@ public class Bootstrap {
 
         CompiledIRBlockBody body = new CompiledIRBlockBody(bodyHandle, scope, encodedSignature);
 
-        return new ConstantCallSite(Binder.from(type).append(body).invokeStaticQuiet(lookup, Bootstrap.class, "prepareBlock"));
+        Binder binder = Binder.from(type);
+
+        binder = binder.fold(FRAME_SCOPE_BINDING);
+
+        // This optimization can't happen until we can see into the method we're calling to know if it reifies the block
+        if (false) {
+            if (scope.needsBinding()) {
+                if (scope.needsFrame()) {
+                    binder = binder.fold(FRAME_SCOPE_BINDING);
+                } else {
+                    binder = binder.fold(SCOPE_BINDING);
+                }
+            } else {
+                if (scope.needsFrame()) {
+                    binder = binder.fold(FRAME_BINDING);
+                } else {
+                    binder = binder.fold(SELF_BINDING);
+                }
+            }
+        }
+
+        MethodHandle blockMaker = binder.drop(1, 3)
+                .append(body)
+                .invoke(CONSTRUCT_BLOCK);
+
+        return new ConstantCallSite(blockMaker);
     }
 
-    public static Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope scope, CompiledIRBlockBody body) throws Throwable {
-        Binding binding = context.currentBinding(self, scope);
+    private static final Binder BINDING_MAKER_BINDER = Binder.from(Binding.class, ThreadContext.class, IRubyObject.class, DynamicScope.class);
 
+    private static final MethodHandle FRAME_SCOPE_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "frameScopeBinding");
+    public static Binding frameScopeBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        Frame frame = context.getCurrentFrame().capture();
+        return new Binding(self, frame, frame.getVisibility(), scope);
+    }
+
+    private static final MethodHandle FRAME_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "frameBinding");
+    public static Binding frameBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        Frame frame = context.getCurrentFrame().capture();
+        return new Binding(self, frame, frame.getVisibility());
+    }
+
+    private static final MethodHandle SCOPE_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "scopeBinding");
+    public static Binding scopeBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        return new Binding(self, scope);
+    }
+
+    private static final MethodHandle SELF_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "selfBinding");
+    public static Binding selfBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        return new Binding(self);
+    }
+
+    private static final MethodHandle CONSTRUCT_BLOCK = Binder.from(Block.class, Binding.class, CompiledIRBlockBody.class).invokeStaticQuiet(LOOKUP, Bootstrap.class, "constructBlock");
+    public static Block constructBlock(Binding binding, CompiledIRBlockBody body) throws Throwable {
         return new Block(body, binding);
     }
 }
