@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class GetDefaultDefineeNode extends RubyNode {
 
@@ -31,6 +32,13 @@ public class GetDefaultDefineeNode extends RubyNode {
     @Override
     public DynamicObject execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
+
+        final DynamicObject capturedDefaultDefinee = RubyArguments.getMethod(frame.getArguments()).getCapturedDefaultDefinee();
+
+        if (capturedDefaultDefinee != null) {
+            return capturedDefaultDefinee;
+        }
+
         return RubyArguments.getDeclarationContext(frame.getArguments()).getModuleToDefineMethods(frame, getContext(), singletonClassNode);
     }
 }

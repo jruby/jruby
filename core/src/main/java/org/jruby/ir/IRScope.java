@@ -13,15 +13,19 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.passes.*;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -89,10 +93,10 @@ public abstract class IRScope implements ParseResult {
     private final StaticScope staticScope;
 
     /** Local variables defined in this scope */
-    private Set<Variable> definedLocalVars;
+    private Set<LocalVariable> definedLocalVars;
 
     /** Local variables used in this scope */
-    private Set<Variable> usedLocalVars;
+    private Set<LocalVariable> usedLocalVars;
 
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
@@ -530,7 +534,7 @@ public abstract class IRScope implements ParseResult {
         return newInstructions;
     }
 
-    public void prepareFullBuildCommon() {
+    private void prepareFullBuildCommon() {
         // We already made it.
         if (fullInterpreterContext != null) return;
 
@@ -563,11 +567,12 @@ public abstract class IRScope implements ParseResult {
         if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
 
         fullInterpreterContext.generateInstructionsForIntepretation();
+
         return fullInterpreterContext;
     }
 
-    /** Run any necessary passes to get the IR ready for compilation */
-    public synchronized BasicBlock[] prepareForInitialCompilation() {
+    /** Run any necessary passes to get the IR ready for compilation (AOT and/or JIT) */
+    public synchronized BasicBlock[] prepareForCompilation() {
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
@@ -577,7 +582,19 @@ public abstract class IRScope implements ParseResult {
 
         runCompilerPasses(getManager().getJITPasses(this));
 
-        return fullInterpreterContext.linearizeBasicBlocks();
+        BasicBlock[] bbs = fullInterpreterContext.linearizeBasicBlocks();
+
+        if (Options.IR_PRINT.load()) printIR();
+
+        return bbs;
+    }
+
+    public void printIR() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        IRDumper dumper = new IRDumper(ps, Options.IR_PRINT_COLOR.load());
+        dumper.visit(this, false);
+        LOG.info("Printing final IR for " + getName(), "\n" + new String(baos.toByteArray()));
     }
 
     // FIXME: For inlining, culmulative or extra passes run based on profiled execution we need to re-init data or even
@@ -726,7 +743,7 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    public LocalVariable getSelf() {
+    public Variable getSelf() {
         return Self.SELF;
     }
 
@@ -758,6 +775,13 @@ public abstract class IRScope implements ParseResult {
      */
     public Map<String, LocalVariable> getLocalVariables() {
         return localVars;
+    }
+
+    /**
+     * Get all variables referenced by this scope.
+     */
+    public Set<LocalVariable> getUsedLocalVariables() {
+        return usedLocalVars;
     }
 
     /**
@@ -920,13 +944,13 @@ public abstract class IRScope implements ParseResult {
         for (BasicBlock bb : getCFG().getBasicBlocks()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
-                    if (v instanceof LocalVariable) usedLocalVars.add(v);
+                    if (v instanceof LocalVariable) usedLocalVars.add((LocalVariable) v);
                 }
 
                 if (i instanceof ResultInstr) {
                     Variable v = ((ResultInstr) i).getResult();
 
-                    if (v instanceof LocalVariable) definedLocalVars.add(v);
+                    if (v instanceof LocalVariable) definedLocalVars.add((LocalVariable) v);
                 }
             }
         }
@@ -1095,5 +1119,33 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean isScriptScope() {
         return false;
+    }
+
+    public boolean needsFrame() {
+        boolean bindingHasEscaped = bindingHasEscaped();
+        boolean requireFrame = bindingHasEscaped || usesEval();
+
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case CAN_CAPTURE_CALLERS_BINDING:
+                case REQUIRES_FRAME:
+                case REQUIRES_VISIBILITY:
+                case USES_BACKREF_OR_LASTLINE:
+                case USES_EVAL:
+                case USES_ZSUPER:
+                    requireFrame = true;
+            }
+        }
+
+        return requireFrame;
+    }
+
+    public boolean reuseParentScope() {
+        return getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+    }
+
+    public boolean needsBinding() {
+        return reuseParentScope() || !getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
     }
 }

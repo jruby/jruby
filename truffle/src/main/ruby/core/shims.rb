@@ -269,3 +269,22 @@ module Truffle::Primitive
     file
   end
 end
+
+module Truffle::Primitive
+  def self.load_arguments_from_array_kw_helper(array, kwrest_name, binding)
+    array = array.dup
+
+    last_arg = array.pop
+    kwargs = last_arg.to_hash
+    raise TypeError.new("can't convert #{last_arg.class} to Hash (#{last_arg.class}#to_hash gives #{kwargs.class})") unless kwargs.is_a?(Hash)
+
+    kwargs.select! do |key, value|
+      symbol = key.is_a? Symbol
+      array.push({key => value}) unless symbol
+      symbol
+    end
+
+    binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
+    array
+  end
+end

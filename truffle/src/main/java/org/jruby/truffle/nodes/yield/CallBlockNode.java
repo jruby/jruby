@@ -78,6 +78,7 @@ public abstract class CallBlockNode extends RubyNode {
                 self,
                 (DynamicObject) blockArgument,
                 declarationContext,
+                Layouts.PROC.getFrameOnStackMarker(block),
                 arguments);
     }
 

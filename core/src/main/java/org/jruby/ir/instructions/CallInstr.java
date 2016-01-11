@@ -20,7 +20,7 @@ import org.jruby.runtime.CallType;
  * args field: [self, receiver, *args]
  */
 public class CallInstr extends CallBase implements ResultInstr {
-    protected Variable result;
+    protected transient Variable result;
 
     public static CallInstr create(IRScope scope, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
         return create(scope, CallType.NORMAL, result, name, receiver, args, closure);

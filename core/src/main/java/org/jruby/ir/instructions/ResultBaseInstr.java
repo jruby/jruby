@@ -10,7 +10,7 @@ import org.jruby.ir.persistence.IRWriterEncoder;
  * logic.
  */
 public abstract class ResultBaseInstr extends Instr implements ResultInstr {
-    protected Variable result;
+    protected transient Variable result;
 
     public ResultBaseInstr(Operation operation, Variable result) {
         super(operation);

@@ -2377,9 +2377,12 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = support.internalId();
                 }
 
-f_opt           : f_norm_arg '=' arg_value {
+f_opt           : f_norm_arg_int '=' arg_value {
+                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier((String) $1, $3));
+                }
+
+f_norm_arg_int  : f_norm_arg {
                     support.arg_var($1);
-                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1, $3));
                 }
 
 f_block_opt     : tIDENTIFIER '=' primary_value {

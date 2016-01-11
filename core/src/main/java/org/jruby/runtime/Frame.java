@@ -89,6 +89,9 @@ public final class Frame {
     
     /** whether this frame has been captured into a binding **/
     private boolean captured;
+
+    /** A dummy frame **/
+    public static final Frame DUMMY = new Frame();
     
     /**
      * Empty constructor, since Frame objects are pre-allocated and updated

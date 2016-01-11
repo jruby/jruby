@@ -34,6 +34,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -52,6 +53,7 @@ public abstract class ProcNodes {
                 Layouts.PROC.getSelf(proc),
                 Layouts.PROC.getBlock(proc),
                 DeclarationContext.BLOCK,
+                Layouts.PROC.getFrameOnStackMarker(proc),
                 args);
     }
 
@@ -62,11 +64,17 @@ public abstract class ProcNodes {
     }
 
     public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
+                                               CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
+                                               Object self, DynamicObject block) {
+        return createRubyProc(instanceFactory, type, sharedMethodInfo, callTargetForProcs, callTargetForLambdas, declarationFrame, method, self, block, null);
+    }
+
+    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
                                           CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                          Object self, DynamicObject block) {
+                                          Object self, DynamicObject block, FrameOnStackMarker frameOnStackMarker) {
         assert block == null || RubyGuards.isRubyProc(block);
         final CallTarget callTargetForType = (type == Type.PROC) ? callTargetForProcs : callTargetForLambdas;
-        return Layouts.PROC.createProc(instanceFactory, type, sharedMethodInfo, callTargetForType, callTargetForLambdas, declarationFrame, method, self, block);
+        return Layouts.PROC.createProc(instanceFactory, type, sharedMethodInfo, callTargetForType, callTargetForLambdas, declarationFrame, method, self, block, frameOnStackMarker);
     }
 
     public enum Type {
@@ -140,7 +148,8 @@ public abstract class ProcNodes {
                     Layouts.PROC.getDeclarationFrame(block),
                     Layouts.PROC.getMethod(block),
                     Layouts.PROC.getSelf(block),
-                    Layouts.PROC.getBlock(block));
+                    Layouts.PROC.getBlock(block),
+                    Layouts.PROC.getFrameOnStackMarker(block));
             initializeNode.call(frame, proc, "initialize", block, args);
             return proc;
         }
@@ -172,7 +181,8 @@ public abstract class ProcNodes {
                     Layouts.PROC.getDeclarationFrame(proc),
                     Layouts.PROC.getMethod(proc),
                     Layouts.PROC.getSelf(proc),
-                    Layouts.PROC.getBlock(proc));
+                    Layouts.PROC.getBlock(proc),
+                    Layouts.PROC.getFrameOnStackMarker(proc));
             return copy;
         }
 

@@ -15,9 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
+import org.jruby.truffle.nodes.methods.ModuleBodyDefinitionNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -33,12 +34,12 @@ public class OpenModuleNode extends RubyNode {
     final protected LexicalScope lexicalScope;
     @Child private IndirectCallNode callModuleDefinitionNode;
 
-    final private MethodDefinitionNode definitionMethod;
+    final private ModuleBodyDefinitionNode definitionMethod;
 
-    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod, LexicalScope lexicalScope) {
+    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, ModuleBodyDefinitionNode definition, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.definingModule = definingModule;
-        this.definitionMethod = definitionMethod;
+        this.definitionMethod = definition;
         this.lexicalScope = lexicalScope;
         callModuleDefinitionNode = Truffle.getRuntime().createIndirectCallNode();
     }

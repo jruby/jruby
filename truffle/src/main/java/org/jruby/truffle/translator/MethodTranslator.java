@@ -128,8 +128,21 @@ public class MethodTranslator extends BodyTranslator {
         final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeForLambdas);
         final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
 
+
+        FrameSlot frameOnStackMarkerSlot;
+
+        if (frameOnStackMarkerSlotStack.isEmpty()) {
+            frameOnStackMarkerSlot = null;
+        } else {
+            frameOnStackMarkerSlot = frameOnStackMarkerSlotStack.peek();
+
+            if (frameOnStackMarkerSlot == BAD_FRAME_SLOT) {
+                frameOnStackMarkerSlot = null;
+            }
+        }
+
         return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
-                callTargetAsProc, callTargetAsLambda, environment.getBreakID());
+                callTargetAsProc, callTargetAsLambda, environment.getBreakID(), frameOnStackMarkerSlot);
     }
 
     private boolean shouldConsiderDestructuringArrayArg(Arity arity) {

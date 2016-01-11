@@ -10,8 +10,6 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -23,42 +21,37 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
- * Define a method from a method literal (def mymethod ... end).
- * That is, store the definition of a method and when executed
- * produce the executable object that results.
+ * Define a method from a module body (module/class/class << self ... end).
  */
-public class MethodDefinitionNode extends RubyNode {
+public class ModuleBodyDefinitionNode extends RubyNode {
 
     private final String name;
     private final SharedMethodInfo sharedMethodInfo;
     private final CallTarget callTarget;
+    private final boolean captureBlock;
 
-    @Child private GetDefaultDefineeNode getDefaultDefineeNode;
-
-    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo, CallTarget callTarget) {
+    public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
+            CallTarget callTarget, boolean captureBlock) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
+        this.captureBlock = captureBlock;
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
         final DynamicObject dummyModule = getContext().getCoreLibrary().getObjectClass();
         final Visibility dummyVisibility = Visibility.PUBLIC;
 
-        final DynamicObject capturedDefaultDefinee;
-        if (RubyArguments.getDeclarationContext(frame.getArguments()) == DeclarationContext.INSTANCE_EVAL) {
-            if (getDefaultDefineeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                getDefaultDefineeNode = insert(new GetDefaultDefineeNode(getContext(), getSourceSection()));
-            }
-            capturedDefaultDefinee = getDefaultDefineeNode.execute(frame);
+        final DynamicObject capturedBlock;
+
+        if (captureBlock) {
+            capturedBlock = RubyArguments.getBlock(frame.getArguments());
         } else {
-            capturedDefaultDefinee = null;
+            capturedBlock = null;
         }
 
-        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, null,
-                capturedDefaultDefinee);
+        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, capturedBlock, null);
     }
 
     @Override
