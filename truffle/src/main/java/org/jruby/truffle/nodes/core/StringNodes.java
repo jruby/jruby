@@ -1021,19 +1021,21 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isSingleByteOptimizable(string)")
-        public DynamicObject downcaseSingleByte(DynamicObject string) {
-            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
-            final ByteList bytes = codeRangeable.getByteList();
+        @Specialization(guards = { "isEmpty(string)", "isSingleByteOptimizable(string)" })
+        public DynamicObject downcaseSingleByteEmpty(DynamicObject string) {
+            return nil();
+        }
 
-            if (bytes.realSize() == 0) {
-                return nil();
-            }
+        @Specialization(guards = { "!isEmpty(string)", "isSingleByteOptimizable(string)" })
+        public DynamicObject downcaseSingleByte(DynamicObject string,
+                                                @Cached("createBinaryProfile()") ConditionProfile modifiedProfile) {
+            final Rope rope = rope(string);
+            final byte[] outputBytes = rope.getBytesCopy();
 
-            codeRangeable.modifyAndKeepCodeRange();
+            final boolean modified = singleByteDowncase(outputBytes, 0, outputBytes.length);
+            if (modifiedProfile.profile(modified)) {
+                Layouts.STRING.setRope(string, RopeOperations.create(outputBytes, rope.getEncoding(), rope.getCodeRange()));
 
-            final boolean modified = singleByteDowncase(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-            if (modified) {
                 return string;
             } else {
                 return nil();
@@ -1041,10 +1043,11 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public DynamicObject downcase(DynamicObject string) {
-            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
-            final ByteList bytes = codeRangeable.getByteList();
-            final Encoding encoding = bytes.getEncoding();
+        public DynamicObject downcase(DynamicObject string,
+                                      @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
+                                      @Cached("createBinaryProfile()") ConditionProfile modifiedProfile) {
+            final Rope rope = rope(string);
+            final Encoding encoding = rope.getEncoding();
 
             if (encoding.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
@@ -1053,15 +1056,16 @@ public abstract class StringNodes {
                                 String.format("incompatible encoding with this operation: %s", encoding), this));
             }
 
-            if (bytes.realSize() == 0) {
+            if (emptyStringProfile.profile(rope.isEmpty())) {
                 return nil();
             }
 
-            codeRangeable.modifyAndKeepCodeRange();
+            final byte[] outputBytes = rope.getBytesCopy();
 
             try {
-                final boolean modified = multiByteDowncase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-                if (modified) {
+                final boolean modified = multiByteDowncase(encoding, outputBytes, 0, outputBytes.length);
+
+                if (modifiedProfile.profile(modified)) {
                     return string;
                 } else {
                     return nil();
