@@ -20,6 +20,7 @@ public class ConcatRope extends Rope {
     private final int byteLength;
     private final int codeRange;
     private final boolean isSingleByteOptimizable;
+    private final int depth;
 
     private byte[] bytes;
     private final Encoding encoding;
@@ -32,6 +33,7 @@ public class ConcatRope extends Rope {
         this.byteLength = left.byteLength() + right.byteLength();
         this.codeRange = StringOperations.commonCodeRange(left.getCodeRange(), right.getCodeRange()); // TODO (nirvdrum 07-Jan-16) This method does a bit of branching. We may want to pass a ConditionProfile in to simplify that or do something clever with bit masks.
         this.isSingleByteOptimizable = left.isSingleByteOptimizable() && right.isSingleByteOptimizable();
+        this.depth = Math.max(left.depth(), right.depth()) + 1;
     }
 
     @Override
@@ -102,6 +104,11 @@ public class ConcatRope extends Rope {
     @Override
     public boolean isSingleByteOptimizable() {
         return isSingleByteOptimizable;
+    }
+
+    @Override
+    public int depth() {
+        return depth;
     }
 
     @Override
