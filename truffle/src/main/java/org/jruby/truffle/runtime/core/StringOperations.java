@@ -29,7 +29,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -203,10 +202,6 @@ public abstract class StringOperations {
 
     public static ByteList getByteListReadOnly(DynamicObject object) {
         return Layouts.STRING.getRope(object).getUnsafeByteList();
-    }
-
-    public static void setByteList(DynamicObject object, ByteList byteList) {
-        Layouts.STRING.setRope(object, ropeFromByteList(byteList));
     }
 
     // TODO (nirdvrum 07-Jan-16) Either remove this method or Rope#byteLength -- the latter doesn't require materializing the full byte array.

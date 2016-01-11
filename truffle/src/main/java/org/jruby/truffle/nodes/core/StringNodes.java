@@ -161,7 +161,7 @@ public abstract class StringNodes {
             final Rope retRope;
 
             if (times == 0) {
-                retRope = StringOperations.EMPTY_UTF8_ROPE;
+                retRope = EMPTY_UTF8_ROPE;
             } else if (times == 1) {
                 retRope = rope(string);
             } else {
