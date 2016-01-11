@@ -11,37 +11,36 @@
 package org.jruby.truffle.runtime.rope;
 
 import org.jcodings.Encoding;
-import org.jruby.util.ByteList;
 
 public class SubstringRope extends Rope {
 
     private final Rope child;
     private final int offset;
-    private final int length;
+    private final int byteLength;
 
     private byte[] bytes;
 
     public SubstringRope(Rope child, int offset, int length) {
         this.child = child;
         this.offset = offset;
-        this.length = length;
+        this.byteLength = length;
     }
 
     @Override
     public int characterLength() {
-        return length;
+        // TODO (nirvdrum 11-Jan-16): This is definitely wrong. We need to be tracking the character length directly.
+        return byteLength;
     }
 
     @Override
     public int byteLength() {
-        // TODO (nirvdrum Jan.-07-2016) This is horribly inefficient.
-        return getBytes().length;
+        return byteLength;
     }
 
     @Override
     public byte[] getBytes() {
         if (bytes == null) {
-            bytes = child.extractRange(offset, length);
+            bytes = child.extractRange(offset, byteLength);
         }
 
         return bytes;
@@ -49,7 +48,7 @@ public class SubstringRope extends Rope {
 
     @Override
     public byte[] extractRange(int offset, int length) {
-        assert length <= this.length;
+        assert length <= this.byteLength;
 
         return child.extractRange(this.offset + offset, length);
     }
