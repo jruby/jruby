@@ -1633,9 +1633,9 @@ public abstract class StringNodes {
             outputBytes.append((byte) '"');
             outputBytes.append((byte) ')');
 
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, StringSupport.CR_UNKNOWN), null);
-            StringOperations.getByteList(result).setEncoding(ASCIIEncoding.INSTANCE);
-            StringOperations.setCodeRange(result, StringSupport.CR_7BIT);
+            outputBytes.setEncoding(ASCIIEncoding.INSTANCE);
+
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, StringSupport.CR_7BIT), null);
 
             return result;
         }
@@ -1643,7 +1643,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         private ByteList dumpCommon(DynamicObject string) {
             assert RubyGuards.isRubyString(string);
-            return StringSupport.dumpCommon(getContext().getRuntime(), StringOperations.getByteList(string));
+            return StringSupport.dumpCommon(getContext().getRuntime(), StringOperations.getByteListReadOnly(string));
         }
     }
 
