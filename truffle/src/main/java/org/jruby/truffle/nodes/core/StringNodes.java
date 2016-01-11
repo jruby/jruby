@@ -1558,25 +1558,26 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "isEmpty(string)")
+        public DynamicObject rstripBangEmptyString(DynamicObject string) {
+            return nil();
+        }
+
         @TruffleBoundary
-        @Specialization(guards = "isSingleByteOptimizable(string)")
+        @Specialization(guards = { "!isEmpty(string)", "isSingleByteOptimizable(string)" })
         public Object rstripBangSingleByte(DynamicObject string) {
             // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#singleByteRStrip19.
 
-            if (StringOperations.getByteList(string).getRealSize() == 0) {
-                return nil();
-            }
-
-            final byte[] bytes = StringOperations.getByteList(string).getUnsafeBytes();
-            final int start = StringOperations.getByteList(string).getBegin();
-            final int end = start + StringOperations.getByteList(string).getRealSize();
+            final Rope rope = rope(string);
+            final byte[] bytes = rope.getBytes();
+            final int start = 0;
+            final int end = rope.byteLength();
             int endp = end - 1;
             while (endp >= start && (bytes[endp] == 0 ||
                     ASCIIEncoding.INSTANCE.isSpace(bytes[endp] & 0xff))) endp--;
 
             if (endp < end - 1) {
-                StringOperations.getByteList(string).view(0, endp - start + 1);
-                StringOperations.keepCodeRange(string);
+                Layouts.STRING.setRope(string, RopeOperations.substring(rope, 0, endp - start + 1));
 
                 return string;
             }
@@ -1585,18 +1586,15 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        @Specialization(guards = { "!isEmpty(string)", "!isSingleByteOptimizable(string)" })
         public Object rstripBang(DynamicObject string) {
             // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#multiByteRStrip19.
 
-            if (StringOperations.getByteList(string).getRealSize() == 0) {
-                return nil();
-            }
-
-            final Encoding enc = EncodingUtils.STR_ENC_GET(StringOperations.getCodeRangeable(string));
-            final byte[] bytes = StringOperations.getByteList(string).getUnsafeBytes();
-            final int start = StringOperations.getByteList(string).getBegin();
-            final int end = start + StringOperations.getByteList(string).getRealSize();
+            final Rope rope = rope(string);
+            final Encoding enc = RopeOperations.STR_ENC_GET(rope);
+            final byte[] bytes = rope.getBytes();
+            final int start = 0;
+            final int end = rope.byteLength();
 
             int endp = end;
             int prev;
@@ -1607,8 +1605,7 @@ public abstract class StringNodes {
             }
 
             if (endp < end) {
-                StringOperations.getByteList(string).view(0, endp - start);
-                StringOperations.keepCodeRange(string);
+                Layouts.STRING.setRope(string, RopeOperations.substring(rope, 0, endp - start));
 
                 return string;
             }
