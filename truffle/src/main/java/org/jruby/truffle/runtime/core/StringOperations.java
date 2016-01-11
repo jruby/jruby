@@ -45,8 +45,6 @@ import org.jruby.util.io.EncodingUtils;
 
 public abstract class StringOperations {
 
-    public static final Rope EMPTY_UTF8_ROPE = RopeOperations.create(new byte[] {}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT);
-
     /** Creates a String from the ByteList, with unknown CR */
     public static DynamicObject createString(RubyContext context, ByteList bytes) {
         return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);

@@ -11,12 +11,14 @@ package org.jruby.truffle.runtime.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyEncoding;
-import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
 public class RopeOperations {
+
+    public static final Rope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT);
 
     public static LeafRope create(byte[] bytes, Encoding encoding, int codeRange) {
         if (codeRange == StringSupport.CR_UNKNOWN) {
@@ -46,7 +48,7 @@ public class RopeOperations {
 
     public static Rope substring(Rope base, int offset, int length) {
         if (length == 0) {
-            return template(StringOperations.EMPTY_UTF8_ROPE, base.getEncoding());
+            return template(EMPTY_UTF8_ROPE, base.getEncoding());
         }
 
         if (length - offset == base.byteLength()) {
