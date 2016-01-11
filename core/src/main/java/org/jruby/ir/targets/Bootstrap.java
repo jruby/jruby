@@ -437,13 +437,13 @@ public class Bootstrap {
             NativeCallMethod nativeMethod = (NativeCallMethod)method;
             DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
 
-            int nativeArgCount = getNativeArgCount(method, nativeCall);
-
             DynamicMethod.NativeCall nc = nativeCall;
 
             if (nc.isJava()) {
                 // not supported yet, use DynamicMethod.call
             } else {
+                int nativeArgCount = getNativeArgCount(method, nativeCall);
+
                 if (nativeArgCount >= 0) { // native methods only support arity 3
                     if (nativeArgCount == site.arity) {
                         // nothing to do
