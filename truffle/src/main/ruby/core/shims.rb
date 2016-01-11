@@ -65,12 +65,6 @@ module Rubinius
   L64 = true
 end
 
-class String
-  def append(other)
-    self << other
-  end
-end
-
 class Rational
   alias :__slash__ :/
 end

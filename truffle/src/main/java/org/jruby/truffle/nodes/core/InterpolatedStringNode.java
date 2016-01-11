@@ -31,7 +31,7 @@ public final class InterpolatedStringNode extends RubyNode {
 
     @Children private final ToSNode[] children;
 
-    @Child private CallDispatchHeadNode concatNode;
+    @Child private CallDispatchHeadNode appendNode;
     @Child private CallDispatchHeadNode dupNode;
     @Child private IsTaintedNode isTaintedNode;
     @Child private TaintNode taintNode;
@@ -41,7 +41,7 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, ToSNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        concatNode = DispatchHeadNodeFactory.createMethodCall(context);
+        appendNode = DispatchHeadNodeFactory.createMethodCall(context);
         dupNode = DispatchHeadNodeFactory.createMethodCall(context);
         isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
         taintNode = TaintNodeGen.create(context, sourceSection, null);
@@ -74,13 +74,14 @@ public final class InterpolatedStringNode extends RubyNode {
 
         Object builder = null;
 
+        // TODO (nirvdrum 11-Jan-16) Rewrite to avoid massively unbalanced trees.
         for (Object string : strings) {
             assert RubyGuards.isRubyString(string);
 
             if (builder == null) {
                 builder = dupNode.call(frame, string, "dup", null);
             } else {
-                builder = concatNode.call(frame, builder, "concat", null, string);
+                builder = appendNode.call(frame, builder, "append", null, string);
             }
         }
 
