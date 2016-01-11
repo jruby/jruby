@@ -17,6 +17,8 @@ public class SubstringRope extends Rope {
     private final Rope child;
     private final int offset;
     private final int byteLength;
+    private final int codeRange;
+    private final boolean isSingleByteOptimizable;
 
     private byte[] bytes;
 
@@ -24,6 +26,8 @@ public class SubstringRope extends Rope {
         this.child = child;
         this.offset = offset;
         this.byteLength = length;
+        this.codeRange = child.getCodeRange(); // TODO (nirvdrum 09-Jan-16) For CR_VALID, a given substring might be CR_7BIT. Misreporting this will put on the slow path for various things.
+        this.isSingleByteOptimizable = child.isSingleByteOptimizable(); // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
     }
 
     @Override
@@ -60,13 +64,11 @@ public class SubstringRope extends Rope {
 
     @Override
     public int getCodeRange() {
-        // TODO (nirvdrum 09-Jan-16) For CR_VALID, a given substring might be CR_7BIT. Misreporting this will put on the slow path for various things.
-        return child.getCodeRange();
+        return codeRange;
     }
 
     @Override
     public boolean isSingleByteOptimizable() {
-        // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
-        return child.isSingleByteOptimizable();
+        return isSingleByteOptimizable;
     }
 }
