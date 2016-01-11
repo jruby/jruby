@@ -1234,13 +1234,14 @@ public abstract class StringNodes {
     })
     public abstract static class InsertNode extends CoreMethodNode {
 
-        @Child private CallDispatchHeadNode concatNode;
+        @Child private CallDispatchHeadNode appendNode;
+        @Child private StringPrimitiveNodes.CharacterByteIndexNode characterByteIndexNode;
         @Child private SizeNode sizeNode;
         @Child private TaintResultNode taintResultNode;
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            concatNode = DispatchHeadNodeFactory.createMethodCall(context);
+            characterByteIndexNode = StringPrimitiveNodesFactory.CharacterByteIndexNodeFactory.create(context, sourceSection, new RubyNode[] {});
             sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] {});
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
@@ -1253,21 +1254,77 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = "isRubyString(otherString)")
-        public Object insert(VirtualFrame frame, DynamicObject string, int index, DynamicObject otherString) {
-            if (index == -1) {
-                return concatNode.call(frame, string, "<<", null, otherString);
+        @Specialization(guards = { "indexAtStartBound(index)", "isRubyString(other)" })
+        public Object insertPrepend(DynamicObject string, int index, DynamicObject other) {
+            final Rope left = rope(other);
+            final Rope right = rope(string);
 
-            } else if (index < 0) {
+            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.areCompatible(string, other);
+
+            if (compatibleEncoding == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(
+                        String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
+            }
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, compatibleEncoding));
+
+            return string;
+        }
+
+        @Specialization(guards = { "indexAtEndBound(index)", "isRubyString(other)" })
+        public Object insertAppend(VirtualFrame frame, DynamicObject string, int index, DynamicObject other) {
+            if (appendNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                appendNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return appendNode.call(frame, string, "append", null, other);
+        }
+
+        @Specialization(guards = { "!indexAtEitherBounds(index)", "isRubyString(other)" })
+        public Object insert(VirtualFrame frame, DynamicObject string, int index, DynamicObject other,
+                             @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            if (negativeIndexProfile.profile(index < 0)) {
                 // Incrementing first seems weird, but MRI does it and it's significant because it uses the modified
                 // index value in its error messages.  This seems wrong, but we should be compatible.
                 index++;
             }
 
-            final int stringLength = sizeNode.executeInteger(frame, string);
-            StringNodesHelper.replaceInternal(string, StringNodesHelper.checkIndex(stringLength, index, this), 0, otherString);
+            final Rope source = rope(string);
+            final Rope insert = rope(other);
+            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.areCompatible(string, other);
 
-            return taintResultNode.maybeTaint(otherString, string);
+            if (compatibleEncoding == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(
+                        String.format("incompatible encodings: %s and %s", source.getEncoding(), insert.getEncoding()), this));
+            }
+
+            final int stringLength = sizeNode.executeInteger(frame, string);
+            final int normalizedIndex = StringNodesHelper.checkIndex(stringLength, index, this);
+            final int byteIndex = characterByteIndexNode.executeInt(frame, string, normalizedIndex, 0);
+
+            final Rope splitLeft = RopeOperations.substring(source, 0, byteIndex);
+            final Rope splitRight = RopeOperations.substring(source, byteIndex, source.byteLength() - byteIndex);
+            final Rope joinedLeft = RopeOperations.concat(splitLeft, insert, compatibleEncoding);
+            final Rope joinedRight = RopeOperations.concat(joinedLeft, splitRight, compatibleEncoding);
+
+            Layouts.STRING.setRope(string, joinedRight);
+
+            return taintResultNode.maybeTaint(other, string);
+        }
+
+        protected  boolean indexAtStartBound(int index) {
+            return index == 0;
+        }
+
+        protected boolean indexAtEndBound(int index) {
+            return index == -1;
+        }
+
+        protected boolean indexAtEitherBounds(int index) {
+            return indexAtStartBound(index) || indexAtEndBound(index);
         }
     }
 
@@ -2466,13 +2523,6 @@ public abstract class StringNodes {
             }
 
             return index;
-        }
-
-        @TruffleBoundary
-        public static void replaceInternal(DynamicObject string, int start, int length, DynamicObject replacement) {
-            assert RubyGuards.isRubyString(string);
-            assert RubyGuards.isRubyString(replacement);
-            StringSupport.replaceInternal19(start, length, StringOperations.getCodeRangeable(string), StringOperations.getCodeRangeable(replacement));
         }
 
         @TruffleBoundary

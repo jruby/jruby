@@ -827,6 +827,8 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        public abstract int executeInt(VirtualFrame frame, DynamicObject string, int index, int start);
+
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public int stringCharacterByteIndex(DynamicObject string, int index, int start) {
             return start + index;
