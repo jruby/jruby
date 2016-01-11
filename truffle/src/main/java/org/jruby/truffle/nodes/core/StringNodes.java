@@ -823,6 +823,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "delete!", rest = true, raiseIfFrozenSelf = true)
+    @ImportStatic(StringGuards.class)
     public abstract static class DeleteBangNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStr;
@@ -832,12 +833,13 @@ public abstract class StringNodes {
             toStr = ToStrNodeGen.create(context, sourceSection, null);
         }
 
-        @Specialization
-        public Object deleteBang(VirtualFrame frame, DynamicObject string, Object... args) {
-            if (rope(string).isEmpty()) {
-                return nil();
-            }
+        @Specialization(guards = "isEmpty(string)")
+        public DynamicObject deleteBangEmpty(VirtualFrame frame, DynamicObject string, Object... args) {
+            return nil();
+        }
 
+        @Specialization(guards = "!isEmpty(string)")
+        public Object deleteBang(VirtualFrame frame, DynamicObject string, Object... args) {
             if (args.length == 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
@@ -857,23 +859,26 @@ public abstract class StringNodes {
             assert RubyGuards.isRubyString(string);
 
             DynamicObject otherString = otherStrings[0];
-            Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(otherString), this);
+            Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherString), this);
 
             boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteList(otherString),
+            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherString),
                     getContext().getRuntime(),
                     squeeze, null, true, enc);
 
             for (int i = 1; i < otherStrings.length; i++) {
                 assert RubyGuards.isRubyString(otherStrings[i]);
 
-                enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(otherStrings[i]), this);
-                tables = StringSupport.trSetupTable(StringOperations.getByteList(otherStrings[i]), getContext().getRuntime(), squeeze, tables, false, enc);
+                enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherStrings[i]), this);
+                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStrings[i]), getContext().getRuntime(), squeeze, tables, false, enc);
             }
 
-            if (StringSupport.delete_bangCommon19(StringOperations.getCodeRangeable(string), getContext().getRuntime(), squeeze, tables, enc) == null) {
+            final CodeRangeable output = StringOperations.getCodeRangeableReadWrite(string);
+            if (StringSupport.delete_bangCommon19(output, getContext().getRuntime(), squeeze, tables, enc) == null) {
                 return nil();
             }
+
+            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(output.getByteList()));
 
             return string;
         }
