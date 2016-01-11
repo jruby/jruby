@@ -142,7 +142,7 @@ public abstract class StringOperations {
 
     @CompilerDirectives.TruffleBoundary
     public static Encoding checkEncoding(DynamicObject string, CodeRangeable other) {
-        final Encoding encoding = StringSupport.areCompatible(getCodeRangeable(string), other);
+        final Encoding encoding = StringSupport.areCompatible(getCodeRangeableReadOnly(string), other);
 
         // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
         if (encoding == null) {

@@ -86,6 +86,7 @@ import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
+import static org.jruby.truffle.runtime.core.StringOperations.encoding;
 import static org.jruby.truffle.runtime.core.StringOperations.rope;
 
 import java.util.ArrayList;
@@ -858,7 +859,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
         public int stringByteCharacterIndexFixedWidth(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
-            return index / Layouts.STRING.getRope(string).getEncoding().minLength();
+            return index / encoding(string).minLength();
         }
 
         @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "!isFixedWidthEncoding(string)", "isValidUtf8(string)" })
@@ -874,14 +875,15 @@ public abstract class StringPrimitiveNodes {
         public int stringByteCharacterIndex(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index and Encoding::find_byte_character_index.
 
-            final ByteList bytes = StringOperations.getByteList(string);
-            final Encoding encoding = bytes.getEncoding();
-            int p = bytes.begin() + start;
-            final int end = bytes.begin() + bytes.realSize();
+            final Rope rope = rope(string);
+            final byte[] bytes = rope.getBytes();
+            final Encoding encoding = rope.getEncoding();
+            int p = start;
+            final int end = bytes.length;
             int charIndex = 0;
 
             while (p < end && index > 0) {
-                final int charLen = StringSupport.length(encoding, bytes.getUnsafeBytes(), p, end);
+                final int charLen = StringSupport.length(encoding, bytes, p, end);
                 p += charLen;
                 index -= charLen;
                 charIndex++;
