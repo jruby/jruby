@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.ast.*;
+import org.jruby.ast.types.INameNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -78,6 +79,12 @@ public class MethodTranslator extends BodyTranslator {
 
         parentSourceSection.push(sourceSection);
         try {
+            if (argsNode.getBlockLocalVariables() != null && !argsNode.getBlockLocalVariables().isEmpty()) {
+                for (org.jruby.ast.Node var : argsNode.getBlockLocalVariables().children()) {
+                    environment.declareVar(((INameNode) var).getName());
+                }
+            }
+
             body = translateNodeOrNil(sourceSection, bodyNode);
         } finally {
             parentSourceSection.pop();
