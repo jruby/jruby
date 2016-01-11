@@ -247,7 +247,7 @@ public abstract class EncodingNodes {
             }
         }
 
-        private Encoding areCompatible(DynamicObject first, DynamicObject second) {
+        public static Encoding areCompatible(DynamicObject first, DynamicObject second) {
             assert RubyGuards.isRubyString(first);
             assert RubyGuards.isRubyString(second);
 

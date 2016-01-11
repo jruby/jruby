@@ -69,6 +69,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
+import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
@@ -82,7 +83,6 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
-import org.jruby.truffle.runtime.rope.SubstringRope;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -141,6 +141,33 @@ public abstract class StringPrimitiveNodes {
             final int codepoint = encoding.mbcToCode(rope.getBytes(), 0, rope.byteLength());
 
             return encoding.isPrint(codepoint);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_append")
+    public static abstract class StringAppendPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(other)")
+        public DynamicObject stringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other) {
+            final Rope left = rope(string);
+            final Rope right = rope(other);
+
+            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.areCompatible(string, other);
+
+            if (compatibleEncoding == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(
+                        String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
+            }
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, compatibleEncoding));
+
+            return string;
         }
 
     }
