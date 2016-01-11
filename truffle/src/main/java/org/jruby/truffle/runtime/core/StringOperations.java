@@ -213,7 +213,7 @@ public abstract class StringOperations {
 
     // TODO (nirdvrum 07-Jan-16) Either remove this method or Rope#byteLength -- the latter doesn't require materializing the full byte array.
     public static int byteLength(DynamicObject object) {
-        return Layouts.STRING.getRope(object).getBytes().length;
+        return Layouts.STRING.getRope(object).byteLength();
     }
 
     public static int commonCodeRange(int first, int second) {
