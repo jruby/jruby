@@ -204,7 +204,7 @@ public abstract class StringOperations {
     }
 
     public static ByteList getByteListReadOnly(DynamicObject object) {
-        return Layouts.STRING.getRope(object).getByteList();
+        return Layouts.STRING.getRope(object).getUnsafeByteList();
     }
 
     public static void setByteList(DynamicObject object, ByteList byteList) {

@@ -22,7 +22,7 @@ public abstract class Rope {
         return byteLength() == 0;
     }
 
-    public final ByteList getByteList() {
+    public final ByteList getUnsafeByteList() {
         return new ByteList(getBytes(), getEncoding(), false);
     }
 
