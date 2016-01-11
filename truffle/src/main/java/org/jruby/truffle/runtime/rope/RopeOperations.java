@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 public class RopeOperations {
 
@@ -53,6 +54,12 @@ public class RopeOperations {
     @CompilerDirectives.TruffleBoundary
     public static String decodeUTF8(Rope rope) {
         return RubyEncoding.decodeUTF8(rope.getBytes(), 0, rope.byteLength());
+    }
+
+    // MRI: get_actual_encoding
+    @CompilerDirectives.TruffleBoundary
+    public static Encoding STR_ENC_GET(Rope rope) {
+        return EncodingUtils.getActualEncoding(rope.getEncoding(), rope.getBytes(), 0, rope.byteLength());
     }
 
 }

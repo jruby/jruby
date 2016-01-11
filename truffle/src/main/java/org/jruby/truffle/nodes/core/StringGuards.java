@@ -60,4 +60,9 @@ public class StringGuards {
         assert RubyGuards.isRubyString(string);
         return StringOperations.isCodeRangeValid(string) && Layouts.STRING.getRope(string).getEncoding() instanceof UTF8Encoding;
     }
+
+    public static boolean isEmpty(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        return Layouts.STRING.getRope(string).isEmpty();
+    }
 }
