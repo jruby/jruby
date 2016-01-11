@@ -18,6 +18,8 @@ public class ConcatRope extends Rope {
     private final Rope right;
     private final int characterLength;
     private final int byteLength;
+    private final int codeRange;
+    private final boolean isSingleByteOptimizable;
 
     private byte[] bytes;
     private final Encoding encoding;
@@ -28,6 +30,8 @@ public class ConcatRope extends Rope {
         this.encoding = encoding;
         this.characterLength = left.characterLength() + right.characterLength();
         this.byteLength = left.byteLength() + right.byteLength();
+        this.codeRange = StringOperations.commonCodeRange(left.getCodeRange(), right.getCodeRange()); // TODO (nirvdrum 07-Jan-16) This method does a bit of branching. We may want to pass a ConditionProfile in to simplify that or do something clever with bit masks.
+        this.isSingleByteOptimizable = left.isSingleByteOptimizable() && right.isSingleByteOptimizable();
     }
 
     @Override
@@ -92,13 +96,12 @@ public class ConcatRope extends Rope {
 
     @Override
     public int getCodeRange() {
-        // TODO (nirvdrum 07-Jan-16) This method does a bit of branching. We may want to pass a ConditionProfile in to simplify that or do something clever with bit masks.
-        return StringOperations.commonCodeRange(left.getCodeRange(), right.getCodeRange());
+        return codeRange;
     }
 
     @Override
     public boolean isSingleByteOptimizable() {
-        return left.isSingleByteOptimizable() && right.isSingleByteOptimizable();
+        return isSingleByteOptimizable;
     }
 
     @Override
