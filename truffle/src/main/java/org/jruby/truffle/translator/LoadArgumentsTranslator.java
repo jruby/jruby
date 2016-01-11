@@ -161,6 +161,22 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode notNilSmaller = SequenceNode.sequence(context, sourceSection, notNilSmallerSequence);
 
+        // The load to use when the there is no rest
+
+        final List<RubyNode> noRestSequence = new ArrayList<>();
+
+        if (postCount > 0) {
+            state = State.POST;
+            org.jruby.ast.Node[] children = node.getPost().children();
+            index = node.getPreCount() + node.getOptionalArgsCount();
+            for (int i = 0; i < children.length; i++) {
+                noRestSequence.add(children[i].accept(this));
+                index++;
+            }
+        }
+
+        final RubyNode noRest = SequenceNode.sequence(context, sourceSection, noRestSequence);
+
         // The load to use when the array is not nil and at least as large as the number of required arguments
 
         final List<RubyNode> notNilAtLeastAsLargeSequence = new ArrayList<>();
@@ -179,10 +195,14 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode notNilAtLeastAsLarge = SequenceNode.sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
 
         if (useArray()) {
-            sequence.add(new IfNode(context, sourceSection,
-                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
-                    notNilAtLeastAsLarge,
-                    notNilSmaller));
+            if (node.getPreCount() == 0 || node.hasRestArg()) {
+                sequence.add(new IfNode(context, sourceSection,
+                        new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
+                        notNilAtLeastAsLarge,
+                        notNilSmaller));
+            } else {
+                sequence.add(noRest);
+            }
         } else {
             // TODO CS 10-Jan-16 needn't have created notNilSmaller
             sequence.add(notNilAtLeastAsLarge);
@@ -346,7 +366,6 @@ public class LoadArgumentsTranslator extends Translator {
                     readNode = readArgument(sourceSection);
                 }
             } else {
-
                 // Optional argument
                 final RubyNode defaultValue;
 

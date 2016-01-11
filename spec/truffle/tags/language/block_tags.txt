@@ -1,1 +1,0 @@
-fails:A block yielded a single Array calls #to_hash on the last element when there are more arguments than parameters
