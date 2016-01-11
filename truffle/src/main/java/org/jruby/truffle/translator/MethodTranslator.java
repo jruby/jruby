@@ -21,17 +21,16 @@ import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.arguments.CheckArityNode;
-import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
-import org.jruby.truffle.nodes.arguments.ReadBlockNode;
-import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.nodes.arguments.ShouldDestructureNode;
+import org.jruby.truffle.nodes.arguments.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
+import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.IfNode;
-import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ProcNodes.Type;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.locals.FlipFlopStateNode;
+import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
+import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.supercall.ReadSuperArgumentsNode;
@@ -98,6 +97,7 @@ public class MethodTranslator extends BodyTranslator {
         if (shouldConsiderDestructuringArrayArg(arity)) {
             final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
             final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
+
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
             final RubyNode writeArrayNode = new WriteLocalVariableNode(context, sourceSection, castArrayNode, arraySlot);
 
@@ -105,9 +105,20 @@ public class MethodTranslator extends BodyTranslator {
             destructureArgumentsTranslator.pushArraySlot(arraySlot);
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
+            final RubyNode shouldDestructure = new ShouldDestructureNode(context, sourceSection, new RespondToNode(context, sourceSection, readArrayNode, "to_ary"));
+
+            final RubyNode arrayWasNotNil = SequenceNode.sequence(context, sourceSection,
+                    writeArrayNode,
+                    new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot))));
+
+            final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(context, sourceSection,
+                    shouldDestructure,
+                    arrayWasNotNil);
+
             preludeProc = new IfNode(context, sourceSection,
-                                    new ShouldDestructureNode(context, sourceSection, new RespondToNode(context, sourceSection, readArrayNode, "to_ary")),
-                    SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments), loadArguments);
+                    shouldDestructureAndArrayWasNotNil,
+                    newDestructureArguments,
+                    loadArguments);
         } else {
             preludeProc = loadArguments;
         }
