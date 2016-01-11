@@ -332,6 +332,8 @@ public class LoadArgumentsTranslator extends Translator {
     private RubyNode translateLocalAssignment(ISourcePosition sourcePosition, String name, org.jruby.ast.Node valueNode) {
         final SourceSection sourceSection = translate(sourcePosition);
 
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
+
         final RubyNode readNode;
 
         if (indexFromEnd == 1) {
@@ -344,8 +346,25 @@ public class LoadArgumentsTranslator extends Translator {
                     readNode = readArgument(sourceSection);
                 }
             } else {
+
                 // Optional argument
-                final RubyNode defaultValue = valueNode.accept(this);
+                final RubyNode defaultValue;
+
+                // The JRuby parser gets local variables that shadow methods with vcalls wrong - fix up here
+
+                if (valueNode instanceof org.jruby.ast.VCallNode) {
+                    final String calledName = ((org.jruby.ast.VCallNode) valueNode).getName();
+
+                    // Just consider the circular case for now as that's all that's speced
+
+                    if (calledName.equals(name)) {
+                        defaultValue = new ReadLocalVariableNode(context, sourceSection, slot);
+                    } else {
+                        defaultValue = valueNode.accept(this);
+                    }
+                } else {
+                    defaultValue = valueNode.accept(this);
+                }
 
                 if (argsNode == null) {
                     throw new IllegalStateException("No arguments node visited");
@@ -371,7 +390,6 @@ public class LoadArgumentsTranslator extends Translator {
             readNode = ArraySliceNodeGen.create(context, sourceSection, index, indexFromEnd, loadArray(sourceSection));
         }
 
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
         return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
