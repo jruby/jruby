@@ -37,9 +37,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
-import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.format.parser.UnpackCompiler;
 import org.jruby.truffle.format.runtime.PackResult;
@@ -77,7 +75,7 @@ import org.jruby.util.io.EncodingUtils;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-import static org.jruby.truffle.runtime.core.StringOperations.EMPTY_UTF8_ROPE;
+import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_UTF8_ROPE;
 import static org.jruby.truffle.runtime.core.StringOperations.rope;
 import static org.jruby.truffle.runtime.core.StringOperations.encoding;
 import static org.jruby.truffle.runtime.core.StringOperations.codeRange;
