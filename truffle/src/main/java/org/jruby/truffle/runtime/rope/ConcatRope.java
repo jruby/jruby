@@ -16,6 +16,8 @@ public class ConcatRope extends Rope {
 
     private final Rope left;
     private final Rope right;
+    private final int characterLength;
+    private final int byteLength;
 
     private byte[] bytes;
     private final Encoding encoding;
@@ -24,16 +26,18 @@ public class ConcatRope extends Rope {
         this.left = left;
         this.right = right;
         this.encoding = encoding;
+        this.characterLength = left.characterLength() + right.characterLength();
+        this.byteLength = left.byteLength() + right.byteLength();
     }
 
     @Override
     public int characterLength() {
-        return left.characterLength() + right.characterLength();
+        return characterLength;
     }
 
     @Override
     public int byteLength() {
-        return  left.byteLength() + right.byteLength();
+        return byteLength;
     }
 
     @Override
