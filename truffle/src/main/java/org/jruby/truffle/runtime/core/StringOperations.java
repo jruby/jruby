@@ -75,6 +75,17 @@ public abstract class StringOperations {
         return wrapper;
     }
 
+    public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
+        return new StringCodeRangeableWrapper(string) {
+            private final ByteList byteList = StringOperations.rope(string).toByteListCopy();
+
+            @Override
+            public ByteList getByteList() {
+                return byteList;
+            }
+        };
+    }
+
     public static StringCodeRangeableWrapper getCodeRangeableReadOnly(final DynamicObject string) {
         return new StringCodeRangeableWrapper(string) {
             @Override
