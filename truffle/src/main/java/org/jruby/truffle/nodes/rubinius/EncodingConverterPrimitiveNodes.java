@@ -70,7 +70,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         @Specialization(guards = {"isNil(source)", "isRubyString(target)"})
         public Object primitiveConvertNilSource(DynamicObject encodingConverter, DynamicObject source,
                                                         DynamicObject target, int offset, int size, int options) {
-            return primitiveConvertHelper(encodingConverter, rope(source), target, offset, size, options);
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion("nil", "String", this));
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)"})
