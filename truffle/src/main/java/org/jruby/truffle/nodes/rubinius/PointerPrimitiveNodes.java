@@ -24,6 +24,7 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -338,9 +339,9 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject address(DynamicObject pointer, DynamicObject string, int maxLength) {
-            final ByteList bytes = StringOperations.getByteList(string);
-            final int length = Math.min(bytes.length(), maxLength);
-            Layouts.POINTER.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
+            final Rope rope = StringOperations.rope(string);
+            final int length = Math.min(rope.byteLength(), maxLength);
+            Layouts.POINTER.getPointer(pointer).put(0, rope.getBytes(), 0, length);
             return pointer;
         }
 
