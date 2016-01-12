@@ -62,16 +62,17 @@ module CG
   end
 
   class MethodVersion
-    attr_reader :id, :method, :callsite_versions
+    attr_reader :id, :method, :callsite_versions, :called_from
 
     def initialize(id, method)
       @id = Integer(id)
       @method = method
       @callsite_versions = []
+      @called_from = []
     end
 
     def reachable
-      [method] + callsite_versions
+      [method] + callsite_versions + called_from
     end
   end
 
@@ -155,7 +156,9 @@ objects.values.each do |object|
       if call == :mega
         :mega
       else
-        objects[call]
+        called = objects[call]
+        called.called_from.push callsite_version
+        called
       end
     end
   end
@@ -227,6 +230,12 @@ puts ERB.new(%{
       <% method.versions.each do |method_version| %>
         <% if reachable_objects.include?(method_version) %>
           <div id='method-version-<%= method_version.id %>' class='method-version'>
+            <p>Called from:</p> 
+            <ul>
+              <% method_version.called_from.each do |caller| %>
+                <li><a href='#method-version-<%= caller.method_version.id %>'><%= h(caller.method_version.method.name) %></a></li>
+              <% end %>
+            </ul>
             <% method.source.lines.each_with_index do |code, offset| %>
               <p class='code'>
                 <code><%= h(code + ' ').gsub(' ', '&nbsp;') %></code>
