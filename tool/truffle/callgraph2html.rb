@@ -30,16 +30,9 @@ module CG
 
     def lines
       if file == '(unknown)'
-        ['(unknown)']
-      elsif !File.exist?(file)
-        ['(doesn\'t exist)']
+        ['(native)']
       else
-        lines = File.readlines(file)[line_start - 1, line_end - line_start + 1]
-        if lines.nil?
-          ['(error)']
-        else
-          lines.map(&:rstrip)
-        end
+        File.readlines(file)[line_start - 1, line_end - line_start + 1].map(&:rstrip)
       end
     end
   end
@@ -57,6 +50,10 @@ module CG
 
     def core?
       source.file.start_with?('truffle:') || source.file == '(unknown)'
+    end
+
+    def hidden?
+      source.file == 'run_jruby_root' || source.file == 'context' || name == 'Truffle::Primitive#run_jruby_root' || name == 'Truffle::Primitive#context'
     end
 
     def reachable
@@ -190,7 +187,7 @@ def annotate(method_version, offset)
       callsite_version.calls.each do |called|
         if called == :mega
           comments.push 'calls mega'
-        else
+        elsif !called.method.hidden?
           comments.push "calls <a href='#method-version-#{called.id}'>#{called.method.name}</a>"
         end
       end
@@ -210,12 +207,12 @@ puts ERB.new(%{
     <title>Call Graph Visualisation</title>
     <style>
       .method-version {
-        background: grey;
+        background: AntiqueWhite;
         margin: 1em;
         padding: 1em;
       }
       .method-version:target {
-        background: blue;
+        background: BurlyWood;
       }
       p.code {
         margin: 0;
@@ -224,18 +221,20 @@ puts ERB.new(%{
   </header>
   <body>
   <% reachable_objects.select { |o| o.is_a?(CG::Method) }.each do |method| %>
-    <h2><%= h(method.name) %></h2>
-    <p><%= h(method.source) %></p>
-    <% method.versions.each do |method_version| %>
-      <% if reachable_objects.include?(method_version) %>
-        <div id='method-version-<%= method_version.id %>' class='method-version'>
-          <% method.source.lines.each_with_index do |code, offset| %>
-            <p class='code'>
-              <code><%= h(code + ' ').gsub(' ', '&nbsp;') %></code>
-              <%= annotate(method_version, offset) %>
-            </p>
-          <% end %>
-        </div>
+    <% unless method.hidden? %>
+      <h2><%= h(method.name) %></h2>
+      <p><%= h(method.source) %></p>
+      <% method.versions.each do |method_version| %>
+        <% if reachable_objects.include?(method_version) %>
+          <div id='method-version-<%= method_version.id %>' class='method-version'>
+            <% method.source.lines.each_with_index do |code, offset| %>
+              <p class='code'>
+                <code><%= h(code + ' ').gsub(' ', '&nbsp;') %></code>
+                <%= annotate(method_version, offset) %>
+              </p>
+            <% end %>
+          </div>
+        <% end %>
       <% end %>
     <% end %>
   <% end %>
