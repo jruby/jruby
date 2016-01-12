@@ -314,43 +314,45 @@ public class Bootstrap {
             HandleMethod handleMethod = (HandleMethod)method;
             boolean blockGiven = site.signature.lastArgType() == Block.class;
 
-            if (site.arity >= 0 && site.arity <= 3) {
+            if (site.arity >= 0) {
                 mh = handleMethod.getHandle(site.arity);
                 if (mh != null) {
                     if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
                     mh = dropArguments(mh, 1, IRubyObject.class);
                 } else {
-                    mh = handleMethod.getHandle(4);
+                    mh = handleMethod.getHandle(-1);
+                    mh = dropArguments(mh, 1, IRubyObject.class);
                     if (site.arity == 0) {
-                        mh = dropArguments(mh, 1, IRubyObject.class);
                         if (!blockGiven) {
                             mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                         } else {
-                            mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY);
+                            mh = insertArguments(mh, mh.type().parameterCount() - 2, (Object)IRubyObject.NULL_ARRAY);
                         }
                     } else {
                         // bundle up varargs
                         if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
                         mh = SmartBinder.from(lookup(), siteToDyncall)
-                                .permute("context", "self", "class", "name", "block", "arg.*")
                                 .collect("args", "arg.*")
-                                .permute("context", "self", "class", "name", "args", "block")
                                 .invoke(mh)
                                 .handle();
                     }
                 }
             } else {
-                mh = handleMethod.getHandle(4);
-                if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+                mh = handleMethod.getHandle(-1);
+                if (mh != null) {
+                    mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
-                mh = SmartBinder.from(lookup(), siteToDyncall)
-                        .permute("context", "self", "class", "name", "args", "block")
-                        .invoke(mh)
-                        .handle();
+                    mh = SmartBinder.from(lookup(), siteToDyncall)
+                            .invoke(mh)
+                            .handle();
+                }
             }
 
-            mh = insertArguments(mh, 3, implClass, site.name());
+            if (mh != null) {
+                mh = insertArguments(mh, 3, implClass, site.name());
+            }
         }
 
         return mh;
