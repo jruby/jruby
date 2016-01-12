@@ -99,6 +99,10 @@ public abstract class ArrayCastNode extends RubyNode {
     public Object cast(VirtualFrame frame, DynamicObject object) {
         final Object result = toArrayNode.call(frame, object, "to_ary", null);
 
+        if (result == nil()) {
+            return nil();
+        }
+
         if (result == DispatchNode.MISSING) {
             return nil();
         }

@@ -41,7 +41,6 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.format.parser.PackCompiler;
 import org.jruby.truffle.format.parser.UnpackCompiler;
 import org.jruby.truffle.format.runtime.PackResult;
 import org.jruby.truffle.format.runtime.exceptions.*;
@@ -2206,6 +2205,8 @@ public abstract class StringNodes {
         private RuntimeException handleException(PackException exception) {
             try {
                 throw exception;
+            } catch (FormatException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             } catch (TooFewArgumentsException e) {
                 return new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
             } catch (NoImplicitConversionException e) {

@@ -26,11 +26,15 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.CompiledIRBlockBody;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -40,6 +44,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -809,6 +814,44 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         loadRuntime();
         adapter.ldc(name);
         invokeHelper("setGlobalVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
+    }
+
+    @Override
+    public void yield(boolean unwrap) {
+        adapter.ldc(unwrap);
+        invokeIRHelper("yield", sig(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, boolean.class));
+    }
+
+    @Override
+    public void yieldSpecific() {
+        invokeIRHelper("yieldSpecific", sig(IRubyObject.class, ThreadContext.class, Block.class));
+    }
+
+    @Override
+    public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
+        // FIXME: too much bytecode
+        String cacheField = "blockBody" + getClassData().callSiteCount.getAndIncrement();
+        Label done = new Label();
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(CompiledIRBlockBody.class), null, null).visitEnd();
+        adapter.getstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
+        adapter.dup();
+        adapter.ifnonnull(done);
+        {
+            adapter.pop();
+            adapter.newobj(p(CompiledIRBlockBody.class));
+            adapter.dup();
+
+            adapter.ldc(handle);
+            adapter.getstatic(className, handle.getName() + "_IRScope", ci(IRScope.class));
+            adapter.ldc(signature.encode());
+
+            adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, long.class));
+            adapter.dup();
+            adapter.putstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
+        }
+        adapter.label(done);
+
+        invokeIRHelper("prepareBlock", sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class, BlockBody.class));
     }
 
     private final Map<Object, String> cacheFieldNames = new HashMap<>();

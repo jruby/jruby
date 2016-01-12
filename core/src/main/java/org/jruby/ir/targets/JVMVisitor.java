@@ -130,17 +130,10 @@ public class JVMVisitor extends IRVisitor {
         emitScriptBody(script);
     }
 
-    private void logScope(IRScope scope) {
-        LOG.info("Starting JVM compilation on scope " + scope);
-        LOG.info("\n\nLinearized instructions for JIT:\n" + scope.toStringInstrs());
-    }
-
     public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity) {
-        BasicBlock[] bbs = scope.prepareForInitialCompilation();
+        BasicBlock[] bbs = scope.prepareForCompilation();
 
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
-
-        if (Options.IR_COMPILER_DEBUG.load()) logScope(scope);
 
         emitClosures(scope);
 
@@ -1734,9 +1727,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void RethrowSavedExcInLambdaInstr(RethrowSavedExcInLambdaInstr instr) {
+    public void ReturnOrRethrowSavedExcInstr(ReturnOrRethrowSavedExcInstr instr) {
         jvmMethod().loadContext();
-        jvmMethod().invokeIRHelper("rethrowSavedExcInLambda", sig(void.class, ThreadContext.class));
+        visit(instr.getReturnValue());
+        jvmMethod().invokeIRHelper("returnOrRethrowSavedException", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+        jvmMethod().returnValue();
     }
 
     @Override
@@ -1999,11 +1994,10 @@ public class JVMVisitor extends IRVisitor {
         visit(yieldinstr.getBlockArg());
 
         if (yieldinstr.getYieldArg() == UndefinedValue.UNDEFINED) {
-            jvmMethod().invokeIRHelper("yieldSpecific", sig(IRubyObject.class, ThreadContext.class, Object.class));
+            jvmMethod().yieldSpecific();
         } else {
             visit(yieldinstr.getYieldArg());
-            jvmAdapter().ldc(yieldinstr.isUnwrapArray());
-            jvmMethod().invokeIRHelper("yield", sig(IRubyObject.class, ThreadContext.class, Object.class, Object.class, boolean.class));
+            jvmMethod().yield(yieldinstr.isUnwrapArray());
         }
 
         jvmStoreLocal(yieldinstr.getResult());
@@ -2350,19 +2344,11 @@ public class JVMVisitor extends IRVisitor {
     public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) {
         IRClosure closure = wrappedirclosure.getClosure();
 
-        jvmAdapter().newobj(p(Block.class));
-        jvmAdapter().dup();
+        jvmMethod().loadContext();
+        visit(closure.getSelf());
+        jvmLoadLocal(DYNAMIC_SCOPE);
 
-        jvmMethod().pushBlockBody(closure.getHandle(), closure.getSignature(), jvm.clsData().clsName);
-
-        { // prepare binding
-            jvmMethod().loadContext();
-            visit(closure.getSelf());
-            jvmLoadLocal(DYNAMIC_SCOPE);
-            jvmAdapter().invokevirtual(p(ThreadContext.class), "currentBinding", sig(Binding.class, IRubyObject.class, DynamicScope.class));
-        }
-
-        jvmAdapter().invokespecial(p(Block.class), "<init>", sig(void.class, BlockBody.class, Binding.class));
+        jvmMethod().prepareBlock(closure.getHandle(), closure.getSignature(), jvm.clsData().clsName);
     }
 
     private SkinnyMethodAdapter jvmAdapter() {

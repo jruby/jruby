@@ -3307,7 +3307,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = "select", required = 1, optional = 3, meta = true)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
         IRubyObject read, write, except, _timeout;
-        Long timeout;
         read = write = except = _timeout = context.nil;
 
         switch (argv.length) {
@@ -3320,13 +3319,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
             case 1:
                 read = argv[0];
         }
+        final Long timeout;
         if (_timeout.isNil()) {
             timeout = null;
         }
         else {
-            double tmp = _timeout.convertToFloat().getDoubleValue();
-            if (tmp < 0) throw context.runtime.newArgumentError("negative timeout");
-            timeout = (long)(tmp * 1000); // ms
+            try { // MRI calls to_f even if not respond_to? (or respond_to_missing?) :to_f
+                _timeout = _timeout.callMethod(context, "to_f");
+            }
+            catch (RaiseException e) {
+                TypeConverter.handleUncoercibleObject(true, _timeout, context.runtime.getFloat());
+                throw e; // won't happen
+            }
+            final double t = _timeout.convertToFloat().getDoubleValue();
+            if ( t < 0 ) throw context.runtime.newArgumentError("negative timeout");
+            timeout = (long) (t * 1000); // ms
         }
 
         SelectExecutor args = new SelectExecutor(read, write, except, timeout);

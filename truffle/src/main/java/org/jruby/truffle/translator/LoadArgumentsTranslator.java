@@ -11,6 +11,7 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.MultipleAsgnNode;
@@ -26,6 +27,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
 import org.jruby.truffle.nodes.core.array.ArraySliceNodeGen;
 import org.jruby.truffle.nodes.core.array.PrimitiveArrayNodeFactory;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -88,6 +90,28 @@ public class LoadArgumentsTranslator extends Translator {
 
         final List<RubyNode> sequence = new ArrayList<>();
         final org.jruby.ast.Node[] args = node.getArgs();
+
+        final boolean useHelper = useArray() && node.hasKeyRest();
+
+        if (useHelper) {
+            sequence.add(node.getKeyRest().accept(this));
+
+            final Object keyRestNameOrNil;
+
+            if (node.hasKeyRest()) {
+                final String name = node.getKeyRest().getName();
+                methodBodyTranslator.getEnvironment().declareVar(name);
+                keyRestNameOrNil = context.getSymbol(name);
+            } else {
+                keyRestNameOrNil = context.getCoreLibrary().getNilObject();
+            }
+
+            sequence.add(new IfNode(context, sourceSection,
+                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
+                    new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil),
+                    new NilNode(context, sourceSection)));
+        }
+
         final int preCount = node.getPreCount();
 
         if (preCount > 0) {
@@ -120,15 +144,68 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         int postCount = node.getPostCount();
+
+        // The load to use when the array is not nil and the length is smaller than the number of required arguments
+
+        final List<RubyNode> notNilSmallerSequence = new ArrayList<>();
+
+        if (postCount > 0) {
+            state = State.POST;
+            org.jruby.ast.Node[] children = node.getPost().children();
+            index = node.getPreCount();
+            for (int i = 0; i < children.length; i++) {
+                notNilSmallerSequence.add(children[i].accept(this));
+                index++;
+            }
+        }
+
+        final RubyNode notNilSmaller = SequenceNode.sequence(context, sourceSection, notNilSmallerSequence);
+
+        // The load to use when the there is no rest
+
+        final List<RubyNode> noRestSequence = new ArrayList<>();
+
+        if (postCount > 0) {
+            state = State.POST;
+            org.jruby.ast.Node[] children = node.getPost().children();
+            index = node.getPreCount() + node.getOptionalArgsCount();
+            for (int i = 0; i < children.length; i++) {
+                noRestSequence.add(children[i].accept(this));
+                index++;
+            }
+        }
+
+        final RubyNode noRest = SequenceNode.sequence(context, sourceSection, noRestSequence);
+
+        // The load to use when the array is not nil and at least as large as the number of required arguments
+
+        final List<RubyNode> notNilAtLeastAsLargeSequence = new ArrayList<>();
+
         if (postCount > 0) {
             state = State.POST;
             index = -1;
             int postIndex = node.getPostIndex();
             for (int i = postCount - 1; i >= 0; i--) {
-                sequence.add(args[postIndex + i].accept(this));
+                notNilAtLeastAsLargeSequence.add(args[postIndex + i].accept(this));
                 required++;
                 index--;
             }
+        }
+
+        final RubyNode notNilAtLeastAsLarge = SequenceNode.sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
+
+        if (useArray()) {
+            if (node.getPreCount() == 0 || node.hasRestArg()) {
+                sequence.add(new IfNode(context, sourceSection,
+                        new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
+                        notNilAtLeastAsLarge,
+                        notNilSmaller));
+            } else {
+                sequence.add(noRest);
+            }
+        } else {
+            // TODO CS 10-Jan-16 needn't have created notNilSmaller
+            sequence.add(notNilAtLeastAsLarge);
         }
 
         if (hasKeywordArguments) {
@@ -145,7 +222,9 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (node.getKeyRest() != null) {
-            sequence.add(node.getKeyRest().accept(this));
+            if (!useHelper) {
+                sequence.add(node.getKeyRest().accept(this));
+            }
         }
 
         if (node.getBlock() != null) {
@@ -273,6 +352,8 @@ public class LoadArgumentsTranslator extends Translator {
     private RubyNode translateLocalAssignment(ISourcePosition sourcePosition, String name, org.jruby.ast.Node valueNode) {
         final SourceSection sourceSection = translate(sourcePosition);
 
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
+
         final RubyNode readNode;
 
         if (indexFromEnd == 1) {
@@ -286,7 +367,23 @@ public class LoadArgumentsTranslator extends Translator {
                 }
             } else {
                 // Optional argument
-                final RubyNode defaultValue = valueNode.accept(this);
+                final RubyNode defaultValue;
+
+                // The JRuby parser gets local variables that shadow methods with vcalls wrong - fix up here
+
+                if (valueNode instanceof org.jruby.ast.VCallNode) {
+                    final String calledName = ((org.jruby.ast.VCallNode) valueNode).getName();
+
+                    // Just consider the circular case for now as that's all that's speced
+
+                    if (calledName.equals(name)) {
+                        defaultValue = new ReadLocalVariableNode(context, sourceSection, slot);
+                    } else {
+                        defaultValue = valueNode.accept(this);
+                    }
+                } else {
+                    defaultValue = valueNode.accept(this);
+                }
 
                 if (argsNode == null) {
                     throw new IllegalStateException("No arguments node visited");
@@ -294,17 +391,24 @@ public class LoadArgumentsTranslator extends Translator {
 
                 int minimum = index + 1 + argsNode.getPostCount();
 
-                if (argsNode.hasKwargs()) {
-                    minimum += 1;
-                }
+                if (useArray()) {
+                    // TODO CS 10-Jan-16 we should really hoist this check, or see if Graal does it for us
+                    readNode = new IfNode(context, sourceSection,
+                            new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), minimum),
+                            PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index),
+                            defaultValue);
+                } else {
+                    if (argsNode.hasKwargs()) {
+                        minimum += 1;
+                    }
 
-                readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
+                    readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
+                }
             }
         } else {
             readNode = ArraySliceNodeGen.create(context, sourceSection, index, indexFromEnd, loadArray(sourceSection));
         }
 
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
         return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
@@ -369,10 +473,6 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode notNilSmaller = SequenceNode.sequence(context, sourceSection, notNilSmallerSequence);
 
-        if (notNilSmaller == null) {
-            throw new UnsupportedOperationException();
-        }
-
         // The load to use when the array is not nil and at least as large as the number of required arguments
 
         final List<RubyNode> notNilAtLeastAsLargeSequence = new ArrayList<>();
@@ -403,10 +503,6 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         final RubyNode notNilAtLeastAsLarge = SequenceNode.sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
-
-        if (notNilAtLeastAsLarge == null) {
-            throw new UnsupportedOperationException();
-        }
 
         popArraySlot(arraySlot);
 

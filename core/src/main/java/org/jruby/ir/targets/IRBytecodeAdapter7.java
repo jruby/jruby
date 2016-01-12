@@ -15,21 +15,27 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.CompiledIRBlockBody;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
 import java.math.BigInteger;
 
 import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -295,5 +301,22 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 "checkpoint",
                 sig(void.class, ThreadContext.class),
                 Bootstrap.checkpointHandle());
+    }
+
+    @Override
+    public void yield(boolean unwrap) {
+        adapter.invokedynamic("yield", sig(JVM.OBJECT, params(ThreadContext.class, Block.class, JVM.OBJECT)), YieldSite.BOOTSTRAP, unwrap ? 1 : 0);
+    }
+
+    @Override
+    public void yieldSpecific() {
+        adapter.invokedynamic("yieldSpecific", sig(JVM.OBJECT, params(ThreadContext.class, Block.class)), YieldSite.BOOTSTRAP, 0);
+    }
+
+    @Override
+    public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
+        Handle scopeHandle = new Handle(Opcodes.H_GETSTATIC, getClassData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
+        long encodedSignature = signature.encode();
+        adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
     }
 }

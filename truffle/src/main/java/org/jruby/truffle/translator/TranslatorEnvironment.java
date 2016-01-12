@@ -50,7 +50,7 @@ public class TranslatorEnvironment {
 
     private final String namedMethodName;
 
-    // TODO(CS): overflow?
+    // TODO(CS): overflow? and it should be per-context, or even more local
     private static AtomicInteger tempIndex = new AtomicInteger();
 
     public boolean hasRestParameter = false;

@@ -11,6 +11,7 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -67,7 +68,7 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
     @Interp
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object blk = getBlockArg().retrieve(context, self, currScope, currDynScope, temp);
+        Block blk = (Block)getBlockArg().retrieve(context, self, currScope, currDynScope, temp);
         if (getYieldArg() == UndefinedValue.UNDEFINED) {
             return IRRuntimeHelpers.yieldSpecific(context, blk);
         } else {

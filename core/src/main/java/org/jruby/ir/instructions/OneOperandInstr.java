@@ -7,7 +7,7 @@ import org.jruby.ir.operands.Operand;
  * Created by enebo on 7/27/15.
  */
 public abstract class OneOperandInstr extends Instr {
-    private Operand operand1;
+    private transient Operand operand1;
 
     public OneOperandInstr(Operation operation, Operand operand1) {
         super(operation);

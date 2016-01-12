@@ -44,7 +44,12 @@ public abstract class EncodingPrimitiveNodes {
             return encoding;
         }
 
-        @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)"})
+        @Specialization(guards = "isRubyRegexp(regexp)")
+        public DynamicObject encodingGetObjectEncodingRegexp(DynamicObject regexp) {
+            return EncodingNodes.getEncoding(Layouts.REGEXP.getSource(regexp).getEncoding());
+        }
+
+        @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)", "!isRubyRegexp(object)"})
         public DynamicObject encodingGetObjectEncodingNil(DynamicObject object) {
             // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
             return nil();

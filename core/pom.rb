@@ -53,11 +53,11 @@ project 'JRuby Core' do
 
   jar 'org.jruby.joni:joni:2.1.8'
   jar 'org.jruby.extras:bytelist:1.0.13'
-  jar 'org.jruby.jcodings:jcodings:1.0.13'
+  jar 'org.jruby.jcodings:jcodings:1.0.16-SNAPSHOT'
   jar 'org.jruby:dirgra:0.3'
 
-  jar 'com.headius:invokebinder:1.5'
-  jar 'com.headius:options:1.3'
+  jar 'com.headius:invokebinder:1.7-SNAPSHOT'
+  jar 'com.headius:options:1.4-SNAPSHOT'
   jar 'com.headius:coro-mock:1.0', :scope => 'provided'
   jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
   jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'

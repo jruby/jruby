@@ -59,7 +59,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -114,12 +113,7 @@ public class RubyInstanceConfig {
 
         threadDumpSignal = Options.THREAD_DUMP_SIGNAL.load();
 
-        environment = new HashMap<String,String>();
-        try {
-            environment.putAll(System.getenv());
-        } catch (SecurityException se) {
-        }
-        setupEnvironment(getJRubyHome());
+        initEnvironment();
     }
 
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
@@ -141,11 +135,15 @@ public class RubyInstanceConfig {
         profilingService = parentConfig.profilingService;
         profilingMode = parentConfig.profilingMode;
 
-        environment = new HashMap<String, String>();
+        initEnvironment();
+    }
+
+    private void initEnvironment() {
+        environment = new HashMap<String,String>();
         try {
             environment.putAll(System.getenv());
-        } catch (SecurityException se) {
         }
+        catch (SecurityException se) { /* ignore missing getenv permission */ }
         setupEnvironment(getJRubyHome());
     }
 
@@ -402,7 +400,7 @@ public class RubyInstanceConfig {
                             // return the script between shebang and __END__ or CTRL-Z (0x1A)
                             return findScript(resource.inputStream());
                         }
-                        return new BufferedInputStream(resource.inputStream(), 8192);
+                        return resource.inputStream();
                     }
                     else {
                         throw new FileNotFoundException(script + " (Not a file)");
@@ -1626,15 +1624,6 @@ public class RubyInstanceConfig {
     // Static configuration fields, used as defaults for new JRuby instances.
     ////////////////////////////////////////////////////////////////////////////
 
-    // NOTE: These BigDecimal fields must be initialized before calls to initGlobalJavaVersion
-
-    /** A BigDecimal representing 1.5, for Java spec version matching */
-    private static final BigDecimal BIGDECIMAL_1_5 = new BigDecimal("1.5");
-    /** A BigDecimal representing 1.6, for Java spec version matching */
-    private static final BigDecimal BIGDECIMAL_1_6 = new BigDecimal("1.6");
-    /** A BigDecimal representing 1.7, for Java spec version matching */
-    private static final BigDecimal BIGDECIMAL_1_7 = new BigDecimal("1.7");
-
     /**
      * The version to use for generated classes. Set to current JVM version by default
      */
@@ -1868,19 +1857,16 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
 
     private static int initGlobalJavaVersion() {
-        String specVersion = Options.BYTECODE_VERSION.load();
-
-        // stack map calculation is failing for some compilation scenarios, so
-        // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
-        if (specVersion.equals("1.5")) {// || specVersion.equals("1.6")) {
-           return Opcodes.V1_5;
-        } else if (specVersion.equals("1.6")) {
-            return Opcodes.V1_6;
-        } else if (specVersion.equals("1.7") || specVersion.equals("1.8") || specVersion.equals("1.9") || specVersion.equals("9")) {
-            return Opcodes.V1_7;
-        } else {
-            System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.5");
-            return Opcodes.V1_5;
+        final String specVersion = Options.BYTECODE_VERSION.load();
+        switch ( specVersion ) {
+            case "1.6" : return Opcodes.V1_6;
+            case "1.7" : return Opcodes.V1_7;
+            case "1.8" : return Opcodes.V1_8;
+            // NOTE: JDK 9 now returns "9" instead of "1.9"
+            case "1.9" : case "9" : return Opcodes.V1_8; // +1
+            default :
+                System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.7");
+                return Opcodes.V1_7;
         }
     }
 

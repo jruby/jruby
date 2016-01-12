@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -30,9 +31,14 @@ public final class RubyArguments {
     public static final int SELF_INDEX = 3;
     public static final int BLOCK_INDEX = 4;
     public static final int DECLARATION_CONTEXT_INDEX = 5;
-    public static final int RUNTIME_ARGUMENT_COUNT = 6;
+    public static final int FRAME_ON_STACK_MARKER_INDEX = 6;
+    public static final int RUNTIME_ARGUMENT_COUNT = 7;
 
     public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, DeclarationContext declarationContext, Object[] arguments) {
+        return pack(method, declarationFrame, callerFrame, self, block, declarationContext, null, arguments);
+    }
+
+    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, DeclarationContext declarationContext, FrameOnStackMarker frameOnStackMarker, Object[] arguments) {
         assert method != null;
         assert self != null;
         assert block == null || RubyGuards.isRubyProc(block);
@@ -47,6 +53,7 @@ public final class RubyArguments {
         packed[SELF_INDEX] = self;
         packed[BLOCK_INDEX] = block;
         packed[DECLARATION_CONTEXT_INDEX] = declarationContext;
+        packed[FRAME_ON_STACK_MARKER_INDEX] = frameOnStackMarker;
         ArrayUtils.arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
 
         return packed;
@@ -210,5 +217,9 @@ public final class RubyArguments {
         }
 
         return parentFrame;
+    }
+
+    public static FrameOnStackMarker getFrameOnStackMarker(Object[] arguments) {
+        return (FrameOnStackMarker) arguments[FRAME_ON_STACK_MARKER_INDEX];
     }
 }

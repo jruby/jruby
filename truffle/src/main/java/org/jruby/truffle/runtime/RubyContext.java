@@ -29,6 +29,8 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.callgraph.CallGraph;
+import org.jruby.truffle.callgraph.SimpleWriter;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -53,6 +55,7 @@ import org.jruby.truffle.runtime.loader.SourceCache;
 import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.runtime.platform.CrtExterns;
 import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
@@ -61,10 +64,9 @@ import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -86,6 +88,7 @@ public class RubyContext extends ExecutionContext {
     private final POSIX posix;
     private final NativeSockets nativeSockets;
     private final LibCClockGetTime libCClockGetTime;
+    private CrtExterns crtExterns;
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -104,6 +107,7 @@ public class RubyContext extends ExecutionContext {
     private final AttachmentsManager attachmentsManager;
     private final SourceCache sourceCache;
     private final RubiniusConfiguration rubiniusConfiguration;
+    private final CallGraph callGraph;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -119,6 +123,12 @@ public class RubyContext extends ExecutionContext {
     public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         options = new Options();
 
+        if (options.CALL_GRAPH) {
+            callGraph = new CallGraph();
+        } else {
+            callGraph = null;
+        }
+
         latestInstance = this;
 
         assert runtime != null;
@@ -126,9 +136,9 @@ public class RubyContext extends ExecutionContext {
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
-        if (!onGraal()) {
-            System.err.println("WARNING: JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. " +
-                    "The compilation is disabled Without the Graal compiler and it runs much slower. " +
+        if (!onGraal() && options.GRAAL_WARNING_UNLESS) {
+            System.err.println("WARNING: JRuby+Truffle is designed to be used with a JVM that has the Graal compiler. " +
+                    "Without the Graal compiler, performance will be drastically reduced. " +
                     "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
@@ -162,6 +172,12 @@ public class RubyContext extends ExecutionContext {
         posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
 
         nativeSockets = LibraryLoader.create(NativeSockets.class).library("c").load();
+
+        try {
+            crtExterns = LibraryLoader.create(CrtExterns.class).failImmediately().library("libSystem.B.dylib").load();
+        } catch (UnsatisfiedLinkError e) {
+            crtExterns = null;
+        }
 
         if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
             libCClockGetTime = LibraryLoader.create(LibCClockGetTime.class).library("c").load();
@@ -640,6 +656,18 @@ public class RubyContext extends ExecutionContext {
         if (options.COVERAGE_GLOBAL) {
             coverageTracker.print(System.out);
         }
+
+        if (callGraph != null) {
+            callGraph.resolve();
+
+            if (options.CALL_GRAPH_WRITE != null) {
+                try (PrintStream stream = new PrintStream(options.CALL_GRAPH_WRITE, StandardCharsets.UTF_8.name())) {
+                    new SimpleWriter(callGraph, stream).write();
+                } catch (FileNotFoundException | UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public PrintStream getDebugStandardOut() {
@@ -680,4 +708,19 @@ public class RubyContext extends ExecutionContext {
         return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
     }
 
+    public CrtExterns getCrtExterns() {
+        return crtExterns;
+    }
+
+    public static void appendToFile(String fileName, String message) {
+        try (PrintStream stream = new PrintStream(new FileOutputStream(fileName, true), true, StandardCharsets.UTF_8.name())) {
+            stream.println(message);
+        } catch (FileNotFoundException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public CallGraph getCallGraph() {
+        return callGraph;
+    }
 }

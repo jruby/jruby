@@ -63,16 +63,6 @@ end
 
 module Rubinius
   L64 = true
-
-  def extended_modules(object)
-    []
-  end
-end
-
-class Module
-  def extended_modules(object)
-    []
-  end
 end
 
 class String
@@ -277,5 +267,37 @@ module Truffle::Primitive
     end
 
     file
+  end
+end
+
+module Truffle::Primitive
+  def self.load_arguments_from_array_kw_helper(array, kwrest_name, binding)
+    array = array.dup
+
+    last_arg = array.pop
+
+    if last_arg.is_a? Fixnum
+      kwargs = {}
+    else
+      kwargs = last_arg.to_hash
+
+      if kwargs.nil?
+        array.push last_arg
+        return array
+      end
+
+      raise TypeError.new("can't convert #{last_arg.class} to Hash (#{last_arg.class}#to_hash gives #{kwargs.class})") unless kwargs.is_a?(Hash)
+
+      return array + [kwargs] unless kwargs.keys.any? { |k| k.is_a? Symbol }
+
+      kwargs.select! do |key, value|
+        symbol = key.is_a? Symbol
+        array.push({key => value}) unless symbol
+        symbol
+      end
+    end
+    
+    binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
+    array
   end
 end

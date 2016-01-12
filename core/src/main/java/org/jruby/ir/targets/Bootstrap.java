@@ -10,11 +10,16 @@ import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CompiledIRBlockBody;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -309,43 +314,45 @@ public class Bootstrap {
             HandleMethod handleMethod = (HandleMethod)method;
             boolean blockGiven = site.signature.lastArgType() == Block.class;
 
-            if (site.arity >= 0 && site.arity <= 3) {
+            if (site.arity >= 0) {
                 mh = handleMethod.getHandle(site.arity);
                 if (mh != null) {
                     if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
                     mh = dropArguments(mh, 1, IRubyObject.class);
                 } else {
-                    mh = handleMethod.getHandle(4);
+                    mh = handleMethod.getHandle(-1);
+                    mh = dropArguments(mh, 1, IRubyObject.class);
                     if (site.arity == 0) {
-                        mh = dropArguments(mh, 1, IRubyObject.class);
                         if (!blockGiven) {
                             mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                         } else {
-                            mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY);
+                            mh = insertArguments(mh, mh.type().parameterCount() - 2, (Object)IRubyObject.NULL_ARRAY);
                         }
                     } else {
                         // bundle up varargs
                         if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
                         mh = SmartBinder.from(lookup(), siteToDyncall)
-                                .permute("context", "self", "class", "name", "block", "arg.*")
                                 .collect("args", "arg.*")
-                                .permute("context", "self", "class", "name", "args", "block")
                                 .invoke(mh)
                                 .handle();
                     }
                 }
             } else {
-                mh = handleMethod.getHandle(4);
-                if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+                mh = handleMethod.getHandle(-1);
+                if (mh != null) {
+                    mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
-                mh = SmartBinder.from(lookup(), siteToDyncall)
-                        .permute("context", "self", "class", "name", "args", "block")
-                        .invoke(mh)
-                        .handle();
+                    mh = SmartBinder.from(lookup(), siteToDyncall)
+                            .invoke(mh)
+                            .handle();
+                }
             }
 
-            mh = insertArguments(mh, 3, implClass, site.name());
+            if (mh != null) {
+                mh = insertArguments(mh, 3, implClass, site.name());
+            }
         }
 
         return mh;
@@ -431,13 +438,13 @@ public class Bootstrap {
             NativeCallMethod nativeMethod = (NativeCallMethod)method;
             DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
 
-            int nativeArgCount = getNativeArgCount(method, nativeCall);
-
             DynamicMethod.NativeCall nc = nativeCall;
 
             if (nc.isJava()) {
                 // not supported yet, use DynamicMethod.call
             } else {
+                int nativeArgCount = getNativeArgCount(method, nativeCall);
+
                 if (nativeArgCount >= 0) { // native methods only support arity 3
                     if (nativeArgCount == site.arity) {
                         // nothing to do
@@ -923,5 +930,71 @@ public class Bootstrap {
 
     public static IRubyObject getGlobalUncached(GlobalVariable variable) throws Throwable {
         return variable.getAccessor().getValue();
+    }
+
+    public static Handle prepareBlock() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "prepareBlock", sig(CallSite.class, Lookup.class, String.class, MethodType.class, MethodHandle.class, MethodHandle.class, long.class));
+    }
+
+    public static CallSite prepareBlock(Lookup lookup, String name, MethodType type, MethodHandle bodyHandle, MethodHandle scopeHandle, long encodedSignature) throws Throwable {
+        IRScope scope = (IRScope)scopeHandle.invokeExact();
+
+        CompiledIRBlockBody body = new CompiledIRBlockBody(bodyHandle, scope, encodedSignature);
+
+        Binder binder = Binder.from(type);
+
+        binder = binder.fold(FRAME_SCOPE_BINDING);
+
+        // This optimization can't happen until we can see into the method we're calling to know if it reifies the block
+        if (false) {
+            if (scope.needsBinding()) {
+                if (scope.needsFrame()) {
+                    binder = binder.fold(FRAME_SCOPE_BINDING);
+                } else {
+                    binder = binder.fold(SCOPE_BINDING);
+                }
+            } else {
+                if (scope.needsFrame()) {
+                    binder = binder.fold(FRAME_BINDING);
+                } else {
+                    binder = binder.fold(SELF_BINDING);
+                }
+            }
+        }
+
+        MethodHandle blockMaker = binder.drop(1, 3)
+                .append(body)
+                .invoke(CONSTRUCT_BLOCK);
+
+        return new ConstantCallSite(blockMaker);
+    }
+
+    private static final Binder BINDING_MAKER_BINDER = Binder.from(Binding.class, ThreadContext.class, IRubyObject.class, DynamicScope.class);
+
+    private static final MethodHandle FRAME_SCOPE_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "frameScopeBinding");
+    public static Binding frameScopeBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        Frame frame = context.getCurrentFrame().capture();
+        return new Binding(self, frame, frame.getVisibility(), scope);
+    }
+
+    private static final MethodHandle FRAME_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "frameBinding");
+    public static Binding frameBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        Frame frame = context.getCurrentFrame().capture();
+        return new Binding(self, frame, frame.getVisibility());
+    }
+
+    private static final MethodHandle SCOPE_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "scopeBinding");
+    public static Binding scopeBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        return new Binding(self, scope);
+    }
+
+    private static final MethodHandle SELF_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "selfBinding");
+    public static Binding selfBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        return new Binding(self);
+    }
+
+    private static final MethodHandle CONSTRUCT_BLOCK = Binder.from(Block.class, Binding.class, CompiledIRBlockBody.class).invokeStaticQuiet(LOOKUP, Bootstrap.class, "constructBlock");
+    public static Block constructBlock(Binding binding, CompiledIRBlockBody body) throws Throwable {
+        return new Block(body, binding);
     }
 }

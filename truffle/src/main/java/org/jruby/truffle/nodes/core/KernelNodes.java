@@ -1102,30 +1102,19 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "instance_variables", "__instance_variables__" })
+    @CoreMethod(names = "instance_variables")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private BasicObjectNodes.InstanceVariablesNode instanceVariablesNode;
 
         public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            instanceVariablesNode = BasicObjectNodesFactory.InstanceVariablesNodeFactory.create(context, sourceSection, new RubyNode[] {});
         }
 
-        @TruffleBoundary
         @Specialization
-        public DynamicObject instanceVariables(DynamicObject self) {
-            List<Object> keys = self.getShape().getKeyList();
-            final Object[] instanceVariableNames = keys.toArray(new Object[keys.size()]);
-
-            Arrays.sort(instanceVariableNames);
-
-            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-
-            for (Object name : instanceVariableNames) {
-                if (name instanceof String) {
-                    ArrayOperations.append(array, getSymbol((String) name));
-                }
-            }
-
-            return array;
+        public DynamicObject instanceVariables(VirtualFrame frame, DynamicObject self) {
+            return instanceVariablesNode.executeObject(self);
         }
 
     }
@@ -1614,6 +1603,7 @@ public abstract class KernelNodes {
 
         @Child private DoesRespondDispatchHeadNode dispatch;
         @Child private DoesRespondDispatchHeadNode dispatchIgnoreVisibility;
+        @Child private DoesRespondDispatchHeadNode dispatchRespondToMissing;
         @Child private CallDispatchHeadNode respondToMissingNode;
         private final ConditionProfile ignoreVisibilityProfile = ConditionProfile.createBinaryProfile();
 
@@ -1622,6 +1612,7 @@ public abstract class KernelNodes {
 
             dispatch = new DoesRespondDispatchHeadNode(context, false);
             dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true);
+            dispatchRespondToMissing = new DoesRespondDispatchHeadNode(context, true);
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);
@@ -1643,8 +1634,10 @@ public abstract class KernelNodes {
 
             if (ret) {
                 return true;
-            } else {
+            } else if (dispatchRespondToMissing.doesRespondTo(frame, "respond_to_missing?", object)) {
                 return respondToMissing(frame, object, name, includeProtectedAndPrivate);
+            } else {
+                return false;
             }
         }
 
@@ -1660,8 +1653,10 @@ public abstract class KernelNodes {
 
             if (ret) {
                 return true;
-            } else {
+            } else if (dispatchRespondToMissing.doesRespondTo(frame, "respond_to_missing?", object)) {
                 return respondToMissing(frame, object, name, includeProtectedAndPrivate);
+            } else {
+                return false;
             }
         }
 

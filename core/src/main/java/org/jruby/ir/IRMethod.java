@@ -42,10 +42,10 @@ public class IRMethod extends IRScope {
         return interpreterContext;
     }
 
-    public synchronized BasicBlock[] prepareForInitialCompilation() {
+    public synchronized BasicBlock[] prepareForCompilation() {
         if (!hasBeenBuilt()) lazilyAcquireInterpreterContext();
 
-        return super.prepareForInitialCompilation();
+        return super.prepareForCompilation();
     }
 
     @Override

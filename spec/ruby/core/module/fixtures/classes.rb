@@ -325,7 +325,7 @@ module ModuleSpecs
         @@cls
       end
       # This actually adds it to the parent lexical scope, class CVars
-      @@meta = :meta
+      @@meta = :metainfo
     end
 
     def self.meta

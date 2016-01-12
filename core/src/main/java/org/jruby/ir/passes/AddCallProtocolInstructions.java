@@ -52,8 +52,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
         if (requireBinding) instrs.add(new PopBindingInstr());
         if (scope instanceof IRClosure) {
-            instrs.add(new RestoreBindingVisibilityInstr(savedViz));
-            instrs.add(new PopBlockFrameInstr(savedFrame));
+            if (scope.needsFrame()) {
+                instrs.add(new RestoreBindingVisibilityInstr(savedViz));
+                instrs.add(new PopBlockFrameInstr(savedFrame));
+            }
         } else {
             if (requireFrame) instrs.add(new PopMethodFrameInstr());
         }
@@ -70,24 +72,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if (!explicitCallProtocolSupported(scope)) return null;
 
-        StoreLocalVarPlacementProblem slvpp = scope.getStoreLocalVarPlacementProblem();
-        boolean scopeHasLocalVarStores = false;
-        boolean bindingHasEscaped = scope.bindingHasEscaped();
-
         CFG cfg = scope.getCFG();
 
-        if (slvpp != null && bindingHasEscaped) {
-            scopeHasLocalVarStores = slvpp.scopeHasLocalVarStores();
-        } else {
-            // We dont require local-var load/stores to have been run.
-            // If it is not run, we go conservative and add push/pop binding instrs. everywhere
-            scopeHasLocalVarStores = bindingHasEscaped;
-        }
-
         // For now, we always require frame for closures
-        boolean requireFrame = doesItRequireFrame(scope, bindingHasEscaped);
-        boolean reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        boolean requireBinding = reuseParentDynScope || !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        boolean requireFrame = scope.needsFrame();
+        boolean requireBinding = scope.needsBinding();
 
         if (scope instanceof IRClosure || requireBinding || requireFrame) {
             BasicBlock entryBB = cfg.getEntryBB();
@@ -96,17 +85,20 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 savedViz = scope.createTemporaryVariable();
                 savedFrame = scope.createTemporaryVariable();
 
-                { // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
-                    int insertIndex = 0;
+                // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
+                int insertIndex = 0;
+
+                if (scope.needsFrame()) {
                     entryBB.insertInstr(insertIndex++, new SaveBindingVisibilityInstr(savedViz));
                     entryBB.insertInstr(insertIndex++, new PushBlockFrameInstr(savedFrame, scope.getName()));
-
-                    // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
-                    if (requireBinding) {
-                        entryBB.insertInstr(insertIndex++, new PushBlockBindingInstr());
-                    }
-                    entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
                 }
+
+                // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
+                if (requireBinding) {
+                    entryBB.insertInstr(insertIndex++, new PushBlockBindingInstr());
+                }
+
+                entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
 
                 Signature sig = ((IRClosure)scope).getSignature();
 
@@ -155,7 +147,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     if (!bb.isExitBB() && i instanceof ReturnInstr) {
                         if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
-                        instrs.previous();
+                        i = instrs.previous();
                         popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                         if (bb == geb) gebProcessed = true;
                         break;
@@ -196,25 +188,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
         (new LiveVariableAnalysis()).invalidate(scope);
 
         return null;
-    }
-
-    private boolean doesItRequireFrame(IRScope scope, boolean bindingHasEscaped) {
-        boolean requireFrame = bindingHasEscaped || scope.usesEval();
-
-        for (IRFlags flag : scope.getFlags()) {
-            switch (flag) {
-                case BINDING_HAS_ESCAPED:
-                case CAN_CAPTURE_CALLERS_BINDING:
-                case REQUIRES_FRAME:
-                case REQUIRES_VISIBILITY:
-                case USES_BACKREF_OR_LASTLINE:
-                case USES_EVAL:
-                case USES_ZSUPER:
-                    requireFrame = true;
-            }
-        }
-
-        return requireFrame;
     }
 
     @Override

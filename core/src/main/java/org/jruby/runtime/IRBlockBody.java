@@ -33,14 +33,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     @Override
     public abstract boolean canCallDirect();
 
-    public IRubyObject callOrYieldDirect(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        if (type == Block.Type.PROC) {
-            return callDirect(context, block, args, blockArg);
-        } else {
-            return yieldDirect(context, block, args, self);
-        }
-    }
-
     @Override
     public IRubyObject call(ThreadContext context, Block block) {
         return call(context, block, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
