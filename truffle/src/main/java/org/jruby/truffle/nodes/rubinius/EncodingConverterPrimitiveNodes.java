@@ -70,7 +70,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         @Specialization(guards = {"isNil(source)", "isRubyString(target)"})
         public Object primitiveConvertNilSource(DynamicObject encodingConverter, DynamicObject source,
                                                         DynamicObject target, int offset, int size, int options) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion("nil", "String", this));
+            return primitiveConvertHelper(encodingConverter, source, target, offset, size, options);
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)"})
@@ -79,15 +79,16 @@ public abstract class EncodingConverterPrimitiveNodes {
 
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
-            return primitiveConvertHelper(encodingConverter, rope(source), target, offset, size, options);
+            return primitiveConvertHelper(encodingConverter, source, target, offset, size, options);
         }
 
         @TruffleBoundary
-        private Object primitiveConvertHelper(DynamicObject encodingConverter, Rope source,
+        private Object primitiveConvertHelper(DynamicObject encodingConverter, DynamicObject source,
                                               DynamicObject target, int offset, int size, int options) {
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
-            Rope sourceRope = source;
+            final boolean nonNullSource = source != nil();
+            Rope sourceRope = nonNullSource ? rope(source) : RopeOperations.EMPTY_UTF8_ROPE;
             final Rope targetRope = rope(target);
             final ByteList outBytes = targetRope.toByteListCopy();
 
@@ -102,8 +103,10 @@ public abstract class EncodingConverterPrimitiveNodes {
             if (size == -1) {
                 size = 16; // in MRI, this is RSTRING_EMBED_LEN_MAX
 
-                if (size < source.byteLength()) {
-                    size = source.byteLength();
+                if (nonNullSource) {
+                    if (size < sourceRope.byteLength()) {
+                        size = sourceRope.byteLength();
+                    }
                 }
             }
 
@@ -133,11 +136,14 @@ public abstract class EncodingConverterPrimitiveNodes {
                 inPtr.p = 0;
                 outPtr.p = offset;
                 int os = outPtr.p + size;
-                EConvResult res = ec.convert(source.getBytes(), inPtr, source.byteLength() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, os, options);
+                EConvResult res = ec.convert(sourceRope.getBytes(), inPtr, sourceRope.byteLength() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, os, options);
 
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 
-                sourceRope = RopeOperations.substring(sourceRope, inPtr.p, source.byteLength() - inPtr.p);
+                if (nonNullSource) {
+                    sourceRope = RopeOperations.substring(sourceRope, inPtr.p, sourceRope.byteLength() - inPtr.p);
+                    Layouts.STRING.setRope(source, sourceRope);
+                }
 
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
                     if (Integer.MAX_VALUE / 2 < size) {
