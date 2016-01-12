@@ -206,47 +206,45 @@ def annotate(method_version, offset)
   end
 end
 
-puts ERB.new(%{
-  <html>
-  <header>
-    <title>Call Graph Visualisation</title>
-    <style>
-      .method-version {
-        background: AntiqueWhite;
-        margin: 1em;
-        padding: 1em;
-      }
-      .method-version:target {
-        background: BurlyWood;
-      }
-      p.code {
-        margin: 0;
-      }
-    </style>
-  </header>
-  <body>
-  <% reachable_objects.select { |o| o.is_a?(CG::Method) && !o.hidden? }.each do |method| %>
-    <h2><%= h(method.name) %></h2>
-    <p><%= h(method.source) %></p>
-    <% method.versions.each do |method_version| %>
-      <% if reachable_objects.include?(method_version) %>
-        <div id='method-version-<%= method_version.id %>' class='method-version'>
-          <p>Called from:</p> 
-          <ul>
-            <% method_version.called_from.each do |caller| %>
-              <li><a href='#method-version-<%= caller.method_version.id %>'><%= h(caller.method_version.method.name) %></a></li>
-            <% end %>
-          </ul>
-          <% method.source.lines.each_with_index do |code, offset| %>
-            <p class='code'>
-              <code><%= h(code + ' ').gsub(' ', '&nbsp;') %></code>
-              <%= annotate(method_version, offset) %>
-            </p>
+puts ERB.new(%{<html>
+<header>
+  <title>Call Graph Visualisation</title>
+  <style>
+    .method-version {
+      background: AntiqueWhite;
+      margin: 1em;
+      padding: 1em;
+    }
+    .method-version:target {
+      background: BurlyWood;
+    }
+    p.code {
+      margin: 0;
+    }
+  </style>
+</header>
+<body>
+<% reachable_objects.select { |o| o.is_a?(CG::Method) && !o.hidden? }.each do |method| %>
+  <h2><%= h(method.name) %></h2>
+  <p><%= h(method.source) %></p>
+  <% method.versions.each do |method_version| %>
+    <% if reachable_objects.include?(method_version) %>
+      <div id='method-version-<%= method_version.id %>' class='method-version'>
+        <p>Called from:</p> 
+        <ul>
+          <% method_version.called_from.each do |caller| %>
+            <li><a href='#method-version-<%= caller.method_version.id %>'><%= h(caller.method_version.method.name) %></a></li>
           <% end %>
-        </div>
-      <% end %>
+        </ul>
+        <% method.source.lines.each_with_index do |code, offset| %>
+          <p class='code'>
+            <code><%= h(code + ' ').gsub(' ', '&nbsp;') %></code>
+            <%= annotate(method_version, offset) %>
+          </p>
+        <% end %>
+      </div>
     <% end %>
   <% end %>
-  </body>
-  </html>
-}).result
+<% end %>
+</body>
+</html>}).result
