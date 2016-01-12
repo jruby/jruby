@@ -1,6 +1,6 @@
 module Enumerable
   def slice_before(filter = (no_filter = true; nil), &block)
-    raise ArgumentError.new("wrong number of arguments (0 for 1)") if no_filter && !block
+    raise ArgumentError.new("wrong number of arguments (0 for 1)") if (no_filter && !block) || (!no_filter && block)
 
     state = nil
 
