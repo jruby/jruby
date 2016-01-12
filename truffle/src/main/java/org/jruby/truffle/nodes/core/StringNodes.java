@@ -626,10 +626,11 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {"isRubyString(other)", "bothSingleByteOptimizable(string, other)"})
+        @TruffleBoundary
         public Object caseCmpSingleByte(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19.
 
-            if (StringSupport.areCompatible(StringOperations.getCodeRangeable(string), StringOperations.getCodeRangeable(other)) == null) {
+            if (StringSupport.areCompatible(StringOperations.getCodeRangeableReadOnly(string), StringOperations.getCodeRangeableReadOnly(other)) == null) {
                 return nil();
             }
 
@@ -637,10 +638,11 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {"isRubyString(other)", "!bothSingleByteOptimizable(string, other)"})
+        @TruffleBoundary
         public Object caseCmp(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19 and
 
-            final Encoding encoding = StringSupport.areCompatible(StringOperations.getCodeRangeable(string), StringOperations.getCodeRangeable(other));
+            final Encoding encoding = StringSupport.areCompatible(StringOperations.getCodeRangeableReadOnly(string), StringOperations.getCodeRangeableReadOnly(other));
 
             if (encoding == null) {
                 return nil();
@@ -663,28 +665,23 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "chop!", raiseIfFrozenSelf = true)
+    @ImportStatic(StringGuards.class)
     public abstract static class ChopBangNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private SizeNode sizeNode;
 
         public ChopBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
-        @Specialization
-        public Object chopBang(VirtualFrame frame, DynamicObject string) {
-            if (sizeNode.executeInteger(frame, string) == 0) {
-                return nil();
-            }
+        @Specialization(guards = "isEmpty(string)")
+        public DynamicObject chopBangEmpty(VirtualFrame frame, DynamicObject string) {
+            return nil();
+        }
 
+        @Specialization(guards = "!isEmpty(string)")
+        public Object chopBang( DynamicObject string) {
             final int newLength = choppedLength(string);
 
-            StringOperations.getByteList(string).view(0, newLength);
-
-            if (codeRange(string) != StringSupport.CR_7BIT) {
-                StringOperations.clearCodeRange(string);
-            }
+            Layouts.STRING.setRope(string, RopeOperations.substring(rope(string), 0, newLength));
 
             return string;
         }
@@ -692,7 +689,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         private int choppedLength(DynamicObject string) {
             assert RubyGuards.isRubyString(string);
-            return StringSupport.choppedLength19(StringOperations.getCodeRangeable(string), getContext().getRuntime());
+            return StringSupport.choppedLength19(StringOperations.getCodeRangeableReadOnly(string), getContext().getRuntime());
         }
     }
 
