@@ -2069,6 +2069,7 @@ public abstract class StringNodes {
         @NodeChild(type = RubyNode.class, value = "fromStr"),
         @NodeChild(type = RubyNode.class, value = "toStrNode")
     })
+    @ImportStatic(StringGuards.class)
     public abstract static class TrBangNode extends CoreMethodNode {
 
         @Child private DeleteBangNode deleteBangNode;
@@ -2085,13 +2086,14 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), toStr);
         }
 
-        @Specialization(guards = {"isRubyString(fromStr)", "isRubyString(toStr)"})
-        public Object trBang(VirtualFrame frame, DynamicObject self, DynamicObject fromStr, DynamicObject toStr) {
-            if (StringOperations.getByteList(self).getRealSize() == 0) {
-                return nil();
-            }
+        @Specialization(guards = "isEmpty(self)")
+        public Object trBangEmpty(VirtualFrame frame, DynamicObject self, DynamicObject fromStr, DynamicObject toStr) {
+            return nil();
+        }
 
-            if (StringOperations.getByteList(toStr).getRealSize() == 0) {
+        @Specialization(guards = { "!isEmpty(self)", "isRubyString(fromStr)", "isRubyString(toStr)" })
+        public Object trBang(VirtualFrame frame, DynamicObject self, DynamicObject fromStr, DynamicObject toStr) {
+            if (rope(toStr).isEmpty()) {
                 if (deleteBangNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
@@ -2542,11 +2544,14 @@ public abstract class StringNodes {
             assert RubyGuards.isRubyString(fromStr);
             assert RubyGuards.isRubyString(toStr);
 
-            final CodeRangeable ret = StringSupport.trTransHelper(context.getRuntime(), StringOperations.getCodeRangeable(self), StringOperations.getCodeRangeable(fromStr), StringOperations.getCodeRangeable(toStr), sFlag);
+            final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(self);
+            final CodeRangeable ret = StringSupport.trTransHelper(context.getRuntime(), buffer, StringOperations.getCodeRangeableReadOnly(fromStr), StringOperations.getCodeRangeableReadOnly(toStr), sFlag);
 
             if (ret == null) {
                 return context.getCoreLibrary().getNilObject();
             }
+
+            Layouts.STRING.setRope(self, StringOperations.ropeFromByteList(buffer.getByteList()));
 
             return self;
         }
