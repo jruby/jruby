@@ -563,7 +563,15 @@ public class BodyTranslator extends Translator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, node.getName());
 
-        RubyNode translated = new RubyCallNode(context, sourceSection,
+        final List<RubyNode> children = new ArrayList<>();
+
+        if (argumentsAndBlock.getBlock() != null) {
+            children.add(argumentsAndBlock.getBlock());
+        }
+
+        children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
+
+        RubyNode translated = new RubyCallNode(context, SequenceNode.enclosing(sourceSection, children.toArray(new RubyNode[children.size()])),
                 node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(),
                 privately || ignoreVisibility, isVCall, argumentsAndBlock.getArguments());
 

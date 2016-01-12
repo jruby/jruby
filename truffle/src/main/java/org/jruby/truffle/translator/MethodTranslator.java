@@ -128,16 +128,17 @@ public class MethodTranslator extends BodyTranslator {
                 NodeUtil.cloneNode(loadArguments));
 
         // Procs
-        final RubyNode bodyProc = new CatchForProcNode(context, sourceSection, composeBody(preludeProc, NodeUtil.cloneNode(body)));
+        final RubyNode bodyProc = new CatchForProcNode(context, SequenceNode.enclosing(sourceSection, body.getEncapsulatingSourceSection()), composeBody(preludeProc, NodeUtil.cloneNode(body)));
 
-        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, bodyProc.getEncapsulatingSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
-        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection, composeBody(preludeLambda, body /* no copy, last usage */), environment.getReturnID());
+        final RubyNode composed = composeBody(preludeLambda, body /* no copy, last usage */);
+        final RubyNode bodyLambda = new CatchForLambdaNode(context, composed.getEncapsulatingSourceSection(), composed, environment.getReturnID());
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
-                context, sourceSection,
+                context, bodyLambda.getEncapsulatingSourceSection(),
                 environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyLambda,
                 environment.needsDeclarationFrame());
@@ -159,7 +160,7 @@ public class MethodTranslator extends BodyTranslator {
             }
         }
 
-        return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
+        return new BlockDefinitionNode(context, newRootNodeForProcs.getEncapsulatingSourceSection(), type, environment.getSharedMethodInfo(),
                 callTargetAsProc, callTargetAsLambda, environment.getBreakID(), frameOnStackMarkerSlot);
     }
 
@@ -179,7 +180,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     private RubyNode composeBody(RubyNode prelude, RubyNode body) {
-        final SourceSection sourceSection = body.getSourceSection();
+        final SourceSection sourceSection = SequenceNode.enclosing(prelude.getSourceSection(), body.getSourceSection());
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);
 
