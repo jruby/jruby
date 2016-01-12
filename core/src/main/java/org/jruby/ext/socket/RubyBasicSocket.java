@@ -359,7 +359,7 @@ public abstract class RubyBasicSocket extends RubyIO {
 
         if (address != null) {
             SocketType socketType = SocketType.forChannel(getChannel());
-            return new Addrinfo(runtime, runtime.getClass("Addrinfo"), address, socketType.getSocketType(), socketType);
+            return new Addrinfo(runtime, runtime.getClass("Addrinfo"), address, socketType.getSocketType());
         }
 
         UnixSocketAddress unix = getUnixSocketAddress();
@@ -375,7 +375,7 @@ public abstract class RubyBasicSocket extends RubyIO {
 
         if (address != null) {
             SocketType socketType = SocketType.forChannel(getChannel());
-            return new Addrinfo(runtime, runtime.getClass("Addrinfo"), address, socketType.getSocketType(), socketType);
+            return new Addrinfo(runtime, runtime.getClass("Addrinfo"), address, socketType.getSocketType());
         }
 
         UnixSocketAddress unix = getUnixRemoteSocket();
@@ -741,7 +741,7 @@ public abstract class RubyBasicSocket extends RubyIO {
         return level;
     }
 
-    protected abstract IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse);
+    protected abstract IRubyObject addrFor(ThreadContext context, SocketAddress addr, boolean reverse);
 
     @Deprecated
     public IRubyObject recv(IRubyObject[] args) {

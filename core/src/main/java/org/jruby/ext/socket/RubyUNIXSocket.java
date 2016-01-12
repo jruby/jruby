@@ -29,6 +29,7 @@ package org.jruby.ext.socket;
 
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
+import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.ffi.LastError;
@@ -61,6 +62,7 @@ import org.jruby.util.io.FilenoUtil;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.Channel;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -381,6 +383,12 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     protected void init_sock(Ruby runtime, Channel channel) {
         init_sock(runtime, channel, null);
+    }
+
+    protected IRubyObject addrFor(ThreadContext context, SocketAddress addr, boolean reverse) {
+        final Ruby runtime = context.runtime;
+
+        return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr, Sock.SOCK_STREAM);
     }
 
     //private UnixSocketChannel asUnixSocket() {
