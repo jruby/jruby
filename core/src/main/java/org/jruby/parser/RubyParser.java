@@ -3975,6 +3975,7 @@ states[406] = new ParserState() {
 states[407] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
+                    ((ArgsNode) yyVal).setBlockLocalVariables((ListNode) ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -3987,6 +3988,7 @@ states[408] = new ParserState() {
 states[409] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = ((ArgsNode)yyVals[-2+yyTop]);
+                    ((ArgsNode) yyVal).setBlockLocalVariables((ListNode) ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -3998,25 +4000,25 @@ states[410] = new ParserState() {
 };
 states[411] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = null;
+                    yyVal = ((ListNode)yyVals[-1+yyTop]);
     return yyVal;
   }
 };
 states[412] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = null;
+                    yyVal = support.newArrayNode(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[413] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = null;
+                    yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[414] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.new_bv(((String)yyVals[0+yyTop]));
+                    yyVal = support.new_bv(((String)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -5299,7 +5301,7 @@ states[641] = new ParserState() {
   }
 };
 }
-					// line 2527 "RubyParser.y"
+					// line 2529 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5314,4 +5316,4 @@ states[641] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 9907 "-"
+					// line 9909 "-"

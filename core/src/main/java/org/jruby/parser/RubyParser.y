@@ -253,12 +253,12 @@ public class RubyParser {
 %type <Node> fitem
    // ENEBO: begin all new types
 %type <Node> f_arg_item
-%type <Node> bv_decls
+%type <ListNode> bv_decls
 %type <Node> opt_bv_decl lambda_body 
 %type <LambdaNode> lambda
 %type <Node> mlhs_inner f_block_opt for_var
 %type <Node> opt_call_args f_marg f_margs
-%type <String> bvar
+%type <Node> bvar
    // ENEBO: end all new types
 
 %type <String> rparen rbracket reswords f_bad_arg
@@ -1671,12 +1671,14 @@ opt_block_param : none {
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
                     $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
+                    ((ArgsNode) $$).setBlockLocalVariables((ListNode) $2);
                 }
                 | tOROP {
                     $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
                     $$ = $2;
+                    ((ArgsNode) $$).setBlockLocalVariables((ListNode) $3);
                 }
 
 // shadowed block variables....
@@ -1684,19 +1686,19 @@ opt_bv_decl     : opt_nl {
                     $$ = null;
                 }
                 | opt_nl ';' bv_decls opt_nl {
-                    $$ = null;
+                    $$ = $3;
                 }
 
 // ENEBO: This is confusing...
 bv_decls        : bvar {
-                    $$ = null;
+                    $$ = support.newArrayNode($1.getPosition(), $1);
                 }
                 | bv_decls ',' bvar {
-                    $$ = null;
+                    $$ = $1.add($3);
                 }
 
 bvar            : tIDENTIFIER {
-                    support.new_bv($1);
+                    $$ = support.new_bv($1);
                 }
                 | f_bad_arg {
                     $$ = null;

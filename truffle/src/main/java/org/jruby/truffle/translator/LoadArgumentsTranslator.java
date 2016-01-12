@@ -107,7 +107,7 @@ public class LoadArgumentsTranslator extends Translator {
             }
 
             sequence.add(new IfNode(context, sourceSection,
-                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount() + 1),
+                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
                     new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil),
                     new NilNode(context, sourceSection)));
         }
@@ -161,6 +161,22 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode notNilSmaller = SequenceNode.sequence(context, sourceSection, notNilSmallerSequence);
 
+        // The load to use when the there is no rest
+
+        final List<RubyNode> noRestSequence = new ArrayList<>();
+
+        if (postCount > 0) {
+            state = State.POST;
+            org.jruby.ast.Node[] children = node.getPost().children();
+            index = node.getPreCount() + node.getOptionalArgsCount();
+            for (int i = 0; i < children.length; i++) {
+                noRestSequence.add(children[i].accept(this));
+                index++;
+            }
+        }
+
+        final RubyNode noRest = SequenceNode.sequence(context, sourceSection, noRestSequence);
+
         // The load to use when the array is not nil and at least as large as the number of required arguments
 
         final List<RubyNode> notNilAtLeastAsLargeSequence = new ArrayList<>();
@@ -179,10 +195,14 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode notNilAtLeastAsLarge = SequenceNode.sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
 
         if (useArray()) {
-            sequence.add(new IfNode(context, sourceSection,
-                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
-                    notNilAtLeastAsLarge,
-                    notNilSmaller));
+            if (node.getPreCount() == 0 || node.hasRestArg()) {
+                sequence.add(new IfNode(context, sourceSection,
+                        new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
+                        notNilAtLeastAsLarge,
+                        notNilSmaller));
+            } else {
+                sequence.add(noRest);
+            }
         } else {
             // TODO CS 10-Jan-16 needn't have created notNilSmaller
             sequence.add(notNilAtLeastAsLarge);
@@ -332,6 +352,8 @@ public class LoadArgumentsTranslator extends Translator {
     private RubyNode translateLocalAssignment(ISourcePosition sourcePosition, String name, org.jruby.ast.Node valueNode) {
         final SourceSection sourceSection = translate(sourcePosition);
 
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
+
         final RubyNode readNode;
 
         if (indexFromEnd == 1) {
@@ -345,7 +367,23 @@ public class LoadArgumentsTranslator extends Translator {
                 }
             } else {
                 // Optional argument
-                final RubyNode defaultValue = valueNode.accept(this);
+                final RubyNode defaultValue;
+
+                // The JRuby parser gets local variables that shadow methods with vcalls wrong - fix up here
+
+                if (valueNode instanceof org.jruby.ast.VCallNode) {
+                    final String calledName = ((org.jruby.ast.VCallNode) valueNode).getName();
+
+                    // Just consider the circular case for now as that's all that's speced
+
+                    if (calledName.equals(name)) {
+                        defaultValue = new ReadLocalVariableNode(context, sourceSection, slot);
+                    } else {
+                        defaultValue = valueNode.accept(this);
+                    }
+                } else {
+                    defaultValue = valueNode.accept(this);
+                }
 
                 if (argsNode == null) {
                     throw new IllegalStateException("No arguments node visited");
@@ -371,7 +409,6 @@ public class LoadArgumentsTranslator extends Translator {
             readNode = ArraySliceNodeGen.create(context, sourceSection, index, indexFromEnd, loadArray(sourceSection));
         }
 
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
         return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
