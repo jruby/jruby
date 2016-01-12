@@ -281,7 +281,7 @@ public class LoadService {
         addBuiltinLibrary(library, Library.DUMMY);
         addLoadedFeature(library, library);
     }
-    
+
     protected boolean isFeatureInIndex(String shortName) {
         return loadedFeaturesIndex.containsKey(shortName);
     }
@@ -293,10 +293,10 @@ public class LoadService {
 
     protected void addLoadedFeature(String shortName, String name) {
         loadedFeatures.append(RubyString.newString(runtime, name));
-        
+
         addFeatureToIndex(shortName, name);
     }
-    
+
     protected void addFeatureToIndex(String shortName, String name) {
         loadedFeaturesDup = (RubyArray)loadedFeatures.dup();
         loadedFeaturesIndex.put(shortName, name);
@@ -377,7 +377,7 @@ public class LoadService {
         // Replace it with .jar to look for a java extension
         // JRUBY-5033: The ExtensionSearcher will locate C exts, too, this way.
         if (file.endsWith(".so")) {
-            file = file.replaceAll(".so$", ".jar");
+            file = file.substring(0, file.length() - 3) + ".jar";
         }
 
         SearchState state = new SearchState(file);
@@ -635,7 +635,7 @@ public class LoadService {
         RubyString nameRubyString = runtime.newString(name);
         loadedFeatures.delete(runtime.getCurrentContext(), nameRubyString, Block.NULL_BLOCK);
     }
-    
+
     private boolean isFeaturesIndexUpToDate() {
         // disable tracing during index check
         runtime.getCurrentContext().preTrace();
@@ -648,13 +648,13 @@ public class LoadService {
 
     protected boolean featureAlreadyLoaded(String name) {
         if (loadedFeatures.containsString(name)) return true;
-        
+
         // Bail if our features index fell out of date.
-        if (!isFeaturesIndexUpToDate()) { 
+        if (!isFeaturesIndexUpToDate()) {
             loadedFeaturesIndex.clear();
             return false;
         }
-        
+
         return isFeatureInIndex(name);
     }
 
@@ -823,7 +823,7 @@ public class LoadService {
         public void prepareRequireSearch(final String file) {
             // if an extension is specified, try more targetted searches
             if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
-                Matcher matcher = null;
+                Matcher matcher;
                 if ((matcher = sourcePattern.matcher(file)).find()) {
                     // source extensions
                     suffixType = SuffixType.Source;
@@ -855,7 +855,7 @@ public class LoadService {
         public void prepareLoadSearch(final String file) {
             // if a source extension is specified, try all source extensions
             if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
-                Matcher matcher = null;
+                Matcher matcher;
                 if ((matcher = sourcePattern.matcher(file)).find()) {
                     // source extensions
                     suffixType = SuffixType.Source;
@@ -947,21 +947,21 @@ public class LoadService {
     }
 
     @Deprecated
-    protected void debugLogTry(String what, String msg) {
+    protected final void debugLogTry(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LOG.info( "trying " + what + ": " + msg );
         }
     }
 
     @Deprecated
-    protected void debugLogFound(String what, String msg) {
+    protected final void debugLogFound(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LOG.info( "found " + what + ": " + msg );
         }
     }
 
     @Deprecated
-    protected void debugLogFound( LoadServiceResource resource ) {
+    protected final void debugLogFound( LoadServiceResource resource ) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             String resourceUrl;
             try {
@@ -1097,9 +1097,9 @@ public class LoadService {
 
         for (String suffix : suffixType.getSuffixes()) {
             String namePlusSuffix = baseName + suffix;
-            
+
             foundResource = tryResourceAsIs(namePlusSuffix, "resourceFromDotSlash");
-            
+
             if (foundResource != null) break;
         }
 
@@ -1286,7 +1286,7 @@ public class LoadService {
 
         return foundResource;
     }
-    
+
     protected String getLoadPathEntry(IRubyObject entry) {
         return RubyFile.get_path(entry.getRuntime().getCurrentContext(), entry).asJavaString();
     }
@@ -1345,7 +1345,7 @@ public class LoadService {
     protected boolean loadPathLooksLikeClasspathURL(String loadPathEntry) {
         return loadPathEntry.startsWith("classpath:");
     }
-    
+
     private String[] splitJarUrl(String loadPathEntry) {
         String unescaped = loadPathEntry;
 
@@ -1366,11 +1366,11 @@ public class LoadService {
         if(filename.startsWith("jar:")) {
             filename = filename.substring(4);
         }
-        
+
         if(filename.startsWith("file:")) {
             filename = filename.substring(5);
         }
-        
+
         return new String[]{filename, entry};
     }
 
@@ -1419,7 +1419,7 @@ public class LoadService {
             if (!Ruby.isSecurityRestricted()) {
                 String reportedPath = namePlusSuffix;
                 File actualPath;
-                
+
                 if (new File(reportedPath).isAbsolute()) {
                     // it's an absolute path, use it as-is
                     actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
@@ -1431,9 +1431,9 @@ public class LoadService {
 
                     actualPath = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 }
-                
+
                 debugLogTry(debugName, actualPath.toString());
-                
+
                 if (reportedPath.contains("..")) {
                     // try to canonicalize if path contains ..
                     try {
@@ -1441,7 +1441,7 @@ public class LoadService {
                     } catch (IOException ioe) {
                     }
                 }
-                
+
                 if (actualPath.isFile() && actualPath.canRead()) {
                     foundResource = new LoadServiceResource(actualPath, reportedPath);
                     debugLogFound(foundResource);
