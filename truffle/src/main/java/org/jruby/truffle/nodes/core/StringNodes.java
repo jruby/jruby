@@ -694,6 +694,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "count", rest = true)
+    @ImportStatic(StringGuards.class)
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStr;
@@ -703,12 +704,13 @@ public abstract class StringNodes {
             toStr = ToStrNodeGen.create(context, sourceSection, null);
         }
 
-        @Specialization
-        public int count(VirtualFrame frame, DynamicObject string, Object[] args) {
-            if (rope(string).isEmpty()) {
-                return 0;
-            }
+        @Specialization(guards = "isEmpty(string)")
+        public int count(DynamicObject string, Object[] args) {
+            return 0;
+        }
 
+        @Specialization(guards = "!isEmpty(string)")
+        public int count(VirtualFrame frame, DynamicObject string, Object[] args) {
             if (args.length == 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
@@ -737,7 +739,7 @@ public abstract class StringNodes {
 
                 assert RubyGuards.isRubyString(otherStr);
 
-                enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(otherStr), this);
+                enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherStr), this);
                 tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getRuntime(), table, tables, false, enc);
             }
 
