@@ -72,6 +72,15 @@ describe "Enumerable#chunk" do
     end
   end
 
+  ruby_version_is "2.3" do
+    it "does not accept arguments" do
+      e = EnumerableSpecs::Numerous.new(1, 2, 3)
+      lambda {
+        e.chunk(1) {}
+      }.should raise_error(ArgumentError)
+    end
+  end
+
   it 'returned Enumerator size returns nil' do
     e = EnumerableSpecs::NumerousWithSize.new(1, 2, 3, 2, 1)
     enum = e.chunk { |x| true }

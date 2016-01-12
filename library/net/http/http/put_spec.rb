@@ -5,7 +5,7 @@ require File.expand_path('../fixtures/http_server', __FILE__)
 describe "Net::HTTP#put" do
   before :each do
     NetHTTPSpecs.start_server
-    @http = Net::HTTP.start("localhost", 3333)
+    @http = Net::HTTP.start("localhost", NetHTTPSpecs.port)
   end
 
   after :each do

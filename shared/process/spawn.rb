@@ -429,12 +429,12 @@ describe :process_spawn, shared: true do
     it "closes file descriptors >= 3 in the child process" do
       IO.pipe do |r, w|
         begin
-          pid = @object.spawn(ruby_cmd(""), @options)
+          pid = @object.spawn(ruby_cmd("while File.exist? '#{@name}'; sleep 0.1; end"), @options)
           w.close
           lambda { r.read_nonblock(1) }.should raise_error(EOFError)
         ensure
-          Process.kill(:TERM, pid)
-          Process.wait(pid)
+          rm_r @name
+          Process.wait(pid) if pid
         end
       end
     end
@@ -472,12 +472,12 @@ describe :process_spawn, shared: true do
     it "closes file descriptors >= 3 in the child process because they are set close_on_exec by default" do
       IO.pipe do |r, w|
         begin
-          pid = @object.spawn(ruby_cmd(""), @options)
+          pid = @object.spawn(ruby_cmd("while File.exist? '#{@name}'; sleep 0.1; end"), @options)
           w.close
           lambda { r.read_nonblock(1) }.should raise_error(EOFError)
         ensure
-          Process.kill(:TERM, pid)
-          Process.wait(pid)
+          rm_r @name
+          Process.wait(pid) if pid
         end
       end
     end
@@ -487,12 +487,12 @@ describe :process_spawn, shared: true do
         r.close_on_exec = false
         w.close_on_exec = false
         begin
-          pid = @object.spawn(ruby_cmd(""), @options)
+          pid = @object.spawn(ruby_cmd("while File.exist? '#{@name}'; sleep 0.1; end"), @options)
           w.close
           lambda { r.read_nonblock(1) }.should raise_error(Errno::EAGAIN)
         ensure
-          Process.kill(:TERM, pid)
-          Process.wait(pid)
+          rm_r @name
+          Process.wait(pid) if pid
         end
       end
     end

@@ -1,5 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures', __FILE__)
+require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "ObjectSpace.each_object" do
   it "calls the block once for each living, non-immediate object in the Ruby process" do
@@ -183,6 +183,13 @@ describe "ObjectSpace.each_object" do
       @meta = @klass.singleton_class
     end
 
+    it "does not walk hidden metaclasses" do
+      klass = Class.new.singleton_class
+      ancestors = ObjectSpace.each_object(Class).select { |c| klass.is_a? c }
+      hidden = ancestors.find { |h| h.inspect.include? klass.inspect }
+      hidden.should == nil
+    end
+
     ruby_version_is ""..."2.3" do
       it "does not walk singleton classes" do
         @sclass.should be_kind_of(@meta)
@@ -212,6 +219,7 @@ describe "ObjectSpace.each_object" do
     # singleton classes should be walked only on >= 2.3
     ruby_version_is "2.3" do
       expected << c_sclass
+      c_sclass.should be_kind_of(a.singleton_class)
     end
 
     b.extend Enumerable # included modules should not be walked
