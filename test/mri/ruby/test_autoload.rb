@@ -1,14 +1,13 @@
 require 'test/unit'
 require 'tempfile'
 require 'thread'
-require_relative 'envutil'
 
 class TestAutoload < Test::Unit::TestCase
   def test_autoload_so
-    # Continuation is always available, unless excluded intentionally.
+    # Date is always available, unless excluded intentionally.
     assert_in_out_err([], <<-INPUT, [], [])
-    autoload :Continuation, "continuation"
-    begin Continuation; rescue LoadError; end
+    autoload :Date, "date"
+    begin Date; rescue LoadError; end
     INPUT
   end
 
@@ -54,6 +53,32 @@ p Foo::Bar
       assert_equal(tmpfile, a.autoload?(:X), bug4565)
       assert_equal(tmpfile, b.autoload?(:X), bug4565)
     }
+  end
+
+  def test_autoload_with_unqualified_file_name # [ruby-core:69206]
+    lp = $LOAD_PATH.dup
+    lf = $LOADED_FEATURES.dup
+
+    Dir.mktmpdir('autoload') { |tmpdir|
+      $LOAD_PATH << tmpdir
+
+      Dir.chdir(tmpdir) do
+        eval <<-END
+          class ::Object
+            module A
+              autoload :C, 'b'
+            end
+          end
+        END
+
+        File.open('b.rb', 'w') {|file| file.puts 'module A; class C; end; end'}
+        assert_kind_of Class, ::A::C
+      end
+    }
+  ensure
+    $LOAD_PATH.replace lp
+    $LOADED_FEATURES.replace lf
+    Object.send(:remove_const, :A) if Object.const_defined?(:A)
   end
 
   def test_require_explicit
