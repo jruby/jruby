@@ -20,14 +20,25 @@ public class RopeOperations {
 
     public static final Rope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT);
 
+    @CompilerDirectives.TruffleBoundary
     public static LeafRope create(byte[] bytes, Encoding encoding, int codeRange) {
+        int characterLength = -1;
+
         if (codeRange == StringSupport.CR_UNKNOWN) {
-            codeRange = StringSupport.codeRangeScan(encoding, bytes, 0, bytes.length);
+            final long packedLengthAndCodeRange; // = StringSupport.strLengthWithCodeRange(encoding, bytes, 0, bytes.length);
+            if (encoding.isAsciiCompatible()) {
+                packedLengthAndCodeRange = StringSupport.strLengthWithCodeRangeAsciiCompatible(encoding, bytes, 0, bytes.length);
+            } else {
+                packedLengthAndCodeRange = StringSupport.strLengthWithCodeRangeNonAsciiCompatible(encoding, bytes, 0, bytes.length);
+            }
+
+            codeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
+            characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
         }
 
         switch(codeRange) {
             case StringSupport.CR_7BIT: return new AsciiOnlyLeafRope(bytes, encoding);
-            case StringSupport.CR_VALID: return new ValidLeafRope(bytes, encoding);
+            case StringSupport.CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
             case StringSupport.CR_UNKNOWN: return new UnknownLeafRope(bytes, encoding);
             case StringSupport.CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: throw new RuntimeException(String.format("Unknown code range type: %d", codeRange));

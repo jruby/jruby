@@ -15,8 +15,11 @@ import org.jruby.util.StringSupport;
 
 public class ValidLeafRope extends LeafRope {
 
-    public ValidLeafRope(byte[] bytes, Encoding encoding) {
+    private final int characterLength;
+
+    public ValidLeafRope(byte[] bytes, Encoding encoding, int characterLength) {
         super(bytes, encoding);
+        this.characterLength = characterLength;
     }
 
     @Override
@@ -27,6 +30,11 @@ public class ValidLeafRope extends LeafRope {
     @Override
     public boolean isSingleByteOptimizable() {
         return getEncoding().isSingleByte();
+    }
+
+    @Override
+    public int characterLength() {
+        return characterLength;
     }
 
 }
