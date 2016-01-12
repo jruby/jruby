@@ -58,7 +58,7 @@ public class SimpleWriter {
 
         stream.printf("method %d %s %s %d %d%n",
                 ids.getId(method),
-                sharedInfo.getName(),
+                sharedInfo.getIndicativeName(),
                 sourceName,
                 sourceSection.getStartLine(),
                 endLine);
