@@ -804,10 +804,10 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     @Override
-    protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
+    protected IRubyObject addrFor(ThreadContext context, SocketAddress addr, boolean reverse) {
         final Ruby runtime = context.runtime;
 
-        return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr.getAddress(), addr.getPort(), Sock.SOCK_DGRAM);
+        return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr, soType);
     }
 
     @JRubyMethod

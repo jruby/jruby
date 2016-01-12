@@ -250,15 +250,13 @@ public class SocketUtils {
                 if (sock_dgram) {
                     l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
                             new InetSocketAddress(address, port),
-                            Sock.SOCK_DGRAM,
-                            SocketType.DATAGRAM));
+                            Sock.SOCK_DGRAM));
                 }
 
                 if (sock_stream) {
                     l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
                             new InetSocketAddress(address, port),
-                            Sock.SOCK_STREAM,
-                            SocketType.SOCKET));
+                            Sock.SOCK_STREAM));
                 }
             }
         });

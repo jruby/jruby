@@ -17,7 +17,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -71,28 +70,24 @@ public class Addrinfo extends RubyObject {
         this.interfaceLink = true;
         this.isBroadcast = isBroadcast;
         this.interfaceName = networkInterface.getName();
-        this.socketType = SocketType.SOCKET;
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress) {
         super(runtime, cls);
         this.socketAddress = new InetSocketAddress(inetAddress, 0);
-        this.socketType = SocketType.SOCKET;
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port, Sock sock) {
         super(runtime, cls);
         this.socketAddress = new InetSocketAddress(inetAddress, port);
         this.pfamily = ProtocolFamily.valueOf(getAddressFamily().intValue());
-        this.socketType = SocketType.SOCKET;
         setSockAndProtocol(sock);
     }
 
-    public Addrinfo(Ruby runtime, RubyClass cls, SocketAddress socketAddress, Sock sock, SocketType socketType) {
+    public Addrinfo(Ruby runtime, RubyClass cls, SocketAddress socketAddress, Sock sock) {
         super(runtime, cls);
         this.socketAddress = socketAddress;
         this.pfamily = ProtocolFamily.valueOf(getAddressFamily().intValue());
-        this.socketType = socketType;
         setSockAndProtocol(sock);
     }
 
@@ -184,7 +179,6 @@ public class Addrinfo extends RubyObject {
                     case AF_UNIX: /* ["AF_UNIX", "/tmp/sock"] */
                         IRubyObject path = sockaddAry.eltOk(1).convertToString();
                         socketAddress = new UnixSocketAddress(new File(path.toString()));
-                        this.socketType = SocketType.UNIX;
                         this.sock = Sock.SOCK_STREAM;
 
                         return;
@@ -253,8 +247,6 @@ public class Addrinfo extends RubyObject {
             this.inspectName = host;
 
             this.pfamily = family == null || family.isNil() ? PF_UNSPEC : SocketUtils.protocolFamilyFromArg(family);
-
-            this.socketType = SocketType.SOCKET;
 
             this.sock = sock == null || sock.isNil() ? Sock.SOCK_STREAM : SocketUtils.sockFromArg(sock);
 
@@ -544,7 +536,6 @@ public class Addrinfo extends RubyObject {
 
         addrinfo.socketAddress = new UnixSocketAddress(new File(path.convertToString().toString()));
         addrinfo.sock = Sock.SOCK_STREAM;
-        addrinfo.socketType = SocketType.UNIX;
         addrinfo.pfamily = PF_UNIX;
 
         return addrinfo;
@@ -556,7 +547,6 @@ public class Addrinfo extends RubyObject {
 
         addrinfo.socketAddress = new UnixSocketAddress(new File(path.convertToString().toString()));
         addrinfo.sock = SocketUtils.sockFromArg(type);
-        addrinfo.socketType = SocketType.UNIX;
         addrinfo.pfamily = PF_UNIX;
 
         return addrinfo;
@@ -970,7 +960,6 @@ public class Addrinfo extends RubyObject {
     private SocketAddress socketAddress;
     private ProtocolFamily pfamily = PF_UNSPEC;
     private Sock sock;
-    private SocketType socketType;
     private String interfaceName;
     private boolean interfaceLink;
     private NetworkInterface networkInterface;

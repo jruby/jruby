@@ -44,6 +44,7 @@ import org.jruby.util.io.Sockaddr;
 
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -198,8 +199,12 @@ public abstract class RubyIPSocket extends RubyBasicSocket {
         }
     }
 
-    protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
+    protected IRubyObject addrFor(ThreadContext context, SocketAddress _addr, boolean reverse) {
         final Ruby runtime = context.runtime;
+        if (!(_addr instanceof InetSocketAddress)) {
+            throw context.runtime.newTypeError("invalid SocketAddress type passed to RubyIPSocket.addrFor");
+        }
+        InetSocketAddress addr = (InetSocketAddress) _addr;
         IRubyObject[] ret = new IRubyObject[4];
         if (addr.getAddress() instanceof Inet6Address) {
             ret[0] = runtime.newString("AF_INET6");
