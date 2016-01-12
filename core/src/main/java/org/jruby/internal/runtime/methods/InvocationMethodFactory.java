@@ -30,21 +30,14 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -194,153 +187,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     protected boolean safeFixedSignature(Signature signature) {
         return signature.isFixed() && signature.required() <= 3;
-    }
-
-    static class DescriptorInfo {
-        private int min;
-        private int max;
-        private boolean frame;
-        private boolean scope;
-        private boolean rest;
-        private boolean block;
-        private String parameterDesc;
-
-        private static final boolean RICH_NATIVE_METHOD_PARAMETERS = false;
-
-        public DescriptorInfo(List<JavaMethodDescriptor> descs) {
-            min = Integer.MAX_VALUE;
-            max = 0;
-            frame = false;
-            scope = false;
-            rest = false;
-            block = false;
-            boolean first = true;
-            boolean lastBlock = false;
-
-            for (JavaMethodDescriptor desc: descs) {
-                // make sure we don't have some methods with blocks and others without
-                // the handle generation logic can't handle such cases yet
-                if (first) {
-                    first = false;
-                } else {
-                    if (lastBlock != desc.hasBlock) {
-                        throw new RuntimeException("Mismatched block parameters for method " + desc.declaringClassName + "." + desc.name);
-                    }
-                }
-                lastBlock = desc.hasBlock;
-
-                int specificArity = -1;
-                if (desc.hasVarArgs) {
-                    if (desc.optional == 0 && !desc.rest && desc.required == 0) {
-                        throw new RuntimeException("IRubyObject[] args but neither of optional or rest specified for method " + desc.declaringClassName + "." + desc.name);
-                    }
-                    rest = true;
-                    if (descs.size() == 1) {
-                        min = -1;
-                    }
-                } else {
-                    if (desc.optional == 0 && !desc.rest) {
-                        if (desc.required == 0) {
-                            // No required specified, check actual number of required args
-                            if (desc.actualRequired <= 3) {
-                                // actual required is less than 3, so we use specific arity
-                                specificArity = desc.actualRequired;
-                            } else {
-                                // actual required is greater than 3, raise error (we don't support actual required > 3)
-                                throw new RuntimeException("Invalid specific-arity number of arguments (" + desc.actualRequired + ") on method " + desc.declaringClassName + "." + desc.name);
-                            }
-                        } else if (desc.required >= 0 && desc.required <= 3) {
-                            if (desc.actualRequired != desc.required) {
-                                throw new RuntimeException("Specified required args does not match actual on method " + desc.declaringClassName + "." + desc.name);
-                            }
-                            specificArity = desc.required;
-                        }
-                    }
-
-                    if (specificArity < min) {
-                        min = specificArity;
-                    }
-
-                    if (specificArity > max) {
-                        max = specificArity;
-                    }
-                }
-
-                if (frame && !desc.anno.frame()) throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + "." + desc.name);
-                if (scope && !desc.anno.scope()) throw new RuntimeException("Unbalanced scope property on method " + desc.declaringClassName + "." + desc.name);
-                frame |= desc.anno.frame();
-                scope |= desc.anno.scope();
-                block |= desc.hasBlock;
-            }
-
-            // Core methods currently only show :req's for fixed-arity or a single
-            // :rest if it's variable arity. I have filed a bug to improve this
-            // (using the skipped logic below, when the time comes) but for now
-            // we follow suit. See https://bugs.ruby-lang.org/issues/8088
-
-            StringBuilder descBuilder = new StringBuilder();
-            if (min == max) {
-                int i = 0;
-                for (; i < min; i++) {
-                    if (i > 0) descBuilder.append(';');
-                    descBuilder.append(ArgumentType.REQ);
-                }
-               // variable arity
-            } else if (RICH_NATIVE_METHOD_PARAMETERS) {
-                int i = 0;
-                for (; i < min; i++) {
-                    if (i > 0) descBuilder.append(';');
-                    descBuilder.append(ArgumentType.REQ);
-                }
-
-                for (; i < max; i++) {
-                    if (i > 0) descBuilder.append(';');
-                    descBuilder.append(ArgumentType.ANONOPT);
-                }
-
-                if (rest) {
-                    if (i > 0) descBuilder.append(';');
-                    descBuilder.append(ArgumentType.ANONREST);
-                }
-            } else {
-                descBuilder.append(ArgumentType.ANONREST);
-            }
-
-            parameterDesc = descBuilder.toString();
-        }
-
-        @Deprecated
-        public boolean isBacktrace() {
-            return false;
-        }
-
-        public boolean isFrame() {
-            return frame;
-        }
-
-        public int getMax() {
-            return max;
-        }
-
-        public int getMin() {
-            return min;
-        }
-
-        public boolean isScope() {
-            return scope;
-        }
-
-        public boolean isRest() {
-            return rest;
-        }
-
-        public boolean isBlock() {
-            return block;
-        }
-
-        public String getParameterDesc() {
-            return parameterDesc;
-        }
     }
 
     /**
