@@ -207,8 +207,8 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    public IRubyObject getAutoloadConstant(String name) {
-        return origin.getAutoloadConstant(name);
+    protected IRubyObject getAutoloadConstant(String name, boolean forceLoad) {
+        return origin.getAutoloadConstant(name, forceLoad);
     }
 
     @Override

@@ -3054,14 +3054,14 @@ public class RubyModule extends RubyObject {
 
         // Bare ::
         if (name.length() == 0) {
-            throw context.runtime.newNameError("wrong constant name ", fullName);
+            throw runtime.newNameError("wrong constant name ", fullName);
         }
 
         IRubyObject obj;
         while ( ( sep = name.indexOf("::") ) != -1 ) {
             final String segment = name.substring(0, sep);
             if (segment.length() == 0) {
-                throw context.runtime.newNameError("wrong constant name " + fullName, name);
+                throw runtime.newNameError("wrong constant name " + fullName, name);
             }
             obj = mod.getConstantNoConstMissing(validateConstant(segment, symbol), inherit, inherit);
             if (obj == null) return runtime.getFalse();
@@ -3073,7 +3073,7 @@ public class RubyModule extends RubyObject {
             name = name.substring(sep + 2);
         }
 
-        obj = mod.getConstantNoConstMissing(validateConstant(name, symbol), inherit, inherit);
+        obj = mod.getConstantSkipAutoload(validateConstant(name, symbol), inherit, inherit);
         return runtime.newBoolean(obj != null);
     }
 
@@ -3100,7 +3100,7 @@ public class RubyModule extends RubyObject {
         int sep = name.indexOf("::");
         // symbol form does not allow ::
         if (symbol instanceof RubySymbol && sep != -1) {
-            throw context.runtime.newNameError("wrong constant name", name);
+            throw runtime.newNameError("wrong constant name", name);
         }
 
         RubyModule mod = this;
@@ -3112,7 +3112,7 @@ public class RubyModule extends RubyObject {
 
         // Bare ::
         if (name.length() == 0) {
-            throw context.runtime.newNameError("wrong constant name ", fullName);
+            throw runtime.newNameError("wrong constant name ", fullName);
         }
 
         while ( ( sep = name.indexOf("::") ) != -1 ) {
@@ -3467,11 +3467,13 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstant(String name, boolean inherit, boolean includeObject) {
+        assert IdUtil.isConstant(name);
+
         IRubyObject value = getConstantNoConstMissing(name, inherit, includeObject);
         Ruby runtime = getRuntime();
 
-        return value == null ? callMethod(runtime.getCurrentContext(), "const_missing",
-                runtime.newSymbol(name)) : value;
+        return value != null ? value :
+            callMethod(runtime.getCurrentContext(), "const_missing", runtime.newSymbol(name));
     }
 
     @Deprecated
@@ -3493,23 +3495,35 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstantNoConstMissing(String name, boolean inherit, boolean includeObject) {
-        assert IdUtil.isConstant(name);
-
-        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit);
+        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, true);
 
         if (constant == null && !isClass() && includeObject) {
-            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit);
+            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit, true);
         }
 
         return constant;
     }
 
-    private IRubyObject iterateConstantNoConstMissing(String name, RubyModule init, boolean inherit) {
-        for (RubyModule p = init; p != null; p = p.getSuperClass()) {
-            IRubyObject value = p.getConstantAt(name);
+    // returns UNDEF for un-loaded autoload constants
+    private IRubyObject getConstantSkipAutoload(String name, boolean inherit, boolean includeObject) {
+        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, false);
 
-            if (value != null) return value == UNDEF ? null : value;
-            if (!inherit) break;
+        if (constant == null && !isClass() && includeObject) {
+            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit, false);
+        }
+
+        return constant;
+    }
+
+    private static IRubyObject iterateConstantNoConstMissing(String name,
+        RubyModule init, boolean inherit, boolean loadConstant) {
+        for (RubyModule mod = init; mod != null; mod = mod.getSuperClass()) {
+            final IRubyObject value = mod.fetchConstant(name, true);
+
+            if ( value == UNDEF ) return mod.getAutoloadConstant(name, loadConstant);
+            if ( value != null ) return value;
+
+            if ( ! inherit ) break;
         }
         return null;
     }
@@ -3532,28 +3546,25 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject getConstantFromNoConstMissing(String name, boolean includePrivate) {
         assert name == name.intern() : name + " is not interned";
-        assert IdUtil.isConstant(name);
-        Ruby runtime = getRuntime();
-        RubyClass objectClass = runtime.getObject();
-        IRubyObject value;
 
-        RubyModule p = this;
+        final Ruby runtime = getRuntime();
+        final RubyClass objectClass = runtime.getObject();
 
-        while (p != null) {
-            if ((value = p.fetchConstant(name, false)) != null) {
-                if (value == UNDEF) {
-                    return p.resolveUndefConstant(name);
-                }
+        RubyModule mod = this; IRubyObject value;
 
-                if (p == objectClass && this != objectClass) {
+        while ( mod != null ) {
+            if ( ( value = mod.fetchConstant(name, includePrivate) ) != null ) {
+                if ( value == UNDEF ) return mod.resolveUndefConstant(name);
+
+                if ( mod == objectClass && this != objectClass ) {
                     String badCName = getName() + "::" + name;
-                    runtime.getWarnings().warn(ID.CONSTANT_BAD_REFERENCE, "toplevel constant " +
-                            name + " referenced by " + badCName);
+                    runtime.getWarnings().warn(ID.CONSTANT_BAD_REFERENCE,
+                        "toplevel constant " + name + " referenced by " + badCName);
                 }
 
                 return value;
             }
-            p = p.getSuperClass();
+            mod = mod.getSuperClass();
         }
         return null;
     }
@@ -3573,7 +3584,7 @@ public class RubyModule extends RubyObject {
         return getConstantFromConstMissing(internedName);
     }
 
-    public IRubyObject resolveUndefConstant(String name) {
+    public final IRubyObject resolveUndefConstant(String name) {
         return getAutoloadConstant(name);
     }
 
@@ -4127,12 +4138,15 @@ public class RubyModule extends RubyObject {
      * If it's first resolution for the constant, it tries to require the defined feature and returns the defined value.
      * Multi-threaded accesses are blocked and processed sequentially except if the caller is the autoloading thread.
      */
-    public IRubyObject getAutoloadConstant(String name) {
-        Autoload autoload = getAutoloadMap().get(name);
-        if (autoload == null) {
-            return null;
-        }
-        return autoload.getConstant(getRuntime().getCurrentContext());
+    public final IRubyObject getAutoloadConstant(String name) {
+        return getAutoloadConstant(name, true);
+    }
+
+    protected IRubyObject getAutoloadConstant(String name, boolean loadConstant) {
+        final Autoload autoload = getAutoloadMap().get(name);
+        if ( autoload == null ) return null;
+        if ( ! loadConstant )  return UNDEF;
+        return autoload.getConstant( getRuntime().getCurrentContext() );
     }
 
     /**
