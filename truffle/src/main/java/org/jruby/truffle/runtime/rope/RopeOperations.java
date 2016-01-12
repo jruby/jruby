@@ -25,12 +25,7 @@ public class RopeOperations {
         int characterLength = -1;
 
         if (codeRange == StringSupport.CR_UNKNOWN) {
-            final long packedLengthAndCodeRange; // = StringSupport.strLengthWithCodeRange(encoding, bytes, 0, bytes.length);
-            if (encoding.isAsciiCompatible()) {
-                packedLengthAndCodeRange = StringSupport.strLengthWithCodeRangeAsciiCompatible(encoding, bytes, 0, bytes.length);
-            } else {
-                packedLengthAndCodeRange = StringSupport.strLengthWithCodeRangeNonAsciiCompatible(encoding, bytes, 0, bytes.length);
-            }
+            final long packedLengthAndCodeRange = calculateCodeRangeAndLength(encoding, bytes, 0, bytes.length);
 
             codeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
             characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
@@ -57,16 +52,24 @@ public class RopeOperations {
         return new ConcatRope(left, right, encoding);
     }
 
-    public static Rope substring(Rope base, int offset, int length) {
-        if (length == 0) {
+    public static Rope substring(Rope base, int offset, int byteLength) {
+        if (byteLength == 0) {
             return template(EMPTY_UTF8_ROPE, base.getEncoding());
         }
 
-        if (length - offset == base.byteLength()) {
+        if (byteLength - offset == base.byteLength()) {
             return base;
         }
 
-        return new SubstringRope(base, offset, length);
+        if (base.getCodeRange() == StringSupport.CR_7BIT) {
+            return new SubstringRope(base, offset, byteLength, byteLength, StringSupport.CR_7BIT);
+        }
+
+        final long packedLengthAndCodeRange = calculateCodeRangeAndLength(base.getEncoding(), base.getBytes(), offset, offset + byteLength);
+        final int codeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
+        final int characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
+
+        return new SubstringRope(base, offset, byteLength, characterLength, codeRange);
     }
 
     public static Rope template(Rope originalRope, Encoding newEncoding, int newCodeRange) {
@@ -90,6 +93,15 @@ public class RopeOperations {
     @CompilerDirectives.TruffleBoundary
     public static Encoding STR_ENC_GET(Rope rope) {
         return EncodingUtils.getActualEncoding(rope.getEncoding(), rope.getBytes(), 0, rope.byteLength());
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private static long calculateCodeRangeAndLength(Encoding encoding, byte[] bytes, int start, int end) {
+        if (encoding.isAsciiCompatible()) {
+            return StringSupport.strLengthWithCodeRangeAsciiCompatible(encoding, bytes, 0, bytes.length);
+        } else {
+            return StringSupport.strLengthWithCodeRangeNonAsciiCompatible(encoding, bytes, 0, bytes.length);
+        }
     }
 
 }
