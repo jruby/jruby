@@ -1,2 +1,4 @@
-module Autoloaded5
+class TestAutoload
+  module Autoloaded5
+  end
 end

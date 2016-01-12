@@ -646,7 +646,7 @@ public class LoadService {
         }
     }
 
-    protected boolean featureAlreadyLoaded(String name) {
+    public boolean featureAlreadyLoaded(String name) {
         if (loadedFeatures.containsString(name)) return true;
 
         // Bail if our features index fell out of date.

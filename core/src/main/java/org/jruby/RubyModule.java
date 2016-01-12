@@ -195,15 +195,27 @@ public class RubyModule extends RubyObject {
         public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
             final Ruby runtime = context.runtime;
             final String name = symbol.asJavaString();
-            for (RubyModule mod = (RubyModule) self; mod != null; mod = mod.getSuperClass()) {
+
+            RubyModule mod = RubyKernel.getModuleForAutoload(runtime, self);
+            for (/* RubyModule mod = (RubyModule) self */; mod != null; mod = mod.getSuperClass()) {
+                final IRubyObject loadedValue = mod.fetchConstant(name);
+                if ( loadedValue != null && loadedValue != UNDEF ) return context.nil;
+
                 final String file;
-                if (mod.isIncluded()) {
+                if ( mod.isIncluded() ) {
                     file = mod.getNonIncludedClass().getAutoloadFile(name);
                 }
                 else {
                     file = mod.getAutoloadFile(name);
                 }
-                if ( file != null ) return runtime.newString(file);
+
+                if ( file != null ) { // due explicit requires still need to :
+                    if ( runtime.getLoadService().featureAlreadyLoaded(file) ) {
+                        // TODO in which case the auto-load never finish-es ?!
+                        return context.nil;
+                    }
+                    return runtime.newString(file);
+                }
             }
             return context.nil;
         }
@@ -4166,13 +4178,14 @@ public class RubyModule extends RubyObject {
      * Set an Object as a defined constant in autoloading.
      */
     private void setAutoloadConstant(String name, IRubyObject value) {
-        Autoload autoload = getAutoloadMap().get(name);
-        if (autoload != null) {
-            if (!autoload.setConstant(getRuntime().getCurrentContext(), value)) {
+        final Autoload autoload = getAutoloadMap().get(name);
+        if ( autoload != null ) {
+            if ( ! autoload.setConstant(getRuntime().getCurrentContext(), value) ) {
                 storeConstant(name, value);
                 removeAutoload(name);
             }
-        } else {
+        }
+        else {
             storeConstant(name, value);
         }
     }
