@@ -29,12 +29,17 @@ ruby_version_is '2.3' do
 
       h.dig(:foo, 0, :bar).should == [ 1 ]
       h.dig(:foo, 0, :bar, 0).should == 1
-      h.dig(:foo, 0, :bar, 0, 0).should be_nil
       h.dig(:foo, 1, 1).should == 'str'
-      h.dig(:foo, 1, 1, 0).should be_nil
       # MRI does not recurse values returned from `obj.dig`
       h.dig(:foo, 1, 0, 0).should == [ 42 ]
       h.dig(:foo, 1, 0, 0, 10).should == [ 42 ]
+    end
+
+    it "raises TypeError if an intermediate element does not respond to #dig" do
+      h = {}
+      h[:foo] = [ { :bar => [ 1 ] }, [ nil, 'str' ] ]
+      lambda { h.dig(:foo, 0, :bar, 0, 0) }.should raise_error(TypeError)
+      lambda { h.dig(:foo, 1, 1, 0) }.should raise_error(TypeError)
     end
 
     it "calls #dig on the result of #[] with the remaining arguments" do

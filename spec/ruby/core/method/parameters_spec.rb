@@ -140,6 +140,25 @@ describe "Method#parameters" do
     m.parameters.should == [[:rest,:a],[:req,:b],[:block,:blk]]
   end
 
+  it "returns [[:key,:a]] for a method with a single optional keyword argument" do
+    m = MethodSpecs::Methods.instance_method(:one_key)
+    m.parameters.should == [[:key,:a]]
+  end
+
+  it "returns [[:keyrest,:a]] for a method with a keyword rest argument" do
+    m = MethodSpecs::Methods.instance_method(:one_keyrest)
+    m.parameters.should == [[:keyrest,:a]]
+  end
+
+  ruby_version_is '2.1' do
+    require File.expand_path('../fixtures/classes21', __FILE__)
+
+    it "returns [[:keyreq,:a]] for a method with a single required keyword argument" do
+      m = MethodSpecs::Methods.instance_method(:one_keyreq)
+      m.parameters.should == [[:keyreq,:a]]
+    end
+  end
+
   it "works with ->(){} as the value of an optional argument" do
     m = MethodSpecs::Methods.instance_method(:one_opt_with_stabby)
     m.parameters.should == [[:opt,:a]]

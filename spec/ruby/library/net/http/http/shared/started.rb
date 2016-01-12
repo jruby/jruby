@@ -1,7 +1,7 @@
 describe :net_http_started_p, shared: true do
   before :each do
     NetHTTPSpecs.start_server
-    @http = Net::HTTP.new("localhost", 3333)
+    @http = Net::HTTP.new("localhost", NetHTTPSpecs.port)
   end
 
   after :each do

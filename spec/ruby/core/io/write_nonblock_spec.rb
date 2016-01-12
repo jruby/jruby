@@ -34,6 +34,37 @@ describe "IO#write_nonblock on a file" do
   end
 end
 
+describe 'IO#write_nonblock' do
+  before do
+    @read, @write = IO.pipe
+  end
+
+  after do
+    @read.close
+    @write.close
+  end
+
+  it "raises EAGAIN or a subclass when the write would block" do
+    lambda {
+      loop { @write.write_nonblock('a' * 10_000) }
+    }.should raise_error(Errno::EAGAIN)
+  end
+
+  it "raises an exception extending IO::WaitWritable when the write would block" do
+    lambda {
+      loop { @write.write_nonblock('a' * 10_000) }
+    }.should raise_error(IO::WaitWritable)
+  end
+
+  ruby_version_is "2.1" do
+    it 'raises IO::EAGAINWaitWritable when the operation would block' do
+      lambda {
+        loop { @write.write_nonblock('a' * 10_000) }
+      }.should raise_error(IO::EAGAINWaitWritable)
+    end
+  end
+end
+
 describe "IO#write_nonblock" do
   it_behaves_like :io_write, :write_nonblock
 end
