@@ -648,6 +648,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         if (callInit) {
             rubyThread.callInit(args, block);
+
+            if (rubyThread.threadImpl == null) {
+                throw recv.getRuntime().newThreadError("uninitialized thread - check " + ((RubyClass) recv).getName() + "#initialize");
+            }
         } else {
             // for Thread::start, which does not call the subclass's initialize
             rubyThread.initialize(recv.getRuntime().getCurrentContext(), args, block);
