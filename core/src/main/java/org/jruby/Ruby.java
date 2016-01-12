@@ -1420,7 +1420,9 @@ public final class Ruby implements Constantizable {
         singleNilArray = new IRubyObject[] {nilObject};
 
         falseObject = new RubyBoolean.False(this);
+        falseObject.setFrozen(true);
         trueObject = new RubyBoolean.True(this);
+        trueObject.setFrozen(true);
     }
 
     private void initCore() {
