@@ -3032,42 +3032,49 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "const_defined?", required = 1, optional = 1)
     public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        String fullName = args[0].asJavaString();
-        String symbol = fullName;
-        boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
+        final Ruby runtime = context.runtime;
+        boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
-        int sep = symbol.indexOf("::");
+        final IRubyObject symbol = args[0];
+        final String fullName = symbol.asJavaString();
+        String name = fullName;
+
+        int sep = name.indexOf("::");
         // symbol form does not allow ::
-        if (args[0] instanceof RubySymbol && sep != -1) {
-            throw runtime.newNameError("wrong constant name", symbol);
+        if (symbol instanceof RubySymbol && sep != -1) {
+            throw runtime.newNameError("wrong constant name", name);
         }
 
         RubyModule mod = this;
 
         if (sep == 0) { // ::Foo::Bar
             mod = runtime.getObject();
-            symbol = symbol.substring(2);
+            name = name.substring(2);
         }
 
         // Bare ::
-        if (symbol.length() == 0) throw context.runtime.newNameError("wrong constant name ", fullName);
+        if (name.length() == 0) {
+            throw context.runtime.newNameError("wrong constant name ", fullName);
+        }
 
-        while((sep = symbol.indexOf("::")) != -1) {
-            String segment = symbol.substring(0, sep);
-            if (segment.length() == 0) throw context.runtime.newNameError("wrong constant name " + fullName, symbol);
-            symbol = symbol.substring(sep + 2);
-            IRubyObject obj = mod.getConstantNoConstMissing(validateConstant(segment, args[0]), inherit, inherit);
+        IRubyObject obj;
+        while ( ( sep = name.indexOf("::") ) != -1 ) {
+            final String segment = name.substring(0, sep);
+            if (segment.length() == 0) {
+                throw context.runtime.newNameError("wrong constant name " + fullName, name);
+            }
+            obj = mod.getConstantNoConstMissing(validateConstant(segment, symbol), inherit, inherit);
+            if (obj == null) return runtime.getFalse();
             if (obj instanceof RubyModule) {
                 mod = (RubyModule) obj;
-            } else if (obj == null) {
-                return runtime.getFalse();
             } else {
                 throw runtime.newTypeError(segment + " does not refer to class/module");
             }
+            name = name.substring(sep + 2);
         }
 
-        return runtime.newBoolean(mod.getConstantNoConstMissing(validateConstant(symbol, args[0]), inherit, inherit) != null);
+        obj = mod.getConstantNoConstMissing(validateConstant(name, symbol), inherit, inherit);
+        return runtime.newBoolean(obj != null);
     }
 
     /** rb_mod_const_get
@@ -3083,39 +3090,43 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "const_get", required = 1, optional = 1)
     public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        String fullName = args[0].asJavaString();
-        String symbol = fullName;
-        boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
+        final Ruby runtime = context.runtime;
+        boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
-        int sep = symbol.indexOf("::");
+        final IRubyObject symbol = args[0];
+        final String fullName = symbol.asJavaString();
+        String name = fullName;
+
+        int sep = name.indexOf("::");
         // symbol form does not allow ::
-        if (args[0] instanceof RubySymbol && sep != -1) {
-            throw context.runtime.newNameError("wrong constant name", symbol);
+        if (symbol instanceof RubySymbol && sep != -1) {
+            throw context.runtime.newNameError("wrong constant name", name);
         }
 
         RubyModule mod = this;
 
         if (sep == 0) { // ::Foo::Bar
             mod = runtime.getObject();
-            symbol = symbol.substring(2);
+            name = name.substring(2);
         }
 
         // Bare ::
-        if (symbol.length() == 0) throw context.runtime.newNameError("wrong constant name ", fullName);
+        if (name.length() == 0) {
+            throw context.runtime.newNameError("wrong constant name ", fullName);
+        }
 
-        while ((sep = symbol.indexOf("::")) != -1) {
-            String segment = symbol.substring(0, sep);
-            symbol = symbol.substring(sep + 2);
-            IRubyObject obj = mod.getConstant(validateConstant(segment, args[0]), inherit, inherit);
+        while ( ( sep = name.indexOf("::") ) != -1 ) {
+            final String segment = name.substring(0, sep);
+            IRubyObject obj = mod.getConstant(validateConstant(segment, symbol), inherit, inherit);
             if (obj instanceof RubyModule) {
                 mod = (RubyModule) obj;
             } else {
                 throw runtime.newTypeError(segment + " does not refer to class/module");
             }
+            name = name.substring(sep + 2);
         }
 
-        return mod.getConstant(validateConstant(symbol, args[0]), inherit, inherit);
+        return mod.getConstant(validateConstant(name, symbol), inherit, inherit);
     }
 
     /** rb_mod_const_set
