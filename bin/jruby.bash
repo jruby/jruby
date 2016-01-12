@@ -241,6 +241,9 @@ do
         elif [ "${val:0:15}" = "-Dgraal.option." ]; then # Graal options
             opt=${val:15}
             java_args=("${java_args[@]}" "-Djvmci.option.$opt")
+        elif [ "${val:0:8}" = "-Dgraal." ]; then # Graal options
+            opt=${val:8}
+            java_args=("${java_args[@]}" "-Djvmci.option.$opt")
         else
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
