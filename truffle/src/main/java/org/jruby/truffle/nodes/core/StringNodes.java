@@ -2410,8 +2410,8 @@ public abstract class StringNodes {
         public DynamicObject capitalizeBang(DynamicObject string) {
             // Taken from org.jruby.RubyString#capitalize_bang19.
 
-            final ByteList value = StringOperations.getByteList(string);
-            final Encoding enc = value.getEncoding();
+            final Rope rope = rope(string);
+            final Encoding enc = rope.getEncoding();
 
             if (enc.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
@@ -2420,15 +2420,15 @@ public abstract class StringNodes {
                                 String.format("incompatible encoding with this operation: %s", enc), this));
             }
 
-            if (value.getRealSize() == 0) {
+            if (rope.isEmpty()) {
                 return nil();
             }
 
             StringOperations.modifyAndKeepCodeRange(string);
 
-            int s = value.getBegin();
-            int end = s + value.getRealSize();
-            byte[]bytes = value.getUnsafeBytes();
+            int s = 0;
+            int end = s + rope.byteLength();
+            byte[] bytes = rope.getBytesCopy();
             boolean modify = false;
 
             int c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, s, end);
@@ -2447,7 +2447,13 @@ public abstract class StringNodes {
                 s += StringSupport.codeLength(enc, c);
             }
 
-            return modify ? string : nil();
+            if (modify) {
+                Layouts.STRING.setRope(string, RopeOperations.create(bytes, rope.getEncoding(), rope.getCodeRange()));
+
+                return string;
+            }
+
+            return nil();
         }
     }
 
