@@ -230,12 +230,14 @@ puts ERB.new(%{<html>
   <% method.versions.each do |method_version| %>
     <% if reachable_objects.include?(method_version) %>
       <div id='method-version-<%= method_version.id %>' class='method-version'>
+        <% unless method_version.called_from.empty? %>
         <p>Called from:</p> 
         <ul>
           <% method_version.called_from.each do |caller| %>
             <li><a href='#method-version-<%= caller.method_version.id %>'><%= h(caller.method_version.method.name) %></a></li>
           <% end %>
         </ul>
+        <% end %>
         <% method.source.lines.each_with_index do |code, offset| %>
           <p class='code'>
             <code><%= h(code + ' ').gsub(' ', '&nbsp;') %></code>
