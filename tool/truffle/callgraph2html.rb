@@ -60,7 +60,7 @@ module CG
     end
 
     def reachable
-      versions + callsites
+      callsites # versions aren't reachable - find them through calls
     end
   end
 
@@ -104,7 +104,7 @@ module CG
     end
 
     def reachable
-      [callsite, method_version] + calls
+      [callsite] + calls # method_version isn't reachable - find it through calls
     end
   end
 end
@@ -167,7 +167,10 @@ end
 # Find which objects were actually used
 
 reachable_objects = Set.new
-reachable_worklist = objects.values.select { |o| o.is_a?(CG::Method) && !o.core? }
+
+reachable_worklist = objects.values.select { |o|
+  (o.is_a?(CG::Method) && !o.core?) || (o.is_a?(CG::MethodVersion) && o.method.name == '<main>' && !o.method.core?)
+}
 
 until reachable_worklist.empty?
   object = reachable_worklist.pop
@@ -188,9 +191,7 @@ def annotate(method_version, offset)
         if called == :mega
           comments.push 'calls mega'
         else
-          comment = "calls #{called.method.name}"
-          comment += " #{called.method.source}" unless called.method.core?
-          comments.push comment
+          comments.push "calls <a href='#method-version-#{called.id}'>#{called.method.name}</a>"
         end
       end
     end
@@ -199,7 +200,7 @@ def annotate(method_version, offset)
   if comments.empty?
     ''
   else
-    " # #{comments.join(', ')}"
+    '# ' + comments.join(', ')
   end
 end
 
@@ -213,6 +214,12 @@ puts ERB.new(%{
         margin: 1em;
         padding: 1em;
       }
+      .method-version:target {
+        background: blue;
+      }
+      p.code {
+        margin: 0;
+      }
     </style>
   </header>
   <body>
@@ -221,8 +228,13 @@ puts ERB.new(%{
     <p><%= h(method.source) %></p>
     <% method.versions.each do |method_version| %>
       <% if reachable_objects.include?(method_version) %>
-        <a name='method-version-<%= method_version.id %>'></a><div class='method-version'>
-          <pre><% method.source.lines.each_with_index do |code, offset| %><%= h(code + annotate(method_version, offset) + '\n') %><% end %></pre>
+        <div id='method-version-<%= method_version.id %>' class='method-version'>
+          <% method.source.lines.each_with_index do |code, offset| %>
+            <p class='code'>
+              <code><%= h(code + ' ').gsub(' ', '&nbsp;') %></code>
+              <%= annotate(method_version, offset) %>
+            </p>
+          <% end %>
         </div>
       <% end %>
     <% end %>
