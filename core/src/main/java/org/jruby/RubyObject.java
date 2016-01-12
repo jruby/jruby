@@ -60,6 +60,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * RubyObject represents the implementation of the Object class in Ruby. As such,
@@ -527,12 +528,12 @@ public class RubyObject extends RubyBasicObject {
         Encoding ext = runtime.getDefaultExternalEncoding();
         if (!ext.isAsciiCompatible()) {
             if (!str.isAsciiOnly()) {
-                throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only if default external encoding is ASCII incompatible");
+                return EncodingUtils.rbStrEscape(runtime, str);
             }
             return str;
         }
         if (str.getEncoding() != ext && !str.isAsciiOnly()) {
-            throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only or use the default external encoding");
+            return EncodingUtils.rbStrEscape(runtime, str);
         }
         return str;
     }

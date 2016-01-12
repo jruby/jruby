@@ -4,6 +4,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -1883,4 +1884,113 @@ public class EncodingUtils {
     public static Encoding STR_ENC_GET(ByteListHolder str) {
         return getEncoding(str.getByteList());
     }
+
+    public static RubyString rbStrEscape(Ruby runtime, RubyString str) {
+        Encoding enc = str.getEncoding();
+        ByteList pByteList = str.getByteList();
+        byte[] pBytes = pByteList.unsafeBytes();
+        int p = pByteList.begin();
+        int pend = p + pByteList.realSize();
+        int prev = p;
+        byte[] buf;
+        RubyString result = RubyString.newEmptyString(runtime);
+        boolean unicode_p = enc.isUnicode();
+        boolean asciicompat = enc.isAsciiCompatible();
+
+        while (p < pend) {
+            long c, cc;
+            int n = StringSupport.preciseLength(enc, pBytes, p, pend);
+            if (!StringSupport.MBCLEN_CHARFOUND_P(n)) {
+                if (p > prev) result.cat(pBytes, prev, p - prev);
+                n = enc.minLength();
+                if (pend < p + n)
+                    n = (int) (pend - p);
+                while ((n--) != 0) {
+                    buf = String.format("x%02X", pBytes[p] & 0377).getBytes();
+                    result.cat(buf, 0, buf.length);
+                    prev = ++p;
+                }
+                continue;
+            }
+            n = StringSupport.MBCLEN_CHARFOUND_LEN(n);
+            c = enc.mbcToCode(pBytes, p, pend);
+            p += n;
+            switch ((int)c) {
+                case '\n':
+                    cc = 'n';
+                    break;
+                case '\r':
+                    cc = 'r';
+                    break;
+                case '\t':
+                    cc = 't';
+                    break;
+                case '\f':
+                    cc = 'f';
+                    break;
+                case '\013':
+                    cc = 'v';
+                    break;
+                case '\010':
+                    cc = 'b';
+                    break;
+                case '\007':
+                    cc = 'a';
+                    break;
+                case 033:
+                    cc = 'e';
+                    break;
+                default:
+                    cc = 0;
+                    break;
+            }
+            if (cc != 0) {
+                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
+                buf = new byte[] {(byte)'\\', (byte)cc};
+                result.cat(buf, 0, 2);
+                prev = p;
+            } else if (asciicompat && Encoding.isAscii((byte)c) && c > 31 /*ISPRINT(c)*/) {
+            } else {
+                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
+                rbStrBufCatEscapedChar(result, c, unicode_p);
+                prev = p;
+            }
+        }
+        if (p > prev) result.cat(pBytes, prev, p - prev);
+        result.setEncodingAndCodeRange(USASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
+
+        result.setTaint(str.isTaint());
+        return result;
+    }
+
+    public static int rbStrBufCatEscapedChar(RubyString result, long c, boolean unicode_p) {
+        // FIXME: inefficient
+        byte[] buf;
+        int l;
+
+        c &= 0xffffffff;
+
+        if (unicode_p) {
+            if (c < 0x7F && c > 31 /*ISPRINT(c)*/) {
+                buf = String.format("%c", (char)c).getBytes();
+            }
+            else if (c < 0x10000) {
+                buf = String.format("\\u%04X", c).getBytes();
+            }
+            else {
+                buf = String.format("\\u{%X}", c).getBytes();
+            }
+        }
+        else {
+            if (c < 0x100) {
+                buf = String.format("\\x{%02X}", c).getBytes();
+            }
+            else {
+                buf = String.format("\\x{%X}", c).getBytes();
+            }
+        }
+        result.cat(buf);
+        return buf.length;
+    }
+
 }
