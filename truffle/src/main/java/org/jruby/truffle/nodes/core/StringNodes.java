@@ -1422,7 +1422,15 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject setNumBytes(DynamicObject string, int count) {
-            Layouts.STRING.setRope(string, RopeOperations.substring(rope(string), 0, count));
+            final Rope rope = rope(string);
+
+            if (count > rope.byteLength()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                        String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength()), this));
+            }
+
+            Layouts.STRING.setRope(string, RopeOperations.substring(rope, 0, count));
 
             return string;
         }
