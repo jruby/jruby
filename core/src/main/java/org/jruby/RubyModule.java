@@ -187,13 +187,13 @@ public class RubyModule extends RubyObject {
 
     public static class ModuleKernelMethods {
         @JRubyMethod
-        public static IRubyObject autoload(IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-            return RubyKernel.autoload(recv, arg0, arg1);
+        public static IRubyObject autoload(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject file) {
+            return RubyKernel.autoload(context, recv, symbol, file);
         }
 
         @JRubyMethod(name = "autoload?")
-        public static IRubyObject autoload_p(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-            return RubyKernel.autoload_p(context, recv, arg0);
+        public static IRubyObject autoload_p(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
+            return RubyKernel.autoload_p(context, recv, symbol);
         }
     }
 

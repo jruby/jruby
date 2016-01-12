@@ -154,21 +154,19 @@ public class RubyKernel {
 
     @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         final RubyModule module = getModuleForAutoload(runtime, recv);
-        String name = symbol.asJavaString();
-
-        String file = module.getAutoloadFile(name);
-        return (file == null) ? runtime.getNil() : runtime.newString(file);
+        final String file = module.getAutoloadFile(symbol.asJavaString());
+        return (file == null) ? context.nil : runtime.newString(file);
     }
 
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
-    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject autoload(ThreadContext context, final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
+        final Ruby runtime = context.runtime;
         String nonInternedName = symbol.asJavaString();
 
-        final RubyString fileString = StringSupport.checkEmbeddedNulls(runtime,
-                                        RubyFile.get_path(runtime.getCurrentContext(), file));
+        final RubyString fileString =
+            StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, file));
 
         if (!IdUtil.isValidConstantName(nonInternedName)) {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
@@ -180,7 +178,7 @@ public class RubyKernel {
         final RubyModule module = getModuleForAutoload(runtime, recv);
 
         IRubyObject existingValue = module.fetchConstant(baseName);
-        if (existingValue != null && existingValue != RubyObject.UNDEF) return runtime.getNil();
+        if (existingValue != null && existingValue != RubyObject.UNDEF) return context.nil;
 
         module.defineAutoload(baseName, new IAutoloadMethod() {
             @Override
@@ -196,7 +194,12 @@ public class RubyKernel {
                 }
             }
         });
-        return runtime.getNil();
+        return context.nil;
+    }
+
+    @Deprecated
+    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
+        return autoload(recv.getRuntime().getCurrentContext(), recv, symbol, file);
     }
 
     private static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
