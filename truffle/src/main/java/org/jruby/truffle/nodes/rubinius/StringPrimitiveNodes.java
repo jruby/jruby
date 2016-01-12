@@ -1319,6 +1319,65 @@ public abstract class StringPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
+    public static abstract class StringSplicePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringSplicePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = { "indexAtStartBound(spliceByteIndex)", "isRubyString(other)" })
+        public Object splicePrepend(DynamicObject string, DynamicObject other, int spliceByteIndex, int otherSubstringByteLength) {
+            final Rope left = RopeOperations.substring(rope(other), 0, otherSubstringByteLength);
+            final Rope right = rope(string);
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, right.getEncoding()));
+
+            return string;
+        }
+
+        @Specialization(guards = { "indexAtEndBound(string, spliceByteIndex)", "isRubyString(other)" })
+        public Object spliceAppend(DynamicObject string, DynamicObject other, int spliceByteIndex, int otherSubstringByteLength) {
+            final Rope left = rope(string);
+            final Rope right = RopeOperations.substring(rope(other), 0, otherSubstringByteLength);
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, left.getEncoding()));
+
+            return string;
+        }
+
+        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)" })
+        public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int otherSubstringByteLength) {
+            final Rope source = rope(string);
+            final Rope insert = rope(other);
+
+            final Rope splitLeft = RopeOperations.substring(source, 0, spliceByteIndex);
+            final Rope splitRight = RopeOperations.substring(source, spliceByteIndex, source.byteLength() - spliceByteIndex);
+            final Rope joinedLeft = RopeOperations.concat(splitLeft, insert, source.getEncoding());
+            final Rope joinedRight = RopeOperations.concat(joinedLeft, splitRight, source.getEncoding());
+
+            Layouts.STRING.setRope(string, joinedRight);
+
+            return string;
+        }
+
+        protected  boolean indexAtStartBound(int index) {
+            return index == 0;
+        }
+
+        protected boolean indexAtEndBound(DynamicObject string, int index) {
+            assert RubyGuards.isRubyString(string);
+
+            return index == rope(string).byteLength();
+        }
+
+        protected boolean indexAtEitherBounds(DynamicObject string, int index) {
+            assert RubyGuards.isRubyString(string);
+
+            return indexAtStartBound(index) || indexAtEndBound(string, index);
+        }
+    }
+
     @RubiniusPrimitive(name = "string_to_inum")
     public static abstract class StringToInumPrimitiveNode extends RubiniusPrimitiveNode {
 
