@@ -577,8 +577,8 @@ public class BodyTranslator extends Translator {
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
-            translated = new FrameOnStackNode(context, sourceSection, translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
-            translated = new CatchBreakNode(context, sourceSection, translated, blockDef.getBreakID());
+            translated = new FrameOnStackNode(context, translated.getSourceSection(), translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
+            translated = new CatchBreakNode(context, translated.getSourceSection(), translated, blockDef.getBreakID());
         }
 
         return addNewlineIfNeeded(node, translated);
