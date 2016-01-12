@@ -873,12 +873,12 @@ public abstract class StringNodes {
                 tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStrings[i]), getContext().getRuntime(), squeeze, tables, false, enc);
             }
 
-            final CodeRangeable output = StringOperations.getCodeRangeableReadWrite(string);
-            if (StringSupport.delete_bangCommon19(output, getContext().getRuntime(), squeeze, tables, enc) == null) {
+            final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(string);
+            if (StringSupport.delete_bangCommon19(buffer, getContext().getRuntime(), squeeze, tables, enc) == null) {
                 return nil();
             }
 
-            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(output.getByteList()));
+            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer.getByteList()));
 
             return string;
         }
