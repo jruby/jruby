@@ -132,7 +132,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
 
     plugin :compiler, '3.1'
-    plugin :shade, '2.1'
+    plugin :shade, '2.4.3'
     plugin :surefire, '2.15'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
