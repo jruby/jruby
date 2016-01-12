@@ -3903,6 +3903,26 @@ public final class Ruby implements Constantizable {
         return newNameError(message, name, origException, false);
     }
 
+    public RaiseException newNameError(String message, IRubyObject recv, IRubyObject name) {
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
+        RubyException err = RubyNameError.newRubyNameError(getNameError(), msg, name);
+
+        return new RaiseException(err);
+    }
+
+    public RaiseException newNameError(String message, IRubyObject recv, String name) {
+        RubySymbol nameSym = newSymbol(name);
+        return newNameError(message, recv, nameSym);
+    }
+
+    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args) {
+        RubySymbol nameStr = newSymbol(name);
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
+        RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args);
+
+        return new RaiseException(err);
+    }
+
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
         if (origException != null) {
             if (printWhenVerbose && isVerbose()) {

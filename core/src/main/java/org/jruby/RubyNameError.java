@@ -28,14 +28,10 @@
 
 package org.jruby;
 
-import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.Visibility.PROTECTED;
-
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -64,22 +60,23 @@ public class RubyNameError extends RubyException {
         static ObjectAllocator NAMEERRORMESSAGE_ALLOCATOR = new ObjectAllocator() {
             @Override
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                IRubyObject dummy = new RubyObject(runtime, runtime.getObject());
-                return new RubyNameErrorMessage(runtime, dummy, dummy, Visibility.PRIVATE, CallType.VARIABLE);
+                return new RubyNameErrorMessage(runtime);
             }
-        };        
+        };
 
-        private final IRubyObject object;
-        private final IRubyObject method;
-        private final Visibility visibility;
-        private final CallType callType;
+        private String message;
+        private IRubyObject object;
+        private IRubyObject name;
 
-        RubyNameErrorMessage(Ruby runtime, IRubyObject object, IRubyObject method, Visibility visibility, CallType callType) {
+        RubyNameErrorMessage(Ruby runtime) {
+            super(runtime, runtime.getNameErrorMessage());
+        }
+
+        RubyNameErrorMessage(Ruby runtime, String message, IRubyObject object, IRubyObject name) {
             super(runtime, runtime.getNameErrorMessage(), false);
+            this.message = message;
             this.object = object;
-            this.method = method;
-            this.visibility = visibility;
-            this.callType = callType;
+            this.name = name;
         }
 
         @JRubyMethod(name = "_load", meta = true)
@@ -94,45 +91,47 @@ public class RubyNameError extends RubyException {
 
         @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
-            String format = null;
-
-            if (visibility == PRIVATE) {
-                format = "private method `%s' called for %s";
-            } else if (visibility == PROTECTED) {
-                format = "protected method `%s' called for %s";
-            } else if (callType == CallType.VARIABLE) {
-                format = "undefined local variable or method `%s' for %s";
-            } else if (callType == CallType.SUPER) {
-                format = "super: no superclass method `%s'";
-            }
-
-            if (format == null) format = "undefined method `%s' for %s";
-
-            String description = null;
-
-            if (object.isNil()) {
-                description = "nil";
-            } else if (object instanceof RubyBoolean && object.isTrue()) {
-                description = "true";
-            } else if (object instanceof RubyBoolean && !object.isTrue()) {
-                description = "false";
-            } else {
-                try {
-                    description = RubyObject.inspect(context, object).toString();
-                } catch(JumpException e) {}
-
-                if (description == null || description.length() > 65) description = object.anyToString().toString();
-            }
-
-            if (description.length() == 0 || (description.length() > 0 && description.charAt(0) != '#')) {
-                description = description + ":" + object.getMetaClass().getRealClass().getName();            
-            }
-
             Ruby runtime = context.runtime;
-            RubyArray arr = runtime.newArray(method, runtime.newString(description));
-            ByteList msgBytes = new ByteList(format.length() + description.length() + method.toString().length());
-            Sprintf.sprintf(msgBytes, format, arr);
-            return runtime.newString(msgBytes).infectBy(object);
+
+            if (message == null) {
+                return context.nil;
+            } else {
+                String description = null;
+                IRubyObject[] args = new IRubyObject[2];
+                boolean singleton = false;
+
+                if (object.isNil()) {
+                    description = "nil";
+                } else if (object instanceof RubyBoolean && object.isTrue()) {
+                    description = "true";
+                } else if (object instanceof RubyBoolean && !object.isTrue()) {
+                    description = "false";
+                } else {
+                    try {
+                        description = RubyObject.inspect(context, object).toString();
+                    } catch (JumpException e) {
+                        context.setErrorInfo(context.nil);
+                    }
+
+                    if (description == null || description.length() > 65) {
+                        description = object.anyToString().toString();
+                    }
+
+                    singleton = description.length() > 0 && description.charAt(0) == '#';
+                }
+
+                if (!singleton) {
+                    description = description + ":" + object.getMetaClass().getRealClass().getName();
+                }
+                args[0] = name;
+                args[1] = runtime.newString(description);
+
+                RubyArray arr = runtime.newArray(name, runtime.newString(description));
+                ByteList msgBytes = new ByteList(this.message.length() + description.length() + name.toString().length());
+                Sprintf.sprintf(msgBytes, this.message, arr);
+
+                return runtime.newString(msgBytes);
+            }
         }
     }
 
@@ -173,18 +172,27 @@ public class RubyNameError extends RubyException {
         this.name = name;
     }
 
-    @JRubyMethod(name = "exception", rest = true, meta = true)
-    public static RubyException newRubyNameError(IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(name = "exception", meta = true)
+    public static RubyException exception(ThreadContext context, IRubyObject recv, IRubyObject message) {
+        return newRubyNameError(recv, message, context.nil);
+    }
+
+    @JRubyMethod(name = "exception", meta = true)
+    public static RubyException exception(ThreadContext context, IRubyObject recv, IRubyObject message, IRubyObject name) {
+        return newRubyNameError(recv, message, name);
+    }
+
+    public static RubyException newRubyNameError(IRubyObject recv, IRubyObject message, IRubyObject name) {
         RubyClass klass = (RubyClass)recv;
-        
+
         RubyException newError = (RubyException) klass.allocate();
-        
-        newError.callInit(args, Block.NULL_BLOCK);
-        
+
+        newError.callInit(message, name, Block.NULL_BLOCK);
+
         return newError;
     }
 
-    @JRubyMethod(optional = 2, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 1) {

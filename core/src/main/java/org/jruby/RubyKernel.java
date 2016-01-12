@@ -111,7 +111,7 @@ public class RubyKernel {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            return RubyKernel.methodMissing(context, self, name, visibility, callType, args, block);
+            return RubyKernel.methodMissing(context, self, name, visibility, callType, args);
         }
 
     }
@@ -168,7 +168,7 @@ public class RubyKernel {
         String nonInternedName = symbol.asJavaString();
 
         final RubyString fileString = StringSupport.checkEmbeddedNulls(runtime,
-                                        RubyFile.get_path(runtime.getCurrentContext(), file));
+                RubyFile.get_path(runtime.getCurrentContext(), file));
 
         if (!IdUtil.isValidConstantName(nonInternedName)) {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
@@ -216,54 +216,45 @@ public class RubyKernel {
             throw context.runtime.newArgumentError("no id given");
         }
 
-        return methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args, block);
+        return methodMissingDirect(context, recv, (RubySymbol) args[0], lastVis, lastCallType, args);
     }
 
-    protected static IRubyObject methodMissingDirect(ThreadContext context, IRubyObject recv, RubySymbol symbol, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
+    protected static IRubyObject methodMissingDirect(ThreadContext context, IRubyObject recv, RubySymbol symbol, Visibility lastVis, CallType lastCallType, IRubyObject[] args) {
+        return methodMissing(context, recv, symbol.toString(), lastVis, lastCallType, args, true);
+    }
+
+    public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args) {
+        return methodMissing(context, recv, name, lastVis, lastCallType, args, false);
+    }
+
+    public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, boolean dropFirst) {
         Ruby runtime = context.runtime;
 
-        // create a lightweight thunk
-        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(runtime,
-                                                                 recv,
-                                                                 symbol,
-                                                                 lastVis,
-                                                                 lastCallType);
-        final IRubyObject[]exArgs;
-        final RubyClass exc;
         if (lastCallType != CallType.VARIABLE) {
-            exc = runtime.getNoMethodError();
-            exArgs = new IRubyObject[]{msg, symbol, RubyArray.newArrayNoCopy(runtime, args, 1)};
+            throw runtime.newNoMethodError(getMethodMissingFormat(lastVis, lastCallType), recv, name, RubyArray.newArrayNoCopy(runtime, args, dropFirst ? 1 : 0));
         } else {
-            exc = runtime.getNameError();
-            exArgs = new IRubyObject[]{msg, symbol};
+            throw runtime.newNameError(getMethodMissingFormat(lastVis, lastCallType), recv, name);
         }
-
-        throw new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
     }
 
-    public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-        RubySymbol symbol = runtime.newSymbol(name);
+    private static String getMethodMissingFormat(Visibility visibility, CallType callType) {
 
-        // create a lightweight thunk
-        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(runtime,
-                                                                 recv,
-                                                                 symbol,
-                                                                 lastVis,
-                                                                 lastCallType);
-        final IRubyObject[]exArgs;
-        final RubyClass exc;
-        if (lastCallType != CallType.VARIABLE) {
-            exc = runtime.getNoMethodError();
-            exArgs = new IRubyObject[]{msg, symbol, RubyArray.newArrayNoCopy(runtime, args)};
-        } else {
-            exc = runtime.getNameError();
-            exArgs = new IRubyObject[]{msg, symbol};
+        String format = null;
+
+        if (visibility == PRIVATE) {
+            format = "private method `%s' called for %s";
+        } else if (visibility == PROTECTED) {
+            format = "protected method `%s' called for %s";
+        } else if (callType == CallType.VARIABLE) {
+            format = "undefined local variable or method `%s' for %s";
+        } else if (callType == CallType.SUPER) {
+            format = "super: no superclass method `%s'";
         }
 
-        throw new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
-    }
+        if (format == null) format = "undefined method `%s' for %s";
 
+        return format;
+    }
 
     private static IRubyObject[] popenArgs(Ruby runtime, String pipedArg, IRubyObject[] args) {
             IRubyObject command = runtime.newString(pipedArg.substring(1));
@@ -2064,4 +2055,10 @@ public class RubyKernel {
         return ((RubyBasicObject)self).instance_variables19(context);
     }
     /* end delegated bindings */
+
+    @Deprecated
+    public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
+        return methodMissing(context, recv, name, lastVis, lastCallType, args);
+    }
+
 }

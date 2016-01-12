@@ -1589,7 +1589,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             throw context.runtime.newArgumentError("no id given");
         }
 
-        return RubyKernel.methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args, block);
+        return RubyKernel.methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args);
     }
 
     @JRubyMethod(name = "__send__", omit = true)
@@ -2685,7 +2685,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     fred.instance_variable_defined?("@c")   #=> false
      */
     public IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject name) {
-        if (variableTableContains(validateInstanceVariable(name.asJavaString()))) {
+        if (variableTableContains(validateInstanceVariable(name, name.asJavaString()))) {
             return context.runtime.getTrue();
         }
         return context.runtime.getFalse();
@@ -2713,7 +2713,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject instance_variable_get(ThreadContext context, IRubyObject name) {
         Object value;
-        if ((value = variableTableFetch(validateInstanceVariable(name.asJavaString()))) != null) {
+        if ((value = variableTableFetch(validateInstanceVariable(name, name.asJavaString()))) != null) {
             return (IRubyObject)value;
         }
         return context.runtime.getNil();
@@ -2741,7 +2741,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         // no need to check for ensureInstanceVariablesSettable() here, that'll happen downstream in setVariable
-        return (IRubyObject)variableTableStore(validateInstanceVariable(name.asJavaString()), value);
+        return (IRubyObject)variableTableStore(validateInstanceVariable(name, name.asJavaString()), value);
     }
 
     /** rb_obj_remove_instance_variable
@@ -2769,10 +2769,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject remove_instance_variable(ThreadContext context, IRubyObject name, Block block) {
         ensureInstanceVariablesSettable();
         IRubyObject value;
-        if ((value = (IRubyObject)variableTableRemove(validateInstanceVariable(name.asJavaString()))) != null) {
+        if ((value = (IRubyObject)variableTableRemove(validateInstanceVariable(name, name.asJavaString()))) != null) {
             return value;
         }
-        throw context.runtime.newNameError("instance variable " + name.asJavaString() + " not defined", name.asJavaString());
+        throw context.runtime.newNameError("instance variable " + name.asJavaString() + " not defined", this, name);
     }
 
     /** rb_obj_instance_variables
@@ -2865,7 +2865,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected String validateInstanceVariable(String name) {
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
-        throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", name);
+        throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", this, name);
+    }
+
+    protected String validateInstanceVariable(IRubyObject nameObj, String name) {
+        if (IdUtil.isValidInstanceVariableName(name)) return name;
+
+        throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", this, nameObj);
     }
 
     /**

@@ -2929,7 +2929,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "class_variable_defined?", required = 1)
     public IRubyObject class_variable_defined_p(ThreadContext context, IRubyObject var) {
-        String internedName = validateClassVariable(var.asJavaString().intern());
+        String internedName = validateClassVariable(var, var.asJavaString().intern());
         RubyModule module = this;
         do {
             if (module.hasClassVariable(internedName)) {
@@ -2944,7 +2944,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject class_variable_get(IRubyObject var) {
-        return getClassVar(validateClassVariable(var.asJavaString()).intern());
+        return getClassVar(var, validateClassVariable(var, var.asJavaString()).intern());
     }
 
     @JRubyMethod(name = "class_variable_get")
@@ -2956,7 +2956,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
-        return setClassVar(validateClassVariable(var.asJavaString()).intern(), value);
+        return setClassVar(validateClassVariable(var, var.asJavaString()).intern(), value);
     }
 
     @JRubyMethod(name = "class_variable_set")
@@ -3173,7 +3173,7 @@ public class RubyModule extends RubyObject {
             longName = shortName;
         }
 
-        throw runtime.newNameErrorObject("uninitialized constant " + longName, runtime.newSymbol(shortName));
+        throw runtime.newNameError("uninitialized constant " + longName, this, rubyName);
     }
 
     public RubyArray constants(ThreadContext context) {
@@ -3362,6 +3362,26 @@ public class RubyModule extends RubyObject {
      * @return The variable's value, or throws NameError if not found
      */
     public IRubyObject getClassVar(String name) {
+        IRubyObject value = getClassVarQuiet(name);
+
+        if (value == null) {
+            throw getRuntime().newNameError("uninitialized class variable %s in %s", this, name);
+        }
+
+        return value;
+    }
+
+    public IRubyObject getClassVar(IRubyObject nameObject, String name) {
+        IRubyObject value = getClassVarQuiet(name);
+
+        if (value == null) {
+            throw getRuntime().newNameError("uninitialized class variable %s in %s", this, nameObject);
+        }
+
+        return value;
+    }
+
+    public IRubyObject getClassVarQuiet(String name) {
         assert IdUtil.isClassVariable(name);
         Object value;
         RubyModule module = this;
@@ -3370,7 +3390,7 @@ public class RubyModule extends RubyObject {
             if ((value = module.fetchClassVariable(name)) != null) return (IRubyObject)value;
         } while ((module = module.getSuperClass()) != null);
 
-        throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName(), name);
+        return null;
     }
 
     @Deprecated
@@ -3919,7 +3939,14 @@ public class RubyModule extends RubyObject {
         if (IdUtil.isValidClassVariableName(name)) {
             return name;
         }
-        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", name);
+        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", this, name);
+    }
+
+    protected final String validateClassVariable(IRubyObject nameObj, String name) {
+        if (IdUtil.isValidClassVariableName(name)) {
+            return name;
+        }
+        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", this, nameObj);
     }
 
     protected final void ensureClassVariablesSettable() {
