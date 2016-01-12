@@ -77,7 +77,7 @@ public class MethodVersion {
         CallSiteVersion callSiteVersion = callSiteVersions.get(callSite);
 
         if (callSiteVersion == null) {
-            callSiteVersion = new CallSiteVersion(callSite);
+            callSiteVersion = new CallSiteVersion(callSite, this);
             callSiteVersions.put(callSite, callSiteVersion);
         }
 

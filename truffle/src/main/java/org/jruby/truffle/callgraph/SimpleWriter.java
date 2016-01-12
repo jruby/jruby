@@ -97,8 +97,9 @@ public class SimpleWriter {
     }
 
     private void write(CallSiteVersion version) {
-        stream.printf("callsite-version %d %d%n",
+        stream.printf("callsite-version %d %d %d%n",
                 ids.getId(version.getCallSite()),
+                ids.getId(version.getMethodVersion()),
                 ids.getId(version));
 
         for (Calls calls : version.getCalls()) {
