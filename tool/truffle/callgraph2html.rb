@@ -1,4 +1,16 @@
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
+# -Xtruffle.callgraph=true -Xtruffle.callgraph.write=test.callgraph
+# ruby tool/truffle/callgraph2html.rb < test.callgraph > callgraph.html && open callgraph.html
+
 require 'erb'
+require 'set'
 
 include ERB::Util
 
@@ -46,6 +58,10 @@ module CG
     def core?
       source.file.start_with?('truffle:') || source.file == '(unknown)'
     end
+
+    def reachable
+      versions + callsites
+    end
   end
 
   class MethodVersion
@@ -55,6 +71,10 @@ module CG
       @id = Integer(id)
       @method = method
       @callsite_versions = []
+    end
+
+    def reachable
+      [method] + callsite_versions
     end
   end
 
@@ -67,6 +87,10 @@ module CG
       @line = Integer(line)
       @versions = []
     end
+
+    def reachable
+      [method] + versions
+    end
   end
 
   class CallSiteVersion
@@ -77,6 +101,10 @@ module CG
       @callsite = callsite
       @method_version = method_version
       @calls = []
+    end
+
+    def reachable
+      [callsite, method_version] + calls
     end
   end
 end
@@ -113,12 +141,15 @@ ARGF.each_line do |line|
     if line[2] == 'mega'
       callsite_version.calls.push :mega
     else
+      # We just store the method id here for now as we may not have seen all methods yet
       callsite_version.calls.push Integer(line[2])
     end
   else
     raise line.inspect
   end
 end
+
+# Resolve method ids to point to the actual object
 
 objects.values.each do |object|
   if object.is_a? CG::CallSiteVersion
@@ -131,6 +162,19 @@ objects.values.each do |object|
       end
     end
   end
+end
+
+# Find which objects were actually used
+
+reachable_objects = Set.new
+reachable_worklist = objects.values.select { |o| o.is_a?(CG::Method) && !o.core? }
+
+until reachable_worklist.empty?
+  object = reachable_worklist.pop
+  next if object == :mega
+  next if reachable_objects.include? object
+  reachable_objects.add object
+  reachable_worklist.push *object.reachable
 end
 
 def annotate(method_version, offset)
@@ -172,13 +216,15 @@ puts ERB.new(%{
     </style>
   </header>
   <body>
-  <% objects.values.select { |o| o.is_a?(CG::Method) && !o.core? }.each do |method| %>
+  <% reachable_objects.select { |o| o.is_a?(CG::Method) }.each do |method| %>
     <h2><%= h(method.name) %></h2>
     <p><%= h(method.source) %></p>
     <% method.versions.each do |method_version| %>
-      <a name='method-version-<%= method_version.id %>'></a><div class='method-version'>
-        <pre><% method.source.lines.each_with_index do |code, offset| %><%= h(code + annotate(method_version, offset) + '\n') %><% end %></pre>
-      </div>
+      <% if reachable_objects.include?(method_version) %>
+        <a name='method-version-<%= method_version.id %>'></a><div class='method-version'>
+          <pre><% method.source.lines.each_with_index do |code, offset| %><%= h(code + annotate(method_version, offset) + '\n') %><% end %></pre>
+        </div>
+      <% end %>
     <% end %>
   <% end %>
   </body>
