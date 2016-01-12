@@ -163,18 +163,18 @@ public class RubyKernel {
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
     public static IRubyObject autoload(ThreadContext context, final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
         final Ruby runtime = context.runtime;
-        String nonInternedName = symbol.asJavaString();
-
-        final RubyString fileString =
-            StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, file));
+        final String nonInternedName = symbol.asJavaString();
 
         if (!IdUtil.isValidConstantName(nonInternedName)) {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
 
+        final RubyString fileString =
+            StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, file));
+
         if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
 
-        final String baseName = symbol.asJavaString().intern(); // interned, OK for "fast" methods
+        final String baseName = nonInternedName.intern(); // interned, OK for "fast" methods
         final RubyModule module = getModuleForAutoload(runtime, recv);
 
         IRubyObject existingValue = module.fetchConstant(baseName);
@@ -202,7 +202,7 @@ public class RubyKernel {
         return autoload(recv.getRuntime().getCurrentContext(), recv, symbol, file);
     }
 
-    private static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
+    static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
         RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getMetaClass().getRealClass();
         if (module == runtime.getKernel()) {
             // special behavior if calling Kernel.autoload directly

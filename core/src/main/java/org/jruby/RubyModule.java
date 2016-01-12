@@ -187,13 +187,25 @@ public class RubyModule extends RubyObject {
 
     public static class ModuleKernelMethods {
         @JRubyMethod
-        public static IRubyObject autoload(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-            return RubyKernel.autoload(context, recv, symbol, file);
+        public static IRubyObject autoload(ThreadContext context, IRubyObject self, IRubyObject symbol, IRubyObject file) {
+            return RubyKernel.autoload(context, self, symbol, file);
         }
 
         @JRubyMethod(name = "autoload?")
-        public static IRubyObject autoload_p(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
-            return RubyKernel.autoload_p(context, recv, symbol);
+        public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
+            final Ruby runtime = context.runtime;
+            final String name = symbol.asJavaString();
+            for (RubyModule mod = (RubyModule) self; mod != null; mod = mod.getSuperClass()) {
+                final String file;
+                if (mod.isIncluded()) {
+                    file = mod.getNonIncludedClass().getAutoloadFile(name);
+                }
+                else {
+                    file = mod.getAutoloadFile(name);
+                }
+                if ( file != null ) return runtime.newString(file);
+            }
+            return context.nil;
         }
     }
 
@@ -427,7 +439,8 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * Is this module one that in an included one (e.g. an IncludedModuleWrapper).
+     * Is this module one that in an included one (e.g. an {@link IncludedModuleWrapper}).
+     * @see IncludedModule
      */
     public boolean isIncluded() {
         return false;
