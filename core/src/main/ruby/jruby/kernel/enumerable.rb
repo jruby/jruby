@@ -65,8 +65,6 @@ module Enumerable
 
   def slice_when(&block)
     raise ArgumentError.new("missing block") unless block
-    return Enumerator.new {|e| } if empty?
-    return Enumerator.new {|e| e.yield self } if length < 2
 
     Enumerator.new do |enum|
       ary = nil
@@ -94,8 +92,6 @@ module Enumerable
   
   def chunk_while(&block)
     raise ArgumentError.new("missing block") unless block
-    return Enumerator.new {|e| } if empty?
-    return Enumerator.new {|e| e.yield self } if length < 2
 
     Enumerator.new do |enum|
       ary = nil
