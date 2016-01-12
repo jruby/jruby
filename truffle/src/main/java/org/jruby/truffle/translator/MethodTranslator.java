@@ -130,7 +130,7 @@ public class MethodTranslator extends BodyTranslator {
         // Procs
         final RubyNode bodyProc = new CatchForProcNode(context, SequenceNode.enclosing(sourceSection, body.getEncapsulatingSourceSection()), composeBody(preludeProc, NodeUtil.cloneNode(body)));
 
-        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, bodyProc.getEncapsulatingSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, considerExtendingMethodToCoverEnd(bodyProc.getEncapsulatingSourceSection()), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
@@ -138,7 +138,7 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode bodyLambda = new CatchForLambdaNode(context, composed.getEncapsulatingSourceSection(), composed, environment.getReturnID());
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
-                context, bodyLambda.getEncapsulatingSourceSection(),
+                context, considerExtendingMethodToCoverEnd(bodyLambda.getEncapsulatingSourceSection()),
                 environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyLambda,
                 environment.needsDeclarationFrame());
@@ -243,7 +243,7 @@ public class MethodTranslator extends BodyTranslator {
     public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         final RubyNode body = compileMethodBody(sourceSection,  methodName, bodyNode, sharedMethodInfo);
         final RubyRootNode rootNode = new RubyRootNode(
-                context, body.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+                context, considerExtendingMethodToCoverEnd(body.getSourceSection()), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
         return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
@@ -387,4 +387,34 @@ public class MethodTranslator extends BodyTranslator {
             this.parentSourceSection = parentSourceSection;
         }
     }
+
+    private static SourceSection considerExtendingMethodToCoverEnd(SourceSection sourceSection) {
+        final Source source = sourceSection.getSource();
+
+        if (sourceSection.getEndLine() >= source.getLineCount()) {
+            return sourceSection;
+        }
+
+        final String indentationOnFirstLine = indentation(source.getCode(sourceSection.getStartLine()));
+
+        final int lineAfter = sourceSection.getEndLine() + 1;
+        final String lineAfterString = source.getCode(lineAfter).replaceAll("\\s+$","");
+
+        if (lineAfterString.equals(indentationOnFirstLine + "end") || lineAfterString.equals(indentationOnFirstLine + "}")) {
+            return source.createSection(sourceSection.getIdentifier(), sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
+        }
+
+        return sourceSection;
+    }
+
+    private static String indentation(String line) {
+        for (int n = 0; n < line.length(); n++) {
+            if (!Character.isWhitespace(line.charAt(n))) {
+                return line.substring(0, n);
+            }
+        }
+
+        return "";
+    }
+
 }
