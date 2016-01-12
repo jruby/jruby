@@ -406,31 +406,6 @@ DO NOT MODIFIY - GENERATED CODE
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>invoker-generator</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <arguments>
-                <argument>-Djruby.bytecode.version=${base.java.version}</argument>
-                <argument>-classpath</argument>
-                <classpath />
-                <argument>org.jruby.anno.InvokerGenerator</argument>
-                <argument>${anno.sources}/annotated_classes.txt</argument>
-                <argument>${project.build.outputDirectory}</argument>
-              </arguments>
-              <executable>java</executable>
-              <classpathScope>compile</classpathScope>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <executions>
           <execution>
@@ -442,13 +417,15 @@ DO NOT MODIFIY - GENERATED CODE
             <configuration>
               <includes>
                 <include>org/jruby/anno/FrameField.java</include>
-                <include>org/jruby/anno/AnnotationBinder.java</include>
+                <include>org/jruby/anno/IndyBinder.java</include>
                 <include>org/jruby/anno/JRubyMethod.java</include>
                 <include>org/jruby/anno/FrameField.java</include>
                 <include>org/jruby/CompatVersion.java</include>
                 <include>org/jruby/runtime/Visibility.java</include>
                 <include>org/jruby/util/CodegenUtils.java</include>
                 <include>org/jruby/util/SafePropertyAccessor.java</include>
+                <include>org/jruby/anno/JavaMethodDescriptorLight.java</include>
+                <include>org/jruby/internal/runtime/methods/DescriptorInfoLight.java</include>
               </includes>
             </configuration>
           </execution>
@@ -460,9 +437,9 @@ DO NOT MODIFIY - GENERATED CODE
             </goals>
             <configuration>
               <annotationProcessors>
-                <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
+                <annotationProcessor>org.jruby.anno.IndyBinder</annotationProcessor>
               </annotationProcessors>
-              <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
+              <generatedSourcesDirectory>target/classes</generatedSourcesDirectory>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
@@ -470,25 +447,6 @@ DO NOT MODIFIY - GENERATED CODE
                 <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
-            </configuration>
-          </execution>
-          <execution>
-            <id>populators</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <compilerArgs>
-                <compilerArg>-XDignore.symbol.file=true</compilerArg>
-                <compilerArg>-J-Duser.language=en</compilerArg>
-                <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
-                <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
-                <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
-              </compilerArgs>
-              <includes>
-                <include>org/jruby/gen/**/*.java</include>
-              </includes>
             </configuration>
           </execution>
           <execution>
