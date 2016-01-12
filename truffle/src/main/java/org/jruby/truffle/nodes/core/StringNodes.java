@@ -754,6 +754,8 @@ public abstract class StringNodes {
     })
     public abstract static class CryptNode extends CoreMethodNode {
 
+        @Child private TaintResultNode taintResultNode;
+
         public CryptNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -763,26 +765,22 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isRubyString(salt)")
+        @TruffleBoundary
         public Object crypt(DynamicObject string, DynamicObject salt) {
             // Taken from org.jruby.RubyString#crypt.
 
-            final ByteList value = StringOperations.getByteListReadOnly(string);
+            final Rope value = rope(string);
+            final Rope other = rope(salt);
 
             final Encoding ascii8bit = getContext().getRuntime().getEncodingService().getAscii8bitEncoding();
-            ByteList otherBL = StringOperations.getByteListReadOnly(salt).dup();
-            final DynamicObject otherStr = createString(otherBL);
-
-            StringOperations.modify(otherStr);
-            StringSupport.associateEncoding(StringOperations.getCodeRangeable(otherStr), ascii8bit);
-
-            if (otherBL.length() < 2) {
+            if (other.byteLength() < 2) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
             final POSIX posix = posix();
-            final byte[] keyBytes = Arrays.copyOfRange(value.unsafeBytes(), value.begin(), value.realSize());
-            final byte[] saltBytes = Arrays.copyOfRange(otherBL.unsafeBytes(), otherBL.begin(), otherBL.realSize());
+            final byte[] keyBytes = Arrays.copyOfRange(value.getBytes(), 0, value.byteLength());
+            final byte[] saltBytes = Arrays.copyOfRange(other.getBytes(), 0, other.byteLength());
 
             if (saltBytes[0] == 0 || saltBytes[1] == 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -798,10 +796,17 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix.errno(), this));
             }
 
-            final DynamicObject result = createString(new ByteList(cryptedString, 0, cryptedString.length - 1));
-            StringSupport.associateEncoding(StringOperations.getCodeRangeable(result), ascii8bit);
+            if (taintResultNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+            }
 
-            return result;
+            final DynamicObject ret = createString(StringOperations.ropeFromByteList(new ByteList(cryptedString, 0, cryptedString.length - 1, ascii8bit, false)));
+
+            taintResultNode.maybeTaint(string, ret);
+            taintResultNode.maybeTaint(salt, ret);
+
+            return ret;
         }
 
     }
