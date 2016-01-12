@@ -57,7 +57,7 @@ public abstract class TypePopulator {
         javaMethod.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeArguments, isStatic, false);
     }
     
-    public static DynamicMethod populateModuleMethod(RubyModule cls, JavaMethod javaMethod) {
+    public static DynamicMethod populateModuleMethod(RubyModule cls, DynamicMethod javaMethod) {
         DynamicMethod moduleMethod = javaMethod.dup();
         moduleMethod.setImplementationClass(cls.getSingletonClass());
         moduleMethod.setVisibility(Visibility.PUBLIC);
