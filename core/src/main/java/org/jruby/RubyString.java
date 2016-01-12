@@ -252,11 +252,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
     }
 
-    private void copyCodeRange(RubyString from) {
-        value.setEncoding(from.value.getEncoding());
-        setCodeRange(from.getCodeRange());
-    }
-
     // rb_enc_str_coderange
     @Override
     public final int scanForCodeRange() {
