@@ -1910,26 +1910,25 @@ public abstract class StringNodes {
         public Object sum(VirtualFrame frame, DynamicObject string, long bits) {
             // Copied from JRuby
 
-            final byte[] bytes = StringOperations.getByteList(string).getUnsafeBytes();
-            int p = StringOperations.getByteList(string).getBegin();
-            final int len = StringOperations.getByteList(string).getRealSize();
+            final Rope rope = rope(string);
+            final byte[] bytes = rope.getBytes();
+            int p = rope.getBegin();
+            final int len = rope.getRealSize();
             final int end = p + len;
 
             if (bits >= 8 * 8) { // long size * bits in byte
                 Object sum = 0;
                 while (p < end) {
-                    //modifyCheck(bytes, len);
                     sum = addNode.call(frame, sum, "+", null, bytes[p++] & 0xff);
                 }
                 if (bits != 0) {
                     final Object mod = shiftNode.call(frame, 1, "<<", null, bits);
-                    sum =  andNode.call(frame, sum, "&", null, subNode.call(frame, mod, "-", null, 1));
+                    sum = andNode.call(frame, sum, "&", null, subNode.call(frame, mod, "-", null, 1));
                 }
                 return sum;
             } else {
                 long sum = 0;
                 while (p < end) {
-                    //modifyCheck(bytes, len);
                     sum += bytes[p++] & 0xff;
                 }
                 return bits == 0 ? sum : sum & (1L << bits) - 1L;
