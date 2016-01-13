@@ -1687,9 +1687,14 @@ public abstract class StringNodes {
         public int setByte(DynamicObject string, int index, int value) {
             final int normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);
 
-            StringOperations.modify(string);
-            StringOperations.clearCodeRange(string);
-            StringOperations.getByteList(string).getUnsafeBytes()[normalizedIndex] = (byte) value;
+            final Rope rope = rope(string);
+
+            final Rope left = RopeOperations.substring(rope, 0, normalizedIndex);
+            final Rope right = RopeOperations.substring(rope, normalizedIndex + 1, rope.byteLength() - normalizedIndex - 1);
+            final Rope middle = RopeOperations.create(new byte[] { (byte) value }, rope.getEncoding(), rope.getCodeRange());
+            final Rope composed = RopeOperations.concat(RopeOperations.concat(left, middle, rope.getEncoding()), right, rope.getEncoding());
+
+            Layouts.STRING.setRope(string, composed);
 
             return value;
         }
@@ -2522,7 +2527,7 @@ public abstract class StringNodes {
         public static int checkIndexForRef(DynamicObject string, int index, RubyNode node) {
             assert RubyGuards.isRubyString(string);
 
-            final int length = StringOperations.getByteList(string).getRealSize();
+            final int length = rope(string).byteLength();
 
             if (index >= length) {
                 CompilerDirectives.transferToInterpreter();
