@@ -10,8 +10,6 @@
 
 package org.jruby.truffle.runtime.rope;
 
-import org.jcodings.Encoding;
-
 public class SubstringRope extends Rope {
 
     private final Rope child;
@@ -40,6 +38,14 @@ public class SubstringRope extends Rope {
         assert length <= this.byteLength();
 
         return child.extractRange(this.offset + offset, length);
+    }
+
+    public Rope getChild() {
+        return child;
+    }
+
+    public int getOffset() {
+        return offset;
     }
 
 }
