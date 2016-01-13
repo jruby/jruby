@@ -83,4 +83,15 @@ public abstract class Rope {
         return new String(getBytes());
     }
 
+    public int begin() {
+        return 0;
+    }
+
+    public int getBegin() {
+        return begin();
+    }
+
+    public int getRealSize() {
+        return byteLength();
+    }
 }
