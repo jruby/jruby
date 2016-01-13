@@ -16,34 +16,19 @@ public class ConcatRope extends Rope {
 
     private final Rope left;
     private final Rope right;
-    private final int characterLength;
-    private final int byteLength;
-    private final int codeRange;
-    private final boolean isSingleByteOptimizable;
-    private final int depth;
 
     private byte[] bytes;
-    private final Encoding encoding;
 
     public ConcatRope(Rope left, Rope right, Encoding encoding) {
+        super(encoding,
+                StringOperations.commonCodeRange(left.getCodeRange(), right.getCodeRange()),
+                left.isSingleByteOptimizable() && right.isSingleByteOptimizable(),
+                left.byteLength() + right.byteLength(),
+                left.characterLength() + right.characterLength(),
+                Math.max(left.depth(), right.depth()) + 1);
+
         this.left = left;
         this.right = right;
-        this.encoding = encoding;
-        this.characterLength = left.characterLength() + right.characterLength();
-        this.byteLength = left.byteLength() + right.byteLength();
-        this.codeRange = StringOperations.commonCodeRange(left.getCodeRange(), right.getCodeRange()); // TODO (nirvdrum 07-Jan-16) This method does a bit of branching. We may want to pass a ConditionProfile in to simplify that or do something clever with bit masks.
-        this.isSingleByteOptimizable = left.isSingleByteOptimizable() && right.isSingleByteOptimizable();
-        this.depth = Math.max(left.depth(), right.depth()) + 1;
-    }
-
-    @Override
-    public int characterLength() {
-        return characterLength;
-    }
-
-    @Override
-    public int byteLength() {
-        return byteLength;
     }
 
     @Override
@@ -89,26 +74,6 @@ public class ConcatRope extends Rope {
         }
 
         return right.extractRange(offset - leftLength, length);
-    }
-
-    @Override
-    public Encoding getEncoding() {
-        return encoding;
-    }
-
-    @Override
-    public int getCodeRange() {
-        return codeRange;
-    }
-
-    @Override
-    public boolean isSingleByteOptimizable() {
-        return isSingleByteOptimizable;
-    }
-
-    @Override
-    public int depth() {
-        return depth;
     }
 
     @Override

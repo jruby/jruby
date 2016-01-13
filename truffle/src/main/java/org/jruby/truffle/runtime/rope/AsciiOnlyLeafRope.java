@@ -16,16 +16,7 @@ import org.jruby.util.StringSupport;
 public class AsciiOnlyLeafRope extends LeafRope {
 
     public AsciiOnlyLeafRope(byte[] bytes, Encoding encoding) {
-        super(bytes, encoding);
+        super(bytes, encoding, StringSupport.CR_7BIT, true, bytes.length);
     }
 
-    @Override
-    public int getCodeRange() {
-        return StringSupport.CR_7BIT;
-    }
-
-    @Override
-    public boolean isSingleByteOptimizable() {
-        return true;
-    }
 }

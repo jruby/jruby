@@ -16,17 +16,7 @@ import org.jruby.util.StringSupport;
 public class InvalidLeafRope extends LeafRope {
 
     public InvalidLeafRope(byte[] bytes, Encoding encoding) {
-        super(bytes, encoding);
-    }
-
-    @Override
-    public int getCodeRange() {
-        return StringSupport.CR_BROKEN;
-    }
-
-    @Override
-    public boolean isSingleByteOptimizable() {
-        return false;
+        super(bytes, encoding, StringSupport.CR_BROKEN, false, bytes.length);
     }
 
 }
