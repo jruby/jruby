@@ -29,6 +29,8 @@ public class RopeOperations {
 
             codeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
             characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
+        } else if (codeRange == StringSupport.CR_VALID) {
+            characterLength = StringSupport.strLength(encoding, bytes, 0,  bytes.length);
         }
 
         switch(codeRange) {
