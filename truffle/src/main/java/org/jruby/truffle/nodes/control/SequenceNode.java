@@ -56,13 +56,58 @@ public final class SequenceNode extends RubyNode {
         }
     }
 
-    private static SourceSection enclosing(SourceSection base, RubyNode[] sequence) {
+    public static SourceSection enclosing(SourceSection base, SourceSection... sourceSections) {
         if (base.getSource() == null) {
             return base;
         }
 
-        int startLine = Integer.MAX_VALUE;
-        int endLine = Integer.MIN_VALUE;
+        if (sourceSections.length == 0) {
+            return base;
+        }
+
+        int startLine = base.getStartLine();
+        int endLine = base.getEndLine();
+
+        for (SourceSection sourceSection : sourceSections) {
+            startLine = Math.min(startLine, sourceSection.getStartLine());
+
+            final int nodeEndLine;
+
+            if (sourceSection.getSource() == null) {
+                nodeEndLine = sourceSection.getStartLine();
+            } else {
+                nodeEndLine = sourceSection.getEndLine();
+            }
+
+            endLine = Math.max(endLine, nodeEndLine);
+        }
+
+        final int index = base.getSource().getLineStartOffset(startLine);
+
+        int length = 0;
+
+        for (int n = startLine; n <= endLine; n++) {
+            // + 1 because the line length doesn't include any newlines
+            length += base.getSource().getLineLength(n) + 1;
+        }
+
+        length = Math.min(length, base.getSource().getLength() - index);
+        length = Math.max(0, length);
+
+        return base.getSource().createSection(base.getIdentifier(), index, length);
+    }
+
+    public static SourceSection enclosing(SourceSection base, RubyNode[] sequence) {
+        if (base.getSource() == null) {
+            return base;
+        }
+
+        if (sequence.length == 0) {
+            return base;
+        }
+
+        int startLine = base.getStartLine();
+        int endLine = base.getEndLine();
 
         for (RubyNode node : sequence) {
             final SourceSection nodeSourceSection = node.getEncapsulatingSourceSection();

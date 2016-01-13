@@ -15,10 +15,12 @@ import java.util.List;
 public class CallSiteVersion {
 
     private final CallSite callSite;
+    private final MethodVersion methodVersion;
     private final List<Calls> calls = new ArrayList<>();
 
-    public CallSiteVersion(CallSite callSite) {
+    public CallSiteVersion(CallSite callSite, MethodVersion methodVersion) {
         this.callSite = callSite;
+        this.methodVersion = methodVersion;
         callSite.getVersions().add(this);
     }
 
@@ -28,5 +30,9 @@ public class CallSiteVersion {
 
     public List<Calls> getCalls() {
         return calls;
+    }
+
+    public Object getMethodVersion() {
+        return methodVersion;
     }
 }
