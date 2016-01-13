@@ -95,4 +95,12 @@ public class ConcatRope extends Rope {
 
         return false;
     }
+
+    public Rope getLeft() {
+        return left;
+    }
+
+    public Rope getRight() {
+        return right;
+    }
 }

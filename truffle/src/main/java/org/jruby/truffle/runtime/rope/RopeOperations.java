@@ -54,6 +54,7 @@ public class RopeOperations {
         return new ConcatRope(left, right, encoding);
     }
 
+    @CompilerDirectives.TruffleBoundary
     public static Rope substring(Rope base, int offset, int byteLength) {
         if (byteLength == 0) {
             return template(EMPTY_UTF8_ROPE, base.getEncoding());
@@ -61,6 +62,20 @@ public class RopeOperations {
 
         if (byteLength - offset == base.byteLength()) {
             return base;
+        }
+
+        if (base instanceof SubstringRope) {
+            final SubstringRope r = (SubstringRope) base;
+
+            return substring(r.getChild(), offset + r.getOffset(), byteLength);
+        } else if (base instanceof ConcatRope) {
+            final ConcatRope r = (ConcatRope) base;
+
+            if (offset + byteLength <= r.getLeft().byteLength()) {
+                return substring(r.getLeft(), offset, byteLength);
+            } else if (offset >= r.getLeft().byteLength()) {
+                return substring(r.getRight(), offset - r.getLeft().byteLength(), byteLength);
+            }
         }
 
         if (base.getCodeRange() == StringSupport.CR_7BIT) {
