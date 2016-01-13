@@ -296,6 +296,7 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_with_jar_prefix
       jruby_specific_test
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar")
+      assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/../foo/bar")
       assert_equal "file:/my.jar!/bar", File.expand_path("file:/my.jar!/foo/../bar")
       assert_equal "file:/my.jar!/foo/bar/baz", File.expand_path("baz", "file:/my.jar!/foo/bar")
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar", "file:/my.jar!/baz/quux")
