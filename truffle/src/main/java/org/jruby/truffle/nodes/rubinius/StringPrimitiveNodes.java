@@ -649,54 +649,51 @@ public abstract class StringPrimitiveNodes {
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization(guards = "isSingleByte(string)")
-        public Object stringFindCharacterSingleByte(DynamicObject string, int offset) {
+        @Specialization(guards = "offset < 0")
+        public Object stringFindCharacterNegativeOffset(DynamicObject string, int offset) {
+            return nil();
+        }
+
+        @Specialization(guards = { "offset >= 0", "isSingleByte(string)" })
+        public Object stringFindCharacterSingleByte(DynamicObject string, int offset,
+                                                    @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
             // Taken from Rubinius's String::find_character.
 
-            if (offset < 0) {
+            final Rope rope = rope(string);
+            if (offsetTooLargeProfile.profile(offset >= rope.byteLength())) {
                 return nil();
             }
 
-            final ByteList byteList = StringOperations.getByteList(string);
-            if (offset >= byteList.getRealSize()) {
-                return nil();
-            }
-
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(new ByteList(byteList, offset, 1), StringSupport.CR_7BIT), null);
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.substring(rope, offset, 1), null);
 
             return propagate(string, ret);
         }
 
-        @Specialization(guards = "!isSingleByte(string)")
-        public Object stringFindCharacter(DynamicObject string, int offset) {
+        @Specialization(guards = { "offset >= 0", "!isSingleByte(string)" })
+        public Object stringFindCharacter(DynamicObject string, int offset,
+                                          @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
             // Taken from Rubinius's String::find_character.
 
-            if (offset < 0) {
+            final Rope rope = rope(string);
+            if (offsetTooLargeProfile.profile(offset >= rope.byteLength())) {
                 return nil();
             }
 
-            final ByteList byteList = StringOperations.getByteList(string);
-            if (offset >= byteList.getRealSize()) {
-                return nil();
-            }
-
-            final ByteList bytes = byteList;
-            final Encoding enc = bytes.getEncoding();
-            final int clen = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+            final Encoding enc = rope.getEncoding();
+            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), rope.begin(), rope.begin() + rope.realSize());
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
-                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(new ByteList(byteList, offset, clen), StringSupport.CR_UNKNOWN), null);
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.substring(rope, offset, clen), null);
             } else {
-                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(new ByteList(byteList, offset, 1), StringSupport.CR_7BIT), null);
+                // TODO (nirvdrum 13-Jan-16) We know that the code range is CR_7BIT. Ensure we're not wasting time figuring that out again in the substring creation.
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.substring(rope, offset, 1), null);
             }
 
             return propagate(string, ret);
         }
 
         private Object propagate(DynamicObject string, DynamicObject ret) {
-            StringOperations.getByteList(ret).setEncoding(Layouts.STRING.getRope(string).getEncoding());
-            StringOperations.setCodeRange(ret, StringOperations.getCodeRange(string));
             return maybeTaint(string, ret);
         }
 
@@ -705,6 +702,7 @@ public abstract class StringPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
+
             return taintResultNode.maybeTaint(source, value);
         }
 
