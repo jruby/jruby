@@ -16,17 +16,7 @@ import org.jruby.util.StringSupport;
 public class UnknownLeafRope extends LeafRope {
 
     public UnknownLeafRope(byte[] bytes, Encoding encoding) {
-        super(bytes, encoding);
-    }
-
-    @Override
-    public int getCodeRange() {
-        return StringSupport.CR_UNKNOWN;
-    }
-
-    @Override
-    public boolean isSingleByteOptimizable() {
-        return false;
+        super(bytes, encoding, StringSupport.CR_UNKNOWN, false, bytes.length);
     }
 
 }

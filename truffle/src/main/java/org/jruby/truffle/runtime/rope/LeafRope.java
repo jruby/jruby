@@ -10,29 +10,17 @@
 package org.jruby.truffle.runtime.rope;
 
 import org.jcodings.Encoding;
-import org.jruby.util.ByteList;
 
 import java.util.Arrays;
 
 public abstract class LeafRope extends Rope {
 
     private final byte[] bytes;
-    private final Encoding encoding;
     private int hashCode = -1;
 
-    public LeafRope(byte[] bytes, Encoding encoding) {
+    public LeafRope(byte[] bytes, Encoding encoding, int codeRange, boolean singleByteOptimizable, int characterLength) {
+        super(encoding, codeRange, singleByteOptimizable, bytes.length, characterLength, 1);
         this.bytes = bytes;
-        this.encoding = encoding;
-    }
-
-    @Override
-    public int characterLength() {
-        return bytes.length;
-    }
-
-    @Override
-    public int byteLength() {
-        return bytes.length;
     }
 
     @Override
@@ -53,19 +41,9 @@ public abstract class LeafRope extends Rope {
     }
 
     @Override
-    public Encoding getEncoding() {
-        return encoding;
-    }
-
-    @Override
-    public int depth() {
-        return 1;
-    }
-
-    @Override
     public int hashCode() {
         if (hashCode == -1) {
-            hashCode = Arrays.hashCode(bytes) + encoding.hashCode();
+            hashCode = Arrays.hashCode(bytes) + getEncoding().hashCode();
         }
 
         return hashCode;
@@ -80,7 +58,7 @@ public abstract class LeafRope extends Rope {
         if (o instanceof LeafRope) {
             final LeafRope other = (LeafRope) o;
 
-            return encoding == other.getEncoding() && Arrays.equals(bytes, other.getBytes());
+            return getEncoding() == other.getEncoding() && Arrays.equals(bytes, other.getBytes());
         }
 
         return false;

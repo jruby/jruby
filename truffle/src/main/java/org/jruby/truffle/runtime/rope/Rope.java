@@ -14,12 +14,32 @@ import org.jruby.util.ByteList;
 
 public abstract class Rope {
 
-    public abstract int characterLength();
+    private final Encoding encoding;
+    private final int codeRange;
+    private final boolean singleByteOptimizable;
+    private final int byteLength;
+    private final int characterLength;
+    private final int ropeDepth;
 
-    public abstract int byteLength();
+    protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth) {
+        this.encoding = encoding;
+        this.codeRange = codeRange;
+        this.singleByteOptimizable = singleByteOptimizable;
+        this.byteLength = byteLength;
+        this.characterLength = characterLength;
+        this.ropeDepth = ropeDepth;
+    }
+
+    public final int characterLength() {
+        return characterLength;
+    }
+
+    public final int byteLength() {
+        return byteLength;
+    }
 
     public boolean isEmpty() {
-        return byteLength() == 0;
+        return byteLength == 0;
     }
 
     public final ByteList getUnsafeByteList() {
@@ -41,13 +61,21 @@ public abstract class Rope {
 
     public abstract byte[] extractRange(int offset, int length);
 
-    public abstract Encoding getEncoding();
+    public final Encoding getEncoding() {
+        return encoding;
+    }
 
-    public abstract int getCodeRange();
+    public final int getCodeRange() {
+        return codeRange;
+    }
 
-    public abstract boolean isSingleByteOptimizable();
+    public final boolean isSingleByteOptimizable() {
+        return singleByteOptimizable;
+    }
 
-    public abstract int depth();
+    public final int depth() {
+        return ropeDepth;
+    }
 
     @Override
     public String toString() {
