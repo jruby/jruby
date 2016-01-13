@@ -1273,6 +1273,42 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "fill", rest = true, needsBlock = true)
+    public abstract static class FillNode extends ArrayCoreMethodNode {
+
+        public FillNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = { "isObjectArray(array)", "args.length == 1" })
+        protected DynamicObject fill(DynamicObject array, Object[] args, NotProvided block) {
+            final Object value = args[0];
+            final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
+            final int size = Layouts.ARRAY.getSize(array);
+            for (int i = 0; i < size; i++) {
+                store[i] = value;
+            }
+            return array;
+        }
+
+        @Specialization
+        protected Object fillFallback(VirtualFrame frame, DynamicObject array, Object[] args, NotProvided block,
+                @Cached("createCallNode()") CallDispatchHeadNode callFillInternal) {
+            return callFillInternal.call(frame, array, "fill_internal", null, args);
+        }
+
+        @Specialization
+        protected Object fillFallback(VirtualFrame frame, DynamicObject array, Object[] args, DynamicObject block,
+                @Cached("createCallNode()") CallDispatchHeadNode callFillInternal) {
+            return callFillInternal.call(frame, array, "fill_internal", block, args);
+        }
+
+        protected CallDispatchHeadNode createCallNode() {
+            return DispatchHeadNodeFactory.createMethodCall(getContext());
+        }
+
+    }
+
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
