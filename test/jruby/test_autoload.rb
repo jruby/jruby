@@ -30,7 +30,9 @@ class TestAutoload < Test::Unit::TestCase
     TestAutoload.autoload(:Autoloaded5, "#{File.dirname(__FILE__)}/autoloaded5.rb")
     assert TestAutoload.autoload?(:Autoloaded5)
     require "#{File.dirname(__FILE__)}/autoloaded5.rb"
+    assert defined?(TestAutoload::Autoloaded5::VAL)
     assert_nil TestAutoload.autoload?(:Autoloaded5)
+    assert_equal 5, TestAutoload::Autoloaded5::VAL
   end
 
   def test_overwrite_autoload

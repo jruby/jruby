@@ -156,8 +156,8 @@ public class RubyKernel {
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
         final Ruby runtime = context.runtime;
         final RubyModule module = getModuleForAutoload(runtime, recv);
-        final String file = module.getAutoloadFile(symbol.asJavaString());
-        return (file == null) ? context.nil : runtime.newString(file);
+        final RubyString file = module.getAutoloadFile(symbol.asJavaString());
+        return file == null ? context.nil : file;
     }
 
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
@@ -180,15 +180,13 @@ public class RubyKernel {
         IRubyObject existingValue = module.fetchConstant(baseName);
         if (existingValue != null && existingValue != RubyObject.UNDEF) return context.nil;
 
-        module.defineAutoload(baseName, new IAutoloadMethod() {
-            @Override
-            public String file() {
-                return fileString.asJavaString();
-            }
+        module.defineAutoload(baseName, new RubyModule.AutoloadMethod() {
 
-            @Override
-            public void load(Ruby runtime) {
-                if (runtime.getLoadService().autoloadRequire(file())) {
+            public RubyString getFile() { return fileString; }
+
+            public void load(final Ruby runtime) {
+                final String file = getFile().asJavaString();
+                if (runtime.getLoadService().autoloadRequire(file)) {
                     // Do not finish autoloading by cyclic autoload
                     module.finishAutoload(baseName);
                 }

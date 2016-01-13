@@ -201,7 +201,7 @@ public class RubyModule extends RubyObject {
                 final IRubyObject loadedValue = mod.fetchConstant(name);
                 if ( loadedValue != null && loadedValue != UNDEF ) return context.nil;
 
-                final String file;
+                final RubyString file;
                 if ( mod.isIncluded() ) {
                     file = mod.getNonIncludedClass().getAutoloadFile(name);
                 }
@@ -210,11 +210,11 @@ public class RubyModule extends RubyObject {
                 }
 
                 if ( file != null ) { // due explicit requires still need to :
-                    if ( runtime.getLoadService().featureAlreadyLoaded(file) ) {
+                    if ( runtime.getLoadService().featureAlreadyLoaded(file.asJavaString()) ) {
                         // TODO in which case the auto-load never finish-es ?!
                         return context.nil;
                     }
-                    return runtime.newString(file);
+                    return file;
                 }
             }
             return context.nil;
@@ -4134,8 +4134,8 @@ public class RubyModule extends RubyObject {
     /**
      * Define an autoload. ConstantMap holds UNDEF for the name as an autoload marker.
      */
-    protected void defineAutoload(String name, IAutoloadMethod loadMethod) {
-        Autoload existingAutoload = getAutoloadMap().get(name);
+    protected final void defineAutoload(String name, AutoloadMethod loadMethod) {
+        final Autoload existingAutoload = getAutoloadMap().get(name);
         if (existingAutoload == null || existingAutoload.getValue() == null) {
             storeConstant(name, RubyObject.UNDEF);
             getAutoloadMapForWrite().put(name, new Autoload(loadMethod));
@@ -4145,17 +4145,15 @@ public class RubyModule extends RubyObject {
     /**
      * Extract an Object which is defined by autoload thread from autoloadMap and define it as a constant.
      */
-    protected IRubyObject finishAutoload(String name) {
-        Autoload autoload = getAutoloadMap().get(name);
-        if (autoload != null) {
-            IRubyObject value = autoload.getValue();
-            if (value != null) {
-                storeConstant(name, value);
-            }
-            removeAutoload(name);
-            return value;
+    protected final IRubyObject finishAutoload(String name) {
+        final Autoload autoload = getAutoloadMap().get(name);
+        if ( autoload == null ) return null;
+        final IRubyObject value = autoload.getValue();
+        if ( value != null ) {
+            storeConstant(name, value);
         }
-        return null;
+        removeAutoload(name);
+        return value;
     }
 
     /**
@@ -4170,7 +4168,7 @@ public class RubyModule extends RubyObject {
     protected IRubyObject getAutoloadConstant(String name, boolean loadConstant) {
         final Autoload autoload = getAutoloadMap().get(name);
         if ( autoload == null ) return null;
-        if ( ! loadConstant )  return UNDEF;
+        if ( ! loadConstant ) return RubyObject.UNDEF;
         return autoload.getConstant( getRuntime().getCurrentContext() );
     }
 
@@ -4197,12 +4195,9 @@ public class RubyModule extends RubyObject {
         getAutoloadMapForWrite().remove(name);
     }
 
-    protected String getAutoloadFile(String name) {
-        Autoload autoload = getAutoloadMap().get(name);
-        if (autoload != null) {
-            return autoload.getFile();
-        }
-        return null;
+    protected RubyString getAutoloadFile(String name) {
+        final Autoload autoload = getAutoloadMap().get(name);
+        return autoload == null ? null : autoload.getFile();
     }
 
     private static void define(RubyModule module, JavaMethodDescriptor desc, String simpleName, DynamicMethod dynamicMethod) {
@@ -4337,6 +4332,11 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    public interface AutoloadMethod {
+        void load(Ruby runtime);
+        RubyString getFile();
+    }
+
     /**
      * Objects for holding autoload state for the defined constant.
      *
@@ -4351,9 +4351,9 @@ public class RubyModule extends RubyObject {
         // An object defined for the constant while autoloading.
         private volatile IRubyObject value;
         // A method which actually requires a defined feature.
-        private final IAutoloadMethod loadMethod;
+        private final AutoloadMethod loadMethod;
 
-        Autoload(IAutoloadMethod loadMethod) {
+        Autoload(AutoloadMethod loadMethod) {
             this.ctx = null;
             this.value = null;
             this.loadMethod = loadMethod;
@@ -4370,7 +4370,7 @@ public class RubyModule extends RubyObject {
                 }
                 // This method needs to be synchronized for removing Autoload
                 // from autoloadMap when it's loaded.
-                getLoadMethod().load(ctx.runtime);
+                loadMethod.load(ctx.runtime);
             }
             return getValue();
         }
@@ -4392,13 +4392,7 @@ public class RubyModule extends RubyObject {
         }
 
         // Returns the assigned feature.
-        String getFile() {
-            return getLoadMethod().file();
-        }
-
-        private IAutoloadMethod getLoadMethod() {
-            return loadMethod;
-        }
+        RubyString getFile() { return loadMethod.getFile(); }
 
         private boolean isSelf(ThreadContext rhs) {
             return ctx != null && ctx.getThread() == rhs.getThread();
