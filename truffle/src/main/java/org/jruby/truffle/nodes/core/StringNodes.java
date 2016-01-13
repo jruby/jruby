@@ -1343,24 +1343,25 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "isEmpty(string)")
+        public DynamicObject lstripBangEmptyString(DynamicObject string) {
+            return nil();
+        }
+
         @TruffleBoundary
-        @Specialization(guards = "isSingleByteOptimizable(string)")
+        @Specialization(guards = { "!isEmpty(string)", "isSingleByteOptimizable(string)" })
         public Object lstripBangSingleByte(DynamicObject string) {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#singleByteLStrip.
 
-            if (StringOperations.getByteList(string).getRealSize() == 0) {
-                return nil();
-            }
-
-            final int s = StringOperations.getByteList(string).getBegin();
-            final int end = s + StringOperations.getByteList(string).getRealSize();
-            final byte[]bytes = StringOperations.getByteList(string).getUnsafeBytes();
+            final Rope rope = rope(string);
+            final int s = rope.getBegin();
+            final int end = s + rope.getRealSize();
+            final byte[] bytes = rope.getBytes();
 
             int p = s;
             while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
             if (p > s) {
-                StringOperations.getByteList(string).view(p - s, end - p);
-                StringOperations.keepCodeRange(string);
+                Layouts.STRING.setRope(string, RopeOperations.substring(rope, p - s, end - p));
 
                 return string;
             }
@@ -1369,18 +1370,15 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        @Specialization(guards = { "!isEmpty(string)", "!isSingleByteOptimizable(string)" })
         public Object lstripBang(DynamicObject string) {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#multiByteLStrip.
 
-            if (StringOperations.getByteList(string).getRealSize() == 0) {
-                return nil();
-            }
-
-            final Encoding enc = EncodingUtils.STR_ENC_GET(StringOperations.getCodeRangeable(string));
-            final int s = StringOperations.getByteList(string).getBegin();
-            final int end = s + StringOperations.getByteList(string).getRealSize();
-            final byte[]bytes = StringOperations.getByteList(string).getUnsafeBytes();
+            final Rope rope = rope(string);
+            final Encoding enc = RopeOperations.STR_ENC_GET(rope);
+            final int s = rope.getBegin();
+            final int end = s + rope.getRealSize();
+            final byte[] bytes = rope.getBytes();
 
             int p = s;
 
@@ -1391,8 +1389,7 @@ public abstract class StringNodes {
             }
 
             if (p > s) {
-                StringOperations.getByteList(string).view(p - s, end - p);
-                StringOperations.keepCodeRange(string);
+                Layouts.STRING.setRope(string, RopeOperations.substring(rope, p - s, end - p));
 
                 return string;
             }
