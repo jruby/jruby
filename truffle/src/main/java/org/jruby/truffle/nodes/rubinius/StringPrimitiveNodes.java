@@ -1007,7 +1007,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public Object stringByteIndexSingleByte(DynamicObject string, int index, int start,
                                                 @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile) {
-            if (indexTooLargeProfile.profile(Layouts.STRING.getRope(string).byteLength() < index)) {
+            if (indexTooLargeProfile.profile(index > rope(string).byteLength())) {
                 return nil();
             }
 
@@ -1020,11 +1020,10 @@ public abstract class StringPrimitiveNodes {
                                       @Cached("createBinaryProfile()") ConditionProfile invalidByteProfile) {
             // Taken from Rubinius's String::byte_index.
 
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
-
-            final Encoding enc = bytes.getEncoding();
-            int p = bytes.getBegin();
-            final int e = p + bytes.getRealSize();
+            final Rope rope = rope(string);
+            final Encoding enc = rope.getEncoding();
+            int p = rope.getBegin();
+            final int e = p + rope.getRealSize();
 
             int i, k = index;
 
@@ -1034,7 +1033,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             for (i = 0; i < k && p < e; i++) {
-                final int c = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), p, e);
+                final int c = StringSupport.preciseLength(enc, rope.getBytes(), p, e);
 
                 // If it's an invalid byte, just treat it as a single byte
                 if(invalidByteProfile.profile(! StringSupport.MBCLEN_CHARFOUND_P(c))) {
@@ -1047,40 +1046,40 @@ public abstract class StringPrimitiveNodes {
             if (indexTooLargeProfile.profile(i < k)) {
                 return nil();
             } else {
-                return p - bytes.begin();
+                return p - rope.begin();
             }
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object stringByteIndex(DynamicObject string, DynamicObject pattern, int offset) {
+        public Object stringByteIndex(DynamicObject string, DynamicObject pattern, int offset,
+                                      @Cached("createBinaryProfile()") ConditionProfile emptyPatternProfile,
+                                      @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
             // Taken from Rubinius's String::byte_index.
-
-            final int match_size = Layouts.STRING.getRope(pattern).byteLength();
 
             if (offset < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative start given", this));
             }
 
-            if (match_size == 0) return offset;
+            final Rope stringRope = rope(string);
+            final Rope patternRope = rope(pattern);
 
-            if (StringOperations.scanForCodeRange(string) == StringSupport.CR_BROKEN) {
+            if (emptyPatternProfile.profile(patternRope.isEmpty())) return offset;
+
+            if (brokenCodeRangeProfile.profile(StringOperations.scanForCodeRange(string) == StringSupport.CR_BROKEN)) {
                 return nil();
             }
 
-            final ByteList stringByteList = StringOperations.getByteList(string);
-            final ByteList patternByteList = StringOperations.getByteList(pattern);
-
-            final Encoding encoding = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(pattern), this);
-            int p = stringByteList.getBegin();
-            final int e = p + stringByteList.getRealSize();
-            int pp = patternByteList.getBegin();
-            final int pe = pp + patternByteList.getRealSize();
+            final Encoding encoding = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(pattern), this);
+            int p = stringRope.getBegin();
+            final int e = p + stringRope.getRealSize();
+            int pp = patternRope.getBegin();
+            final int pe = pp + patternRope.getRealSize();
             int s;
             int ss;
 
-            final byte[] stringBytes = stringByteList.getUnsafeBytes();
-            final byte[] patternBytes = patternByteList.getUnsafeBytes();
+            final byte[] stringBytes = stringRope.getBytes();
+            final byte[] patternBytes = patternRope.getBytes();
 
             for(s = p, ss = pp; p < e; s = ++p) {
                 if (stringBytes[p] != patternBytes[pp]) continue;
@@ -1097,7 +1096,7 @@ public abstract class StringPrimitiveNodes {
                     final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
 
                     if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
-                        return s - stringByteList.begin();
+                        return s - stringRope.begin();
                     } else {
                         return nil();
                     }
