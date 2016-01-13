@@ -91,7 +91,11 @@ public abstract class Rope {
         return begin();
     }
 
-    public int getRealSize() {
+    public int realSize() {
         return byteLength();
+    }
+
+    public int getRealSize() {
+        return realSize();
     }
 }
