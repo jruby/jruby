@@ -1724,6 +1724,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "squeeze!", rest = true, raiseIfFrozenSelf = true)
+    @ImportStatic(StringGuards.class)
     public abstract static class SqueezeBangNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStrNode;
@@ -1732,41 +1733,44 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "zeroArgs(args)")
+        @Specialization(guards = "isEmpty(string)")
+        public DynamicObject squeezeBangEmptyString(DynamicObject string, Object[] args) {
+            return nil();
+        }
+
+        @Specialization(guards = { "!isEmpty(string)", "zeroArgs(args)" })
+        @TruffleBoundary
         public Object squeezeBangZeroArgs(DynamicObject string, Object[] args,
                                           @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
-            if (rope(string).isEmpty()) {
-                return nil();
-            }
+            final Rope rope = rope(string);
+            final ByteList buffer = rope.toByteListCopy();
 
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE];
             for (int i = 0; i < StringSupport.TRANS_SIZE; i++) squeeze[i] = true;
 
-            StringOperations.modifyAndKeepCodeRange(string);
-
-            if (singleByteOptimizableProfile.profile(StringOperations.singleByteOptimizable(string))) {
-                if (! StringSupport.singleByteSqueeze(StringOperations.getByteList(string), squeeze)) {
+            if (singleByteOptimizableProfile.profile(rope.isSingleByteOptimizable())) {
+                if (! StringSupport.singleByteSqueeze(buffer, squeeze)) {
                     return nil();
+                } else {
+                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             } else {
-                if (! squeezeCommonMultiByte(StringOperations.getByteList(string), squeeze, null, encoding(string), false)) {
+                if (! squeezeCommonMultiByte(buffer, squeeze, null, encoding(string), false)) {
                     return nil();
+                } else {
+                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             }
 
             return string;
         }
 
-        @Specialization(guards = "!zeroArgs(args)")
+        @Specialization(guards = { "!isEmpty(string)", "!zeroArgs(args)" })
         public Object squeezeBang(VirtualFrame frame, DynamicObject string, Object[] args,
                                   @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
             // Taken from org.jruby.RubyString#squeeze_bang19.
-
-            if (rope(string).isEmpty()) {
-                return nil();
-            }
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -1778,6 +1782,7 @@ public abstract class StringNodes {
             for (int i = 0; i < args.length; i++) {
                 otherStrings[i] = toStrNode.executeToStr(frame, args[i]);
             }
+
             return performSqueezeBang(string, otherStrings, singleByteOptimizableProfile);
         }
 
@@ -1785,29 +1790,36 @@ public abstract class StringNodes {
         private Object performSqueezeBang(DynamicObject string, DynamicObject[] otherStrings,
                                           @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
 
-            DynamicObject otherStr = otherStrings[0];
-            Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(otherStr), this);
-            final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteList(otherStr), getContext().getRuntime(), squeeze, null, true, enc);
+            final Rope rope = rope(string);
+            final ByteList buffer = rope.toByteListCopy();
 
-            boolean singlebyte = StringOperations.singleByteOptimizable(string) && StringOperations.singleByteOptimizable(otherStr);
+            DynamicObject otherStr = otherStrings[0];
+            Rope otherRope = rope(otherStr);
+            Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherStr), this);
+            final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
+            StringSupport.TrTables tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getRuntime(), squeeze, null, true, enc);
+
+            boolean singlebyte = rope.isSingleByteOptimizable() && otherRope.isSingleByteOptimizable();
 
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
-                enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(otherStr), this);
-                singlebyte = singlebyte && StringOperations.singleByteOptimizable(otherStr);
-                tables = StringSupport.trSetupTable(StringOperations.getByteList(otherStr), getContext().getRuntime(), squeeze, tables, false, enc);
+                otherRope = rope(otherStr);
+                enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherStr), this);
+                singlebyte = singlebyte && otherRope.isSingleByteOptimizable();
+                tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getRuntime(), squeeze, tables, false, enc);
             }
 
-            StringOperations.modifyAndKeepCodeRange(string);
-
             if (singleByteOptimizableProfile.profile(singlebyte)) {
-                if (! StringSupport.singleByteSqueeze(StringOperations.getByteList(string), squeeze)) {
+                if (! StringSupport.singleByteSqueeze(buffer, squeeze)) {
                     return nil();
+                } else {
+                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             } else {
-                if (! StringSupport.multiByteSqueeze(getContext().getRuntime(), StringOperations.getByteList(string), squeeze, tables, enc, true)) {
+                if (! StringSupport.multiByteSqueeze(getContext().getRuntime(), buffer, squeeze, tables, enc, true)) {
                     return nil();
+                } else {
+                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             }
 
