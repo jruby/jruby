@@ -186,7 +186,7 @@ else
 end
 
 if !result || RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
-  warn "io/console not supported; tty will not be manipulated"
+  warn "io/console not supported; tty will not be manipulated" if $VERBOSE
 
   # Windows version is always stubbed for now
   class IO
