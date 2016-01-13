@@ -3,3 +3,4 @@ fails:Regexp with character classes doesn't matches Unicode marks with [[:alnum:
 fails:Regexp with character classes doesn't matches Unicode marks with [[:alpha:]]
 fails:Regexp with character classes doesn't match Unicode format characters with [[:cntrl:]]
 fails:Regexp with character classes doesn't match Unicode private-use characters with [[:cntrl:]]
+fails:Regexp with character classes matches Unicode space characters with [[:blank:]]
