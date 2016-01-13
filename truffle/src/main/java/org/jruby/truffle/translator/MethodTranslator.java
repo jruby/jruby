@@ -391,7 +391,7 @@ public class MethodTranslator extends BodyTranslator {
     private static SourceSection considerExtendingMethodToCoverEnd(SourceSection sourceSection) {
         final Source source = sourceSection.getSource();
 
-        if (sourceSection.getEndLine() >= source.getLineCount()) {
+        if (sourceSection.getEndLine() + 1 >= source.getLineCount()) {
             return sourceSection;
         }
 
