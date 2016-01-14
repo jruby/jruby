@@ -882,7 +882,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer.getByteList()));
+            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer.getByteList(), buffer.getCodeRange()));
 
             return string;
         }
@@ -2132,6 +2132,7 @@ public abstract class StringNodes {
             @NodeChild(type = RubyNode.class, value = "fromStr"),
             @NodeChild(type = RubyNode.class, value = "toStrNode")
     })
+    @ImportStatic(StringGuards.class)
     public abstract static class TrSBangNode extends CoreMethodNode {
 
         @Child private DeleteBangNode deleteBangNode;
@@ -2148,13 +2149,14 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), toStr);
         }
 
-        @Specialization(guards = {"isRubyString(fromStr)", "isRubyString(toStr)"})
-        public Object trSBang(VirtualFrame frame, DynamicObject self, DynamicObject fromStr, DynamicObject toStr) {
-            if (StringOperations.getByteList(self).getRealSize() == 0) {
-                return nil();
-            }
+        @Specialization(guards = "isEmpty(self)")
+        public DynamicObject trSBangEmpty(DynamicObject self, DynamicObject fromStr, DynamicObject toStr) {
+            return nil();
+        }
 
-            if (StringOperations.getByteList(toStr).getRealSize() == 0) {
+        @Specialization(guards = { "!isEmpty(self)", "isRubyString(fromStr)", "isRubyString(toStr)" })
+        public Object trSBang(VirtualFrame frame, DynamicObject self, DynamicObject fromStr, DynamicObject toStr) {
+            if (rope(toStr).isEmpty()) {
                 if (deleteBangNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
@@ -2577,7 +2579,7 @@ public abstract class StringNodes {
                 return context.getCoreLibrary().getNilObject();
             }
 
-            Layouts.STRING.setRope(self, StringOperations.ropeFromByteList(buffer.getByteList()));
+            Layouts.STRING.setRope(self, StringOperations.ropeFromByteList(buffer.getByteList(), buffer.getCodeRange()));
 
             return self;
         }
