@@ -21,6 +21,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 
 import java.security.MessageDigest;
@@ -146,8 +147,9 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
-            final ByteList bytes = StringOperations.getByteList(message);
-            DigestLayoutImpl.INSTANCE.getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            final Rope rope = StringOperations.rope(message);
+
+            DigestLayoutImpl.INSTANCE.getDigest(digestObject).update(rope.getBytes(), rope.begin(), rope.byteLength());
             return digestObject;
         }
 
@@ -221,8 +223,9 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject bubblebabble(DynamicObject message) {
-            final ByteList byteList = StringOperations.getByteList(message);
-            return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
+            final Rope rope = StringOperations.rope(message);
+
+            return createString(BubbleBabble.bubblebabble(rope.getBytes(), rope.begin(), rope.byteLength()));
         }
 
     }
