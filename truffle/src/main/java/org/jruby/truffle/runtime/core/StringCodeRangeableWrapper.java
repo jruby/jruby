@@ -41,7 +41,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
     }
 
     @Override
-    public final void setCodeRange(int newCodeRange) {
+    public void setCodeRange(int newCodeRange) {
         StringOperations.setCodeRange(string, newCodeRange);
     }
 

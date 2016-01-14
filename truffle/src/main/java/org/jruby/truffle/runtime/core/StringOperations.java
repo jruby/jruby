@@ -78,6 +78,17 @@ public abstract class StringOperations {
     public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
         return new StringCodeRangeableWrapper(string) {
             private final ByteList byteList = StringOperations.rope(string).toByteListCopy();
+            int codeRange = StringOperations.getCodeRange(string);
+
+            @Override
+            public void setCodeRange(int newCodeRange) {
+                this.codeRange = newCodeRange;
+            }
+
+            @Override
+            public int getCodeRange() {
+                return codeRange;
+            }
 
             @Override
             public ByteList getByteList() {
