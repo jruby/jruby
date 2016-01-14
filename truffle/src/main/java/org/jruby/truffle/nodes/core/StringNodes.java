@@ -1015,16 +1015,17 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isValidOr7BitEncoding(string)")
         public DynamicObject eachChar(VirtualFrame frame, DynamicObject string, DynamicObject block) {
-            byte[] ptrBytes = rope(string).getBytes();
-            int len = ptrBytes.length;
-            Encoding enc = encoding(string);
+            final Rope rope = rope(string);
+            final byte[] ptrBytes = rope.getBytes();
+            final int len = ptrBytes.length;
+            final Encoding enc = rope.getEncoding();
 
             int n;
 
             for (int i = 0; i < len; i += n) {
                 n = StringSupport.encFastMBCLen(ptrBytes, i, len, enc);
 
-                yield(frame, block, substr(string, i, n));
+                yield(frame, block, substr(rope, string, i, n));
             }
 
             return string;
@@ -1032,16 +1033,17 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isValidOr7BitEncoding(string)")
         public DynamicObject eachCharMultiByteEncoding(VirtualFrame frame, DynamicObject string, DynamicObject block) {
-            byte[] ptrBytes = rope(string).getBytes();
-            int len = ptrBytes.length;
-            Encoding enc = encoding(string);
+            final Rope rope = rope(string);
+            final byte[] ptrBytes = rope.getBytes();
+            final int len = ptrBytes.length;
+            final Encoding enc = rope.getEncoding();
 
             int n;
 
             for (int i = 0; i < len; i += n) {
                 n = multiByteStringLength(enc, ptrBytes, i, len);
 
-                yield(frame, block, substr(string, i, n));
+                yield(frame, block, substr(rope, string, i, n));
             }
 
             return string;
@@ -1053,9 +1055,10 @@ public abstract class StringNodes {
         }
 
         // TODO (nirvdrum 10-Mar-15): This was extracted from JRuby, but likely will need to become a Rubinius primitive.
-        private Object substr(DynamicObject string, int beg, int len) {
-            final Rope rope = rope(string);
-
+        // Don't be tempted to extract the rope from the passed string. If the block being yielded to modifies the
+        // source string, you'll get a different rope. Unlike String#each_byte, String#each_char does not make
+        // modifications to the string visible to the rest of the iteration.
+        private Object substr(Rope rope, DynamicObject string, int beg, int len) {
             int length = rope.byteLength();
             if (len < 0 || beg > length) return nil();
 
