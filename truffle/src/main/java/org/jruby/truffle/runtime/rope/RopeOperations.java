@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyEncoding;
 import org.jruby.util.StringSupport;
@@ -18,6 +19,7 @@ import org.jruby.util.io.EncodingUtils;
 
 public class RopeOperations {
 
+    public static final Rope EMPTY_ASCII_8BIT_ROPE = create(new byte[] {}, ASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
     public static final Rope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT);
 
     @CompilerDirectives.TruffleBoundary

@@ -75,10 +75,10 @@ import org.jruby.util.io.EncodingUtils;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_UTF8_ROPE;
 import static org.jruby.truffle.runtime.core.StringOperations.rope;
 import static org.jruby.truffle.runtime.core.StringOperations.encoding;
-import static org.jruby.truffle.runtime.core.StringOperations.codeRange;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {
@@ -95,7 +95,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, EMPTY_UTF8_ROPE, null);
+            return allocateObjectNode.allocate(rubyClass, EMPTY_ASCII_8BIT_ROPE, null);
         }
 
     }
