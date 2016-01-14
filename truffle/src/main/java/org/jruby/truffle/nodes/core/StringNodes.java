@@ -546,15 +546,26 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "ascii_only?")
+    @ImportStatic(StringGuards.class)
     public abstract static class ASCIIOnlyNode extends CoreMethodArrayArgumentsNode {
 
         public ASCIIOnlyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = { "isAsciiCompatible(string)", "is7Bit(string)" })
+        public boolean asciiOnlyAsciiCompatible7BitCR(DynamicObject string) {
+            return true;
+        }
+
+        @Specialization(guards = { "isAsciiCompatible(string)", "!is7Bit(string)" })
+        public boolean asciiOnlyAsciiCompatible(DynamicObject string) {
+            return false;
+        }
+
+        @Specialization(guards = "!isAsciiCompatible(string)")
         public boolean asciiOnly(DynamicObject string) {
-            return StringOperations.scanForCodeRange(string) == StringSupport.CR_7BIT;
+            return false;
         }
 
     }
