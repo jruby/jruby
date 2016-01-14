@@ -62,11 +62,13 @@ public class ClassExtensionLibrary implements Library {
      * @return a ClassExtensionLibrary that will boot the ext, or null if none was found
      */
     static ClassExtensionLibrary tryFind(Ruby runtime, String searchName) {
-        // skip obviously wrong class-names/package-names
-        if (searchName.contains("-")) return null;
-
         // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
         String[] all = searchName.split("/");
+
+        // search backward for any non-identifier strings and don't try to use them
+        int leftmostIdentifier = findLeftmostIdentifier(all);
+
+        if (leftmostIdentifier == all.length) return null;
 
         // make service name out of last element
         String serviceName = buildServiceName(all[all.length - 1]);
@@ -75,8 +77,13 @@ public class ClassExtensionLibrary implements Library {
         StringBuilder classNameBuilder = new StringBuilder(searchName.length() * 2);
         StringBuilder classFileBuilder = new StringBuilder(searchName.length() * 2);
 
-        for (int i = all.length - 1; i >= 0; i--) {
+        for (int i = all.length - 1; i >= leftmostIdentifier; i--) {
             buildClassName(classNameBuilder, classFileBuilder, all, i, serviceName);
+
+            String classFileName = classFileBuilder.toString();
+
+            // bail out once if see a dash in the name
+            if (classFileName.contains("-")) return null;
 
             // look for the filename in classloader resources
             URL resource = runtime.getJRubyClassLoader().getResource(classFileBuilder.toString());
@@ -98,6 +105,24 @@ public class ClassExtensionLibrary implements Library {
 
         // not found
         return null;
+    }
+
+    public static int findLeftmostIdentifier(String[] all) {
+        int firstElement = all.length - 1;
+        for (; firstElement >= 0; firstElement--) {
+            if (!isJavaIdentifier(all[firstElement])) {
+                break;
+            }
+        }
+        return firstElement + 1; // go forward one to the last good element
+    }
+
+    private static boolean isJavaIdentifier(String str) {
+        if (!Character.isJavaIdentifierStart(str.charAt(0))) return false;
+        for (int i = 1; i < str.length(); i++) {
+            if (!Character.isJavaIdentifierPart(str.charAt(i))) return false;
+        }
+        return true;
     }
 
     private static void buildClassName(StringBuilder nameBuilder, StringBuilder fileBuilder, String[] all, int i, String serviceName) {
