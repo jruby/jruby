@@ -952,6 +952,8 @@ public abstract class StringNodes {
                 final boolean modified = multiByteDowncase(encoding, outputBytes, 0, outputBytes.length);
 
                 if (modifiedProfile.profile(modified)) {
+                    Layouts.STRING.setRope(string, RopeOperations.create(outputBytes, rope.getEncoding(), rope.getCodeRange()));
+
                     return string;
                 } else {
                     return nil();
