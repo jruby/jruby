@@ -10,14 +10,29 @@
 
 package org.jruby.truffle.nodes;
 
+import org.jruby.truffle.runtime.layouts.Layouts;
+
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 
 public abstract class ShapeCachingGuards {
 
     public static boolean updateShape(DynamicObject object) {
         CompilerDirectives.transferToInterpreter();
         return object.updateShape();
+    }
+
+    public static boolean isArrayShape(Shape shape) {
+        return Layouts.ARRAY.isArray(shape.getObjectType());
+    }
+
+    public static boolean isQueueShape(Shape shape) {
+        return Layouts.QUEUE.isQueue(shape.getObjectType());
+    }
+
+    public static boolean isBasicObjectShape(Shape shape) {
+        return shape.getObjectType().getClass().getName().endsWith(".BasicObjectType"); // FIXME
     }
 
 }
