@@ -1408,7 +1408,11 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject stringByteAppend(DynamicObject string, DynamicObject other) {
-            StringOperations.getByteList(string).append(StringOperations.getByteList(other));
+            final Rope left = rope(string);
+            final Rope right = rope(other);
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, left.getEncoding()));
+
             return string;
         }
 
