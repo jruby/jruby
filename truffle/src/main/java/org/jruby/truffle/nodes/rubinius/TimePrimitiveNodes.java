@@ -235,7 +235,7 @@ public abstract class TimePrimitiveNodes {
         @Specialization(guards = "isRubyString(format)")
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
-            return createString(rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteList(format), false),
+            return createString(rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteListReadOnly(format), false),
                     Layouts.TIME.getDateTime(time), Layouts.TIME.getNSec(time), null));
         }
 
