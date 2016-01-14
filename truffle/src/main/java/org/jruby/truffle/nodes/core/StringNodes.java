@@ -1287,7 +1287,7 @@ public abstract class StringNodes {
 
             Layouts.STRING.setRope(string, RopeOperations.concat(left, right, compatibleEncoding));
 
-            return string;
+            return taintResultNode.maybeTaint(other, string);
         }
 
         @Specialization(guards = { "indexAtEndBound(index)", "isRubyString(other)" })
@@ -1297,7 +1297,9 @@ public abstract class StringNodes {
                 appendNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return appendNode.call(frame, string, "append", null, other);
+            appendNode.call(frame, string, "append", null, other);
+
+            return taintResultNode.maybeTaint(other, string);
         }
 
         @Specialization(guards = { "!indexAtEitherBounds(index)", "isRubyString(other)" })
@@ -1338,6 +1340,7 @@ public abstract class StringNodes {
         }
 
         protected boolean indexAtEndBound(int index) {
+            // TODO (nirvdrum 14-Jan-16) Now that we know the character length of the string, we can update the check for positive numbers as well.
             return index == -1;
         }
 
