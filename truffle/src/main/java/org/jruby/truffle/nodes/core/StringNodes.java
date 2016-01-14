@@ -981,11 +981,19 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public DynamicObject eachByte(VirtualFrame frame, DynamicObject string, DynamicObject block) {
-            final byte[] bytes = rope(string).getBytes();
+        public DynamicObject eachByte(VirtualFrame frame, DynamicObject string, DynamicObject block,
+                                      @Cached("createBinaryProfile()") ConditionProfile ropeChangedProfile) {
+            Rope rope = rope(string);
+            byte[] bytes = rope.getBytes();
 
             for (int i = 0; i < bytes.length; i++) {
                 yield(frame, block, bytes[i] & 0xff);
+
+                Rope updatedRope = rope(string);
+                if (ropeChangedProfile.profile(rope != updatedRope)) {
+                    rope = updatedRope;
+                    bytes = updatedRope.getBytes();
+                }
             }
 
             return string;
