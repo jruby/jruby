@@ -25,9 +25,9 @@ import org.jruby.truffle.runtime.layouts.Layouts;
         @NodeChild(value = "requiredCapacity", type = RubyNode.class)
 })
 @ImportStatic(ArrayGuards.class)
-public abstract class GeneralizeArrayNode extends RubyNode {
+public abstract class ArrayGeneralizeNode extends RubyNode {
 
-    public GeneralizeArrayNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayGeneralizeNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

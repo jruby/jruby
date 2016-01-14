@@ -25,9 +25,9 @@ import org.jruby.truffle.runtime.layouts.Layouts;
         @NodeChild("array")
 })
 @ImportStatic(ArrayGuards.class)
-public abstract class PopOneNode extends RubyNode {
+public abstract class ArrayPopOneNode extends RubyNode {
 
-    public PopOneNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayPopOneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

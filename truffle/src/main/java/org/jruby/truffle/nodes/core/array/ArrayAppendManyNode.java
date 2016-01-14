@@ -28,9 +28,9 @@ import java.util.Arrays;
         @NodeChild("other"),
 })
 @ImportStatic(ArrayGuards.class)
-public abstract class AppendManyNode extends RubyNode {
+public abstract class ArrayAppendManyNode extends RubyNode {
 
-    public AppendManyNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayAppendManyNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

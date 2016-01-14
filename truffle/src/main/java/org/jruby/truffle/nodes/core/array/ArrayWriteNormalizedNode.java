@@ -28,15 +28,15 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayWriteNormalizedNode extends RubyNode {
 
-    @Child private EnsureCapacityArrayNode ensureCapacityNode;
-    @Child private GeneralizeArrayNode generalizeNode;
+    @Child private ArrayEnsureCapacityNode ensureCapacityNode;
+    @Child private ArrayGeneralizeNode generalizeNode;
 
     public ArrayWriteNormalizedNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
 
         // TODO CS 9-Feb-15 make this lazy later on
-        ensureCapacityNode = EnsureCapacityArrayNodeGen.create(context, sourceSection, null, null);
-        generalizeNode = GeneralizeArrayNodeGen.create(context, sourceSection, null, null);
+        ensureCapacityNode = ArrayEnsureCapacityNodeGen.create(context, sourceSection, null, null);
+        generalizeNode = ArrayGeneralizeNodeGen.create(context, sourceSection, null, null);
     }
 
     public abstract Object executeWrite(DynamicObject array, int index, Object value);

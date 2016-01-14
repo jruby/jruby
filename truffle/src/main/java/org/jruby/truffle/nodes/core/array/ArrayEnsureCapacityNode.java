@@ -28,11 +28,11 @@ import java.util.Arrays;
         @NodeChild(value="requiredCapacity", type=RubyNode.class)
 })
 @ImportStatic(ArrayGuards.class)
-public abstract class EnsureCapacityArrayNode extends RubyNode {
+public abstract class ArrayEnsureCapacityNode extends RubyNode {
 
     private final ConditionProfile allocateProfile = ConditionProfile.createCountingProfile();
 
-    public EnsureCapacityArrayNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayEnsureCapacityNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
