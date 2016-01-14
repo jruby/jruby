@@ -238,6 +238,10 @@ public abstract class HashNodes {
             return eqlNode.callBoolean(frame, key1, "eql?", null, key2);
         }
 
+        protected boolean equal(VirtualFrame frame, Object key1, Object key2) {
+            return equalNode.executeReferenceEqual(frame, key1, key2);
+        }
+
         @ExplodeLoop
         @Specialization(guards = "isPackedHash(hash)", contains = "getConstantIndexPackedArray")
         public Object getPackedArray(VirtualFrame frame, DynamicObject hash, Object key,
@@ -255,9 +259,9 @@ public abstract class HashNodes {
                         final boolean equal;
 
                         if (byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash))) {
-                            equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
+                            equal = equal(frame, key, PackedArrayStrategy.getKey(store, n));
                         } else {
-                            equal = eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
+                            equal = eql(frame, key, PackedArrayStrategy.getKey(store, n));
                         }
 
                         if (equal) {
