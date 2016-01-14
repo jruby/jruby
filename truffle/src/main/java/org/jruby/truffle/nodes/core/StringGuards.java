@@ -15,6 +15,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.StringSupport;
 
@@ -48,7 +49,9 @@ public class StringGuards {
 
     public static boolean isValidOr7BitEncoding(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringOperations.isCodeRangeValid(string) || CodeRangeSupport.isCodeRangeAsciiOnly(StringOperations.getCodeRangeable(string));
+        final Rope rope = StringOperations.rope(string);
+
+        return (rope.getCodeRange() == StringSupport.CR_VALID) || (rope.getCodeRange() == StringSupport.CR_7BIT);
     }
 
     public static boolean isFixedWidthEncoding(DynamicObject string) {

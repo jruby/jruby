@@ -187,7 +187,8 @@ public abstract class StringPrimitiveNodes {
         @Specialization
         public DynamicObject stringAwkSplit(DynamicObject string, int lim) {
             final List<DynamicObject> ret = new ArrayList<>();
-            final ByteList value = StringOperations.getByteListReadOnly(string);
+            final Rope rope = rope(string);
+            final ByteList value = rope.getUnsafeByteList();
             final boolean limit = lim > 0;
             int i = lim > 0 ? 1 : 0;
 
@@ -200,7 +201,7 @@ public abstract class StringPrimitiveNodes {
             boolean skip = true;
 
             int e = 0, b = 0;
-            final boolean singlebyte = StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), enc);
+            final boolean singlebyte = rope.isSingleByteOptimizable();
             while (p < end) {
                 final int c;
                 if (singlebyte) {
