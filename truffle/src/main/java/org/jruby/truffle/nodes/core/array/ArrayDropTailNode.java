@@ -32,14 +32,14 @@ public abstract class ArrayDropTailNode extends RubyNode {
         this.index = index;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isNullArray(array)"})
+    @Specialization(guards = "isNullArray(array)")
     public DynamicObject getHeadNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
+    @Specialization(guards = "isIntArray(array)")
     public DynamicObject getHeadIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
@@ -50,7 +50,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
+    @Specialization(guards = "isLongArray(array)")
     public DynamicObject geHeadLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
@@ -62,7 +62,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
+    @Specialization(guards = "isDoubleArray(array)")
     public DynamicObject getHeadFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
@@ -74,7 +74,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
+    @Specialization(guards = "isObjectArray(array)")
     public DynamicObject getHeadObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 

@@ -35,29 +35,29 @@ public abstract class ArrayPopOneNode extends RubyNode {
 
     // Pop from an empty array
 
-    @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
+    @Specialization(guards = "isEmptyArray(array)")
     public DynamicObject popOneEmpty(DynamicObject array) {
         return nil();
     }
 
     // Pop from a non-empty array
 
-    @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isIntArray(array)"})
+    @Specialization(guards = { "!isEmptyArray(array)", "isIntArray(array)" })
     public Object popOneInteger(DynamicObject array) {
         return popOneGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)));
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isLongArray(array)"})
+    @Specialization(guards = { "!isEmptyArray(array)", "isLongArray(array)" })
     public Object popOneLong(DynamicObject array) {
         return popOneGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)));
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isDoubleArray(array)"})
+    @Specialization(guards = { "!isEmptyArray(array)", "isDoubleArray(array)" })
     public Object popOneDouble(DynamicObject array) {
         return popOneGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)));
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isObjectArray(array)"})
+    @Specialization(guards = { "!isEmptyArray(array)", "isObjectArray(array)" })
     public Object popOneObject(DynamicObject array) {
         return popOneGeneric(array, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)));
     }
