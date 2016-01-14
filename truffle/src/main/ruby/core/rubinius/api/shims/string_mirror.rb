@@ -10,8 +10,8 @@ module Rubinius
   class Mirror
     class String < Mirror
 
-      def splice(start, count, replacement)
-        Rubinius.invoke_primitive :string_splice, @object, replacement, start, replacement.bytesize
+      def splice(starting_byte_index, byte_count_to_replace, replacement)
+        Rubinius.invoke_primitive :string_splice, @object, replacement, starting_byte_index, byte_count_to_replace
       end
 
     end
