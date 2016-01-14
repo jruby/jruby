@@ -1719,7 +1719,7 @@ public abstract class StringNodes {
 
             final Rope left = RopeOperations.substring(rope, 0, normalizedIndex);
             final Rope right = RopeOperations.substring(rope, normalizedIndex + 1, rope.byteLength() - normalizedIndex - 1);
-            final Rope middle = RopeOperations.create(new byte[] { (byte) value }, rope.getEncoding(), rope.getCodeRange());
+            final Rope middle = RopeOperations.create(new byte[] { (byte) value }, rope.getEncoding(), StringSupport.CR_UNKNOWN);
             final Rope composed = RopeOperations.concat(RopeOperations.concat(left, middle, rope.getEncoding()), right, rope.getEncoding());
 
             Layouts.STRING.setRope(string, composed);
