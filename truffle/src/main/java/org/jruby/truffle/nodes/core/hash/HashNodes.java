@@ -334,15 +334,11 @@ public abstract class HashNodes {
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
         }
 
         @Specialization
-        public Object setNull(VirtualFrame frame, DynamicObject hash, Object key, Object value) {
-            if (setNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
-            }
-
+        public Object set(VirtualFrame frame, DynamicObject hash, Object key, Object value) {
             return setNode.executeSet(frame, hash, key, value, Layouts.HASH.getCompareByIdentity(hash));
         }
 
