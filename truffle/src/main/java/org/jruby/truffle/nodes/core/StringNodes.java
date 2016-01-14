@@ -1570,11 +1570,12 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject swapcaseSingleByte(DynamicObject string,
+                                                @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
                                                 @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
             // Taken from org.jruby.RubyString#swapcase_bang19.
 
-            final ByteList value = StringOperations.getByteList(string);
-            final Encoding enc = value.getEncoding();
+            final Rope rope = rope(string);
+            final Encoding enc = rope.getEncoding();
 
             if (enc.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
@@ -1583,22 +1584,24 @@ public abstract class StringNodes {
                                 String.format("incompatible encoding with this operation: %s", enc), this));
             }
 
-            if (value.getRealSize() == 0) {
+            if (emptyStringProfile.profile(rope.isEmpty())) {
                 return nil();
             }
 
-            StringOperations.modifyAndKeepCodeRange(string);
+            final int s = rope.getBegin();
+            final int end = s + rope.getRealSize();
+            final byte[] bytes = rope.getBytesCopy();
 
-            final int s = value.getBegin();
-            final int end = s + value.getRealSize();
-            final byte[]bytes = value.getUnsafeBytes();
-
-            if (singleByteOptimizableProfile.profile(StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), enc))) {
+            if (singleByteOptimizableProfile.profile(rope.isSingleByteOptimizable())) {
                 if (StringSupport.singleByteSwapcase(bytes, s, end)) {
+                    Layouts.STRING.setRope(string, RopeOperations.create(bytes, rope.getEncoding(), rope.getCodeRange()));
+
                     return string;
                 }
             } else {
                 if (StringSupport.multiByteSwapcase(getContext().getRuntime(), enc, bytes, s, end)) {
+                    Layouts.STRING.setRope(string, RopeOperations.create(bytes, rope.getEncoding(), rope.getCodeRange()));
+
                     return string;
                 }
             }
