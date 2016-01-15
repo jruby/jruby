@@ -330,13 +330,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyClass metaclass = getMetaClass();
         Ruby runtime = metaclass.getClassRuntime();
         if (metaclass != runtime.getString() || metaclass != other.getMetaClass()) return super.eql(other);
-        return eql19(runtime, other);
+        return eql19(other);
     }
 
     // rb_str_hash_cmp
-    private boolean eql19(Ruby runtime, IRubyObject other) {
-        RubyString otherString = (RubyString)other;
-        return StringSupport.areComparable(this, otherString) && value.equal(((RubyString)other).value);
+    private boolean eql19(IRubyObject other) {
+        final RubyString otherString = (RubyString) other;
+        return StringSupport.areComparable(this, otherString) && value.equal(otherString.value);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass) {
@@ -529,19 +529,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         // Ruby internal
         Encoding internal = runtime.getDefaultInternalEncoding();
         Charset rubyInt = null;
-        if (internal != null && internal.getCharset() != null) rubyInt = internal.getCharset();
+        if ( internal != null ) rubyInt = internal.getCharset();
 
-        Encoding javaExtEncoding = runtime.getEncodingService().getJavaDefault();
-
-        if (rubyInt == null) {
-            return RubyString.newString(
-                    runtime,
-                    new ByteList(str.getBytes(), javaExtEncoding));
-        } else {
-            return RubyString.newString(
-                    runtime,
-                    new ByteList(RubyEncoding.encode(str, rubyInt), internal));
+        if ( rubyInt == null ) {
+            Encoding javaExtEncoding = runtime.getEncodingService().getJavaDefault();
+            return RubyString.newString(runtime, new ByteList(str.getBytes(), javaExtEncoding));
         }
+        return RubyString.newString(runtime,  new ByteList(RubyEncoding.encode(str, rubyInt), internal));
     }
 
     // String construction routines by NOT byte[] buffer and making the target String shared
