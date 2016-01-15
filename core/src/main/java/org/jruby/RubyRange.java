@@ -266,9 +266,6 @@ public class RubyRange extends RubyObject {
         hash ^= h << 24;
         return getRuntime().newFixnum(hash);
     }
-    
-    private static byte[] DOTDOTDOT = "...".getBytes();
-    private static byte[] DOTDOT = "..".getBytes();
 
     private IRubyObject inspectValue(final ThreadContext context, IRubyObject value) {
         return getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
@@ -282,11 +279,13 @@ public class RubyRange extends RubyObject {
         }, value);
     }
 
+    private static final byte[] DOTDOTDOT = new byte[] { '.','.','.' };
+
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(final ThreadContext context) {
         RubyString i1 = ((RubyString) inspectValue(context, begin)).strDup(context.runtime);
         RubyString i2 = (RubyString) inspectValue(context, end);
-        i1.cat(isExclusive ? DOTDOTDOT : DOTDOT);
+        i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);
         i1.infectBy(i2);
         return i1;
@@ -296,7 +295,7 @@ public class RubyRange extends RubyObject {
     public IRubyObject to_s(final ThreadContext context) {
         RubyString i1 = begin.asString().strDup(context.runtime);
         RubyString i2 = end.asString();
-        i1.cat(isExclusive ? DOTDOTDOT : DOTDOT);
+        i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);
         i1.infectBy(i2);
         return i1;

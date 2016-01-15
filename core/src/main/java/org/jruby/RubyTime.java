@@ -862,7 +862,7 @@ public class RubyTime extends RubyObject {
         Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
 
         if (offsetMatcher.matches()) {
-            boolean minus_p = offsetMatcher.group(1).toString().equals("-");
+            boolean minus_p = offsetMatcher.group(1).equals("-");
             int hourOffset  = Integer.valueOf(offsetMatcher.group(2));
 
             if (zone.equals("+00:00")) {

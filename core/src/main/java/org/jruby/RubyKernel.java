@@ -154,52 +154,53 @@ public class RubyKernel {
 
     @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         final RubyModule module = getModuleForAutoload(runtime, recv);
-        String name = symbol.asJavaString();
-
-        String file = module.getAutoloadFile(name);
-        return (file == null) ? runtime.getNil() : runtime.newString(file);
+        final RubyString file = module.getAutoloadFile(symbol.asJavaString());
+        return file == null ? context.nil : file;
     }
 
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
-    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        Ruby runtime = recv.getRuntime();
-        String nonInternedName = symbol.asJavaString();
-
-        final RubyString fileString = StringSupport.checkEmbeddedNulls(runtime,
-                                        RubyFile.get_path(runtime.getCurrentContext(), file));
+    public static IRubyObject autoload(ThreadContext context, final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
+        final Ruby runtime = context.runtime;
+        final String nonInternedName = symbol.asJavaString();
 
         if (!IdUtil.isValidConstantName(nonInternedName)) {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
 
+        final RubyString fileString =
+            StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, file));
+
         if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
 
-        final String baseName = symbol.asJavaString().intern(); // interned, OK for "fast" methods
+        final String baseName = nonInternedName.intern(); // interned, OK for "fast" methods
         final RubyModule module = getModuleForAutoload(runtime, recv);
 
         IRubyObject existingValue = module.fetchConstant(baseName);
-        if (existingValue != null && existingValue != RubyObject.UNDEF) return runtime.getNil();
+        if (existingValue != null && existingValue != RubyObject.UNDEF) return context.nil;
 
-        module.defineAutoload(baseName, new IAutoloadMethod() {
-            @Override
-            public String file() {
-                return fileString.asJavaString();
-            }
+        module.defineAutoload(baseName, new RubyModule.AutoloadMethod() {
 
-            @Override
-            public void load(Ruby runtime) {
-                if (runtime.getLoadService().autoloadRequire(file())) {
+            public RubyString getFile() { return fileString; }
+
+            public void load(final Ruby runtime) {
+                final String file = getFile().asJavaString();
+                if (runtime.getLoadService().autoloadRequire(file)) {
                     // Do not finish autoloading by cyclic autoload
                     module.finishAutoload(baseName);
                 }
             }
         });
-        return runtime.getNil();
+        return context.nil;
     }
 
-    private static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
+    @Deprecated
+    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
+        return autoload(recv.getRuntime().getCurrentContext(), recv, symbol, file);
+    }
+
+    static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
         RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getMetaClass().getRealClass();
         if (module == runtime.getKernel()) {
             // special behavior if calling Kernel.autoload directly
@@ -565,18 +566,15 @@ public class RubyKernel {
     // rb_f_printf
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
-        IRubyObject out;
-        int argc = args.length;
+        if (args.length == 0) return context.nil;
 
-        if (argc == 0) return context.nil;
+        final IRubyObject out;
         if (args[0] instanceof RubyString) {
-            out = runtime.getGlobalVariables().get("$>");
+            out = context.runtime.getGlobalVariables().get("$>");
         }
         else {
             out = args[0];
             args = Arrays.copyOfRange(args, 1, args.length);
-            argc--;
         }
         RubyIO.write(context, out, sprintf(context, recv, args));
 

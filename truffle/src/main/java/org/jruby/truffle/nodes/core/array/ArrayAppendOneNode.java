@@ -25,9 +25,9 @@ import org.jruby.truffle.runtime.layouts.Layouts;
         @NodeChild("value"),
 })
 @ImportStatic(ArrayGuards.class)
-public abstract class AppendOneNode extends RubyNode {
+public abstract class ArrayAppendOneNode extends RubyNode {
 
-    public AppendOneNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayAppendOneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

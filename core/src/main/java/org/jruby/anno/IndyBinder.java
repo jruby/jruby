@@ -375,10 +375,10 @@ public class IndyBinder extends AbstractProcessor {
                 boolean hasContext = desc.hasContext;
                 boolean hasBlock = desc.hasBlock;
 
-                StringBuffer buffer = new StringBuffer(method.getReturnType().toString() + " foo(");
+                StringBuilder buffer = new StringBuilder(method.getReturnType().toString()).append(" foo(");
                 boolean first = true;
                 for (VariableElement parameter : method.getParameters()) {
-                    if (!first) buffer.append(",");
+                    if (!first) buffer.append(',');
                     first = false;
                     buffer.append(parameter.asType().toString());
                 }

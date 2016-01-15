@@ -28,19 +28,17 @@ import java.util.Arrays;
         @NodeChild(value="requiredCapacity", type=RubyNode.class)
 })
 @ImportStatic(ArrayGuards.class)
-public abstract class EnsureCapacityArrayNode extends RubyNode {
+public abstract class ArrayEnsureCapacityNode extends RubyNode {
 
     private final ConditionProfile allocateProfile = ConditionProfile.createCountingProfile();
 
-    public EnsureCapacityArrayNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayEnsureCapacityNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     public abstract Object executeEnsureCapacity(DynamicObject array, int requiredCapacity);
 
-    @Specialization(
-            guards={"isRubyArray(array)", "isIntArray(array)"}
-    )
+    @Specialization(guards = "isIntArray(array)")
     public boolean ensureCapacityInt(DynamicObject array, int requiredCapacity) {
         final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
@@ -53,9 +51,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
         }
     }
 
-    @Specialization(
-            guards={"isRubyArray(array)", "isLongArray(array)"}
-    )
+    @Specialization(guards = "isLongArray(array)")
     public boolean ensureCapacityLong(DynamicObject array, int requiredCapacity) {
         final long[] store = (long[]) Layouts.ARRAY.getStore(array);
 
@@ -68,9 +64,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
         }
     }
 
-    @Specialization(
-            guards={"isRubyArray(array)", "isDoubleArray(array)"}
-    )
+    @Specialization(guards = "isDoubleArray(array)")
     public boolean ensureCapacityDouble(DynamicObject array, int requiredCapacity) {
         final double[] store = (double[]) Layouts.ARRAY.getStore(array);
 
@@ -83,9 +77,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
         }
     }
 
-    @Specialization(
-            guards={"isRubyArray(array)", "isObjectArray(array)"}
-    )
+    @Specialization(guards = "isObjectArray(array)")
     public boolean ensureCapacityObject(DynamicObject array, int requiredCapacity) {
         final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 

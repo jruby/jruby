@@ -11,6 +11,8 @@ package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
+
 import org.jruby.RubyThread;
 import org.jruby.truffle.nodes.core.InterruptMode;
 import org.jruby.truffle.om.dsl.api.Layout;
@@ -44,6 +46,7 @@ public interface ThreadLayout extends BasicObjectLayout {
                                AtomicBoolean wakeUp,
                                @Volatile int priority);
 
+    boolean isThread(ObjectType objectType);
     boolean isThread(DynamicObject object);
 
     FiberManager getFiberManager(DynamicObject object);
