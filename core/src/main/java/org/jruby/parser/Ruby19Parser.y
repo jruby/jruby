@@ -1240,7 +1240,7 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                     $$ = support.assignable($1, NilImplicitNode.NIL);
+                     $$ = support.assignableInCurr($1, NilImplicitNode.NIL);
                 }
                 | tLPAREN f_margs rparen {
                     $$ = $2;
@@ -1258,10 +1258,10 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgn19Node($1.getPosition(), $1, null, null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignable($4, null), null);
+                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignableInCurr($4, null), null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignable($4, null), $6);
+                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignableInCurr($4, null), $6);
                 }
                 | f_marg_list ',' tSTAR {
                     $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
@@ -1270,10 +1270,10 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), null, support.assignable($2, null), null);
+                    $$ = new MultipleAsgn19Node($1.getPosition(), null, support.assignableInCurr($2, null), null);
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), null, support.assignable($2, null), $4);
+                    $$ = new MultipleAsgn19Node($1.getPosition(), null, support.assignableInCurr($2, null), $4);
                 }
                 | tSTAR {
                     $$ = new MultipleAsgn19Node($1.getPosition(), null, new StarNode(lexer.getPosition()), null);

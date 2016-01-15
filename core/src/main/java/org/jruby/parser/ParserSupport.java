@@ -236,6 +236,12 @@ public class ParserSupport {
                 "identifier " + (String) lhs.getValue() + " is not valid", lhs.getValue());
     }
 
+    // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
+    public AssignableNode assignableInCurr(Token name, Node value) {
+        currentScope.addVariableThisScope(name.getValue().toString());
+        return currentScope.assign(lexer.getPosition(), name.getValue().toString(), makeNullNil(value));
+    }
+
     /**
      *  Wraps node with NEWLINE node.
      *
