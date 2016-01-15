@@ -143,6 +143,13 @@ public abstract class SizedQueueNodes {
         public DynamicObject pushBlocking(DynamicObject self, final Object value, boolean nonBlocking) {
             final BlockingQueue<Object> queue = Layouts.SIZED_QUEUE.getQueue(self);
 
+            doPushBlocking(value, queue);
+
+            return self;
+        }
+
+        @TruffleBoundary
+        private void doPushBlocking(final Object value, final BlockingQueue<Object> queue) {
             getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
@@ -150,22 +157,24 @@ public abstract class SizedQueueNodes {
                     return SUCCESS;
                 }
             });
-
-            return self;
         }
 
-        @TruffleBoundary
         @Specialization(guards = "nonBlocking")
         public DynamicObject pushNonBlock(DynamicObject self, final Object value, boolean nonBlocking) {
             final BlockingQueue<Object> queue = Layouts.SIZED_QUEUE.getQueue(self);
 
-            final boolean pushed = queue.offer(value);
+            final boolean pushed = doOffer(value, queue);
             if (!pushed) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().threadError("queue full", this));
             }
 
             return self;
+        }
+
+        @TruffleBoundary
+        private boolean doOffer(final Object value, final BlockingQueue<Object> queue) {
+            return queue.offer(value);
         }
 
     }
@@ -190,6 +199,11 @@ public abstract class SizedQueueNodes {
         public Object popBlocking(DynamicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = Layouts.SIZED_QUEUE.getQueue(self);
 
+            return doPop(queue);
+        }
+
+        @TruffleBoundary
+        private Object doPop(final BlockingQueue<Object> queue) {
             return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
                 @Override
                 public Object block() throws InterruptedException {
@@ -198,18 +212,22 @@ public abstract class SizedQueueNodes {
             });
         }
 
-        @TruffleBoundary
         @Specialization(guards = "nonBlocking")
         public Object popNonBlock(DynamicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = Layouts.SIZED_QUEUE.getQueue(self);
 
-            final Object value = queue.poll();
+            final Object value = doPoll(queue);
             if (value == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().threadError("queue empty", this));
             }
 
             return value;
+        }
+
+        @TruffleBoundary
+        private Object doPoll(final BlockingQueue<Object> queue) {
+            return queue.poll();
         }
 
     }
