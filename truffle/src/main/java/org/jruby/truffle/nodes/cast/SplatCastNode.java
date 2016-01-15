@@ -73,6 +73,9 @@ public abstract class SplatCastNode extends RubyNode {
             case CONVERT:
                 return toA.call(frame, nil, "to_a", null);
 
+            case NIL:
+                return nil;
+
             default: {
                 throw new UnsupportedOperationException();
             }
