@@ -60,7 +60,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
     private Object lookupRestKeywordArgumentHash(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
+        final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum, getContext());
 
         if (hash == null) {
             return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, 0, null, null, null, null, false);

@@ -56,7 +56,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
                 return kwarg;
             }
         } else {
-            final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
+            final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum, getContext());
 
             if (defaultProfile.profile(hash == null)) {
                 return defaultValue.execute(frame);
