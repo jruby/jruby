@@ -105,5 +105,11 @@ public class TestLoadService extends TestRubyBase {
         leftmost = ClassExtensionLibrary.findLeftmostIdentifier(elts);
 
         assertEquals(0, leftmost);
+
+        path = "foo//baz/quux/widget";
+        elts = path.split("/");
+        leftmost = ClassExtensionLibrary.findLeftmostIdentifier(elts);
+
+        assertEquals(2, leftmost);
     }
 }
