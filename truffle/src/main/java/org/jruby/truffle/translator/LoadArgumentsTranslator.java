@@ -22,6 +22,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
+import org.jruby.truffle.nodes.cast.SplatCastNode;
+import org.jruby.truffle.nodes.cast.SplatCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
@@ -548,7 +550,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         return SequenceNode.sequence(context, sourceSection,
                 new WriteLocalVariableNode(context, sourceSection,
-                        ArrayCastNodeGen.create(context, sourceSection,
+                        SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.NIL, true,
                                 readArgument(sourceSection)), arraySlot),
                 new IfNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
