@@ -277,12 +277,13 @@ public class RubyDir extends RubyObject {
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
 
         FileResource directory = JRubyFile.createResource(context, path);
-        Object[] files = getEntries(context, directory, adjustedPath);
+        String[] files = getEntries(context, directory, adjustedPath);
 
         return runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, files));
     }
 
-    private static final String[] NO_FILES = new String[] {};
+    private static final String[] NO_FILES = StringSupport.EMPTY_STRING_ARRAY;
+
     private static String[] getEntries(ThreadContext context, FileResource dir, String path) {
         if (!dir.isDirectory()) throw context.runtime.newErrnoENOENTError("No such directory: " + path);
         if (!dir.canRead()) throw context.runtime.newErrnoEACCESError(path);
