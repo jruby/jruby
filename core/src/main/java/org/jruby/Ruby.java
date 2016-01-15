@@ -2820,22 +2820,28 @@ public final class Ruby {
         IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this) : getTopSelf();
         ThreadContext context = getCurrentContext();
         String file = context.getFile();
+        RubyModule scopeClass = objectClass;
+
+        Node node = parseFile(in, scriptName, null);
+
+        if (wrap) {
+            // toss an anonymous module into the search path
+            scopeClass = RubyModule.newModule(this);
+            ((RootNode)node).getStaticScope().setModule(scopeClass);
+        }
+
+        context.preNodeEval(scopeClass, self, scriptName);
 
         try {
             ThreadContext.pushBacktrace(context, "(root)", file, 0);
-            context.preNodeEval(objectClass, self, scriptName);
 
-            Node node = parseFile(in, scriptName, null);
-            if (wrap) {
-                // toss an anonymous module into the search path
-                ((RootNode)node).getStaticScope().setModule(RubyModule.newModule(this));
-            }
             runInterpreter(context, node, self);
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {
-            context.postNodeEval();
             ThreadContext.popBacktrace(context);
+
+            context.postNodeEval();
         }
     }
 
