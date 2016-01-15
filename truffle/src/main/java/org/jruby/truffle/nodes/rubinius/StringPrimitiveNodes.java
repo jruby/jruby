@@ -1414,7 +1414,18 @@ public abstract class StringPrimitiveNodes {
             final Rope left = rope(string);
             final Rope right = rope(other);
 
-            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, left.getEncoding()));
+            // The semantics of this primitive are such that the original string's byte[] should be extended without
+            // any modification to the other properties of the string. This is counter-intuitive because adding bytes
+            // from another string may very well change the code range for the source string. Updating the code range,
+            // however, breaks other things so we can't do it. As an example, StringIO starts with an empty UTF-8
+            // string and then appends ASCII-8BIT bytes, but must retain the original UTF-8 encoding. The binary contents
+            // of the ASCII-8BIT string could give the resulting string a CR_BROKEN code range on UTF-8, but if we do
+            // this, StringIO ceases to work -- the resulting string must retain the original CR_7BIT code range. It's
+            // ugly, but seems to be due to a difference in how Rubinius keeps track of byte optimizable strings.
+
+            final Rope rightConverted = RopeOperations.create(right.getBytes(), left.getEncoding(), left.getCodeRange());
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, rightConverted, left.getEncoding()));
 
             return string;
         }
