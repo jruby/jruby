@@ -303,12 +303,6 @@ public class RubyHash extends RubyObject implements Map {
         allocFirst();
     }
 
-    private final void alloc(int buckets) {
-        generation++;
-        head.prevAdded = head.nextAdded = head;
-        allocFirst(buckets);
-    }
-
     /* ============================
      * Here are hash internals
      * (This could be extracted to a separate class but it's not too large though)
