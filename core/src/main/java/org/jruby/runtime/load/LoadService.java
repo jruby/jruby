@@ -1178,7 +1178,7 @@ public class LoadService {
                     JarFile file = new JarFile(jarFile);
                     String expandedFilename = expandRelativeJarPath(namePlusSuffix.substring(namePlusSuffix.indexOf("!/") + 2));
 
-                    debugLogTry("resourceFromJarURL", expandedFilename.toString());
+                    debugLogTry("resourceFromJarURL", expandedFilename);
                     if(file.getJarEntry(expandedFilename) != null) {
                         URI resourceUri = new URI("jar", "file:" + jarFile + "!/" + expandedFilename, null);
                         foundResource = new LoadServiceResource(resourceUri.toURL(), namePlusSuffix);
