@@ -128,16 +128,17 @@ public class MethodTranslator extends BodyTranslator {
                 NodeUtil.cloneNode(loadArguments));
 
         // Procs
-        final RubyNode bodyProc = new CatchForProcNode(context, sourceSection, composeBody(preludeProc, NodeUtil.cloneNode(body)));
+        final RubyNode bodyProc = new CatchForProcNode(context, SequenceNode.enclosing(sourceSection, body.getEncapsulatingSourceSection()), composeBody(preludeProc, NodeUtil.cloneNode(body)));
 
-        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, considerExtendingMethodToCoverEnd(bodyProc.getEncapsulatingSourceSection()), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
-        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection, composeBody(preludeLambda, body /* no copy, last usage */), environment.getReturnID());
+        final RubyNode composed = composeBody(preludeLambda, body /* no copy, last usage */);
+        final RubyNode bodyLambda = new CatchForLambdaNode(context, composed.getEncapsulatingSourceSection(), composed, environment.getReturnID());
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
-                context, sourceSection,
+                context, considerExtendingMethodToCoverEnd(bodyLambda.getEncapsulatingSourceSection()),
                 environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyLambda,
                 environment.needsDeclarationFrame());
@@ -159,7 +160,7 @@ public class MethodTranslator extends BodyTranslator {
             }
         }
 
-        return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
+        return new BlockDefinitionNode(context, newRootNodeForProcs.getEncapsulatingSourceSection(), type, environment.getSharedMethodInfo(),
                 callTargetAsProc, callTargetAsLambda, environment.getBreakID(), frameOnStackMarkerSlot);
     }
 
@@ -179,7 +180,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     private RubyNode composeBody(RubyNode prelude, RubyNode body) {
-        final SourceSection sourceSection = body.getSourceSection();
+        final SourceSection sourceSection = SequenceNode.enclosing(prelude.getSourceSection(), body.getSourceSection());
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);
 
@@ -242,7 +243,7 @@ public class MethodTranslator extends BodyTranslator {
     public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         final RubyNode body = compileMethodBody(sourceSection,  methodName, bodyNode, sharedMethodInfo);
         final RubyRootNode rootNode = new RubyRootNode(
-                context, body.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+                context, considerExtendingMethodToCoverEnd(body.getSourceSection()), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
         return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
@@ -386,4 +387,34 @@ public class MethodTranslator extends BodyTranslator {
             this.parentSourceSection = parentSourceSection;
         }
     }
+
+    private static SourceSection considerExtendingMethodToCoverEnd(SourceSection sourceSection) {
+        final Source source = sourceSection.getSource();
+
+        if (sourceSection.getEndLine() + 1 >= source.getLineCount()) {
+            return sourceSection;
+        }
+
+        final String indentationOnFirstLine = indentation(source.getCode(sourceSection.getStartLine()));
+
+        final int lineAfter = sourceSection.getEndLine() + 1;
+        final String lineAfterString = source.getCode(lineAfter).replaceAll("\\s+$","");
+
+        if (lineAfterString.equals(indentationOnFirstLine + "end") || lineAfterString.equals(indentationOnFirstLine + "}")) {
+            return source.createSection(sourceSection.getIdentifier(), sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
+        }
+
+        return sourceSection;
+    }
+
+    private static String indentation(String line) {
+        for (int n = 0; n < line.length(); n++) {
+            if (!Character.isWhitespace(line.charAt(n))) {
+                return line.substring(0, n);
+            }
+        }
+
+        return "";
+    }
+
 }

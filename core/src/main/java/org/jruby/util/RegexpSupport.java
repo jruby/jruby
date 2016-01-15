@@ -477,7 +477,7 @@ public class RegexpSupport {
             }
             if (enc[0] == null) {
                 enc[0] = UTF8Encoding.INSTANCE;
-            } else if (!(enc[0] instanceof UTF8Encoding)) { // do not load the class if not used
+            } else if (!(enc[0].isUTF8())) {
                 raisePreprocessError(runtime, str, "UTF-8 character in non UTF-8 regexp", mode);
             }
         }

@@ -36,14 +36,14 @@ public abstract class ArraySliceNode extends RubyNode {
         this.to = to;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isNullArray(array)"})
+    @Specialization(guards = "isNullArray(array)")
     public DynamicObject sliceNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
+    @Specialization(guards = "isIntArray(array)")
     public DynamicObject sliceIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = Layouts.ARRAY.getSize(array) + this.to;
@@ -55,7 +55,7 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
+    @Specialization(guards = "isLongArray(array)")
     public DynamicObject sliceLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = Layouts.ARRAY.getSize(array) + this.to;
@@ -67,7 +67,7 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
+    @Specialization(guards = "isDoubleArray(array)")
     public DynamicObject sliceFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = Layouts.ARRAY.getSize(array) + this.to;
@@ -79,7 +79,7 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
+    @Specialization(guards = "isObjectArray(array)")
     public DynamicObject sliceObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = Layouts.ARRAY.getSize(array) + this.to;

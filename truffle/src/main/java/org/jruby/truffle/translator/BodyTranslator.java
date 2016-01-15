@@ -563,14 +563,22 @@ public class BodyTranslator extends Translator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, node.getName());
 
-        RubyNode translated = new RubyCallNode(context, sourceSection,
+        final List<RubyNode> children = new ArrayList<>();
+
+        if (argumentsAndBlock.getBlock() != null) {
+            children.add(argumentsAndBlock.getBlock());
+        }
+
+        children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
+
+        RubyNode translated = new RubyCallNode(context, SequenceNode.enclosing(sourceSection, children.toArray(new RubyNode[children.size()])),
                 node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(),
                 privately || ignoreVisibility, isVCall, argumentsAndBlock.getArguments());
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
-            translated = new FrameOnStackNode(context, sourceSection, translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
-            translated = new CatchBreakNode(context, sourceSection, translated, blockDef.getBreakID());
+            translated = new FrameOnStackNode(context, translated.getSourceSection(), translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
+            translated = new CatchBreakNode(context, translated.getSourceSection(), translated, blockDef.getBreakID());
         }
 
         return addNewlineIfNeeded(node, translated);
@@ -1153,7 +1161,7 @@ public class BodyTranslator extends Translator {
             boolean rename = false;
 
             if (path.equals(coreRubiniusPath + "common/array.rb")) {
-                rename = methodName.equals("zip");
+                rename = methodName.equals("fill") || methodName.equals("zip");
             } else if (path.equals(coreRubiniusPath + "common/float.rb")) {
                 rename = methodName.equals("round");
             } else if (path.equals(coreRubiniusPath + "common/range.rb")) {

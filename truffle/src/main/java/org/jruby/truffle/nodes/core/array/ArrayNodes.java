@@ -430,7 +430,7 @@ public abstract class ArrayNodes {
 
         @Child private ArrayWriteNormalizedNode writeNode;
         @Child protected ArrayReadSliceNormalizedNode readSliceNode;
-        @Child private PopOneNode popOneNode;
+        @Child private ArrayPopOneNode popOneNode;
         @Child private ToIntNode toIntNode;
 
         public IndexSetNode(RubyContext context, SourceSection sourceSection) {
@@ -506,7 +506,7 @@ public abstract class ArrayNodes {
 
                 if (popOneNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    popOneNode = insert(PopOneNodeGen.create(getContext(), getSourceSection(), null));
+                    popOneNode = insert(ArrayPopOneNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 int popLength = length - 1 < size ? length - 1 : size - 1;
                 for (int i = 0; i < popLength; i++) { // TODO 3-15-2015 BF update when pop can pop multiple
@@ -820,11 +820,11 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class ConcatNode extends CoreMethodNode {
 
-        @Child private AppendManyNode appendManyNode;
+        @Child private ArrayAppendManyNode appendManyNode;
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendManyNode = AppendManyNodeGen.create(context, sourceSection, null, null, null);
+            appendManyNode = ArrayAppendManyNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
@@ -1269,6 +1269,42 @@ public abstract class ArrayNodes {
         @Specialization
         public Object eachWithIndexObject(VirtualFrame frame, DynamicObject array, NotProvided block) {
             return ruby(frame, "to_enum(:each_with_index)");
+        }
+
+    }
+
+    @CoreMethod(names = "fill", rest = true, needsBlock = true)
+    public abstract static class FillNode extends ArrayCoreMethodNode {
+
+        public FillNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = { "isObjectArray(array)", "args.length == 1" })
+        protected DynamicObject fill(DynamicObject array, Object[] args, NotProvided block) {
+            final Object value = args[0];
+            final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
+            final int size = Layouts.ARRAY.getSize(array);
+            for (int i = 0; i < size; i++) {
+                store[i] = value;
+            }
+            return array;
+        }
+
+        @Specialization
+        protected Object fillFallback(VirtualFrame frame, DynamicObject array, Object[] args, NotProvided block,
+                @Cached("createCallNode()") CallDispatchHeadNode callFillInternal) {
+            return callFillInternal.call(frame, array, "fill_internal", null, args);
+        }
+
+        @Specialization
+        protected Object fillFallback(VirtualFrame frame, DynamicObject array, Object[] args, DynamicObject block,
+                @Cached("createCallNode()") CallDispatchHeadNode callFillInternal) {
+            return callFillInternal.call(frame, array, "fill_internal", block, args);
+        }
+
+        protected CallDispatchHeadNode createCallNode() {
+            return DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
     }
@@ -2497,7 +2533,7 @@ public abstract class ArrayNodes {
     public abstract static class PopNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
-        @Child private PopOneNode popOneNode;
+        @Child private ArrayPopOneNode popOneNode;
 
         public PopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2507,7 +2543,7 @@ public abstract class ArrayNodes {
         public Object pop(DynamicObject array, NotProvided n) {
             if (popOneNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                popOneNode = insert(PopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                popOneNode = insert(ArrayPopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
 
             return popOneNode.executePopOne(array);
@@ -2847,11 +2883,11 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "<<", raiseIfFrozenSelf = true, required = 1)
     public abstract static class LeftShiftNode extends ArrayCoreMethodNode {
 
-        @Child private AppendOneNode appendOneNode;
+        @Child private ArrayAppendOneNode appendOneNode;
 
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendOneNode = AppendOneNodeGen.create(context, sourceSection, null, null);
+            appendOneNode = ArrayAppendOneNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization

@@ -253,11 +253,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
     }
 
-    private void copyCodeRange(RubyString from) {
-        value.setEncoding(from.value.getEncoding());
-        setCodeRange(from.getCodeRange());
-    }
-
     // rb_enc_str_coderange
     @Override
     public final int scanForCodeRange() {
@@ -2798,7 +2793,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
         if (len == 0) {
             p = 0;
-        } else if (isCodeRangeValid() && enc instanceof UTF8Encoding) {
+        } else if (isCodeRangeValid() && enc.isUTF8()) {
             p = StringSupport.utf8Nth(bytes, s, end, beg);
             len = StringSupport.utf8Offset(bytes, p, end, len);
         } else if (enc.isFixedWidth()) {

@@ -37,7 +37,7 @@ public abstract class ArrayReadSliceDenormalizedNode extends RubyNode {
 
     public abstract DynamicObject executeReadSlice(DynamicObject array, int index, int length);
 
-    @Specialization(guards = "isRubyArray(array)")
+    @Specialization
     public DynamicObject read(DynamicObject array, int index, int length,
             @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
         final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);

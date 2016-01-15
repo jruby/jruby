@@ -276,9 +276,7 @@ module Truffle::Primitive
 
     last_arg = array.pop
 
-    if last_arg.is_a? Fixnum
-      kwargs = {}
-    else
+    if last_arg.respond_to?(:to_hash)
       kwargs = last_arg.to_hash
 
       if kwargs.nil?
@@ -295,6 +293,8 @@ module Truffle::Primitive
         array.push({key => value}) unless symbol
         symbol
       end
+    else
+      kwargs = {}
     end
     
     binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
