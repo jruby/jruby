@@ -3936,8 +3936,6 @@ public class RubyModule extends RubyObject {
         return new ArrayList<String>(getClassVariablesForRead().keySet());
     }
 
-    protected static final String ERR_INSECURE_SET_CLASS_VAR = "Insecure: can't modify class variable";
-
     protected final String validateClassVariable(String name) {
         if (IdUtil.isValidClassVariableName(name)) {
             return name;
