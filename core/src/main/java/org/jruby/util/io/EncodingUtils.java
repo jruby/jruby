@@ -285,7 +285,7 @@ public class EncodingUtils {
         Encoding extencoding = null;
         Encoding intencoding = null;
 
-        if (options != null || !options.isNil()) {
+        if (options != null && !options.isNil()) {
             RubyHash opts = (RubyHash) options;
 
             IRubyObject encodingOpt = opts.op_aref(context, runtime.newSymbol("encoding"));
