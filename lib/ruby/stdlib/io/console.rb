@@ -150,15 +150,15 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       # TODO: Windows version uses "conin$" and "conout$" instead of /dev/tty
       def self.console(sym = nil)
         raise TypeError, "expected Symbol, got #{sym.class}" unless sym.nil? || sym.kind_of?(Symbol)
-        klass = self == IO ? File : self
 
+        # klass = self == IO ? File : self
         if defined?(@console) # using ivar instead of hidden const as in MRI
           con = @console
-        end
-
-        if !con.kind_of?(File) || (con.kind_of?(IO) && !con.open? || !con.readable?) # MRI checks IO internals here
-          remove_instance_variable :@console if defined?(@console)
-          con = nil
+          # MRI checks IO internals : (!RB_TYPE_P(con, T_FILE) || (!(fptr = RFILE(con)->fptr) || GetReadFD(fptr) == -1))
+          if !con.kind_of?(File) || (con.kind_of?(IO) && (con.closed? || !FileTest.readable?(con)))
+            remove_instance_variable :@console
+            con = nil
+          end
         end
 
         if sym
@@ -166,13 +166,12 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
             if con
               con.close
               remove_instance_variable :@console if defined?(@console)
-              con = nil
             end
             return nil
           end
         end
 
-        if con.nil?
+        unless con
           con = File.open('/dev/tty', 'r+')
           @console = con
         end
