@@ -566,18 +566,15 @@ public class RubyKernel {
     // rb_f_printf
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
-        IRubyObject out;
-        int argc = args.length;
+        if (args.length == 0) return context.nil;
 
-        if (argc == 0) return context.nil;
+        final IRubyObject out;
         if (args[0] instanceof RubyString) {
-            out = runtime.getGlobalVariables().get("$>");
+            out = context.runtime.getGlobalVariables().get("$>");
         }
         else {
             out = args[0];
             args = Arrays.copyOfRange(args, 1, args.length);
-            argc--;
         }
         RubyIO.write(context, out, sprintf(context, recv, args));
 
