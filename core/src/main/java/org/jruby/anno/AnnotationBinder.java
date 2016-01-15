@@ -297,7 +297,7 @@ public class AnnotationBinder extends AbstractProcessor {
             boolean hasContext = false;
             boolean hasBlock = false;
 
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             boolean first = true;
             for (VariableElement parameter : method.getParameters()) {
                 if (!first) buffer.append(", ");
@@ -343,7 +343,7 @@ public class AnnotationBinder extends AbstractProcessor {
             boolean hasContext = false;
             boolean hasBlock = false;
 
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             boolean first = true;
             for (VariableElement parameter : method.getParameters()) {
                 if (!first) buffer.append(", ");

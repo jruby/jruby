@@ -1654,14 +1654,14 @@ public class RubyModule extends RubyObject {
         }
 
         // FIXME: This only works if identifier's encoding is ASCII-compatible
-        final String variableName = TypeConverter.checkID(runtime, "@" + internedIdentifier).toString();
+        final String variableName = TypeConverter.checkID(runtime, '@' + internedIdentifier).toString();
         if (readable) {
             addMethod(internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
         }
         if (writeable) {
             // FIXME: This only works if identifier's encoding is ASCII-compatible
-            identifier = TypeConverter.checkID(runtime, internedIdentifier + "=");
+            identifier = TypeConverter.checkID(runtime, internedIdentifier + '=');
             internedIdentifier = identifier.toString();
             addMethod(internedIdentifier, new AttrWriterMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
@@ -2068,7 +2068,7 @@ public class RubyModule extends RubyObject {
                     buffer.append(attached.anyToString());
                 }
             }
-            buffer.append(">");
+            buffer.append('>');
             return getRuntime().newString(buffer.toString());
         }
         return getRuntime().newString(getName());
