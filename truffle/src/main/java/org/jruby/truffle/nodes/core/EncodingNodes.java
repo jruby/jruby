@@ -247,6 +247,7 @@ public abstract class EncodingNodes {
             }
         }
 
+        @TruffleBoundary
         public static Encoding areCompatible(DynamicObject first, DynamicObject second) {
             assert RubyGuards.isRubyString(first);
             assert RubyGuards.isRubyString(second);

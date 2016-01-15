@@ -44,6 +44,7 @@ public class RopeOperations {
         }
     }
 
+    @CompilerDirectives.TruffleBoundary
     public static Rope concat(Rope left, Rope right, Encoding encoding) {
         if (right.isEmpty()) {
             return template(left, encoding);
@@ -99,6 +100,7 @@ public class RopeOperations {
         return create(originalRope.getBytes(), newEncoding, newCodeRange);
     }
 
+    @CompilerDirectives.TruffleBoundary
     public static Rope template(Rope originalRope, Encoding newEncoding) {
         return template(originalRope, newEncoding, originalRope.getCodeRange());
     }
