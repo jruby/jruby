@@ -3670,7 +3670,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // rb_io_s_readlines
     @JRubyMethod(name = "readlines", required = 1, optional = 3, meta = true)
     public static IRubyObject readlines19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        int argc = args.length;
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         IRubyObject io = openKeyArgs(context, recv, args, opt);
         if (io.isNil()) return io;
@@ -4772,11 +4771,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
                             Thread.yield();
                         }
 
-                        ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
+                        runtime.getThreadService().registerNewThread(rubyThread);
 
-                        rubyThread.op_aset(
-                                runtime.newSymbol("pid"),
-                                runtime.newFixnum(pid));
+                        rubyThread.op_aset(runtime.newSymbol("pid"),  runtime.newFixnum(pid));
 
                         try {
                             int exitValue = tuple.process.waitFor();

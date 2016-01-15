@@ -29,7 +29,6 @@ package org.jruby.ext.nkf;
 
 public class CommandParser {
     public Command parse(Options opt, String args) {
-        Options options = opt;
         Command cc = new Command();
         String[] tokens = args.split("\\s");
         for (int i = 0; i < tokens.length; i++) {

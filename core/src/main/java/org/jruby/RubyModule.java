@@ -2945,9 +2945,7 @@ public class RubyModule extends RubyObject {
     private RubyModule proceedWithPrepend(RubyModule insertBelow, RubyModule moduleToPrepend) {
         if (!moduleToPrepend.isPrepended()) moduleToPrepend = moduleToPrepend.getNonIncludedClass();
 
-        RubyModule newInclusionPoint = proceedWithInclude(insertBelow, moduleToPrepend);
-
-        return newInclusionPoint;
+        return proceedWithInclude(insertBelow, moduleToPrepend);
     }
 
 
@@ -3159,8 +3157,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        IRubyObject constant = setConstant(validateConstant(symbol).intern(), value);
-        return constant;
+        return setConstant(validateConstant(symbol).intern(), value);
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)

@@ -3464,17 +3464,13 @@ public final class Ruby implements Constantizable {
     public RubyProc newProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
-        RubyProc proc =  RubyProc.newProc(this, block, type);
-
-        return proc;
+        return RubyProc.newProc(this, block, type);
     }
 
     public RubyProc newBlockPassProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
-        RubyProc proc =  RubyProc.newProc(this, block, type);
-
-        return proc;
+        return RubyProc.newProc(this, block, type);
     }
 
     public RubyBinding newBinding() {
