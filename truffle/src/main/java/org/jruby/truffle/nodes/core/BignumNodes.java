@@ -378,6 +378,20 @@ public abstract class BignumNodes {
         }
     }
 
+    @CoreMethod(names = "~")
+    public abstract static class ComplementNode extends BignumCoreMethodNode {
+
+        public ComplementNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object complement(DynamicObject value) {
+            return fixnumOrBignum(Layouts.BIGNUM.getValue(value).not());
+        }
+
+    }
+
     @CoreMethod(names = "&", required = 1)
     public abstract static class BitAndNode extends BignumCoreMethodNode {
 
@@ -551,6 +565,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public DynamicObject divMod(DynamicObject a, long b) {
+            return divModNode.execute(Layouts.BIGNUM.getValue(a), b);
+        }
+
+        @Specialization
+        public DynamicObject divMod(DynamicObject a, double b) {
             return divModNode.execute(Layouts.BIGNUM.getValue(a), b);
         }
 

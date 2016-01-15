@@ -83,7 +83,7 @@ class Float < Numeric
   def arg
     if nan?
       self
-    elsif negative?
+    elsif signbit?
       Math::PI
     else
       0
@@ -144,9 +144,9 @@ class Float < Numeric
 
   alias_method :magnitude, :abs
 
-  def negative?
-    Rubinius.primitive :float_negative
-    raise PrimitiveFailure, "Float#negative primitive failed"
+  def signbit?
+    Rubinius.primitive :float_signbit_p
+    raise PrimitiveFailure, "Float#signbit? primitive failed"
   end
 
   def +(other)

@@ -26,6 +26,11 @@
 #
 #   jt run --graal -J-G:+TraceTruffleCompilation -J-G:+TruffleCompilationExceptionsAreFatal -J-G:+TruffleIterativePartialEscape test.rb
 
+unless Truffle.graal?
+  puts 'not running Graal'
+  exit 1
+end
+
 TIMEOUT = 10
 
 EXAMPLES = []
