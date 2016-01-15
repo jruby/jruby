@@ -1740,15 +1740,9 @@ public abstract class StringNodes {
 
         public abstract int executeInteger(VirtualFrame frame, DynamicObject string);
 
-        @Specialization(guards = "isSingleByteOptimizable(string)")
-        public int sizeSingleByteRope(DynamicObject string) {
-            return rope(string).characterLength();
-        }
-
-        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        @Specialization
         public int size(DynamicObject string) {
-            // TODO (nirvdrum Jan.-07-2016) This should be made much more efficient.
-            return StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string));
+            return rope(string).characterLength();
         }
 
     }
