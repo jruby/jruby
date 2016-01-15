@@ -118,6 +118,7 @@ public class ClassExtensionLibrary implements Library {
     }
 
     private static boolean isJavaIdentifier(String str) {
+        if (str.isEmpty()) return false;
         if (!Character.isJavaIdentifierStart(str.charAt(0))) return false;
         for (int i = 1; i < str.length(); i++) {
             if (!Character.isJavaIdentifierPart(str.charAt(i))) return false;
