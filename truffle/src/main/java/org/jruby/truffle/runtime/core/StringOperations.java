@@ -115,6 +115,7 @@ public abstract class StringOperations {
         final int existingCodeRange = StringOperations.getCodeRange(string);
 
         if (existingCodeRange != codeRange) {
+            CompilerDirectives.transferToInterpreter();
             throw new RuntimeException(String.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
         }
     }
