@@ -1104,7 +1104,7 @@ public class RubyModule extends RubyObject {
             if (c.isSingleton()) {
                 IRubyObject obj = ((MetaClass)c).getAttached();
 
-                if (obj != null && obj instanceof RubyModule) {
+                if (obj instanceof RubyModule) {
                     c = (RubyModule) obj;
                     s0 = "";
                 }
