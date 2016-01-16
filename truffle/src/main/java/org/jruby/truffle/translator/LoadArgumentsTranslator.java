@@ -269,6 +269,8 @@ public class LoadArgumentsTranslator extends Translator {
             throw new UnsupportedOperationException("unsupported keyword arg " + node);
         }
 
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
+
         final RubyNode defaultValue;
         if (asgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
             /* This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
@@ -281,7 +283,6 @@ public class LoadArgumentsTranslator extends Translator {
         excludedKeywords.add(name);
 
         final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue, kwIndex - countKwArgs);
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
 
         return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
