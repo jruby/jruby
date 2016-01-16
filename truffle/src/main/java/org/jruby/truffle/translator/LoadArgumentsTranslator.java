@@ -75,6 +75,7 @@ public class LoadArgumentsTranslator extends Translator {
     private State state;
     private boolean hasKeywordArguments;
     private List<String> excludedKeywords = new ArrayList<>();
+    private boolean firstOpt = false;
 
     private org.jruby.ast.ArgsNode argsNode;
 
@@ -126,6 +127,8 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
+        hasKeywordArguments = node.hasKwargs();
+
         final int optArgCount = node.getOptionalArgsCount();
         if (optArgCount > 0) {
             // (BlockNode 0, (OptArgNode:a 0, (LocalAsgnNode:a 0, (FixnumNode 0))), ...)
@@ -133,12 +136,11 @@ public class LoadArgumentsTranslator extends Translator {
             index = argsNode.getPreCount();
             final int optArgIndex = node.getOptArgIndex();
             for (int i = 0; i < optArgCount; i++) {
+                firstOpt = i == 0;
                 sequence.add(args[optArgIndex + i].accept(this));
                 ++index;
             }
         }
-
-        hasKeywordArguments = node.hasKwargs();
 
         if (node.getRestArgNode() != null) {
             methodBodyTranslator.getEnvironment().hasRestParameter = true;
@@ -410,7 +412,20 @@ public class LoadArgumentsTranslator extends Translator {
                         minimum += 1;
                     }
 
-                    readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
+                    final boolean considerRejectedKWArgs;
+                    final ReadRestArgumentNode readRest;
+
+                    if (firstOpt && hasKeywordArguments) {
+                        considerRejectedKWArgs = true;
+                        int from = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
+                        int to = -argsNode.getPostCount();
+                        readRest = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments, required);
+                    } else {
+                        considerRejectedKWArgs = false;
+                        readRest = null;
+                    }
+
+                    readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, considerRejectedKWArgs, defaultValue, readRest);
                 }
             }
         } else {
