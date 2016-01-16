@@ -120,6 +120,18 @@ public abstract class CheckArityNode {
                     }
                 }
             }
+
+            if (arity.hasKeywordsRest() && keywordArguments != null) {
+                for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(keywordArguments)) {
+                    if (!RubyGuards.isRubySymbol(keyValue.getKey())) {
+                        given++;
+
+                        if (given > arity.getRequired() && !arity.hasRest() && arity.getOptional() == 0) {
+                            throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
+                        }
+                    }
+                }
+            }
         }
 
         private boolean checkArity(VirtualFrame frame, int given, DynamicObject keywordArguments) {
