@@ -187,7 +187,7 @@ public class LoadArgumentsTranslator extends Translator {
             state = State.POST;
             index = -1;
 
-            if (hasKeywordArguments) {
+            if (!useArray() && hasKeywordArguments) {
                 index--;
             }
 
