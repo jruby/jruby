@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -105,7 +106,7 @@ public abstract class CheckArityNode {
 
             if (!arity.hasKeywordsRest() && keywordArguments != null) {
                 for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(keywordArguments)) {
-                    if (!keywordAllowed(keyValue.getKey().toString())) {
+                    if (RubyGuards.isRubySymbol(keyValue.getKey()) && !keywordAllowed(keyValue.getKey().toString())) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
                     }
