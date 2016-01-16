@@ -768,9 +768,8 @@ public class ASTInspector {
             // a while node could receive non-local flow control from any of these:
             // * a closure within the loop
             // * an eval within the loop
-            // * a block-arg-based proc called within the loop
             // * any case that disables optimization, like rescues and ensures
-            if (whileInspector.getFlag(CLOSURE) || whileInspector.getFlag(EVAL) || getFlag(BLOCK_ARG)) {
+            if (whileInspector.getFlag(CLOSURE) || whileInspector.getFlag(EVAL)) {
                 whileNode.containsNonlocalFlow = true;
                 
                 // we set scope-aware to true to force heap-based locals
