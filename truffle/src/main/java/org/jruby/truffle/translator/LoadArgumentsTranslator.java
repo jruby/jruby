@@ -499,7 +499,6 @@ public class LoadArgumentsTranslator extends Translator {
             index = -1;
             for (int i = children.length - 1; i >= 0; i--) {
                 notNilAtLeastAsLargeSequence.add(children[i].accept(this));
-                required++;
                 index--;
             }
         }
