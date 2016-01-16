@@ -74,21 +74,6 @@ public class MethodTranslator extends BodyTranslator {
             arityForCheck = arity;
         }
 
-        RubyNode body;
-
-        parentSourceSection.push(sourceSection);
-        try {
-            if (argsNode.getBlockLocalVariables() != null && !argsNode.getBlockLocalVariables().isEmpty()) {
-                for (org.jruby.ast.Node var : argsNode.getBlockLocalVariables().children()) {
-                    environment.declareVar(((INameNode) var).getName());
-                }
-            }
-
-            body = translateNodeOrNil(sourceSection, bodyNode);
-        } finally {
-            parentSourceSection.pop();
-        }
-
         final boolean isProc = type == Type.PROC;
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isProc, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
@@ -126,6 +111,21 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode preludeLambda = SequenceNode.sequence(context, sourceSection,
                 CheckArityNode.create(context, sourceSection, arityForCheck),
                 NodeUtil.cloneNode(loadArguments));
+
+        RubyNode body;
+
+        parentSourceSection.push(sourceSection);
+        try {
+            if (argsNode.getBlockLocalVariables() != null && !argsNode.getBlockLocalVariables().isEmpty()) {
+                for (org.jruby.ast.Node var : argsNode.getBlockLocalVariables().children()) {
+                    environment.declareVar(((INameNode) var).getName());
+                }
+            }
+
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
+        }
 
         // Procs
         final RubyNode bodyProc = new CatchForProcNode(context, SequenceNode.enclosing(sourceSection, body.getEncapsulatingSourceSection()), composeBody(preludeProc, NodeUtil.cloneNode(body)));

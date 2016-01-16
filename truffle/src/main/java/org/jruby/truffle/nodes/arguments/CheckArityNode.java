@@ -96,7 +96,7 @@ public abstract class CheckArityNode {
                 given = RubyArguments.getUserArgumentsCount(frame.getArguments());
             }
 
-            final DynamicObject keywordArguments = RubyArguments.getUserKeywordsHash(frameArguments, arity.getRequired());
+            final DynamicObject keywordArguments = RubyArguments.getUserKeywordsHash(frameArguments, arity.getRequired(), getContext());
 
             if (!checkArity(frame, given, keywordArguments)) {
                 CompilerDirectives.transferToInterpreter();

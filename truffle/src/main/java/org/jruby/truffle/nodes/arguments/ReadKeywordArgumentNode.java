@@ -56,7 +56,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
                 return kwarg;
             }
         } else {
-            final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
+            final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum, getContext());
 
             if (defaultProfile.profile(hash == null)) {
                 return defaultValue.execute(frame);
@@ -77,7 +77,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
         assert RubyGuards.isRubyHash(hash);
 
         for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
-            if (keyValue.getKey().toString().equals(name)) {
+            if (RubyGuards.isRubySymbol(keyValue.getKey()) && keyValue.getKey().toString().equals(name)) {
                 return keyValue.getValue();
             }
         }

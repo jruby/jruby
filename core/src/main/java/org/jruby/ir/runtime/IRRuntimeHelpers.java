@@ -815,10 +815,10 @@ public class IRRuntimeHelpers {
                             case MODULE_BODY:
                             case CLASS_BODY:
                             case METACLASS_BODY:
-                            case SCRIPT_BODY:
                                 return (RubyModule) self;
 
                             case INSTANCE_METHOD:
+                            case SCRIPT_BODY:
                                 return self.getMetaClass();
 
                             default:

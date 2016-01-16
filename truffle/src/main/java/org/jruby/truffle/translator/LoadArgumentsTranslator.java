@@ -186,6 +186,11 @@ public class LoadArgumentsTranslator extends Translator {
         if (postCount > 0) {
             state = State.POST;
             index = -1;
+
+            if (hasKeywordArguments) {
+                index--;
+            }
+
             int postIndex = node.getPostIndex();
             for (int i = postCount - 1; i >= 0; i--) {
                 notNilAtLeastAsLargeSequence.add(args[postIndex + i].accept(this));
@@ -264,6 +269,8 @@ public class LoadArgumentsTranslator extends Translator {
             throw new UnsupportedOperationException("unsupported keyword arg " + node);
         }
 
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
+
         final RubyNode defaultValue;
         if (asgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
             /* This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
@@ -276,7 +283,6 @@ public class LoadArgumentsTranslator extends Translator {
         excludedKeywords.add(name);
 
         final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue, kwIndex - countKwArgs);
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
 
         return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
@@ -499,7 +505,6 @@ public class LoadArgumentsTranslator extends Translator {
             index = -1;
             for (int i = children.length - 1; i >= 0; i--) {
                 notNilAtLeastAsLargeSequence.add(children[i].accept(this));
-                required++;
                 index--;
             }
         }
@@ -521,8 +526,14 @@ public class LoadArgumentsTranslator extends Translator {
         if (node.getRest() != null) {
             if (node.getRest() instanceof INameNode) {
                 final String name = ((INameNode) node.getRest()).getName();
-                nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
-                        .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[] {})));
+
+                if (node.getPreCount() == 0 && node.getPostCount() == 0) {
+                    nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
+                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{new NilNode(context, sourceSection)})));
+                } else {
+                    nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
+                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{})));
+                }
             } else if (node.getRest() instanceof StarNode) {
                 // Don't think we need to do anything
             } else {
@@ -550,7 +561,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         return SequenceNode.sequence(context, sourceSection,
                 new WriteLocalVariableNode(context, sourceSection,
-                        SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.NIL, true,
+                        SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
                                 readArgument(sourceSection)), arraySlot),
                 new IfNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
