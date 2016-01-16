@@ -1,3 +1,0 @@
-fails:A block yielded a single Array assigns elements to mixed argument types
-fails:A block yielded a single Array calls #to_hash on the last element if keyword arguments are present
-fails:A block yielded a single Array assigns the last element to a non-keyword argument if #to_hash returns nil

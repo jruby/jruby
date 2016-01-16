@@ -300,4 +300,16 @@ module Truffle::Primitive
     binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
     array
   end
+
+  def self.add_rejected_kwargs_to_rest(rest, kwargs)
+    return if kwargs.nil?
+
+    rejected = kwargs.select { |key, value|
+      not key.is_a?(Symbol)
+    }
+
+    unless rejected.empty?
+      rest.push rejected
+    end
+  end
 end

@@ -204,6 +204,9 @@ public class MethodTranslator extends BodyTranslator {
         declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
 
+        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, false, this);
+        final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
+        
         RubyNode body;
 
         parentSourceSection.push(sourceSection);
@@ -212,9 +215,6 @@ public class MethodTranslator extends BodyTranslator {
         } finally {
             parentSourceSection.pop();
         }
-
-        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, false, this);
-        final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
         final RubyNode prelude;
 
