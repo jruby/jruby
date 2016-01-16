@@ -89,7 +89,7 @@ public abstract class CheckArityNode {
         @Override
         public void executeVoid(VirtualFrame frame) {
             final Object[] frameArguments = frame.getArguments();
-            final int given;
+            int given;
 
             if (RubyArguments.isKwOptimized(frame.getArguments())) {
                 given = RubyArguments.getUserArgumentsCount(frame.getArguments()) - arity.getKeywordsCount() - 2;
@@ -106,9 +106,17 @@ public abstract class CheckArityNode {
 
             if (!arity.hasKeywordsRest() && keywordArguments != null) {
                 for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(keywordArguments)) {
-                    if (RubyGuards.isRubySymbol(keyValue.getKey()) && !keywordAllowed(keyValue.getKey().toString())) {
-                        CompilerDirectives.transferToInterpreter();
-                        throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
+                    if (RubyGuards.isRubySymbol(keyValue.getKey())) {
+                        if (!keywordAllowed(keyValue.getKey().toString())) {
+                            CompilerDirectives.transferToInterpreter();
+                            throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
+                        }
+                    } else {
+                        given++;
+
+                        if (given > arity.getRequired() && !arity.hasRest() && arity.getOptional() == 0) {
+                            throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
+                        }
                     }
                 }
             }
