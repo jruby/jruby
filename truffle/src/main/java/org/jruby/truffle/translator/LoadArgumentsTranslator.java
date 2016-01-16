@@ -556,7 +556,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         return SequenceNode.sequence(context, sourceSection,
                 new WriteLocalVariableNode(context, sourceSection,
-                        SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.NIL, true,
+                        SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
                                 readArgument(sourceSection)), arraySlot),
                 new IfNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
