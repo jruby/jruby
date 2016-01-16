@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
 import org.jruby.truffle.nodes.methods.MarkerNode;
@@ -69,6 +70,10 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
         final List<Map.Entry<Object, Object>> entries = new ArrayList<>();
 
         outer: for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
+            if (!RubyGuards.isRubySymbol(keyValue.getKey())) {
+                continue;
+            }
+
             for (String excludedKeyword : excludedKeywords) {
                 if (excludedKeyword.equals(keyValue.getKey().toString())) {
                     continue outer;
