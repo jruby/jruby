@@ -9,7 +9,9 @@
  */
 package org.jruby.truffle.nodes.arguments;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -17,7 +19,10 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+
+import java.util.Map;
 
 /**
  * Read the rest of arguments after a certain point into an array.
@@ -27,15 +32,17 @@ public class ReadRestArgumentNode extends RubyNode {
     private final int startIndex;
     private final int negativeEndIndex;
     private final boolean keywordArguments;
+    private final int minimumForKWargs;
 
     private final BranchProfile noArgumentsLeftProfile = BranchProfile.create();
     private final BranchProfile subsetOfArgumentsProfile = BranchProfile.create();
 
-    public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int negativeEndIndex, boolean keywordArguments) {
+    public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int negativeEndIndex, boolean keywordArguments, int minimumForKWargs) {
         super(context, sourceSection);
         this.startIndex = startIndex;
         this.negativeEndIndex = negativeEndIndex;
         this.keywordArguments = keywordArguments;
+        this.minimumForKWargs = minimumForKWargs;
     }
 
     @Override
@@ -74,6 +81,22 @@ public class ReadRestArgumentNode extends RubyNode {
             }
         }
 
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), resultStore, resultLength);
+        final DynamicObject rest = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), resultStore, resultLength);
+
+        if (keywordArguments) {
+            CompilerDirectives.transferToInterpreter();
+
+            Object kwargsHash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimumForKWargs, getContext());
+
+            if (kwargsHash == null) {
+                kwargsHash = nil();
+            }
+
+            getContext().inlineRubyHelper(this, "Truffle::Primitive.add_rejected_kwargs_to_rest(rest, kwargs)",
+                    "rest", rest,
+                    "kwargs", kwargsHash);
+        }
+
+        return rest;
     }
 }

@@ -325,7 +325,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (useArray()) {
             readNode = ArraySliceNodeGen.create(context, sourceSection, from, to, loadArray(sourceSection));
         } else {
-            readNode = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments);
+            readNode = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments, required);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
