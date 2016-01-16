@@ -77,7 +77,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
         assert RubyGuards.isRubyHash(hash);
 
         for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
-            if (keyValue.getKey().toString().equals(name)) {
+            if (RubyGuards.isRubySymbol(keyValue.getKey()) && keyValue.getKey().toString().equals(name)) {
                 return keyValue.getValue();
             }
         }
