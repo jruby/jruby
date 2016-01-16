@@ -425,7 +425,7 @@ public class LoadArgumentsTranslator extends Translator {
                         readRest = null;
                     }
 
-                    readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, considerRejectedKWArgs, defaultValue, readRest);
+                    readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, considerRejectedKWArgs, defaultValue, readRest, required, argsNode.hasKwargs());
                 }
             }
         } else {

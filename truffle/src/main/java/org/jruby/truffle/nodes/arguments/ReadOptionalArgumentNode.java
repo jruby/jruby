@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.ir.Compiler;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -30,21 +31,35 @@ public class ReadOptionalArgumentNode extends RubyNode {
     private final boolean considerRejectedKWArgs;
     @Child private RubyNode defaultValue;
     @Child private ReadRestArgumentNode readRestArgumentNode;
+    private final int requiredForKWArgs;
+    private final boolean reduceMinimumWhenNoKWargs;
 
     private final BranchProfile defaultValueProfile = BranchProfile.create();
 
-    public ReadOptionalArgumentNode(RubyContext context, SourceSection sourceSection, int index, int minimum, boolean considerRejectedKWArgs, RubyNode defaultValue, ReadRestArgumentNode readRestArgumentNode) {
+    public ReadOptionalArgumentNode(RubyContext context, SourceSection sourceSection, int index, int minimum, boolean considerRejectedKWArgs, RubyNode defaultValue, ReadRestArgumentNode readRestArgumentNode, int requiredForKWArgs, boolean reduceMinimumWhenNoKWargs) {
         super(context, sourceSection);
         this.index = index;
         this.minimum = minimum;
         this.considerRejectedKWArgs = considerRejectedKWArgs;
         this.defaultValue = defaultValue;
         this.readRestArgumentNode = readRestArgumentNode;
+        this.requiredForKWArgs = requiredForKWArgs;
+        this.reduceMinimumWhenNoKWargs = reduceMinimumWhenNoKWargs;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (RubyArguments.getNamedUserArgumentsCount(frame.getArguments()) < minimum) {
+        int actualMinimum = minimum;
+
+        if (reduceMinimumWhenNoKWargs) {
+            CompilerDirectives.transferToInterpreter();
+
+            if (RubyArguments.getUserKeywordsHash(frame.getArguments(), requiredForKWArgs, getContext()) == null) {
+                actualMinimum--;
+            }
+        }
+
+        if (RubyArguments.getNamedUserArgumentsCount(frame.getArguments()) < actualMinimum) {
             defaultValueProfile.enter();
 
             if (considerRejectedKWArgs) {
