@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.runtime;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -20,9 +19,6 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-/**
- * Pack and unpack Ruby method arguments to and from an array of objects.
- */
 public final class RubyArguments {
 
     private enum ArgumentIndicies {
@@ -66,6 +62,8 @@ public final class RubyArguments {
 
         return packed;
     }
+
+    // Basic getters
 
     public static MaterializedFrame getDeclarationFrame(Object[] arguments) {
         return (MaterializedFrame) arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()];
@@ -111,16 +109,28 @@ public final class RubyArguments {
         return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT + start, arguments.length);
     }
 
-    /**
-     * Get the declaration frame a certain number of levels up from the current frame, where the
-     * current frame is 0.
-     */
+    // Getters for the decalaration frame that let you reach up several levels
+
     public static MaterializedFrame getDeclarationFrame(VirtualFrame frame, int level) {
         assert level > 0;
-
-        MaterializedFrame parentFrame = RubyArguments.getDeclarationFrame(frame.getArguments());
-        return getDeclarationFrame(parentFrame, level - 1);
+        return getDeclarationFrame(RubyArguments.getDeclarationFrame(frame.getArguments()), level - 1);
     }
+
+    @ExplodeLoop
+    public static MaterializedFrame getDeclarationFrame(MaterializedFrame frame, int level) {
+        assert frame != null;
+        assert level >= 0;
+
+        MaterializedFrame currentFrame = frame;
+
+        for (int n = 0; n < level; n++) {
+            currentFrame = RubyArguments.getDeclarationFrame(currentFrame.getArguments());
+        }
+
+        return currentFrame;
+    }
+
+    // Getters that fail safely for when you aren't even sure if this is a Ruby frame
 
     public static MaterializedFrame tryGetDeclarationFrame(Object[] arguments) {
         if (ArgumentIndicies.DECLARATION_FRAME.ordinal() >= arguments.length) {
@@ -136,23 +146,29 @@ public final class RubyArguments {
         return null;
     }
 
-    /**
-     * Get the declaration frame a certain number of levels up from the current frame, where the
-     * current frame is 0.
-     */
-    @ExplodeLoop
-    public static MaterializedFrame getDeclarationFrame(MaterializedFrame frame, int level) {
-        assert frame != null;
-        assert level >= 0;
-
-        MaterializedFrame parentFrame = frame;
-
-        for (int n = 0; n < level; n++) {
-            parentFrame = RubyArguments.getDeclarationFrame(parentFrame.getArguments());
+    public static Object tryGetSelf(Object[] arguments) {
+        if (ArgumentIndicies.SELF.ordinal() >= arguments.length) {
+            return null;
         }
 
-        return parentFrame;
+        return getSelf(arguments);
     }
+
+    public static DynamicObject tryGetBlock(Object[] arguments) {
+        if (ArgumentIndicies.BLOCK.ordinal() >= arguments.length) {
+            return null;
+        }
+
+        final Object block = arguments[ArgumentIndicies.BLOCK.ordinal()];
+
+        if (block instanceof DynamicObject) {
+            return (DynamicObject) block;
+        } else {
+            return null;
+        }
+    }
+
+    // Setters
 
     public static void setDeclarationFrame(Object[] arguments, MaterializedFrame declarationFrame) {
         arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()] = declarationFrame;
@@ -162,31 +178,11 @@ public final class RubyArguments {
         arguments[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()] = declarationContext;
     }
 
-    public static Object tryGetSelf(Object[] arguments) {
-        if (ArgumentIndicies.SELF.ordinal() >= arguments.length) {
-            return null;
-        }
-        return arguments[ArgumentIndicies.SELF.ordinal()];
-    }
-
     public static void setSelf(Object[] arguments, Object self) {
         arguments[ArgumentIndicies.SELF.ordinal()] = self;
     }
 
-    public static DynamicObject tryGetBlock(Object[] arguments) {
-        if (ArgumentIndicies.BLOCK.ordinal() >= arguments.length) {
-            return null;
-        }
-
-        final Object block = arguments[ArgumentIndicies.BLOCK.ordinal()];
-        if (block instanceof DynamicObject) {
-            return (DynamicObject) block;
-        } else {
-            return null;
-        }
-    }
-
-    public static void setUserArgument(Object[] internalArguments, int index, Object value) {
+    public static void setArgument(Object[] internalArguments, int index, Object value) {
         internalArguments[RUNTIME_ARGUMENT_COUNT + index] = value;
     }
 

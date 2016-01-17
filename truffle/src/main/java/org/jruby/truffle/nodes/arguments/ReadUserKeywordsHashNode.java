@@ -46,7 +46,7 @@ public class ReadUserKeywordsHashNode extends RubyNode {
             final Object converted = ruby(frame, "last_arg.to_hash", "last_arg", lastArgument);
 
             if (RubyGuards.isRubyHash(converted)) {
-                RubyArguments.setUserArgument(frame.getArguments(), argumentCount - 1, converted);
+                RubyArguments.setArgument(frame.getArguments(), argumentCount - 1, converted);
                 return converted;
             }
         }
