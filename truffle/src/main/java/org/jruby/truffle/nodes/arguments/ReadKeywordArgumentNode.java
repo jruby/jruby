@@ -27,49 +27,32 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
     private final int minimum;
     private final String name;
-    private final int kwIndex;
-    private final ValueProfile argumentValueProfile = ValueProfile.createPrimitiveProfile();
-
-    private final ConditionProfile optimizedProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile defaultProfile = ConditionProfile.createBinaryProfile();
     
     @Child private RubyNode defaultValue;
 
-    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue, int kwIndex) {
+    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue) {
         super(context, sourceSection);
         this.minimum = minimum;
         this.name = name;
         this.defaultValue = defaultValue;
-        this.kwIndex = kwIndex;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (optimizedProfile.profile(RubyArguments.isKwOptimized(frame.getArguments()))) {
-            Object kwarg = argumentValueProfile
-                    .profile(RubyArguments.getOptimizedKeywordArgument(
-                            frame.getArguments(), kwIndex));
+        final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum, getContext());
 
-            if (defaultProfile.profile(kwarg instanceof OptionalKeywordArgMissingNode.OptionalKeywordArgMissing)) {
-                return defaultValue.execute(frame);
-            } else {
-                return kwarg;
-            }
-        } else {
-            final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum, getContext());
-
-            if (defaultProfile.profile(hash == null)) {
-                return defaultValue.execute(frame);
-            }
-
-            Object value = lookupKeywordInHash(hash);
-
-            if (defaultProfile.profile(value == null)) {
-                return defaultValue.execute(frame);
-            }
-
-            return value;
+        if (defaultProfile.profile(hash == null)) {
+            return defaultValue.execute(frame);
         }
+
+        Object value = lookupKeywordInHash(hash);
+
+        if (defaultProfile.profile(value == null)) {
+            return defaultValue.execute(frame);
+        }
+
+        return value;
     }
 
     @TruffleBoundary

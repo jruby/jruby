@@ -91,11 +91,7 @@ public abstract class CheckArityNode {
             final Object[] frameArguments = frame.getArguments();
             int given;
 
-            if (RubyArguments.isKwOptimized(frame.getArguments())) {
-                given = RubyArguments.getUserArgumentsCount(frame.getArguments()) - arity.getKeywordsCount() - 2;
-            } else {
-                given = RubyArguments.getUserArgumentsCount(frame.getArguments());
-            }
+            given = RubyArguments.getUserArgumentsCount(frame.getArguments());
 
             final DynamicObject keywordArguments = RubyArguments.getUserKeywordsHash(frameArguments, arity.getRequired(), getContext());
 

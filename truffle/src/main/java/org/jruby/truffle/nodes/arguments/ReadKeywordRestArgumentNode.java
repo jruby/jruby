@@ -31,31 +31,16 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
 
     private final int minimum;
     private final String[] excludedKeywords;
-    private final int kwIndex;
 
-    public ReadKeywordRestArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String[] excludedKeywords, int kwIndex) {
+    public ReadKeywordRestArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String[] excludedKeywords) {
         super(context, sourceSection);
         this.minimum = minimum;
         this.excludedKeywords = excludedKeywords;
-        this.kwIndex = kwIndex;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (RubyArguments.isKwOptimized(frame.getArguments())) {
-            Object restHash = RubyArguments.getOptimizedKeywordArgument(
-                    frame.getArguments(), kwIndex);
-
-            if (restHash instanceof MarkerNode.Marker) {
-                // no rest keyword args hash passed
-                return HashLiteralNode.create(getContext(), null,
-                        new RubyNode[0]).execute(frame);
-            } else {
-                return restHash;
-            }
-        } else {
-            return lookupRestKeywordArgumentHash(frame);
-        }
+        return lookupRestKeywordArgumentHash(frame);
     }
 
     private Object lookupRestKeywordArgumentHash(VirtualFrame frame) {

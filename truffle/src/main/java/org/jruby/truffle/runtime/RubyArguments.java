@@ -59,15 +59,6 @@ public final class RubyArguments {
         return packed;
     }
 
-    public static Object getOptimizedKeywordArgument(Object[] arguments,
-            int index) {
-        return arguments[arguments.length - 1 + index];
-    }
-
-    public static boolean isKwOptimized(Object[] arguments) {
-        return arguments[arguments.length - 1] instanceof MarkerNode.Marker;
-    }
-
     public static InternalMethod getMethod(Object[] arguments) {
         return (InternalMethod) arguments[ArgumentIndicies.METHOD.ordinal()];
     }
@@ -111,13 +102,7 @@ public final class RubyArguments {
     }
 
     public static int getNamedUserArgumentsCount(Object[] internalArguments) {
-        if (isKwOptimized(internalArguments)) {
-            return getUserArgumentsCount(internalArguments)
-                    - getMethod(internalArguments).getSharedMethodInfo().getArity()
-                            .getKeywordsCount() - 1;
-        } else {
-            return getUserArgumentsCount(internalArguments);
-        }
+        return getUserArgumentsCount(internalArguments);
     }
 
     public static Object getUserArgument(Object[] internalArguments, int index) {
