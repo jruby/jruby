@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
+import org.jruby.truffle.runtime.BreakID;
 
 public class BreakNode extends RubyNode {
 

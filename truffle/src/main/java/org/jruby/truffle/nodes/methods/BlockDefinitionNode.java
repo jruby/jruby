@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
+import org.jruby.truffle.runtime.BreakID;
 
 /**
  * Create a RubyProc to pass as a block to the called method.
