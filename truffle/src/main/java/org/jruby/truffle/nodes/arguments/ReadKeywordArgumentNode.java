@@ -25,22 +25,22 @@ import java.util.Map;
 
 public class ReadKeywordArgumentNode extends RubyNode {
 
-    private final int minimum;
     private final String name;
     private final ConditionProfile defaultProfile = ConditionProfile.createBinaryProfile();
     
     @Child private RubyNode defaultValue;
+    @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
     public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue) {
         super(context, sourceSection);
-        this.minimum = minimum;
         this.name = name;
         this.defaultValue = defaultValue;
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimum);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum, getContext());
+        final DynamicObject hash = (DynamicObject) readUserKeywordsHashNode.execute(frame);
 
         if (defaultProfile.profile(hash == null)) {
             return defaultValue.execute(frame);

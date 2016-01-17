@@ -75,10 +75,12 @@ public abstract class CheckArityNode {
     private static class CheckArityKeywords extends RubyNode {
 
         private final Arity arity;
+        @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
         private CheckArityKeywords(RubyContext context, SourceSection sourceSection, Arity arity) {
             super(context, sourceSection);
             this.arity = arity;
+            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, arity.getRequired());
         }
 
         @Override
@@ -93,7 +95,7 @@ public abstract class CheckArityNode {
 
             given = RubyArguments.getUserArgumentsCount(frame.getArguments());
 
-            final DynamicObject keywordArguments = RubyArguments.getUserKeywordsHash(frameArguments, arity.getRequired(), getContext());
+            final DynamicObject keywordArguments = (DynamicObject) readUserKeywordsHashNode.execute(frame);
 
             if (!checkArity(frame, given, keywordArguments)) {
                 CompilerDirectives.transferToInterpreter();

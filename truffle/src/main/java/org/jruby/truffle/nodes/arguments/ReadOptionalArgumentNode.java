@@ -31,8 +31,8 @@ public class ReadOptionalArgumentNode extends RubyNode {
     private final boolean considerRejectedKWArgs;
     @Child private RubyNode defaultValue;
     @Child private ReadRestArgumentNode readRestArgumentNode;
-    private final int requiredForKWArgs;
     private final boolean reduceMinimumWhenNoKWargs;
+    @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
     private final BranchProfile defaultValueProfile = BranchProfile.create();
 
@@ -43,8 +43,8 @@ public class ReadOptionalArgumentNode extends RubyNode {
         this.considerRejectedKWArgs = considerRejectedKWArgs;
         this.defaultValue = defaultValue;
         this.readRestArgumentNode = readRestArgumentNode;
-        this.requiredForKWArgs = requiredForKWArgs;
         this.reduceMinimumWhenNoKWargs = reduceMinimumWhenNoKWargs;
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, requiredForKWArgs);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
         if (reduceMinimumWhenNoKWargs) {
             CompilerDirectives.transferToInterpreter();
 
-            if (RubyArguments.getUserKeywordsHash(frame.getArguments(), requiredForKWArgs, getContext()) == null) {
+            if (readUserKeywordsHashNode.execute(frame) == null) {
                 actualMinimum--;
             }
         }

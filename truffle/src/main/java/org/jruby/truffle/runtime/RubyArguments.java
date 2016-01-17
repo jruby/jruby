@@ -200,31 +200,4 @@ public final class RubyArguments {
         internalArguments[RUNTIME_ARGUMENT_COUNT + index] = value;
     }
 
-    public static DynamicObject getUserKeywordsHash(Object[] internalArguments, int minArgumentCount, RubyContext context) {
-        final int argumentCount = getUserArgumentsCount(internalArguments);
-
-        if (argumentCount <= minArgumentCount) {
-            return null;
-        }
-
-        final Object lastArgument = getUserArgument(internalArguments, argumentCount - 1);
-
-        if (RubyGuards.isRubyHash(lastArgument)) {
-            return (DynamicObject) lastArgument;
-        }
-
-        CompilerDirectives.transferToInterpreter();
-
-        if ((boolean) context.inlineRubyHelper(null, "last_arg.respond_to?(:to_hash)", "last_arg", lastArgument)) {
-            final Object converted = context.inlineRubyHelper(null, "last_arg.to_hash", "last_arg", lastArgument);
-
-            if (RubyGuards.isRubyHash(converted)) {
-                setUserArgument(internalArguments, argumentCount - 1, converted);
-                return (DynamicObject) converted;
-            }
-        }
-
-        return null;
-    }
-
 }

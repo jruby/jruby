@@ -29,13 +29,14 @@ import java.util.Map;
 
 public class ReadKeywordRestArgumentNode extends RubyNode {
 
-    private final int minimum;
     private final String[] excludedKeywords;
+
+    @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
     public ReadKeywordRestArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String[] excludedKeywords) {
         super(context, sourceSection);
-        this.minimum = minimum;
         this.excludedKeywords = excludedKeywords;
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimum);
     }
 
     @Override
@@ -46,7 +47,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
     private Object lookupRestKeywordArgumentHash(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum, getContext());
+        final DynamicObject hash = (DynamicObject) readUserKeywordsHashNode.execute(frame);
 
         if (hash == null) {
             return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, 0, null, null, null, null, false);

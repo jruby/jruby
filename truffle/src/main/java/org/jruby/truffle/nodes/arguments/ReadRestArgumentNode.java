@@ -37,12 +37,15 @@ public class ReadRestArgumentNode extends RubyNode {
     private final BranchProfile noArgumentsLeftProfile = BranchProfile.create();
     private final BranchProfile subsetOfArgumentsProfile = BranchProfile.create();
 
+    @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
+
     public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int negativeEndIndex, boolean keywordArguments, int minimumForKWargs) {
         super(context, sourceSection);
         this.startIndex = startIndex;
         this.negativeEndIndex = negativeEndIndex;
         this.keywordArguments = keywordArguments;
         this.minimumForKWargs = minimumForKWargs;
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimumForKWargs);
     }
 
     @Override
@@ -86,7 +89,7 @@ public class ReadRestArgumentNode extends RubyNode {
         if (keywordArguments) {
             CompilerDirectives.transferToInterpreter();
 
-            Object kwargsHash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimumForKWargs, getContext());
+            Object kwargsHash = readUserKeywordsHashNode.execute(frame);
 
             if (kwargsHash == null) {
                 kwargsHash = nil();
