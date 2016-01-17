@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -1903,7 +1903,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object insertBoxed(VirtualFrame frame, DynamicObject array, Object idxObject, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.extractUserArgumentsFrom(frame.getArguments(), 1);
+            final Object[] values = RubyArguments.getArguments(frame.getArguments(), 1);
             final int idx = toInt(frame, idxObject);
 
             CompilerDirectives.transferToInterpreter();
@@ -2173,7 +2173,7 @@ public abstract class ArrayNodes {
 
             final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(method, null, null, array, null, DeclarationContext.BLOCK, new Object[] {}), maxBlock.getFrameDescriptor());
+                    RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
@@ -2293,7 +2293,7 @@ public abstract class ArrayNodes {
 
             final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(method, null, null, array, null, DeclarationContext.BLOCK, new Object[] {}), minBlock.getFrameDescriptor());
+                    RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
@@ -2922,7 +2922,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject pushNullEmptyObjects(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame.getArguments());
             Layouts.ARRAY.setStore(array, values);
             Layouts.ARRAY.setSize(array, values.length);
             return array;
@@ -2931,7 +2931,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "!isNullArray(array)", "isEmptyArray(array)" })
         public DynamicObject pushEmptySingleIntegerFixnum(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
             // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
-            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame.getArguments());
             Layouts.ARRAY.setStore(array, values);
             Layouts.ARRAY.setSize(array, values.length);
             return array;
@@ -2978,7 +2978,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isIntArray(array)", "wasProvided(value)", "rest.length != 0" })
         public DynamicObject pushIntegerFixnum(VirtualFrame frame, DynamicObject array, Object value, Object[] rest) {
-            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame.getArguments());
 
             final int oldSize = Layouts.ARRAY.getSize(array);
             final int newSize = oldSize + values.length;
@@ -3045,7 +3045,7 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
 
-            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame.getArguments());
             Layouts.ARRAY.setStore(array, values);
             Layouts.ARRAY.setSize(array, values.length);
             return array;
@@ -3053,7 +3053,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObjectArray(array)")
         public DynamicObject pushObject(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame.getArguments());
 
             final int oldSize = Layouts.ARRAY.getSize(array);
             final int newSize = oldSize + values.length;
@@ -4350,7 +4350,7 @@ public abstract class ArrayNodes {
                 zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object[] others = RubyArguments.extractUserArguments(frame.getArguments());
+            final Object[] others = RubyArguments.getArguments(frame.getArguments());
 
             return zipInternalCall.call(frame, array, "zip_internal", block, others);
         }

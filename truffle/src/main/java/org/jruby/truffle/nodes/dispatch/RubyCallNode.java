@@ -108,37 +108,7 @@ public class RubyCallNode extends RubyNode {
 
         final Object[] argumentsObjects;
 
-        if (dispatchHead.getFirstDispatchNode().couldOptimizeKeywordArguments() && !cannotOptimize) {
-            final CachedBoxedDispatchNode dispatchNode = (CachedBoxedDispatchNode) dispatchHead.getFirstDispatchNode();
-
-            if (keywordOptimizedArguments[0] == null) {
-                CompilerDirectives.transferToInterpreter();
-
-                System.err.println("optimizing for keyword arguments!");
-
-                final RubyNode[] optimized = expandedArgumentNodes(dispatchNode.getMethod(), arguments, isSplatted);
-
-                if (optimized == null || optimized.length > keywordOptimizedArguments.length) {
-                    System.err.println("couldn't optimize :(");
-                    cannotOptimize = true;
-                } else {
-                    keywordOptimizedArgumentsLength = optimized.length;
-
-                    for (int n = 0; n < keywordOptimizedArgumentsLength; n++) {
-                        keywordOptimizedArguments[n] = insert(NodeUtil.cloneNode(optimized[n]));
-                    }
-                }
-            }
-
-            if (dispatchNode.guard(methodName, receiverObject) && dispatchNode.getUnmodifiedAssumption().isValid()) {
-                argumentsObjects = executeKeywordOptimizedArguments(frame);
-            } else {
-                argumentsObjects = executeArguments(frame);
-            }
-
-        } else {
-            argumentsObjects = executeArguments(frame);
-        }
+        argumentsObjects = executeArguments(frame);
 
         final DynamicObject blockObject = executeBlock(frame);
 

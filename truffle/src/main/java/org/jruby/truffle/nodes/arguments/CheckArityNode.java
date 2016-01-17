@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -47,7 +47,7 @@ public abstract class CheckArityNode {
 
         @Override
         public void executeVoid(VirtualFrame frame) {
-            final int given = RubyArguments.getUserArgumentsCount(frame.getArguments());
+            final int given = RubyArguments.getArgumentsCount(frame.getArguments());
             if (!checkArity(given)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
@@ -75,10 +75,12 @@ public abstract class CheckArityNode {
     private static class CheckArityKeywords extends RubyNode {
 
         private final Arity arity;
+        @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
         private CheckArityKeywords(RubyContext context, SourceSection sourceSection, Arity arity) {
             super(context, sourceSection);
             this.arity = arity;
+            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, arity.getRequired());
         }
 
         @Override
@@ -91,13 +93,9 @@ public abstract class CheckArityNode {
             final Object[] frameArguments = frame.getArguments();
             int given;
 
-            if (RubyArguments.isKwOptimized(frame.getArguments())) {
-                given = RubyArguments.getUserArgumentsCount(frame.getArguments()) - arity.getKeywordsCount() - 2;
-            } else {
-                given = RubyArguments.getUserArgumentsCount(frame.getArguments());
-            }
+            given = RubyArguments.getArgumentsCount(frame.getArguments());
 
-            final DynamicObject keywordArguments = RubyArguments.getUserKeywordsHash(frameArguments, arity.getRequired(), getContext());
+            final DynamicObject keywordArguments = (DynamicObject) readUserKeywordsHashNode.execute(frame);
 
             if (!checkArity(frame, given, keywordArguments)) {
                 CompilerDirectives.transferToInterpreter();

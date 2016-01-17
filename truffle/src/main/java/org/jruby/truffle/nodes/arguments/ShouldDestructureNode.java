@@ -36,14 +36,14 @@ public class ShouldDestructureNode extends RubyNode {
     public boolean executeBoolean(VirtualFrame frame) {
         // If the caller supplied no arguments, or more than one argument, there's no need to destructure this time
 
-        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) != 1) {
+        if (RubyArguments.getArgumentsCount(frame.getArguments()) != 1) {
             return false;
         }
 
         // If the single argument is a RubyArray, destructure
         // TODO(CS): can we not just rely on the respondToCheck? Should experiment.
 
-        if (RubyGuards.isRubyArray(RubyArguments.getUserArgument(frame.getArguments(), 0))) {
+        if (RubyGuards.isRubyArray(RubyArguments.getArgument(frame.getArguments(), 0))) {
             return true;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,7 +14,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ir.Compiler;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -31,8 +30,8 @@ public class ReadOptionalArgumentNode extends RubyNode {
     private final boolean considerRejectedKWArgs;
     @Child private RubyNode defaultValue;
     @Child private ReadRestArgumentNode readRestArgumentNode;
-    private final int requiredForKWArgs;
     private final boolean reduceMinimumWhenNoKWargs;
+    @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
     private final BranchProfile defaultValueProfile = BranchProfile.create();
 
@@ -43,8 +42,8 @@ public class ReadOptionalArgumentNode extends RubyNode {
         this.considerRejectedKWArgs = considerRejectedKWArgs;
         this.defaultValue = defaultValue;
         this.readRestArgumentNode = readRestArgumentNode;
-        this.requiredForKWArgs = requiredForKWArgs;
         this.reduceMinimumWhenNoKWargs = reduceMinimumWhenNoKWargs;
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, requiredForKWArgs);
     }
 
     @Override
@@ -54,12 +53,12 @@ public class ReadOptionalArgumentNode extends RubyNode {
         if (reduceMinimumWhenNoKWargs) {
             CompilerDirectives.transferToInterpreter();
 
-            if (RubyArguments.getUserKeywordsHash(frame.getArguments(), requiredForKWArgs, getContext()) == null) {
+            if (readUserKeywordsHashNode.execute(frame) == null) {
                 actualMinimum--;
             }
         }
 
-        if (RubyArguments.getNamedUserArgumentsCount(frame.getArguments()) < actualMinimum) {
+        if (RubyArguments.getArgumentsCount(frame.getArguments()) < actualMinimum) {
             defaultValueProfile.enter();
 
             if (considerRejectedKWArgs) {
@@ -74,7 +73,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
 
             return defaultValue.execute(frame);
         } else {
-            return RubyArguments.getUserArgument(frame.getArguments(), index);
+            return RubyArguments.getArgument(frame.getArguments(), index);
         }
     }
 

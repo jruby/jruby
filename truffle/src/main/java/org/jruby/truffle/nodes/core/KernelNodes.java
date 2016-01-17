@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -63,7 +63,6 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -84,7 +83,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -539,14 +537,7 @@ public abstract class KernelNodes {
                     Visibility.PUBLIC,
                     cachedCallTarget);
 
-            return callNode.call(frame, RubyArguments.pack(
-                    method,
-                    parentFrame,
-                    null,
-                    callerSelf,
-                    null,
-                    RubyArguments.getDeclarationContext(parentFrame.getArguments()),
-                    new Object[] {}));
+            return callNode.call(frame, RubyArguments.pack(parentFrame, null, method, RubyArguments.getDeclarationContext(parentFrame.getArguments()), null, callerSelf, null, new Object[]{}));
         }
 
         @Specialization(guards = {
@@ -1272,7 +1263,7 @@ public abstract class KernelNodes {
 
             @Override
             public Object execute(VirtualFrame frame) {
-                final Object[] originalUserArguments = RubyArguments.extractUserArguments(frame.getArguments());
+                final Object[] originalUserArguments = RubyArguments.getArguments(frame.getArguments());
                 final Object[] newUserArguments = ArrayUtils.unshift(originalUserArguments, methodName);
                 return methodMissing.call(frame, RubyArguments.getSelf(frame.getArguments()), "method_missing", RubyArguments.getBlock(frame.getArguments()), newUserArguments);
             }
