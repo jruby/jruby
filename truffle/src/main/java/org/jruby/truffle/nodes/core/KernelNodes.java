@@ -1263,7 +1263,7 @@ public abstract class KernelNodes {
 
             @Override
             public Object execute(VirtualFrame frame) {
-                final Object[] originalUserArguments = RubyArguments.extractUserArguments(frame.getArguments());
+                final Object[] originalUserArguments = RubyArguments.getArguments(frame.getArguments());
                 final Object[] newUserArguments = ArrayUtils.unshift(originalUserArguments, methodName);
                 return methodMissing.call(frame, RubyArguments.getSelf(frame.getArguments()), "method_missing", RubyArguments.getBlock(frame.getArguments()), newUserArguments);
             }

@@ -14,7 +14,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ir.Compiler;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -59,7 +58,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
             }
         }
 
-        if (RubyArguments.getNamedUserArgumentsCount(frame.getArguments()) < actualMinimum) {
+        if (RubyArguments.getArgumentsCount(frame.getArguments()) < actualMinimum) {
             defaultValueProfile.enter();
 
             if (considerRejectedKWArgs) {
@@ -74,7 +73,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
 
             return defaultValue.execute(frame);
         } else {
-            return RubyArguments.getUserArgument(frame.getArguments(), index);
+            return RubyArguments.getArgument(frame.getArguments(), index);
         }
     }
 

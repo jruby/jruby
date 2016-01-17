@@ -19,10 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-
-import java.util.Map;
 
 /**
  * Read the rest of arguments after a certain point into an array.
@@ -50,12 +47,12 @@ public class ReadRestArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        int count = RubyArguments.getUserArgumentsCount(frame.getArguments());
+        int count = RubyArguments.getArgumentsCount(frame.getArguments());
 
         int endIndex = count + negativeEndIndex;
 
         if (keywordArguments) {
-            final Object lastArgument = RubyArguments.getUserArgument(frame.getArguments(), RubyArguments.getUserArgumentsCount(frame.getArguments()) - 1);
+            final Object lastArgument = RubyArguments.getArgument(frame.getArguments(), RubyArguments.getArgumentsCount(frame.getArguments()) - 1);
 
             if (RubyGuards.isRubyHash(lastArgument)) {
                 endIndex -= 1;
@@ -68,7 +65,7 @@ public class ReadRestArgumentNode extends RubyNode {
         final int resultLength;
 
         if (startIndex == 0) {
-            final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
+            final Object[] arguments = RubyArguments.getArguments(frame.getArguments());
             resultStore = arguments;
             resultLength = length;
         } else {
@@ -78,7 +75,7 @@ public class ReadRestArgumentNode extends RubyNode {
                 resultLength = 0;
             } else {
                 subsetOfArgumentsProfile.enter();
-                final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
+                final Object[] arguments = RubyArguments.getArguments(frame.getArguments());
                 resultStore = ArrayUtils.extractRange(arguments, startIndex, endIndex);
                 resultLength = length;
             }

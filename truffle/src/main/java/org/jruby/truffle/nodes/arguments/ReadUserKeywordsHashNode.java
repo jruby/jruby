@@ -11,9 +11,7 @@ package org.jruby.truffle.nodes.arguments;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -30,13 +28,13 @@ public class ReadUserKeywordsHashNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final int argumentCount = RubyArguments.getUserArgumentsCount(frame.getArguments());
+        final int argumentCount = RubyArguments.getArgumentsCount(frame.getArguments());
 
         if (argumentCount <= minArgumentCount) {
             return null;
         }
 
-        final Object lastArgument = RubyArguments.getUserArgument(frame.getArguments(), argumentCount - 1);
+        final Object lastArgument = RubyArguments.getArgument(frame.getArguments(), argumentCount - 1);
 
         if (RubyGuards.isRubyHash(lastArgument)) {
             return lastArgument;

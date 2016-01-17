@@ -71,6 +71,46 @@ public final class RubyArguments {
         return (MaterializedFrame) arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()];
     }
 
+    public static MaterializedFrame getCallerFrame(Object[] arguments) {
+        return (MaterializedFrame) arguments[ArgumentIndicies.CALLER_FRAME.ordinal()];
+    }
+
+    public static InternalMethod getMethod(Object[] arguments) {
+        return (InternalMethod) arguments[ArgumentIndicies.METHOD.ordinal()];
+    }
+
+    public static DeclarationContext getDeclarationContext(Object[] arguments) {
+        return (DeclarationContext) arguments[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()];
+    }
+
+    public static FrameOnStackMarker getFrameOnStackMarker(Object[] arguments) {
+        return (FrameOnStackMarker) arguments[ArgumentIndicies.FRAME_ON_STACK_MARKER.ordinal()];
+    }
+
+    public static Object getSelf(Object[] arguments) {
+        return arguments[ArgumentIndicies.SELF.ordinal()];
+    }
+
+    public static DynamicObject getBlock(Object[] arguments) {
+        return (DynamicObject) arguments[ArgumentIndicies.BLOCK.ordinal()];
+    }
+
+    public static int getArgumentsCount(Object[] arguments) {
+        return arguments.length - RUNTIME_ARGUMENT_COUNT;
+    }
+
+    public static Object getArgument(Object[] arguments, int index) {
+        return arguments[RUNTIME_ARGUMENT_COUNT + index];
+    }
+
+    public static Object[] getArguments(Object[] arguments) {
+        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
+    }
+
+    public static Object[] getArguments(Object[] arguments, int start) {
+        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT + start, arguments.length);
+    }
+
     /**
      * Get the declaration frame a certain number of levels up from the current frame, where the
      * current frame is 0.
@@ -118,28 +158,8 @@ public final class RubyArguments {
         arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()] = declarationFrame;
     }
 
-    public static MaterializedFrame getCallerFrame(Object[] arguments) {
-        return (MaterializedFrame) arguments[ArgumentIndicies.CALLER_FRAME.ordinal()];
-    }
-
-    public static InternalMethod getMethod(Object[] arguments) {
-        return (InternalMethod) arguments[ArgumentIndicies.METHOD.ordinal()];
-    }
-
-    public static DeclarationContext getDeclarationContext(Object[] arguments) {
-        return (DeclarationContext) arguments[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()];
-    }
-
     public static void setDeclarationContext(Object[] arguments, DeclarationContext declarationContext) {
         arguments[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()] = declarationContext;
-    }
-
-    public static FrameOnStackMarker getFrameOnStackMarker(Object[] arguments) {
-        return (FrameOnStackMarker) arguments[ArgumentIndicies.FRAME_ON_STACK_MARKER.ordinal()];
-    }
-
-    public static Object getSelf(Object[] arguments) {
-        return arguments[ArgumentIndicies.SELF.ordinal()];
     }
 
     public static Object tryGetSelf(Object[] arguments) {
@@ -153,10 +173,6 @@ public final class RubyArguments {
         arguments[ArgumentIndicies.SELF.ordinal()] = self;
     }
 
-    public static DynamicObject getBlock(Object[] arguments) {
-        return (DynamicObject) arguments[ArgumentIndicies.BLOCK.ordinal()];
-    }
-
     public static DynamicObject tryGetBlock(Object[] arguments) {
         if (ArgumentIndicies.BLOCK.ordinal() >= arguments.length) {
             return null;
@@ -168,32 +184,6 @@ public final class RubyArguments {
         } else {
             return null;
         }
-    }
-
-    public static Object[] extractUserArguments(Object[] arguments) {
-        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
-    }
-
-    public static Object[] extractUserArgumentsFrom(Object[] arguments, int start) {
-        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT + start, arguments.length);
-    }
-
-    public static Object[] extractUserArgumentsWithUnshift(Object first, Object[] arguments) {
-        final Object[] range = ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT - 1, arguments.length);
-        range[0] = first;
-        return range;
-    }
-
-    public static int getUserArgumentsCount(Object[] internalArguments) {
-        return internalArguments.length - RUNTIME_ARGUMENT_COUNT;
-    }
-
-    public static int getNamedUserArgumentsCount(Object[] internalArguments) {
-        return getUserArgumentsCount(internalArguments);
-    }
-
-    public static Object getUserArgument(Object[] internalArguments, int index) {
-        return internalArguments[RUNTIME_ARGUMENT_COUNT + index];
     }
 
     public static void setUserArgument(Object[] internalArguments, int index, Object value) {
