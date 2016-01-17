@@ -108,14 +108,7 @@ public abstract class MethodNodes {
         }
 
         private Object[] packArguments(DynamicObject method, InternalMethod internalMethod, Object[] arguments, Object block) {
-            return RubyArguments.pack(
-                    internalMethod,
-                    null,
-                    null,
-                    Layouts.METHOD.getReceiver(method),
-                    procOrNullNode.executeProcOrNull(block),
-                    DeclarationContext.METHOD,
-                    arguments);
+            return RubyArguments.pack(internalMethod, null, null, Layouts.METHOD.getReceiver(method), procOrNullNode.executeProcOrNull(block), DeclarationContext.METHOD, null, arguments);
         }
 
     }

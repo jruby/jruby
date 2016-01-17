@@ -98,7 +98,7 @@ public class LazyRubyRootNode extends RootNode {
         }
 
         return callNode.call(frame,
-                RubyArguments.pack(method, null, null, mainObject, null, DeclarationContext.TOP_LEVEL, frame.getArguments()));
+                RubyArguments.pack(method, null, null, mainObject, null, DeclarationContext.TOP_LEVEL, null, frame.getArguments()));
     }
 
     private int getIndex(String name) {

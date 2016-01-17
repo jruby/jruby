@@ -56,7 +56,7 @@ public class OpenModuleNode extends RubyNode {
 
         final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
         return callModuleDefinitionNode.call(frame, definition.getCallTarget(),
-                RubyArguments.pack(definition, null, null, module, null, DeclarationContext.MODULE, new Object[] {}));
+                RubyArguments.pack(definition, null, null, module, null, DeclarationContext.MODULE, null, new Object[]{}));
     }
 
 }

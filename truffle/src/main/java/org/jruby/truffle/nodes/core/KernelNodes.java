@@ -63,7 +63,6 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -84,7 +83,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -539,14 +537,7 @@ public abstract class KernelNodes {
                     Visibility.PUBLIC,
                     cachedCallTarget);
 
-            return callNode.call(frame, RubyArguments.pack(
-                    method,
-                    parentFrame,
-                    null,
-                    callerSelf,
-                    null,
-                    RubyArguments.getDeclarationContext(parentFrame.getArguments()),
-                    new Object[] {}));
+            return callNode.call(frame, RubyArguments.pack(method, parentFrame, null, callerSelf, null, RubyArguments.getDeclarationContext(parentFrame.getArguments()), null, new Object[]{}));
         }
 
         @Specialization(guards = {

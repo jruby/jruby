@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -95,15 +96,9 @@ public abstract class CachedDispatchNode extends DispatchNode {
     protected static Object call(DirectCallNode callNode, VirtualFrame frame, InternalMethod method, Object receiver, DynamicObject block, Object[] arguments) {
         CompilerAsserts.compilationConstant(method.getSharedMethodInfo().needsCallerFrame());
 
+        MaterializedFrame callerFrame = method.getSharedMethodInfo().needsCallerFrame() ? frame.materialize() : null;
         return callNode.call(
                 frame,
-                RubyArguments.pack(
-                        method,
-                        null,
-                        method.getSharedMethodInfo().needsCallerFrame() ? frame.materialize() : null,
-                        receiver,
-                        block,
-                        DeclarationContext.METHOD,
-                        arguments));
+                RubyArguments.pack(method, null, callerFrame, receiver, block, DeclarationContext.METHOD, null, arguments));
     }
 }

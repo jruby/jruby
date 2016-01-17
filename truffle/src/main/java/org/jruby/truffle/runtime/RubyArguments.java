@@ -38,10 +38,6 @@ public final class RubyArguments {
 
     private final static int RUNTIME_ARGUMENT_COUNT = ArgumentIndicies.values().length;
 
-    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, DeclarationContext declarationContext, Object[] arguments) {
-        return pack(method, declarationFrame, callerFrame, self, block, declarationContext, null, arguments);
-    }
-
     public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, DeclarationContext declarationContext, FrameOnStackMarker frameOnStackMarker, Object[] arguments) {
         assert method != null;
         assert self != null;
