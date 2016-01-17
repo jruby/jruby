@@ -26,14 +26,17 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
  */
 public final class RubyArguments {
 
-    public static final int METHOD_INDEX = 0;
-    public static final int DECLARATION_FRAME_INDEX = 1;
-    public static final int CALLER_FRAME_INDEX = 2;
-    public static final int SELF_INDEX = 3;
-    public static final int BLOCK_INDEX = 4;
-    public static final int DECLARATION_CONTEXT_INDEX = 5;
-    public static final int FRAME_ON_STACK_MARKER_INDEX = 6;
-    public static final int RUNTIME_ARGUMENT_COUNT = 7;
+    private enum ArgumentIndicies {
+        METHOD,
+        DECLARATION_FRAME,
+        CALLER_FRAME,
+        SELF,
+        BLOCK,
+        DECLARATION_CONTEXT,
+        FRAME_ON_STACK_MARKER
+    }
+
+    private final static int RUNTIME_ARGUMENT_COUNT = ArgumentIndicies.values().length;
 
     public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, DeclarationContext declarationContext, Object[] arguments) {
         return pack(method, declarationFrame, callerFrame, self, block, declarationContext, null, arguments);
@@ -48,13 +51,13 @@ public final class RubyArguments {
 
         final Object[] packed = new Object[arguments.length + RUNTIME_ARGUMENT_COUNT];
 
-        packed[METHOD_INDEX] = method;
-        packed[DECLARATION_FRAME_INDEX] = declarationFrame;
-        packed[CALLER_FRAME_INDEX] = callerFrame;
-        packed[SELF_INDEX] = self;
-        packed[BLOCK_INDEX] = block;
-        packed[DECLARATION_CONTEXT_INDEX] = declarationContext;
-        packed[FRAME_ON_STACK_MARKER_INDEX] = frameOnStackMarker;
+        packed[ArgumentIndicies.METHOD.ordinal()] = method;
+        packed[ArgumentIndicies.DECLARATION_FRAME.ordinal()] = declarationFrame;
+        packed[ArgumentIndicies.CALLER_FRAME.ordinal()] = callerFrame;
+        packed[ArgumentIndicies.SELF.ordinal()] = self;
+        packed[ArgumentIndicies.BLOCK.ordinal()] = block;
+        packed[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()] = declarationContext;
+        packed[ArgumentIndicies.FRAME_ON_STACK_MARKER.ordinal()] = frameOnStackMarker;
         ArrayUtils.arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
 
         return packed;
@@ -70,27 +73,27 @@ public final class RubyArguments {
     }
 
     public static InternalMethod getMethod(Object[] arguments) {
-        return (InternalMethod) arguments[METHOD_INDEX];
+        return (InternalMethod) arguments[ArgumentIndicies.METHOD.ordinal()];
     }
 
     public static Object getSelf(Object[] arguments) {
-        return arguments[SELF_INDEX];
+        return arguments[ArgumentIndicies.SELF.ordinal()];
     }
 
     public static void setSelf(Object[] arguments, Object self) {
-        arguments[SELF_INDEX] = self;
+        arguments[ArgumentIndicies.SELF.ordinal()] = self;
     }
 
     public static DynamicObject getBlock(Object[] arguments) {
-        return (DynamicObject) arguments[BLOCK_INDEX];
+        return (DynamicObject) arguments[ArgumentIndicies.BLOCK.ordinal()];
     }
 
     public static DeclarationContext getDeclarationContext(Object[] arguments) {
-        return (DeclarationContext) arguments[DECLARATION_CONTEXT_INDEX];
+        return (DeclarationContext) arguments[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()];
     }
 
     public static void setDeclarationContext(Object[] arguments, DeclarationContext declarationContext) {
-        arguments[DECLARATION_CONTEXT_INDEX] = declarationContext;
+        arguments[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()] = declarationContext;
     }
 
     public static Object[] extractUserArguments(Object[] arguments) {
@@ -157,11 +160,11 @@ public final class RubyArguments {
     }
 
     public static MaterializedFrame tryGetDeclarationFrame(Object[] arguments) {
-        if (DECLARATION_FRAME_INDEX >= arguments.length) {
+        if (ArgumentIndicies.DECLARATION_FRAME.ordinal() >= arguments.length) {
             return null;
         }
 
-        final Object frame = arguments[DECLARATION_FRAME_INDEX];
+        final Object frame = arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()];
 
         if (frame instanceof MaterializedFrame) {
             return (MaterializedFrame) frame;
@@ -171,18 +174,18 @@ public final class RubyArguments {
     }
 
     public static Object tryGetSelf(Object[] arguments) {
-        if (SELF_INDEX >= arguments.length) {
+        if (ArgumentIndicies.SELF.ordinal() >= arguments.length) {
             return null;
         }
-        return arguments[SELF_INDEX];
+        return arguments[ArgumentIndicies.SELF.ordinal()];
     }
 
     public static DynamicObject tryGetBlock(Object[] arguments) {
-        if (BLOCK_INDEX >= arguments.length) {
+        if (ArgumentIndicies.BLOCK.ordinal() >= arguments.length) {
             return null;
         }
 
-        final Object block = arguments[BLOCK_INDEX];
+        final Object block = arguments[ArgumentIndicies.BLOCK.ordinal()];
         if (block instanceof DynamicObject) {
             return (DynamicObject) block;
         } else {
@@ -191,15 +194,15 @@ public final class RubyArguments {
     }
 
     public static MaterializedFrame getCallerFrame(Object[] arguments) {
-        return (MaterializedFrame) arguments[CALLER_FRAME_INDEX];
+        return (MaterializedFrame) arguments[ArgumentIndicies.CALLER_FRAME.ordinal()];
     }
 
     public static MaterializedFrame getDeclarationFrame(Object[] arguments) {
-        return (MaterializedFrame) arguments[DECLARATION_FRAME_INDEX];
+        return (MaterializedFrame) arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()];
     }
 
     public static void setDeclarationFrame(Object[] arguments, MaterializedFrame declarationFrame) {
-        arguments[DECLARATION_FRAME_INDEX] = declarationFrame;
+        arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()] = declarationFrame;
     }
 
     /**
@@ -232,6 +235,6 @@ public final class RubyArguments {
     }
 
     public static FrameOnStackMarker getFrameOnStackMarker(Object[] arguments) {
-        return (FrameOnStackMarker) arguments[FRAME_ON_STACK_MARKER_INDEX];
+        return (FrameOnStackMarker) arguments[ArgumentIndicies.FRAME_ON_STACK_MARKER.ordinal()];
     }
 }
