@@ -239,7 +239,7 @@ public class RubyContext extends ExecutionContext {
         }
 
         return method.getCallTarget().call(
-                RubyArguments.pack(method, null, null, object, block, DeclarationContext.METHOD, null, arguments));
+                RubyArguments.pack(null, null, method, DeclarationContext.METHOD, null, object, block, arguments));
     }
 
     /* For debugging in Java. */
@@ -264,7 +264,7 @@ public class RubyContext extends ExecutionContext {
     private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
         CompilerDirectives.transferToInterpreter();
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(RubyArguments.getMethod(frame.getArguments()), null, null, RubyArguments.getSelf(frame.getArguments()), null, DeclarationContext.INSTANCE_EVAL, null, new Object[]{}),
+                RubyArguments.pack(null, null, RubyArguments.getMethod(frame.getArguments()), DeclarationContext.INSTANCE_EVAL, null, RubyArguments.getSelf(frame.getArguments()), null, new Object[]{}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
 
         if (arguments.length % 2 == 1) {
@@ -439,7 +439,7 @@ public class RubyContext extends ExecutionContext {
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
                 declaringModule, Visibility.PUBLIC, callTarget);
 
-        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, null, new Object[]{}));
+        return callTarget.call(RubyArguments.pack(parentFrame, null, method, declarationContext, null, self, null, new Object[]{}));
     }
 
     public long getNextObjectID() {

@@ -69,7 +69,7 @@ public class SuperCallNode extends RubyNode {
             return callMethodMissing(frame, self, blockObject, methodMissingArguments);
         }
 
-        final Object[] frameArguments = RubyArguments.pack(superMethod, null, null, self, blockObject, DeclarationContext.METHOD, null, superArguments);
+        final Object[] frameArguments = RubyArguments.pack(null, null, superMethod, DeclarationContext.METHOD, null, self, blockObject, superArguments);
 
         return callMethodNode.executeCallMethod(frame, superMethod, frameArguments);
     }

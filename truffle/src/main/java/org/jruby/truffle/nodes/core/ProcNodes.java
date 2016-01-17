@@ -47,13 +47,9 @@ public abstract class ProcNodes {
 
     public static Object[] packArguments(DynamicObject proc, Object... args) {
         return RubyArguments.pack(
-                Layouts.PROC.getMethod(proc),
-                Layouts.PROC.getDeclarationFrame(proc),
-                null,
-                Layouts.PROC.getSelf(proc),
+                Layouts.PROC.getDeclarationFrame(proc), null, Layouts.PROC.getMethod(proc),
+                DeclarationContext.BLOCK, Layouts.PROC.getFrameOnStackMarker(proc), Layouts.PROC.getSelf(proc),
                 Layouts.PROC.getBlock(proc),
-                DeclarationContext.BLOCK,
-                Layouts.PROC.getFrameOnStackMarker(proc),
                 args);
     }
 

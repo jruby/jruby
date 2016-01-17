@@ -41,7 +41,7 @@ public abstract class BindingNodes {
         final Object[] arguments = frame.getArguments();
 
         final MaterializedFrame bindingFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(RubyArguments.getMethod(arguments), frame, null, RubyArguments.getSelf(arguments), RubyArguments.getBlock(arguments), RubyArguments.getDeclarationContext(arguments), null, RubyArguments.extractUserArguments(arguments)),
+                RubyArguments.pack(frame, null, RubyArguments.getMethod(arguments), RubyArguments.getDeclarationContext(arguments), null, RubyArguments.getSelf(arguments), RubyArguments.getBlock(arguments), RubyArguments.extractUserArguments(arguments)),
                 newFrameDescriptor(context));
 
         return Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), bindingFrame);

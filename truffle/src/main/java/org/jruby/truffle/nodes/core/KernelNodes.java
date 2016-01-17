@@ -537,7 +537,7 @@ public abstract class KernelNodes {
                     Visibility.PUBLIC,
                     cachedCallTarget);
 
-            return callNode.call(frame, RubyArguments.pack(method, parentFrame, null, callerSelf, null, RubyArguments.getDeclarationContext(parentFrame.getArguments()), null, new Object[]{}));
+            return callNode.call(frame, RubyArguments.pack(parentFrame, null, method, RubyArguments.getDeclarationContext(parentFrame.getArguments()), null, callerSelf, null, new Object[]{}));
         }
 
         @Specialization(guards = {

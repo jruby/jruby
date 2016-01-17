@@ -136,14 +136,14 @@ public abstract class InteropNode extends RubyNode {
                                 @Cached("create(getCallTarget(cachedProc))") DirectCallNode callNode) {
             final List<Object> faArgs = ForeignAccess.getArguments(frame);
             Object[] args = faArgs.toArray();
-            return callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(cachedProc), Layouts.PROC.getDeclarationFrame(cachedProc), null, Layouts.PROC.getSelf(cachedProc), null, DeclarationContext.METHOD, null, args));
+            return callNode.call(frame, RubyArguments.pack(Layouts.PROC.getDeclarationFrame(cachedProc), null, Layouts.PROC.getMethod(cachedProc), DeclarationContext.METHOD, null, Layouts.PROC.getSelf(cachedProc), null, args));
         }
         
         @Specialization(guards = "isRubyProc(proc)")
         protected Object doCallProc(VirtualFrame frame, DynamicObject proc) {
             final List<Object> faArgs = ForeignAccess.getArguments(frame);
             Object[] args = faArgs.toArray();
-            return callNode.call(frame, Layouts.PROC.getCallTargetForType(proc), RubyArguments.pack(Layouts.PROC.getMethod(proc), Layouts.PROC.getDeclarationFrame(proc), null, Layouts.PROC.getSelf(proc), null, DeclarationContext.METHOD, null, args));
+            return callNode.call(frame, Layouts.PROC.getCallTargetForType(proc), RubyArguments.pack(Layouts.PROC.getDeclarationFrame(proc), null, Layouts.PROC.getMethod(proc), DeclarationContext.METHOD, null, Layouts.PROC.getSelf(proc), null, args));
         }
         
         @Specialization(guards = {"isRubyMethod(method)", "method == cachedMethod"})
@@ -154,7 +154,7 @@ public abstract class InteropNode extends RubyNode {
             final List<Object> faArgs = ForeignAccess.getArguments(frame);
             
             Object[] args = faArgs.subList(0, faArgs.size()).toArray();
-            return callNode.call(frame, RubyArguments.pack(internalMethod, null, null, Layouts.METHOD.getReceiver(cachedMethod), null, DeclarationContext.METHOD, null, args));
+            return callNode.call(frame, RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(cachedMethod), null, args));
         }
         
         @Specialization(guards = "isRubyMethod(method)")
@@ -163,7 +163,7 @@ public abstract class InteropNode extends RubyNode {
             final List<Object> faArgs = ForeignAccess.getArguments(frame);
             
             Object[] args = faArgs.subList(0, faArgs.size()).toArray();
-            return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(internalMethod, null, null, Layouts.METHOD.getReceiver(method), null, DeclarationContext.METHOD, null, args));
+            return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(method), null, args));
         }
 
         protected InternalMethod getMethodFromProc(DynamicObject proc) {
