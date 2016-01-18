@@ -105,11 +105,7 @@ public class RubyCallNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
-
-        final Object[] argumentsObjects;
-
-        argumentsObjects = executeArguments(frame);
-
+        final Object[] argumentsObjects = executeArguments(frame);
         final DynamicObject blockObject = executeBlock(frame);
 
         return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
