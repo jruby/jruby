@@ -191,50 +191,6 @@ project 'JRuby Integration Tests' do
 
   end
 
-  profile 'truffle-specs-language' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:language, false) ) ] )
-    end
-
-  end
-
-  profile 'truffle-specs-core' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:core, false) ) ] )
-    end
-
-  end
-
-  profile 'truffle-specs-library' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:library, false) ) ] )
-    end
-
-  end
-
-  profile 'truffle-specs-truffle' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:truffle, false) ) ] )
-    end
-
-  end
-
   profile 'truffle-specs-language-report' do
 
     plugin :antrun do
@@ -297,26 +253,6 @@ project 'JRuby Integration Tests' do
                          '<property name="reportTitle" value="Stdlib Specs Report" />' +
                          '<ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />' +
                        '</target>' ) ] )
-    end
-
-  end
-
-  profile 'truffle-mri-tests' do
-
-    plugin :surefire, '2.15', :skipTests => true
-
-    plugin :antrun do
-      execute_goals('run',
-                    :id => 'rake',
-                    :phase => 'test',
-                    :configuration => [xml(
-                                           '<target>' +
-                                               '<exec dir="${jruby.home}" executable="ruby" failonerror="true">' +
-                                               '<arg value="tool/jt.rb" />' +
-                                               '<arg value="test" />' +
-                                               '<arg value="mri" />' +
-                                               '</exec>' +
-                                               '</target>')])
     end
 
   end
