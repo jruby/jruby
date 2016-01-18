@@ -50,13 +50,15 @@ project 'JRuby Integration Tests' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'jruby.home' => '${basedir}/..',
-              'gem.home' => '${jruby.home}/lib/ruby/gems/shared' )
+              'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
+              'gem.path' => '${gem.home}' )
 
   scope :test do
     jar 'junit:junit:4.11'
     jar 'commons-logging:commons-logging:1.1.3'
     jar 'org.livetribe:livetribe-jsr223:2.0.7'
     jar 'org.jruby:jruby-core', '${project.version}'
+    jar 'org.jruby:jruby-stdlib', '${project.version}'
   end
   scope :provided do
     jar 'org.apache.ant:ant:${ant.version}'
@@ -65,7 +67,9 @@ project 'JRuby Integration Tests' do
   jar( 'org.jruby:requireTest:1.0',
        :scope => 'system',
        :systemPath => '${project.basedir}/jruby/requireTest-1.0.jar' )
-  gem 'rspec', '${rspec.version}'
+
+  gemfile( "../Gemfile" )
+  gem! 'bundler', '1.10.6'
 
   overrides do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -82,21 +86,20 @@ project 'JRuby Integration Tests' do
             } )
   end
 
-  jruby_plugin :gem, '${jruby.plugins.version}' do
-    options = { :phase => 'initialize',
-      'gemPath' => '${gem.home}',
-      'gemHome' => '${gem.home}',
-      'binDirectory' => '${jruby.home}/bin',
-      'includeRubygemsInTestResources' => 'false' }
-
-    if version =~ /-SNAPSHOT/
-      options[ 'jrubyVersion' ] = '1.7.12'
-    else
-      options[ 'libDirectory' ] = '${jruby.home}/lib'
-      options[ 'jrubyJvmArgs' ] = '-Djruby.home=${jruby.home}'
-    end
-    execute_goals( 'initialize', options )
+  options = {
+    'gemPath' => '${gem.home}',
+    'gemHome' => '${gem.home}',
+    'binDirectory' => '${jruby.home}/bin',
+    'includeRubygemsInTestResources' => 'false' }
+  
+  if version =~ /-SNAPSHOT/
+    options[ 'jrubyVersion' ] = '1.7.12'
+  else
+    options[ 'libDirectory' ] = '${jruby.home}/lib'
+    options[ 'jrubyJvmArgs' ] = '-Djruby.home=${jruby.home}'
   end
+
+  jruby_plugin! :gem, options
 
   plugin( :compiler,
           'encoding' =>  'utf-8',
@@ -157,7 +160,7 @@ project 'JRuby Integration Tests' do
       execute_goals( 'run',
                      :id => 'rake',
                      :phase => 'test',
-                     :configuration => [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><env key="JRUBY_OPTS" value=""/><arg value="-S"/><arg value="rake"/><arg value="${task}"/></exec></target>' ) ] )
+                     :configuration => [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><env key="JRUBY_OPTS" value=""/><env key="GEM_PATH" value="${gem.path}"/><env key="GEM_HOME" value="${gem.home}"/><arg value="-S"/><arg value="rake"/><arg value="${task}"/></exec></target>' ) ] )
     end
 
   end
