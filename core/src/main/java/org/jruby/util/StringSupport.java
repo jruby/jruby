@@ -365,7 +365,7 @@ public final class StringSupport {
     }
 
     // arg cannot be negative
-    static long pack(int result, int arg) {
+    public static long pack(int result, int arg) {
         return ((long)arg << 31) | result;
     }
 
