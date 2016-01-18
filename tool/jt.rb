@@ -235,7 +235,7 @@ module Commands
     sh 'git', 'checkout', branch
     rebuild
   end
-  
+
   def build(project = nil)
     opts = %w[-DskipTests]
     case project
@@ -407,6 +407,10 @@ module Commands
 
     if args.delete('--jexception') || args.delete('--jexceptions')
       options << "-T#{JEXCEPTION}"
+    end
+
+    if args.delete('--truffle-formatter')
+      options += %w[--format spec/truffle/truffle_formatter.rb]
     end
 
     if ENV['TRAVIS']
