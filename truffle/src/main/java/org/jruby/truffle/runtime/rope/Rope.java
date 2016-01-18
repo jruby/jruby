@@ -51,12 +51,7 @@ public abstract class Rope {
     public abstract byte[] getBytes();
 
     public byte[] getBytesCopy() {
-        final byte[] originalBytes = getBytes();
-        final byte[] ret = new byte[originalBytes.length];
-
-        System.arraycopy(originalBytes, 0, ret, 0, ret.length);
-
-        return ret;
+        return getBytes().clone();
     }
 
     public abstract byte[] extractRange(int offset, int length);
