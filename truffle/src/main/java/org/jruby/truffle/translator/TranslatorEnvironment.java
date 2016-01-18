@@ -27,8 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TranslatorEnvironment {
 
-    ;
-
     private final RubyContext context;
 
     private final ParseEnvironment parseEnvironment;
