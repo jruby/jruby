@@ -42,11 +42,11 @@ env:
     - PHASE='-Prake -Dtask=spec:jruby'
     - PHASE='-Prake -Dtask=spec:jrubyc'
     - PHASE='-Prake -Dtask=spec:profiler'
-    - PHASE='-Ptruffle-specs-language'
-    - PHASE='-Ptruffle-specs-core'
-    - PHASE='-Ptruffle-specs-library'
-    - PHASE='-Ptruffle-specs-truffle'
-    - PHASE='-Ptruffle-mri-tests'
+    - COMMAND='./mvnw && ruby tool/jt.rb test :language'
+    - COMMAND='./mvnw && ruby tool/jt.rb test :core'
+    - COMMAND='./mvnw && ruby tool/jt.rb test :library'
+    - COMMAND='./mvnw && ruby tool/jt.rb test :truffle'
+    - COMMAND='./mvnw && ruby tool/jt.rb test mri'
 
 matrix:
   include:
