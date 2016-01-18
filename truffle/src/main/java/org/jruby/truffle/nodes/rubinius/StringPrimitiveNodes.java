@@ -153,6 +153,8 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        public abstract DynamicObject executeStringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other);
+
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject stringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other) {
             final Rope left = rope(string);

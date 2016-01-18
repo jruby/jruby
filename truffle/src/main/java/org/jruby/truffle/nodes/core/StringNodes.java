@@ -374,6 +374,46 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameter = 0, raiseIfFrozenSelf = true)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "string"),
+            @NodeChild(type = RubyNode.class, value = "other")
+    })
+    @ImportStatic(StringGuards.class)
+    public abstract static class ConcatNode extends CoreMethodNode {
+
+        @Child private StringPrimitiveNodes.StringAppendPrimitiveNode stringAppendNode;
+
+        public ConcatNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = { "isRubyString(other)", "is7Bit(string)", "is7Bit(other)" })
+        public DynamicObject concatStringSingleByte(DynamicObject string, DynamicObject other) {
+            final Rope left = rope(string);
+            final Rope right = rope(other);
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, left.getEncoding()));
+
+            return string;
+        }
+
+        @Specialization(guards =  { "isRubyString(other)", "!is7Bit(string) || !is7Bit(other)" })
+        public Object concatString(VirtualFrame frame, DynamicObject string, DynamicObject other) {
+            if (stringAppendNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                stringAppendNode = insert(StringPrimitiveNodesFactory.StringAppendPrimitiveNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
+            }
+
+            return stringAppendNode.executeStringAppend(frame, string, other);
+        }
+
+        @Specialization(guards = "!isRubyString(other)")
+        public Object concat(VirtualFrame frame, DynamicObject string, Object other) {
+            return ruby(frame, "string.concat_internal(other)", "string", string, "other", other);
+        }
+    }
+
     @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFromSelf = true)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
