@@ -207,7 +207,7 @@ module Commands
     puts 'jt test specs fast                             run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                     run specs in this directory'
     puts 'jt test spec/ruby/language/while_spec.rb       run specs in this file'
-    puts 'jt test pe                                     run partial evaluation tests'
+    puts 'jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)'
     puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
@@ -257,7 +257,7 @@ module Commands
   end
 
   def rebuild
-    FileUtils.cp('bin/jruby.bash', 'bin/jruby')
+    FileUtils.cp("#{JRUBY_DIR}/bin/jruby.bash", "#{JRUBY_DIR}/bin/jruby")
     clean
     build
   end
@@ -346,7 +346,7 @@ module Commands
       test_tck
       test_specs('run')
       test_mri
-    when 'pe' then test_pe(*rest)
+    when 'compiler' then test_compiler(*rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
       args = []
@@ -364,13 +364,14 @@ module Commands
     end
   end
 
-  def test_pe(*args)
-    file = args.pop if args.last and File.exist?(args.last)
-    args.push('-J-G:+TruffleIterativePartialEscape')
-    args.push('-J-G:+TruffleCompilationExceptionsAreThrown')
-    run('--graal', *args, 'test/truffle/pe/pe.rb', *file)
+  def test_compiler(*args)
+    env_vars = {}
+    env_vars["JAVACMD"] = Utilities.find_graal
+    Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
+      sh(env_vars, test_script)
+    end
   end
-  private :test_pe
+  private :test_compiler
 
   def test_specs(command, *args)
     env_vars = {}
