@@ -208,6 +208,7 @@ module Commands
     puts 'jt test spec/ruby/language                     run specs in this directory'
     puts 'jt test spec/ruby/language/while_spec.rb       run specs in this file'
     puts 'jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)'
+    puts 'jt test integration                            runs bigger integration tests'
     puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
@@ -347,6 +348,7 @@ module Commands
       test_specs('run')
       test_mri
     when 'compiler' then test_compiler(*rest)
+    when 'integration' then test_integration(*rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
       args = []
@@ -368,10 +370,17 @@ module Commands
     env_vars = {}
     env_vars["JAVACMD"] = Utilities.find_graal
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
-      sh(env_vars, test_script)
+      sh env_vars, test_script
     end
   end
   private :test_compiler
+
+  def test_integration(*args)
+    Dir["#{JRUBY_DIR}/test/truffle/integration/*.sh"].each do |test_script|
+      sh test_script
+    end
+  end
+  private :test_integration
 
   def test_specs(command, *args)
     env_vars = {}
