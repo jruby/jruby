@@ -17,7 +17,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -76,7 +76,7 @@ public class UnmarshalStream extends InputStream {
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
         this(runtime, in, proc, taint, false);
     }
-    
+
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint, boolean untrust) throws IOException {
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
@@ -110,29 +110,29 @@ public class UnmarshalStream extends InputStream {
     // introduced for keeping ivar read state recursively.
     private static class MarshalState {
         private boolean ivarWaiting;
-        
+
         MarshalState(boolean ivarWaiting) {
             this.ivarWaiting = ivarWaiting;
         }
-        
+
         boolean isIvarWaiting() {
             return ivarWaiting;
         }
-        
+
         void setIvarWaiting(boolean ivarWaiting) {
             this.ivarWaiting = ivarWaiting;
         }
     }
-    
+
     // r_object0
-    public IRubyObject unmarshalObject(MarshalState state) throws IOException {
+    private IRubyObject unmarshalObject(MarshalState state) throws IOException {
         return unmarshalObject(state, true);
     }
 
     // r_object0
-    public IRubyObject unmarshalObject(MarshalState state, boolean callProc) throws IOException {
-        int type = readUnsignedByte();
-        IRubyObject result = null;
+    private IRubyObject unmarshalObject(MarshalState state, boolean callProc) throws IOException {
+        final int type = readUnsignedByte();
+        final IRubyObject result;
         if (cache.isLinkType(type)) {
             result = cache.readLink(this, type);
             if (callProc && runtime.is1_9()) return doCallProcForLink(result, type);
@@ -235,17 +235,17 @@ public class UnmarshalStream extends InputStream {
                 RubyModule tp = null;
                 try {
                     tp = runtime.getClassFromPath(moduleName.asJavaString());
-                } catch (RaiseException e) {
+                }catch (RaiseException e) {
                     if (runtime.getModule("NameError").isInstance(e.getException())) {
                         throw runtime.newArgumentError("undefined class/module " + moduleName.asJavaString());
-                    } 
+                    }
                     throw e;
                 }
 
                 rubyObj = unmarshalObject();
 
                 tp.extend_object(rubyObj);
-                tp.callMethod(runtime.getCurrentContext(),"extended", rubyObj);
+                tp.callMethod(runtime.getCurrentContext(), "extended", rubyObj);
                 break;
             case 'l' :
                 rubyObj = RubyBignum.unmarshalFrom(this);
@@ -277,7 +277,7 @@ public class UnmarshalStream extends InputStream {
             // call the proc, but not for symbols
             doCallProcForObj(rubyObj);
         }
-        
+
         return rubyObj;
     }
 
@@ -370,17 +370,17 @@ public class UnmarshalStream extends InputStream {
         int count = unmarshalInt();
 
         RubyClass cls = object.getMetaClass().getRealClass();
-        
+
         for (int i = 0; i < count; i++) {
-            
+
             IRubyObject key = unmarshalObject(false);
-            
+
             if (runtime.is1_9() && object instanceof EncodingCapable) {
-                
+
                 EncodingCapable strObj = (EncodingCapable)object;
 
                 if (key.asJavaString().equals(MarshalStream.SYMBOL_ENCODING_SPECIAL)) {
-                    
+
                     // special case for USASCII and UTF8
                     if (unmarshalObject().isTrue()) {
                         strObj.setEncoding(UTF8Encoding.INSTANCE);
@@ -388,9 +388,9 @@ public class UnmarshalStream extends InputStream {
                         strObj.setEncoding(USASCIIEncoding.INSTANCE);
                     }
                     continue;
-                    
+
                 } else if (key.asJavaString().equals("encoding")) {
-                    
+
                     IRubyObject encodingNameObj = unmarshalObject(false);
                     String encodingNameStr = encodingNameObj.asJavaString();
                     ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
@@ -402,10 +402,10 @@ public class UnmarshalStream extends InputStream {
                     Encoding encoding = entry.getEncoding();
                     strObj.setEncoding(encoding);
                     continue;
-                    
+
                 } // else fall through as normal ivar
             }
-            
+
             String name = key.asJavaString();
             IRubyObject value = unmarshalObject();
 
@@ -468,7 +468,7 @@ public class UnmarshalStream extends InputStream {
         } catch (RaiseException e) {
             if (runtime.getModule("NameError").isInstance(e.getException())) {
                 throw runtime.newArgumentError("undefined class/module " + className);
-            } 
+            }
             throw e;
         }
         if (! (classInstance instanceof RubyClass)) {
