@@ -118,7 +118,9 @@ public class RopeOperations {
 
     @CompilerDirectives.TruffleBoundary
     private static long calculateCodeRangeAndLength(Encoding encoding, byte[] bytes, int start, int end) {
-        if (encoding.isAsciiCompatible()) {
+        if (bytes.length == 0) {
+            return StringSupport.pack(0, encoding.isAsciiCompatible() ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
+        } else if (encoding.isAsciiCompatible()) {
             return StringSupport.strLengthWithCodeRangeAsciiCompatible(encoding, bytes, start, end);
         } else {
             return StringSupport.strLengthWithCodeRangeNonAsciiCompatible(encoding, bytes, start, end);
