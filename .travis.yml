@@ -47,7 +47,7 @@ env:
     - JT='test specs :library'
     - JT='test specs :truffle'
     - JT='test mri'
-    - JT='test test integration'
+    - JT='test integration'
 
 matrix:
   include:
