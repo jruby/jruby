@@ -150,6 +150,8 @@ public abstract class StringNodes {
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
+        public abstract DynamicObject executeInt(VirtualFrame frame, DynamicObject string, int times);
+
         @Specialization(guards = "times < 0")
         public DynamicObject multiplyTimesNegative(DynamicObject string, int times) {
             CompilerDirectives.transferToInterpreter();
@@ -166,7 +168,19 @@ public abstract class StringNodes {
             return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), rope(string), null);
         }
 
-        @Specialization(guards = "times > 1")
+        @Specialization(guards = { "isSingleByteString(string)", "times > 1" })
+        public DynamicObject multiplySingleByteString(DynamicObject string, int times) {
+            final Rope baseRope = rope(string);
+            final byte filler = baseRope.getBytes()[0];
+
+            byte[] buffer = new byte[times];
+            Arrays.fill(buffer, filler);
+            final Rope multipliedRope = RopeOperations.create(buffer, baseRope.getEncoding(), baseRope.getCodeRange());
+
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), multipliedRope, null);
+        }
+
+        @Specialization(guards = { "!isSingleByteString(string)", "times > 1" })
         public DynamicObject multiply(DynamicObject string, int times) {
             final Rope baseRope = rope(string);
             final Rope concatLeafRope = RopeOperations.concat(baseRope, baseRope, baseRope.getEncoding());
@@ -249,7 +263,13 @@ public abstract class StringNodes {
                 toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return multiply(string, toIntNode.doInt(frame, times));
+            return executeInt(frame, string, toIntNode.doInt(frame, times));
+        }
+
+        protected static boolean isSingleByteString(DynamicObject string) {
+            assert RubyGuards.isRubyString(string);
+
+            return rope(string).byteLength() == 1;
         }
 
     }
