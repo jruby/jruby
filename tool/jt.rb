@@ -409,6 +409,11 @@ module Commands
       options << "-T#{JEXCEPTION}"
     end
 
+    if ENV['TRAVIS']
+      # Need lots of output to keep Travis happy
+      options += %w[--format specdoc]
+    end
+
     mspec env_vars, command, *options, *args
   end
   private :test_specs
