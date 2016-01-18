@@ -200,7 +200,7 @@ module Commands
     puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
-    puts 'jt test                                        run all mri tests and specs'
+    puts 'jt test                                        run all mri tests, specs and integration tests'
     puts 'jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests'
     puts 'jt test mri                                    run mri tests'
     puts 'jt test specs                                  run all specs'
@@ -324,21 +324,6 @@ module Commands
     e 'p begin', *args, 'end'
   end
 
-  def test_mri(*args)
-    env_vars = {
-      "EXCLUDES" => "test/mri/excludes_truffle"
-    }
-    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java]
-
-    if args.empty?
-      args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
-    end
-
-    command = %w[test/mri/runner.rb -v --color=never --tty=no -q]
-    run(env_vars, *jruby_args, *command, *args)
-  end
-  private :test_mri
-
   def test(*args)
     path, *rest = args
 
@@ -347,6 +332,7 @@ module Commands
       test_tck
       test_specs('run')
       test_mri
+      test_integration
     when 'compiler' then test_compiler(*rest)
     when 'integration' then test_integration(*rest)
     when 'specs' then test_specs('run', *rest)
@@ -365,6 +351,21 @@ module Commands
       end
     end
   end
+
+  def test_mri(*args)
+    env_vars = {
+      "EXCLUDES" => "test/mri/excludes_truffle"
+    }
+    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java]
+
+    if args.empty?
+      args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
+    end
+
+    command = %w[test/mri/runner.rb -v --color=never --tty=no -q]
+    run(env_vars, *jruby_args, *command, *args)
+  end
+  private :test_mri
 
   def test_compiler(*args)
     env_vars = {}
