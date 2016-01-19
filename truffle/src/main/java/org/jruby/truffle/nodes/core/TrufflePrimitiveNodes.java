@@ -813,4 +813,18 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
+    @CoreMethod(names = "logical_processors", onSingleton = true)
+    public abstract static class LogicalProcessorsNode extends CoreMethodNode {
+
+        public LogicalProcessorsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int logicalProcessors() {
+            return Runtime.getRuntime().availableProcessors();
+        }
+
+    }
+
 }
