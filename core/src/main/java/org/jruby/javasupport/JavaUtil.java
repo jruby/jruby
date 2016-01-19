@@ -285,7 +285,7 @@ public class JavaUtil {
             return ((JavaObject) object).getValue();
         }
         final Object unwrap = object.dataGetStruct();
-        if ( unwrap != null && unwrap instanceof IRubyObject ) {
+        if ( unwrap instanceof IRubyObject ) {
             return unwrapJavaValue(runtime, (IRubyObject) unwrap, errorMessage);
         }
         throw runtime.newTypeError(errorMessage);
@@ -304,7 +304,7 @@ public class JavaUtil {
             return ((JavaObject) object).getValue();
         }
         final Object unwrap = object.dataGetStruct();
-        if ( unwrap != null && unwrap instanceof IRubyObject ) {
+        if ( unwrap instanceof IRubyObject ) {
             return unwrapJavaValue((IRubyObject) unwrap);
         }
         return null;

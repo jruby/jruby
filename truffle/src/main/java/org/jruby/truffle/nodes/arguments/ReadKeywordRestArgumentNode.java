@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
 import org.jruby.truffle.nodes.methods.MarkerNode;
@@ -28,39 +29,25 @@ import java.util.Map;
 
 public class ReadKeywordRestArgumentNode extends RubyNode {
 
-    private final int minimum;
     private final String[] excludedKeywords;
-    private final int kwIndex;
 
-    public ReadKeywordRestArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String[] excludedKeywords, int kwIndex) {
+    @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
+
+    public ReadKeywordRestArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String[] excludedKeywords) {
         super(context, sourceSection);
-        this.minimum = minimum;
         this.excludedKeywords = excludedKeywords;
-        this.kwIndex = kwIndex;
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimum);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (RubyArguments.isKwOptimized(frame.getArguments())) {
-            Object restHash = RubyArguments.getOptimizedKeywordArgument(
-                    frame.getArguments(), kwIndex);
-
-            if (restHash instanceof MarkerNode.Marker) {
-                // no rest keyword args hash passed
-                return HashLiteralNode.create(getContext(), null,
-                        new RubyNode[0]).execute(frame);
-            } else {
-                return restHash;
-            }
-        } else {
-            return lookupRestKeywordArgumentHash(frame);
-        }
+        return lookupRestKeywordArgumentHash(frame);
     }
 
     private Object lookupRestKeywordArgumentHash(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
+        final DynamicObject hash = (DynamicObject) readUserKeywordsHashNode.execute(frame);
 
         if (hash == null) {
             return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, 0, null, null, null, null, false);
@@ -69,6 +56,10 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
         final List<Map.Entry<Object, Object>> entries = new ArrayList<>();
 
         outer: for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
+            if (!RubyGuards.isRubySymbol(keyValue.getKey())) {
+                continue;
+            }
+
             for (String excludedKeyword : excludedKeywords) {
                 if (excludedKeyword.equals(keyValue.getKey().toString())) {
                     continue outer;

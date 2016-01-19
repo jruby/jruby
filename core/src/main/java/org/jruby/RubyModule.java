@@ -1101,7 +1101,7 @@ public class RubyModule extends RubyObject {
             if (c.isSingleton()) {
                 IRubyObject obj = ((MetaClass)c).getAttached();
 
-                if (obj != null && obj instanceof RubyModule) {
+                if (obj instanceof RubyModule) {
                     c = (RubyModule) obj;
                     s0 = "";
                 }
@@ -1651,14 +1651,14 @@ public class RubyModule extends RubyObject {
         }
 
         // FIXME: This only works if identifier's encoding is ASCII-compatible
-        final String variableName = TypeConverter.checkID(runtime, "@" + internedIdentifier).toString();
+        final String variableName = TypeConverter.checkID(runtime, '@' + internedIdentifier).toString();
         if (readable) {
             addMethod(internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
         }
         if (writeable) {
             // FIXME: This only works if identifier's encoding is ASCII-compatible
-            identifier = TypeConverter.checkID(runtime, internedIdentifier + "=");
+            identifier = TypeConverter.checkID(runtime, internedIdentifier + '=');
             internedIdentifier = identifier.toString();
             addMethod(internedIdentifier, new AttrWriterMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
@@ -2065,7 +2065,7 @@ public class RubyModule extends RubyObject {
                     buffer.append(attached.anyToString());
                 }
             }
-            buffer.append(">");
+            buffer.append('>');
             return getRuntime().newString(buffer.toString());
         }
         return getRuntime().newString(getName());
@@ -2942,9 +2942,7 @@ public class RubyModule extends RubyObject {
     private RubyModule proceedWithPrepend(RubyModule insertBelow, RubyModule moduleToPrepend) {
         if (!moduleToPrepend.isPrepended()) moduleToPrepend = moduleToPrepend.getNonIncludedClass();
 
-        RubyModule newInclusionPoint = proceedWithInclude(insertBelow, moduleToPrepend);
-
-        return newInclusionPoint;
+        return proceedWithInclude(insertBelow, moduleToPrepend);
     }
 
 
@@ -3156,8 +3154,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        IRubyObject constant = setConstant(validateConstant(symbol).intern(), value);
-        return constant;
+        return setConstant(validateConstant(symbol).intern(), value);
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
@@ -3979,8 +3976,6 @@ public class RubyModule extends RubyObject {
     public List<String> getClassVariableNameList() {
         return new ArrayList<String>(getClassVariablesForRead().keySet());
     }
-
-    protected static final String ERR_INSECURE_SET_CLASS_VAR = "Insecure: can't modify class variable";
 
     protected final String validateClassVariable(String name) {
         if (IdUtil.isValidClassVariableName(name)) {

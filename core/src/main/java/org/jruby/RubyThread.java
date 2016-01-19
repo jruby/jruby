@@ -1892,9 +1892,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 97 * hash + (this.threadImpl != null ? this.threadImpl.hashCode() : 0);
-        return hash;
+        return 97 * 3 + (this.threadImpl != null ? this.threadImpl.hashCode() : 0);
     }
 
     @Override

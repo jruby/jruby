@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -56,7 +56,7 @@ public class OpenModuleNode extends RubyNode {
 
         final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
         return callModuleDefinitionNode.call(frame, definition.getCallTarget(),
-                RubyArguments.pack(definition, null, null, module, null, DeclarationContext.MODULE, new Object[] {}));
+                RubyArguments.pack(null, null, definition, DeclarationContext.MODULE, null, module, null, new Object[]{}));
     }
 
 }

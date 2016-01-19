@@ -279,8 +279,10 @@ end
 class RuntimeError < StandardError
 end
 
-#class SecurityError < StandardError
-#end
+Truffle.omit("Wrong superclass") do
+  class SecurityError < StandardError
+  end
+end
 
 class ThreadError < StandardError
 end

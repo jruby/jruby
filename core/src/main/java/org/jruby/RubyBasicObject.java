@@ -1121,7 +1121,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
             Object value = entry.getValue().get(this);
-            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
+            if (!(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
 
             part.append(sep).append(' ').append(entry.getKey()).append('=');
             part.append(invokedynamic(context, (IRubyObject)value, INSPECT));
@@ -1487,7 +1487,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             final String key = entry.getKey();
             final Object value = entry.getValue().get(this);
-            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
+            if (!(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
             list.add(new VariableEntry<IRubyObject>(key, (IRubyObject) value));
         }
         return list;
@@ -1504,7 +1504,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             final String key = entry.getKey();
             final Object value = entry.getValue().get(this);
-            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
+            if (!(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
             list.add(key);
         }
         return list;

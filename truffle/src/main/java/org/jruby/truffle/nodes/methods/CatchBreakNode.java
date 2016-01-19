@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
-import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
+import org.jruby.truffle.runtime.BreakID;
 
 /**
  * Catch a {@code break} from a call with a block containing a break

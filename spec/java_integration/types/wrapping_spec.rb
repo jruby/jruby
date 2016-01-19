@@ -64,6 +64,47 @@ describe "A Java method returning/receiving uncoercible Java types" do
       expect(rsojo2.foo).to eq(true)
     end
   end
+
+  describe "with persistence off" do
+    before { java.lang.Object.__persistent__ = false }
+    let(:object_proxy_cache) { JRuby.runtime.java_support.object_proxy_cache }
+
+    it "doesn't cache the proxy when directly constructed" do
+      object = java.lang.Object.new
+      expect(object_proxy_cache.get(object)).to be_nil
+    end
+
+    it "doesn't cache the proxy when retrieved from a Java instance method" do
+      object = JavaTypeMethods.new.newObject
+      expect(object_proxy_cache.get(object)).to be_nil
+    end
+
+    it "doesn't cache the proxy when retrieved from a Java static method" do
+      object = JavaTypeMethods.staticNewObject
+      expect(object_proxy_cache.get(object)).to be_nil
+    end
+  end
+
+  describe "with persistence on" do
+    before { java.lang.Object.__persistent__ = true }
+    after { java.lang.Object.__persistent__ = false }
+    let(:object_proxy_cache) { JRuby.runtime.java_support.object_proxy_cache }
+
+    it "doesn't cache the proxy when directly constructed" do
+      object = java.lang.Object.new
+      expect(object_proxy_cache.get(object)).to eq(object)
+    end
+
+    it "doesn't cache the proxy when retrieved from a Java instance method" do
+      object = JavaTypeMethods.new.newObject
+      expect(object_proxy_cache.get(object)).to eq(object)
+    end
+
+    it "doesn't cache the proxy when retrieved from a Java static method" do
+      object = JavaTypeMethods.staticNewObject
+      expect(object_proxy_cache.get(object)).to eq(object)
+    end
+  end
 end
 
 describe "Java::JavaObject.wrap" do

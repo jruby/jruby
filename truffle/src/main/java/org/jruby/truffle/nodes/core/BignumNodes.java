@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -378,6 +378,20 @@ public abstract class BignumNodes {
         }
     }
 
+    @CoreMethod(names = "~")
+    public abstract static class ComplementNode extends BignumCoreMethodNode {
+
+        public ComplementNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object complement(DynamicObject value) {
+            return fixnumOrBignum(Layouts.BIGNUM.getValue(value).not());
+        }
+
+    }
+
     @CoreMethod(names = "&", required = 1)
     public abstract static class BitAndNode extends BignumCoreMethodNode {
 
@@ -551,6 +565,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public DynamicObject divMod(DynamicObject a, long b) {
+            return divModNode.execute(Layouts.BIGNUM.getValue(a), b);
+        }
+
+        @Specialization
+        public DynamicObject divMod(DynamicObject a, double b) {
             return divModNode.execute(Layouts.BIGNUM.getValue(a), b);
         }
 

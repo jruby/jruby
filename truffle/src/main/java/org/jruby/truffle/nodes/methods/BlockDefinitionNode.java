@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
+import org.jruby.truffle.runtime.BreakID;
 
 /**
  * Create a RubyProc to pass as a block to the called method.

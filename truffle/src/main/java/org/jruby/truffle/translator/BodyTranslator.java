@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -19,7 +19,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
-import org.jruby.ast.StarNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
@@ -70,7 +69,7 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
+import org.jruby.truffle.runtime.BreakID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 

@@ -12,7 +12,7 @@ package org.jruby.truffle.translator;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
+import org.jruby.truffle.runtime.BreakID;
 
 /**
  * Translator environment, unique per parse/translation.

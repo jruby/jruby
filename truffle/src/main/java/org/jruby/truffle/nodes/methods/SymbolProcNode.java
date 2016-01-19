@@ -33,8 +33,8 @@ public class SymbolProcNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object[] args = frame.getArguments();
-        final Object receiver = RubyArguments.getUserArgument(args, 0);
-        final Object[] arguments = RubyArguments.extractUserArguments(args);
+        final Object receiver = RubyArguments.getArgument(args, 0);
+        final Object[] arguments = RubyArguments.getArguments(args);
         final Object[] sendArgs = ArrayUtils.extractRange(arguments, 1, arguments.length);
         return dispatch.call(frame, receiver, symbol, RubyArguments.getBlock(args), sendArgs);
     }

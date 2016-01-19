@@ -23,7 +23,7 @@ public class ReadAllArgumentsNode extends RubyNode {
 
     @Override
     public Object[] executeObjectArray(VirtualFrame frame) {
-        return RubyArguments.extractUserArguments(frame.getArguments());
+        return RubyArguments.getArguments(frame.getArguments());
     }
 
     @Override

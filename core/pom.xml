@@ -194,12 +194,12 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
-      <version>1.7-SNAPSHOT</version>
+      <version>1.7</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>options</artifactId>
-      <version>1.4-SNAPSHOT</version>
+      <version>1.4</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>

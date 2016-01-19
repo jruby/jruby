@@ -299,7 +299,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         return new Callable<MethodHandle>() {
             @Override
             public MethodHandle call() throws Exception {
-                Class returnClass = method.type().returnType();
+                //Class returnClass = method.type().returnType();
 
                 int specificArity = -1;
                 if (optional == 0 && !rest) {

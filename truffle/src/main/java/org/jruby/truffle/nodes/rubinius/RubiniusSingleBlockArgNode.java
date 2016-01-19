@@ -39,16 +39,16 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
          * multiple arguments we need to reverse the destructuring by collecting the values into an array.
          */
 
-        int userArgumentCount = RubyArguments.getUserArgumentsCount(frame.getArguments());
+        int userArgumentCount = RubyArguments.getArgumentsCount(frame.getArguments());
 
         if (emptyArgsProfile.profile(userArgumentCount == 0)) {
             return nil();
         } else {
             if (singleArgProfile.profile(userArgumentCount == 1)) {
-                return RubyArguments.getUserArgument(frame.getArguments(), 0);
+                return RubyArguments.getArgument(frame.getArguments(), 0);
 
             } else {
-                Object[] extractedArguments = RubyArguments.extractUserArguments(frame.getArguments());
+                Object[] extractedArguments = RubyArguments.getArguments(frame.getArguments());
 
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), extractedArguments, userArgumentCount);
             }

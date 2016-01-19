@@ -10,7 +10,7 @@
 package org.jruby.truffle.runtime.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
-import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
+import org.jruby.truffle.runtime.BreakID;
 
 /**
  * Controls a break from a control structure or method.

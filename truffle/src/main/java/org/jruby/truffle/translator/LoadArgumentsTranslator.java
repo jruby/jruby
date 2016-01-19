@@ -22,6 +22,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
+import org.jruby.truffle.nodes.cast.SplatCastNode;
+import org.jruby.truffle.nodes.cast.SplatCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
@@ -67,12 +69,11 @@ public class LoadArgumentsTranslator extends Translator {
 
     private int required;
     private int index;
-    private int kwIndex;
-    private int countKwArgs;
     private int indexFromEnd = 1;
     private State state;
     private boolean hasKeywordArguments;
     private List<String> excludedKeywords = new ArrayList<>();
+    private boolean firstOpt = false;
 
     private org.jruby.ast.ArgsNode argsNode;
 
@@ -124,6 +125,8 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
+        hasKeywordArguments = node.hasKwargs();
+
         final int optArgCount = node.getOptionalArgsCount();
         if (optArgCount > 0) {
             // (BlockNode 0, (OptArgNode:a 0, (LocalAsgnNode:a 0, (FixnumNode 0))), ...)
@@ -131,12 +134,11 @@ public class LoadArgumentsTranslator extends Translator {
             index = argsNode.getPreCount();
             final int optArgIndex = node.getOptArgIndex();
             for (int i = 0; i < optArgCount; i++) {
+                firstOpt = i == 0;
                 sequence.add(args[optArgIndex + i].accept(this));
                 ++index;
             }
         }
-
-        hasKeywordArguments = node.hasKwargs();
 
         if (node.getRestArgNode() != null) {
             methodBodyTranslator.getEnvironment().hasRestParameter = true;
@@ -184,6 +186,11 @@ public class LoadArgumentsTranslator extends Translator {
         if (postCount > 0) {
             state = State.POST;
             index = -1;
+
+            if (!useArray() && hasKeywordArguments) {
+                index--;
+            }
+
             int postIndex = node.getPostIndex();
             for (int i = postCount - 1; i >= 0; i--) {
                 notNilAtLeastAsLargeSequence.add(args[postIndex + i].accept(this));
@@ -209,15 +216,11 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (hasKeywordArguments) {
-            kwIndex = 0;
-            countKwArgs = 0;
             final int keywordIndex = node.getKeywordsIndex();
             final int keywordCount = node.getKeywordCount();
 
             for (int i = 0; i < keywordCount; i++) {
                 sequence.add(args[keywordIndex + i].accept(this));
-                kwIndex++;
-                countKwArgs++;
             }
         }
 
@@ -238,7 +241,7 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitKeywordRestArgNode(org.jruby.ast.KeywordRestArgNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode readNode = new ReadKeywordRestArgumentNode(context, sourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]), -countKwArgs - 1);
+        final RubyNode readNode = new ReadKeywordRestArgumentNode(context, sourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]));
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(node.getName());
 
         return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
@@ -262,6 +265,8 @@ public class LoadArgumentsTranslator extends Translator {
             throw new UnsupportedOperationException("unsupported keyword arg " + node);
         }
 
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
+
         final RubyNode defaultValue;
         if (asgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
             /* This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
@@ -273,8 +278,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         excludedKeywords.add(name);
 
-        final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue, kwIndex - countKwArgs);
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
+        final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue);
 
         return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
@@ -317,7 +321,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (useArray()) {
             readNode = ArraySliceNodeGen.create(context, sourceSection, from, to, loadArray(sourceSection));
         } else {
-            readNode = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments);
+            readNode = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments, required);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
@@ -402,7 +406,20 @@ public class LoadArgumentsTranslator extends Translator {
                         minimum += 1;
                     }
 
-                    readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
+                    final boolean considerRejectedKWArgs;
+                    final ReadRestArgumentNode readRest;
+
+                    if (firstOpt && hasKeywordArguments) {
+                        considerRejectedKWArgs = true;
+                        int from = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
+                        int to = -argsNode.getPostCount();
+                        readRest = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments, required);
+                    } else {
+                        considerRejectedKWArgs = false;
+                        readRest = null;
+                    }
+
+                    readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, considerRejectedKWArgs, defaultValue, readRest, required, argsNode.hasKwargs());
                 }
             }
         } else {
@@ -497,7 +514,6 @@ public class LoadArgumentsTranslator extends Translator {
             index = -1;
             for (int i = children.length - 1; i >= 0; i--) {
                 notNilAtLeastAsLargeSequence.add(children[i].accept(this));
-                required++;
                 index--;
             }
         }
@@ -519,8 +535,14 @@ public class LoadArgumentsTranslator extends Translator {
         if (node.getRest() != null) {
             if (node.getRest() instanceof INameNode) {
                 final String name = ((INameNode) node.getRest()).getName();
-                nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
-                        .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[] {})));
+
+                if (node.getPreCount() == 0 && node.getPostCount() == 0) {
+                    nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
+                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{new NilNode(context, sourceSection)})));
+                } else {
+                    nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
+                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{})));
+                }
             } else if (node.getRest() instanceof StarNode) {
                 // Don't think we need to do anything
             } else {
@@ -548,7 +570,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         return SequenceNode.sequence(context, sourceSection,
                 new WriteLocalVariableNode(context, sourceSection,
-                        ArrayCastNodeGen.create(context, sourceSection,
+                        SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
                                 readArgument(sourceSection)), arraySlot),
                 new IfNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
