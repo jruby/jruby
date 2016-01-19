@@ -176,7 +176,7 @@ public abstract class StringOperations {
 
     @CompilerDirectives.TruffleBoundary
     private static int slowCodeRangeScan(DynamicObject string) {
-        final ByteList byteList = StringOperations.getByteList(string);
+        final ByteList byteList = StringOperations.getByteListReadOnly(string);
         return StringSupport.codeRangeScan(byteList.getEncoding(), byteList);
     }
 
