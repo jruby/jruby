@@ -37,8 +37,15 @@ module Rubinius
   class Mirror
     class Array
 
-      def self.reflect(array)
-        Array.new(array)
+      def self.reflect(object)
+        if Rubinius::Type.object_kind_of? object, ::Array
+          Array.new(object)
+        elsif ary = Rubinius::Type.try_convert(object, ::Array, :to_ary)
+          Array.new(ary)
+        else
+          message = "expected Array, given #{Rubinius::Type.object_class(object)}"
+          raise TypeError, message
+        end
       end
 
       def initialize(array)

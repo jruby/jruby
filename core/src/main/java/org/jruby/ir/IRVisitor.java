@@ -119,7 +119,7 @@ public abstract class IRVisitor {
     public void RestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restargmultipleasgninstr) { error(restargmultipleasgninstr); }
     public void RestoreBindingVisibilityInstr(RestoreBindingVisibilityInstr instr) { error(instr); }
     public void ReturnInstr(ReturnInstr returninstr) { error(returninstr); }
-    public void RethrowSavedExcInLambdaInstr(RethrowSavedExcInLambdaInstr instr) { error(instr); }
+    public void ReturnOrRethrowSavedExcInstr(ReturnOrRethrowSavedExcInstr instr) { error(instr); }
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
     public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) { error(instr); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }

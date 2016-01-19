@@ -46,6 +46,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -221,6 +222,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // readlink is not available on Windows. See below and jruby/jruby#3287.
             // TODO: MRI does not implement readlink on Windows, but perhaps we could?
             fileClass.searchMethod("readlink").setNotImplemented(true);
+
+            fileClass.searchMethod("mkfifo").setNotImplemented(true);
         }
 
         return fileClass;
@@ -266,6 +269,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     public RubyFile(Ruby runtime, String path, InputStream in) {
         super(runtime, runtime.getFile(), Channels.newChannel(in));
+        this.setPath(path);
+    }
+
+    public RubyFile(Ruby runtime, String path, FileChannel channel) {
+        super(runtime, runtime.getFile(), channel);
         this.setPath(path);
     }
 
@@ -1209,6 +1217,30 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         size = fptr.posix.size(fptr.fd());
 
         return RubyFixnum.newFixnum(runtime, size);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject mkfifo(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        if (Platform.IS_WINDOWS) throw context.runtime.newNotImplementedError("mkfifo");
+
+        return mkfifo(context, get_path(context, path), 0666);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject mkfifo(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject mode) {
+        if (Platform.IS_WINDOWS) throw context.runtime.newNotImplementedError("mkfifo");
+
+        return mkfifo(context, get_path(context, path), RubyNumeric.num2int(mode));
+    }
+
+    public static IRubyObject mkfifo(ThreadContext context, RubyString path, int mode) {
+        Ruby runtime = context.runtime;
+        String decodedPath = path.toString();
+
+        if (runtime.getPosix().mkfifo(decodedPath, mode) != 0) {
+            throw runtime.newErrnoFromInt(runtime.getPosix().errno(), decodedPath);
+        }
+        return RubyFixnum.zero(runtime);
     }
 
     public String getPath() {

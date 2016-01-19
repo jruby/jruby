@@ -113,14 +113,7 @@ public class UncachedDispatchNode extends DispatchNode {
         return indirectCallNode.call(
                 frame,
                 method.getCallTarget(),
-                RubyArguments.pack(
-                        method,
-                        null,
-                        null,
-                        receiverObject,
-                        blockObject,
-                        DeclarationContext.METHOD,
-                        argumentsObjects));
+                RubyArguments.pack(null, null, method, DeclarationContext.METHOD, null, receiverObject, blockObject, argumentsObjects));
     }
 
 }

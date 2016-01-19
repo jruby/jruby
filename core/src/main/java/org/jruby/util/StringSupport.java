@@ -770,7 +770,7 @@ public final class StringSupport {
                 if (ASCIIEncoding.INSTANCE.isPrint(c)) {
                     len++;
                 } else {
-                    if (enc instanceof UTF8Encoding) {
+                    if (enc.isUTF8()) {
                         int n = preciseLength(enc, bytes, p - 1, end) - 1;
                         if (n > 0) {
                             if (buf == null) buf = new ByteList();
@@ -835,7 +835,7 @@ public final class StringSupport {
                 out[q++] = (byte)c;
             } else {
                 out[q++] = '\\';
-                if (enc instanceof UTF8Encoding) {
+                if (enc.isUTF8()) {
                     int n = preciseLength(enc, bytes, p - 1, end) - 1;
                     if (n > 0) {
                         int cc = codePoint(runtime, enc, bytes, p - 1, end);
@@ -958,7 +958,7 @@ public final class StringSupport {
     }
 
     private static int strLengthFromRubyStringFull(CodeRangeable string, ByteList bytes, Encoding enc) {
-        if (string.isCodeRangeValid() && enc instanceof UTF8Encoding) return utf8Length(bytes);
+        if (string.isCodeRangeValid() && enc.isUTF8()) return utf8Length(bytes);
 
         long lencr = strLengthWithCodeRange(bytes, enc);
         int cr = unpackArg(lencr);

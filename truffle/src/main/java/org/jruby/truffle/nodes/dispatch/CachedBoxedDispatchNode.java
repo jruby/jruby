@@ -104,11 +104,6 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                 method == null ? "null" : method.toString());
     }
 
-    public boolean couldOptimizeKeywordArguments() {
-        // TODO CS 18-Apr-15 doesn't seem to work with Truffle?
-        return false; //method.getSharedMethodInfo().getArity().getKeywordArguments() != null && next instanceof UnresolvedDispatchNode;
-    }
-
     public InternalMethod getMethod() {
         return method;
     }

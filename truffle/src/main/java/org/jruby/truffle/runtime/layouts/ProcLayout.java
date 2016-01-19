@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,6 +17,7 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
+import org.jruby.truffle.runtime.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
@@ -42,7 +43,8 @@ public interface ProcLayout extends BasicObjectLayout {
             @Nullable MaterializedFrame declarationFrame,
             @Nullable InternalMethod method,
             Object self,
-            @Nullable DynamicObject block);
+            @Nullable DynamicObject block,
+            @Nullable FrameOnStackMarker frameOnStackMarker);
 
     boolean isProc(ObjectType objectType);
     boolean isProc(DynamicObject object);
@@ -63,5 +65,7 @@ public interface ProcLayout extends BasicObjectLayout {
     Object getSelf(DynamicObject object);
 
     DynamicObject getBlock(DynamicObject object);
+
+    FrameOnStackMarker getFrameOnStackMarker(DynamicObject object);
 
 }

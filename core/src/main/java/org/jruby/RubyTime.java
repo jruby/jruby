@@ -840,7 +840,11 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     public IRubyObject zone() {
         if (isTzRelative) return getRuntime().getNil();
-        return getRuntime().newString(RubyTime.getRubyTimeZoneName(getRuntime(), dt));
+        RubyString zone = getRuntime().newString(RubyTime.getRubyTimeZoneName(getRuntime(), dt));
+
+        if (zone.isAsciiOnly()) zone.setEncoding(USASCIIEncoding.INSTANCE);
+
+        return zone;
     }
 
 	public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
@@ -862,7 +866,7 @@ public class RubyTime extends RubyObject {
         Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
 
         if (offsetMatcher.matches()) {
-            boolean minus_p = offsetMatcher.group(1).toString().equals("-");
+            boolean minus_p = offsetMatcher.group(1).equals("-");
             int hourOffset  = Integer.valueOf(offsetMatcher.group(2));
 
             if (zone.equals("+00:00")) {

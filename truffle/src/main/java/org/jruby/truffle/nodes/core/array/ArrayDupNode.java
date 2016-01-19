@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -38,12 +38,12 @@ public abstract class ArrayDupNode extends RubyNode {
 
     public abstract DynamicObject executeDup(VirtualFrame frame, DynamicObject array);
 
-    @Specialization(guards = {"isRubyArray(from)", "isNullArray(from)"})
+    @Specialization(guards = "isNullArray(from)")
     public DynamicObject dupNull(DynamicObject from) {
         return allocateNode.allocate(getContext().getCoreLibrary().getArrayClass(), null, 0);
     }
 
-    @Specialization(guards = {"isRubyArray(from)", "isIntArray(from)"})
+    @Specialization(guards = "isIntArray(from)")
     public DynamicObject dupIntegerFixnum(DynamicObject from) {
         final int[] store = (int[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocate(
@@ -52,7 +52,7 @@ public abstract class ArrayDupNode extends RubyNode {
                 Layouts.ARRAY.getSize(from));
     }
 
-    @Specialization(guards = {"isRubyArray(from)", "isLongArray(from)"})
+    @Specialization(guards = "isLongArray(from)")
     public DynamicObject dupLongFixnum(DynamicObject from) {
         final long[] store = (long[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocate(
@@ -61,7 +61,7 @@ public abstract class ArrayDupNode extends RubyNode {
                 Layouts.ARRAY.getSize(from));
     }
 
-    @Specialization(guards = {"isRubyArray(from)", "isDoubleArray(from)"})
+    @Specialization(guards = "isDoubleArray(from)")
     public DynamicObject dupFloat(DynamicObject from) {
         final double[] store = (double[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocate(
@@ -70,7 +70,7 @@ public abstract class ArrayDupNode extends RubyNode {
                 Layouts.ARRAY.getSize(from));
     }
 
-    @Specialization(guards = {"isRubyArray(from)", "isObjectArray(from)"})
+    @Specialization(guards = "isObjectArray(from)")
     public DynamicObject dupObject(DynamicObject from) {
         final Object[] store = (Object[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocate(

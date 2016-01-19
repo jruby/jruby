@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -26,6 +26,7 @@ public class SharedMethodInfo {
     private final Arity arity;
     /** The original name of the method. Does not change when aliased. */
     private final String name;
+    private final String indicativeName;
     private final boolean isBlock;
     private final ArgumentDescriptor[] argumentDescriptors;
     private final boolean alwaysClone;
@@ -33,6 +34,10 @@ public class SharedMethodInfo {
     private final boolean needsCallerFrame;
 
     public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, ArgumentDescriptor[] argumentDescriptors, boolean alwaysClone, boolean alwaysInline, boolean needsCallerFrame) {
+        this(sourceSection, lexicalScope, arity, name, name, isBlock, argumentDescriptors, alwaysClone, alwaysInline, needsCallerFrame);
+    }
+
+    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, String indicativeName, boolean isBlock, ArgumentDescriptor[] argumentDescriptors, boolean alwaysClone, boolean alwaysInline, boolean needsCallerFrame) {
         assert sourceSection != null;
         assert name != null;
 
@@ -40,6 +45,7 @@ public class SharedMethodInfo {
         this.lexicalScope = lexicalScope;
         this.arity = arity;
         this.name = name;
+        this.indicativeName = indicativeName;
         this.isBlock = isBlock;
         this.argumentDescriptors = argumentDescriptors == null ? new ArgumentDescriptor[] {} : argumentDescriptors;
         this.alwaysClone = alwaysClone;
@@ -61,6 +67,10 @@ public class SharedMethodInfo {
 
     public String getName() {
         return name;
+    }
+
+    public String getIndicativeName() {
+        return indicativeName;
     }
 
     public boolean isBlock() {

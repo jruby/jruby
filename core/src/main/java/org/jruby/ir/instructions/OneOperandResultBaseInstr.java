@@ -8,7 +8,7 @@ import org.jruby.ir.operands.Variable;
  * Result Instr with one operand.
  */
 public abstract class OneOperandResultBaseInstr extends ResultBaseInstr {
-    private Operand operand1;
+    private transient Operand operand1;
 
     public OneOperandResultBaseInstr(Operation operation, Variable result, Operand operand1) {
         super(operation, result);

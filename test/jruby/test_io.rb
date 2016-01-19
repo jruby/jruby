@@ -3,8 +3,6 @@ require 'test/unit'
 require 'test/jruby/test_helper'
 require 'rbconfig'
 require 'stringio'
-require 'java'
-require 'jruby'
 
 class TestIO < Test::Unit::TestCase
   include TestHelper
@@ -230,9 +228,18 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_select
-    ##### select #####
     assert_equal(nil, select(nil, nil, nil, 0))
     assert_raises(ArgumentError) { select(nil, nil, nil, -1) }
+  end
+
+  class NumLike
+    def initialize; @num = 1 end
+    def method_missing(m, *args); @num.send(m, *args) end
+  end
+
+  def test_select_converts_timeout
+    assert_equal nil, IO.select([], [], [], NumLike.new)
+    assert_raises(TypeError) { IO.select([], [], [], Object.new) }
   end
 
   class FakeStream
@@ -425,27 +432,27 @@ class TestIO < Test::Unit::TestCase
     files.each {|f| File.open(f, "w") {|g| g << " " } }
   end
   private :ensure_files
-  
+
   # JRUBY-5114
-  def test_autoclose_false_leaves_channels_open
+  def test_autoclose_false_leaves_channels_open; require 'java'
     channel = java.io.FileInputStream.new(__FILE__).channel
-    
+
     # sanity check
     io1 = channel.to_io(:autoclose => false)
     assert_equal "#", io1.sysread(1)
     io2 = channel.to_io(:autoclose => false)
     assert_equal " ", io2.sysread(1)
-    
+
     # dereference and force GC a few times to finalize
     io1 = nil
     5.times { java.lang.System.gc }
-    
+
     # io2 and original channel should still be open and usable
     assert_equal "-", io2.sysread(1)
     assert !io2.closed?
-    
+
     assert channel.open?
-  end
+  end if defined? JRUBY_VERSION
 
   def test_gets_no_args
     File.open(@file, 'w') { |f| f.write 'abcde' }
@@ -473,7 +480,7 @@ class TestIO < Test::Unit::TestCase
 
   if false # FIXME: Disabled until (if ever) we need it for new IO logic (in 9k)
   # JRUBY-6137
-  def test_rubyio_fileno_mapping_leak
+  def test_rubyio_fileno_mapping_leak; require 'jruby'
     starting_count = JRuby.runtime.fileno_int_map_size
     io = org.jruby.RubyIO.new(JRuby.runtime, org.jruby.util.io.STDIO::ERR)
     open_io_count = JRuby.runtime.fileno_int_map_size
@@ -481,7 +488,7 @@ class TestIO < Test::Unit::TestCase
     io.close
     closed_io_count = JRuby.runtime.fileno_int_map_size
     assert_equal(starting_count, closed_io_count)
-  end
+  end if defined? JRUBY_VERSION
   end
 
   # JRUBY-1222

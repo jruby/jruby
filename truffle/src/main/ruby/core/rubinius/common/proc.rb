@@ -127,19 +127,7 @@ class Proc
 
   def source_location
     if @ruby_method
-      code = @ruby_method.executable
-      if code.respond_to? :file
-        file = code.file
-        if code.lines
-          line = code.first_line
-        else
-          line = -1
-        end
-      else
-        file = "(unknown)"
-        line = -1
-      end
-      [file.to_s, line]
+      @ruby_method.source_location
     elsif @bound_method
       if @bound_method.respond_to?(:source_location)
         @bound_method.source_location

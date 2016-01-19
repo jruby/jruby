@@ -266,30 +266,6 @@ public abstract class IRBytecodeAdapter {
         return new org.objectweb.asm.Label();
     }
 
-    public void pushBlockBody(Handle handle, org.jruby.runtime.Signature signature, String className) {
-        // FIXME: too much bytecode
-        String cacheField = "blockBody" + getClassData().callSiteCount.getAndIncrement();
-        Label done = new Label();
-        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(CompiledIRBlockBody.class), null, null).visitEnd();
-        adapter.getstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
-        adapter.dup();
-        adapter.ifnonnull(done);
-        {
-            adapter.pop();
-            adapter.newobj(p(CompiledIRBlockBody.class));
-            adapter.dup();
-
-            adapter.ldc(handle);
-            adapter.getstatic(className, handle.getName() + "_IRScope", ci(IRScope.class));
-            adapter.ldc(signature.encode());
-
-            adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, long.class));
-            adapter.dup();
-            adapter.putstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
-        }
-        adapter.label(done);
-    }
-
     /**
      * Stack required: none
      *
@@ -592,6 +568,27 @@ public abstract class IRBytecodeAdapter {
      * Stack required: the new value
      */
     public abstract void setGlobalVariable(String name);
+
+    /**
+     * Yield argument list to a block.
+     *
+     * Stack required: context, block, argument
+     */
+    public abstract void yield(boolean unwrap);
+
+    /**
+     * Yield to a block.
+     *
+     * Stack required: context, block
+     */
+    public abstract void yieldSpecific();
+
+    /**
+     * Prepare a block for a subsequent call.
+     *
+     * Stack required: context, self, dynamicScope
+     */
+    public abstract void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className);
 
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -49,11 +49,16 @@ public class YieldNode extends RubyNode {
             argumentsObjects[i] = arguments[i].execute(frame);
         }
 
-        final DynamicObject block = RubyArguments.getBlock(frame.getArguments());
+        DynamicObject block = RubyArguments.getBlock(frame.getArguments());
 
         if (block == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().noBlockToYieldTo(this));
+
+            block = RubyArguments.getMethod(frame.getArguments()).getCapturedBlock();
+
+            if (block == null) {
+                throw new RaiseException(getContext().getCoreLibrary().noBlockToYieldTo(this));
+            }
         }
 
         if (unsplat) {

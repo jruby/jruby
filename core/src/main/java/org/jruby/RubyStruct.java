@@ -687,16 +687,16 @@ public class RubyStruct extends RubyObject {
     }
 
     final IRubyObject aref(int idx) {
-        idx = idx < 0 ? values.length + idx : idx;
+        int newIdx = idx < 0 ? values.length + idx : idx;
 
-        if (idx < 0) {
+        if (newIdx < 0) {
             throw getRuntime().newIndexError("offset " + idx + " too small for struct(size:" + values.length + ")");
         }
-        if (idx >= values.length) {
+        if (newIdx >= values.length) {
             throw getRuntime().newIndexError("offset " + idx + " too large for struct(size:" + values.length + ")");
         }
 
-        return values[idx];
+        return values[newIdx];
     }
 
     @JRubyMethod(name = "[]=", required = 2)
@@ -712,16 +712,16 @@ public class RubyStruct extends RubyObject {
     }
 
     private IRubyObject aset(int idx, IRubyObject value) {
-        idx = idx < 0 ? values.length + idx : idx;
+        int newIdx = idx < 0 ? values.length + idx : idx;
 
-        if (idx < 0) {
+        if (newIdx < 0) {
             throw getRuntime().newIndexError("offset " + idx + " too small for struct(size:" + values.length + ")");
-        } else if (idx >= values.length) {
+        } else if (newIdx >= values.length) {
             throw getRuntime().newIndexError("offset " + idx + " too large for struct(size:" + values.length + ")");
         }
 
         modify();
-        return values[idx] = value;
+        return values[newIdx] = value;
     }
 
     // FIXME: This is copied code from RubyArray.  Both RE, Struct, and Array should share one impl

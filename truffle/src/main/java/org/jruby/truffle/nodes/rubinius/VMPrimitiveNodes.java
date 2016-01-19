@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -57,6 +57,8 @@ import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.nodes.objects.IsANode;
@@ -155,6 +157,37 @@ public abstract class VMPrimitiveNodes {
         @Fallback
         public Object vmExit(Object status) {
             return null; // Primitive failure
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "vm_extended_modules", needsSelf = false)
+    public static abstract class VMExtendedModulesNode extends RubiniusPrimitiveNode {
+
+        @Child private CallDispatchHeadNode newArrayNode;
+        @Child private CallDispatchHeadNode arrayAppendNode;
+
+        public VMExtendedModulesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            newArrayNode = DispatchHeadNodeFactory.createMethodCall(context);
+            arrayAppendNode = DispatchHeadNodeFactory.createMethodCall(context);
+        }
+
+        @Specialization
+        public Object vmExtendedModules(VirtualFrame frame, Object object) {
+            final DynamicObject metaClass = getContext().getCoreLibrary().getMetaClass(object);
+
+            if (Layouts.CLASS.getIsSingleton(metaClass)) {
+                final Object ret = newArrayNode.call(frame, getContext().getCoreLibrary().getArrayClass(), "new", null);
+
+                for (DynamicObject included : Layouts.MODULE.getFields(metaClass).prependedAndIncludedModules()) {
+                    arrayAppendNode.call(frame, ret, "<<", null, included);
+                }
+
+                return ret;
+            }
+
+            return nil();
         }
 
     }

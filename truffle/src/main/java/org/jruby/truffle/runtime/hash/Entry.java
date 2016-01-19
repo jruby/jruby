@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,7 +13,7 @@ package org.jruby.truffle.runtime.hash;
  * An entry in the Ruby hash. That is, a container for a key and a value, and a member of two lists - the chain of
  * buckets for a given index, and the chain of entries for the insertion order across the whole hash.
  */
-public class Entry {
+public final class Entry {
 
     private int hashed;
     private Object key;

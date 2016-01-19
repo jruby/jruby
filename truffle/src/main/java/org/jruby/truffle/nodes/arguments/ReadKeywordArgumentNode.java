@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -25,51 +25,34 @@ import java.util.Map;
 
 public class ReadKeywordArgumentNode extends RubyNode {
 
-    private final int minimum;
     private final String name;
-    private final int kwIndex;
-    private final ValueProfile argumentValueProfile = ValueProfile.createPrimitiveProfile();
-
-    private final ConditionProfile optimizedProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile defaultProfile = ConditionProfile.createBinaryProfile();
     
     @Child private RubyNode defaultValue;
+    @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
-    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue, int kwIndex) {
+    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue) {
         super(context, sourceSection);
-        this.minimum = minimum;
         this.name = name;
         this.defaultValue = defaultValue;
-        this.kwIndex = kwIndex;
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimum);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (optimizedProfile.profile(RubyArguments.isKwOptimized(frame.getArguments()))) {
-            Object kwarg = argumentValueProfile
-                    .profile(RubyArguments.getOptimizedKeywordArgument(
-                            frame.getArguments(), kwIndex));
+        final DynamicObject hash = (DynamicObject) readUserKeywordsHashNode.execute(frame);
 
-            if (defaultProfile.profile(kwarg instanceof OptionalKeywordArgMissingNode.OptionalKeywordArgMissing)) {
-                return defaultValue.execute(frame);
-            } else {
-                return kwarg;
-            }
-        } else {
-            final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
-
-            if (defaultProfile.profile(hash == null)) {
-                return defaultValue.execute(frame);
-            }
-
-            Object value = lookupKeywordInHash(hash);
-
-            if (defaultProfile.profile(value == null)) {
-                return defaultValue.execute(frame);
-            }
-
-            return value;
+        if (defaultProfile.profile(hash == null)) {
+            return defaultValue.execute(frame);
         }
+
+        Object value = lookupKeywordInHash(hash);
+
+        if (defaultProfile.profile(value == null)) {
+            return defaultValue.execute(frame);
+        }
+
+        return value;
     }
 
     @TruffleBoundary
@@ -77,7 +60,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
         assert RubyGuards.isRubyHash(hash);
 
         for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
-            if (keyValue.getKey().toString().equals(name)) {
+            if (RubyGuards.isRubySymbol(keyValue.getKey()) && keyValue.getKey().toString().equals(name)) {
                 return keyValue.getValue();
             }
         }

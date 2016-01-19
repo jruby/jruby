@@ -7,6 +7,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.runtime.Block;
@@ -55,7 +56,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         JavaConstructor constructor = (JavaConstructor) findCallable(self, name, args, args.length);
 
         final Object[] convertedArgs = convertArguments(constructor, args);
-        proxy.setObject( constructor.newInstanceDirect(context, convertedArgs) );
+        setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, convertedArgs));
 
         return self;
     }
@@ -66,7 +67,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor) findCallableArityZero(self, name);
 
-        proxy.setObject(constructor.newInstanceDirect(context));
+        setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context));
 
         return self;
     }
@@ -79,7 +80,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         final Class<?>[] paramTypes = constructor.getParameterTypes();
         Object cArg0 = arg0.toJava(paramTypes[0]);
 
-        proxy.setObject(constructor.newInstanceDirect(context, cArg0));
+        setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, cArg0));
 
         return self;
     }
@@ -93,7 +94,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         Object cArg0 = arg0.toJava(paramTypes[0]);
         Object cArg1 = arg1.toJava(paramTypes[1]);
 
-        proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1));
+        setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, cArg0, cArg1));
 
         return self;
     }
@@ -108,7 +109,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         Object cArg1 = arg1.toJava(paramTypes[1]);
         Object cArg2 = arg2.toJava(paramTypes[2]);
 
-        proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1, cArg2));
+        setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, cArg0, cArg1, cArg2));
 
         return self;
     }
@@ -131,7 +132,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
                 convertedArgs[i] = intermediate[i].toJava(paramTypes[i]);
             }
 
-            proxy.setObject(constructor.newInstanceDirect(context, convertedArgs));
+            setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, convertedArgs));
 
             return self;
         }
@@ -148,7 +149,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
             final Class<?>[] paramTypes = constructor.getParameterTypes();
             Object cArg0 = proc.toJava(paramTypes[0]);
 
-            proxy.setObject(constructor.newInstanceDirect(context, cArg0));
+            setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, cArg0));
 
             return self;
         }
@@ -166,7 +167,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
             Object cArg0 = arg0.toJava(paramTypes[0]);
             Object cArg1 = proc.toJava(paramTypes[1]);
 
-            proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1));
+            setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, cArg0, cArg1));
 
             return self;
         }
@@ -185,7 +186,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
             Object cArg1 = arg1.toJava(paramTypes[1]);
             Object cArg2 = proc.toJava(paramTypes[2]);
 
-            proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1, cArg2));
+            setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, cArg0, cArg1, cArg2));
 
             return self;
         }
@@ -205,10 +206,18 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
             Object cArg2 = arg2.toJava(paramTypes[2]);
             Object cArg3 = proc.toJava(paramTypes[3]);
 
-            proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1, cArg2, cArg3));
+            setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, cArg0, cArg1, cArg2, cArg3));
 
             return self;
         }
         return call(context, self, clazz, name, arg0, arg1, arg2);
+    }
+
+    private void setAndCacheProxyObject(ThreadContext context, RubyModule clazz, JavaProxy proxy, Object object) {
+        proxy.setObject(object);
+
+        if (Java.OBJECT_PROXY_CACHE || clazz.getCacheProxy()) {
+            context.runtime.getJavaSupport().getObjectProxyCache().put(object, proxy);
+        }
     }
 }

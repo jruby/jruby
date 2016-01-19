@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class GetDefaultDefineeNode extends RubyNode {
 
@@ -31,6 +32,13 @@ public class GetDefaultDefineeNode extends RubyNode {
     @Override
     public DynamicObject execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
+
+        final DynamicObject capturedDefaultDefinee = RubyArguments.getMethod(frame.getArguments()).getCapturedDefaultDefinee();
+
+        if (capturedDefaultDefinee != null) {
+            return capturedDefaultDefinee;
+        }
+
         return RubyArguments.getDeclarationContext(frame.getArguments()).getModuleToDefineMethods(frame, getContext(), singletonClassNode);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,6 +11,8 @@ package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
+
 import org.jruby.RubyThread;
 import org.jruby.truffle.nodes.core.InterruptMode;
 import org.jruby.truffle.om.dsl.api.Layout;
@@ -44,6 +46,7 @@ public interface ThreadLayout extends BasicObjectLayout {
                                AtomicBoolean wakeUp,
                                @Volatile int priority);
 
+    boolean isThread(ObjectType objectType);
     boolean isThread(DynamicObject object);
 
     FiberManager getFiberManager(DynamicObject object);

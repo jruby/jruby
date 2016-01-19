@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -38,19 +38,25 @@ public class InternalMethod implements ObjectGraphNode {
     private final DynamicObject proc; // only if method is created from a Proc
 
     private final CallTarget callTarget;
+    private final DynamicObject capturedBlock;
+    private final DynamicObject capturedDefaultDefinee;
 
     public static InternalMethod fromProc(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
             Visibility visibility, DynamicObject proc, CallTarget callTarget) {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, false, proc, callTarget);
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, false, proc, callTarget, null, null);
     }
 
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
             Visibility visibility, CallTarget callTarget) {
-        this(sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget);
+        this(sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget, null, null);
+    }
+    public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
+                          Visibility visibility, boolean undefined, DynamicObject proc, CallTarget callTarget) {
+        this(sharedMethodInfo, name, declaringModule, visibility, undefined, proc, callTarget, null, null);
     }
 
-    private InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
-            Visibility visibility, boolean undefined, DynamicObject proc, CallTarget callTarget) {
+    public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
+                          Visibility visibility, boolean undefined, DynamicObject proc, CallTarget callTarget, DynamicObject capturedBlock, DynamicObject capturedDefaultDefinee) {
         assert RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
@@ -59,6 +65,8 @@ public class InternalMethod implements ObjectGraphNode {
         this.undefined = undefined;
         this.proc = proc;
         this.callTarget = callTarget;
+        this.capturedBlock = capturedBlock;
+        this.capturedDefaultDefinee = capturedDefaultDefinee;
     }
 
     public SharedMethodInfo getSharedMethodInfo() {
@@ -91,7 +99,7 @@ public class InternalMethod implements ObjectGraphNode {
         if (newDeclaringModule == declaringModule) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, proc, callTarget);
+            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, proc, callTarget, capturedBlock, capturedDefaultDefinee);
         }
     }
 
@@ -99,7 +107,7 @@ public class InternalMethod implements ObjectGraphNode {
         if (newName.equals(name)) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, proc, callTarget);
+            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, proc, callTarget, capturedBlock, capturedDefaultDefinee);
         }
     }
 
@@ -107,12 +115,12 @@ public class InternalMethod implements ObjectGraphNode {
         if (newVisibility == visibility) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, proc, callTarget);
+            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, proc, callTarget, capturedBlock, capturedDefaultDefinee);
         }
     }
 
     public InternalMethod undefined() {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, proc, callTarget);
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, proc, callTarget, capturedBlock, capturedDefaultDefinee);
     }
 
     public boolean isVisibleTo(Node currentNode, DynamicObject callerClass) {
@@ -161,4 +169,11 @@ public class InternalMethod implements ObjectGraphNode {
         return adjacent;
     }
 
+    public DynamicObject getCapturedBlock() {
+        return capturedBlock;
+    }
+
+    public DynamicObject getCapturedDefaultDefinee() {
+        return capturedDefaultDefinee;
+    }
 }

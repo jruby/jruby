@@ -1420,7 +1420,9 @@ public final class Ruby implements Constantizable {
         singleNilArray = new IRubyObject[] {nilObject};
 
         falseObject = new RubyBoolean.False(this);
+        falseObject.setFrozen(true);
         trueObject = new RubyBoolean.True(this);
+        trueObject.setFrozen(true);
     }
 
     private void initCore() {
@@ -2740,7 +2742,7 @@ public final class Ruby implements Constantizable {
 
      private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
          ParserConfiguration parserConfig =
-                 new ParserConfiguration(this, lineNumber, false, true, config);
+                 new ParserConfiguration(this, lineNumber, false, true, isFromMain, config);
          setupSourceEncoding(parserConfig, UTF8Encoding.INSTANCE);
          return parser.parse(file, in, scope, parserConfig);
      }
@@ -3481,17 +3483,13 @@ public final class Ruby implements Constantizable {
     public RubyProc newProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
-        RubyProc proc =  RubyProc.newProc(this, block, type);
-
-        return proc;
+        return RubyProc.newProc(this, block, type);
     }
 
     public RubyProc newBlockPassProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
-        RubyProc proc =  RubyProc.newProc(this, block, type);
-
-        return proc;
+        return RubyProc.newProc(this, block, type);
     }
 
     public RubyBinding newBinding() {
@@ -3905,6 +3903,26 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newNameError(String message, String name, Throwable origException) {
         return newNameError(message, name, origException, false);
+    }
+
+    public RaiseException newNameError(String message, IRubyObject recv, IRubyObject name) {
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
+        RubyException err = RubyNameError.newRubyNameError(getNameError(), msg, name);
+
+        return new RaiseException(err);
+    }
+
+    public RaiseException newNameError(String message, IRubyObject recv, String name) {
+        RubySymbol nameSym = newSymbol(name);
+        return newNameError(message, recv, nameSym);
+    }
+
+    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args) {
+        RubySymbol nameStr = newSymbol(name);
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
+        RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args);
+
+        return new RaiseException(err);
     }
 
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
@@ -5117,8 +5135,8 @@ public final class Ruby implements Constantizable {
     private final Random random;
 
     /** The runtime-local seed for hash randomization */
-    private long hashSeedK0;
-    private long hashSeedK1;
+    private final long hashSeedK0;
+    private final long hashSeedK1;
 
     private StaticScopeFactory staticScopeFactory;
 

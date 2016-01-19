@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,9 +10,11 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
@@ -62,6 +64,7 @@ public abstract class MutexNodes {
             return mutex;
         }
 
+        @TruffleBoundary
         protected static void lock(final ReentrantLock lock, final DynamicObject thread, RubyNode currentNode) {
             assert RubyGuards.isRubyThread(thread);
 
@@ -127,6 +130,11 @@ public abstract class MutexNodes {
                 return false;
             }
 
+            return doTryLock(lock);
+        }
+
+        @TruffleBoundary
+        private boolean doTryLock(final ReentrantLock lock) {
             if (lock.tryLock()) {
                 final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
                 Layouts.THREAD.getOwnedLocks(thread).add(lock);
@@ -155,6 +163,7 @@ public abstract class MutexNodes {
             return mutex;
         }
 
+        @TruffleBoundary
         protected static void unlock(ReentrantLock lock, DynamicObject thread, RubyNode currentNode) {
             assert RubyGuards.isRubyThread(thread);
 

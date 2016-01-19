@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -154,13 +154,7 @@ public abstract class SetNode extends RubyNode {
     public Object setBuckets(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
         assert HashOperations.verifyStore(getContext(), hash);
 
-        if (lookupEntryNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            lookupEntryNode = insert(new LookupEntryNode(getContext(), getEncapsulatingSourceSection()));
-        }
-
-        final HashLookupResult result = lookupEntryNode.lookup(frame, hash, key);
-
+        final HashLookupResult result = lookup(frame, hash, key);
         final Entry entry = result.getEntry();
 
         if (foundProfile.profile(entry == null)) {
@@ -203,6 +197,14 @@ public abstract class SetNode extends RubyNode {
         return value;
     }
 
+    private HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
+        if (lookupEntryNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            lookupEntryNode = insert(new LookupEntryNode(getContext(), getEncapsulatingSourceSection()));
+        }
+        return lookupEntryNode.lookup(frame, hash, key);
+    }
+
     @Specialization(guards = {"isBucketHash(hash)", "byIdentity", "isRubyString(key)"})
     public Object setBucketsByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setBuckets(frame, hash, key, value, byIdentity);
@@ -214,26 +216,35 @@ public abstract class SetNode extends RubyNode {
     }
 
     private Object freezeAndDupIfNeeded(VirtualFrame frame, DynamicObject key) {
+        if (!frozenProfile.profile(isFrozen(key))) {
+            return freeze(frame, dup(frame, key));
+        } else {
+            return key;
+        }
+    }
+
+    private boolean isFrozen(Object value) {
         if (isFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();
             isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
         }
+        return isFrozenNode.executeIsFrozen(value);
+    }
 
-        if (!frozenProfile.profile(isFrozenNode.executeIsFrozen(key))) {
-            if (dupNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            if (freezeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                freezeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
-        } else {
-            return key;
+    private Object dup(VirtualFrame frame, Object value) {
+        if (dupNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
+        return dupNode.call(frame, value, "dup", null);
+    }
+
+    private Object freeze(VirtualFrame frame, Object value) {
+        if (freezeNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            freezeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+        }
+        return freezeNode.call(frame, value, "freeze", null);
     }
 
 }

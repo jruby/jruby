@@ -35,6 +35,9 @@
 
 /* Array */
 #define HAVE_RB_ARRAY                      1
+#ifdef RUBY_VERSION_IS_2_1
+#define HAVE_RARRAY_AREF                   1
+#endif
 #define HAVE_RARRAY_LEN                    1
 #define HAVE_RARRAY_PTR                    1
 #define HAVE_RB_ARY_AREF                   1

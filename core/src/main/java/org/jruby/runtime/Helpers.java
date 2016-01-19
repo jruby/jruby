@@ -2439,9 +2439,8 @@ public class Helpers {
 
     public static RubyString getDefinedNot(Ruby runtime, RubyString definition) {
         if (definition != null) {
-            definition = runtime.getDefinedMessage(DefinedMessage.METHOD);
+            return runtime.getDefinedMessage(DefinedMessage.METHOD);
         }
-
         return definition;
     }
 

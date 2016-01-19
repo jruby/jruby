@@ -861,7 +861,7 @@ public class RubyNumeric extends RubyObject {
      */
 
     private IRubyObject[] scanStepArgs(ThreadContext context, IRubyObject[] args) {
-        IRubyObject to = context.runtime.getNil();
+        IRubyObject to = context.nil;
         IRubyObject step = context.runtime.newFixnum(1);
 
         if (args.length >= 1) to = args[0];

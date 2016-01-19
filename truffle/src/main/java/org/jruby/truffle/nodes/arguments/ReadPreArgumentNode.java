@@ -38,7 +38,7 @@ public class ReadPreArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (index >= RubyArguments.getUserArgumentsCount(frame.getArguments())) {
+        if (index >= RubyArguments.getArgumentsCount(frame.getArguments())) {
             outOfRangeProfile.enter();
 
             switch (missingArgumentBehaviour) {
@@ -53,7 +53,7 @@ public class ReadPreArgumentNode extends RubyNode {
             }
         }
 
-        return argumentValueProfile.profile(RubyArguments.getUserArgument(frame.getArguments(), index));
+        return argumentValueProfile.profile(RubyArguments.getArgument(frame.getArguments(), index));
     }
 
 }

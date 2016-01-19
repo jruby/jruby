@@ -405,6 +405,13 @@ module FFI
       raise PrimitiveFailure, "FFI::MemoryPointer#autorelease= primitive failed"
     end
 
+    ##
+    # Returns true if autorelease is enabled, otherwise false.
+    def autorelease?
+      Rubinius.primitive :pointer_autorelease_p
+      raise PrimitiveFailure, "FFI::MemoryPointer#pointer_autorelease_p primitive failed"
+    end
+
   end
 
   class DynamicLibrary::Symbol < Pointer

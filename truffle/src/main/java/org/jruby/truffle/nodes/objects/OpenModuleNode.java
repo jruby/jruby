@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,9 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
+import org.jruby.truffle.nodes.methods.ModuleBodyDefinitionNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -33,12 +34,12 @@ public class OpenModuleNode extends RubyNode {
     final protected LexicalScope lexicalScope;
     @Child private IndirectCallNode callModuleDefinitionNode;
 
-    final private MethodDefinitionNode definitionMethod;
+    final private ModuleBodyDefinitionNode definitionMethod;
 
-    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod, LexicalScope lexicalScope) {
+    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, ModuleBodyDefinitionNode definition, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.definingModule = definingModule;
-        this.definitionMethod = definitionMethod;
+        this.definitionMethod = definition;
         this.lexicalScope = lexicalScope;
         callModuleDefinitionNode = Truffle.getRuntime().createIndirectCallNode();
     }
@@ -55,7 +56,7 @@ public class OpenModuleNode extends RubyNode {
 
         final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
         return callModuleDefinitionNode.call(frame, definition.getCallTarget(),
-                RubyArguments.pack(definition, null, null, module, null, DeclarationContext.MODULE, new Object[] {}));
+                RubyArguments.pack(null, null, definition, DeclarationContext.MODULE, null, module, null, new Object[]{}));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -63,7 +63,6 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -84,7 +83,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -539,14 +537,7 @@ public abstract class KernelNodes {
                     Visibility.PUBLIC,
                     cachedCallTarget);
 
-            return callNode.call(frame, RubyArguments.pack(
-                    method,
-                    parentFrame,
-                    null,
-                    callerSelf,
-                    null,
-                    RubyArguments.getDeclarationContext(parentFrame.getArguments()),
-                    new Object[] {}));
+            return callNode.call(frame, RubyArguments.pack(parentFrame, null, method, RubyArguments.getDeclarationContext(parentFrame.getArguments()), null, callerSelf, null, new Object[]{}));
         }
 
         @Specialization(guards = {
@@ -1102,30 +1093,19 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "instance_variables", "__instance_variables__" })
+    @CoreMethod(names = "instance_variables")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private BasicObjectNodes.InstanceVariablesNode instanceVariablesNode;
 
         public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            instanceVariablesNode = BasicObjectNodesFactory.InstanceVariablesNodeFactory.create(context, sourceSection, new RubyNode[] {});
         }
 
-        @TruffleBoundary
         @Specialization
-        public DynamicObject instanceVariables(DynamicObject self) {
-            List<Object> keys = self.getShape().getKeyList();
-            final Object[] instanceVariableNames = keys.toArray(new Object[keys.size()]);
-
-            Arrays.sort(instanceVariableNames);
-
-            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-
-            for (Object name : instanceVariableNames) {
-                if (name instanceof String) {
-                    ArrayOperations.append(array, getSymbol((String) name));
-                }
-            }
-
-            return array;
+        public DynamicObject instanceVariables(VirtualFrame frame, DynamicObject self) {
+            return instanceVariablesNode.executeObject(self);
         }
 
     }
@@ -1283,7 +1263,7 @@ public abstract class KernelNodes {
 
             @Override
             public Object execute(VirtualFrame frame) {
-                final Object[] originalUserArguments = RubyArguments.extractUserArguments(frame.getArguments());
+                final Object[] originalUserArguments = RubyArguments.getArguments(frame.getArguments());
                 final Object[] newUserArguments = ArrayUtils.unshift(originalUserArguments, methodName);
                 return methodMissing.call(frame, RubyArguments.getSelf(frame.getArguments()), "method_missing", RubyArguments.getBlock(frame.getArguments()), newUserArguments);
             }
@@ -1614,6 +1594,7 @@ public abstract class KernelNodes {
 
         @Child private DoesRespondDispatchHeadNode dispatch;
         @Child private DoesRespondDispatchHeadNode dispatchIgnoreVisibility;
+        @Child private DoesRespondDispatchHeadNode dispatchRespondToMissing;
         @Child private CallDispatchHeadNode respondToMissingNode;
         private final ConditionProfile ignoreVisibilityProfile = ConditionProfile.createBinaryProfile();
 
@@ -1622,6 +1603,7 @@ public abstract class KernelNodes {
 
             dispatch = new DoesRespondDispatchHeadNode(context, false);
             dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true);
+            dispatchRespondToMissing = new DoesRespondDispatchHeadNode(context, true);
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);
@@ -1643,8 +1625,10 @@ public abstract class KernelNodes {
 
             if (ret) {
                 return true;
-            } else {
+            } else if (dispatchRespondToMissing.doesRespondTo(frame, "respond_to_missing?", object)) {
                 return respondToMissing(frame, object, name, includeProtectedAndPrivate);
+            } else {
+                return false;
             }
         }
 
@@ -1660,8 +1644,10 @@ public abstract class KernelNodes {
 
             if (ret) {
                 return true;
-            } else {
+            } else if (dispatchRespondToMissing.doesRespondTo(frame, "respond_to_missing?", object)) {
                 return respondToMissing(frame, object, name, includeProtectedAndPrivate);
+            } else {
+                return false;
             }
         }
 

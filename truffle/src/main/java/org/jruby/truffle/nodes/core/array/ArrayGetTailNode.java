@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -32,14 +32,14 @@ public abstract class ArrayGetTailNode extends RubyNode {
         this.index = index;
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isNullArray(array)"})
+    @Specialization(guards = "isNullArray(array)")
     public DynamicObject getTailNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
+    @Specialization(guards = "isIntArray(array)")
     public DynamicObject getTailIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
@@ -50,7 +50,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
+    @Specialization(guards = "isLongArray(array)")
     public DynamicObject getTailLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
@@ -61,7 +61,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
+    @Specialization(guards = "isDoubleArray(array)")
     public DynamicObject getTailFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
@@ -72,7 +72,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
+    @Specialization(guards = "isObjectArray(array)")
     public DynamicObject getTailObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 

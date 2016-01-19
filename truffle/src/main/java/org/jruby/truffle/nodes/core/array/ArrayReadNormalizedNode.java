@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -36,7 +36,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     // Anything from a null array is nil
 
     @Specialization(
-            guards={"isRubyArray(array)", "isNullArray(array)"}
+            guards = "isNullArray(array)"
     )
     public DynamicObject readNull(DynamicObject array, int index) {
         return nil();
@@ -45,28 +45,28 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     // Read within the bounds of an array with actual storage
 
     @Specialization(
-            guards={"isRubyArray(array)", "isInBounds(array, index)", "isIntArray(array)"}
+            guards = { "isInBounds(array, index)", "isIntArray(array)" }
     )
     public int readIntInBounds(DynamicObject array, int index) {
         return ((int[]) Layouts.ARRAY.getStore(array))[index];
     }
 
     @Specialization(
-            guards={"isRubyArray(array)", "isInBounds(array, index)", "isLongArray(array)"}
+            guards = { "isInBounds(array, index)", "isLongArray(array)" }
     )
     public long readLongInBounds(DynamicObject array, int index) {
         return ((long[]) Layouts.ARRAY.getStore(array))[index];
     }
 
     @Specialization(
-            guards={"isRubyArray(array)", "isInBounds(array, index)", "isDoubleArray(array)"}
+            guards = { "isInBounds(array, index)", "isDoubleArray(array)" }
     )
     public double readDoubleInBounds(DynamicObject array, int index) {
         return ((double[]) Layouts.ARRAY.getStore(array))[index];
     }
 
     @Specialization(
-            guards={"isRubyArray(array)", "isInBounds(array, index)", "isObjectArray(array)"}
+            guards = { "isInBounds(array, index)", "isObjectArray(array)" }
     )
     public Object readObjectInBounds(DynamicObject array, int index) {
         return ((Object[]) Layouts.ARRAY.getStore(array))[index];
@@ -75,7 +75,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     // Reading out of bounds is nil of any array is nil - cannot contain isNullArray
 
     @Specialization(
-            guards={"isRubyArray(array)", "!isInBounds(array, index)"}
+            guards = "!isInBounds(array, index)"
     )
     public DynamicObject readOutOfBounds(DynamicObject array, int index) {
         return nil();

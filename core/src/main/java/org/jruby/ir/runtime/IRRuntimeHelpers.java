@@ -221,7 +221,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void rethrowSavedExcInLambda(ThreadContext context) {
+    public static IRubyObject returnOrRethrowSavedException(ThreadContext context, IRubyObject value) {
         // This rethrows the exception saved in handleBreakAndReturnsInLambda
         // after additional code to pop frames, bindings, etc. are done.
         Throwable exc = context.getSavedExceptionInLambda();
@@ -230,6 +230,9 @@ public class IRRuntimeHelpers {
             context.setSavedExceptionInLambda(null);
             Helpers.throwException(exc);
         }
+
+        // otherwise, return value
+        return value;
     }
 
     @JIT
@@ -468,18 +471,12 @@ public class IRRuntimeHelpers {
         return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
     }
 
-    public static IRubyObject yield(ThreadContext context, Object blk, Object yieldArg, boolean unwrapArray) {
-        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
-        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        Block b = (Block)blk;
+    public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldArg, boolean unwrapArray) {
         IRubyObject yieldVal = (IRubyObject)yieldArg;
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
-    public static IRubyObject yieldSpecific(ThreadContext context, Object blk) {
-        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
-        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        Block b = (Block)blk;
+    public static IRubyObject yieldSpecific(ThreadContext context, Block b) {
         return b.yieldSpecific(context);
     }
 
@@ -818,10 +815,10 @@ public class IRRuntimeHelpers {
                             case MODULE_BODY:
                             case CLASS_BODY:
                             case METACLASS_BODY:
-                            case SCRIPT_BODY:
                                 return (RubyModule) self;
 
                             case INSTANCE_METHOD:
+                            case SCRIPT_BODY:
                                 return self.getMetaClass();
 
                             default:
@@ -1721,5 +1718,23 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyProc newSymbolProc(ThreadContext context, String symbol, String encoding) {
         return newSymbolProc(context, symbol, retrieveJCodingsEncoding(context, encoding));
+    }
+
+    @JIT
+    public static IRubyObject[] singleBlockArgToArray(IRubyObject value) {
+        IRubyObject[] args;
+        if (value instanceof RubyArray) {
+            args = value.convertToArray().toJavaArray();
+        } else {
+            args = new IRubyObject[] { value };
+        }
+        return args;
+    }
+
+    @JIT
+    public static Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope scope, BlockBody body) {
+        Block block = new Block(body, context.currentBinding(self, scope));
+
+        return block;
     }
 }

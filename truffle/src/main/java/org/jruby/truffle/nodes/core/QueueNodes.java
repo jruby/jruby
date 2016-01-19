@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
@@ -62,13 +63,18 @@ public abstract class QueueNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject push(DynamicObject self, final Object value) {
             final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
-            queue.add(value);
+            doPush(value, queue);
+
             return self;
+        }
+
+        @TruffleBoundary
+        private void doPush(final Object value, final BlockingQueue<Object> queue) {
+            queue.add(value);
         }
 
     }
@@ -89,11 +95,15 @@ public abstract class QueueNodes {
             return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, nonBlocking);
         }
 
-        @TruffleBoundary
         @Specialization(guards = "!nonBlocking")
         public Object popBlocking(DynamicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
+            return doPop(queue);
+        }
+
+        @TruffleBoundary
+        private Object doPop(final BlockingQueue<Object> queue) {
             return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
                 @Override
                 public Object block() throws InterruptedException {
@@ -102,18 +112,22 @@ public abstract class QueueNodes {
             });
         }
 
-        @TruffleBoundary
         @Specialization(guards = "nonBlocking")
         public Object popNonBlock(DynamicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
-            final Object value = queue.poll();
+            final Object value = doPoll(queue);
             if (value == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().threadError("queue empty", this));
             }
 
             return value;
+        }
+
+        @TruffleBoundary
+        private Object doPoll(final BlockingQueue<Object> queue) {
+            return queue.poll();
         }
 
     }

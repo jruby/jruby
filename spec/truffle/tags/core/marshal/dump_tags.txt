@@ -1,24 +1,3 @@
-fails:Marshal.dump dumps an extended_object
-fails:Marshal.dump with a Float dumps a Float
-fails:Marshal.dump with a String dumps a String extended with a Module
-fails:Marshal.dump with a Regexp dumps a Regexp
-fails:Marshal.dump with a Regexp dumps a Regexp with flags
-fails:Marshal.dump with a Regexp dumps a Regexp with instance variables
-fails:Marshal.dump with a Regexp dumps an extended Regexp
-fails:Marshal.dump with a Regexp dumps a Regexp subclass
-fails:Marshal.dump with a Regexp dumps a UTF-8 Regexp
-fails:Marshal.dump with a Regexp dumps a Regexp in another encoding
-fails:Marshal.dump with an Array dumps an extended Array
-fails:Marshal.dump with a Hash dumps an extended Hash
-fails:Marshal.dump with a Struct dumps an extended Struct
-fails:Marshal.dump with an Object dumps an extended Object
-fails:Marshal.dump with an Object dumps a BasicObject subclass if it defines respond_to?
-fails:Marshal.dump with a Range dumps a Range inclusive of end (with indeterminant order)
-fails:Marshal.dump with a Range dumps a Range exclusive of end (with indeterminant order)
 fails:Marshal.dump with a Time dumps the zone and the offset
 fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC
-fails:Marshal.dump with an Exception dumps the message for the exception
-fails:Marshal.dump with an Exception contains the filename in the backtrace
 fails:Marshal.dump with a Symbol dumps a binary encoded Symbol
-fails:Marshal.dump with a String dumps a String subclass extended with a Module
-fails:Marshal.dump with an Object dumps an Object that has had an instance variable added and removed as though it was never set

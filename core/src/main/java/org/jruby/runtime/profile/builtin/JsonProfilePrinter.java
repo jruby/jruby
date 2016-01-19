@@ -133,43 +133,43 @@ public class JsonProfilePrinter extends ProfilePrinter {
         );
     }
 
-    private String nanosToSecondsString(long nanos) {
+    private static String nanosToSecondsString(long nanos) {
         return String.format(JSON_LOCALE, "%f", nanos/1.0e9);
     }
 
-    private String quote(String str) {
+    private static String quote(String str) {
         return String.format("\"%s\"", str);
     }
 
-    private String quote(int num) {
+    private static String quote(int num) {
         return String.format("\"%d\"", num);
     }
 
-    private String toJsonArray(String... values) {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("[");
+    private static String toJsonArray(String... values) {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append('[');
         for (String v : values) {
             buffer.append(v);
             if (v != values[values.length - 1]) {
-                buffer.append(",");
+                buffer.append(',');
             }
         }
-        buffer.append("]");
+        buffer.append(']');
         return buffer.toString();
     }
 
-    private String toJsonObject(String... keysAndValues) {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("{");
+    private static String toJsonObject(String... keysAndValues) {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append('{');
         for (int i = 0; i < keysAndValues.length; i += 2) {
             buffer.append(quote(keysAndValues[i]));
             buffer.append(":");
             buffer.append(keysAndValues[i + 1]);
             if (i < keysAndValues.length - 3) {
-                buffer.append(",");
+                buffer.append(',');
             }
         }
-        buffer.append("}");
+        buffer.append('}');
         return buffer.toString();
     }
 }

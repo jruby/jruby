@@ -292,7 +292,7 @@ DO NOT MODIFIY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>2.1</version>
+          <version>2.4.3</version>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>

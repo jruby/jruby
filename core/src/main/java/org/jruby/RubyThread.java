@@ -57,6 +57,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
+import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -78,6 +79,7 @@ import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.OpenFile;
@@ -646,6 +648,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         if (callInit) {
             rubyThread.callInit(args, block);
+
+            if (rubyThread.threadImpl == null) {
+                throw recv.getRuntime().newThreadError("uninitialized thread - check " + ((RubyClass) recv).getName() + "#initialize");
+            }
         } else {
             // for Thread::start, which does not call the subclass's initialize
             rubyThread.initialize(recv.getRuntime().getCurrentContext(), args, block);
@@ -750,6 +756,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "name=", required = 1)
     public IRubyObject setName(IRubyObject name) {
+        Ruby runtime = getRuntime();
+
+        if (!name.isNil()) {
+            RubyString nameStr = StringSupport.checkEmbeddedNulls(runtime, name);
+            Encoding enc = nameStr.getEncoding();
+            if (!enc.isAsciiCompatible()) {
+                throw runtime.newArgumentError("ASCII incompatible encoding (" + enc + ")");
+            }
+            name = nameStr.newFrozen();
+        }
         this.threadName = name;
         setThreadName(getRuntime(), getNativeThread(), null, -1, false);
         return name;
@@ -1876,9 +1892,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 97 * hash + (this.threadImpl != null ? this.threadImpl.hashCode() : 0);
-        return hash;
+        return 97 * 3 + (this.threadImpl != null ? this.threadImpl.hashCode() : 0);
     }
 
     @Override

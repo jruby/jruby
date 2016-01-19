@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -39,19 +39,28 @@ public abstract class FloatPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject dToA(double value) {
-            String string = String.format(Locale.ENGLISH, "%.9f", value);
+            // Large enough to print all digits of Float::MIN.
+            String string = String.format(Locale.ENGLISH, "%.1022f", value);
 
             if (string.toLowerCase(Locale.ENGLISH).contains("e")) {
                 throw new UnsupportedOperationException();
             }
 
             string = string.replace("-", "");
+            while (string.charAt(string.length() - 1) == '0') {
+                string = string.substring(0, string.length() - 1);
+            }
 
-            final int decimal;
+            int decimal;
 
             if (string.startsWith("0.")) {
                 string = string.replace("0.", "");
                 decimal = 0;
+
+                while (string.charAt(0) == '0') {
+                    string = string.substring(1, string.length());
+                    --decimal;
+                }
             } else {
                 decimal = string.indexOf('.');
 
@@ -69,15 +78,15 @@ public abstract class FloatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "float_negative")
-    public static abstract class FloatNegativePrimitiveNode extends RubiniusPrimitiveNode {
+    @RubiniusPrimitive(name = "float_signbit_p")
+    public static abstract class FloatSignBitNode extends RubiniusPrimitiveNode {
 
-        public FloatNegativePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public FloatSignBitNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public boolean floatNegative(double value) {
+        public boolean floatSignBit(double value) {
             // Edge-cases: 0, NaN and infinity can all be negative
             return (Double.doubleToLongBits(value) >>> 63) == 1;
         }

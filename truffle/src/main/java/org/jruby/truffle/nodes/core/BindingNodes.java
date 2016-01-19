@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -41,14 +41,7 @@ public abstract class BindingNodes {
         final Object[] arguments = frame.getArguments();
 
         final MaterializedFrame bindingFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(
-                        RubyArguments.getMethod(arguments),
-                        frame,
-                        null,
-                        RubyArguments.getSelf(arguments),
-                        RubyArguments.getBlock(arguments),
-                        RubyArguments.getDeclarationContext(arguments),
-                        RubyArguments.extractUserArguments(arguments)),
+                RubyArguments.pack(frame, null, RubyArguments.getMethod(arguments), RubyArguments.getDeclarationContext(arguments), null, RubyArguments.getSelf(arguments), RubyArguments.getBlock(arguments), RubyArguments.getArguments(arguments)),
                 newFrameDescriptor(context));
 
         return Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), bindingFrame);
@@ -303,7 +296,7 @@ public abstract class BindingNodes {
 
             while (frame != null) {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
-                    if (slot.getIdentifier() instanceof String) {
+                    if (slot.getIdentifier() instanceof String && !((String) slot.getIdentifier()).startsWith("rubytruffle_temp_frame_on_stack_marker")) {
                         ArrayOperations.append(array, context.getSymbol((String) slot.getIdentifier()));
                     }
                 }

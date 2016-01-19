@@ -9,26 +9,13 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.nodes.NodeUtil;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.arguments.OptionalKeywordArgMissingNode;
-import org.jruby.truffle.nodes.arguments.UnknownArgumentErrorNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
-import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -37,8 +24,13 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 
 public class RubyCallNode extends RubyNode {
 
@@ -47,8 +39,6 @@ public class RubyCallNode extends RubyNode {
     @Child private RubyNode receiver;
     @Child private ProcOrNullNode block;
     @Children private final RubyNode[] arguments;
-    @Children private final RubyNode[] keywordOptimizedArguments;
-    @CompilationFinal private int keywordOptimizedArgumentsLength;
 
     private final boolean isSplatted;
     private final boolean isVCall;
@@ -65,8 +55,6 @@ public class RubyCallNode extends RubyNode {
     @Child private BooleanCastNode respondToMissingCast;
 
     private final boolean ignoreVisibility;
-
-    @CompilationFinal private boolean cannotOptimize;
 
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         this(context, section, methodName, receiver, block, isSplatted, false, arguments);
@@ -93,53 +81,12 @@ public class RubyCallNode extends RubyNode {
         this.ignoreVisibility = ignoreVisibility;
 
         this.dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility);
-
-        /*
-         * TODO CS 19-Mar-15 we currently can't swap an @Children array out
-         * so we just allocate a lot up-front. In a future version of Truffle
-         * @Children might not need to be final, which would fix this.
-         */
-        this.keywordOptimizedArguments = new RubyNode[arguments.length + 32];
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
-
-        final Object[] argumentsObjects;
-
-        if (dispatchHead.getFirstDispatchNode().couldOptimizeKeywordArguments() && !cannotOptimize) {
-            final CachedBoxedDispatchNode dispatchNode = (CachedBoxedDispatchNode) dispatchHead.getFirstDispatchNode();
-
-            if (keywordOptimizedArguments[0] == null) {
-                CompilerDirectives.transferToInterpreter();
-
-                System.err.println("optimizing for keyword arguments!");
-
-                final RubyNode[] optimized = expandedArgumentNodes(dispatchNode.getMethod(), arguments, isSplatted);
-
-                if (optimized == null || optimized.length > keywordOptimizedArguments.length) {
-                    System.err.println("couldn't optimize :(");
-                    cannotOptimize = true;
-                } else {
-                    keywordOptimizedArgumentsLength = optimized.length;
-
-                    for (int n = 0; n < keywordOptimizedArgumentsLength; n++) {
-                        keywordOptimizedArguments[n] = insert(NodeUtil.cloneNode(optimized[n]));
-                    }
-                }
-            }
-
-            if (dispatchNode.guard(methodName, receiverObject) && dispatchNode.getUnmodifiedAssumption().isValid()) {
-                argumentsObjects = executeKeywordOptimizedArguments(frame);
-            } else {
-                argumentsObjects = executeArguments(frame);
-            }
-
-        } else {
-            argumentsObjects = executeArguments(frame);
-        }
-
+        final Object[] argumentsObjects = executeArguments(frame);
         final DynamicObject blockObject = executeBlock(frame);
 
         return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
@@ -159,21 +106,6 @@ public class RubyCallNode extends RubyNode {
 
         for (int i = 0; i < arguments.length; i++) {
             argumentsObjects[i] = arguments[i].execute(frame);
-        }
-
-        if (isSplatted) {
-            return splat(argumentsObjects[0]);
-        } else {
-            return argumentsObjects;
-        }
-    }
-
-    @ExplodeLoop
-    private Object[] executeKeywordOptimizedArguments(VirtualFrame frame) {
-        final Object[] argumentsObjects = new Object[keywordOptimizedArgumentsLength];
-
-        for (int i = 0; i < keywordOptimizedArgumentsLength; i++) {
-            argumentsObjects[i] = keywordOptimizedArguments[i].execute(frame);
         }
 
         if (isSplatted) {
@@ -229,117 +161,6 @@ public class RubyCallNode extends RubyNode {
         }
 
         throw new UnsupportedOperationException();
-    }
-
-    public RubyNode[] expandedArgumentNodes(InternalMethod method, RubyNode[] argumentNodes, boolean isSplatted) {
-        final RubyNode[] result;
-
-        boolean shouldExpand = true;
-        if (method == null || !method.getSharedMethodInfo().getArity().acceptsKeywords()) {
-            // no keyword arguments in method definition
-            shouldExpand = false;
-        } else if (argumentNodes.length != 0
-                && !(argumentNodes[argumentNodes.length - 1] instanceof HashLiteralNode)) {
-            // last argument is not a Hash that could be expanded
-            shouldExpand = false;
-        } else if (method.getSharedMethodInfo().getArity() == null
-                || method.getSharedMethodInfo().getArity().getRequired() >= argumentNodes.length) {
-            shouldExpand = false;
-        } else if (isSplatted
-                || method.getSharedMethodInfo().getArity().hasRest()) {
-            // TODO: make optimization work if splat arguments are involed
-            // the problem is that Markers and keyword args are used when
-            // reading splatted args
-            shouldExpand = false;
-        }
-
-        if (shouldExpand) {
-            String[] kwargs = method.getSharedMethodInfo().getArity().getKeywordArguments();
-
-            int countArgNodes = argumentNodes.length + kwargs.length + 1;
-            if (argumentNodes.length == 0) {
-                countArgNodes++;
-            }
-
-            result = new RubyNode[countArgNodes];
-            int i;
-
-            for (i = 0; i < argumentNodes.length - 1; ++i) {
-                result[i] = argumentNodes[i];
-            }
-
-            int firstMarker = i++;
-            result[firstMarker] = new MarkerNode(getContext(), null);
-
-            HashLiteralNode hashNode;
-            if (argumentNodes.length > 0) {
-                hashNode = (HashLiteralNode) argumentNodes[argumentNodes.length - 1];
-            } else {
-                hashNode = HashLiteralNode.create(getContext(), null,
-                        new RubyNode[0]);
-            }
-
-            List<String> restKeywordLabels = new ArrayList<>();
-            for (int j = 0; j < hashNode.size(); j++) {
-                Object key = hashNode.getKey(j);
-                boolean keyIsSymbol = key instanceof LiteralNode &&
-                        RubyGuards.isRubySymbol(((LiteralNode) key).getObject());
-
-                if (!keyIsSymbol) {
-                    // cannot optimize case where keyword label is dynamic (not a fixed RubySymbol)
-                    cannotOptimize = true;
-                    return null;
-                }
-
-                final String label = ((LiteralNode) hashNode.getKey(j)).getObject().toString();
-                restKeywordLabels.add(label);
-            }
-
-            for (String kwarg : kwargs) {
-                result[i] = new OptionalKeywordArgMissingNode(getContext(), null);
-                for (int j = 0; j < hashNode.size(); j++) {
-                    final String label = ((LiteralNode) hashNode.getKey(j)).getObject().toString();
-
-                    if (label.equals(kwarg)) {
-                        result[i] = hashNode.getValue(j);
-                        restKeywordLabels.remove(label);
-                        break;
-                    }
-                }
-                i++;
-            }
-            result[i++] = new MarkerNode(getContext(), null);
-
-            if (restKeywordLabels.size() > 0
-                    && !method.getSharedMethodInfo().getArity().hasKeywordsRest()) {
-                result[firstMarker] = new UnknownArgumentErrorNode(getContext(), null, restKeywordLabels.get(0));
-            } else if (restKeywordLabels.size() > 0) {
-                i = 0;
-                RubyNode[] keyValues = new RubyNode[2 * restKeywordLabels
-                        .size()];
-
-                for (String label : restKeywordLabels) {
-                    for (int j = 0; j < hashNode.size(); j++) {
-                        final String argLabel = ((LiteralNode) hashNode.getKey(j)).getObject().toString();
-
-                        if (argLabel.equals(label)) {
-                            keyValues[i++] = hashNode.getKey(j);
-                            keyValues[i++] = hashNode.getValue(j);
-                        }
-                    }
-                }
-
-                HashLiteralNode restHash = HashLiteralNode.create(getContext(), null, keyValues);
-                result[firstMarker] = restHash;
-            }
-
-        }
-        else {
-            cannotOptimize = true;
-            result = null;
-        }
-
-        return result;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -881,6 +881,7 @@ public abstract class ModuleNodes {
     public abstract static class ConstGetNode extends CoreMethodNode {
 
         @Child private ReadConstantNode readConstantNode;
+        @Child private KernelNodes.RequireNode requireNode;
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -927,12 +928,17 @@ public abstract class ModuleNodes {
 
         @TruffleBoundary
         private Object getConstantNoInherit(DynamicObject module, String name, Node currentNode) {
-            final RubyConstant constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
+            RubyConstant constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
 
             if (constant == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name, this));
             } else {
+                if (constant.isAutoload()) {
+                    loadAutoloadedConstant(module, name, constant);
+                    constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
+                }
+
                 return constant.getValue();
             }
         }
@@ -953,6 +959,15 @@ public abstract class ModuleNodes {
             assert RubyGuards.isRubyString(name);
             // TODO (eregon, 27 May 2015): Any way to make this efficient?
             return name.toString().contains("::");
+        }
+
+        private void loadAutoloadedConstant(DynamicObject module, String name, RubyConstant constant) {
+            if (requireNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            requireNode.require((DynamicObject) constant.getValue());
         }
 
     }

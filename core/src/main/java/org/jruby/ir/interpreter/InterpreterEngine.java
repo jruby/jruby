@@ -24,6 +24,7 @@ import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
+import org.jruby.ir.instructions.ReturnOrRethrowSavedExcInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
@@ -381,9 +382,6 @@ public class InterpreterEngine {
             case POP_BINDING:
                 context.popScope();
                 break;
-            case RETHROW_SAVED_EXC_IN_LAMBDA:
-                IRRuntimeHelpers.rethrowSavedExcInLambda(context);
-                break; // may not be reachable
             case THREAD_POLL:
                 if (IRRuntimeHelpers.inProfileMode()) Profiler.clockTick();
                 context.callThreadPoll();
@@ -434,6 +432,10 @@ public class InterpreterEngine {
                 NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
                 IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
                 return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, rv);
+            }
+            case RETURN_OR_RETHROW_SAVED_EXC: {
+                IRubyObject retVal = (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);
+                return IRRuntimeHelpers.returnOrRethrowSavedException(context, retVal);
             }
         }
         return null;

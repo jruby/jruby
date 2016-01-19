@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -33,10 +33,11 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 @NodeChild("child")
 public abstract class SplatCastNode extends RubyNode {
 
-    public static enum NilBehavior {
+    public enum NilBehavior {
         EMPTY_ARRAY,
         ARRAY_WITH_NIL,
-        NIL
+        NIL,
+        CONVERT
     }
 
     private final NilBehavior nilBehavior;
@@ -58,16 +59,22 @@ public abstract class SplatCastNode extends RubyNode {
         conversionMethod = context.getSymbol(useToAry ? "to_ary" : "to_a");
     }
 
-    protected abstract RubyNode getChild();
+    public abstract RubyNode getChild();
 
     @Specialization(guards = "isNil(nil)")
-    public DynamicObject splat(Object nil) {
+    public Object splatNil(VirtualFrame frame, Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
+
+            case CONVERT:
+                return toA.call(frame, nil, "to_a", null);
+
+            case NIL:
+                return nil;
 
             default: {
                 throw new UnsupportedOperationException();

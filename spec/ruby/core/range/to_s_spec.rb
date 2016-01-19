@@ -14,18 +14,16 @@ describe "Range#to_s" do
   it "returns a tainted string if either end is tainted" do
     (("a".taint)..."c").to_s.tainted?.should be_true
     ("a"...("c".taint)).to_s.tainted?.should be_true
-  end
-
-  it "ignores own tainted status" do
-    ("a"..."c").taint.to_s.tainted?.should be_false
+    ruby_bug("#11767", "2.2") do
+      ("a"..."c").taint.to_s.tainted?.should be_true
+    end
   end
 
   it "returns a untrusted string if either end is untrusted" do
     (("a".untrust)..."c").to_s.untrusted?.should be_true
     ("a"...("c".untrust)).to_s.untrusted?.should be_true
-  end
-
-  it "ignores own untrusted status" do
-    ("a"..."c").untrust.to_s.untrusted?.should be_false
+    ruby_bug("#11767", "2.2") do
+      ("a"..."c").untrust.to_s.untrusted?.should be_true
+    end
   end
 end

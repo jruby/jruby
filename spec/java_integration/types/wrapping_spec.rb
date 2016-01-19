@@ -64,6 +64,47 @@ describe "A Java method returning/receiving uncoercible Java types" do
       expect(rsojo2.foo).to eq(true)
     end
   end
+
+  describe "with persistence off" do
+    before { java.lang.Object.__persistent__ = false }
+    let(:object_proxy_cache) { JRuby.runtime.java_support.object_proxy_cache }
+
+    it "doesn't cache the proxy when directly constructed" do
+      object = java.lang.Object.new
+      expect(object_proxy_cache.get(object)).to be_nil
+    end
+
+    it "doesn't cache the proxy when retrieved from a Java instance method" do
+      object = JavaTypeMethods.new.newObject
+      expect(object_proxy_cache.get(object)).to be_nil
+    end
+
+    it "doesn't cache the proxy when retrieved from a Java static method" do
+      object = JavaTypeMethods.staticNewObject
+      expect(object_proxy_cache.get(object)).to be_nil
+    end
+  end
+
+  describe "with persistence on" do
+    before { java.lang.Object.__persistent__ = true }
+    after { java.lang.Object.__persistent__ = false }
+    let(:object_proxy_cache) { JRuby.runtime.java_support.object_proxy_cache }
+
+    it "doesn't cache the proxy when directly constructed" do
+      object = java.lang.Object.new
+      expect(object_proxy_cache.get(object)).to eq(object)
+    end
+
+    it "doesn't cache the proxy when retrieved from a Java instance method" do
+      object = JavaTypeMethods.new.newObject
+      expect(object_proxy_cache.get(object)).to eq(object)
+    end
+
+    it "doesn't cache the proxy when retrieved from a Java static method" do
+      object = JavaTypeMethods.staticNewObject
+      expect(object_proxy_cache.get(object)).to eq(object)
+    end
+  end
 end
 
 describe "Java::JavaObject.wrap" do
@@ -83,20 +124,26 @@ describe "Java::newInterfaceImpl" do
     def run
     end
   end
-  class Bolt
-    def run
-    end
-  end
+
   it "should use the same generated class for wrapping, on different classloaders" do
     expected1 = InterfaceWrapper.give_me_back(BugTest.new)
     expected2 = InterfaceWrapper.give_me_back(BugTest.new)
-    expect(expected1.java_class.class_loader).not_to eq(expected2.java_class.class_loader)
+    unless java.lang.reflect.Proxy.isProxyClass(expected1.java_class)
+      expect(expected1.java_class.class_loader).not_to eq(expected2.java_class.class_loader)
+    end
     expect(expected1.java_class.to_s).to eq(expected2.java_class.to_s)
   end
 
   it "should not mix classes when generating new types for interfaces" do
+    a_klass = Class.new { def run; end }
     expected1 = InterfaceWrapper.give_me_back(BugTest.new)
-    expected2 = InterfaceWrapper.give_me_back(Bolt.new)
-    expect(expected1.java_class).not_to eq(expected2.java_class)
+    expected2 = InterfaceWrapper.give_me_back(a_klass.new)
+    # in case of proxy based interface implementations this won't hold
+    # generated java-class might be the same (instances using different handlers)
+    unless java.lang.reflect.Proxy.isProxyClass(expected1.java_class)
+      expect(expected1.java_class).not_to eq(expected2.java_class)
+    end
+    expect(expected1.to_java.equals(expected2.to_java)).to be false
+    expect(expected1.to_java.hashCode).not_to eql expected2.to_java.hashCode
   end
 end

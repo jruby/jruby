@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
@@ -8,6 +9,8 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+
+import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
 
 /**
  * Load the block passed to this scope via the on-heap frame (or similar cross-call structure).
@@ -38,6 +41,12 @@ public class LoadFrameClosureInstr extends NoOperandResultBaseInstr implements F
 
     public static LoadFrameClosureInstr decode(IRReaderDecoder d) {
         return new LoadFrameClosureInstr(d.decodeVariable());
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(REQUIRES_FRAME);
+        return true;
     }
 
     @Override

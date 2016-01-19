@@ -1,4 +1,4 @@
-# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -147,7 +147,6 @@ require_relative 'core/rubinius/common/identity_map'
 #require_relative 'core/rubinius/common/global'
 #require_relative 'core/rubinius/common/backtrace'
 require_relative 'core/rubinius/common/comparable'
-require_relative 'core/rubinius/api/shims/comparable'
 require_relative 'core/rubinius/common/numeric_mirror'
 require_relative 'core/rubinius/common/numeric'
 require_relative 'core/rubinius/common/ctype'
@@ -188,6 +187,7 @@ require_relative 'core/rubinius/common/immediate'
 #require_relative 'core/rubinius/common/lookup_table'
 require_relative 'core/rubinius/common/main'
 require_relative 'core/rubinius/common/marshal'
+require_relative 'core/rubinius/api/shims/marshal'
 #require_relative 'core/rubinius/common/math'
 #require_relative 'core/rubinius/common/method'
 #require_relative 'core/rubinius/common/method_equality'
@@ -215,6 +215,7 @@ require_relative 'core/rubinius/common/thread'
 #require_relative 'core/rubinius/common/thread_group'
 require_relative 'core/rubinius/common/throw_catch'
 require_relative 'core/rubinius/common/time'
+require_relative 'core/rubinius/api/shims/time'
 require_relative 'core/rubinius/common/true'
 #require_relative 'core/rubinius/common/variable_scope'
 #require_relative 'core/rubinius/common/capi'

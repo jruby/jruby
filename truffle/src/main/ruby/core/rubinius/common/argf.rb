@@ -534,7 +534,7 @@ module Rubinius
       @advance = false
 
       file = ARGV.shift
-      @stream = stream(file)
+      @stream = stream(file) 
       @filename = file
 
       if $-i && @stream != STDIN

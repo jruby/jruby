@@ -505,7 +505,7 @@ public class RubyMath {
     };
     
     public static RubyFloat erf(IRubyObject recv, IRubyObject x) {
-        return erf19(null, recv, x);
+        return erf19(recv.getRuntime().getCurrentContext(), recv, x);
     }
 
     @JRubyMethod(name = "erf", required = 1, module = true, visibility = Visibility.PRIVATE)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -51,8 +51,93 @@ public final class SequenceNode extends RubyNode {
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
-            return new SequenceNode(context, sourceSection, flattened.toArray(new RubyNode[flattened.size()]));
+            final RubyNode[] flatSequence = flattened.toArray(new RubyNode[flattened.size()]);
+            return new SequenceNode(context, enclosing(sourceSection, flatSequence), flatSequence);
         }
+    }
+
+    public static SourceSection enclosing(SourceSection base, SourceSection... sourceSections) {
+        if (base.getSource() == null) {
+            return base;
+        }
+
+        if (sourceSections.length == 0) {
+            return base;
+        }
+
+        int startLine = base.getStartLine();
+        int endLine = base.getEndLine();
+
+        for (SourceSection sourceSection : sourceSections) {
+            startLine = Math.min(startLine, sourceSection.getStartLine());
+
+            final int nodeEndLine;
+
+            if (sourceSection.getSource() == null) {
+                nodeEndLine = sourceSection.getStartLine();
+            } else {
+                nodeEndLine = sourceSection.getEndLine();
+            }
+
+            endLine = Math.max(endLine, nodeEndLine);
+        }
+
+        final int index = base.getSource().getLineStartOffset(startLine);
+
+        int length = 0;
+
+        for (int n = startLine; n <= endLine; n++) {
+            // + 1 because the line length doesn't include any newlines
+            length += base.getSource().getLineLength(n) + 1;
+        }
+
+        length = Math.min(length, base.getSource().getLength() - index);
+        length = Math.max(0, length);
+
+        return base.getSource().createSection(base.getIdentifier(), index, length);
+    }
+
+    public static SourceSection enclosing(SourceSection base, RubyNode[] sequence) {
+        if (base.getSource() == null) {
+            return base;
+        }
+
+        if (sequence.length == 0) {
+            return base;
+        }
+
+        int startLine = base.getStartLine();
+        int endLine = base.getEndLine();
+
+        for (RubyNode node : sequence) {
+            final SourceSection nodeSourceSection = node.getEncapsulatingSourceSection();
+
+            startLine = Math.min(startLine, nodeSourceSection.getStartLine());
+
+            final int nodeEndLine;
+
+            if (nodeSourceSection.getSource() == null) {
+                nodeEndLine = nodeSourceSection.getStartLine();
+            } else {
+                nodeEndLine = nodeSourceSection.getEndLine();
+            }
+
+            endLine = Math.max(endLine, nodeEndLine);
+        }
+
+        final int index = base.getSource().getLineStartOffset(startLine);
+
+        int length = 0;
+
+        for (int n = startLine; n <= endLine; n++) {
+            // + 1 because the line length doesn't include any newlines
+            length += base.getSource().getLineLength(n) + 1;
+        }
+
+        length = Math.min(length, base.getSource().getLength() - index);
+        length = Math.max(0, length);
+
+        return base.getSource().createSection(base.getIdentifier(), index, length);
     }
 
     private static List<RubyNode> flatten(RubyContext context, List<RubyNode> sequence, boolean allowTrailingNil) {
