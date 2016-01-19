@@ -40,7 +40,6 @@ import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
-import org.jruby.util.io.EncodingUtils;
 
 public abstract class StringOperations {
 
