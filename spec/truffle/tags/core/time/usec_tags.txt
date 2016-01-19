@@ -1,3 +1,0 @@
-fails:Time#usec returns the microseconds part of a Time constructed with an Integer number of microseconds
-fails:Time#usec returns the microseconds part of a Time constructed with an Float number of microseconds > 1
-fails:Time#usec returns the microseconds part of a Time constructed with an Rational number of microseconds > 1

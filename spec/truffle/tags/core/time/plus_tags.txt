@@ -1,8 +1,1 @@
-fails:Time#+ adds a negative Float
-fails:Time#+ returns a time with the same fixed offset as self
-fails:Time#+ tracks microseconds
-fails:Time#+ tracks nanoseconds
-fails:Time#+ maintains microseconds precision
-fails:Time#+ maintains nanoseconds precision
 fails:Time#+ maintains subseconds precision
-fails(travis):Time#+ returns a non-UTC time if self is non-UTC
