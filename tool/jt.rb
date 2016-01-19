@@ -73,7 +73,7 @@ module Utilities
   end
 
   def self.igv_running?
-    `ps a`.include? 'IdealGraphVisualizer'
+    `ps ax`.include? 'IdealGraphVisualizer'
   end
 
   def self.ensure_igv_running
