@@ -1,5 +1,7 @@
 package java_integration.fixtures;
 
+import java.io.Serializable;
+
 public class InnerClasses {
 
     public static class CapsInnerClass {
@@ -62,32 +64,34 @@ public class InnerClasses {
     private static int capsImplCounter;
 
     public static CapsInnerInterface localMethodClass() {
-        class CapsImpl implements CapsInnerInterface {
+        class CapsImpl implements CapsInnerSerial {
             private final int counter;
             CapsImpl(int counter) { this.counter = counter; }
             public String capsMethod() { return "CapsImpl" + counter; }
 
         }
-        return new CapsImpl(capsImplCounter++);
+        return new CapsImpl(++capsImplCounter);
     }
 
     public static CapsInnerInterface localMethodClass2() {
-        class CapsImpl implements CapsInnerInterface {
+        class CapsImpl implements CapsInnerInterface, Serializable {
             private final int counter;
             CapsImpl(int counter) { this.counter = counter; }
             public String capsMethod() { return "CapsImpl2" + counter; }
 
         }
-        return new CapsImpl(capsImplCounter++);
+        return new CapsImpl(++capsImplCounter);
     }
 
     private static int capsAnonCounter;
 
     public static CapsInnerInterface anonymousMethodClass() {
-        return new CapsInnerInterface() {
-            private final int counter = capsAnonCounter++;
+        return new CapsInnerSerial() {
+            private final int counter = ++capsAnonCounter;
             public String capsMethod() { return "CapsAnon" + counter; }
         };
     }
+
+    public static interface CapsInnerSerial extends CapsInnerInterface, Serializable {}
 
 }
