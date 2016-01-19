@@ -583,7 +583,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)
+    @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, lowerFixnumParameters = 2, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
