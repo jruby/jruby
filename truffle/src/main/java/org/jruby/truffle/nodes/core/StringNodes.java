@@ -639,7 +639,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject b(DynamicObject string) {
-            return createString(RopeOperations.template(rope(string), ASCIIEncoding.INSTANCE));
+            return createString(RopeOperations.withEncoding(rope(string), ASCIIEncoding.INSTANCE));
         }
 
     }
@@ -1936,7 +1936,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             if (rope.isEmpty()) {
-                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.template(EMPTY_UTF8_ROPE, rope.getEncoding()), null);
+                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.withEncoding(EMPTY_UTF8_ROPE, rope.getEncoding()), null);
             } else {
                 final ByteList succByteList = StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteListReadOnly(string));
 
@@ -2591,7 +2591,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject clear(DynamicObject string) {
-            Layouts.STRING.setRope(string, RopeOperations.template(EMPTY_UTF8_ROPE, encoding(string)));
+            Layouts.STRING.setRope(string, RopeOperations.withEncoding(EMPTY_UTF8_ROPE, encoding(string)));
 
             return string;
         }

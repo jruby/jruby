@@ -183,7 +183,7 @@ public abstract class StringOperations {
     public static void forceEncoding(DynamicObject string, Encoding encoding) {
         modify(string);
         final Rope oldRope = Layouts.STRING.getRope(string);
-        Layouts.STRING.setRope(string, RopeOperations.template(oldRope, encoding, StringSupport.CR_UNKNOWN));
+        Layouts.STRING.setRope(string, RopeOperations.withEncoding(oldRope, encoding, StringSupport.CR_UNKNOWN));
     }
 
     public static int normalizeIndex(int length, int index) {

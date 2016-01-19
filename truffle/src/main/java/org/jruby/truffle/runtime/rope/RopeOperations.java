@@ -48,11 +48,11 @@ public class RopeOperations {
     @CompilerDirectives.TruffleBoundary
     public static Rope concat(Rope left, Rope right, Encoding encoding) {
         if (right.isEmpty()) {
-            return template(left, encoding);
+            return withEncoding(left, encoding);
         }
 
         if (left.isEmpty()) {
-            return template(right, encoding);
+            return withEncoding(right, encoding);
         }
 
         return new ConcatRope(left, right, encoding);
@@ -60,7 +60,7 @@ public class RopeOperations {
 
     public static Rope substring(Rope base, int offset, int byteLength) {
         if (byteLength == 0) {
-            return template(EMPTY_UTF8_ROPE, base.getEncoding());
+            return withEncoding(EMPTY_UTF8_ROPE, base.getEncoding());
         }
 
         if (byteLength - offset == base.byteLength()) {
@@ -103,7 +103,7 @@ public class RopeOperations {
         return new SubstringRope(base, offset, byteLength, characterLength, codeRange);
     }
 
-    public static Rope template(Rope originalRope, Encoding newEncoding, int newCodeRange) {
+    public static Rope withEncoding(Rope originalRope, Encoding newEncoding, int newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
         }
@@ -112,8 +112,8 @@ public class RopeOperations {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static Rope template(Rope originalRope, Encoding newEncoding) {
-        return template(originalRope, newEncoding, originalRope.getCodeRange());
+    public static Rope withEncoding(Rope originalRope, Encoding newEncoding) {
+        return withEncoding(originalRope, newEncoding, originalRope.getCodeRange());
     }
 
     @CompilerDirectives.TruffleBoundary
