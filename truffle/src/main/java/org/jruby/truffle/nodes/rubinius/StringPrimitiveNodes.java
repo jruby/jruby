@@ -539,14 +539,14 @@ public abstract class StringPrimitiveNodes {
 
         public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
 
-        @Specialization(guards = "string == other")
-        public boolean stringEqualsSameObject(DynamicObject string, DynamicObject other) {
+        @Specialization(guards = "ropeEqual(string, other)")
+        public boolean stringEqualsRopeEquals(DynamicObject string, DynamicObject other) {
             return true;
         }
 
         @Specialization(guards = {
-                "string != other",
                 "isRubyString(other)",
+                "!ropeEqual(string, other)",
                 "!areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
         })
         public boolean stringEqualNotComparable(DynamicObject string, DynamicObject other,
@@ -561,12 +561,11 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = {
-                "string != other",
                 "isRubyString(other)",
+                "!ropeEqual(string, other)",
                 "areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
         })
         public boolean equal(DynamicObject string, DynamicObject other,
-                                 @Cached("createBinaryProfile()") ConditionProfile sameRopeProfile,
                                  @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
                                  @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
                                  @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
@@ -578,11 +577,6 @@ public abstract class StringPrimitiveNodes {
 
             final Rope a = Layouts.STRING.getRope(string);
             final Rope b = Layouts.STRING.getRope(other);
-
-            // TODO (nirvdrum 08-Jan-16) Make this its own specialization to avoid the costly "areComparable" check.
-            if (sameRopeProfile.profile(a == b)) {
-                return true;
-            }
 
             if (differentSizeProfile.profile(a.byteLength() != b.byteLength())) {
                 return false;
@@ -637,6 +631,13 @@ public abstract class StringPrimitiveNodes {
             }
 
             return false;
+        }
+
+        protected static boolean ropeEqual(DynamicObject first, DynamicObject second) {
+            assert RubyGuards.isRubyString(first);
+            assert RubyGuards.isRubyString(second);
+
+            return rope(first) == rope(second);
         }
     }
 
