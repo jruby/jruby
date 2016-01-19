@@ -33,7 +33,6 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.RubyDateFormatter;
 
-import java.sql.Time;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -186,14 +185,9 @@ public abstract class TimePrimitiveNodes {
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        @Specialization
-        public DynamicObject timeDecompose(VirtualFrame frame, DynamicObject time) {
-            final DynamicObject envTimeZone = (DynamicObject) readTimeZoneNode.execute(frame);
-            return decompose(time, envTimeZone);
-        }
-
         @TruffleBoundary
-        private DynamicObject decompose(DynamicObject time, DynamicObject envTimeZone) {
+        @Specialization
+        public DynamicObject timeDecompose(DynamicObject time) {
             final DateTime dateTime = Layouts.TIME.getDateTime(time);
             final int sec = dateTime.getSecondOfMinute();
             final int min = dateTime.getMinuteOfHour();
@@ -211,14 +205,13 @@ public abstract class TimePrimitiveNodes {
             final int yday = dateTime.getDayOfYear();
             final boolean isdst = !dateTime.getZone().isStandardOffset(dateTime.getMillis());
 
-            final String envTimeZoneString = StringOperations.getString(getContext(), envTimeZone);
-            String zoneString = TimeZoneParser.getShortZoneName(dateTime, TimeZoneParser.parse(this, envTimeZoneString));
             final Object zone;
             if (Layouts.TIME.getRelativeOffset(time)) {
                 zone = nil();
             } else {
                 final Object timeZone = Layouts.TIME.getZone(time);
                 if (timeZone == nil()) {
+                    final String zoneString = TimeZoneParser.getShortZoneName(dateTime, dateTime.getZone());
                     zone = createString(StringOperations.encodeByteList(zoneString, UTF8Encoding.INSTANCE));
                 } else {
                     zone = timeZone;
