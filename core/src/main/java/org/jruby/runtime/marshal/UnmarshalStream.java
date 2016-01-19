@@ -153,15 +153,29 @@ public class UnmarshalStream extends InputStream {
     }
 
     public static RubyModule getModuleFromPath(Ruby runtime, String path) {
-        RubyModule value = runtime.getClassFromPath(path);
-        if (!value.isModule()) throw runtime.newArgumentError(path + " does not refer module");
+        final RubyModule value = getConstantFromPath(runtime, path);
+        if ( ! value.isModule() ) throw runtime.newArgumentError(path + " does not refer module");
         return value;
     }
 
     public static RubyClass getClassFromPath(Ruby runtime, String path) {
-        RubyModule value = runtime.getClassFromPath(path);
-        if (!value.isClass()) throw runtime.newArgumentError(path + " does not refer class");
-        return (RubyClass)value;
+        final RubyModule value = getConstantFromPath(runtime, path);
+        if ( ! value.isClass() ) throw runtime.newArgumentError(path + " does not refer class");
+        return (RubyClass) value;
+    }
+
+    private static RubyModule getConstantFromPath(Ruby runtime, String path) {
+        final RubyModule value;
+        try {
+            value = runtime.getClassFromPath(path);
+        }
+        catch (RaiseException e) {
+            if ( runtime.getModule("NameError").isInstance(e.getException()) ) {
+                throw runtime.newArgumentError("undefined class/module " + path);
+            }
+            throw e;
+        }
+        return value;
     }
 
     private IRubyObject doCallProcForLink(IRubyObject result, int type) {
@@ -232,15 +246,7 @@ public class UnmarshalStream extends InputStream {
                 break;
             case 'e':
                 RubySymbol moduleName = (RubySymbol) unmarshalObject();
-                RubyModule tp = null;
-                try {
-                    tp = runtime.getClassFromPath(moduleName.asJavaString());
-                }catch (RaiseException e) {
-                    if (runtime.getModule("NameError").isInstance(e.getException())) {
-                        throw runtime.newArgumentError("undefined class/module " + moduleName.asJavaString());
-                    }
-                    throw e;
-                }
+                final RubyModule tp = getModuleFromPath(runtime, moduleName.asJavaString());
 
                 rubyObj = unmarshalObject();
 
@@ -348,18 +354,7 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject defaultObjectUnmarshal() throws IOException {
         RubySymbol className = (RubySymbol) unmarshalObject(false);
 
-        RubyClass type = null;
-        try {
-            type = getClassFromPath(runtime, className.toString());
-        } catch (RaiseException e) {
-            if (runtime.getModule("NameError").isInstance(e.getException())) {
-                throw runtime.newArgumentError("undefined class/module " + className.asJavaString());
-            }
-
-            throw e;
-        }
-
-        assert type != null : "type shouldn't be null.";
+        RubyClass type = getClassFromPath(runtime, className.toString());
 
         IRubyObject result = (IRubyObject)type.unmarshal(this);
 
@@ -416,7 +411,7 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject uclassUnmarshall() throws IOException {
         RubySymbol className = (RubySymbol)unmarshalObject(false);
 
-        RubyClass type = (RubyClass)runtime.getClassFromPath(className.asJavaString());
+        RubyClass type = getClassFromPath(runtime, className.asJavaString());
 
         // singleton, raise error
         if (type.isSingleton()) throw runtime.newTypeError("singleton can't be loaded");
@@ -442,7 +437,7 @@ public class UnmarshalStream extends InputStream {
         String className = unmarshalObject(false).asJavaString();
         ByteList marshaled = unmarshalString();
         RubyClass classInstance = findClass(className);
-        RubyString data = RubyString.newString(getRuntime(), marshaled);
+        RubyString data = RubyString.newString(runtime, marshaled);
         if (state.isIvarWaiting()) {
             defaultVariablesUnmarshal(data);
             state.setIvarWaiting(false);
@@ -462,19 +457,7 @@ public class UnmarshalStream extends InputStream {
     }
 
     private RubyClass findClass(String className) {
-        RubyModule classInstance;
-        try {
-            classInstance = runtime.getClassFromPath(className);
-        } catch (RaiseException e) {
-            if (runtime.getModule("NameError").isInstance(e.getException())) {
-                throw runtime.newArgumentError("undefined class/module " + className);
-            }
-            throw e;
-        }
-        if (! (classInstance instanceof RubyClass)) {
-            throw runtime.newArgumentError(className + " does not refer class"); // sic
-        }
-        return (RubyClass) classInstance;
+        return getClassFromPath(runtime, className);
     }
 
     public int read() throws IOException {
