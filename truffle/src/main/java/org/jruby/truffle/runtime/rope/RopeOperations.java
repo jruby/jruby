@@ -22,7 +22,6 @@ public class RopeOperations {
     public static final Rope EMPTY_ASCII_8BIT_ROPE = create(new byte[] {}, ASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
     public static final Rope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT);
 
-    @CompilerDirectives.TruffleBoundary
     public static LeafRope create(byte[] bytes, Encoding encoding, int codeRange) {
         int characterLength = -1;
 
@@ -32,7 +31,7 @@ public class RopeOperations {
             codeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
             characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
         } else if (codeRange == StringSupport.CR_VALID) {
-            characterLength = StringSupport.strLength(encoding, bytes, 0,  bytes.length);
+            characterLength = strLength(encoding, bytes, 0, bytes.length);
         }
 
         switch(codeRange) {
@@ -40,7 +39,10 @@ public class RopeOperations {
             case StringSupport.CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
             case StringSupport.CR_UNKNOWN: return new UnknownLeafRope(bytes, encoding);
             case StringSupport.CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
-            default: throw new RuntimeException(String.format("Unknown code range type: %d", codeRange));
+            default: {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(String.format("Unknown code range type: %d", codeRange));
+            }
         }
     }
 
@@ -125,6 +127,11 @@ public class RopeOperations {
         } else {
             return StringSupport.strLengthWithCodeRangeNonAsciiCompatible(encoding, bytes, start, end);
         }
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public static int strLength(Encoding enc, byte[] bytes, int p, int end) {
+        return StringSupport.strLength(enc, bytes, p, end);
     }
 
 }

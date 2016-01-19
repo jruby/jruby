@@ -43,9 +43,11 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
+import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.io.IOException;
@@ -809,7 +811,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject createSimpleString() {
-            return createString(new ByteList(new byte[]{'t', 'e', 's', 't'}, false));
+            return createString(RopeOperations.create(new byte[]{'t', 'e', 's', 't'}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT));
         }
     }
 
