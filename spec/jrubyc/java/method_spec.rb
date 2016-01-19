@@ -403,5 +403,35 @@ describe "A Ruby class generating a Java stub" do
         method.java_signature.to_s.should == 'public void bar() throws FooBarException, QuxBazException'   
       end        
     end
+
+    describe "with a root method definition" do
+      it "does not error" do
+        cls = generate("def foo; end; class Foo; end").classes[0]
+
+        expect(cls).to_not eq nil
+      end
+    end
   end
+
+  describe "when no class definitions are present in the target script" do
+    before do
+      @source = Tempfile.new('jrubyc_method_spec')
+    end
+
+    after do
+      @source.close!
+    end
+
+    it "raises an error" do
+      lambda do
+        @source.write('def foo; end')
+        @source.flush
+
+        Dir.chdir(File.dirname(@source.path)) do
+          JRuby::Compiler.compile_argv(['--java', @source.path])
+        end
+      end.should raise_error(RuntimeError)
+    end
+  end
+
 end
