@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 MenTaLguY <mental@rydia.net>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -100,5 +100,20 @@ public class SizedQueue extends Queue {
         this.queue = new ArrayBlockingQueue<IRubyObject>(new_capacity, false);
 
         return this;
+    }
+
+    @JRubyMethod(name = {"push", "<<", "enq"}, required = 1, optional = 1)
+    @Override
+    public IRubyObject push(ThreadContext context, final IRubyObject[] args) {
+        checkShutdown();
+        numWaiting.incrementAndGet();
+        try {
+            context.getThread().executeTask(context, args, putTask);
+            return this;
+        } catch (InterruptedException ie) {
+            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#push");
+        } finally {
+            numWaiting.decrementAndGet();
+        }
     }
 }
