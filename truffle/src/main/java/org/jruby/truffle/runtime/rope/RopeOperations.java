@@ -58,7 +58,6 @@ public class RopeOperations {
         return new ConcatRope(left, right, encoding);
     }
 
-    @CompilerDirectives.TruffleBoundary
     public static Rope substring(Rope base, int offset, int byteLength) {
         if (byteLength == 0) {
             return template(EMPTY_UTF8_ROPE, base.getEncoding());
@@ -69,19 +68,30 @@ public class RopeOperations {
         }
 
         if (base instanceof SubstringRope) {
-            final SubstringRope r = (SubstringRope) base;
-
-            return substring(r.getChild(), offset + r.getOffset(), byteLength);
+            return substringSubstringRope((SubstringRope) base, offset, byteLength);
         } else if (base instanceof ConcatRope) {
-            final ConcatRope r = (ConcatRope) base;
-
-            if (offset + byteLength <= r.getLeft().byteLength()) {
-                return substring(r.getLeft(), offset, byteLength);
-            } else if (offset >= r.getLeft().byteLength()) {
-                return substring(r.getRight(), offset - r.getLeft().byteLength(), byteLength);
-            }
+            return substringConcatRope((ConcatRope) base, offset, byteLength);
         }
 
+        return makeSubstring(base, offset, byteLength);
+    }
+
+    private static Rope substringSubstringRope(SubstringRope base, int offset, int byteLength) {
+        return makeSubstring(base.getChild(), offset + base.getOffset(), byteLength);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private static Rope substringConcatRope(ConcatRope base, int offset, int byteLength) {
+        if (offset + byteLength <= base.getLeft().byteLength()) {
+            return substring(base.getLeft(), offset, byteLength);
+        } else if (offset >= base.getLeft().byteLength()) {
+            return substring(base.getRight(), offset - base.getLeft().byteLength(), byteLength);
+        }
+
+        return makeSubstring(base, offset, byteLength);
+    }
+
+    private static Rope makeSubstring(Rope base, int offset, int byteLength) {
         if (base.getCodeRange() == StringSupport.CR_7BIT) {
             return new SubstringRope(base, offset, byteLength, byteLength, StringSupport.CR_7BIT);
         }
