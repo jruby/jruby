@@ -1670,15 +1670,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "rubinius/common/time.rb")) {
-            if (name.equals("@is_gmt")) {
-                ret = TimeNodesFactory.InternalSetGMTNodeFactory.create(context, sourceSection, self, rhs);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@offset")) {
-                ret = TimeNodesFactory.InternalSetOffsetNodeFactory.create(context, sourceSection, self, rhs);
-                return addNewlineIfNeeded(node, ret);
-            }
-        } else if (path.equals(corePath + "rubinius/common/hash.rb")) {
+        if (path.equals(corePath + "rubinius/common/hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.SetDefaultValueNodeFactory.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);

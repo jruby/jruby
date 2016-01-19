@@ -22,18 +22,30 @@ public interface TimeLayout extends BasicObjectLayout {
 
     DynamicObject createTime(DynamicObjectFactory factory,
                              DateTime dateTime,
+                             long nSec,
+                             Object zone,
                              Object offset,
-                             boolean relativeOffset);
+                             boolean relativeOffset,
+                             boolean isUtc);
 
     boolean isTime(DynamicObject object);
 
     DateTime getDateTime(DynamicObject object);
     void setDateTime(DynamicObject object, DateTime value);
 
+    long getNSec(DynamicObject object);
+    void setNSec(DynamicObject object, long value);
+
     Object getOffset(DynamicObject object);
     void setOffset(DynamicObject object, Object value);
 
+    Object getZone(DynamicObject object);
+    void setZone(DynamicObject object, Object value);
+
     boolean getRelativeOffset(DynamicObject object);
     void setRelativeOffset(DynamicObject object, boolean value);
+
+    boolean getIsUtc(DynamicObject object);
+    void setIsUtc(DynamicObject object, boolean value);
 
 }
