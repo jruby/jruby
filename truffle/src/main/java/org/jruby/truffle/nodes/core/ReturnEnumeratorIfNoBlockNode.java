@@ -13,10 +13,12 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 
 public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
 
@@ -41,11 +43,8 @@ public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            Object[] arguments = frame.getArguments();
-            final Object[] range = new Object[1 + RubyArguments.getArgumentsCount(arguments)];
-            System.arraycopy(RubyArguments.getArguments(arguments), 0, range, 1, range.length - 1);
-            range[0] = getSymbol(methodName);
-            return toEnumNode.call(frame, RubyArguments.getSelf(frame.getArguments()), "to_enum", null, range);
+            final Object[] arguments = ArrayUtils.unshift(RubyArguments.getArguments(frame.getArguments()), getSymbol(methodName));
+            return toEnumNode.call(frame, RubyArguments.getSelf(frame.getArguments()), "to_enum", null, arguments);
 
         } else {
 

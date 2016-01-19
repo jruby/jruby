@@ -6,14 +6,12 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# -J-G:+TruffleCompilationExceptionsAreFatal
-
 def foo
   foo = 14
   foo * 2
 end
 
-Truffle::Attachments.attach __FILE__, 13 do |binding|
+Truffle::Attachments.attach __FILE__, 11 do |binding|
   binding.local_variable_set(:foo, 100)
 end
 

@@ -24,19 +24,18 @@ env:
   global:
     - MALLOC_ARENA_MAX=2
   matrix:
-    - PHASE='-Ptruffle-specs-language'
-    - PHASE='-Ptruffle-specs-core'
-    - PHASE='-Ptruffle-specs-library'
-    - PHASE='-Ptruffle-specs-truffle'
-    - PHASE='-Ptruffle-mri-tests'
+    - JT='test specs :language'
+    - JT='test specs :core'
+    - JT='test specs :library'
+    - JT='test specs :truffle'
+    - JT='test mri'
+    - JT='test integration'
 
 matrix:
   include:
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
-    - env: COMMAND='ruby tool/jt.rb check_ambiguous_arguments'
-      jdk: oraclejdk8
-    - env: COMMAND=test/truffle/integration-tests.sh
+    - env: JT=check_ambiguous_arguments
       jdk: oraclejdk8
 
 branches:
@@ -47,7 +46,7 @@ branches:
     - /^test-.*$/
     - /^ha-feature/
 
-script: if [[ -v COMMAND ]]; then $COMMAND; else ./mvnw install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
+script: tool/travis_runner.sh
 install: travis_retry ./mvnw -Pbootstrap clean install -Dinvoker.skip -Dmaven.test.skip
 
 notifications:
