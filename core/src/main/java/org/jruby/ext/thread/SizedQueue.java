@@ -205,19 +205,4 @@ public class SizedQueue extends Queue {
         }
         return should_block;
     }
-
-    @JRubyMethod(name = {"push", "<<", "enq"}, required = 1, optional = 1)
-    @Override
-    public IRubyObject push(ThreadContext context, final IRubyObject[] args) {
-        checkShutdown();
-        numWaiting.incrementAndGet();
-        try {
-            context.getThread().executeTask(context, args, putTask);
-            return this;
-        } catch (InterruptedException ie) {
-            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#push");
-        } finally {
-            numWaiting.decrementAndGet();
-        }
-    }
 }
