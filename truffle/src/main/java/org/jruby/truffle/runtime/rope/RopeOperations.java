@@ -37,7 +37,6 @@ public class RopeOperations {
         switch(codeRange) {
             case StringSupport.CR_7BIT: return new AsciiOnlyLeafRope(bytes, encoding);
             case StringSupport.CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
-            case StringSupport.CR_UNKNOWN: return new UnknownLeafRope(bytes, encoding);
             case StringSupport.CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: {
                 CompilerDirectives.transferToInterpreter();
