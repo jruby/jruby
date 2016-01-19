@@ -58,8 +58,11 @@ public class ClassInitializer extends Initializer {
         proxy.setParent(parent);
 
         // set the Java class name and package
-        if ( javaClass.isAnonymousClass() ) {
-            String baseName = ""; // javaClass.getSimpleName() returns "" for anonymous
+        if ( javaClass.isMemberClass() ) {
+            proxy.setBaseName( javaClass.getSimpleName() );
+        }
+        else { // javaClass.isAnonymousClass() || javaClass.isLocalClass()
+            String baseName = javaClass.getSimpleName(); // returns "" for anonymous
             if ( enclosingClass != null ) {
                 // instead of an empty name anonymous classes will have a "conforming"
                 // although not valid (by Ruby semantics) RubyClass name e.g. :
@@ -76,9 +79,6 @@ public class ClassInitializer extends Initializer {
                 }
             }
             proxy.setBaseName( baseName );
-        }
-        else {
-            proxy.setBaseName( javaClass.getSimpleName() );
         }
 
         installClassFields(proxyClass, state);
