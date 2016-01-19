@@ -170,7 +170,7 @@ module ShellUtils
       command, *args = args
     end
 
-    if ENV["JRUBY_ECLIPSE"] == "true"
+    if USE_JRUBY_ECLIPSE
       args.unshift "-ttool/jruby_eclipse"
     end
 
@@ -302,7 +302,7 @@ module Commands
       end
     end
 
-    if ENV["JRUBY_ECLIPSE"] == "true"
+    if USE_JRUBY_ECLIPSE
       jruby_bin = "#{JRUBY_DIR}/tool/jruby_eclipse"
     else
       jruby_bin = "#{JRUBY_DIR}/bin/jruby"
@@ -594,5 +594,8 @@ class JT
     end
   end
 end
+
+# tool/jruby_eclipse only works on release currently
+USE_JRUBY_ECLIPSE = ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
 
 JT.new.main(ARGV)
