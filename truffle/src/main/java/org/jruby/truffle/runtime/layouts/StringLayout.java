@@ -16,7 +16,6 @@ import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
 import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.util.ByteList;
 
 @Layout
 public interface StringLayout extends BasicObjectLayout {
@@ -33,7 +32,7 @@ public interface StringLayout extends BasicObjectLayout {
     boolean isString(Object dynamicObject);
 
     Rope getRope(DynamicObject object);
-    void setRope(DynamicObject object, Rope byteList);
+    void setRope(DynamicObject object, Rope rope);
 
     StringCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
     void setCodeRangeableWrapper(DynamicObject object, StringCodeRangeableWrapper codeRangeableWrapper);
