@@ -46,6 +46,7 @@ import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.runtime.core.RopeTable;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.core.SymbolTable;
 import org.jruby.truffle.runtime.ffi.LibCClockGetTime;
@@ -96,6 +97,7 @@ public class RubyContext extends ExecutionContext {
     private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
     private final AtExitManager atExitManager;
+    private final RopeTable ropeTable = new RopeTable();
     private final SymbolTable symbolTable = new SymbolTable(this);
     private final Warnings warnings;
     private final SafepointManager safepointManager;
@@ -380,6 +382,10 @@ public class RubyContext extends ExecutionContext {
 
     public void load(Source source, Node currentNode) {
         parseAndExecute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode);
+    }
+
+    public RopeTable getRopeTable() {
+        return ropeTable;
     }
 
     public SymbolTable getSymbolTable() {
