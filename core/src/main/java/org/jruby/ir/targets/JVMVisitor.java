@@ -22,6 +22,7 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -42,6 +43,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import java.io.ByteArrayOutputStream;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -130,8 +132,14 @@ public class JVMVisitor extends IRVisitor {
         emitScriptBody(script);
     }
 
-    public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity) {
+    public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity, boolean print) {
         BasicBlock[] bbs = scope.prepareForCompilation();
+
+        if (print && Options.IR_PRINT.load()) {
+            ByteArrayOutputStream baos = IRDumper.printIR(scope, true);
+
+            LOG.info("Printing JIT IR for " + scope.getName(), "\n" + new String(baos.toByteArray()));
+        }
 
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
@@ -237,7 +245,7 @@ public class JVMVisitor extends IRVisitor {
         String clsName = jvm.scriptToClass(script.getFileName());
         jvm.pushscript(clsName, script.getFileName());
 
-        emitScope(script, name, signatureFor(script, false), false);
+        emitScope(script, name, signatureFor(script, false), false, true);
 
         jvm.cls().visitEnd();
         jvm.popclass();
@@ -265,7 +273,7 @@ public class JVMVisitor extends IRVisitor {
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
         jvm.pushscript(clsName, closure.getFileName());
 
-        emitScope(closure, name, CLOSURE_SIGNATURE, false);
+        emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
 
         context.setJittedName(name);
 
@@ -277,12 +285,12 @@ public class JVMVisitor extends IRVisitor {
         context.setJittedName(name);
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false);
+        emitScope(method, name, signature, false, true);
         context.addNativeSignature(-1, signature.type());
 
         Signature specificSig = signatureFor(method, true);
         if (specificSig != null) {
-            emitScope(method, name, specificSig, true);
+            emitScope(method, name, specificSig, true, false);
             context.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
         }
     }
@@ -294,7 +302,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.pushscript(clsName, method.getFileName());
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false);
+        emitScope(method, name, signature, false, true);
 
         Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
 
@@ -315,7 +323,7 @@ public class JVMVisitor extends IRVisitor {
         /* Compile the closure like a method */
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
 
-        emitScope(closure, name, CLOSURE_SIGNATURE, false);
+        emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
 
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()));
     }
@@ -324,7 +332,7 @@ public class JVMVisitor extends IRVisitor {
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false);
+        emitScope(method, name, signature, false, true);
 
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
     }

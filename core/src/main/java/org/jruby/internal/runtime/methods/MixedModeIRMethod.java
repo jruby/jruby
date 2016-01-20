@@ -6,6 +6,7 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.*;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -20,6 +21,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
 
 public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Compilable<DynamicMethod> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
@@ -97,7 +100,16 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         if (method instanceof IRMethod) {
             return ((IRMethod) method).lazilyAcquireInterpreterContext();
         }
-        return method.getInterpreterContext();
+
+        InterpreterContext ic = method.getInterpreterContext();
+
+        if (Options.IR_PRINT.load()) {
+            ByteArrayOutputStream baos = IRDumper.printIR(method, false);
+
+            LOG.info("Printing simple IR for " + method.getName(), "\n" + new String(baos.toByteArray()));
+        }
+
+        return ic;
     }
 
     @Override

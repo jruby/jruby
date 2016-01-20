@@ -7,6 +7,7 @@ import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -21,6 +22,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
 
 /**
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
@@ -96,6 +99,12 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                 interpreterContext = ((IRMethod) method).lazilyAcquireInterpreterContext();
             }
             interpreterContext = method.getInterpreterContext();
+
+            if (Options.IR_PRINT.load()) {
+                ByteArrayOutputStream baos = IRDumper.printIR(method, false);
+
+                LOG.info("Printing simple IR for " + method.getName(), "\n" + new String(baos.toByteArray()));
+            }
         }
 
         return interpreterContext;
