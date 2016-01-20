@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -45,7 +46,7 @@ public class RopeOperations {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static Rope concat(Rope left, Rope right, Encoding encoding) {
         if (right.isEmpty()) {
             return withEncoding(left, encoding);
@@ -80,7 +81,7 @@ public class RopeOperations {
         return makeSubstring(base.getChild(), offset + base.getOffset(), byteLength);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private static Rope substringConcatRope(ConcatRope base, int offset, int byteLength) {
         if (offset + byteLength <= base.getLeft().byteLength()) {
             return substring(base.getLeft(), offset, byteLength);
@@ -111,23 +112,23 @@ public class RopeOperations {
         return create(originalRope.getBytes(), newEncoding, newCodeRange);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static Rope withEncoding(Rope originalRope, Encoding newEncoding) {
         return withEncoding(originalRope, newEncoding, originalRope.getCodeRange());
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static String decodeUTF8(Rope rope) {
         return RubyEncoding.decodeUTF8(rope.getBytes(), 0, rope.byteLength());
     }
 
     // MRI: get_actual_encoding
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static Encoding STR_ENC_GET(Rope rope) {
         return EncodingUtils.getActualEncoding(rope.getEncoding(), rope.getBytes(), 0, rope.byteLength());
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private static long calculateCodeRangeAndLength(Encoding encoding, byte[] bytes, int start, int end) {
         if (bytes.length == 0) {
             return StringSupport.pack(0, encoding.isAsciiCompatible() ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
@@ -138,7 +139,7 @@ public class RopeOperations {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static int strLength(Encoding enc, byte[] bytes, int p, int end) {
         return StringSupport.strLength(enc, bytes, p, end);
     }
