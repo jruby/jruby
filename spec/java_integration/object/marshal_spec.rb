@@ -28,7 +28,7 @@ describe "A Java object" do
     hash = { :local => InnerClasses.localMethodClass }
     caps_method = hash[:local].capsMethod
 
-    pending 'Marshal.load can not resolve local class: Java::Java_integrationFixtures::InnerClasses::1CapsImpl'
+    #pending 'Marshal.load can not resolve local class: Java::Java_integrationFixtures::InnerClasses::1CapsImpl'
 
     local = Marshal.load(Marshal.dump(hash))[:local]
     expect( local.class.java_class.member_class? ).to be false
@@ -40,9 +40,10 @@ describe "A Java object" do
     array = [ InnerClasses.anonymousMethodClass ]
     caps_method = array[0].capsMethod
 
-    pending 'Marshal.load can not resolve anonymous class: Java::Java_integrationFixtures::InnerClasses::1'
+    #pending 'Marshal.load can not resolve anonymous class: Java::Java_integrationFixtures::InnerClasses::1'
 
     anon = Marshal.load(Marshal.dump(array))[0]
+
     expect( anon.class.java_class.member_class? ).to be false
     expect( anon.class.java_class.anonymous_class? ).to be true
     expect( anon.capsMethod ).to eql caps_method
@@ -53,10 +54,11 @@ describe "A Java object" do
     mil = java.util.concurrent.TimeUnit::MILLISECONDS
     hash = { 'mic' => mic, 'mil' => mil }
 
-    pending 'Marshal.load can not resolve anonymous class: Java::JavaUtilConcurrent::TimeUnit::2'
+    #pending 'Marshal.load can not resolve anonymous class: Java::JavaUtilConcurrent::TimeUnit::2'
 
     marshaled = Marshal.load(Marshal.dump(hash))
-    expect( marshaled[0] ).to be_a java.lang.Thread::State
+    expect( marshaled['mic'] ).to be_a java.util.concurrent.TimeUnit
+    expect( marshaled['mil'] ).to be java.util.concurrent.TimeUnit::MILLISECONDS
     expect( marshaled ).to eql hash
   end
 end
