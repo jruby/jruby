@@ -143,7 +143,7 @@ public class JVMVisitor extends IRVisitor {
 
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
-        emitClosures(scope);
+        emitClosures(scope, print);
 
         jvm.pushmethod(name, scope, signature, specificArity);
 
@@ -312,18 +312,18 @@ public class JVMVisitor extends IRVisitor {
         return handle;
     }
 
-    private void emitClosures(IRScope s) {
+    private void emitClosures(IRScope s, boolean print) {
         // Emit code for all nested closures
         for (IRClosure c: s.getClosures()) {
-            c.setHandle(emitClosure(c));
+            c.setHandle(emitClosure(c, print));
         }
     }
 
-    public Handle emitClosure(IRClosure closure) {
+    public Handle emitClosure(IRClosure closure, boolean print) {
         /* Compile the closure like a method */
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
 
-        emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
+        emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()));
     }

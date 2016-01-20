@@ -77,10 +77,14 @@ public class IRDumper extends IRVisitor {
     }
 
     public static ByteArrayOutputStream printIR(IRScope scope, boolean full) {
+        return printIR(scope, full, false);
+    }
+
+    public static ByteArrayOutputStream printIR(IRScope scope, boolean full, boolean recurse) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
         IRDumper dumper = new IRDumper(ps, Options.IR_PRINT_COLOR.load());
-        dumper.visit(scope, full, false);
+        dumper.visit(scope, full, recurse);
         return baos;
     }
 

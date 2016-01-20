@@ -47,6 +47,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         // -1 jit.threshold is way of having interpreter not promote full builds.
         if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
+
+        // If we are printing, do the build right at creation time so we can see it
+        if (Options.IR_PRINT.load()) {
+            ensureInstrsReady();
+        }
     }
 
     public IRScope getIRScope() {
@@ -101,7 +106,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             interpreterContext = method.getInterpreterContext();
 
             if (Options.IR_PRINT.load()) {
-                ByteArrayOutputStream baos = IRDumper.printIR(method, false);
+                ByteArrayOutputStream baos = IRDumper.printIR(method, false, true);
 
                 LOG.info("Printing simple IR for " + method.getName(), "\n" + new String(baos.toByteArray()));
             }
