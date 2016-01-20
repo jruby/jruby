@@ -1409,11 +1409,13 @@ public class Helpers {
     }
 
     public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
+        RubyModule objectClass = context.runtime.getObject();
         if (wrap) {
-            staticScope.setModule(RubyModule.newModule(context.runtime));
-        } else {
-            staticScope.setModule(context.runtime.getObject());
+            objectClass = RubyModule.newModule(context.runtime);
         }
+
+        staticScope.setModule(objectClass);
+
         DynamicScope scope = DynamicScope.newDynamicScope(staticScope);
 
         // Each root node has a top-level scope that we need to push

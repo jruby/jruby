@@ -38,6 +38,18 @@ describe "SkinnyMethodAdapter" do
       end
     end.map(&:to_s).map(&:downcase)
     # 1.9 makes them symbols, so to_s the lot
+    insn_opcodes = insn_opcodes.map(&:to_s)
+    instance_methods = SkinnyMethodAdapter.instance_methods.map(&:to_s)
+
+    insn_opcodes.each do |opcode|
+      opcode = opcode.downcase
+      expect(instance_methods).to include(opcode)
+    end
+
+    expect(instance_methods).to include("go_to")
+    expect(instance_methods).to include("voidreturn")
+    expect(instance_methods).to include("instance_of")
+    expect(instance_methods).to include("newobj")
   end
 
   it "supports all JVM opcodes" do
