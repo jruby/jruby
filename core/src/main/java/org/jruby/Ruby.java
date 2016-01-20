@@ -2886,7 +2886,7 @@ public final class Ruby implements Constantizable {
     }
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
         ThreadContext context = getCurrentContext();
         String file = context.getFile();
 
@@ -2897,7 +2897,9 @@ public final class Ruby implements Constantizable {
 
             if (wrap) {
                 // toss an anonymous module into the search path
-                ((RootNode) parseResult).getStaticScope().setModule(RubyModule.newModule(this));
+                RubyModule wrapper = RubyModule.newModule(this);
+                ((RubyBasicObject)self).extend(new IRubyObject[] {wrapper});
+                ((RootNode) parseResult).getStaticScope().setModule(wrapper);
             }
 
             runInterpreter(context, parseResult, self);
