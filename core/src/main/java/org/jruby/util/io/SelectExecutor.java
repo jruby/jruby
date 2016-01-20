@@ -69,8 +69,7 @@ public class SelectExecutor {
 
             // TODO: pool ENXIOSelector impls
             for (ENXIOSelector enxioSelector : enxioSelectors) {
-                enxioSelector.pipe.sink().close();
-                enxioSelector.pipe.source().close();
+                enxioSelector.cleanup();
             }
         }
 
@@ -562,6 +561,11 @@ public class SelectExecutor {
             }
 
             return null;
+        }
+
+        public void cleanup() throws IOException {
+            pipe.sink().close();
+            pipe.source().close();
         }
     }
 
