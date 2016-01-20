@@ -303,4 +303,32 @@ describe "Module#prepend" do
     child_class = Class.new(base_class)
     ScratchPad.recorded.should == child_class
   end
+
+  it "does not interfere with a define_method super in the original class" do
+    base_class = Class.new do
+      def foo(ary)
+        ary << 1
+      end
+    end
+
+    child_class = Class.new(base_class) do
+      define_method :foo do |ary|
+        ary << 2
+        super(ary)
+      end
+    end
+
+    prep_mod = Module.new do
+      def foo(ary)
+        ary << 3
+        super(ary)
+      end
+    end
+
+    child_class.prepend(prep_mod)
+
+    ary = []
+    child_class.new.foo(ary)
+    ary.should == [3, 2, 1]
+  end
 end
