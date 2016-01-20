@@ -1,1 +1,2 @@
 fails:Time#+ maintains subseconds precision
+fails:Time#+ returns a time with the same fixed offset as self
