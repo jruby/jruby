@@ -80,4 +80,8 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
         return StringOperations.getByteList(string);
     }
 
+
+    public DynamicObject getString() {
+        return string;
+    }
 }
