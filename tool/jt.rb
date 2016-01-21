@@ -306,7 +306,7 @@ module Commands
 
     if USE_JRUBY_ECLIPSE
       jruby_bin = "#{JRUBY_DIR}/tool/jruby_eclipse"
-    if ENV['RUBY_BIN']
+    elsif ENV['RUBY_BIN']
       jruby_bin = ENV['RUBY_BIN']
     else
       jruby_bin = "#{JRUBY_DIR}/bin/jruby"
@@ -373,7 +373,7 @@ module Commands
 
   def test_compiler(*args)
     env_vars = {}
-    env_vars["JAVACMD"] = Utilities.find_graal
+    env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
     end
