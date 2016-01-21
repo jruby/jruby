@@ -45,7 +45,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-enxio:0.10', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-unixsocket:0.10', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.23', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.27', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.0', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-ffi:2.0.7'
   jar 'com.github.jnr:jffi:${jffi.version}'
@@ -53,7 +53,7 @@ project 'JRuby Core' do
 
   jar 'org.jruby.joni:joni:2.1.9'
   jar 'org.jruby.extras:bytelist:1.0.13'
-  jar 'org.jruby.jcodings:jcodings:1.0.16'
+  jar 'org.jruby.jcodings:jcodings:1.0.17-SNAPSHOT'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.7'

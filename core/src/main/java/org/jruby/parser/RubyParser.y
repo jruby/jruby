@@ -31,6 +31,7 @@ package org.jruby.parser;
 import java.io.IOException;
 
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BackRefNode;
@@ -263,6 +264,7 @@ public class RubyParser {
 
 %type <String> rparen rbracket reswords f_bad_arg
 %type <Node> top_compstmt top_stmts top_stmt
+%type <ArgumentNode> f_norm_arg_int
 %token <String> tSYMBOLS_BEG
 %token <String> tQSYMBOLS_BEG
 %token <String> tDSTAR
@@ -2380,11 +2382,11 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                 }
 
 f_opt           : f_norm_arg_int '=' arg_value {
-                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier((String) $1, $3));
+                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName(), $3));
                 }
 
 f_norm_arg_int  : f_norm_arg {
-                    support.arg_var($1);
+                    $$ = support.arg_var($1);
                 }
 
 f_block_opt     : tIDENTIFIER '=' primary_value {

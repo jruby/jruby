@@ -3,9 +3,13 @@ package org.jruby.ir;
 import org.jruby.ast.DefNode;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.util.cli.Options;
+
+import java.io.ByteArrayOutputStream;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
@@ -45,7 +49,9 @@ public class IRMethod extends IRScope {
     public synchronized BasicBlock[] prepareForCompilation() {
         if (!hasBeenBuilt()) lazilyAcquireInterpreterContext();
 
-        return super.prepareForCompilation();
+        BasicBlock[] bbs = super.prepareForCompilation();
+
+        return bbs;
     }
 
     @Override

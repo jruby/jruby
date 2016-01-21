@@ -12,4 +12,14 @@ class Time
     seconds + nsec * 0.000000001 # Truffle: optimized
   end
 
+  def localtime(offset = nil)
+    if offset
+      localtime_internal Rubinius::Type.coerce_to_utc_offset(offset)
+    else
+      localtime_internal
+    end
+
+    self
+  end
+
 end

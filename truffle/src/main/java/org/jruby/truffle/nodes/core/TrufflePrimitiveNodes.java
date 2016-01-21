@@ -54,7 +54,7 @@ import java.util.*;
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {
 
-    @CoreMethod(names = "binding_of_caller", onSingleton = true)
+    @CoreMethod(names = "binding_of_caller", isModuleFunction = true)
     public abstract static class BindingOfCallerNode extends CoreMethodArrayArgumentsNode {
 
         public BindingOfCallerNode(RubyContext context, SourceSection sourceSection) {
@@ -94,7 +94,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "source_of_caller", onSingleton = true)
+    @CoreMethod(names = "source_of_caller", isModuleFunction = true)
     public abstract static class SourceOfCallerNode extends CoreMethodArrayArgumentsNode {
 
         public SourceOfCallerNode(RubyContext context, SourceSection sourceSection) {

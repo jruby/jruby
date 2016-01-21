@@ -323,7 +323,8 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     @CompilerDirectives.TruffleBoundary
     public void addMethod(RubyContext context, Node currentNode, InternalMethod method) {
-        assert method != null;
+        assert ModuleOperations.canBindMethodTo(method.getDeclaringModule(), rubyModuleObject) ||
+                ModuleOperations.assignableTo(context.getCoreLibrary().getObjectClass(), method.getDeclaringModule());
 
         if (context.getCoreLibrary().isLoadingRubyCore()) {
             final InternalMethod currentMethod = methods.get(method.getName());
@@ -334,7 +335,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
 
         checkFrozen(context, currentNode);
-        methods.put(method.getName(), method.withDeclaringModule(rubyModuleObject));
+        methods.put(method.getName(), method);
         newVersion();
 
         if (context.getCoreLibrary().isLoaded() && !method.isUndefined()) {

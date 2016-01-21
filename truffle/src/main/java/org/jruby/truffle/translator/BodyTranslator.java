@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
@@ -25,6 +26,7 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
@@ -1205,9 +1207,16 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
+        final MethodDefinitionNode methodDefinitionNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
 
-        return new AddMethodNode(context, sourceSection, classNode, functionExprNode, isDefs);
+        final RubyNode visibilityNode;
+        if (isDefs) {
+            visibilityNode = new LiteralNode(context, sourceSection, Visibility.PUBLIC);
+        } else {
+            visibilityNode = new GetCurrentVisibilityNode(context, sourceSection);
+        }
+
+        return AddMethodNodeGen.create(context, sourceSection, isDefs, true, classNode, methodDefinitionNode, visibilityNode);
     }
 
     @Override
@@ -1670,15 +1679,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "rubinius/common/time.rb")) {
-            if (name.equals("@is_gmt")) {
-                ret = TimeNodesFactory.InternalSetGMTNodeFactory.create(context, sourceSection, self, rhs);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@offset")) {
-                ret = TimeNodesFactory.InternalSetOffsetNodeFactory.create(context, sourceSection, self, rhs);
-                return addNewlineIfNeeded(node, ret);
-            }
-        } else if (path.equals(corePath + "rubinius/common/hash.rb")) {
+        if (path.equals(corePath + "rubinius/common/hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.SetDefaultValueNodeFactory.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);

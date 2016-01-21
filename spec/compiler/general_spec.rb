@@ -394,6 +394,8 @@ modes.each do |mode|
       # non-local flow control with while loops
       run("a = 0; 1.times { a += 1; redo if a < 2 }; a") {|result| expect(result).to eq 2 }
       run("def foo(&b); while true; b.call; end; end; foo { break 3 }") {|result| expect(result).to eq 3 }
+      
+      expect(lambda { run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }") }).to raise_error(LocalJumpError)
     end
 
     it "compiles block passing" do
