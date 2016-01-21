@@ -6,6 +6,10 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ *
+ * Some of the code in this class is modified from org.jruby.runtime.Helpers,
+ * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  */
 package org.jruby.truffle.runtime.rope;
 
@@ -14,9 +18,13 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
 public class RopeOperations {
 
@@ -120,6 +128,30 @@ public class RopeOperations {
     @TruffleBoundary
     public static String decodeUTF8(Rope rope) {
         return RubyEncoding.decodeUTF8(rope.getBytes(), 0, rope.byteLength());
+    }
+
+    @TruffleBoundary
+    public static String decodeRope(Ruby runtime, Rope value) {
+        int begin = value.getBegin();
+        int length = value.byteLength();
+
+        Encoding encoding = value.getEncoding();
+
+        if (encoding == UTF8Encoding.INSTANCE) {
+            return RubyEncoding.decodeUTF8(value.getBytes(), begin, length);
+        }
+
+        Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
+
+        if (charset == null) {
+            try {
+                return new String(value.getBytes(), begin, length, encoding.toString());
+            } catch (UnsupportedEncodingException uee) {
+                return value.toString();
+            }
+        }
+
+        return RubyEncoding.decode(value.getBytes(), begin, length, charset);
     }
 
     // MRI: get_actual_encoding
