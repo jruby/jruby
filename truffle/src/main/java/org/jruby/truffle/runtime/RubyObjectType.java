@@ -17,6 +17,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 
 public class RubyObjectType extends ObjectType {
 
@@ -25,7 +26,7 @@ public class RubyObjectType extends ObjectType {
         CompilerAsserts.neverPartOfCompilation();
 
         if (RubyGuards.isRubyString(object)) {
-            return Helpers.decodeByteList(getContext().getRuntime(), StringOperations.getByteListReadOnly(object));
+            return RopeOperations.decodeRope(getContext().getRuntime(), StringOperations.rope(object));
         } else if (RubyGuards.isRubySymbol(object)) {
             return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
