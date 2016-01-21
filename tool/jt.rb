@@ -306,7 +306,7 @@ module Commands
 
     if USE_JRUBY_ECLIPSE
       jruby_bin = "#{JRUBY_DIR}/tool/jruby_eclipse"
-    if ENV['RUBY_BIN']
+    elsif ENV['RUBY_BIN']
       jruby_bin = ENV['RUBY_BIN']
     else
       jruby_bin = "#{JRUBY_DIR}/bin/jruby"
