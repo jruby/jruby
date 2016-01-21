@@ -63,4 +63,10 @@ public abstract class LeafRope extends Rope {
 
         return false;
     }
+
+    @Override
+    public String toString() {
+        // This should be used for debugging only.
+        return RopeOperations.decodeUTF8(this);
+    }
 }

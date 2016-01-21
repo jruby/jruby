@@ -10,6 +10,8 @@
 
 package org.jruby.truffle.runtime.rope;
 
+import org.jruby.RubyEncoding;
+
 public class SubstringRope extends Rope {
 
     private final Rope child;
@@ -48,4 +50,9 @@ public class SubstringRope extends Rope {
         return offset;
     }
 
+    @Override
+    public String toString() {
+        // This should be used for debugging only.
+        return RubyEncoding.decodeUTF8(child.getBytes(), offset, byteLength());
+    }
 }

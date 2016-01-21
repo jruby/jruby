@@ -72,12 +72,6 @@ public abstract class Rope {
         return ropeDepth;
     }
 
-    @Override
-    public String toString() {
-        // This should be used for debugging only.
-        return new String(getBytes());
-    }
-
     public int begin() {
         return 0;
     }
