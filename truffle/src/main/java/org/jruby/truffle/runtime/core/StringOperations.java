@@ -60,7 +60,7 @@ public abstract class StringOperations {
     // Since ByteList.toString does not decode properly
     @CompilerDirectives.TruffleBoundary
     public static String getString(RubyContext context, DynamicObject string) {
-        return Helpers.decodeByteList(context.getRuntime(), StringOperations.getByteListReadOnly(string));
+        return RopeOperations.decodeRope(context.getRuntime(), StringOperations.rope(string));
     }
 
     public static StringCodeRangeableWrapper getCodeRangeable(DynamicObject string) {
@@ -192,7 +192,9 @@ public abstract class StringOperations {
 
     public static int clampExclusiveIndex(DynamicObject string, int index) {
         assert RubyGuards.isRubyString(string);
-        return ArrayOperations.clampExclusiveIndex(StringOperations.getByteListReadOnly(string).length(), index);
+
+        // TODO (nirvdrum 21-Jan-16): Verify this is supposed to be the byteLength and not the characterLength.
+        return ArrayOperations.clampExclusiveIndex(StringOperations.rope(string).byteLength(), index);
     }
 
     @CompilerDirectives.TruffleBoundary

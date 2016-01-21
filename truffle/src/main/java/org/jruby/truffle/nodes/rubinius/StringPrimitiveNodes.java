@@ -509,11 +509,12 @@ public abstract class StringPrimitiveNodes {
                 size = stringLength;
             }
 
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
-            final ByteList otherBytes = StringOperations.getByteListReadOnly(other);
+            final Rope rope = StringOperations.rope(string);
+            final Rope otherRope = StringOperations.rope(other);
 
-            return ByteList.memcmp(bytes.getUnsafeBytes(), bytes.getBegin(), size,
-                    otherBytes.getUnsafeBytes(), otherBytes.getBegin() + start, size);
+            // TODO (nirvdrum 21-Jan-16): Reimplement with something more friendly to rope byte[] layout?
+            return ByteList.memcmp(rope.getBytes(), rope.getBegin(), size,
+                    otherRope.getBytes(), otherRope.getBegin() + start, size);
         }
 
     }
@@ -899,17 +900,19 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final Rope stringRope = Layouts.STRING.getRope(string);
+            final Rope stringRope = rope(string);
+            final Rope patternRope = rope(pattern);
+
             final int total = stringRope.byteLength();
-            int p = StringOperations.getByteListReadOnly(string).getBegin();
+            int p = stringRope.begin();
             final int e = p + total;
-            int pp = StringOperations.getByteListReadOnly(pattern).getBegin();
-            final int pe = pp + Layouts.STRING.getRope(pattern).byteLength();
+            int pp = patternRope.begin();
+            final int pe = pp + patternRope.byteLength();
             int s;
             int ss;
 
-            final byte[] stringBytes = StringOperations.getByteListReadOnly(string).getUnsafeBytes();
-            final byte[] patternBytes = StringOperations.getByteListReadOnly(pattern).getUnsafeBytes();
+            final byte[] stringBytes = stringRope.getBytes();
+            final byte[] patternBytes = patternRope.getBytes();
 
             if (stringRope.isSingleByteOptimizable()) {
                 for(s = p += offset, ss = pp; p < e; s = ++p) {
@@ -931,7 +934,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final Encoding enc = Layouts.STRING.getRope(string).getEncoding();
+            final Encoding enc = stringRope.getEncoding();
             int index = 0;
             int c;
 
@@ -1113,11 +1116,11 @@ public abstract class StringPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative index given", this));
             }
 
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
-            final int p = bytes.getBegin();
-            final int end = p + bytes.getRealSize();
+            final Rope rope = rope(string);
+            final int p = rope.getBegin();
+            final int end = p + rope.getRealSize();
 
-            final int b = bytes.getEncoding().prevCharHead(bytes.getUnsafeBytes(), p, p + index, end);
+            final int b = rope.getEncoding().prevCharHead(rope.getBytes(), p, p + index, end);
 
             if (b == -1) {
                 return nil();
@@ -1147,8 +1150,8 @@ public abstract class StringPrimitiveNodes {
             int dst = dest;
             int cnt = size;
 
-            final ByteList otherBytes = StringOperations.getByteListReadOnly(other);
-            int osz = otherBytes.length();
+            final Rope otherRope = rope(other);
+            int osz = otherRope.byteLength();
             if(negativeStartOffsetProfile.profile(src < 0)) src = 0;
             if(sizeTooLargeInReplacementProfile.profile(cnt > osz - src)) cnt = osz - src;
 
@@ -1157,7 +1160,7 @@ public abstract class StringPrimitiveNodes {
             if(negativeDestinationOffsetProfile.profile(dst < 0)) dst = 0;
             if(sizeTooLargeInStringProfile.profile(cnt > sz - dst)) cnt = sz - dst;
 
-            System.arraycopy(otherBytes.unsafeBytes(), otherBytes.begin() + src, stringBytes.getUnsafeBytes(), stringBytes.begin() + dest, cnt);
+            System.arraycopy(otherRope.getBytes(), otherRope.begin() + src, stringBytes.getUnsafeBytes(), stringBytes.begin() + dest, cnt);
 
             Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(stringBytes));
 
@@ -1181,8 +1184,10 @@ public abstract class StringPrimitiveNodes {
             // This bounds checks on the total capacity rather than the virtual
             // size() of the String. This allows for string adjustment within
             // the capacity without having to change the virtual size first.
-            final ByteList byteList = StringOperations.getByteListReadOnly(string);
-            return offset >= (byteList.unsafeBytes().length - byteList.begin());
+
+            // TODO (nirvdrum 21-Jan-16) Verify whether we still need this method as we never have spare capacity allocated with ropes.
+            final Rope rope = rope(string);
+            return offset >= (rope.byteLength() - rope.begin());
         }
 
     }
