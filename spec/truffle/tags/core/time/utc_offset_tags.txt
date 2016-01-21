@@ -1,0 +1,1 @@
+fails:Time#utc_offset returns offset as Rational

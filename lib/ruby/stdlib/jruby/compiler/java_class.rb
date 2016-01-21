@@ -236,12 +236,14 @@ module JRuby::Compiler
     end
 
     visit :defn do
+      next if @class_stack.empty?
       new_method(node.name)
       node.args_node.accept(self)
       pop_method
     end
 
     visit :defs do
+      next if @class_stack.empty?
       new_static_method(node.name)
       node.args_node.accept(self)
       pop_method

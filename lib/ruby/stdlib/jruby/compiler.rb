@@ -60,11 +60,11 @@ module JRuby::Compiler
         options[:jdk5] = true
       end
 
-      opts.on("--java", "Generate .java classes to accompany the script") do
+      opts.on("--java", "Generate Java classes (.java) for a script containing Ruby class definitions") do
         options[:java] = true
       end
 
-      opts.on("--javac", "Generate and compile .java classes to accompany the script") do
+      opts.on("--javac", "Generate Java classes (.java and .class) for a script containing Ruby class definitions") do
         options[:javac] = true
       end
 
@@ -139,6 +139,9 @@ module JRuby::Compiler
           node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
 
           ruby_script = JavaGenerator.generate_java(node, filename)
+
+          raise("No classes found in target script: " + filename) if ruby_script.classes.empty?
+
           ruby_script.classes.each do |cls|
             java_dir = File.join(options[:target], cls.package.gsub('.', '/'))
 

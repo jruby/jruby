@@ -1,5 +1,6 @@
 package org.jruby.ir.interpreter;
 
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
@@ -15,6 +16,7 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.IRTranslator;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -26,6 +28,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -58,6 +61,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     @Override
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.getInterpreterContext();
+
+        if (Options.IR_PRINT.load()) {
+            ByteArrayOutputStream baos = IRDumper.printIR(irScope, false);
+
+            LOG.info("Printing simple IR for " + irScope.getName(), "\n" + new String(baos.toByteArray()));
+        }
+
         ThreadContext context = runtime.getCurrentContext();
         String name = ROOT;
 

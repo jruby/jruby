@@ -227,6 +227,8 @@ module Commands
     puts
     puts 'recognised environment variables:'
     puts
+    puts '  RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)'
+    puts
     puts '  GRAAL_BIN                                    GraalVM executable (java command) to use'
     puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
@@ -304,6 +306,8 @@ module Commands
 
     if USE_JRUBY_ECLIPSE
       jruby_bin = "#{JRUBY_DIR}/tool/jruby_eclipse"
+    elsif ENV['RUBY_BIN']
+      jruby_bin = ENV['RUBY_BIN']
     else
       jruby_bin = "#{JRUBY_DIR}/bin/jruby"
     end
@@ -369,7 +373,7 @@ module Commands
 
   def test_compiler(*args)
     env_vars = {}
-    env_vars["JAVACMD"] = Utilities.find_graal
+    env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
     end

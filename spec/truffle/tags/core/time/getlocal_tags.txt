@@ -1,3 +1,2 @@
-fails:Time#getlocal returns a new time with the correct utc_offset according to the set timezone
 fails:Time#getlocal returns a Time with a UTC offset of the specified number of Rational seconds
 fails:Time#getlocal with an argument that responds to #to_r coerces using #to_r

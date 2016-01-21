@@ -2857,31 +2857,30 @@ public final class Ruby implements Constantizable {
         return new PrintStream(new IOOutputStream(getGlobalVariables().get("$stdout")));
     }
 
-    public RubyModule getClassFromPath(String path) {
-        RubyModule c = getObject();
+    public RubyModule getClassFromPath(final String path) {
         if (path.length() == 0 || path.charAt(0) == '#') {
             throw newTypeError("can't retrieve anonymous class " + path);
         }
-        int pbeg = 0, p = 0;
-        for(int l=path.length(); p<l; ) {
-            while(p<l && path.charAt(p) != ':') {
-                p++;
-            }
-            String str = path.substring(pbeg, p);
 
-            if(p<l && path.charAt(p) == ':') {
-                if(p+1 < l && path.charAt(p+1) != ':') {
-                    throw newTypeError("undefined class/module " + path.substring(pbeg,p));
+        RubyModule c = getObject();
+        int pbeg = 0, p = 0;
+        for ( final int l = path.length(); p < l; ) {
+            while ( p < l && path.charAt(p) != ':' ) p++;
+
+            final String str = path.substring(pbeg, p);
+
+            if ( p < l && path.charAt(p) == ':' ) {
+                if ( ++p < l && path.charAt(p) != ':' ) {
+                    throw newTypeError("undefined class/module " + str);
                 }
-                p += 2;
-                pbeg = p;
+                pbeg = ++p;
             }
 
             IRubyObject cc = c.getConstant(str);
-            if(!(cc instanceof RubyModule)) {
+            if ( ! ( cc instanceof RubyModule ) ) {
                 throw newTypeError(path + " does not refer to class/module");
             }
-            c = (RubyModule)cc;
+            c = (RubyModule) cc;
         }
         return c;
     }
@@ -2906,7 +2905,7 @@ public final class Ruby implements Constantizable {
     }
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
         ThreadContext context = getCurrentContext();
         String file = context.getFile();
 
@@ -2917,7 +2916,9 @@ public final class Ruby implements Constantizable {
 
             if (wrap) {
                 // toss an anonymous module into the search path
-                ((RootNode) parseResult).getStaticScope().setModule(RubyModule.newModule(this));
+                RubyModule wrapper = RubyModule.newModule(this);
+                ((RubyBasicObject)self).extend(new IRubyObject[] {wrapper});
+                ((RootNode) parseResult).getStaticScope().setModule(wrapper);
             }
 
             runInterpreter(context, parseResult, self);

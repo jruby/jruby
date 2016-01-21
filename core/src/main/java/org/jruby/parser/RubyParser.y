@@ -31,7 +31,7 @@ package org.jruby.parser;
 import java.io.IOException;
 
 import org.jruby.ast.ArgsNode;
- import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BackRefNode;
@@ -265,6 +265,7 @@ public class RubyParser {
 
 %type <String> rparen rbracket reswords f_bad_arg
 %type <Node> top_compstmt top_stmts top_stmt
+%type <ArgumentNode> f_norm_arg_int
 %token <String> tSYMBOLS_BEG
 %token <String> tQSYMBOLS_BEG
 %token <String> tDSTAR
@@ -1554,7 +1555,7 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                     $$ = support.assignableLabelOrIdentifier($1, NilImplicitNode.NIL);
+                     $$ = support.assignableInCurr($1, NilImplicitNode.NIL);
                 }
                 | tLPAREN f_margs rparen {
                     $$ = $2;
@@ -1572,10 +1573,10 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgnNode($1.getPosition(), $1, null, null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg {
-                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableInCurr($4, null), null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), $6);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableInCurr($4, null), $6);
                 }
                 | f_marg_list ',' tSTAR {
                     $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
@@ -1584,10 +1585,10 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), null);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableInCurr($2, null), null);
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), $4);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableInCurr($2, null), $4);
                 }
                 | tSTAR {
                     $$ = new MultipleAsgnNode(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
@@ -2385,8 +2386,12 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = support.internalId();
                 }
 
-f_opt           : f_arg_asgn '=' arg_value {
+f_opt           : f_norm_arg_int '=' arg_value {
                     $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName(), $3));
+                }
+
+f_norm_arg_int  : f_norm_arg {
+                    $$ = support.arg_var($1);
                 }
 
 f_block_opt     : f_arg_asgn '=' primary_value {

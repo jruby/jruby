@@ -27,6 +27,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.utilities.ValueProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
@@ -48,9 +49,12 @@ import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGe
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.methods.AddMethodNode;
+import org.jruby.truffle.nodes.methods.AddMethodNodeGen;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
+import org.jruby.truffle.nodes.methods.GetCurrentVisibilityNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -583,7 +587,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)
+    @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, lowerFixnumParameters = 2, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
@@ -1036,8 +1040,11 @@ public abstract class ModuleNodes {
     })
     public abstract static class DefineMethodNode extends CoreMethodNode {
 
+        @Child AddMethodNode addMethodNode;
+
         public DefineMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            addMethodNode = AddMethodNodeGen.create(context, sourceSection, false, false, null, null, null);
         }
 
         @CreateCast("name")
@@ -1134,15 +1141,13 @@ public abstract class ModuleNodes {
 
         }
 
+        @TruffleBoundary
         private DynamicObject addMethod(DynamicObject module, String name, InternalMethod method) {
             method = method.withName(name);
 
-            if (ModuleOperations.isMethodPrivateFromName(name)) {
-                method = method.withVisibility(Visibility.PRIVATE);
-            }
-
-            Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
-            return getSymbol(name);
+            final Frame frame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
+            final Visibility visibility = GetCurrentVisibilityNode.getVisibilityFromNameAndFrame(name, frame);
+            return addMethodNode.executeAddMethod(module, method, visibility);
         }
 
         protected CanBindMethodToModuleNode createCanBindMethodToModuleNode() {
@@ -1965,14 +1970,14 @@ public abstract class ModuleNodes {
 
         private final Visibility visibility;
 
-        @Child SingletonClassNode singletonClassNode;
         @Child NameToJavaStringNode nameToJavaStringNode;
+        @Child AddMethodNode addMethodNode;
 
         public SetMethodVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
             this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.addMethodNode = AddMethodNodeGen.create(context, sourceSection, true, false, null, null, null);
         }
 
         public abstract DynamicObject executeSetMethodVisibility(VirtualFrame frame, DynamicObject module, Object name);
@@ -1994,14 +1999,7 @@ public abstract class ModuleNodes {
              * want to add a copy of the method with a different visibility
              * to this module.
              */
-            if (visibility == Visibility.MODULE_FUNCTION) {
-                Layouts.MODULE.getFields(module).addMethod(getContext(), this, method.withVisibility(Visibility.PRIVATE));
-                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(module)).addMethod(getContext(), this, method.withVisibility(Visibility.PUBLIC));
-            } else {
-                Layouts.MODULE.getFields(module).addMethod(getContext(), this, method.withVisibility(visibility));
-            }
-
-            return module;
+            return addMethodNode.executeAddMethod(module, method, visibility);
         }
 
     }

@@ -7,6 +7,7 @@ import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -21,6 +22,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
 
 /**
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
@@ -44,6 +47,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         // -1 jit.threshold is way of having interpreter not promote full builds.
         if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
+
+        // If we are printing, do the build right at creation time so we can see it
+        if (Options.IR_PRINT.load()) {
+            ensureInstrsReady();
+        }
     }
 
     public IRScope getIRScope() {
@@ -96,6 +104,12 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                 interpreterContext = ((IRMethod) method).lazilyAcquireInterpreterContext();
             }
             interpreterContext = method.getInterpreterContext();
+
+            if (Options.IR_PRINT.load()) {
+                ByteArrayOutputStream baos = IRDumper.printIR(method, false, true);
+
+                LOG.info("Printing simple IR for " + method.getName(), "\n" + new String(baos.toByteArray()));
+            }
         }
 
         return interpreterContext;
@@ -106,7 +120,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, args, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, args, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -135,7 +149,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         if (callCount >= 0) promoteToFullBuild(context);
 
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -163,7 +177,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -191,7 +205,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -219,7 +233,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, arg2, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, arg2, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,

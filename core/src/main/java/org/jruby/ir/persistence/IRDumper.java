@@ -11,6 +11,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
@@ -53,9 +54,12 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.runtime.Signature;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.cli.Options;
 
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -72,11 +76,28 @@ public class IRDumper extends IRVisitor {
         this.color = color;
     }
 
-    public void visit(IRScope scope, boolean recurse) {
+    public static ByteArrayOutputStream printIR(IRScope scope, boolean full) {
+        return printIR(scope, full, false);
+    }
+
+    public static ByteArrayOutputStream printIR(IRScope scope, boolean full, boolean recurse) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        IRDumper dumper = new IRDumper(ps, Options.IR_PRINT_COLOR.load());
+        dumper.visit(scope, full, recurse);
+        return baos;
+    }
+
+    public void visit(IRScope scope, boolean full, boolean recurse) {
         println("begin " + scope.getScopeType().name() + "<" + scope.getName() + ">");
 
-        scope.prepareForCompilation();
-        InterpreterContext ic = scope.getInterpreterContext();
+        InterpreterContext ic;
+
+        if (full) {
+            ic = scope.getFullInterpreterContext();
+        } else {
+            ic = scope.getInterpreterContext();
+        }
 
         if (ic.getStaticScope().getSignature() == null) {
             println(Signature.NO_ARGUMENTS);
@@ -108,38 +129,51 @@ public class IRDumper extends IRVisitor {
 
         // find longest variable name
         int longest = 0;
+        int largestBlock = 0;
 
-        for (Instr i : instrs) {
-            if (i instanceof ResultInstr) {
-                Variable result = ((ResultInstr) i).getResult();
+        if (instrs != null) {
+            largestBlock = instrs.length;
+            for (Instr i : instrs) {
+                if (i instanceof ResultInstr) {
+                    longest = getLongestVariable(longest, (ResultInstr) i);
+                }
+            }
+        } else {
+            BasicBlock[] bbs = ((FullInterpreterContext)ic).getLinearizedBBList();
 
-                longest = Math.max(longest, result.getName().length() + ((result instanceof LocalVariable) ? 1 : 0));
+            for (BasicBlock bb : bbs) {
+                List<Instr> instrList = bb.getInstrs();
+                largestBlock = Math.max(largestBlock, instrList.size());
+                for (Instr i : instrList) {
+                    if (i instanceof ResultInstr) {
+                        longest = getLongestVariable(longest, (ResultInstr) i);
+                    }
+                }
             }
         }
 
-        int instrLog = (int)Math.log10(instrs.length) + 1;
+        int instrLog = (int)Math.log10(largestBlock) + 1;
 
         String varFormat = ansiStr(VARIABLE_COLOR, "%" + longest + "s") + " := ";
         String varSpaces = spaces(longest + " := ".length());
-        String ipcFormat = "%0" + instrLog + "d: ";
+        String ipcFormat = "  %0" + instrLog + "d: ";
 
-        for (int i = 0; i < instrs.length; i++) {
-            Instr instr = instrs[i];
-
-            printf(ipcFormat, i);
-
-            if (instr instanceof ResultInstr) {
-                Variable result = ((ResultInstr) instr).getResult();
-                String sigilName = (result instanceof LocalVariable) ? "*" + result.getName() : result.getName();
-
-                printf(varFormat, sigilName);
-            } else {
-                print(varSpaces);
+        if (instrs != null) {
+            for (int i = 0; i < instrs.length; i++) {
+                formatInstr(instrs[i], varFormat, varSpaces, ipcFormat, instrs[i], i);
             }
+        } else {
+            BasicBlock[] bbs = ((FullInterpreterContext)ic).getLinearizedBBList();
 
-            visit(instrs[i]);
+            for (BasicBlock bb : bbs) {
+                printAnsi(BLOCK_COLOR, "\nbasic_block #" + bb.getID() + ": " + bb.getLabel() + "\n");
 
-            println();
+                List<Instr> instrList = bb.getInstrs();
+
+                for (int i = 0; i < instrList.size(); i++) {
+                    formatInstr(instrList.get(i), varFormat, varSpaces, ipcFormat, instrList.get(i), i);
+                }
+            }
         }
 
         if (recurse && !scope.getClosures().isEmpty()) {
@@ -148,9 +182,35 @@ public class IRDumper extends IRVisitor {
             for (IRClosure closure : scope.getClosures()) {
                 if (closure == scope) continue;
 
-                visit(closure, true);
+                visit(closure, full, true);
             }
         }
+    }
+
+    public void formatInstr(Instr instr1, String varFormat, String varSpaces, String ipcFormat, Instr instr2, int i) {
+        Instr instr = instr2;
+
+        printf(ipcFormat, i);
+
+        if (instr instanceof ResultInstr) {
+            Variable result = ((ResultInstr) instr).getResult();
+            String sigilName = (result instanceof LocalVariable) ? "*" + result.getName() : result.getName();
+
+            printf(varFormat, sigilName);
+        } else {
+            print(varSpaces);
+        }
+
+        visit(instr1);
+
+        println();
+    }
+
+    public int getLongestVariable(int longest, ResultInstr i) {
+        Variable result = i.getResult();
+
+        longest = Math.max(longest, result.getName().length() + ((result instanceof LocalVariable) ? 1 : 0));
+        return longest;
     }
 
     @Override
@@ -313,5 +373,6 @@ public class IRDumper extends IRVisitor {
     private static final String OPERAND_COLOR = "\033[1;33m";
     private static final String VARIABLE_COLOR = "\033[1;32m";
     private static final String FIELD_COLOR = "\033[1;34m";
+    private static final String BLOCK_COLOR = "\033[4;31m";
     private static final String CLEAR_COLOR = "\033[0m";
 }
