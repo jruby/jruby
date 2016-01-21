@@ -104,21 +104,18 @@ public abstract class ByteArrayNodes {
     @CoreMethod(names = "locate", required = 3, lowerFixnumParameters = {1, 2})
     public abstract static class LocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private StringNodes.SizeNode sizeNode;
-
         public LocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] {});
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object getByte(VirtualFrame frame, DynamicObject bytes, DynamicObject pattern, int start, int length) {
+        public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
             final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteListReadOnly(pattern));
 
             if (index == -1) {
                 return nil();
             } else {
-                return start + index + sizeNode.executeInteger(frame, pattern);
+                return start + index + StringOperations.rope(pattern).characterLength();
             }
         }
 

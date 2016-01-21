@@ -263,7 +263,6 @@ public abstract class StringPrimitiveNodes {
 
         @Child private TaintResultNode taintResultNode;
         @Child private AllocateObjectNode allocateObjectNode;
-        @Child private StringNodes.SizeNode sizeNode;
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -293,7 +292,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Rope rope = rope(string);
-            final int stringLength = getSizeNode().executeInteger(frame, string);
+            final int stringLength = rope.characterLength();
             final int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
             if (normalizedIndex < 0 || normalizedIndex > rope.byteLength()) {
@@ -393,14 +392,6 @@ public abstract class StringPrimitiveNodes {
             return null;
         }
 
-        private StringNodes.SizeNode getSizeNode() {
-            if (sizeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                sizeNode = insert(StringNodesFactory.SizeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
-            }
-
-            return sizeNode;
-        }
     }
 
     @RubiniusPrimitive(name = "string_check_null_safe", needsSelf = false)
@@ -475,19 +466,16 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_compare_substring")
     public static abstract class StringCompareSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private StringNodes.SizeNode sizeNode;
-
         public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
         @Specialization(guards = "isRubyString(other)")
         public int stringCompareSubstring(VirtualFrame frame, DynamicObject string, DynamicObject other, int start, int size) {
             // Transliterated from Rubinius C++.
 
-            final int stringLength = sizeNode.executeInteger(frame, string);
-            final int otherLength = sizeNode.executeInteger(frame, other);
+            final int stringLength = StringOperations.rope(string).characterLength();
+            final int otherLength = StringOperations.rope(other).characterLength();
 
             if (start < 0) {
                 start += otherLength;
