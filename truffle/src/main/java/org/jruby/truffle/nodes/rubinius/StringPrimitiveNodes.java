@@ -247,11 +247,9 @@ public abstract class StringPrimitiveNodes {
         private DynamicObject makeString(DynamicObject source, int index, int length) {
             assert RubyGuards.isRubyString(source);
 
-            final ByteList bytes = new ByteList(StringOperations.getByteListReadOnly(source), index, length);
-            bytes.setEncoding(Layouts.STRING.getRope(source).getEncoding());
+            final Rope rope = RopeOperations.substring(rope(source), index, length);
 
-            // TODO (nirvdrum 08-Jan-16) We should be able to work out the code range from the parent string in some cases.
-            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
+            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), rope, null);
             taintResultNode.maybeTaint(source, ret);
 
             return ret;
@@ -1225,9 +1223,10 @@ public abstract class StringPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative start given", this));
             }
 
-            final ByteList buf = StringOperations.getByteListReadOnly(string);
-            final int total = buf.getRealSize();
-            final int matchSize = Layouts.STRING.getRope(pattern).byteLength();
+            final Rope stringRope = rope(string);
+            final Rope patternRope = rope(pattern);
+            final int total = stringRope.byteLength();
+            final int matchSize = patternRope.byteLength();
 
             if (pos >= total) {
                 pos = total - 1;
@@ -1239,10 +1238,10 @@ public abstract class StringPrimitiveNodes {
                 }
 
                 case 1: {
-                    final int matcher = StringOperations.getByteListReadOnly(pattern).get(0);
+                    final int matcher = patternRope.get(0);
 
                     while (pos >= 0) {
-                        if (buf.get(pos) == matcher) {
+                        if (stringRope.get(pos) == matcher) {
                             return pos;
                         }
 
@@ -1260,7 +1259,8 @@ public abstract class StringPrimitiveNodes {
                     int cur = pos;
 
                     while (cur >= 0) {
-                        if (ByteList.memcmp(StringOperations.getByteListReadOnly(string).getUnsafeBytes(), cur, StringOperations.getByteListReadOnly(pattern).getUnsafeBytes(), 0, matchSize) == 0) {
+                        // TODO (nirvdrum 21-Jan-16): Investigate a more rope efficient memcmp.
+                        if (ByteList.memcmp(stringRope.getBytes(), cur, patternRope.getBytes(), 0, matchSize) == 0) {
                             return cur;
                         }
 
@@ -1299,16 +1299,18 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject stringPattern(DynamicObject stringClass, int size, DynamicObject string) {
+            final Rope rope = rope(string);
             final byte[] bytes = new byte[size];
-            final ByteList byteList = StringOperations.getByteListReadOnly(string);
 
-            if (byteList.length() > 0) {
-                for (int n = 0; n < size; n += byteList.length()) {
-                    System.arraycopy(byteList.unsafeBytes(), byteList.begin(), bytes, n, Math.min(byteList.length(), size - n));
+            // TODO (nirvdrum 21-Jan-16): Investigate whether using a ConcatRope would be better here.
+            if (! rope.isEmpty()) {
+                for (int n = 0; n < size; n += rope.byteLength()) {
+                    System.arraycopy(rope.getBytes(), rope.begin(), bytes, n, Math.min(rope.byteLength(), size - n));
                 }
             }
 
-            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(new ByteList(bytes), StringSupport.CR_UNKNOWN), null);
+            // TODO (nirvdrum 21-Jan-16): Verify the encoding and code range are correct.
+            return allocateObjectNode.allocate(stringClass, RopeOperations.create(bytes, encoding(string), StringSupport.CR_UNKNOWN), null);
         }
 
     }

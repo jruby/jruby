@@ -27,6 +27,11 @@ public class SubstringRope extends Rope {
     }
 
     @Override
+    public int get(int index) {
+        return child.get(index + offset);
+    }
+
+    @Override
     public byte[] getBytes() {
         if (bytes == null) {
             bytes = child.extractRange(offset, byteLength());

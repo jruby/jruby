@@ -48,6 +48,8 @@ public abstract class Rope {
 
     public final ByteList toByteListCopy() { return new ByteList(getBytes(), getEncoding(), true); }
 
+    public abstract int get(int index);
+
     public abstract byte[] getBytes();
 
     public byte[] getBytesCopy() {
@@ -87,4 +89,5 @@ public abstract class Rope {
     public int getRealSize() {
         return realSize();
     }
+
 }

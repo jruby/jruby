@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.rope;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jruby.truffle.runtime.core.StringOperations;
 
@@ -29,6 +30,16 @@ public class ConcatRope extends Rope {
 
         this.left = left;
         this.right = right;
+    }
+
+    @Override
+    @TruffleBoundary
+    public int get(int index) {
+        if (index < left.byteLength()) {
+            return left.get(index);
+        }
+
+        return right.get(index - left.byteLength());
     }
 
     @Override
