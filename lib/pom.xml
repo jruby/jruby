@@ -175,7 +175,20 @@ DO NOT MODIFIY - GENERATED CODE
       </exclusions>
     </dependency>
   </dependencies>
+  <repositories>
+    <repository>
+      <id>mavengems</id>
+      <url>mavengem:http://rubygems.org</url>
+    </repository>
+  </repositories>
   <build>
+    <extensions>
+      <extension>
+        <groupId>org.torquebox.mojo</groupId>
+        <artifactId>mavengem-wagon</artifactId>
+        <version>0.2.0</version>
+      </extension>
+    </extensions>
     <resources>
       <resource>
         <targetPath>${jruby.complete.gems}</targetPath>
