@@ -32,6 +32,7 @@ import org.jcodings.Encoding;
 import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -161,10 +162,11 @@ public abstract class StringOperations {
 
     @CompilerDirectives.TruffleBoundary
     public static Encoding checkEncoding(DynamicObject string, CodeRangeable other) {
-        final Encoding encoding = StringSupport.areCompatible(getCodeRangeableReadOnly(string), other);
+        final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, ((StringCodeRangeableWrapper) other).getString());
 
         // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
         if (encoding == null) {
+            CompilerDirectives.transferToInterpreter();
             throw Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime().newEncodingCompatibilityError(
                     String.format("incompatible character encodings: %s and %s",
                             Layouts.STRING.getRope(string).getEncoding().toString(),
