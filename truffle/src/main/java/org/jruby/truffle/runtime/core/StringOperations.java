@@ -58,7 +58,7 @@ public abstract class StringOperations {
     }
 
     // Since ByteList.toString does not decode properly
-    @TruffleBoundary
+    @CompilerDirectives.TruffleBoundary
     public static String getString(RubyContext context, DynamicObject string) {
         return Helpers.decodeByteList(context.getRuntime(), StringOperations.getByteListReadOnly(string));
     }
@@ -159,7 +159,7 @@ public abstract class StringOperations {
         keepCodeRange(string);
     }
 
-    @TruffleBoundary
+    @CompilerDirectives.TruffleBoundary
     public static Encoding checkEncoding(DynamicObject string, CodeRangeable other) {
         final Encoding encoding = StringSupport.areCompatible(getCodeRangeableReadOnly(string), other);
 
@@ -174,7 +174,7 @@ public abstract class StringOperations {
         return encoding;
     }
 
-    @TruffleBoundary
+    @CompilerDirectives.TruffleBoundary
     private static int slowCodeRangeScan(DynamicObject string) {
         final ByteList byteList = StringOperations.getByteListReadOnly(string);
         return StringSupport.codeRangeScan(byteList.getEncoding(), byteList);
@@ -195,7 +195,7 @@ public abstract class StringOperations {
         return ArrayOperations.clampExclusiveIndex(StringOperations.getByteListReadOnly(string).length(), index);
     }
 
-    @TruffleBoundary
+    @CompilerDirectives.TruffleBoundary
     public static Encoding checkEncoding(RubyContext context, DynamicObject string, CodeRangeable other, Node node) {
         final Encoding encoding = StringSupport.areCompatible(getCodeRangeableReadOnly(string), other);
 

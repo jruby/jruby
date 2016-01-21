@@ -440,7 +440,6 @@ public abstract class StringNodes {
         @Child private ToIntNode toIntNode;
         @Child private CallDispatchHeadNode includeNode;
         @Child private CallDispatchHeadNode dupNode;
-        @Child private SizeNode sizeNode;
         @Child private StringPrimitiveNodes.StringSubstringPrimitiveNode substringNode;
         @Child private AllocateObjectNode allocateObjectNode;
 
@@ -453,7 +452,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
         public Object getIndex(VirtualFrame frame, DynamicObject string, int index, Object length) {
-            final int stringLength = getSizeNode().executeInteger(frame, string);
+            final int stringLength = StringOperations.rope(string).characterLength();
             int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
             if (normalizedIndex < 0 || normalizedIndex >= StringOperations.byteLength(string)) {
@@ -492,7 +491,7 @@ public abstract class StringNodes {
         private Object sliceRange(VirtualFrame frame, DynamicObject string, int begin, int end, boolean doesExcludeEnd) {
             assert RubyGuards.isRubyString(string);
 
-            final int stringLength = getSizeNode().executeInteger(frame, string);
+            final int stringLength = StringOperations.rope(string).characterLength();
             begin = StringOperations.normalizeIndex(stringLength, begin);
 
             if (begin < 0 || begin > stringLength) {
@@ -592,15 +591,6 @@ public abstract class StringNodes {
 
         protected boolean isRubiniusUndefined(Object object) {
             return object == getContext().getCoreLibrary().getRubiniusUndefined();
-        }
-
-        private SizeNode getSizeNode() {
-            if (sizeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                sizeNode = insert(StringNodesFactory.SizeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
-            }
-
-            return sizeNode;
         }
 
     }
@@ -1326,14 +1316,11 @@ public abstract class StringNodes {
     public abstract static class InsertNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode appendNode;
-        @Child private StringPrimitiveNodes.CharacterByteIndexNode characterByteIndexNode;
-        @Child private SizeNode sizeNode;
-        @Child private TaintResultNode taintResultNode;
+        @Child private StringPrimitiveNodes.CharacterByteIndexNode characterByteIndexNode;@Child private TaintResultNode taintResultNode;
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             characterByteIndexNode = StringPrimitiveNodesFactory.CharacterByteIndexNodeFactory.create(context, sourceSection, new RubyNode[] {});
-            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] {});
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
@@ -1394,7 +1381,7 @@ public abstract class StringNodes {
                         String.format("incompatible encodings: %s and %s", source.getEncoding(), insert.getEncoding()), this));
             }
 
-            final int stringLength = sizeNode.executeInteger(frame, string);
+            final int stringLength = source.characterLength();
             final int normalizedIndex = StringNodesHelper.checkIndex(stringLength, index, this);
             final int byteIndex = characterByteIndexNode.executeInt(frame, string, normalizedIndex, 0);
 
