@@ -1350,7 +1350,7 @@ public abstract class StringNodes {
             final Rope left = rope(other);
             final Rope right = rope(string);
 
-            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.areCompatible(string, other);
+            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1386,7 +1386,7 @@ public abstract class StringNodes {
 
             final Rope source = rope(string);
             final Rope insert = rope(other);
-            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.areCompatible(string, other);
+            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreter();

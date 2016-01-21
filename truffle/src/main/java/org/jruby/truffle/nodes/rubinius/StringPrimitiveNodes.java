@@ -160,7 +160,7 @@ public abstract class StringPrimitiveNodes {
             final Rope left = rope(string);
             final Rope right = rope(other);
 
-            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.areCompatible(string, other);
+            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreter();
