@@ -199,14 +199,13 @@ public abstract class StringOperations {
         return ArrayOperations.clampExclusiveIndex(StringOperations.rope(string).byteLength(), index);
     }
 
-    @CompilerDirectives.TruffleBoundary
-    public static Encoding checkEncoding(RubyContext context, DynamicObject string, CodeRangeable other, Node node) {
-        final Encoding encoding = StringSupport.areCompatible(getCodeRangeableReadOnly(string), other);
+    public static Encoding checkEncoding(RubyContext context, DynamicObject string, DynamicObject other, Node node) {
+        final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
         if (encoding == null) {
             throw new RaiseException(context.getCoreLibrary().encodingCompatibilityErrorIncompatible(
-                    Layouts.STRING.getRope(string).getEncoding().toString(),
-                    other.getByteList().getEncoding().toString(),
+                    rope(string).getEncoding().toString(),
+                    rope(other).getEncoding().toString(),
                     node));
         }
 

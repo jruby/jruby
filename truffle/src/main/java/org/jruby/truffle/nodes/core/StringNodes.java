@@ -123,7 +123,7 @@ public abstract class StringNodes {
             final Rope left = rope(string);
             final Rope right = rope(other);
 
-            final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(other), this);
+            final Encoding enc = StringOperations.checkEncoding(getContext(), string, other, this);
 
             final Rope concatRope = RopeOperations.concat(left, right, enc);
 
@@ -800,7 +800,7 @@ public abstract class StringNodes {
 
                 assert RubyGuards.isRubyString(otherStr);
 
-                enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherStr), this);
+                enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
                 tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getRuntime(), table, tables, false, enc);
             }
 
@@ -924,7 +924,7 @@ public abstract class StringNodes {
             assert RubyGuards.isRubyString(string);
 
             DynamicObject otherString = otherStrings[0];
-            Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherString), this);
+            Encoding enc = StringOperations.checkEncoding(getContext(), string, otherString, this);
 
             boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherString),
@@ -934,7 +934,7 @@ public abstract class StringNodes {
             for (int i = 1; i < otherStrings.length; i++) {
                 assert RubyGuards.isRubyString(otherStrings[i]);
 
-                enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherStrings[i]), this);
+                enc = StringOperations.checkEncoding(getContext(), string, otherStrings[i], this);
                 tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStrings[i]), getContext().getRuntime(), squeeze, tables, false, enc);
             }
 
@@ -1866,7 +1866,7 @@ public abstract class StringNodes {
 
             DynamicObject otherStr = otherStrings[0];
             Rope otherRope = rope(otherStr);
-            Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherStr), this);
+            Encoding enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getRuntime(), squeeze, null, true, enc);
 
@@ -1875,7 +1875,7 @@ public abstract class StringNodes {
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
                 otherRope = rope(otherStr);
-                enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(otherStr), this);
+                enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
                 singlebyte = singlebyte && otherRope.isSingleByteOptimizable();
                 tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getRuntime(), squeeze, tables, false, enc);
             }
