@@ -19,13 +19,13 @@ public class ConcatRope extends Rope {
 
     private byte[] bytes;
 
-    public ConcatRope(Rope left, Rope right, Encoding encoding, int codeRange) {
+    public ConcatRope(Rope left, Rope right, Encoding encoding, int codeRange, boolean singleByteOptimizable, int depth) {
         super(encoding,
                 codeRange,
-                left.isSingleByteOptimizable() && right.isSingleByteOptimizable(),
+                singleByteOptimizable,
                 left.byteLength() + right.byteLength(),
                 left.characterLength() + right.characterLength(),
-                Math.max(left.depth(), right.depth()) + 1);
+                depth);
 
         this.left = left;
         this.right = right;

@@ -176,8 +176,13 @@ public abstract class RopeNodes {
         @Specialization(guards = { "!left.isEmpty()", "!right.isEmpty()" })
         public Rope concat(Rope left, Rope right, Encoding encoding,
                            @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
-                           @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
-            return new ConcatRope(left, right, encoding, commonCodeRange(left.getCodeRange(), right.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile));
+                           @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile leftDepthGreaterThanRightProfile) {
+            return new ConcatRope(left, right, encoding,
+                    commonCodeRange(left.getCodeRange(), right.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile),
+                    isSingleByteOptimizable(left, right, isLeftSingleByteOptimizableProfile),
+                    depth(left, right, leftDepthGreaterThanRightProfile));
         }
 
         private int commonCodeRange(int first, int second,
@@ -193,6 +198,22 @@ public abstract class RopeNodes {
 
             // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
             return StringSupport.CR_VALID;
+        }
+
+        private boolean isSingleByteOptimizable(Rope left, Rope right, ConditionProfile isLeftSingleByteOptimizableProfile) {
+            if (isLeftSingleByteOptimizableProfile.profile(left.isSingleByteOptimizable())) {
+                return right.isSingleByteOptimizable();
+            }
+
+            return false;
+        }
+
+        private int depth(Rope left, Rope right, ConditionProfile leftDepthGreaterThanRightProfile) {
+            if (leftDepthGreaterThanRightProfile.profile(left.depth() >= right.depth())) {
+                return left.depth() + 1;
+            }
+
+            return right.depth() + 1;
         }
 
     }
