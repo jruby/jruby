@@ -174,8 +174,25 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = { "!left.isEmpty()", "!right.isEmpty()" })
-        public Rope concat(Rope left, Rope right, Encoding encoding) {
-            return new ConcatRope(left, right, encoding);
+        public Rope concat(Rope left, Rope right, Encoding encoding,
+                           @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
+            return new ConcatRope(left, right, encoding, commonCodeRange(left.getCodeRange(), right.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile));
+        }
+
+        private int commonCodeRange(int first, int second,
+                                    ConditionProfile sameCodeRangeProfile,
+                                    ConditionProfile brokenCodeRangeProfile) {
+            if (sameCodeRangeProfile.profile(first == second)) {
+                return first;
+            }
+
+            if (brokenCodeRangeProfile.profile((first == StringSupport.CR_BROKEN) || (second == StringSupport.CR_BROKEN))) {
+                return StringSupport.CR_BROKEN;
+            }
+
+            // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
+            return StringSupport.CR_VALID;
         }
 
     }

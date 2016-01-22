@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime.rope;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
-import org.jruby.truffle.runtime.core.StringOperations;
 
 public class ConcatRope extends Rope {
 
@@ -20,9 +19,9 @@ public class ConcatRope extends Rope {
 
     private byte[] bytes;
 
-    public ConcatRope(Rope left, Rope right, Encoding encoding) {
+    public ConcatRope(Rope left, Rope right, Encoding encoding, int codeRange) {
         super(encoding,
-                StringOperations.commonCodeRange(left.getCodeRange(), right.getCodeRange()),
+                codeRange,
                 left.isSingleByteOptimizable() && right.isSingleByteOptimizable(),
                 left.byteLength() + right.byteLength(),
                 left.characterLength() + right.characterLength(),
