@@ -105,6 +105,11 @@ public class RopeOperations {
             return new SubstringRope(base, offset, byteLength, byteLength, StringSupport.CR_7BIT);
         }
 
+        return makeSubstringNon7Bit(base, offset, byteLength);
+    }
+
+    @TruffleBoundary
+    private static Rope makeSubstringNon7Bit(Rope base, int offset, int byteLength) {
         final long packedLengthAndCodeRange = calculateCodeRangeAndLength(base.getEncoding(), base.getBytes(), offset, offset + byteLength);
         final int codeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
         final int characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
