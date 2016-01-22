@@ -224,6 +224,7 @@ module Commands
     puts 'jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)'
     puts '    --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already'
     puts 'jt test integration                            runs bigger integration tests'
+    puts '    --no-gems       don\'t run tests that install gems'
     puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
@@ -389,9 +390,11 @@ module Commands
   private :test_compiler
 
   def test_integration(*args)
+    no_gems = args.delete('--no-gems')
     env_vars = {}
     env_vars["PATH"] = "#{Utilities.find_jruby_dir}:#{ENV["PATH"]}"
     Dir["#{JRUBY_DIR}/test/truffle/integration/*.sh"].each do |test_script|
+      next if no_gems && File.read(test_script).include?('gem install')
       sh env_vars, test_script
     end
   end
