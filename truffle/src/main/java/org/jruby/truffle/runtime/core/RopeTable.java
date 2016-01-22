@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
+import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -69,7 +70,7 @@ public class RopeTable {
         }
     }
 
-    private static class Key {
+    public static class Key {
 
         private final byte[] bytes;
         private final Encoding encoding;
@@ -96,6 +97,12 @@ public class RopeTable {
 
             return false;
         }
+
+        @Override
+        public String toString() {
+            return RopeOperations.create(bytes, encoding, StringSupport.CR_UNKNOWN).toString();
+        }
+
     }
 
 }

@@ -9,8 +9,11 @@
  */
 package org.jruby.truffle.runtime.rope;
 
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import org.jcodings.Encoding;
 import org.jruby.util.ByteList;
+
+import java.util.Arrays;
 
 public abstract class Rope {
 
@@ -20,6 +23,7 @@ public abstract class Rope {
     private final int byteLength;
     private final int characterLength;
     private final int ropeDepth;
+    @CompilationFinal private int hashCode = -1;
 
     protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth) {
         this.encoding = encoding;
@@ -88,6 +92,31 @@ public abstract class Rope {
 
     public int getRealSize() {
         return realSize();
+    }
+
+    @Override
+    public int hashCode() {
+        if (hashCode == -1) {
+            hashCode = RopeOperations.hashForRange(this, 1, 0, byteLength);
+        }
+
+        return hashCode;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o instanceof Rope) {
+            final Rope other = (Rope) o;
+
+            // TODO (nirvdrum 21-Jan-16): We really should be taking the encoding into account here. We're currenly not because it breaks the symbol table.
+            return byteLength() == other.byteLength() && Arrays.equals(getBytes(), other.getBytes());
+        }
+
+        return false;
     }
 
 }

@@ -192,7 +192,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyRegexp(first)", "isRubySymbol(second)"})
         public Object isCompatibleRegexpSymbol(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.SYMBOL.getByteList(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.SYMBOL.getRope(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -204,7 +204,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(first)", "isRubyRegexp(second)"})
         public Object isCompatibleSymbolRegexp(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.SYMBOL.getByteList(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.SYMBOL.getRope(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);

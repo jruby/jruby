@@ -2073,7 +2073,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject toSym(DynamicObject string) {
-            return getSymbol(StringOperations.getByteListReadOnly(string));
+            return getSymbol(rope(string));
         }
     }
 
