@@ -51,6 +51,20 @@ module Utilities
       File.executable?(location)
     end
   end
+  
+  def self.find_jruby
+    if USE_JRUBY_ECLIPSE
+      "#{JRUBY_DIR}/tool/jruby_eclipse"
+    elsif ENV['RUBY_BIN']
+      ENV['RUBY_BIN']
+    else
+      "#{JRUBY_DIR}/bin/jruby"
+    end
+  end
+  
+  def self.find_jruby_dir
+    File.dirname(find_jruby)
+  end
 
   def self.git_branch
     @git_branch ||= `GIT_DIR="#{JRUBY_DIR}/.git" git rev-parse --abbrev-ref HEAD`.strip
@@ -208,6 +222,7 @@ module Commands
     puts 'jt test spec/ruby/language                     run specs in this directory'
     puts 'jt test spec/ruby/language/while_spec.rb       run specs in this file'
     puts 'jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)'
+    puts '    --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already'
     puts 'jt test integration                            runs bigger integration tests'
     puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
@@ -304,15 +319,7 @@ module Commands
       end
     end
 
-    if USE_JRUBY_ECLIPSE
-      jruby_bin = "#{JRUBY_DIR}/tool/jruby_eclipse"
-    elsif ENV['RUBY_BIN']
-      jruby_bin = ENV['RUBY_BIN']
-    else
-      jruby_bin = "#{JRUBY_DIR}/bin/jruby"
-    end
-
-    raw_sh env_vars, jruby_bin, *jruby_args, *args
+    raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args
   end
   alias ruby run
 
@@ -374,6 +381,7 @@ module Commands
   def test_compiler(*args)
     env_vars = {}
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
+    env_vars["PATH"] = "#{Utilities.find_jruby_dir}:#{ENV["PATH"]}"
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
     end
@@ -381,8 +389,10 @@ module Commands
   private :test_compiler
 
   def test_integration(*args)
+    env_vars = {}
+    env_vars["PATH"] = "#{Utilities.find_jruby_dir}:#{ENV["PATH"]}"
     Dir["#{JRUBY_DIR}/test/truffle/integration/*.sh"].each do |test_script|
-      sh test_script
+      sh env_vars, test_script
     end
   end
   private :test_integration
