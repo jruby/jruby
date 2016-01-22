@@ -70,6 +70,8 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.core.EncodingNodes;
+import org.jruby.truffle.nodes.core.RopeNodes;
+import org.jruby.truffle.nodes.core.RopeNodesFactory;
 import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
@@ -178,10 +180,12 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_awk_split")
     public static abstract class StringAwkSplitPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
 
         public StringAwkSplitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
@@ -247,7 +251,7 @@ public abstract class StringPrimitiveNodes {
         private DynamicObject makeString(DynamicObject source, int index, int length) {
             assert RubyGuards.isRubyString(source);
 
-            final Rope rope = RopeOperations.substring(rope(source), index, length);
+            final Rope rope = makeSubstringNode.executeMake(rope(source), index, length);
 
             final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), rope, null);
             taintResultNode.maybeTaint(source, ret);
@@ -259,13 +263,15 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_byte_substring")
     public static abstract class StringByteSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private TaintResultNode taintResultNode;
         @Child private AllocateObjectNode allocateObjectNode;
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+        @Child private TaintResultNode taintResultNode;
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         @Specialization
@@ -301,7 +307,7 @@ public abstract class StringPrimitiveNodes {
                 length = rope.byteLength() - normalizedIndex;
             }
 
-            final Rope substringRope = RopeOperations.substring(rope, normalizedIndex, length);
+            final Rope substringRope = makeSubstringNode.executeMake(rope, normalizedIndex, length);
             final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringRope, null);
 
             return taintResultNode.maybeTaint(string, result);
@@ -632,12 +638,14 @@ public abstract class StringPrimitiveNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringFindCharacterNode extends RubiniusPrimitiveNode {
 
-        @Child private TaintResultNode taintResultNode;
         @Child private AllocateObjectNode allocateObjectNode;
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+        @Child private TaintResultNode taintResultNode;
 
         public StringFindCharacterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "offset < 0")
@@ -655,7 +663,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.substring(rope, offset, 1), null);
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), makeSubstringNode.executeMake(rope, offset, 1), null);
 
             return propagate(string, ret);
         }
@@ -675,10 +683,10 @@ public abstract class StringPrimitiveNodes {
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
-                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.substring(rope, offset, clen), null);
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), makeSubstringNode.executeMake(rope, offset, clen), null);
             } else {
                 // TODO (nirvdrum 13-Jan-16) We know that the code range is CR_7BIT. Ensure we're not wasting time figuring that out again in the substring creation.
-                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.substring(rope, offset, 1), null);
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), makeSubstringNode.executeMake(rope, offset, 1), null);
             }
 
             return propagate(string, ret);
@@ -1318,15 +1326,24 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
     public static abstract class StringSplicePrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private RopeNodes.MakeSubstringNode prependMakeSubstringNode;
+        @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode;
+        @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode;
+
         public StringSplicePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization(guards = { "indexAtStartBound(spliceByteIndex)", "isRubyString(other)" })
         public Object splicePrepend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace) {
+            if (prependMakeSubstringNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                prependMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
             final Rope original = rope(string);
             final Rope left = rope(other);
-            final Rope right = RopeOperations.substring(original, byteCountToReplace, original.byteLength() - byteCountToReplace);
+            final Rope right = prependMakeSubstringNode.executeMake(original, byteCountToReplace, original.byteLength() - byteCountToReplace);
 
             Layouts.STRING.setRope(string, RopeOperations.concat(left, right, right.getEncoding()));
 
@@ -1345,12 +1362,22 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)" })
         public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace) {
+            if (leftMakeSubstringNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                leftMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
+            if (rightMakeSubstringNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                rightMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
             final Rope source = rope(string);
             final Rope insert = rope(other);
             final int rightSideStartingIndex = spliceByteIndex + byteCountToReplace;
 
-            final Rope splitLeft = RopeOperations.substring(source, 0, spliceByteIndex);
-            final Rope splitRight = RopeOperations.substring(source, rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
+            final Rope splitLeft = leftMakeSubstringNode.executeMake(source, 0, spliceByteIndex);
+            final Rope splitRight = rightMakeSubstringNode.executeMake(source, rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
             final Rope joinedLeft = RopeOperations.concat(splitLeft, insert, source.getEncoding());
             final Rope joinedRight = RopeOperations.concat(joinedLeft, splitRight, source.getEncoding());
 
@@ -1435,6 +1462,7 @@ public abstract class StringPrimitiveNodes {
     public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private AllocateObjectNode allocateNode;
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
 
         public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1565,6 +1593,11 @@ public abstract class StringPrimitiveNodes {
                 allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 
+            if (makeSubstringNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                makeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
@@ -1572,7 +1605,7 @@ public abstract class StringPrimitiveNodes {
 
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
-                    RopeOperations.substring(Layouts.STRING.getRope(string), beg, len),
+                    makeSubstringNode.executeMake(rope(string), beg, len),
                     null);
 
             taintResultNode.maybeTaint(string, ret);
