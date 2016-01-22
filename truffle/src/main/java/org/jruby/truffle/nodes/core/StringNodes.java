@@ -1266,7 +1266,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int hash(DynamicObject string) {
-            return StringOperations.getByteListReadOnly(string).hashCode();
+            return rope(string).hashCode();
         }
 
     }
