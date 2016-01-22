@@ -137,26 +137,38 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static String decodeRope(Ruby runtime, Rope value) {
-        int begin = value.getBegin();
-        int length = value.byteLength();
+        if (value instanceof LeafRope) {
+            int begin = value.getBegin();
+            int length = value.byteLength();
 
-        Encoding encoding = value.getEncoding();
+            Encoding encoding = value.getEncoding();
 
-        if (encoding == UTF8Encoding.INSTANCE) {
-            return RubyEncoding.decodeUTF8(value.getBytes(), begin, length);
-        }
-
-        Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
-
-        if (charset == null) {
-            try {
-                return new String(value.getBytes(), begin, length, encoding.toString());
-            } catch (UnsupportedEncodingException uee) {
-                return value.toString();
+            if (encoding == UTF8Encoding.INSTANCE) {
+                return RubyEncoding.decodeUTF8(value.getBytes(), begin, length);
             }
-        }
 
-        return RubyEncoding.decode(value.getBytes(), begin, length, charset);
+            Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
+
+            if (charset == null) {
+                try {
+                    return new String(value.getBytes(), begin, length, encoding.toString());
+                } catch (UnsupportedEncodingException uee) {
+                    return value.toString();
+                }
+            }
+
+            return RubyEncoding.decode(value.getBytes(), begin, length, charset);
+        } else if (value instanceof SubstringRope) {
+            final SubstringRope substringRope = (SubstringRope) value;
+
+            return decodeRope(runtime, substringRope.getChild()).substring(substringRope.getOffset(), substringRope.getOffset() + substringRope.characterLength());
+        } else if (value instanceof ConcatRope) {
+            final ConcatRope concatRope = (ConcatRope) value;
+
+            return decodeRope(runtime, concatRope.getLeft()) + decodeRope(runtime, concatRope.getRight());
+        } else {
+            throw new RuntimeException("Decoding to String is not supported for rope of type: " + value.getClass().getName());
+        }
     }
 
     // MRI: get_actual_encoding
