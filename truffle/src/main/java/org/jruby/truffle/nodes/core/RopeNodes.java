@@ -13,12 +13,14 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.rope.ConcatRope;
@@ -135,6 +137,46 @@ public abstract class RopeNodes {
         protected static boolean isConcatRope(Rope rope) {
             return (rope instanceof ConcatRope);
         }
+
     }
 
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "left"),
+            @NodeChild(type = RubyNode.class, value = "right"),
+            @NodeChild(type = RubyNode.class, value = "encoding")
+    })
+    public abstract static class MakeConcatNode extends RubyNode {
+
+        public MakeConcatNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract Rope executeMake(Rope left, Rope right, Encoding encoding);
+
+        @Specialization(guards = { "left.isEmpty()", "right.getEncoding() == encoding" })
+        public Rope concatEmptyLeftSameEncoding(Rope left, Rope right, Encoding encoding) {
+            return right;
+        }
+
+        @Specialization(guards = { "left.isEmpty()", "right.getEncoding() != encoding" })
+        public Rope concatEmptyLeftDifferentEncoding(Rope left, Rope right, Encoding encoding) {
+            return RopeOperations.withEncoding(right, encoding);
+        }
+
+        @Specialization(guards = { "right.isEmpty()", "left.getEncoding() == encoding" })
+        public Rope concatEmptyRightSameEncoding(Rope left, Rope right, Encoding encoding) {
+            return left;
+        }
+
+        @Specialization(guards = { "right.isEmpty()", "left.getEncoding() != encoding" })
+        public Rope concatEmptyRightDifferentEncoding(Rope left, Rope right, Encoding encoding) {
+            return RopeOperations.withEncoding(left, encoding);
+        }
+
+        @Specialization(guards = { "!left.isEmpty()", "!right.isEmpty()" })
+        public Rope concat(Rope left, Rope right, Encoding encoding) {
+            return new ConcatRope(left, right, encoding);
+        }
+
+    }
 }

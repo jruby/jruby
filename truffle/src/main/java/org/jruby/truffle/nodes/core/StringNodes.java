@@ -107,10 +107,12 @@ public abstract class StringNodes {
     })
     public abstract static class AddNode extends CoreMethodNode {
 
+        @Child private RopeNodes.MakeConcatNode makeConcatNode;
         @Child private TaintResultNode taintResultNode;
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
@@ -125,7 +127,7 @@ public abstract class StringNodes {
 
             final Encoding enc = StringOperations.checkEncoding(getContext(), string, other, this);
 
-            final Rope concatRope = RopeOperations.concat(left, right, enc);
+            final Rope concatRope = makeConcatNode.executeMake(left, right, enc);
 
             final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
                     concatRope,
@@ -142,8 +144,9 @@ public abstract class StringNodes {
     @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
     public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ToIntNode toIntNode;
         @Child private AllocateObjectNode allocateObjectNode;
+        @Child private RopeNodes.MakeConcatNode makeConcatNode;
+        @Child private ToIntNode toIntNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -182,8 +185,13 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isSingleByteString(string)", "times > 1" })
         public DynamicObject multiply(DynamicObject string, int times) {
+            if (makeConcatNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                makeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
             final Rope baseRope = rope(string);
-            final Rope concatLeafRope = RopeOperations.concat(baseRope, baseRope, baseRope.getEncoding());
+            final Rope concatLeafRope = makeConcatNode.executeMake(baseRope, baseRope, baseRope.getEncoding());
 
             final boolean timesIsPowerOf2 = (times & (times - 1)) == 0;
             final double log2_times = Math.log(times) / Math.log(2);
@@ -222,7 +230,7 @@ public abstract class StringNodes {
                             canCacheRightTree = false;
                         }
                     } else if (right == null) {
-                        currentLevel[i] = RopeOperations.concat(left, baseRope, baseRope.getEncoding());
+                        currentLevel[i] = makeConcatNode.executeMake(left, baseRope, baseRope.getEncoding());
 
                         if (i < levelWidth / 2) {
                             canCacheLeftTree = false;
@@ -232,12 +240,12 @@ public abstract class StringNodes {
                     } else {
                         if ((canCacheLeftTree && i < levelWidth / 2) || (canCacheRightTree && i >= levelWidth / 2)) {
                             if (cachedRope == null) {
-                                cachedRope = RopeOperations.concat(left, right, baseRope.getEncoding());
+                                cachedRope = makeConcatNode.executeMake(left, right, baseRope.getEncoding());
                             }
 
                             currentLevel[i] = cachedRope;
                         } else {
-                            currentLevel[i] = RopeOperations.concat(left, right, baseRope.getEncoding());
+                            currentLevel[i] = makeConcatNode.executeMake(left, right, baseRope.getEncoding());
                         }
                     }
                 }
@@ -402,6 +410,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class ConcatNode extends CoreMethodNode {
 
+        @Child private RopeNodes.MakeConcatNode makeConcatNode;
         @Child private StringPrimitiveNodes.StringAppendPrimitiveNode stringAppendNode;
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
@@ -413,7 +422,12 @@ public abstract class StringNodes {
             final Rope left = rope(string);
             final Rope right = rope(other);
 
-            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, left.getEncoding()));
+            if (makeConcatNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                makeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
+            Layouts.STRING.setRope(string, makeConcatNode.executeMake(left, right, left.getEncoding()));
 
             return string;
         }
@@ -1322,6 +1336,9 @@ public abstract class StringNodes {
 
         @Child private CallDispatchHeadNode appendNode;
         @Child private StringPrimitiveNodes.CharacterByteIndexNode characterByteIndexNode;
+        @Child private RopeNodes.MakeConcatNode prependMakeConcatNode;
+        @Child private RopeNodes.MakeConcatNode leftMakeConcatNode;
+        @Child private RopeNodes.MakeConcatNode rightMakeConcatNode;
         @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode;
         @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode;
         @Child private TaintResultNode taintResultNode;
@@ -1329,6 +1346,8 @@ public abstract class StringNodes {
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             characterByteIndexNode = StringPrimitiveNodesFactory.CharacterByteIndexNodeFactory.create(context, sourceSection, new RubyNode[] {});
+            leftMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
+            rightMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
             leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
             rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
             taintResultNode = new TaintResultNode(context, sourceSection);
@@ -1355,7 +1374,12 @@ public abstract class StringNodes {
                         String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
             }
 
-            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, compatibleEncoding));
+            if (prependMakeConcatNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                prependMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
+            Layouts.STRING.setRope(string, prependMakeConcatNode.executeMake(left, right, compatibleEncoding));
 
             return taintResultNode.maybeTaint(other, string);
         }
@@ -1397,8 +1421,8 @@ public abstract class StringNodes {
 
             final Rope splitLeft = leftMakeSubstringNode.executeMake(source, 0, byteIndex);
             final Rope splitRight = rightMakeSubstringNode.executeMake(source, byteIndex, source.byteLength() - byteIndex);
-            final Rope joinedLeft = RopeOperations.concat(splitLeft, insert, compatibleEncoding);
-            final Rope joinedRight = RopeOperations.concat(joinedLeft, splitRight, compatibleEncoding);
+            final Rope joinedLeft = leftMakeConcatNode.executeMake(splitLeft, insert, compatibleEncoding);
+            final Rope joinedRight = rightMakeConcatNode.executeMake(joinedLeft, splitRight, compatibleEncoding);
 
             Layouts.STRING.setRope(string, joinedRight);
 
@@ -1765,11 +1789,15 @@ public abstract class StringNodes {
     })
     public abstract static class SetByteNode extends CoreMethodNode {
 
+        @Child private RopeNodes.MakeConcatNode composedMakeConcatNode;
+        @Child private RopeNodes.MakeConcatNode middleMakeConcatNode;
         @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode;
         @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode;
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            composedMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
+            middleMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
             leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
             rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
@@ -1793,7 +1821,7 @@ public abstract class StringNodes {
             final Rope left = leftMakeSubstringNode.executeMake(rope, 0, normalizedIndex);
             final Rope right = rightMakeSubstringNode.executeMake(rope, normalizedIndex + 1, rope.byteLength() - normalizedIndex - 1);
             final Rope middle = RopeOperations.create(new byte[] { (byte) value }, rope.getEncoding(), StringSupport.CR_UNKNOWN);
-            final Rope composed = RopeOperations.concat(RopeOperations.concat(left, middle, rope.getEncoding()), right, rope.getEncoding());
+            final Rope composed = composedMakeConcatNode.executeMake(middleMakeConcatNode.executeMake(left, middle, rope.getEncoding()), right, rope.getEncoding());
 
             Layouts.STRING.setRope(string, composed);
 

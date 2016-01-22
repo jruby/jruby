@@ -54,19 +54,6 @@ public class RopeOperations {
         }
     }
 
-    @TruffleBoundary
-    public static Rope concat(Rope left, Rope right, Encoding encoding) {
-        if (right.isEmpty()) {
-            return withEncoding(left, encoding);
-        }
-
-        if (left.isEmpty()) {
-            return withEncoding(right, encoding);
-        }
-
-        return new ConcatRope(left, right, encoding);
-    }
-
     public static Rope withEncoding(Rope originalRope, Encoding newEncoding, int newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
@@ -75,7 +62,6 @@ public class RopeOperations {
         return create(originalRope.getBytes(), newEncoding, newCodeRange);
     }
 
-    @TruffleBoundary
     public static Rope withEncoding(Rope originalRope, Encoding newEncoding) {
         return withEncoding(originalRope, newEncoding, originalRope.getCodeRange());
     }

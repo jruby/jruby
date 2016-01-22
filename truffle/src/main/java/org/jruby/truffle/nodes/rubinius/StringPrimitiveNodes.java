@@ -73,8 +73,6 @@ import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.nodes.core.RopeNodes;
 import org.jruby.truffle.nodes.core.RopeNodesFactory;
 import org.jruby.truffle.nodes.core.StringGuards;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.StringNodesFactory;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
@@ -151,8 +149,11 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_append")
     public static abstract class StringAppendPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private RopeNodes.MakeConcatNode makeConcatNode;
+
         public StringAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
         }
 
         public abstract DynamicObject executeStringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other);
@@ -170,7 +171,7 @@ public abstract class StringPrimitiveNodes {
                         String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
             }
 
-            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, compatibleEncoding));
+            Layouts.STRING.setRope(string, makeConcatNode.executeMake(left, right, compatibleEncoding));
 
             return string;
         }
@@ -1326,6 +1327,10 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
     public static abstract class StringSplicePrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private RopeNodes.MakeConcatNode appendMakeConcatNode;
+        @Child private RopeNodes.MakeConcatNode prependMakeConcatNode;
+        @Child private RopeNodes.MakeConcatNode leftMakeConcatNode;
+        @Child private RopeNodes.MakeConcatNode rightMakeConcatNode;
         @Child private RopeNodes.MakeSubstringNode prependMakeSubstringNode;
         @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode;
         @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode;
@@ -1341,11 +1346,16 @@ public abstract class StringPrimitiveNodes {
                 prependMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
+            if (prependMakeConcatNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                prependMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
             final Rope original = rope(string);
             final Rope left = rope(other);
             final Rope right = prependMakeSubstringNode.executeMake(original, byteCountToReplace, original.byteLength() - byteCountToReplace);
 
-            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, right.getEncoding()));
+            Layouts.STRING.setRope(string, prependMakeConcatNode.executeMake(left, right, right.getEncoding()));
 
             return string;
         }
@@ -1355,7 +1365,12 @@ public abstract class StringPrimitiveNodes {
             final Rope left = rope(string);
             final Rope right = rope(other);
 
-            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, left.getEncoding()));
+            if (appendMakeConcatNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                appendMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
+            Layouts.STRING.setRope(string, appendMakeConcatNode.executeMake(left, right, left.getEncoding()));
 
             return string;
         }
@@ -1372,14 +1387,24 @@ public abstract class StringPrimitiveNodes {
                 rightMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
+            if (leftMakeConcatNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                leftMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
+            if (rightMakeConcatNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                rightMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
             final Rope source = rope(string);
             final Rope insert = rope(other);
             final int rightSideStartingIndex = spliceByteIndex + byteCountToReplace;
 
             final Rope splitLeft = leftMakeSubstringNode.executeMake(source, 0, spliceByteIndex);
             final Rope splitRight = rightMakeSubstringNode.executeMake(source, rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
-            final Rope joinedLeft = RopeOperations.concat(splitLeft, insert, source.getEncoding());
-            final Rope joinedRight = RopeOperations.concat(joinedLeft, splitRight, source.getEncoding());
+            final Rope joinedLeft = leftMakeConcatNode.executeMake(splitLeft, insert, source.getEncoding());
+            final Rope joinedRight = rightMakeConcatNode.executeMake(joinedLeft, splitRight, source.getEncoding());
 
             Layouts.STRING.setRope(string, joinedRight);
 
@@ -1430,8 +1455,11 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_byte_append")
     public static abstract class StringByteAppendPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private RopeNodes.MakeConcatNode makeConcatNode;
+
         public StringByteAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isRubyString(other)")
@@ -1450,7 +1478,7 @@ public abstract class StringPrimitiveNodes {
 
             final Rope rightConverted = RopeOperations.create(right.getBytes(), left.getEncoding(), left.getCodeRange());
 
-            Layouts.STRING.setRope(string, RopeOperations.concat(left, rightConverted, left.getEncoding()));
+            Layouts.STRING.setRope(string, makeConcatNode.executeMake(left, rightConverted, left.getEncoding()));
 
             return string;
         }
