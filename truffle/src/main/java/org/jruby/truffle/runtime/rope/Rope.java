@@ -23,7 +23,7 @@ public abstract class Rope {
     private final int byteLength;
     private final int characterLength;
     private final int ropeDepth;
-    @CompilationFinal private int hashCode = -1;
+    @CompilationFinal private int hashCode = 0;
 
     protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth) {
         this.encoding = encoding;
@@ -111,6 +111,10 @@ public abstract class Rope {
 
         if (o instanceof Rope) {
             final Rope other = (Rope) o;
+
+            if ((hashCode != 0) && (other.hashCode != 0) && (hashCode != other.hashCode)) {
+                return false;
+            }
 
             // TODO (nirvdrum 21-Jan-16): We really should be taking the encoding into account here. We're currenly not because it breaks the symbol table.
             return byteLength() == other.byteLength() && Arrays.equals(getBytes(), other.getBytes());
