@@ -23,7 +23,7 @@ public abstract class Rope {
     private final int byteLength;
     private final int characterLength;
     private final int ropeDepth;
-    @CompilationFinal private int hashCode = 0;
+    private int hashCode = 0;
 
     protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth) {
         this.encoding = encoding;
@@ -96,7 +96,7 @@ public abstract class Rope {
 
     @Override
     public int hashCode() {
-        if (hashCode == -1) {
+        if (hashCode == 0) {
             hashCode = RopeOperations.hashForRange(this, 1, 0, byteLength);
         }
 
