@@ -72,7 +72,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            return (RubyGuards.isRubyString(methodName)) && StringOperations.getByteListReadOnly((DynamicObject) cachedName).equal(StringOperations.getByteListReadOnly((DynamicObject) methodName));
+            return (RubyGuards.isRubyString(methodName)) && StringOperations.rope((DynamicObject) cachedName).equals(StringOperations.rope((DynamicObject) methodName));
         } else {
             throw new UnsupportedOperationException();
         }
