@@ -23,11 +23,14 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.rope.AsciiOnlyLeafRope;
 import org.jruby.truffle.runtime.rope.ConcatRope;
+import org.jruby.truffle.runtime.rope.InvalidLeafRope;
 import org.jruby.truffle.runtime.rope.LeafRope;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.truffle.runtime.rope.SubstringRope;
+import org.jruby.truffle.runtime.rope.ValidLeafRope;
 import org.jruby.util.StringSupport;
 
 public abstract class RopeNodes {
@@ -216,5 +219,73 @@ public abstract class RopeNodes {
             return right.depth() + 1;
         }
 
+    }
+
+
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "bytes"),
+            @NodeChild(type = RubyNode.class, value = "encoding"),
+            @NodeChild(type = RubyNode.class, value = "codeRange")
+    })
+    public abstract static class MakeLeafRopeNode extends RubyNode {
+
+        public MakeLeafRopeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract LeafRope executeMake(byte[] bytes, Encoding encoding, int codeRange);
+
+        @Specialization(guards = "is7Bit(codeRange)")
+        public LeafRope makeAsciiOnlyLeafRope(byte[] bytes, Encoding encoding, int codeRange) {
+            return new AsciiOnlyLeafRope(bytes, encoding);
+        }
+
+        @Specialization(guards = "isValid(codeRange)")
+        public LeafRope makeValidLeafRope(byte[] bytes, Encoding encoding, int codeRange) {
+            final int characterLength = RopeOperations.strLength(encoding, bytes, 0, bytes.length);
+
+            return new ValidLeafRope(bytes, encoding, characterLength);
+        }
+
+        @Specialization(guards = "isBroken(codeRange)")
+        public LeafRope makeInvalidLeafRope(byte[] bytes, Encoding encoding, int codeRange) {
+            return new InvalidLeafRope(bytes, encoding);
+        }
+
+        @Specialization(guards = "isUnknown(codeRange)")
+        public LeafRope makeUnknownLeafRope(byte[] bytes, Encoding encoding, int codeRange,
+                                            @Cached("createBinaryProfile()") ConditionProfile discovered7BitProfile,
+                                            @Cached("createBinaryProfile()") ConditionProfile discoveredValidProfile) {
+            final long packedLengthAndCodeRange = RopeOperations.calculateCodeRangeAndLength(encoding, bytes, 0, bytes.length);
+            final int newCodeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
+            final int characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
+
+            if (discovered7BitProfile.profile(newCodeRange == StringSupport.CR_7BIT)) {
+                return new AsciiOnlyLeafRope(bytes, encoding);
+            }
+
+            if (discoveredValidProfile.profile(newCodeRange == StringSupport.CR_VALID)) {
+                return new ValidLeafRope(bytes, encoding, characterLength);
+            }
+
+            return new InvalidLeafRope(bytes, encoding);
+        }
+
+
+        protected static boolean is7Bit(int codeRange) {
+            return codeRange == StringSupport.CR_7BIT;
+        }
+
+        protected static boolean isValid(int codeRange) {
+            return codeRange == StringSupport.CR_VALID;
+        }
+
+        protected static boolean isBroken(int codeRange) {
+            return codeRange == StringSupport.CR_BROKEN;
+        }
+
+        protected static boolean isUnknown(int codeRange) {
+            return codeRange == StringSupport.CR_UNKNOWN;
+        }
     }
 }

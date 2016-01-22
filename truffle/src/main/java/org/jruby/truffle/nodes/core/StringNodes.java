@@ -146,6 +146,7 @@ public abstract class StringNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
         @Child private RopeNodes.MakeConcatNode makeConcatNode;
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private ToIntNode toIntNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -173,12 +174,17 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "isSingleByteString(string)", "times > 1" })
         public DynamicObject multiplySingleByteString(DynamicObject string, int times) {
+            if (makeLeafRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+
             final Rope baseRope = rope(string);
             final byte filler = baseRope.getBytes()[0];
 
             byte[] buffer = new byte[times];
             Arrays.fill(buffer, filler);
-            final Rope multipliedRope = RopeOperations.create(buffer, baseRope.getEncoding(), baseRope.getCodeRange());
+            final Rope multipliedRope = makeLeafRopeNode.executeMake(buffer, baseRope.getEncoding(), baseRope.getCodeRange());
 
             return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), multipliedRope, null);
         }
@@ -970,8 +976,11 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class DowncaseBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+
         public DowncaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = { "isEmpty(string)", "isSingleByteOptimizable(string)" })
@@ -987,7 +996,7 @@ public abstract class StringNodes {
 
             final boolean modified = singleByteDowncase(outputBytes, 0, outputBytes.length);
             if (modifiedProfile.profile(modified)) {
-                Layouts.STRING.setRope(string, RopeOperations.create(outputBytes, rope.getEncoding(), rope.getCodeRange()));
+                Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange()));
 
                 return string;
             } else {
@@ -1019,7 +1028,7 @@ public abstract class StringNodes {
                 final boolean modified = multiByteDowncase(encoding, outputBytes, 0, outputBytes.length);
 
                 if (modifiedProfile.profile(modified)) {
-                    Layouts.STRING.setRope(string, RopeOperations.create(outputBytes, rope.getEncoding(), rope.getCodeRange()));
+                    Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange()));
 
                     return string;
                 } else {
@@ -1680,8 +1689,11 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SwapcaseBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+
         public SwapcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @TruffleBoundary
@@ -1711,13 +1723,13 @@ public abstract class StringNodes {
 
             if (singleByteOptimizableProfile.profile(rope.isSingleByteOptimizable())) {
                 if (StringSupport.singleByteSwapcase(bytes, s, end)) {
-                    Layouts.STRING.setRope(string, RopeOperations.create(bytes, rope.getEncoding(), rope.getCodeRange()));
+                    Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
 
                     return string;
                 }
             } else {
                 if (StringSupport.multiByteSwapcase(getContext().getRuntime(), enc, bytes, s, end)) {
-                    Layouts.STRING.setRope(string, RopeOperations.create(bytes, rope.getEncoding(), rope.getCodeRange()));
+                    Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
 
                     return string;
                 }
@@ -1791,6 +1803,7 @@ public abstract class StringNodes {
 
         @Child private RopeNodes.MakeConcatNode composedMakeConcatNode;
         @Child private RopeNodes.MakeConcatNode middleMakeConcatNode;
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode;
         @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode;
 
@@ -1798,6 +1811,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
             composedMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
             middleMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
             leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
             rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
@@ -1820,7 +1834,7 @@ public abstract class StringNodes {
 
             final Rope left = leftMakeSubstringNode.executeMake(rope, 0, normalizedIndex);
             final Rope right = rightMakeSubstringNode.executeMake(rope, normalizedIndex + 1, rope.byteLength() - normalizedIndex - 1);
-            final Rope middle = RopeOperations.create(new byte[] { (byte) value }, rope.getEncoding(), StringSupport.CR_UNKNOWN);
+            final Rope middle = makeLeafRopeNode.executeMake(new byte[] { (byte) value }, rope.getEncoding(), StringSupport.CR_UNKNOWN);
             final Rope composed = composedMakeConcatNode.executeMake(middleMakeConcatNode.executeMake(left, middle, rope.getEncoding()), right, rope.getEncoding());
 
             Layouts.STRING.setRope(string, composed);
@@ -2133,8 +2147,11 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class ReverseBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+
         public ReverseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "reverseIsEqualToSelf(string)")
@@ -2153,7 +2170,7 @@ public abstract class StringNodes {
                 reversedBytes[len - i - 1] = originalBytes[i];;
             }
 
-            Layouts.STRING.setRope(string, RopeOperations.create(reversedBytes, rope.getEncoding(), rope.getCodeRange()));
+            Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), rope.getCodeRange()));
 
             return string;
         }
@@ -2191,7 +2208,7 @@ public abstract class StringNodes {
                 codeRange = single ? StringSupport.CR_7BIT : StringSupport.CR_VALID;
             }
 
-            Layouts.STRING.setRope(string, RopeOperations.create(reversedBytes, rope.getEncoding(), codeRange));
+            Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), codeRange));
 
             return string;
         }
@@ -2543,8 +2560,11 @@ public abstract class StringNodes {
     @CoreMethod(names = "capitalize!", raiseIfFrozenSelf = true)
     public abstract static class CapitalizeBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+
         public CapitalizeBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization
@@ -2590,7 +2610,7 @@ public abstract class StringNodes {
             }
 
             if (modify) {
-                Layouts.STRING.setRope(string, RopeOperations.create(bytes, rope.getEncoding(), rope.getCodeRange()));
+                Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
 
                 return string;
             }
