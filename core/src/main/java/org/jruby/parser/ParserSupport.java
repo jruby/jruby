@@ -235,6 +235,12 @@ public class ParserSupport {
         return head;
     }
 
+    // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
+    public AssignableNode assignableInCurr(String name, Node value) {
+        currentScope.addVariableThisScope(name);
+        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
+    }
+
     public Node getOperatorCallNode(Node firstNode, String operator) {
         checkExpression(firstNode);
 
