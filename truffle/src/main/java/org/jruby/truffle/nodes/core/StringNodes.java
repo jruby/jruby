@@ -729,8 +729,11 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class ChopBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+
         public ChopBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isEmpty(string)")
@@ -742,7 +745,7 @@ public abstract class StringNodes {
         public Object chopBang( DynamicObject string) {
             final int newLength = choppedLength(string);
 
-            Layouts.STRING.setRope(string, RopeOperations.substring(rope(string), 0, newLength));
+            Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope(string), 0, newLength));
 
             return string;
         }
@@ -1057,12 +1060,14 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 
-        @Child private TaintResultNode taintResultNode;
         @Child private AllocateObjectNode allocateObjectNode;
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+        @Child private TaintResultNode taintResultNode;
 
         public EachCharNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isValidOr7BitEncoding(string)")
@@ -1121,7 +1126,7 @@ public abstract class StringNodes {
 
             int end = Math.min(length, beg + len);
 
-            final Rope substringRope = RopeOperations.substring(rope, beg, end - beg);
+            final Rope substringRope = makeSubstringNode.executeMake(rope, beg, end - beg);
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1316,11 +1321,16 @@ public abstract class StringNodes {
     public abstract static class InsertNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode appendNode;
-        @Child private StringPrimitiveNodes.CharacterByteIndexNode characterByteIndexNode;@Child private TaintResultNode taintResultNode;
+        @Child private StringPrimitiveNodes.CharacterByteIndexNode characterByteIndexNode;
+        @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode;
+        @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode;
+        @Child private TaintResultNode taintResultNode;
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             characterByteIndexNode = StringPrimitiveNodesFactory.CharacterByteIndexNodeFactory.create(context, sourceSection, new RubyNode[] {});
+            leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
+            rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
@@ -1385,8 +1395,8 @@ public abstract class StringNodes {
             final int normalizedIndex = StringNodesHelper.checkIndex(stringLength, index, this);
             final int byteIndex = characterByteIndexNode.executeInt(frame, string, normalizedIndex, 0);
 
-            final Rope splitLeft = RopeOperations.substring(source, 0, byteIndex);
-            final Rope splitRight = RopeOperations.substring(source, byteIndex, source.byteLength() - byteIndex);
+            final Rope splitLeft = leftMakeSubstringNode.executeMake(source, 0, byteIndex);
+            final Rope splitRight = rightMakeSubstringNode.executeMake(source, byteIndex, source.byteLength() - byteIndex);
             final Rope joinedLeft = RopeOperations.concat(splitLeft, insert, compatibleEncoding);
             final Rope joinedRight = RopeOperations.concat(joinedLeft, splitRight, compatibleEncoding);
 
@@ -1413,8 +1423,11 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class LstripBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+
         public LstripBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isEmpty(string)")
@@ -1435,7 +1448,7 @@ public abstract class StringNodes {
             int p = s;
             while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
             if (p > s) {
-                Layouts.STRING.setRope(string, RopeOperations.substring(rope, p - s, end - p));
+                Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, p - s, end - p));
 
                 return string;
             }
@@ -1463,7 +1476,7 @@ public abstract class StringNodes {
             }
 
             if (p > s) {
-                Layouts.STRING.setRope(string, RopeOperations.substring(rope, p - s, end - p));
+                Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, p - s, end - p));
 
                 return string;
             }
@@ -1491,8 +1504,11 @@ public abstract class StringNodes {
     @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
     public abstract static class SetNumBytesNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+
         public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization
@@ -1505,7 +1521,7 @@ public abstract class StringNodes {
                         String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength()), this));
             }
 
-            Layouts.STRING.setRope(string, RopeOperations.substring(rope, 0, count));
+            Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, 0, count));
 
             return string;
         }
@@ -1569,8 +1585,11 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class RstripBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+
         public RstripBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isEmpty(string)")
@@ -1592,7 +1611,7 @@ public abstract class StringNodes {
                     ASCIIEncoding.INSTANCE.isSpace(bytes[endp] & 0xff))) endp--;
 
             if (endp < end - 1) {
-                Layouts.STRING.setRope(string, RopeOperations.substring(rope, 0, endp - start + 1));
+                Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, 0, endp - start + 1));
 
                 return string;
             }
@@ -1620,7 +1639,7 @@ public abstract class StringNodes {
             }
 
             if (endp < end) {
-                Layouts.STRING.setRope(string, RopeOperations.substring(rope, 0, endp - start));
+                Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, 0, endp - start));
 
                 return string;
             }
@@ -1746,8 +1765,13 @@ public abstract class StringNodes {
     })
     public abstract static class SetByteNode extends CoreMethodNode {
 
+        @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode;
+        @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode;
+
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
+            rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
@@ -1766,8 +1790,8 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
 
-            final Rope left = RopeOperations.substring(rope, 0, normalizedIndex);
-            final Rope right = RopeOperations.substring(rope, normalizedIndex + 1, rope.byteLength() - normalizedIndex - 1);
+            final Rope left = leftMakeSubstringNode.executeMake(rope, 0, normalizedIndex);
+            final Rope right = rightMakeSubstringNode.executeMake(rope, normalizedIndex + 1, rope.byteLength() - normalizedIndex - 1);
             final Rope middle = RopeOperations.create(new byte[] { (byte) value }, rope.getEncoding(), StringSupport.CR_UNKNOWN);
             final Rope composed = RopeOperations.concat(RopeOperations.concat(left, middle, rope.getEncoding()), right, rope.getEncoding());
 

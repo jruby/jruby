@@ -67,56 +67,6 @@ public class RopeOperations {
         return new ConcatRope(left, right, encoding);
     }
 
-    public static Rope substring(Rope base, int offset, int byteLength) {
-        if (byteLength == 0) {
-            return withEncoding(EMPTY_UTF8_ROPE, base.getEncoding());
-        }
-
-        if (byteLength - offset == base.byteLength()) {
-            return base;
-        }
-
-        if (base instanceof SubstringRope) {
-            return substringSubstringRope((SubstringRope) base, offset, byteLength);
-        } else if (base instanceof ConcatRope) {
-            return substringConcatRope((ConcatRope) base, offset, byteLength);
-        }
-
-        return makeSubstring(base, offset, byteLength);
-    }
-
-    private static Rope substringSubstringRope(SubstringRope base, int offset, int byteLength) {
-        return makeSubstring(base.getChild(), offset + base.getOffset(), byteLength);
-    }
-
-    @TruffleBoundary
-    private static Rope substringConcatRope(ConcatRope base, int offset, int byteLength) {
-        if (offset + byteLength <= base.getLeft().byteLength()) {
-            return substring(base.getLeft(), offset, byteLength);
-        } else if (offset >= base.getLeft().byteLength()) {
-            return substring(base.getRight(), offset - base.getLeft().byteLength(), byteLength);
-        }
-
-        return makeSubstring(base, offset, byteLength);
-    }
-
-    private static Rope makeSubstring(Rope base, int offset, int byteLength) {
-        if (base.getCodeRange() == StringSupport.CR_7BIT) {
-            return new SubstringRope(base, offset, byteLength, byteLength, StringSupport.CR_7BIT);
-        }
-
-        return makeSubstringNon7Bit(base, offset, byteLength);
-    }
-
-    @TruffleBoundary
-    private static Rope makeSubstringNon7Bit(Rope base, int offset, int byteLength) {
-        final long packedLengthAndCodeRange = calculateCodeRangeAndLength(base.getEncoding(), base.getBytes(), offset, offset + byteLength);
-        final int codeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
-        final int characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
-
-        return new SubstringRope(base, offset, byteLength, characterLength, codeRange);
-    }
-
     public static Rope withEncoding(Rope originalRope, Encoding newEncoding, int newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
@@ -178,7 +128,7 @@ public class RopeOperations {
     }
 
     @TruffleBoundary
-    private static long calculateCodeRangeAndLength(Encoding encoding, byte[] bytes, int start, int end) {
+    public static long calculateCodeRangeAndLength(Encoding encoding, byte[] bytes, int start, int end) {
         if (bytes.length == 0) {
             return StringSupport.pack(0, encoding.isAsciiCompatible() ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
         } else if (encoding.isAsciiCompatible()) {
