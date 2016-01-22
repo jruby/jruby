@@ -94,7 +94,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public DynamicObject encoding(DynamicObject symbol) {
-            return EncodingNodes.getEncoding(Layouts.SYMBOL.getByteList(symbol).getEncoding());
+            return EncodingNodes.getEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
         }
 
     }
@@ -176,7 +176,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public DynamicObject toS(DynamicObject symbol) {
-            return createString(Layouts.SYMBOL.getByteList(symbol).dup());
+            return createString(Layouts.SYMBOL.getRope(symbol));
         }
 
     }

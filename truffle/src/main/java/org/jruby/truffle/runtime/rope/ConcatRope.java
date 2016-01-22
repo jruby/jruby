@@ -87,26 +87,6 @@ public class ConcatRope extends Rope {
         return right.extractRange(offset - leftLength, length);
     }
 
-    @Override
-    public int hashCode() {
-        return left.hashCode() + right.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o instanceof ConcatRope) {
-            final ConcatRope other = (ConcatRope) o;
-
-            return left.equals(other.left) && right.equals(other.right);
-        }
-
-        return false;
-    }
-
     public Rope getLeft() {
         return left;
     }

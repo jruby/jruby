@@ -176,4 +176,61 @@ public class RopeOperations {
         return StringSupport.strLength(enc, bytes, p, end);
     }
 
+    public static LeafRope flatten(Rope rope) {
+        if (rope instanceof LeafRope) {
+            return (LeafRope) rope;
+        }
+
+        return create(rope.getBytes(), rope.getEncoding(), rope.getCodeRange());
+    }
+
+    public static int hashCodeForLeafRope(byte[] bytes, int startingHashCode, int offset, int length) {
+        assert offset <= bytes.length;
+        assert length <= bytes.length;
+
+        int hashCode = startingHashCode;
+        final int endIndex = offset + length;
+        for (int i = offset; i < endIndex; i++) {
+            hashCode = 31 * hashCode + bytes[i];
+        }
+
+        return hashCode;
+    }
+
+    @TruffleBoundary
+    public static int hashForRange(Rope rope, int startingHashCode, int offset, int length) {
+        if (rope instanceof LeafRope) {
+            return hashCodeForLeafRope(rope.getBytes(), startingHashCode, offset, length);
+        } else if (rope instanceof SubstringRope) {
+            final SubstringRope substringRope = (SubstringRope) rope;
+
+            return hashForRange(substringRope.getChild(), startingHashCode, offset + substringRope.getOffset(), length);
+        } else if (rope instanceof ConcatRope) {
+            final ConcatRope concatRope = (ConcatRope) rope;
+            final Rope left = concatRope.getLeft();
+            final Rope right = concatRope.getRight();
+
+            int hash = startingHashCode;
+            final int leftLength = left.byteLength();
+
+            if (offset < leftLength) {
+                // The left branch might not be large enough to extract the full hash code we want. In that case,
+                // we'll extract what we can and extract the difference from the right side.
+                if (offset + length > leftLength) {
+                    final int coveredByLeft = leftLength - offset;
+                    hash = hashForRange(left, hash, offset, coveredByLeft);
+                    hash = hashForRange(right, hash, 0, length - coveredByLeft);
+
+                    return hash;
+                } else {
+                    return hashForRange(left, hash, offset, length);
+                }
+            }
+
+            return hashForRange(right, hash, offset - leftLength, length);
+        } else {
+            throw new RuntimeException("Hash code not supported for rope of type: " + rope.getClass().getName());
+        }
+    }
+
 }

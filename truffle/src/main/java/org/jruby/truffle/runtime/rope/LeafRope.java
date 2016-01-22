@@ -16,7 +16,6 @@ import java.util.Arrays;
 public abstract class LeafRope extends Rope {
 
     private final byte[] bytes;
-    private int hashCode = -1;
 
     public LeafRope(byte[] bytes, Encoding encoding, int codeRange, boolean singleByteOptimizable, int characterLength) {
         super(encoding, codeRange, singleByteOptimizable, bytes.length, characterLength, 1);
@@ -43,30 +42,6 @@ public abstract class LeafRope extends Rope {
         System.arraycopy(bytes, offset, ret, 0, trueLength);
 
         return ret;
-    }
-
-    @Override
-    public int hashCode() {
-        if (hashCode == -1) {
-            hashCode = Arrays.hashCode(bytes) + getEncoding().hashCode();
-        }
-
-        return hashCode;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o instanceof LeafRope) {
-            final LeafRope other = (LeafRope) o;
-
-            return getEncoding() == other.getEncoding() && Arrays.equals(bytes, other.getBytes());
-        }
-
-        return false;
     }
 
     @Override

@@ -36,7 +36,7 @@ public abstract class EncodingPrimitiveNodes {
 
         @Specialization(guards = "isRubySymbol(symbol)")
         public DynamicObject encodingGetObjectEncodingSymbol(DynamicObject symbol) {
-            return EncodingNodes.getEncoding(Layouts.SYMBOL.getByteList(symbol).getEncoding());
+            return EncodingNodes.getEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")

@@ -44,7 +44,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (RubyGuards.isRubySymbol(cachedName)) {
             cachedNameAsSymbol = (DynamicObject) cachedName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            cachedNameAsSymbol = context.getSymbol(StringOperations.getByteListReadOnly((DynamicObject) cachedName));
+            cachedNameAsSymbol = context.getSymbol(StringOperations.rope((DynamicObject) cachedName));
         } else if (cachedName instanceof String) {
             cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {

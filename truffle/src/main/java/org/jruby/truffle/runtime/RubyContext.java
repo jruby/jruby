@@ -57,6 +57,7 @@ import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 import org.jruby.truffle.runtime.platform.CrtExterns;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
@@ -397,6 +398,10 @@ public class RubyContext extends ExecutionContext {
     }
 
     public DynamicObject getSymbol(ByteList name) {
+        return symbolTable.getSymbol(name);
+    }
+
+    public DynamicObject getSymbol(Rope name) {
         return symbolTable.getSymbol(name);
     }
 

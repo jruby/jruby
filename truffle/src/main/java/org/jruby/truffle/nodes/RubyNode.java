@@ -157,6 +157,10 @@ public abstract class RubyNode extends Node {
         return getContext().getSymbol(name);
     }
 
+    public DynamicObject getSymbol(Rope name) {
+        return getContext().getSymbol(name);
+    }
+
     /** Creates a String from the ByteList, with unknown CR */
     protected DynamicObject createString(ByteList bytes) {
         return StringOperations.createString(getContext(), bytes);
