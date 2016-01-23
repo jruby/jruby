@@ -60,4 +60,13 @@ public class SubstringRope extends Rope {
         // This should be used for debugging only.
         return RubyEncoding.decodeUTF8(child.getBytes(), offset, byteLength());
     }
+
+    @Override
+    protected void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength) {
+        if (bytes != null) {
+            System.arraycopy(bytes, offset, buffer, bufferPosition, byteLength);
+        } else {
+            child.fillBytes(buffer, bufferPosition, offset + this.offset, byteLength);
+        }
+    }
 }

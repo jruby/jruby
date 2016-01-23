@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.runtime.rope;
 
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import org.jcodings.Encoding;
 import org.jruby.util.ByteList;
 
@@ -122,5 +121,7 @@ public abstract class Rope {
 
         return false;
     }
+
+    protected abstract void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength);
 
 }

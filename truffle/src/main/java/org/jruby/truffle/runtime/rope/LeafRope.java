@@ -49,4 +49,11 @@ public abstract class LeafRope extends Rope {
         // This should be used for debugging only.
         return RopeOperations.decodeUTF8(this);
     }
+
+    @Override
+    protected void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength) {
+        assert offset + byteLength <= bytes.length;
+
+        System.arraycopy(bytes, offset, buffer, bufferPosition, byteLength);
+    }
 }
