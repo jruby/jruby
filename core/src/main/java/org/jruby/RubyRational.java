@@ -129,7 +129,7 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_raw
      * 
      */
-    static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
+    public static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
         return new RubyRational(runtime, runtime.getRational(), x, y);
     }
 
@@ -150,7 +150,7 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_new
      * 
      */
-    static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
         return canonicalizeInternal(context, context.runtime.getRational(), x, y);
     }
 
