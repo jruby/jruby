@@ -17,10 +17,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyRational;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
@@ -1830,6 +1832,8 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "round", optional = 2)
     public abstract static class RoundNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
+        @Child private FixnumOrBignumNode fixnumOrBignumNode;
+
         public RoundNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1851,7 +1855,12 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "isNormal(value)")
         public Object round(VirtualFrame frame, DynamicObject value, NotProvided digit, NotProvided roundingMode) {
-            return createBigDecimal(frame, round(value, 0, getRoundMode(frame)));
+            if (fixnumOrBignumNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fixnumOrBignumNode = insert(FixnumOrBignumNode.create(getContext(), getSourceSection()));
+            }
+
+            return fixnumOrBignumNode.fixnumOrBignum(round(value, 0, getRoundMode(frame)));
         }
 
         @Specialization(guards = "isNormal(value)")
@@ -1866,6 +1875,11 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "!isNormal(value)")
         public Object roundSpecial(VirtualFrame frame, DynamicObject value, NotProvided precision, Object unusedRoundingMode) {
+            if (fixnumOrBignumNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fixnumOrBignumNode = insert(FixnumOrBignumNode.create(getContext(), getSourceSection()));
+            }
+
             switch (Layouts.BIG_DECIMAL.getType(value)) {
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
@@ -1876,7 +1890,7 @@ public abstract class BigDecimalNodes {
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError("Computation results to 'Infinity'", this));
                 case NEGATIVE_ZERO:
-                    return value;
+                    return fixnumOrBignumNode.fixnumOrBignum(Layouts.BIG_DECIMAL.getValue(value));
                 case NAN:
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().
@@ -2111,14 +2125,16 @@ public abstract class BigDecimalNodes {
                         "value.numerator",
                         "value", value);
 
-                final long numeratorValue;
+                final IRubyObject numeratorValue;
 
                 if (numerator instanceof Integer) {
-                    numeratorValue = (int) numerator;
+                    numeratorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (int) numerator);
                 } else if (numerator instanceof Long) {
-                    numeratorValue = (long) numerator;
+                    numeratorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (long) numerator);
+                } else if (RubyGuards.isRubyBignum(numerator)) {
+                    numeratorValue = RubyBignum.newBignum(getContext().getRuntime(), Layouts.BIGNUM.getValue((DynamicObject) numerator));
                 } else {
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException(numerator.toString());
                 }
 
                 final Object denominator = ruby(
@@ -2126,19 +2142,28 @@ public abstract class BigDecimalNodes {
                         "value.denominator",
                         "value", value);
 
-                final long denominatorValue;
+                final IRubyObject denominatorValue;
 
                 if (denominator instanceof Integer) {
-                    denominatorValue = (int) denominator;
+                    denominatorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (int) denominator);
                 } else if (denominator instanceof Long) {
-                    denominatorValue = (long) denominator;
+                    denominatorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (long) denominator);
+                } else if (RubyGuards.isRubyBignum(denominator)) {
+                    denominatorValue = RubyBignum.newBignum(getContext().getRuntime(), Layouts.BIGNUM.getValue((DynamicObject) denominator));
                 } else {
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException(denominator.toString());
                 }
 
-                final RubyRational rubyRationalValue = RubyRational.newRationalRaw(getContext().getRuntime(), RubyFixnum.newFixnum(getContext().getRuntime(), numeratorValue), RubyFixnum.newFixnum(getContext().getRuntime(), denominatorValue));
+                final RubyRational rubyRationalValue = RubyRational.newRationalRaw(getContext().getRuntime(), numeratorValue, denominatorValue);
 
-                final RubyBigDecimal rubyBigDecimalValue = RubyBigDecimal.getVpRubyObjectWithPrec19Inner(getContext().getRuntime().getCurrentContext(), rubyRationalValue, (RoundingMode) roundingMode);
+                final RubyBigDecimal rubyBigDecimalValue;
+
+                try {
+                    rubyBigDecimalValue = RubyBigDecimal.getVpRubyObjectWithPrec19Inner(getContext().getRuntime().getCurrentContext(), rubyRationalValue, (RoundingMode) roundingMode);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw e;
+                }
 
                 return rubyBigDecimalValue.getBigDecimalValue();
             } else {
