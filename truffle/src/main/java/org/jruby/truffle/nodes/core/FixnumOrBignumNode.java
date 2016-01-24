@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -39,6 +40,12 @@ public class FixnumOrBignumNode extends RubyNode {
 
     private final ConditionProfile integerFromDoubleProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile longFromDoubleProfile = ConditionProfile.createBinaryProfile();
+
+    public Object fixnumOrBignum(BigDecimal value) {
+        CompilerDirectives.transferToInterpreter();
+
+        return fixnumOrBignum(value.toBigInteger());
+    }
 
     public Object fixnumOrBignum(BigInteger value) {
         if (lowerProfile.profile(value.compareTo(LONG_MIN_BIGINT) >= 0 && value.compareTo(LONG_MAX_BIGINT) <= 0)) {
