@@ -136,6 +136,11 @@ public abstract class BignumNodes {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).multiply(Layouts.BIGNUM.getValue(b)));
         }
 
+        @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isDouble(b)", "!isRubyBignum(b)"})
+        public Object mul(VirtualFrame frame, DynamicObject a, Object b) {
+            return ruby(frame, "redo_coerced :*, other", "other", b);
+        }
+
     }
 
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
