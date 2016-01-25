@@ -24,6 +24,8 @@
 
 require "execjs"
 require "truffle/execjs"
+
+# Not using the remote file as we can't inflate the data it gives us at the moment
 #require "open-uri"
 source = File.read(File.join(File.dirname(__FILE__), 'coffeescript.js')) # open("http://coffeescript.org/extras/coffee-script.js").read
 
