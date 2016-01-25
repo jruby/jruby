@@ -2546,15 +2546,21 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "valid_encoding?")
+    @ImportStatic(StringGuards.class)
     public abstract static class ValidEncodingQueryNode extends CoreMethodArrayArgumentsNode {
 
         public ValidEncodingQueryNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isBrokenCodeRange(string)")
+        public boolean validEncodingQueryBroken(DynamicObject string) {
+            return false;
+        }
+
+        @Specialization(guards = "!isBrokenCodeRange(string)")
         public boolean validEncodingQuery(DynamicObject string) {
-            return codeRange(string) != StringSupport.CR_BROKEN;
+            return true;
         }
 
     }

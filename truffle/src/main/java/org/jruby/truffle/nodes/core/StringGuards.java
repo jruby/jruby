@@ -68,4 +68,9 @@ public class StringGuards {
         assert RubyGuards.isRubyString(string);
         return Layouts.STRING.getRope(string).isEmpty();
     }
+
+    public static boolean isBrokenCodeRange(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        return StringOperations.codeRange(string) == StringSupport.CR_BROKEN;
+    }
 }
