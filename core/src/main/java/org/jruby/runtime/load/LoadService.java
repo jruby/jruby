@@ -207,7 +207,7 @@ public class LoadService {
      *
      * @param prependDirectories
      */
-    public void init(List prependDirectories) {
+    public void init(List<String> prependDirectories) {
         loadPath = RubyArray.newArray(runtime);
 
         String jrubyHome = runtime.getJRubyHome();
@@ -426,7 +426,7 @@ public class LoadService {
         return smartLoadInternal(file, circularRequireWarning);
     }
 
-    protected final RequireLocks requireLocks = new RequireLocks();
+    private final RequireLocks requireLocks = new RequireLocks();
 
     private static final class RequireLocks {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
