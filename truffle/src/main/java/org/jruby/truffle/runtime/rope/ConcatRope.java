@@ -17,15 +17,14 @@ public class ConcatRope extends Rope {
     private final Rope left;
     private final Rope right;
 
-    private byte[] bytes;
-
     public ConcatRope(Rope left, Rope right, Encoding encoding, int codeRange, boolean singleByteOptimizable, int depth) {
         super(encoding,
                 codeRange,
                 singleByteOptimizable,
                 left.byteLength() + right.byteLength(),
                 left.characterLength() + right.characterLength(),
-                depth);
+                depth,
+                null);
 
         this.left = left;
         this.right = right;
@@ -42,20 +41,20 @@ public class ConcatRope extends Rope {
     }
 
     @Override
-    public byte[] getBytes() {
-        if (bytes == null) {
-            final byte[] leftBytes = left.getBytes();
-            final byte[] rightBytes = right.getBytes();
+    @TruffleBoundary
+    public byte[] calculateBytes() {
+        final byte[] leftBytes = left.getBytes();
+        final byte[] rightBytes = right.getBytes();
 
-            bytes = new byte[leftBytes.length + rightBytes.length];
-            System.arraycopy(leftBytes, 0, bytes, 0, leftBytes.length);
-            System.arraycopy(rightBytes, 0, bytes, leftBytes.length, rightBytes.length);
-        }
+        final byte[] bytes = new byte[leftBytes.length + rightBytes.length];
+        System.arraycopy(leftBytes, 0, bytes, 0, leftBytes.length);
+        System.arraycopy(rightBytes, 0, bytes, leftBytes.length, rightBytes.length);
 
         return bytes;
     }
 
     @Override
+    @TruffleBoundary
     public byte[] extractRange(int offset, int length) {
         byte[] leftBytes;
         byte[] rightBytes;
@@ -102,8 +101,8 @@ public class ConcatRope extends Rope {
 
     @Override
     protected void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength) {
-        if (bytes != null) {
-            System.arraycopy(bytes, offset, buffer, bufferPosition, byteLength);
+        if (getRawBytes() != null) {
+            System.arraycopy(getRawBytes(), offset, buffer, bufferPosition, byteLength);
         } else {
             final int leftLength = left.byteLength();
 

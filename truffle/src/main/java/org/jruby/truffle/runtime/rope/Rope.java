@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.rope;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 import org.jruby.util.ByteList;
 
@@ -23,14 +24,16 @@ public abstract class Rope {
     private final int characterLength;
     private final int ropeDepth;
     private int hashCode = 0;
+    private byte[] bytes;
 
-    protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth) {
+    protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
         this.encoding = encoding;
         this.codeRange = codeRange;
         this.singleByteOptimizable = singleByteOptimizable;
         this.byteLength = byteLength;
         this.characterLength = characterLength;
         this.ropeDepth = ropeDepth;
+        this.bytes = bytes;
     }
 
     public final int characterLength() {
@@ -53,13 +56,26 @@ public abstract class Rope {
 
     public abstract int get(int index);
 
-    public abstract byte[] getBytes();
+    public final byte[] getRawBytes() {
+        return bytes;
+    }
+
+    public final byte[] getBytes() {
+        if (bytes == null) {
+            CompilerDirectives.transferToInterpreter();
+            bytes = calculateBytes();
+        }
+
+        return bytes;
+    }
 
     public byte[] getBytesCopy() {
         return getBytes().clone();
     }
 
     public abstract byte[] extractRange(int offset, int length);
+
+    public abstract byte[] calculateBytes();
 
     public final Encoding getEncoding() {
         return encoding;

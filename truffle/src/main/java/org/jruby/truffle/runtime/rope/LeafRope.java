@@ -15,31 +15,28 @@ import java.util.Arrays;
 
 public abstract class LeafRope extends Rope {
 
-    private final byte[] bytes;
-
     public LeafRope(byte[] bytes, Encoding encoding, int codeRange, boolean singleByteOptimizable, int characterLength) {
-        super(encoding, codeRange, singleByteOptimizable, bytes.length, characterLength, 1);
-        this.bytes = bytes;
+        super(encoding, codeRange, singleByteOptimizable, bytes.length, characterLength, 1, bytes);
     }
 
     @Override
     public int get(int index) {
-        return bytes[index];
+        return getRawBytes()[index];
     }
 
     @Override
-    public byte[] getBytes() {
-        return bytes;
+    public byte[] calculateBytes() {
+        throw new UnsupportedOperationException("LeafRope's bytes are always known. There is no need to calculate them.");
     }
 
     @Override
     public byte[] extractRange(int offset, int length) {
-        assert offset + length <= bytes.length;
+        assert offset + length <= byteLength();
 
         final int trueLength = Math.min(length, byteLength());
         final byte[] ret = new byte[trueLength];
 
-        System.arraycopy(bytes, offset, ret, 0, trueLength);
+        System.arraycopy(getRawBytes(), offset, ret, 0, trueLength);
 
         return ret;
     }
@@ -52,8 +49,8 @@ public abstract class LeafRope extends Rope {
 
     @Override
     protected void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength) {
-        assert offset + byteLength <= bytes.length;
+        assert offset + byteLength <= byteLength();
 
-        System.arraycopy(bytes, offset, buffer, bufferPosition, byteLength);
+        System.arraycopy(getRawBytes(), offset, buffer, bufferPosition, byteLength);
     }
 }

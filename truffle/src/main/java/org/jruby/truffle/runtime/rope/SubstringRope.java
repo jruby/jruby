@@ -17,11 +17,9 @@ public class SubstringRope extends Rope {
     private final Rope child;
     private final int offset;
 
-    private byte[] bytes;
-
     public SubstringRope(Rope child, int offset, int byteLength, int characterLength, int codeRange) {
         // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
-        super(child.getEncoding(), codeRange, child.isSingleByteOptimizable(), byteLength, characterLength, child.depth() + 1);
+        super(child.getEncoding(), codeRange, child.isSingleByteOptimizable(), byteLength, characterLength, child.depth() + 1, null);
         this.child = child;
         this.offset = offset;
     }
@@ -32,12 +30,8 @@ public class SubstringRope extends Rope {
     }
 
     @Override
-    public byte[] getBytes() {
-        if (bytes == null) {
-            bytes = child.extractRange(offset, byteLength());
-        }
-
-        return bytes;
+    public byte[] calculateBytes() {
+        return child.extractRange(offset, byteLength());
     }
 
     @Override
@@ -63,8 +57,8 @@ public class SubstringRope extends Rope {
 
     @Override
     protected void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength) {
-        if (bytes != null) {
-            System.arraycopy(bytes, offset, buffer, bufferPosition, byteLength);
+        if (getRawBytes() != null) {
+            System.arraycopy(getRawBytes(), offset, buffer, bufferPosition, byteLength);
         } else {
             child.fillBytes(buffer, bufferPosition, offset + this.offset, byteLength);
         }
