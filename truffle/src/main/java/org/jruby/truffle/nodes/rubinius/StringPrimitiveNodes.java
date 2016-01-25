@@ -605,8 +605,8 @@ public abstract class StringPrimitiveNodes {
                 return true;
             }
 
-            final int firstCodeRange = StringOperations.scanForCodeRange(first);
-            final int secondCodeRange = StringOperations.scanForCodeRange(second);
+            final int firstCodeRange = firstRope.getCodeRange();
+            final int secondCodeRange = secondRope.getCodeRange();
 
             if (firstStringCR7BitProfile.profile(firstCodeRange == StringSupport.CR_7BIT)) {
                 if (secondStringCR7BitProfile.profile(secondCodeRange == StringSupport.CR_7BIT)) {
@@ -1066,7 +1066,7 @@ public abstract class StringPrimitiveNodes {
 
             if (emptyPatternProfile.profile(patternRope.isEmpty())) return offset;
 
-            if (brokenCodeRangeProfile.profile(StringOperations.scanForCodeRange(string) == StringSupport.CR_BROKEN)) {
+            if (brokenCodeRangeProfile.profile(stringRope.getCodeRange() == StringSupport.CR_BROKEN)) {
                 return nil();
             }
 
