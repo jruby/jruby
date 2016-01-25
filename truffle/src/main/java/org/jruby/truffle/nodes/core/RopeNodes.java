@@ -57,19 +57,19 @@ public abstract class RopeNodes {
             return base;
         }
 
-        @Specialization(guards = { "byteLength > 0", "!sameAsBase(base, offset, byteLength)", "isLeafRope(base)" })
+        @Specialization(guards = { "byteLength > 0", "!sameAsBase(base, offset, byteLength)" })
         public Rope substringLeafRope(LeafRope base, int offset, int byteLength,
                                   @Cached("createBinaryProfile()") ConditionProfile is7BitProfile) {
             return makeSubstring(base, offset, byteLength, is7BitProfile);
         }
 
-        @Specialization(guards = { "byteLength > 0", "!sameAsBase(base, offset, byteLength)", "isSubstringRope(base)" })
+        @Specialization(guards = { "byteLength > 0", "!sameAsBase(base, offset, byteLength)" })
         public Rope substringSubstringRope(SubstringRope base, int offset, int byteLength,
                                       @Cached("createBinaryProfile()") ConditionProfile is7BitProfile) {
             return makeSubstring(base.getChild(), offset + base.getOffset(), byteLength, is7BitProfile);
         }
 
-        @Specialization(guards = { "byteLength > 0", "!sameAsBase(base, offset, byteLength)", "isConcatRope(base)" })
+        @Specialization(guards = { "byteLength > 0", "!sameAsBase(base, offset, byteLength)" })
         public Rope substringConcatRope(ConcatRope base, int offset, int byteLength,
                                       @Cached("createBinaryProfile()") ConditionProfile is7BitProfile) {
             Rope root = base;
@@ -128,22 +128,6 @@ public abstract class RopeNodes {
 
         protected static boolean sameAsBase(Rope base, int offset, int byteLength) {
             return (byteLength - offset) == base.byteLength();
-        }
-
-        protected static boolean is7Bit(Rope base) {
-            return base.getCodeRange() == StringSupport.CR_7BIT;
-        }
-
-        protected static boolean isLeafRope(Rope rope) {
-            return (rope instanceof LeafRope);
-        }
-
-        protected static boolean isSubstringRope(Rope rope) {
-            return (rope instanceof SubstringRope);
-        }
-
-        protected static boolean isConcatRope(Rope rope) {
-            return (rope instanceof ConcatRope);
         }
 
     }
