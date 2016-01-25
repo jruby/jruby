@@ -25,38 +25,39 @@ public class BaseTest {
         container.terminate();
     }
 
-    private void collectTests(ScriptingContainer container, String index) throws Exception {
-        container.runScriptlet("File.open(File.join('test', '" + index + ".index')) do |f|\n" +
-                               "      f.each_line.each do |line|\n" +
-                               "        next if line =~ /^#/ or line.strip.empty?\n" +
-                               "        filename = \"test/mri/#{line.chomp}\"\n" +
-                               "        filename = \"test/jruby/#{line.chomp}.rb\" unless File.exist? filename\n" +
-                               "        filename = \"test/#{line.chomp}.rb\" unless File.exist? filename\n" +
-                               "        next unless File.file? filename\n" +
-                               "        next if filename =~ /mri\\/net\\/http\\//\n" +
-                               "        next if filename =~ /mri\\/ruby\\/test_class/\n" +
-                               "        next if filename =~ /mri\\/ruby\\/test_io/\n" +
-                               "        next if filename =~ /mri\\/ruby\\/test_econv/\n" +
-                               // TODO find a way to obey the minitest/excludes and get those back
-                               "        next if filename =~ /psych\\/test_encoding.rb/\n" +
-                               "        next if filename =~ /psych\\/test_parser.rb/\n" +
-                               "        next if filename =~ /psych\\/test_psych.rb/\n" +
-                               "        next if filename =~ /psych\\/visitors\\/test_yaml_tree.rb/\n" +
-                               "        next if filename =~ /psych\\/test_document.rb/\n" +
-                               "        next if filename =~ /psych\\/test_tree_builder.rb/\n" +
-                               "        next if filename =~ /psych\\/test_date_time.rb/\n" +
-                               "        next if filename =~ /psych\\/test_nil.rb/\n" +
-                               // TODO file an issue or so
-                               "        next if filename =~ /test_load_compiled_ruby.rb/\n" +
-                               "        next if filename =~ /compiler\\/test_jrubyc.rb/\n" +
-                               // TODO remove the following after fix of #2215
-                               "        next if filename =~ /test_jar_on_load_path.rb/\n" +
-                               "        next if filename =~ /test_file.rb/\n" +
-                               "        filename.sub!( /.*\\/test\\//, 'test/' )\n" +
-                               "        puts filename\n" +
-                               "        require filename\n" +
-                               "      end\n" +
-                               "    end");
+    protected void collectTests(ScriptingContainer container, String index) throws Exception {
+        container.runScriptlet(
+            "File.open(File.join('test', '" + index + ".index')) do |f|\n" +
+            "      f.each_line do |line|\n" +
+            "        next if line =~ /^#/ or line.strip.empty?\n" +
+            "        filename = \"test/mri/#{line.chomp}\"\n" +
+            "        filename = \"test/jruby/#{line.chomp}.rb\" unless File.exist? filename\n" +
+            "        filename = \"test/#{line.chomp}.rb\" unless File.exist? filename\n" +
+            "        next unless File.file? filename\n" +
+            "        next if filename =~ /mri\\/net\\/http\\//\n" +
+            "        next if filename =~ /mri\\/ruby\\/test_class/\n" +
+            "        next if filename =~ /mri\\/ruby\\/test_io/\n" +
+            "        next if filename =~ /mri\\/ruby\\/test_econv/\n" +
+            // TODO find a way to obey the minitest/excludes and get those back
+            "        next if filename =~ /psych\\/test_encoding.rb/\n" +
+            "        next if filename =~ /psych\\/test_parser.rb/\n" +
+            "        next if filename =~ /psych\\/test_psych.rb/\n" +
+            "        next if filename =~ /psych\\/visitors\\/test_yaml_tree.rb/\n" +
+            "        next if filename =~ /psych\\/test_document.rb/\n" +
+            "        next if filename =~ /psych\\/test_tree_builder.rb/\n" +
+            "        next if filename =~ /psych\\/test_date_time.rb/\n" +
+            "        next if filename =~ /psych\\/test_nil.rb/\n" +
+            // TODO file an issue or so
+            "        next if filename =~ /test_load_compiled_ruby.rb/\n" +
+            "        next if filename =~ /compiler\\/test_jrubyc.rb/\n" +
+            // TODO remove the following after fix of #2215
+            "        next if filename =~ /test_jar_on_load_path.rb/\n" +
+            "        next if filename =~ /test_file.rb/\n" +
+            "        filename.sub!( /.*\\/test\\//, 'test/' )\n" +
+            "        puts filename\n" +
+            "        require filename\n" +
+            "      end\n" +
+            "    end" );
     }
 
     void runIt(String index) throws Exception {
