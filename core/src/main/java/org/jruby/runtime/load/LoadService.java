@@ -305,7 +305,7 @@ public class LoadService {
     protected void addPath(String path) {
         // Empty paths do not need to be added
         if (path == null || path.length() == 0) return;
-
+        final RubyArray loadPath = this.loadPath;
         synchronized(loadPath) {
             loadPath.append(runtime.newString(path.replace('\\', '/')));
         }
@@ -335,7 +335,7 @@ public class LoadService {
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
-                if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+                debugLoadException(runtime, e);
                 throw newLoadErrorFromThrowable(runtime, file, e);
             }
         } finally {
@@ -361,7 +361,7 @@ public class LoadService {
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
-                if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+                debugLoadException(runtime, e);
                 throw newLoadErrorFromThrowable(runtime, file, e);
             }
         } finally {
@@ -610,9 +610,13 @@ public class LoadService {
         } catch (RaiseException re) {
             throw re;
         } catch (Throwable e) {
-            if (runtime.getDebug().isTrue()) e.printStackTrace();
+            debugLoadException(runtime, e);
             throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e, libraryName);
         }
+    }
+
+    private static void debugLoadException(final Ruby runtime, final Throwable ex) {
+        if (runtime.isDebug()) ex.printStackTrace(runtime.getErr());
     }
 
     public IRubyObject getLoadPath() {
@@ -899,12 +903,12 @@ public class LoadService {
             // allow MainExitException to propagate out for exec and friends
             throw mee;
         } catch (Throwable e) {
-            if(isJarfileLibrary(state, state.searchFile)) {
+            if (isJarfileLibrary(state, state.searchFile)) {
                 return true;
             }
             reraiseRaiseExceptions(e);
 
-            if(runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+            debugLoadException(runtime, e);
 
             RaiseException re = newLoadErrorFromThrowable(runtime, state.searchFile, e);
             re.initCause(e);
@@ -933,15 +937,16 @@ public class LoadService {
     protected String buildClassName(String className) {
         // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
         className = className.replaceFirst("^\\.\\/", "");
-        if (className.lastIndexOf(".") != -1) {
-            className = className.substring(0, className.lastIndexOf("."));
+        final int lastDot = className.lastIndexOf('.');
+        if (lastDot != -1) {
+            className = className.substring(0, lastDot);
         }
         className = className.replace("-", "_minus_").replace('.', '_');
         return className;
     }
 
     protected void checkEmptyLoad(String file) throws RaiseException {
-        if (file.equals("")) {
+        if (file.isEmpty()) {
             throw runtime.newLoadError("no such file to load -- " + file, file);
         }
     }
@@ -1355,7 +1360,7 @@ public class LoadService {
             // Fall back to using the original string
         }
 
-        int idx = unescaped.indexOf("!");
+        int idx = unescaped.indexOf('!');
         if (idx == -1) {
             return new String[]{unescaped, ""};
         }
@@ -1363,11 +1368,11 @@ public class LoadService {
         String filename = unescaped.substring(0, idx);
         String entry = idx + 2 < unescaped.length() ? unescaped.substring(idx + 2) : "";
 
-        if(filename.startsWith("jar:")) {
+        if (filename.startsWith("jar:")) {
             filename = filename.substring(4);
         }
 
-        if(filename.startsWith("file:")) {
+        if (filename.startsWith("file:")) {
             filename = filename.substring(5);
         }
 
