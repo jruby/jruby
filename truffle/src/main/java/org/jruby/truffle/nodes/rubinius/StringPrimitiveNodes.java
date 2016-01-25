@@ -576,7 +576,7 @@ public abstract class StringPrimitiveNodes {
                 return false;
             }
 
-            return Arrays.equals(a.getBytes(), b.getBytes());
+            return a.equals(b);
         }
 
         protected boolean areComparable(DynamicObject first, DynamicObject second,
