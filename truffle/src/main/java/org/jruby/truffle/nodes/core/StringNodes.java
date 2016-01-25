@@ -75,6 +75,7 @@ import org.jruby.util.io.EncodingUtils;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import static org.jruby.truffle.runtime.core.StringOperations.codeRange;
 import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_UTF8_ROPE;
 import static org.jruby.truffle.runtime.core.StringOperations.rope;
@@ -472,10 +473,11 @@ public abstract class StringNodes {
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
         public Object getIndex(VirtualFrame frame, DynamicObject string, int index, Object length) {
-            final int stringLength = StringOperations.rope(string).characterLength();
+            final Rope rope = rope(string);
+            final int stringLength = rope.characterLength();
             int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
-            if (normalizedIndex < 0 || normalizedIndex >= StringOperations.byteLength(string)) {
+            if (normalizedIndex < 0 || normalizedIndex >= rope.byteLength()) {
                 outOfBounds.enter();
                 return nil();
             } else {
@@ -2552,7 +2554,7 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean validEncodingQuery(DynamicObject string) {
-            return StringOperations.scanForCodeRange(string) != StringSupport.CR_BROKEN;
+            return codeRange(string) != StringSupport.CR_BROKEN;
         }
 
     }

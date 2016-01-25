@@ -39,6 +39,7 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.*;
 
 import java.nio.charset.StandardCharsets;
@@ -466,7 +467,8 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(raw)")
         public DynamicObject quoteString(DynamicObject raw) {
-            boolean isAsciiOnly = Layouts.STRING.getRope(raw).getEncoding().isAsciiCompatible() && StringOperations.scanForCodeRange(raw) == CR_7BIT;
+            final Rope rope = StringOperations.rope(raw);
+            boolean isAsciiOnly = rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CR_7BIT;
             return createString(org.jruby.RubyRegexp.quote19(StringOperations.getByteListReadOnly(raw), isAsciiOnly));
         }
 

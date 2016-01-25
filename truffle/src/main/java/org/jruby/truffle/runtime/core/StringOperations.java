@@ -120,17 +120,6 @@ public abstract class StringOperations {
         }
     }
 
-    public static int scanForCodeRange(DynamicObject string) {
-        int cr = StringOperations.getCodeRange(string);
-
-        if (cr == StringSupport.CR_UNKNOWN) {
-            cr = slowCodeRangeScan(string);
-            StringOperations.setCodeRange(string, cr);
-        }
-
-        return cr;
-    }
-
     public static boolean isCodeRangeValid(DynamicObject string) {
         return StringOperations.getCodeRange(string) == StringSupport.CR_VALID;
     }
@@ -176,12 +165,6 @@ public abstract class StringOperations {
         return encoding;
     }
 
-    @CompilerDirectives.TruffleBoundary
-    private static int slowCodeRangeScan(DynamicObject string) {
-        final ByteList byteList = StringOperations.getByteListReadOnly(string);
-        return StringSupport.codeRangeScan(byteList.getEncoding(), byteList);
-    }
-
     public static void forceEncoding(DynamicObject string, Encoding encoding) {
         modify(string);
         final Rope oldRope = Layouts.STRING.getRope(string);
@@ -223,11 +206,6 @@ public abstract class StringOperations {
 
     public static ByteList getByteListReadOnly(DynamicObject object) {
         return Layouts.STRING.getRope(object).getUnsafeByteList();
-    }
-
-    // TODO (nirdvrum 07-Jan-16) Either remove this method or Rope#byteLength -- the latter doesn't require materializing the full byte array.
-    public static int byteLength(DynamicObject object) {
-        return Layouts.STRING.getRope(object).byteLength();
     }
 
     public static Rope ropeFromByteList(ByteList byteList) {
