@@ -28,6 +28,7 @@ import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -234,11 +235,11 @@ public abstract class TruffleInteropNodes {
             return ForeignAccess.execute(readNode, frame, receiver, identifierString);
         }
 
-        @Specialization(guards = {"isRubyString(identifier)", "byteListsEqual(identifier, cachedIdentifier)"})
+        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
         public Object readProperty(VirtualFrame frame,
                                    TruffleObject receiver,
                                    DynamicObject identifier,
-                                   @Cached("privatizeByteList(identifier)") ByteList cachedIdentifier,
+                                   @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
                                    @Cached("identifier.toString()") String identifierString,
                                    @Cached("createReadNode()") Node readNode) {
             return ForeignAccess.execute(readNode, frame, receiver, identifierString);
@@ -282,12 +283,12 @@ public abstract class TruffleInteropNodes {
             return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
         }
 
-        @Specialization(guards = {"isRubyString(identifier)", "byteListsEqual(identifier, cachedIdentifier)"})
+        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
         public Object writeProperty(VirtualFrame frame,
                                     TruffleObject receiver,
                                     DynamicObject identifier,
                                     Object value,
-                                    @Cached("privatizeByteList(identifier)") ByteList cachedIdentifier,
+                                    @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
                                     @Cached("identifier.toString()") String identifierString,
                                     @Cached("createWriteNode()") Node writeNode) {
             return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
@@ -439,15 +440,15 @@ public abstract class TruffleInteropNodes {
         @Specialization(guards = {
                 "isRubyString(mimeType)",
                 "isRubyString(source)",
-                "byteListsEqual(mimeType, cachedMimeType)",
-                "byteListsEqual(source, cachedSource)"
+                "ropesEqual(mimeType, cachedMimeType)",
+                "ropesEqual(source, cachedSource)"
         }, limit = "getCacheLimit()")
         public Object evalCached(
                 VirtualFrame frame,
                 DynamicObject mimeType,
                 DynamicObject source,
-                @Cached("privatizeByteList(mimeType)") ByteList cachedMimeType,
-                @Cached("privatizeByteList(source)") ByteList cachedSource,
+                @Cached("privatizeRope(mimeType)") Rope cachedMimeType,
+                @Cached("privatizeRope(source)") Rope cachedSource,
                 @Cached("create(parse(mimeType, source))") DirectCallNode callNode
         ) {
             return callNode.call(frame, new Object[]{});

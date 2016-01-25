@@ -2316,20 +2316,20 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(format)", "byteListsEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
+        @Specialization(guards = {"isRubyString(format)", "ropesEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
         public DynamicObject unpackCached(
                 VirtualFrame frame,
                 DynamicObject string,
                 DynamicObject format,
-                @Cached("privatizeByteList(format)") ByteList cachedFormat,
+                @Cached("privatizeRope(format)") Rope cachedFormat,
                 @Cached("create(compileFormat(format))") DirectCallNode callUnpackNode) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
+            final Rope rope = rope(string);
 
             final PackResult result;
 
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (PackResult) callUnpackNode.call(frame, new Object[]{bytes.bytes(), bytes.length()});
+                result = (PackResult) callUnpackNode.call(frame, new Object[]{rope.getBytes(), rope.byteLength()});
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2344,19 +2344,19 @@ public abstract class StringNodes {
                 DynamicObject string,
                 DynamicObject format,
                 @Cached("create()") IndirectCallNode callUnpackNode) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(string);
+            final Rope rope = rope(string);
 
             final PackResult result;
 
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (PackResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{bytes.bytes(), bytes.length()});
+                result = (PackResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{rope.getBytes(), rope.byteLength()});
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
 
-            return finishUnpack(StringOperations.getByteListReadOnly(format), result);
+            return finishUnpack(rope, result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2379,10 +2379,10 @@ public abstract class StringNodes {
             }
         }
 
-        private DynamicObject finishUnpack(ByteList format, PackResult result) {
+        private DynamicObject finishUnpack(Rope format, PackResult result) {
             final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
 
-            if (format.length() == 0) {
+            if (format.isEmpty()) {
                 //StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {
