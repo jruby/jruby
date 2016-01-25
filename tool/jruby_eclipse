@@ -46,7 +46,6 @@ bootclasspath = []
 classpath = []
 
 bootclasspath << "#{JRUBY}/lib/jruby.jar"
-classpath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
 if rest.include?('-X+T')
   bootclasspath += TRUFFLEJARS
   classpath << SNAKEYAMLJAR
