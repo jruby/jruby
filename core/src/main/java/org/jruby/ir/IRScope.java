@@ -870,7 +870,7 @@ public abstract class IRScope implements ParseResult {
             varType = TemporaryVariableType.FLOAT;
         } else if (type == Fixnum.class) {
             varType = TemporaryVariableType.FIXNUM;
-        } else if (type == Boolean.class) {
+        } else if (type == java.lang.Boolean.class) {
             varType = TemporaryVariableType.BOOLEAN;
         } else {
             varType = TemporaryVariableType.LOCAL;
