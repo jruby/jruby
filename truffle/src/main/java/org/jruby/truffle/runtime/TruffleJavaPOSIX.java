@@ -10,10 +10,19 @@
 package org.jruby.truffle.runtime;
 
 import jnr.constants.platform.Fcntl;
+import jnr.constants.platform.OpenFlags;
 import jnr.posix.LibC;
 import jnr.posix.POSIX;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.ByteBuffer;
+
 public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
+
+    private static final int STDIN = 0;
+    private static final int STDOUT = 1;
+    private static final int STDERR = 2;
 
     private final RubyContext context;
 
@@ -26,10 +35,11 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     public int fcntlInt(int fd, Fcntl fcntlConst, int arg) {
         if (fcntlConst.longValue() == Fcntl.F_GETFL.longValue()) {
             switch (fd) {
-                case 0:
-                case 1:
-                case 2:
-                    return 0;
+                case STDIN:
+                    return OpenFlags.O_RDONLY.intValue();
+                case STDOUT:
+                case STDERR:
+                    return OpenFlags.O_WRONLY.intValue();
             }
         }
 
@@ -46,4 +56,37 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
         return JavaLibC.INSTANCE;
     }
 
+    @Override
+    public int write(int fd, byte[] buf, int n) {
+        return pwrite(fd, buf, n, 0);
+    }
+
+    @Override
+    public int write(int fd, ByteBuffer buf, int n) {
+        return pwrite(fd, buf.array(), n, buf.arrayOffset());
+    }
+
+    @Override
+    public int pwrite(int fd, byte[] buf, int n, int offset) {
+        if (fd == STDOUT || fd == STDERR) {
+            final PrintStream stream;
+
+            switch (fd) {
+                case STDOUT:
+                    stream = System.out;
+                    break;
+                case STDERR:
+                    stream = System.err;
+                    break;
+                default:
+                    throw new UnsupportedOperationException();
+            }
+
+            stream.write(buf, offset, buf.length);
+
+            return buf.length;
+        }
+
+        return super.pwrite(fd, buf, n, offset);
+    }
 }
