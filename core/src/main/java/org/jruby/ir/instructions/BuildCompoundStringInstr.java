@@ -43,7 +43,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     }
 
     public boolean isSameEncodingAndCodeRange(RubyString str, StringLiteral newStr) {
-        return newStr.bytelist.getEncoding() == encoding && newStr.getCodeRange() == str.getCodeRange();
+        return newStr.getByteList().getEncoding() == encoding && newStr.getCodeRange() == str.getCodeRange();
     }
 
     @Override
@@ -64,7 +64,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         RubyString str = RubyString.newStringShared(context.runtime, bytes, StringSupport.CR_7BIT);
         for (Operand p : getOperands()) {
             if ((p instanceof StringLiteral) && (isSameEncodingAndCodeRange(str, (StringLiteral)p))) {
-                str.getByteList().append(((StringLiteral)p).bytelist);
+                str.getByteList().append(((StringLiteral)p).getByteList());
                 str.setCodeRange(((StringLiteral)p).getCodeRange());
             } else {
                 IRubyObject pval = (IRubyObject)p.retrieve(context, self, currScope, currDynScope, temp);
