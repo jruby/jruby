@@ -11,9 +11,11 @@ package org.jruby.truffle.runtime;
 
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
+import jnr.posix.FileStat;
 import jnr.posix.LibC;
 import jnr.posix.POSIX;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
@@ -89,4 +91,15 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
 
         return super.pwrite(fd, buf, n, offset);
     }
+
+    @Override
+    public int getgid() {
+        return 0;
+    }
+
+    @Override
+    public FileStat allocateStat() {
+        return new TruffleJavaFileStat(this, null);
+    }
+
 }
