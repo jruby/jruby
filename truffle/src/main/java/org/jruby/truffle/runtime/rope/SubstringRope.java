@@ -52,7 +52,7 @@ public class SubstringRope extends Rope {
     @Override
     public String toString() {
         // This should be used for debugging only.
-        return RubyEncoding.decodeUTF8(child.getBytes(), offset, byteLength());
+        return child.toString().substring(offset, offset + byteLength());
     }
 
     @Override

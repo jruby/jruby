@@ -96,7 +96,7 @@ public class ConcatRope extends Rope {
     @Override
     public String toString() {
         // This should be used for debugging only.
-        return RopeOperations.decodeUTF8(left) + RopeOperations.decodeUTF8(right);
+        return left.toString() + right.toString();
     }
 
     @Override
