@@ -10,13 +10,13 @@
 
 package org.jruby.truffle.nodes.core;
 
-
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.Node.Child;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
@@ -111,7 +111,7 @@ public abstract class RopeNodes {
             return makeSubstringNon7Bit(base, offset, byteLength);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private Rope makeSubstringNon7Bit(Rope base, int offset, int byteLength) {
             final long packedLengthAndCodeRange = RopeOperations.calculateCodeRangeAndLength(base.getEncoding(), base.getBytes(), offset, offset + byteLength);
             final int codeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
@@ -343,5 +343,96 @@ public abstract class RopeNodes {
         protected static boolean isUnknown(int codeRange) {
             return codeRange == StringSupport.CR_UNKNOWN;
         }
+    }
+
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "rope"),
+            @NodeChild(type = RubyNode.class, value = "currentLevel"),
+            @NodeChild(type = RubyNode.class, value = "printString")
+    })
+    public abstract static class DebugPrintRopeNode extends RubyNode {
+
+        public DebugPrintRopeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract DynamicObject executeDebugPrint(Rope rope, int currentLevel, boolean printString);
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject debugPrintLeafRope(LeafRope rope, int currentLevel, boolean printString) {
+            printPreamble(currentLevel);
+
+            // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
+            final boolean bytesAreNull = rope.getRawBytes() == null;
+
+            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d)",
+                    printString ? rope.toString() : "<skipped>",
+                    rope.getClass().getSimpleName(),
+                    bytesAreNull,
+                    rope.byteLength(),
+                    rope.characterLength(),
+                    StringSupport.codeRangeAsString(rope.getCodeRange()),
+                    rope.depth()));
+
+            return nil();
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject debugPrintSubstringRope(SubstringRope rope, int currentLevel, boolean printString) {
+            printPreamble(currentLevel);
+
+            // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
+            final boolean bytesAreNull = rope.getRawBytes() == null;
+
+            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; O: %d; D: %d)",
+                    printString ? rope.toString() : "<skipped>",
+                    rope.getClass().getSimpleName(),
+                    bytesAreNull,
+                    rope.byteLength(),
+                    rope.characterLength(),
+                    StringSupport.codeRangeAsString(rope.getCodeRange()),
+                    rope.getOffset(),
+                    rope.depth()));
+
+            executeDebugPrint(rope.getChild(), currentLevel + 1, printString);
+
+            return nil();
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject debugPrintConcatRope(ConcatRope rope, int currentLevel, boolean printString) {
+            printPreamble(currentLevel);
+
+            // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
+            final boolean bytesAreNull = rope.getRawBytes() == null;
+
+            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d; LD: %d; RD: %d)",
+                    printString ? rope.toString() : "<skipped>",
+                    rope.getClass().getSimpleName(),
+                    bytesAreNull,
+                    rope.byteLength(),
+                    rope.characterLength(),
+                    StringSupport.codeRangeAsString(rope.getCodeRange()),
+                    rope.depth(),
+                    rope.getLeft().depth(),
+                    rope.getRight().depth()));
+
+            executeDebugPrint(rope.getLeft(), currentLevel + 1, printString);
+            executeDebugPrint(rope.getRight(), currentLevel + 1, printString);
+
+            return nil();
+        }
+
+        private void printPreamble(int level) {
+            if (level > 0) {
+                for (int i = 0; i < level; i++) {
+                    System.err.print("|  ");
+                }
+            }
+        }
+
     }
 }
