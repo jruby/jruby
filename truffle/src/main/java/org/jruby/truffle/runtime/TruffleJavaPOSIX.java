@@ -102,4 +102,14 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
         return new TruffleJavaFileStat(this, null);
     }
 
+    @Override
+    public String getenv(String envName) {
+        final String javaValue = System.getenv(envName);
+
+        if (javaValue != null) {
+            return javaValue;
+        }
+
+        return super.getenv(envName);
+    }
 }
