@@ -114,8 +114,48 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, boolean receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, byte receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, short receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, long receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, float receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, double receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, CharSequence receiver) {
+            return true;
+        }
+
+        @Specialization
         public boolean isBoxedPrimitive(VirtualFrame frame, TruffleObject receiver) {
             return (boolean) ForeignAccess.execute(node, frame, receiver);
+        }
+
+        @Specialization(guards = {"!isTruffleObject(receiver)", "!isJavaCharSequence(receiver)"})
+        public boolean isBoxedPrimitive(VirtualFrame frame, Object receiver) {
+            return false;
         }
 
     }
@@ -268,6 +308,43 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization
+        public boolean unbox(VirtualFrame frame, boolean receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public byte unbox(VirtualFrame frame, byte receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public short unbox(VirtualFrame frame, short receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public long unbox(VirtualFrame frame, long receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public float unbox(VirtualFrame frame, float receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public double unbox(VirtualFrame frame, double receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public DynamicObject executeForeign(VirtualFrame frame, CharSequence receiver) {
+            // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
+
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ByteList.create(receiver), StringSupport.CR_UNKNOWN, null);
+        }
+
+        @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
             return ForeignAccess.execute(node, frame, receiver);
         }
@@ -336,7 +413,6 @@ public abstract class TruffleInteropNodes {
 
     @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
-
 
         public ImportNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

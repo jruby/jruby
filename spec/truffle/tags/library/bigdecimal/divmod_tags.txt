@@ -1,0 +1,2 @@
+fails:BigDecimal#mod_part_of_divmod raises TypeError if the argument cannot be coerced to BigDecimal
+fails:BigDecimal#divmod raises TypeError if the argument cannot be coerced to BigDecimal

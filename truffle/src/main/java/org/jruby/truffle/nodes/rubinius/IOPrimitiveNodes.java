@@ -241,7 +241,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_read_if_available")
+    @RubiniusPrimitive(name = "io_read_if_available", lowerFixnumParameters = 0)
     public static abstract class IOReadIfAvailableNode extends RubiniusPrimitiveNode {
 
         private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
@@ -564,7 +564,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_select", needsSelf = false)
+    @RubiniusPrimitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3)
     public static abstract class IOSelectPrimitiveNode extends RubiniusPrimitiveNode {
 
         private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();

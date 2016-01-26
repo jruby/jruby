@@ -4049,99 +4049,114 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
 
-        if (arg1 instanceof RubyString) {
-            io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
-        } else if (arg1 instanceof RubyIO) {
-            io1 = (RubyIO) arg1;
-        } else if (arg1.respondsTo("to_path")) {
-            RubyString path = (RubyString) TypeConverter.convertToType19(arg1, runtime.getString(), "to_path");
-            io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path}, Block.NULL_BLOCK);
-        } else if (arg1.respondsTo("read")) {
-            if (length == null) {
-                read = arg1.callMethod(context, "read", runtime.getNil()).convertToString();
-            } else {
-                read = arg1.callMethod(context, "read", length).convertToString();
-            }
-        } else {
-            throw runtime.newArgumentError("Should be String or IO");
-        }
-
-        if (arg2 instanceof RubyString) {
-            io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
-        } else if (arg2 instanceof RubyIO) {
-            io2 = (RubyIO) arg2;
-        } else if (arg2.respondsTo("to_path")) {
-            RubyString path = (RubyString) TypeConverter.convertToType19(arg2, runtime.getString(), "to_path");
-            io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path, runtime.newString("w")}, Block.NULL_BLOCK);
-        } else if (arg2.respondsTo("write")) {
-            if (read == null) {
-                if (length == null) {
-                    read = io1.read(context, runtime.getNil()).convertToString();
-                } else {
-                    read = io1.read(context, length).convertToString();
-                }
-            }
-            return arg2.callMethod(context, "write", read);
-        } else {
-            throw runtime.newArgumentError("Should be String or IO");
-        }
-
-        if (io1 == null) {
-            IRubyObject size = io2.write(context, read);
-            io2.flush(context);
-            return size;
-        }
-
-        io2 = io2.GetWriteIO();
-
-        if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
-        if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
-
-        // attempt to preserve position of original
-        OpenFile fptr = io1.getOpenFileChecked();
-
-        boolean locked = fptr.lock();
+        boolean close1 = false;
+        boolean close2 = false;
         try {
-            long pos = fptr.tell(context);
-            long size = 0;
+            if (arg1 instanceof RubyString) {
+                io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{arg1}, Block.NULL_BLOCK);
+                close1 = true;
+            } else if (arg1 instanceof RubyIO) {
+                io1 = (RubyIO) arg1;
+            } else if (arg1.respondsTo("to_path")) {
+                RubyString path = (RubyString) TypeConverter.convertToType19(arg1, runtime.getString(), "to_path");
+                io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path}, Block.NULL_BLOCK);
+                close1 = true;
+            } else if (arg1.respondsTo("read")) {
+                if (length == null) {
+                    read = arg1.callMethod(context, "read", runtime.getNil()).convertToString();
+                } else {
+                    read = arg1.callMethod(context, "read", length).convertToString();
+                }
+            } else {
+                throw runtime.newArgumentError("Should be String or IO");
+            }
 
-            try {
-                if (io1.openFile.fileChannel() == null) {
-                    long remaining = length == null ? -1 : length.getLongValue();
-                    long position = offset == null ? -1 : offset.getLongValue();
-                    if (io2.openFile.fileChannel() == null) {
-                        ReadableByteChannel from = io1.openFile.readChannel();
-                        WritableByteChannel to = io2.openFile.writeChannel();
-
-                        size = transfer(context, from, to, remaining, position);
+            if (arg2 instanceof RubyString) {
+                io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{arg2, runtime.newString("w")}, Block.NULL_BLOCK);
+                close2 = true;
+            } else if (arg2 instanceof RubyIO) {
+                io2 = (RubyIO) arg2;
+            } else if (arg2.respondsTo("to_path")) {
+                RubyString path = (RubyString) TypeConverter.convertToType19(arg2, runtime.getString(), "to_path");
+                io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newString("w")}, Block.NULL_BLOCK);
+                close2 = true;
+            } else if (arg2.respondsTo("write")) {
+                if (read == null) {
+                    if (length == null) {
+                        read = io1.read(context, runtime.getNil()).convertToString();
                     } else {
-                        ReadableByteChannel from = io1.openFile.readChannel();
-                        FileChannel to = io2.openFile.fileChannel();
-
-                        size = transfer(context, from, to, remaining, position);
+                        read = io1.read(context, length).convertToString();
                     }
-                } else {
-                    FileChannel from = io1.openFile.fileChannel();
-                    WritableByteChannel to = io2.openFile.writeChannel();
-                    long remaining = length == null ? from.size() : length.getLongValue();
-                    long position = offset == null ? from.position() : offset.getLongValue();
-
-                    size = transfer(from, to, remaining, position);
                 }
+                return arg2.callMethod(context, "write", read);
+            } else {
+                throw runtime.newArgumentError("Should be String or IO");
+            }
 
-                return context.runtime.newFixnum(size);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-                throw runtime.newIOErrorFromException(ioe);
+            if (io1 == null) {
+                IRubyObject size = io2.write(context, read);
+                io2.flush(context);
+                return size;
+            }
+
+            io2 = io2.GetWriteIO();
+
+            if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
+            if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
+
+            // attempt to preserve position of original
+            OpenFile fptr = io1.getOpenFileChecked();
+
+            boolean locked = fptr.lock();
+            try {
+                long pos = fptr.tell(context);
+                long size = 0;
+
+                try {
+                    if (io1.openFile.fileChannel() == null) {
+                        long remaining = length == null ? -1 : length.getLongValue();
+                        long position = offset == null ? -1 : offset.getLongValue();
+                        if (io2.openFile.fileChannel() == null) {
+                            ReadableByteChannel from = io1.openFile.readChannel();
+                            WritableByteChannel to = io2.openFile.writeChannel();
+
+                            size = transfer(context, from, to, remaining, position);
+                        } else {
+                            ReadableByteChannel from = io1.openFile.readChannel();
+                            FileChannel to = io2.openFile.fileChannel();
+
+                            size = transfer(context, from, to, remaining, position);
+                        }
+                    } else {
+                        FileChannel from = io1.openFile.fileChannel();
+                        WritableByteChannel to = io2.openFile.writeChannel();
+                        long remaining = length == null ? from.size() : length.getLongValue();
+                        long position = offset == null ? from.position() : offset.getLongValue();
+
+                        size = transfer(from, to, remaining, position);
+                    }
+
+                    return context.runtime.newFixnum(size);
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
+                    throw runtime.newIOErrorFromException(ioe);
+                } finally {
+                    if (offset != null) {
+                        fptr.seek(context, pos, PosixShim.SEEK_SET);
+                    } else {
+                        fptr.seek(context, pos + size, PosixShim.SEEK_SET);
+                    }
+                }
             } finally {
-                if (offset != null) {
-                    fptr.seek(context, pos, PosixShim.SEEK_SET);
-                } else {
-                    fptr.seek(context, pos + size, PosixShim.SEEK_SET);
-                }
+                if (locked) fptr.unlock();
             }
         } finally {
-            if (locked) fptr.unlock();
+            if (close1 && io1 != null) {
+                try {io1.close();} catch (Exception e) {}
+            }
+            if (close2 && io2 != null) {
+                try {io2.close();} catch (Exception e) {}
+            }
         }
     }
 

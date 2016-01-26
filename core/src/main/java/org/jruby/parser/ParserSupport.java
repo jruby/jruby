@@ -1138,7 +1138,7 @@ public class ParserSupport {
         if (name == "_") {
             int count = 0;
             while (current.exists(name) >= 0) {
-                name = "_$" + count++;
+                name = ("_$" + count++).intern();
             }
         }
         

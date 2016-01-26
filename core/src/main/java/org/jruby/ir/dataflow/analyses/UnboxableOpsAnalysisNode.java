@@ -349,8 +349,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         switch (t) {
         case FLOAT: return c == Float.class;
         case FIXNUM: return c == Fixnum.class;
-        case BOOLEAN: return c == Boolean.class;
-        default: return c != Float.class && c != Boolean.class && c != Fixnum.class;
+        case BOOLEAN: return c == java.lang.Boolean.class;
+        default: return c != Float.class && c != java.lang.Boolean.class && c != Fixnum.class;
         }
     }
 
@@ -387,7 +387,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     public void unboxVar(UnboxState state, Class reqdType, Map<Variable, TemporaryLocalVariable> unboxMap, Variable v, List<Instr> newInstrs) {
         Variable unboxedV = getUnboxedVar(reqdType, unboxMap, v);
-        if (reqdType == Boolean.class) {
+        if (reqdType == java.lang.Boolean.class) {
             newInstrs.add(new UnboxBooleanInstr(unboxedV, v));
         } else if (reqdType == Float.class) { // SSS FIXME: This is broken
             newInstrs.add(new UnboxFloatInstr(unboxedV, v));
