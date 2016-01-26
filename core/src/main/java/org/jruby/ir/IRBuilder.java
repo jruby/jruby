@@ -1103,7 +1103,14 @@ public class IRBuilder {
                     v2 = build(whenNode.getExpressionNodes());
                 }
             } else {
-                addInstr(new EQQInstr(eqqResult, build(whenNode.getExpressionNodes()), value));
+                Operand expression = build(whenNode.getExpressionNodes());
+
+                // use frozen string for direct literal strings in `when`
+                if (expression instanceof StringLiteral) {
+                    expression = ((StringLiteral) expression).frozenString;
+                }
+
+                addInstr(new EQQInstr(eqqResult, expression, value));
                 v1 = eqqResult;
                 v2 = manager.getTrue();
             }
