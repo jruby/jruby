@@ -47,7 +47,7 @@ branches:
     - /^ha-feature/
 
 script: tool/travis_runner.sh
-install: travis_retry ./mvnw -Pbootstrap clean install -Dinvoker.skip -Dmaven.test.skip
+install: travis_retry ./mvnw -Pbootstrap clean install -B -Dinvoker.skip -Dmaven.test.skip
 
 notifications:
   irc:

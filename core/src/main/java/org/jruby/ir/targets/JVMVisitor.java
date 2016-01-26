@@ -463,13 +463,19 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BFalseInstr(BFalseInstr bFalseInstr) {
         Operand arg1 = bFalseInstr.getArg1();
-        visit(arg1);
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
-        if (!(arg1 instanceof TemporaryBooleanVariable) && !(arg1 instanceof UnboxedBoolean)) {
+        if (arg1 instanceof TemporaryBooleanVariable || arg1 instanceof UnboxedBoolean) {
+            // no need to unbox
+            visit(arg1);
+            jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
+        } else if (arg1 instanceof UnboxedFixnum || arg1 instanceof UnboxedFloat) {
+            // always true, don't branch
+        } else {
             // unbox
+            visit(arg1);
             jvmAdapter().invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+            jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
         }
-        jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
     }
 
     @Override
@@ -721,12 +727,20 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BTrueInstr(BTrueInstr btrueinstr) {
         Operand arg1 = btrueinstr.getArg1();
-        visit(arg1);
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
-        if (!(arg1 instanceof TemporaryBooleanVariable) && !(arg1 instanceof UnboxedBoolean)) {
-            jvmMethod().isTrue();
+        if (arg1 instanceof TemporaryBooleanVariable || arg1 instanceof UnboxedBoolean) {
+            // no need to unbox, just branch
+            visit(arg1);
+            jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
+        } else if (arg1 instanceof UnboxedFixnum || arg1 instanceof UnboxedFloat) {
+            // always true, always branch
+            jvmMethod().goTo(getJVMLabel(btrueinstr.getJumpTarget()));
+        } else {
+            // unbox and branch
+            visit(arg1);
+            jvmAdapter().invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+            jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
         }
-        jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
     }
 
     @Override
