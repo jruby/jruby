@@ -75,7 +75,6 @@ import org.jruby.util.io.EncodingUtils;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-import static org.jruby.truffle.runtime.core.StringOperations.codeRange;
 import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_UTF8_ROPE;
 import static org.jruby.truffle.runtime.core.StringOperations.rope;
@@ -434,7 +433,7 @@ public abstract class StringNodes {
                 makeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            Layouts.STRING.setRope(string, makeConcatNode.executeMake(left, right, left.getEncoding()));
+            StringOperations.setRope(string, makeConcatNode.executeMake(left, right, left.getEncoding()));
 
             return string;
         }
@@ -767,7 +766,7 @@ public abstract class StringNodes {
         public Object chopBang( DynamicObject string) {
             final int newLength = choppedLength(string);
 
-            Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope(string), 0, newLength));
+            StringOperations.setRope(string, makeSubstringNode.executeMake(rope(string), 0, newLength));
 
             return string;
         }
@@ -906,9 +905,18 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public DynamicObject data(DynamicObject string) {
-            // TODO (nirvdrum 08-Jan-16) ByteArrays might be better served if backed by a byte[] instead of a ByteList.
-            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), StringOperations.getByteListReadOnly(string));
+        public Object data(DynamicObject string) {
+            final DynamicObject ret = Layouts.STRING.getRubiniusDataArray(string);
+
+            if (ret == null) {
+                // TODO (nirvdrum 08-Jan-16) ByteArrays might be better served if backed by a byte[] instead of a ByteList.
+                final DynamicObject rubiniusDataArray = ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), StringOperations.getByteListReadOnly(string));
+                Layouts.STRING.setRubiniusDataArray(string, rubiniusDataArray);
+
+                return rubiniusDataArray;
+            }
+
+            return ret;
         }
     }
 
@@ -968,7 +976,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer.getByteList(), buffer.getCodeRange()));
+            StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer.getByteList(), buffer.getCodeRange()));
 
             return string;
         }
@@ -998,7 +1006,7 @@ public abstract class StringNodes {
 
             final boolean modified = singleByteDowncase(outputBytes, 0, outputBytes.length);
             if (modifiedProfile.profile(modified)) {
-                Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange()));
+                StringOperations.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange()));
 
                 return string;
             } else {
@@ -1030,7 +1038,7 @@ public abstract class StringNodes {
                 final boolean modified = multiByteDowncase(encoding, outputBytes, 0, outputBytes.length);
 
                 if (modifiedProfile.profile(modified)) {
-                    Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange()));
+                    StringOperations.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange()));
 
                     return string;
                 } else {
@@ -1301,7 +1309,7 @@ public abstract class StringNodes {
                         getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
             }
 
-            Layouts.STRING.setRope(self, rope(from));
+            StringOperations.setRope(self, rope(from));
 
             return self;
         }
@@ -1330,7 +1338,7 @@ public abstract class StringNodes {
                 return self;
             }
 
-            Layouts.STRING.setRope(self, rope(from));
+            StringOperations.setRope(self, rope(from));
 
             return self;
         }
@@ -1390,7 +1398,7 @@ public abstract class StringNodes {
                 prependMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            Layouts.STRING.setRope(string, prependMakeConcatNode.executeMake(left, right, compatibleEncoding));
+            StringOperations.setRope(string, prependMakeConcatNode.executeMake(left, right, compatibleEncoding));
 
             return taintResultNode.maybeTaint(other, string);
         }
@@ -1435,7 +1443,7 @@ public abstract class StringNodes {
             final Rope joinedLeft = leftMakeConcatNode.executeMake(splitLeft, insert, compatibleEncoding);
             final Rope joinedRight = rightMakeConcatNode.executeMake(joinedLeft, splitRight, compatibleEncoding);
 
-            Layouts.STRING.setRope(string, joinedRight);
+            StringOperations.setRope(string, joinedRight);
 
             return taintResultNode.maybeTaint(other, string);
         }
@@ -1483,7 +1491,7 @@ public abstract class StringNodes {
             int p = s;
             while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
             if (p > s) {
-                Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, p - s, end - p));
+                StringOperations.setRope(string, makeSubstringNode.executeMake(rope, p - s, end - p));
 
                 return string;
             }
@@ -1511,7 +1519,7 @@ public abstract class StringNodes {
             }
 
             if (p > s) {
-                Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, p - s, end - p));
+                StringOperations.setRope(string, makeSubstringNode.executeMake(rope, p - s, end - p));
 
                 return string;
             }
@@ -1556,7 +1564,7 @@ public abstract class StringNodes {
                         String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength()), this));
             }
 
-            Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, 0, count));
+            StringOperations.setRope(string, makeSubstringNode.executeMake(rope, 0, count));
 
             return string;
         }
@@ -1609,7 +1617,7 @@ public abstract class StringNodes {
                 return string;
             }
 
-            Layouts.STRING.setRope(string, rope(other));
+            StringOperations.setRope(string, rope(other));
 
             return string;
         }
@@ -1646,7 +1654,7 @@ public abstract class StringNodes {
                     ASCIIEncoding.INSTANCE.isSpace(bytes[endp] & 0xff))) endp--;
 
             if (endp < end - 1) {
-                Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, 0, endp - start + 1));
+                StringOperations.setRope(string, makeSubstringNode.executeMake(rope, 0, endp - start + 1));
 
                 return string;
             }
@@ -1674,7 +1682,7 @@ public abstract class StringNodes {
             }
 
             if (endp < end) {
-                Layouts.STRING.setRope(string, makeSubstringNode.executeMake(rope, 0, endp - start));
+                StringOperations.setRope(string, makeSubstringNode.executeMake(rope, 0, endp - start));
 
                 return string;
             }
@@ -1725,13 +1733,13 @@ public abstract class StringNodes {
 
             if (singleByteOptimizableProfile.profile(rope.isSingleByteOptimizable())) {
                 if (StringSupport.singleByteSwapcase(bytes, s, end)) {
-                    Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
+                    StringOperations.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
 
                     return string;
                 }
             } else {
                 if (StringSupport.multiByteSwapcase(getContext().getRuntime(), enc, bytes, s, end)) {
-                    Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
+                    StringOperations.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
 
                     return string;
                 }
@@ -1839,7 +1847,7 @@ public abstract class StringNodes {
             final Rope middle = makeLeafRopeNode.executeMake(new byte[] { (byte) value }, rope.getEncoding(), StringSupport.CR_UNKNOWN);
             final Rope composed = composedMakeConcatNode.executeMake(middleMakeConcatNode.executeMake(left, middle, rope.getEncoding()), right, rope.getEncoding());
 
-            Layouts.STRING.setRope(string, composed);
+            StringOperations.setRope(string, composed);
 
             return value;
         }
@@ -1893,13 +1901,13 @@ public abstract class StringNodes {
                 if (! StringSupport.singleByteSqueeze(buffer, squeeze)) {
                     return nil();
                 } else {
-                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer));
+                    StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             } else {
                 if (! squeezeCommonMultiByte(buffer, squeeze, null, encoding(string), false)) {
                     return nil();
                 } else {
-                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer));
+                    StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             }
 
@@ -1952,13 +1960,13 @@ public abstract class StringNodes {
                 if (! StringSupport.singleByteSqueeze(buffer, squeeze)) {
                     return nil();
                 } else {
-                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer));
+                    StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             } else {
                 if (! StringSupport.multiByteSqueeze(getContext().getRuntime(), buffer, squeeze, tables, enc, true)) {
                     return nil();
                 } else {
-                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(buffer));
+                    StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             }
 
@@ -2015,7 +2023,7 @@ public abstract class StringNodes {
             if (! rope.isEmpty()) {
                 final ByteList succByteList = StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteListReadOnly(string));
 
-                Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()));
+                StringOperations.setRope(string, StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()));
             }
 
             return string;
@@ -2172,7 +2180,7 @@ public abstract class StringNodes {
                 reversedBytes[len - i - 1] = originalBytes[i];;
             }
 
-            Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), rope.getCodeRange()));
+            StringOperations.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), rope.getCodeRange()));
 
             return string;
         }
@@ -2210,7 +2218,7 @@ public abstract class StringNodes {
                 codeRange = single ? StringSupport.CR_7BIT : StringSupport.CR_VALID;
             }
 
-            Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), codeRange));
+            StringOperations.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), codeRange));
 
             return string;
         }
@@ -2492,7 +2500,7 @@ public abstract class StringNodes {
 
             final boolean modified = singleByteUpcase(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
             if (modified) {
-                Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
+                StringOperations.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
 
                 return string;
             } else {
@@ -2521,7 +2529,7 @@ public abstract class StringNodes {
             try {
                 final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
                 if (modified) {
-                    Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
+                    StringOperations.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
 
                     return string;
                 } else {
@@ -2618,7 +2626,7 @@ public abstract class StringNodes {
             }
 
             if (modify) {
-                Layouts.STRING.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
+                StringOperations.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
 
                 return string;
             }
@@ -2658,7 +2666,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject clear(DynamicObject string) {
-            Layouts.STRING.setRope(string, RopeOperations.withEncoding(EMPTY_UTF8_ROPE, encoding(string)));
+            StringOperations.setRope(string, RopeOperations.withEncoding(EMPTY_UTF8_ROPE, encoding(string)));
 
             return string;
         }
@@ -2727,7 +2735,7 @@ public abstract class StringNodes {
                 return context.getCoreLibrary().getNilObject();
             }
 
-            Layouts.STRING.setRope(self, StringOperations.ropeFromByteList(buffer.getByteList(), buffer.getCodeRange()));
+            StringOperations.setRope(self, StringOperations.ropeFromByteList(buffer.getByteList(), buffer.getCodeRange()));
 
             return self;
         }

@@ -713,7 +713,7 @@ public abstract class PosixNodes {
             // We just ignore maxSize - I think this is ok
 
             final String path = getContext().getRuntime().getCurrentDirectory();
-            Layouts.STRING.setRope(resultPath, makeLeafRopeNode.executeMake(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), StringSupport.CR_UNKNOWN));
+            StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), StringSupport.CR_UNKNOWN));
             return resultPath;
         }
 

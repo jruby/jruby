@@ -1771,10 +1771,7 @@ public class BodyTranslator extends Translator {
                 ret = StringNodesFactory.ByteSizeNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@data")) {
-                final RubyNode bytes = StringNodesFactory.BytesNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
-                // Wrap in a StringData instance, see shims.
-                LiteralNode stringDataClass = new LiteralNode(context, sourceSection, context.getCoreLibrary().getStringDataClass());
-                ret = new RubyCallNode(context, sourceSection, "new", stringDataClass, null, false, bytes);
+                ret = StringNodesFactory.DataNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "rubinius/common/time.rb")) {
