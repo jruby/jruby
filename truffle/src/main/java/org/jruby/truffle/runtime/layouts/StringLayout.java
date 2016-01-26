@@ -25,7 +25,7 @@ public interface StringLayout extends BasicObjectLayout {
 
     DynamicObject createString(DynamicObjectFactory factory,
                                Rope rope,
-                               @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
+                               @Nullable DynamicObject rubiniusDataArray);
 
     boolean isString(ObjectType objectType);
     boolean isString(DynamicObject dynamicObject);
@@ -34,7 +34,7 @@ public interface StringLayout extends BasicObjectLayout {
     Rope getRope(DynamicObject object);
     void setRope(DynamicObject object, Rope rope);
 
-    StringCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
-    void setCodeRangeableWrapper(DynamicObject object, StringCodeRangeableWrapper codeRangeableWrapper);
+    DynamicObject getRubiniusDataArray(DynamicObject object);
+    void setRubiniusDataArray(DynamicObject object, DynamicObject rubiniusDataArray);
 
 }

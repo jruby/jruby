@@ -64,17 +64,6 @@ public abstract class StringOperations {
         return RopeOperations.decodeRope(context.getRuntime(), StringOperations.rope(string));
     }
 
-    public static StringCodeRangeableWrapper getCodeRangeable(DynamicObject string) {
-        StringCodeRangeableWrapper wrapper = Layouts.STRING.getCodeRangeableWrapper(string);
-
-        if (wrapper == null) {
-            wrapper = new StringCodeRangeableWrapper(string);
-            Layouts.STRING.setCodeRangeableWrapper(string, wrapper);
-        }
-
-        return wrapper;
-    }
-
     public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
         return new StringCodeRangeableWrapper(string) {
             private final ByteList byteList = StringOperations.rope(string).toByteListCopy();
@@ -168,7 +157,7 @@ public abstract class StringOperations {
     public static void forceEncoding(DynamicObject string, Encoding encoding) {
         modify(string);
         final Rope oldRope = Layouts.STRING.getRope(string);
-        Layouts.STRING.setRope(string, RopeOperations.withEncoding(oldRope, encoding, StringSupport.CR_UNKNOWN));
+        StringOperations.setRope(string, RopeOperations.withEncoding(oldRope, encoding, StringSupport.CR_UNKNOWN));
     }
 
     public static int normalizeIndex(int length, int index) {
@@ -226,6 +215,13 @@ public abstract class StringOperations {
         assert RubyGuards.isRubyString(string);
 
         return Layouts.STRING.getRope(string);
+    }
+
+    public static void setRope(DynamicObject string, Rope rope) {
+        assert RubyGuards.isRubyString(string);
+
+        Layouts.STRING.setRope(string, rope);
+        Layouts.STRING.setRubiniusDataArray(string, null);
     }
 
     public static Encoding encoding(DynamicObject string) {

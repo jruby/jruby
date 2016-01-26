@@ -147,7 +147,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
                 if (nonNullSource) {
                     sourceRope = makeSubstringNode.executeMake(sourceRope, inPtr.p, sourceRope.byteLength() - inPtr.p);
-                    Layouts.STRING.setRope(source, sourceRope);
+                    StringOperations.setRope(source, sourceRope);
                 }
 
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
@@ -164,7 +164,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                     outBytes.setEncoding(ec.destinationEncoding);
                 }
 
-                Layouts.STRING.setRope(target, StringOperations.ropeFromByteList(outBytes));
+                StringOperations.setRope(target, StringOperations.ropeFromByteList(outBytes));
 
                 return getSymbol(res.symbolicName());
             }

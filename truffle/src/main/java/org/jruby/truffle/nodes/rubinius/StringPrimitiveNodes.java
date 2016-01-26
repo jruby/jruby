@@ -171,7 +171,7 @@ public abstract class StringPrimitiveNodes {
                         String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
             }
 
-            Layouts.STRING.setRope(string, makeConcatNode.executeMake(left, right, compatibleEncoding));
+            StringOperations.setRope(string, makeConcatNode.executeMake(left, right, compatibleEncoding));
 
             return string;
         }
@@ -1169,7 +1169,7 @@ public abstract class StringPrimitiveNodes {
 
             System.arraycopy(otherRope.getBytes(), otherRope.begin() + src, stringBytes.getUnsafeBytes(), stringBytes.begin() + dest, cnt);
 
-            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(stringBytes));
+            StringOperations.setRope(string, StringOperations.ropeFromByteList(stringBytes));
 
             return string;
         }
@@ -1357,7 +1357,7 @@ public abstract class StringPrimitiveNodes {
             final Rope left = rope(other);
             final Rope right = prependMakeSubstringNode.executeMake(original, byteCountToReplace, original.byteLength() - byteCountToReplace);
 
-            Layouts.STRING.setRope(string, prependMakeConcatNode.executeMake(left, right, right.getEncoding()));
+            StringOperations.setRope(string, prependMakeConcatNode.executeMake(left, right, right.getEncoding()));
 
             return string;
         }
@@ -1372,7 +1372,7 @@ public abstract class StringPrimitiveNodes {
                 appendMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            Layouts.STRING.setRope(string, appendMakeConcatNode.executeMake(left, right, left.getEncoding()));
+            StringOperations.setRope(string, appendMakeConcatNode.executeMake(left, right, left.getEncoding()));
 
             return string;
         }
@@ -1408,7 +1408,7 @@ public abstract class StringPrimitiveNodes {
             final Rope joinedLeft = leftMakeConcatNode.executeMake(splitLeft, insert, source.getEncoding());
             final Rope joinedRight = rightMakeConcatNode.executeMake(joinedLeft, splitRight, source.getEncoding());
 
-            Layouts.STRING.setRope(string, joinedRight);
+            StringOperations.setRope(string, joinedRight);
 
             return string;
         }
@@ -1482,7 +1482,7 @@ public abstract class StringPrimitiveNodes {
 
             final Rope rightConverted = makeLeafRopeNode.executeMake(right.getBytes(), left.getEncoding(), left.getCodeRange());
 
-            Layouts.STRING.setRope(string, makeConcatNode.executeMake(left, rightConverted, left.getEncoding()));
+            StringOperations.setRope(string, makeConcatNode.executeMake(left, rightConverted, left.getEncoding()));
 
             return string;
         }
