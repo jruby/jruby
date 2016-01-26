@@ -65,7 +65,7 @@ module ExecJS
     end
 
     def available?
-      Truffle::Interop.supported_mime_types.include?('application/javascript')
+      Truffle::Interop.mime_type_supported?('application/javascript')
     end
 
   end

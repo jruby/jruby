@@ -8,14 +8,14 @@
 
 require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle::Interop.supported_mime_types" do
-
-  it "returns an Array" do
-    Truffle::Interop.supported_mime_types.should be_kind_of(Array)
+describe "Truffle::Interop.mime_type_supported?" do
+  
+  it "returns true for application/x-ruby" do
+    Truffle::Interop.mime_type_supported?('application/x-ruby').should be_true
   end
   
-  it "includes application/x-ruby" do
-    Truffle::Interop.supported_mime_types.should include('application/x-ruby')
+  it "returns false for application/x-this-language-does-not-exist" do
+    Truffle::Interop.mime_type_supported?('application/x-this-language-does-not-exist').should be_false
   end
 
 end

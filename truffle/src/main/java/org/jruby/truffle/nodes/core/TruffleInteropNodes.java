@@ -426,26 +426,17 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "supported_mime_types", isModuleFunction = true, needsSelf = false)
-    public abstract static class SupportedMimeTypesNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "mime_type_supported?", isModuleFunction = true, needsSelf = false, required =1)
+    public abstract static class MimeTypeSupportedNode extends CoreMethodArrayArgumentsNode {
 
-        public SupportedMimeTypesNode(RubyContext context, SourceSection sourceSection) {
+        public MimeTypeSupportedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @TruffleBoundary
-        @Specialization
-        public DynamicObject supportedMimeTypes() {
-            final String[] supportedMimeTypes = getContext().getEnv().getSupportedMimeTypes();
-            final Object[] supportedMimeTypesTruffle = new Object[supportedMimeTypes.length];
-
-            for (int n = 0; n < supportedMimeTypes.length; n++) {
-                supportedMimeTypesTruffle[n] = Layouts.STRING.createString(
-                        getContext().getCoreLibrary().getStringFactory(),
-                        ByteList.create(supportedMimeTypes[n]), StringSupport.CR_UNKNOWN, null);
-            }
-
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), supportedMimeTypesTruffle, supportedMimeTypesTruffle.length);
+        @Specialization(guards = "isRubyString(mimeType)")
+        public boolean isMimeTypeSupported(DynamicObject mimeType) {
+            return getContext().getEnv().isMimeTypeSupported(mimeType.toString());
         }
 
     }
