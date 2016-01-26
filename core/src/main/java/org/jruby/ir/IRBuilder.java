@@ -2148,6 +2148,10 @@ public class IRBuilder {
     private Operand dynamicPiece(Node pieceNode) {
         Operand piece = build(pieceNode);
 
+        if (piece instanceof StringLiteral) {
+            piece = ((StringLiteral)piece).frozenString;
+        }
+
         return piece == null ? manager.getNil() : piece;
     }
 
