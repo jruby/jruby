@@ -3882,12 +3882,14 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getNotImplementedError(), message);
     }
 
+    @Deprecated
     public RaiseException newInvalidEncoding(String message) {
-        return newRaiseException(fastGetClass("Iconv").getClass("InvalidEncoding"), message);
+        return newRaiseException(getClass("Iconv").getClass("InvalidEncoding"), message);
     }
 
+    @Deprecated
     public RaiseException newIllegalSequence(String message) {
-        return newRaiseException(fastGetClass("Iconv").getClass("IllegalSequence"), message);
+        return newRaiseException(getClass("Iconv").getClass("IllegalSequence"), message);
     }
 
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
