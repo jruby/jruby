@@ -787,12 +787,55 @@ public class RubyKernel {
 
     @JRubyMethod(name = {"raise", "fail"}, optional = 3, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         int argc = args.length;
 
         RubyHash opts = extract_raise_opts(context, args);
         if (opts != null) argc--;
 
+        maybeRaiseJavaException(runtime, args, argc, opts);
+
+        // FIXME: Pass block down?
+        RaiseException raise;
+        switch (argc) {
+            case 0:
+                IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+                if (lastException.isNil()) {
+                    raise = new RaiseException(runtime, runtime.getRuntimeError(), "", false);
+                } else {
+                    // non RubyException value is allowed to be assigned as $!.
+                    raise = new RaiseException((RubyException) lastException);
+                }
+                break;
+            case 1:
+                if (args[0] instanceof RubyString) {
+                    raise = new RaiseException((RubyException) runtime.getRuntimeError().newInstance(context, args, block));
+                } else {
+                    raise = new RaiseException(convertToException(runtime, args[0], null));
+                }
+                break;
+            case 2:
+                raise = new RaiseException(convertToException(runtime, args[0], args[1]));
+                break;
+            default:
+                raise = new RaiseException(convertToException(runtime, args[0], args[1]), args[2]);
+                break;
+        }
+
+        if (runtime.isDebug()) {
+            printExceptionSummary(context, runtime, raise.getException());
+        }
+
+        if (opts != null) {
+            IRubyObject cause = opts.op_aref(context, runtime.newSymbol("cause"));
+            raise.getException().setCause(cause);
+        }
+
+        throw raise;
+    }
+
+    private static void maybeRaiseJavaException(final Ruby runtime,
+        final IRubyObject[] args, final int argc, final RubyHash opts) {
         // Check for a Java exception
         ConcreteJavaProxy exception = null;
         switch (argc) {
@@ -800,14 +843,14 @@ public class RubyKernel {
                 if (opts != null) {
                     throw runtime.newArgumentError("only cause is given with no arguments");
                 }
-
-                if (runtime.getGlobalVariables().get("$!") instanceof ConcreteJavaProxy) {
-                    exception = (ConcreteJavaProxy)runtime.getGlobalVariables().get("$!");
+                IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+                if (lastException instanceof ConcreteJavaProxy) {
+                    exception = (ConcreteJavaProxy) lastException;
                 }
                 break;
             case 1:
                 if (args.length == 1 && args[0] instanceof ConcreteJavaProxy) {
-                    exception = (ConcreteJavaProxy)args[0];
+                    exception = (ConcreteJavaProxy) args[0];
                 }
                 break;
         }
@@ -817,50 +860,11 @@ public class RubyKernel {
             Object maybeThrowable = exception.getObject();
 
             if (maybeThrowable instanceof Throwable) {
-                // yes, we're cheating here.
-                Helpers.throwException((Throwable)maybeThrowable);
-                return recv; // not reached
+                Helpers.throwException((Throwable) maybeThrowable);
+                return; // not reached
             } else {
                 throw runtime.newTypeError("can't raise a non-Throwable Java object");
             }
-        } else {
-            // FIXME: Pass block down?
-            RaiseException raise;
-            switch (argc) {
-                case 0:
-                    IRubyObject lastException = runtime.getGlobalVariables().get("$!");
-                    if (lastException.isNil()) {
-                        raise = new RaiseException(runtime, runtime.getRuntimeError(), "", false);
-                    } else {
-                        // non RubyException value is allowed to be assigned as $!.
-                        raise = new RaiseException((RubyException) lastException);
-                    }
-                    break;
-                case 1:
-                    if (args[0] instanceof RubyString) {
-                        raise = new RaiseException((RubyException) runtime.getRuntimeError().newInstance(context, args, block));
-                    } else {
-                        raise = new RaiseException(convertToException(runtime, args[0], null));
-                    }
-                    break;
-                case 2:
-                    raise = new RaiseException(convertToException(runtime, args[0], args[1]));
-                    break;
-                default:
-                    raise = new RaiseException(convertToException(runtime, args[0], args[1]), args[2]);
-                    break;
-            }
-
-            if (runtime.getDebug().isTrue()) {
-                printExceptionSummary(context, runtime, raise.getException());
-            }
-
-            if (opts != null) {
-                IRubyObject cause = opts.op_aref(context, runtime.newSymbol("cause"));
-                raise.getException().setCause(cause);
-            }
-
-            throw raise;
         }
     }
 
