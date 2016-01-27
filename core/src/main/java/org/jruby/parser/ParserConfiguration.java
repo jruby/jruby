@@ -82,6 +82,7 @@ public class ParserConfiguration {
         this(runtime, lineNumber, inlineSource, isFileParse, saveData);
 
         this.isDebug = config.isParserDebug();
+        this.frozenStringLiteral = config.isFrozenStringLiteral();
     }
 
 

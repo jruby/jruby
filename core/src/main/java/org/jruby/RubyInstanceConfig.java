@@ -1454,6 +1454,14 @@ public class RubyInstanceConfig {
         this.profilingService = service;
     }
 
+    public boolean isFrozenStringLiteral() {
+        return frozenStringLiteral;
+    }
+
+    public void setFrozenStringLiteral(boolean frozenStringLiteral) {
+        this.frozenStringLiteral = frozenStringLiteral;
+    }
+
     public static ClassLoader defaultClassLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
@@ -1554,7 +1562,7 @@ public class RubyInstanceConfig {
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
     private boolean preferIPv4 = Options.PREFER_IPV4.load();
-
+    private boolean frozenStringLiteral = false;
     private String jrubyHome;
 
     /**

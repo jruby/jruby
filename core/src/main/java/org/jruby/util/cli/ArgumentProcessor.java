@@ -495,12 +495,15 @@ public class ArgumentProcessor {
                         config.setDisableGems(true);
                         break FOR;
                     } else if (argument.equals("--disable")) {
-                        errorMissingDisable();
+                        errorMissingEquals("disable");
+                    } else if (argument.equals("--disable-frozen-string-literal")) {
+                        config.setFrozenStringLiteral(true);
+                        break FOR;
                     } else if (argument.startsWith("--disable=")) {
                         String disablesStr = argument.substring("--disable=".length());
                         String[] disables = disablesStr.split(",");
 
-                        if (disables.length == 0) errorMissingDisable();
+                        if (disables.length == 0) errorMissingEquals("disable");
 
                         for (String disable : disables) {
                             boolean all = disable.equals("all");
@@ -512,8 +515,33 @@ public class ArgumentProcessor {
                                 config.setDisableRUBYOPT(true);
                                 continue;
                             }
+                            if (disable.equals("frozen-string-literal") || disable.equals("frozen_string_literal") || all) {
+                                config.setFrozenStringLiteral(false);
+                                continue;
+                            }
 
                             config.getError().println("warning: unknown argument for --disable: `" + disable + "'");
+                        }
+                        break FOR;
+                    } else if (argument.equals("--enable")) {
+                        errorMissingEquals("enable");
+                    } else if (argument.equals("--enable-frozen-string-literal")) {
+                        config.setFrozenStringLiteral(true);
+                        break FOR;
+                    } else if (argument.startsWith("--enable=")) {
+                        String enablesString = argument.substring("--enable=".length());
+                        String[] enables = enablesString.split(",");
+
+                        if (enables.length == 0) errorMissingEquals("enable");
+
+                        for (String enable : enables) {
+                            boolean all = enable.equals("all");
+                            if (enable.equals("frozen-string-literal") || enable.equals("frozen-string-literal") || all) {
+                                config.setFrozenStringLiteral(true);
+                                continue;
+                            }
+
+                            config.getError().println("warning: unknown argument for --enable: `" + enable + "'");
                         }
                         break FOR;
                     } else if (argument.equals("--gemfile")) {
@@ -582,9 +610,9 @@ public class ArgumentProcessor {
         }
     }
 
-    private void errorMissingDisable() {
+    private void errorMissingEquals(String label) {
         MainExitException mee;
-        mee = new MainExitException(1, "missing argument for --disable\n");
+        mee = new MainExitException(1, "missing argument for --" + label + "\n");
         mee.setUsageError(true);
         throw mee;
     }
