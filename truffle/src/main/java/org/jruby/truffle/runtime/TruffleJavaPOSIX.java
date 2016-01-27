@@ -16,6 +16,7 @@ import jnr.posix.LibC;
 import jnr.posix.POSIX;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -31,7 +32,7 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
 
     private final RubyContext context;
 
-    private final AtomicInteger nextFileHandle = new AtomicInteger();
+    private final AtomicInteger nextFileHandle = new AtomicInteger(3);
     private final Map<Integer, RandomAccessFile> fileHandles = new ConcurrentHashMap<>();
 
     public TruffleJavaPOSIX(RubyContext context, POSIX delegateTo) {
@@ -103,13 +104,56 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     }
 
     @Override
-    public int write(int fd, byte[] buf, int n) {
-        return pwrite(fd, buf, n, 0);
+    public int read(int fd, ByteBuffer buf, int n) {
+        return pread(fd, buf.array(), n, buf.arrayOffset());
+    }
+
+    @Override
+    public int read(int fd, byte[] buf, int n) {
+        return pread(fd, buf, n, 0);
+    }
+
+    @Override
+    public int pread(int fd, byte[] buf, int n, int offset) {
+        if (fd == STDIN) {
+            try {
+                System.in.read(buf, offset, n);
+            } catch (IOException e) {
+                return -1;
+            }
+
+            return n;
+        }
+
+        final RandomAccessFile randomAccessFile = fileHandles.get(fd);
+
+        if (randomAccessFile != null) {
+            try {
+                randomAccessFile.read(buf, offset, n);
+            } catch (IOException e) {
+                return -1;
+            }
+
+            try {
+                randomAccessFile.seek(randomAccessFile.getFilePointer() + n);
+            } catch (IOException e) {
+                return -1;
+            }
+
+            return n;
+        }
+
+        return super.pwrite(fd, buf, n, offset);
     }
 
     @Override
     public int write(int fd, ByteBuffer buf, int n) {
         return pwrite(fd, buf.array(), n, buf.arrayOffset());
+    }
+
+    @Override
+    public int write(int fd, byte[] buf, int n) {
+        return pwrite(fd, buf, n, 0);
     }
 
     @Override
@@ -128,9 +172,9 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
                     throw new UnsupportedOperationException();
             }
 
-            stream.write(buf, offset, buf.length);
+            stream.write(buf, offset, n);
 
-            return buf.length;
+            return n;
         }
 
         return super.pwrite(fd, buf, n, offset);
