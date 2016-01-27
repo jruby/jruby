@@ -75,8 +75,6 @@ public abstract class Rope {
 
     public abstract byte[] extractRange(int offset, int length);
 
-    public abstract byte[] calculateBytes();
-
     public final Encoding getEncoding() {
         return encoding;
     }
@@ -137,7 +135,5 @@ public abstract class Rope {
 
         return false;
     }
-
-    protected abstract void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength);
 
 }
