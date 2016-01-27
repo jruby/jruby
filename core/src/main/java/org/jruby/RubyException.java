@@ -70,14 +70,13 @@ public class RubyException extends RubyObject {
         super(runtime, rubyClass);
 
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
+        this.cause = runtime.getNil();
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length == 1) message = args[0];
-
-        IRubyObject errinfo = getRuntime().getCurrentContext().getErrorInfo();
-        if (!errinfo.isNil()) cause = errinfo;
+        if ( args.length == 1 ) message = args[0];
+        cause = getRuntime().getCurrentContext().getErrorInfo(); // returns nil for no error-info
         return this;
     }
 
@@ -395,7 +394,7 @@ public class RubyException extends RubyObject {
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
     public IRubyObject message;
-    private IRubyObject cause = getRuntime().getNil();
+    private IRubyObject cause;
 
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;
