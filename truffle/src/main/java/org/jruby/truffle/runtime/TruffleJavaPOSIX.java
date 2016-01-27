@@ -15,10 +15,13 @@ import jnr.posix.FileStat;
 import jnr.posix.LibC;
 import jnr.posix.POSIX;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
 
@@ -27,6 +30,9 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     private static final int STDERR = 2;
 
     private final RubyContext context;
+
+    private final AtomicInteger nextFileHandle = new AtomicInteger();
+    private final Map<Integer, RandomAccessFile> fileHandles = new ConcurrentHashMap<>();
 
     public TruffleJavaPOSIX(RubyContext context, POSIX delegateTo) {
         super(delegateTo);
@@ -56,6 +62,44 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     @Override
     public LibC libc() {
         return JavaLibC.INSTANCE;
+    }
+
+    @Override
+    public int open(CharSequence path, int flags, int perm) {
+        if (perm != 0666) {
+            return super.open(path, flags, perm);
+        }
+
+        final int fileHandle = nextFileHandle.getAndIncrement();
+
+        if (fileHandle < 0) {
+            throw new UnsupportedOperationException();
+        }
+
+        final int basicMode = flags & 3;
+        final String mode;
+
+        if (basicMode == OpenFlags.O_RDONLY.intValue()) {
+            mode = "r";
+        } else if (basicMode == OpenFlags.O_WRONLY.intValue()) {
+            mode = "w";
+        } else if (basicMode == OpenFlags.O_RDWR.intValue()) {
+            mode = "rw";
+        } else {
+            return super.open(path, flags, perm);
+        }
+
+        final RandomAccessFile randomAccessFile;
+
+        try {
+            randomAccessFile = new RandomAccessFile(path.toString(), mode);
+        } catch (FileNotFoundException e) {
+            return -1;
+        }
+
+        fileHandles.put(fileHandle, randomAccessFile);
+
+        return fileHandle;
     }
 
     @Override
