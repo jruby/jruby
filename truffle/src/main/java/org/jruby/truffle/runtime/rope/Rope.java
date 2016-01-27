@@ -63,7 +63,7 @@ public abstract class Rope {
     public final byte[] getBytes() {
         if (bytes == null) {
             CompilerDirectives.transferToInterpreter();
-            bytes = calculateBytes();
+            bytes = RopeOperations.flattenBytes(this);
         }
 
         return bytes;
