@@ -43,6 +43,7 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
@@ -486,6 +487,23 @@ public abstract class TrufflePrimitiveNodes {
             System.err.println("RD = Right Depth (ConcatRope only)");
 
             return debugPrintRopeNode.executeDebugPrint(StringOperations.rope(string), 0, printString);
+        }
+
+    }
+
+    @CoreMethod(names = "flatten_rope", onSingleton = true, required = 1)
+    public abstract static class FlattenRopeNode extends CoreMethodArrayArgumentsNode {
+
+        public FlattenRopeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject debugPrint(DynamicObject string) {
+            final Rope flattened = RopeOperations.flatten(StringOperations.rope(string));
+
+            return createString(flattened);
         }
 
     }
