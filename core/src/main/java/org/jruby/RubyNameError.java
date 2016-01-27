@@ -91,13 +91,12 @@ public class RubyNameError extends RubyException {
 
         @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
-            Ruby runtime = context.runtime;
+            final Ruby runtime = context.runtime;
 
             if (message == null) {
                 return context.nil;
             } else {
                 String description = null;
-                IRubyObject[] args = new IRubyObject[2];
                 boolean singleton = false;
 
                 if (object.isNil()) {
@@ -121,10 +120,9 @@ public class RubyNameError extends RubyException {
                 }
 
                 if (!singleton) {
-                    description = description + ":" + object.getMetaClass().getRealClass().getName();
+                    description = description + ':' + object.getMetaClass().getRealClass().getName();
                 }
-                args[0] = name;
-                args[1] = runtime.newString(description);
+                //IRubyObject[] args = new IRubyObject[] { name, runtime.newString(description) };
 
                 RubyArray arr = runtime.newArray(name, runtime.newString(description));
                 ByteList msgBytes = new ByteList(this.message.length() + description.length() + name.toString().length());
