@@ -193,18 +193,9 @@ public class RubyNameError extends RubyException {
     @JRubyMethod(required = 1, optional = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length > 1) {
-            name = args[args.length - 1];
-            int newLength = args.length > 2 ? args.length - 2 : args.length - 1;
-
-            IRubyObject []tmpArgs = new IRubyObject[newLength];
-            System.arraycopy(args, 0, tmpArgs, 0, newLength);
-            args = tmpArgs;
-        } else {
-            name = getRuntime().getNil();
-        }
-
-        super.initialize(args, block);
+        this.message = args[0];
+        if ( args.length > 1 ) this.name = args[1];
+        super.initialize(NULL_ARRAY, block); // message already set
         return this;
     }
 
