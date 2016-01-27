@@ -114,6 +114,36 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, boolean receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, byte receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, short receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, long receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, float receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, double receiver) {
+            return true;
+        }
+
+        @Specialization
         public boolean isBoxedPrimitive(VirtualFrame frame, CharSequence receiver) {
             return true;
         }
@@ -275,6 +305,36 @@ public abstract class TruffleInteropNodes {
         public UnboxValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.node = Message.UNBOX.createNode();
+        }
+
+        @Specialization
+        public boolean unbox(VirtualFrame frame, boolean receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public byte unbox(VirtualFrame frame, byte receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public short unbox(VirtualFrame frame, short receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public long unbox(VirtualFrame frame, long receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public float unbox(VirtualFrame frame, float receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public double unbox(VirtualFrame frame, double receiver) {
+            return receiver;
         }
 
         @Specialization
