@@ -76,7 +76,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if ( args.length == 1 ) message = args[0];
-        cause = getRuntime().getCurrentContext().getErrorInfo(); // returns nil for no error-info
+        // cause filled in at RubyKernel#raise ... Exception.new does not fill-in cause!
         return this;
     }
 
@@ -122,10 +122,8 @@ public class RubyException extends RubyObject {
             case 0 :
                 return this;
             case 1 :
-                if(args[0] == this) {
-                    return this;
-                }
-                RubyException ret = (RubyException)rbClone();
+                if (args[0] == this) return this;
+                RubyException ret = (RubyException) rbClone();
                 ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
                 return ret;
             default :

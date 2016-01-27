@@ -790,12 +790,23 @@ public class RubyKernel {
         final Ruby runtime = context.runtime;
         int argc = args.length;
 
-        RubyHash opts = extract_raise_opts(context, args);
-        if (opts != null) argc--;
+        // semi extract_raise_opts :
+        IRubyObject cause = null;
+        if ( argc > 0 ) {
+            IRubyObject last = args[argc - 1];
+            if ( last instanceof RubyHash ) {
+                RubyHash opt = (RubyHash) last; RubySymbol key;
+                if ( ! opt.isEmpty() && ( opt.has_key_p( key = runtime.newSymbol("cause") ) == runtime.getTrue() ) ) {
+                    cause = opt.delete(context, key, Block.NULL_BLOCK);
+                    if ( opt.isEmpty() && --argc == 0 ) { // more opts will be passed along
+                        throw runtime.newArgumentError("only cause is given with no arguments");
+                    }
+                }
+            }
+        }
 
-        maybeRaiseJavaException(runtime, args, argc, opts);
+        maybeRaiseJavaException(runtime, args, argc, cause);
 
-        // FIXME: Pass block down?
         RaiseException raise;
         switch (argc) {
             case 0:
@@ -826,8 +837,8 @@ public class RubyKernel {
             printExceptionSummary(context, runtime, raise.getException());
         }
 
-        if (opts != null) {
-            IRubyObject cause = opts.op_aref(context, runtime.newSymbol("cause"));
+        if ( argc > 0 ) { // for argc == 0 we're already raising $!
+            if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
             raise.getException().setCause(cause);
         }
 
@@ -835,14 +846,11 @@ public class RubyKernel {
     }
 
     private static void maybeRaiseJavaException(final Ruby runtime,
-        final IRubyObject[] args, final int argc, final RubyHash opts) {
+        final IRubyObject[] args, final int argc, final IRubyObject cause) {
         // Check for a Java exception
         ConcreteJavaProxy exception = null;
         switch (argc) {
             case 0:
-                if (opts != null) {
-                    throw runtime.newArgumentError("only cause is given with no arguments");
-                }
                 IRubyObject lastException = runtime.getGlobalVariables().get("$!");
                 if (lastException instanceof ConcreteJavaProxy) {
                     exception = (ConcreteJavaProxy) lastException;
@@ -860,11 +868,17 @@ public class RubyKernel {
             Object maybeThrowable = exception.getObject();
 
             if (maybeThrowable instanceof Throwable) {
-                Helpers.throwException((Throwable) maybeThrowable);
-                return; // not reached
-            } else {
-                throw runtime.newTypeError("can't raise a non-Throwable Java object");
+                final Throwable ex = (Throwable) maybeThrowable;
+                if (ex.getCause() == null && cause instanceof ConcreteJavaProxy) {
+                    // allow raise java.lang.RuntimeException.new, cause: myCurrentException()
+                    maybeThrowable = ((ConcreteJavaProxy) cause).getObject();
+                    if (maybeThrowable instanceof Throwable) {
+                        ex.initCause((Throwable) maybeThrowable);
+                    }
+                }
+                Helpers.throwException(ex); return; // not reached
             }
+            throw runtime.newTypeError("can't raise a non-Throwable Java object");
         }
     }
 
@@ -894,21 +908,6 @@ public class RubyKernel {
                 TypeConverter.convertToType(rEx, runtime.getString(), "to_s"));
 
         runtime.getErrorStream().print(msg);
-    }
-
-    private static RubyHash extract_raise_opts(ThreadContext context, IRubyObject[] args) {
-        int i;
-        if (args.length > 0) {
-            IRubyObject opt = args[args.length-1];
-            if (opt instanceof RubyHash) {
-                if (!((RubyHash)opt).isEmpty()) {
-                    if (!((RubyHash)opt).op_aref(context, context.runtime.newSymbol("cause")).isNil()) {
-                        return (RubyHash) opt;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     /**
