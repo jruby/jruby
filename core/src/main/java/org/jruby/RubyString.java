@@ -627,15 +627,25 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     // str_independent
-    public boolean independent() {
+    public final boolean independent() {
         return shareLevel == SHARE_LEVEL_NONE;
     }
 
     // str_make_independent, modified to create a new String rather than possibly modifying a frozen one
-    public RubyString makeIndependent() {
+    public final RubyString makeIndependent() {
         RubyClass klass = metaClass;
         RubyString str = strDup(klass.getClassRuntime(), klass);
         str.modify();
+        str.setFrozen(true);
+        str.infectBy(this);
+        return str;
+    }
+
+    // str_make_independent_expand
+    public final RubyString makeIndependent(final int length) {
+        RubyClass klass = metaClass;
+        RubyString str = strDup(klass.getClassRuntime(), klass);
+        str.modify(length);
         str.setFrozen(true);
         str.infectBy(this);
         return str;

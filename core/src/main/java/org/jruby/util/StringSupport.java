@@ -650,42 +650,40 @@ public final class StringSupport {
         return 0;
     }
 
-    public static int memchr(byte[] ptr, int start, int find, int len) {
+    public static int memchr(byte[] ptr, int start, final int find, int len) {
         for (int i = start; i < start + len; i++) {
-            if (ptr[i] == find) return i;
+            if ( ptr[i] == find ) return i;
         }
         return -1;
     }
 
-    // StringValueCstr, rb_string_value_cstr without trailing null addition
+    // StringValueCStr, rb_string_value_cstr without trailing null addition
     public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
-        RubyString str = ptr.convertToString();
-        ByteList strByteList = str.getByteList();
-        byte[] sBytes = strByteList.unsafeBytes();
-        int s = strByteList.begin();
-        int len = strByteList.length();
-        Encoding enc = str.getEncoding();
+        final RubyString s = ptr.convertToString();
+        ByteList sByteList = s.getByteList();
+        byte[] sBytes = sByteList.unsafeBytes();
+        int beg = sByteList.begin();
+        int len = sByteList.length();
+        final Encoding enc = s.getEncoding();
         final int minlen = enc.minLength();
 
         if (minlen > 1) {
-            if (strNullChar(sBytes, s, len, minlen, enc) != -1) {
+            if (strNullChar(sBytes, beg, len, minlen, enc) != -1) {
                 throw runtime.newArgumentError("string contains null char");
             }
-            return strFillTerm(str, sBytes, s, len, minlen, minlen);
+            return strFillTerm(s, sBytes, beg, len, minlen);
         }
-        if (memchr(sBytes, s, 0, len) != -1) {
+        if (memchr(sBytes, beg, '\0', len) != -1) {
             throw runtime.newArgumentError("string contains null byte");
         }
-//        if (s[len]) {
-//            rb_str_modify(str);
-//            s = RSTRING_PTR(str);
-//            s[RSTRING_LEN(str)] = 0;
-//        }
-        return str;
+        //if (s[len]) {
+        //    s = str_fill_term(str, s, len, minlen);
+        //}
+        return s;
     }
 
     // MRI: str_null_char
-    public static int strNullChar(byte[] sBytes, int s, int len, final int minlen, Encoding enc) {
+    private static int strNullChar(byte[] sBytes, int s, int len, final int minlen, Encoding enc) {
         int e = s + len;
 
         for (; s + minlen <= e; s += enc.length(sBytes, s, e)) {
@@ -694,35 +692,38 @@ public final class StringSupport {
         return -1;
     }
 
-    public static boolean zeroFilled(byte[] sBytes, int s, int n) {
+    // MRI: zero_filled
+    private static boolean zeroFilled(byte[] sBytes, int s, int n) {
         for (; n > 0; --n) {
             if (sBytes[s++] != 0) return false;
         }
         return true;
     }
 
-    public static RubyString strFillTerm(RubyString str, byte[] sBytes, int s, int len, int oldtermlen, int termlen) {
-        int capa = str.getByteList().getUnsafeBytes().length - str.getByteList().begin();
+    // MRI: str_fill_term
+    private static RubyString strFillTerm(RubyString str, byte[] sBytes, int beg, int len, int termlen) {
+        int capa = sBytes.length - beg;
 
         if (capa < len + termlen) {
-            str.modify(len + termlen);
+            // rb_check_lockedtmp(str);
+            str = str.makeIndependent(len + termlen);
+            sBytes = str.getByteList().unsafeBytes();
+            beg = str.getByteList().begin();
         }
-        else if (!str.independent()) {
-            if (zeroFilled(sBytes, s + len, termlen)) return str;
-            str.makeIndependent();
+        else if ( ! str.independent() ) {
+            if ( ! zeroFilled(sBytes, beg + len, termlen) ) {
+                str = str.makeIndependent(len + termlen);
+                sBytes = str.getByteList().unsafeBytes();
+                beg = str.getByteList().begin();
+            }
         }
-        sBytes = str.getByteList().getUnsafeBytes();
-        s = str.getByteList().begin();
-        TERM_FILL(sBytes, s + len, termlen);
+
+        TERM_FILL(sBytes, beg, len, termlen);
         return str;
     }
 
-    public static void TERM_FILL(byte[] ptrBytes, int ptr, int termlen) {
-        int term_fill_ptr = ptr;
-        int term_fill_len = termlen;
-        ptrBytes[term_fill_ptr] = '\0';
-        if (term_fill_len > 1)
-        Arrays.fill(ptrBytes, term_fill_ptr, term_fill_len, (byte)0);
+    private static void TERM_FILL(byte[] ptr, final int beg, final int len, final int termlen) {
+        final int p = beg + len; Arrays.fill(ptr, p, p + termlen, (byte) '\0');
     }
 
     /**
