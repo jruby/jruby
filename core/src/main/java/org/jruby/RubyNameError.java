@@ -201,11 +201,12 @@ public class RubyNameError extends RubyException {
 
     @JRubyMethod
     @Override
-    public IRubyObject to_s() {
-        if (message.isNil()) return getRuntime().newString(message.getMetaClass().getName());
+    public IRubyObject to_s(ThreadContext context) {
+        if (message.isNil()) {
+            return context.runtime.newString(getMetaClass().getRealClass().getName());
+        }
         RubyString str = message.convertToString();
         if (str != message) message = str;
-        if (isTaint()) message.setTaint(true);
         return message;
     }
 
@@ -217,7 +218,7 @@ public class RubyNameError extends RubyException {
     @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
         if (message instanceof RubyNameErrorMessage) {
-            return ((RubyNameErrorMessage)message).object;
+            return ((RubyNameErrorMessage) message).object;
         }
 
         throw context.runtime.newArgumentError("no receiver is available");

@@ -133,11 +133,14 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        if (message.isNil()) return context.runtime.newString(getMetaClass().getRealClass().getName());
-
-        message.setTaint(isTaint());
+        if (message.isNil()) {
+            return context.runtime.newString(getMetaClass().getRealClass().getName());
+        }
         return message.asString();
     }
+
+    @Deprecated
+    public IRubyObject to_s19(ThreadContext context) { return to_s(context); }
 
     @JRubyMethod(name = "message")
     public IRubyObject message(ThreadContext context) {
@@ -375,14 +378,6 @@ public class RubyException extends RubyObject {
     // rb_exc_new3
     public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
         return exceptionClass.callMethod(context, "new", message.convertToString());
-    }
-
-    @Deprecated
-    public IRubyObject to_s19(ThreadContext context) {
-        if (message.isNil()) return context.runtime.newString(getMetaClass().getRealClass().getName());
-
-        message.setTaint(isTaint());
-        return message.asString();
     }
 
     public IRubyObject getMessage() {
