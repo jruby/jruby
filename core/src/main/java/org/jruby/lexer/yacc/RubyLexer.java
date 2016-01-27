@@ -61,6 +61,7 @@ import org.jruby.ast.StrNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.RubyParser;
@@ -70,34 +71,10 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.lexer.LexingCommon.ASCII8BIT_ENCODING;
-import static org.jruby.lexer.LexingCommon.BEGIN_DOC_MARKER;
-import static org.jruby.lexer.LexingCommon.CODING;
-import static org.jruby.lexer.LexingCommon.END_DOC_MARKER;
-import static org.jruby.lexer.LexingCommon.END_MARKER;
-import static org.jruby.lexer.LexingCommon.EOF;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_INDENT;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_QWORDS;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_REGEXP;
-import static org.jruby.lexer.LexingCommon.SUFFIX_ALL;
-import static org.jruby.lexer.LexingCommon.SUFFIX_I;
-import static org.jruby.lexer.LexingCommon.SUFFIX_R;
-import static org.jruby.lexer.LexingCommon.USASCII_ENCODING;
-import static org.jruby.lexer.LexingCommon.UTF8_ENCODING;
-import static org.jruby.lexer.LexingCommon.isHexChar;
-import static org.jruby.lexer.LexingCommon.isOctChar;
-import static org.jruby.lexer.LexingCommon.parseMagicComment;
-import static org.jruby.lexer.LexingCommon.str_dquote;
-import static org.jruby.lexer.LexingCommon.str_dsym;
-import static org.jruby.lexer.LexingCommon.str_regexp;
-import static org.jruby.lexer.LexingCommon.str_squote;
-import static org.jruby.lexer.LexingCommon.str_ssym;
-import static org.jruby.lexer.LexingCommon.str_xquote;
-
 /*
  * This is a port of the MRI lexer to Java.
  */
-public class RubyLexer {
+public class RubyLexer extends LexingCommon {
     private static final HashMap<String, Keyword> map;
 
     static {
@@ -287,6 +264,7 @@ public class RubyLexer {
     private LexState last_state;
     public ISourcePosition tokline;
     private int tokenCR;
+    private boolean tokenSeen;
 
     public int getTokenCR() {
         return tokenCR;
@@ -401,6 +379,7 @@ public class RubyLexer {
         tokp = 0;
         ruby_sourceline = src.getLineOffset() - 1;
         last_cr_line = -1;
+        tokenSeen = false;
 
         parser_prepare();
     }
@@ -657,6 +636,46 @@ public class RubyLexer {
         this.parserSupport = parserSupport;
     }
 
+    @Override
+    protected void magicCommentEncoding(ByteList encoding) {
+        if (!comment_at_top()) return;
+
+        setEncoding(encoding);
+    }
+
+    @Override
+    protected void setCompileOptionFlag(String name, ByteList value) {
+        if (tokenSeen) {
+            warnings.warn(ID.ACCESSOR_MODULE_FUNCTION, "`" + name + "' is ignored after any tokens");
+            return;
+        }
+
+        int b = asTruth(name, value);
+        if (b < 0) return;
+
+        // Enebo: This is a hash in MRI for multiple potential compile options but we currently only support one.
+        // I am just going to set it and when a second is done we will reevaluate how they are populated.
+        parserSupport.getConfiguration().setFrozenStringLiteral(b == 1);
+    }
+
+    private final ByteList TRUE = new ByteList(new byte[] {'t', 'r', 'u', 'e'});
+    private final ByteList FALSE = new ByteList(new byte[] {'f', 'a', 'l', 's', 'e'});
+    protected int asTruth(String name, ByteList value) {
+        int result = value.caseInsensitiveCmp(TRUE);
+        if (result == 0) return 1;
+
+        result = value.caseInsensitiveCmp(FALSE);
+        if (result == 0) return 0;
+
+        warnings.warn(ID.ACCESSOR_MODULE_FUNCTION, "invalid value for " + name + ": " + value);
+        return -1;
+    }
+
+    @Override
+    protected void setTokenInfo(String name, ByteList value) {
+
+    }
+
     private void setEncoding(ByteList name) {
         Ruby runtime = parserSupport.getConfiguration().getRuntime();
         Encoding newEncoding = runtime.getEncodingService().loadEncoding(name);
@@ -874,7 +893,11 @@ public class RubyLexer {
             }
         }
 
-        return new StrNode(getPosition(), buffer, codeRange);
+        StrNode newStr = new StrNode(getPosition(), buffer, codeRange);
+
+        if (parserSupport.getConfiguration().isFrozenStringLiteral()) newStr.setFrozen(true);
+
+        return newStr;
     }
     
     /**
@@ -1276,6 +1299,7 @@ public class RubyLexer {
         int c;
         boolean spaceSeen = false;
         boolean commandState;
+        boolean tokenSeen = this.tokenSeen;
         
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this);
@@ -1300,6 +1324,7 @@ public class RubyLexer {
 
         commandState = commandStart;
         commandStart = false;
+        this.tokenSeen = true;
 
         loop: for(;;) {
             last_state = lex_state;
@@ -1318,19 +1343,15 @@ public class RubyLexer {
                 spaceSeen = true;
                 continue;
             case '#': {	/* it's a comment */
-                ByteList encodingName = parseMagicComment(parserSupport.getConfiguration().getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p));
-                // FIXME: boolean to mark we already found a magic comment to stop searching.  When found or we went too far
-                if (comment_at_top()) {
-                    if (encodingName != null) {
-                        setEncoding(encodingName);
-                    } else {
-                        set_file_encoding(lex_p, lex_pend);
-                    }
+                this.tokenSeen = tokenSeen;
+                if (!parseMagicComment(parserSupport.getConfiguration().getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p))) {
+                    if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
                 }
                 lex_p = lex_pend;
             }
             /* fall through */
             case '\n':
+                this.tokenSeen = tokenSeen;
                 switch (lex_state) {
                 case EXPR_BEG: case EXPR_FNAME: case EXPR_DOT:
                 case EXPR_CLASS: case EXPR_VALUE:

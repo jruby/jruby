@@ -55,6 +55,8 @@ public class ParserConfiguration {
     // whether we should save the end-of-file data as DATA
     private boolean saveData = false;
 
+    private boolean frozenStringLiteral = false;
+
     private Encoding defaultEncoding;
     private Ruby runtime;
 
@@ -80,6 +82,15 @@ public class ParserConfiguration {
         this(runtime, lineNumber, inlineSource, isFileParse, saveData);
 
         this.isDebug = config.isParserDebug();
+    }
+
+
+    public void setFrozenStringLiteral(boolean frozenStringLiteral) {
+        this.frozenStringLiteral = frozenStringLiteral;
+    }
+
+    public boolean isFrozenStringLiteral() {
+        return frozenStringLiteral;
     }
 
     public void setDefaultEncoding(Encoding encoding) {

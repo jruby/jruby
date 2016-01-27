@@ -69,6 +69,7 @@ public class StrNode extends Node implements ILiteralNode, SideEffectFree {
         myValue.append(headBL);
         myValue.append(tailBL);
 
+        frozen = head.isFrozen() && tail.isFrozen();
         value = myValue;
         codeRange = StringSupport.codeRangeScan(value.getEncoding(), value);
     }

@@ -32,26 +32,20 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import org.jcodings.Encoding;
-import org.joni.Matcher;
-import org.joni.Option;
-import org.joni.Regex;
 import org.jruby.Ruby;
-import org.jruby.RubyRegexp;
 import org.jruby.lexer.LexerSource;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
-import static org.jruby.lexer.LexingCommon.*;
-import static org.jruby.lexer.LexingCommon.parseMagicComment;
-
 /**
  *
  * @author enebo
  */
-public class RipperLexer {
+public class RipperLexer extends LexingCommon {
     private static final HashMap<String, Keyword> map;
 
     static {
@@ -585,6 +579,23 @@ public class RipperLexer {
         this.parser = parserSupport;
     }
 
+    @Override
+    protected void magicCommentEncoding(ByteList encoding) {
+        if (!comment_at_top()) return;
+
+        setEncoding(encoding);
+    }
+
+    @Override
+    protected void setCompileOptionFlag(String name, ByteList value) {
+
+    }
+
+    @Override
+    protected void setTokenInfo(String name, ByteList value) {
+
+    }
+
     private void setEncoding(ByteList name) {
         Encoding newEncoding = parser.getRuntime().getEncodingService().loadEncoding(name);
 
@@ -704,22 +715,6 @@ public class RipperLexer {
             setState(LexState.EXPR_BEG);
             break;
         }
-    }
-
-	/**
-	 * @param c the character to test
-	 * @return true if character is a hex value (0-9a-f)
-	 */
-    static boolean isHexChar(int c) {
-        return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
-    }
-
-    /**
-	 * @param c the character to test
-     * @return true if character is an octal value (0-7)
-	 */
-    static boolean isOctChar(int c) {
-        return '0' <= c && c <= '7';
     }
     
     /**
@@ -1404,12 +1399,8 @@ public class RipperLexer {
                 continue;
             }
             case '#': { /* it's a comment */
-                ByteList encodingName = parseMagicComment(getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p));
-                // FIXME: boolean to mark we already found a magic comment to stop searching.  When found or we went too far
-                if (encodingName != null) {
-                    setEncoding(encodingName);
-                } else if (comment_at_top()) {
-                    set_file_encoding(lex_p, lex_pend);
+                if (!parseMagicComment(getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p))) {
+                    if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
                 }
                 lex_p = lex_pend;
                 dispatchScanEvent(Tokens.tCOMMENT);

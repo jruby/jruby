@@ -15,7 +15,7 @@ import org.jruby.util.ByteList;
 /**
  * Code and constants common to both ripper and main parser.
  */
-public class LexingCommon {
+public abstract class LexingCommon {
     // ruby constants for strings (should this be moved somewhere else?)
     public static final int STR_FUNC_ESCAPE=0x01;
     public static final int STR_FUNC_EXPAND=0x02;
@@ -99,32 +99,45 @@ public class LexingCommon {
     public static final String magicString = "([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*";
     public static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
 
+
     // MRI: parser_magic_comment
-    public static ByteList parseMagicComment(Ruby runtime, ByteList magicLine) throws IOException {
+    public boolean parseMagicComment(Ruby runtime, ByteList magicLine) throws IOException {
         int length = magicLine.length();
 
-        if (length <= 7) return null;
+        if (length <= 7) return false;
         int beg = magicCommentMarker(magicLine, 0);
-        if (beg < 0) return null;
-        int end = magicCommentMarker(magicLine, beg);
-        if (end < 0) return null;
+        if (beg >= 0) {
+            int end = magicCommentMarker(magicLine, beg);
+            if (end < 0) return false;
+            length = end - beg - 3; // -3 is to skip past beg
+        }
 
-        // We only use a regex if -*- ... -*- is found.
-        length = end - beg - 3; // -3 is to skip past beg
         int realSize = magicLine.getRealSize();
         int begin = magicLine.getBegin();
         Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + realSize);
         int result = RubyRegexp.matcherSearch(runtime, matcher, begin, begin + realSize, Option.NONE);
 
-        if (result < 0) return null;
+        if (result < 0) return false;
 
-        // Regexp is guarateed to have three matches
+        // Regexp is guaranteed to have three matches
         int begs[] = matcher.getRegion().beg;
         int ends[] = matcher.getRegion().end;
-        String name = magicLine.subSequence(begs[1], ends[1]).toString();
-        if (!name.contains("ccoding")) return null;
+        String name = magicLine.subSequence(begs[1], ends[1]).toString().replace('-', '_');
 
-        return magicLine.makeShared(begs[2], ends[2] - begs[2]);
+        if ("coding".equals(name) || "encoding".equals(name)) {
+            magicCommentEncoding(magicLine.makeShared(begs[2], ends[2] - begs[2]));
+        } else if ("frozen_string_literal".equals(name)) {
+            setCompileOptionFlag(name, magicLine.makeShared(begs[2], ends[2] - begs[2]));
+        } else if ("warn_indent".equals(name)) {
+            setTokenInfo(name, magicLine.makeShared(begs[2], ends[2] - begs[2]));
+        } else {
+            return false;
+        }
+
+        return true;
     }
 
+    protected abstract void magicCommentEncoding(ByteList encoding);
+    protected abstract void setCompileOptionFlag(String name, ByteList value);
+    protected abstract void setTokenInfo(String name, ByteList value);
 }
