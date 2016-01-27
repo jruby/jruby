@@ -153,19 +153,15 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
         final OpenFile openFile = fileHandles.get(fd);
 
         if (openFile != null) {
+            final int read;
+
             try {
-                openFile.getRandomAccessFile().read(buf, offset, n);
+                read = openFile.getRandomAccessFile().read(buf, offset, n);
             } catch (IOException e) {
                 return -1;
             }
 
-            try {
-                openFile.getRandomAccessFile().seek(openFile.getRandomAccessFile().getFilePointer() + n);
-            } catch (IOException e) {
-                return -1;
-            }
-
-            return n;
+            return read;
         }
 
         return super.pwrite(fd, buf, n, offset);
