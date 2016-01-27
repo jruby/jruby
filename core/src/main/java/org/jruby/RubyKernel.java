@@ -95,7 +95,6 @@ import static org.jruby.anno.FrameField.*;
  */
 @JRubyModule(name="Kernel")
 public class RubyKernel {
-    public final static Class<?> IRUBY_OBJECT = IRubyObject.class;
 
     public static class MethodMissingMethod extends JavaMethodNBlock {
         private final Visibility visibility;
