@@ -3898,7 +3898,7 @@ public final class Ruby implements Constantizable {
         return newNameError(message, name, null);
     }
 
-    // This name sucks and should be replaced by newNameErrorfor 9k.
+    @Deprecated
     public RaiseException newNameErrorObject(String message, IRubyObject name) {
         RubyException error = new RubyNameError(this, getNameError(), message, name);
 
@@ -3938,8 +3938,7 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        return new RaiseException(new RubyNameError(
-                this, getNameError(), message, name), false);
+        return new RaiseException(new RubyNameError(this, getNameError(), message, name), false);
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
