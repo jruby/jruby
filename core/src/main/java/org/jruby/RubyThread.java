@@ -690,22 +690,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(meta = true)
     public static IRubyObject handle_interrupt(ThreadContext context, IRubyObject self, IRubyObject _mask, Block block) {
-        Ruby runtime = context.runtime;
-
         if (!block.isGiven()) {
-            throw runtime.newArgumentError("block is needed");
+            throw context.runtime.newArgumentError("block is needed");
         }
 
-        RubyHash mask = (RubyHash)TypeConverter.convertToTypeWithCheck(_mask, runtime.getHash(), "to_hash");
+        final RubyHash mask = (RubyHash) TypeConverter.convertToType(_mask, context.runtime.getHash(), "to_hash");
 
         mask.visitAll(new RubyHash.Visitor() {
             @Override
             public void visit(IRubyObject key, IRubyObject value) {
                 if (value instanceof RubySymbol) {
-                    RubySymbol sym = (RubySymbol)value;
-                    String symString = sym.toString();
-                    if (!symString.equals("immediate") && !symString.equals("on_blocking") && !symString.equals("never")) {
-                        throw key.getRuntime().newArgumentError("unknown mask signature");
+                    RubySymbol sym = (RubySymbol) value;
+                    switch (sym.toString()) {
+                        case "immediate" : return;
+                        case "on_blocking" : return;
+                        case "never" : return;
+                        default : throw key.getRuntime().newArgumentError("unknown mask signature");
                     }
                 }
             }
