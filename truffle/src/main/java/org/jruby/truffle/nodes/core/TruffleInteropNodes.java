@@ -28,6 +28,7 @@ import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -342,7 +343,7 @@ public abstract class TruffleInteropNodes {
         public DynamicObject executeForeign(VirtualFrame frame, CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ByteList.create(receiver), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(receiver)), null);
         }
 
         @Specialization
