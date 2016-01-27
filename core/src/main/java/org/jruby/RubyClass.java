@@ -665,7 +665,7 @@ public class RubyClass extends RubyModule {
      * MRI: check_funcall_respond_to
      */
     private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, String mid) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         DynamicMethod me = klass.searchMethod("respond_to?");
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
@@ -681,8 +681,7 @@ public class RubyClass extends RubyModule {
             } else {
                 result = me.call(context, recv, klass, "respond_to?", runtime.newSymbol(mid), runtime.getTrue());
             }
-
-            if (!result.isTrue()) return false;
+            return result.isTrue();
         }
         return true;
     }
