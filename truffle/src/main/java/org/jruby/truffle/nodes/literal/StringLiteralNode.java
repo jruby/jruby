@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,41 +9,32 @@
  */
 package org.jruby.truffle.nodes.literal;
 
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
-
-import java.util.Arrays;
 
 public class StringLiteralNode extends RubyNode {
 
-    private @CompilationFinal byte[] bytes; // deeply immutable
-    private final Encoding encoding;
-    private final int codeRange;
+    private final Rope rope;
 
     @Child private AllocateObjectNode allocateObjectNode;
 
     public StringLiteralNode(RubyContext context, SourceSection sourceSection, ByteList byteList, int codeRange) {
         super(context, sourceSection);
         assert byteList != null;
-        this.bytes = byteList.bytes();
-        this.encoding = byteList.getEncoding();
-        this.codeRange = codeRange;
+        this.rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), codeRange);
         allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, false, null, null);
     }
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        final byte[] copy = Arrays.copyOf(bytes, bytes.length);
-        final ByteList byteList = new ByteList(copy, encoding, false);
-        return allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(), byteList, codeRange, null);
+        return allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(), rope, null);
     }
 
 }

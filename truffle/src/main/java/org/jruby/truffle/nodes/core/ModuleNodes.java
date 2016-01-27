@@ -641,7 +641,7 @@ public abstract class ModuleNodes {
 
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
-            Encoding encoding = StringOperations.getByteList(code).getEncoding();
+            Encoding encoding = Layouts.STRING.getRope(code).getEncoding();
 
             CompilerDirectives.transferToInterpreter();
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS

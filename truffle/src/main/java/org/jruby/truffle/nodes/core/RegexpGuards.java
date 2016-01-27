@@ -26,7 +26,7 @@ public class RegexpGuards {
     }
 
     public static boolean isValidEncoding(DynamicObject string) {
-        return StringOperations.scanForCodeRange(string) != StringSupport.CR_BROKEN;
+        return StringOperations.codeRange(string) != StringSupport.CR_BROKEN;
     }
 
 }

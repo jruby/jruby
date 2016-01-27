@@ -19,6 +19,8 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.truffle.translator.BodyTranslator;
 import org.jruby.util.RegexpOptions;
 
@@ -43,18 +45,20 @@ public class InterpolatedRegexpNode extends RubyNode {
 
         for (int n = 0; n < children.length; n++) {
             final Object child = children[n].execute(frame);
-            strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), StringOperations.getByteList((DynamicObject) toS.call(frame, child, "to_s", null)));
+            strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), StringOperations.getByteListReadOnly((DynamicObject) toS.call(frame, child, "to_s", null)));
         }
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);
 
-        final DynamicObject regexp = RegexpNodes.createRubyRegexp(getContext(), this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options);
+        final DynamicObject regexp = RegexpNodes.createRubyRegexp(getContext(), this, getContext().getCoreLibrary().getRegexpClass(), StringOperations.ropeFromByteList(preprocessed.getByteList()), options);
 
         if (options.isEncodingNone()) {
+            final Rope source = Layouts.REGEXP.getSource(regexp);
+
             if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
-                Layouts.REGEXP.getSource(regexp).setEncoding(getContext().getRuntime().getEncodingService().getAscii8bitEncoding());
+                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncoding(source, getContext().getRuntime().getEncodingService().getAscii8bitEncoding()));
             } else {
-                Layouts.REGEXP.getSource(regexp).setEncoding(getContext().getRuntime().getEncodingService().getUSAsciiEncoding());
+                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncoding(source, getContext().getRuntime().getEncodingService().getUSAsciiEncoding()));
             }
         }
 

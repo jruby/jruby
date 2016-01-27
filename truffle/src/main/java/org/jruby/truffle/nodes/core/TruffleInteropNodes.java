@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -26,7 +26,10 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -111,6 +114,36 @@ public abstract class TruffleInteropNodes {
         public IsBoxedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.node = Message.IS_BOXED.createNode();
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, boolean receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, byte receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, short receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, long receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, float receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxedPrimitive(VirtualFrame frame, double receiver) {
+            return true;
         }
 
         @Specialization
@@ -202,11 +235,11 @@ public abstract class TruffleInteropNodes {
             return ForeignAccess.execute(readNode, frame, receiver, identifierString);
         }
 
-        @Specialization(guards = {"isRubyString(identifier)", "byteListsEqual(identifier, cachedIdentifier)"})
+        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
         public Object readProperty(VirtualFrame frame,
                                    TruffleObject receiver,
                                    DynamicObject identifier,
-                                   @Cached("privatizeByteList(identifier)") ByteList cachedIdentifier,
+                                   @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
                                    @Cached("identifier.toString()") String identifierString,
                                    @Cached("createReadNode()") Node readNode) {
             return ForeignAccess.execute(readNode, frame, receiver, identifierString);
@@ -250,12 +283,12 @@ public abstract class TruffleInteropNodes {
             return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
         }
 
-        @Specialization(guards = {"isRubyString(identifier)", "byteListsEqual(identifier, cachedIdentifier)"})
+        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
         public Object writeProperty(VirtualFrame frame,
                                     TruffleObject receiver,
                                     DynamicObject identifier,
                                     Object value,
-                                    @Cached("privatizeByteList(identifier)") ByteList cachedIdentifier,
+                                    @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
                                     @Cached("identifier.toString()") String identifierString,
                                     @Cached("createWriteNode()") Node writeNode) {
             return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
@@ -278,10 +311,40 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization
+        public boolean unbox(VirtualFrame frame, boolean receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public byte unbox(VirtualFrame frame, byte receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public short unbox(VirtualFrame frame, short receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public long unbox(VirtualFrame frame, long receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public float unbox(VirtualFrame frame, float receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public double unbox(VirtualFrame frame, double receiver) {
+            return receiver;
+        }
+
+        @Specialization
         public DynamicObject executeForeign(VirtualFrame frame, CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ByteList.create(receiver), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(receiver)), null);
         }
 
         @Specialization
@@ -377,15 +440,15 @@ public abstract class TruffleInteropNodes {
         @Specialization(guards = {
                 "isRubyString(mimeType)",
                 "isRubyString(source)",
-                "byteListsEqual(mimeType, cachedMimeType)",
-                "byteListsEqual(source, cachedSource)"
+                "ropesEqual(mimeType, cachedMimeType)",
+                "ropesEqual(source, cachedSource)"
         }, limit = "getCacheLimit()")
         public Object evalCached(
                 VirtualFrame frame,
                 DynamicObject mimeType,
                 DynamicObject source,
-                @Cached("privatizeByteList(mimeType)") ByteList cachedMimeType,
-                @Cached("privatizeByteList(source)") ByteList cachedSource,
+                @Cached("privatizeRope(mimeType)") Rope cachedMimeType,
+                @Cached("privatizeRope(source)") Rope cachedSource,
                 @Cached("create(parse(mimeType, source))") DirectCallNode callNode
         ) {
             return callNode.call(frame, new Object[]{});
@@ -426,7 +489,7 @@ public abstract class TruffleInteropNodes {
         @Specialization
         @TruffleBoundary
         public DynamicObject javaStringToRuby(String string) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ByteList.create(string), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(string), StringSupport.CR_UNKNOWN), null);
         }
 
     }

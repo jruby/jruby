@@ -65,44 +65,11 @@ module Rubinius
   L64 = true
 end
 
-class String
-  def append(other)
-    self << other
-  end
-end
-
 class Rational
   alias :__slash__ :/
 end
 
-# Wrapper class for Rubinius's exposure of @data within String.
-#
-# We can't use Array directly because we don't currently guarantee that we'll always return the same
-# exact underlying byte array.  Rubinius calls #equal? rather than #== throughout its code, making a tighter
-# assumption than we provide.  This wrapper provides the semantics we need in the interim.
 module Rubinius
-  class StringData
-    attr_accessor :array
-
-    def initialize(array)
-      @array = array
-    end
-
-    def equal?(other)
-      @array == other.array
-    end
-
-    alias_method :==, :equal?
-
-    def size
-      @array.size
-    end
-
-    def [](index)
-      @array[index]
-    end
-  end
-
   class Mirror
     module Process
       def self.set_status_global(status)

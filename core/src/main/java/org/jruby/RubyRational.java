@@ -189,6 +189,11 @@ public class RubyRational extends RubyNumeric {
     private static RubyRational newRationalBang(ThreadContext context, IRubyObject clazz, IRubyObject x) {
         return newRationalBang(context, clazz, x, RubyFixnum.one(context.runtime));
     }
+
+    @Override
+    public ClassIndex getNativeClassIndex() {
+        return ClassIndex.RATIONAL;
+    }
     
     private IRubyObject num;
     private IRubyObject den;
@@ -402,6 +407,14 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "denominator")
     @Override
     public IRubyObject denominator(ThreadContext context) {
+        return den;
+    }
+
+    public IRubyObject getNumerator() {
+        return num;
+    }
+
+    public IRubyObject getDenominator() {
         return den;
     }
 

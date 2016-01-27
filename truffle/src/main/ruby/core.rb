@@ -119,6 +119,7 @@ require_relative 'core/rubinius/platform/struct'
 
 #require_relative 'core/rubinius/common/basic_object'
 require_relative 'core/rubinius/common/string_mirror'
+require_relative 'core/rubinius/api/shims/string_mirror'
 #require_relative 'core/rubinius/common/class'
 #require_relative 'core/rubinius/common/autoload'
 require_relative 'core/rubinius/common/module'

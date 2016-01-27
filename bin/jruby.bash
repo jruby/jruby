@@ -383,7 +383,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
-    $java_class $JRUBY_OPTS "$@"
+    $java_class $mode "$@"
 
   # Record the exit status immediately, or it will be overridden.
   JRUBY_STATUS=$?

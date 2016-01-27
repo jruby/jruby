@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -39,6 +39,8 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.*;
 
 import java.nio.charset.StandardCharsets;
@@ -54,17 +56,17 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
 
-        final ByteList sourceByteList = StringOperations.getByteList(source);
+        final Rope sourceRope = StringOperations.rope(source);
 
-        final ByteList bl = Layouts.REGEXP.getSource(regexp);
-        final Encoding enc = checkEncoding(regexp, StringOperations.getCodeRangeable(source), true);
-        final ByteList preprocessed = RegexpSupport.preprocess(context.getRuntime(), bl, enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
+        final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
+        final Encoding enc = checkEncoding(regexp, sourceRope, true);
+        final ByteList preprocessed = RegexpSupport.preprocess(context.getRuntime(), regexpSourceRope.getUnsafeByteList(), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
-        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, StringOperations.getCodeRangeable(source), true));
-        final Matcher matcher = r.matcher(sourceByteList.unsafeBytes(), sourceByteList.begin(), sourceByteList.begin() + sourceByteList.realSize());
-        int range = sourceByteList.begin() + sourceByteList.realSize();
+        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
+        final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), sourceRope.begin() + sourceRope.realSize());
+        int range = sourceRope.begin() + sourceRope.realSize();
 
-        return matchCommon(context, regexp, source, operator, setNamedCaptures, matcher, sourceByteList.begin() + startPos, range);
+        return matchCommon(context, regexp, source, operator, setNamedCaptures, matcher, sourceRope.begin() + startPos, range);
     }
 
     @TruffleBoundary
@@ -72,7 +74,7 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
 
-        final ByteList bytes = StringOperations.getByteList(source);
+        final ByteList bytes = StringOperations.getByteListReadOnly(source);
 
         final int match = matcher.search(startPos, range, Option.DEFAULT);
 
@@ -176,10 +178,8 @@ public abstract class RegexpNodes {
     private static DynamicObject createSubstring(DynamicObject source, int start, int length) {
         assert RubyGuards.isRubyString(source);
 
-        final ByteList bytes = new ByteList(StringOperations.getByteList(source), start, length);
-        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), bytes, StringSupport.CR_UNKNOWN, null);
-
-        Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(source));
+        final ByteList bytes = new ByteList(StringOperations.getByteListReadOnly(source), start, length);
+        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes, StringOperations.getCodeRange(source)), null);
 
         return ret;
     }
@@ -198,7 +198,7 @@ public abstract class RegexpNodes {
         }
     }
 
-    public static ByteList shimModifiers(ByteList bytes) {
+    public static Rope shimModifiers(Rope bytes) {
         // Joni doesn't support (?u) etc but we can shim some common cases
 
         String bytesString = bytes.toString();
@@ -224,14 +224,15 @@ public abstract class RegexpNodes {
                     throw new UnsupportedOperationException();
             }
 
-            bytes = ByteList.create(bytesString);
+            // TODO (nirvdrum 25-Jan-16): We probably just want a way to create a Rope from a java.lang.String.
+            bytes = StringOperations.ropeFromByteList(ByteList.create(bytesString));
         }
 
         return bytes;
     }
 
     @TruffleBoundary
-    public static Regex compile(Node currentNode, RubyContext context, ByteList bytes, RegexpOptions options) {
+    public static Regex compile(Node currentNode, RubyContext context, Rope bytes, RegexpOptions options) {
         bytes = shimModifiers(bytes);
 
         try {
@@ -250,13 +251,14 @@ public abstract class RegexpNodes {
         }
              */
 
+            final ByteList byteList = bytes.getUnsafeByteList();
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
-            ByteList unescaped = RegexpSupport.preprocess(context.getRuntime(), bytes, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            ByteList unescaped = RegexpSupport.preprocess(context.getRuntime(), byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             if (fixedEnc[0] != null) {
                 if ((fixedEnc[0] != enc && options.isFixed()) ||
                         (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
-                    RegexpSupport.raiseRegexpError19(context.getRuntime(), bytes, enc, options, "incompatible character encoding");
+                    RegexpSupport.raiseRegexpError19(context.getRuntime(), byteList, enc, options, "incompatible character encoding");
                 }
                 if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
                     options.setFixed(true);
@@ -269,10 +271,8 @@ public abstract class RegexpNodes {
             if (fixedEnc[0] != null) options.setFixed(true);
             //if (regexpOptions.isEncodingNone()) setEncodingNone();
 
-            bytes.setEncoding(enc);
-
             Regex ret = new Regex(unescaped.getUnsafeBytes(), unescaped.getBegin(), unescaped.getBegin() + unescaped.getRealSize(), options.toJoniOptions(), enc, Syntax.RUBY);
-            ret.setUserObject(bytes);
+            ret.setUserObject(RopeOperations.withEncoding(bytes, enc));
 
             return ret;
         } catch (ValueException e) {
@@ -294,7 +294,7 @@ public abstract class RegexpNodes {
         Layouts.REGEXP.setRegex(regexp, regex);
     }
 
-    public static void setSource(DynamicObject regexp, ByteList source) {
+    public static void setSource(DynamicObject regexp, Rope source) {
         Layouts.REGEXP.setSource(regexp, source);
     }
 
@@ -303,7 +303,7 @@ public abstract class RegexpNodes {
     }
 
     // TODO (nirvdrum 03-June-15) Unify with JRuby in RegexpSupport.
-    public static Encoding checkEncoding(DynamicObject regexp, CodeRangeable str, boolean warn) {
+    public static Encoding checkEncoding(DynamicObject regexp, Rope str, boolean warn) {
         assert RubyGuards.isRubyRegexp(regexp);
 
         final Regex pattern = Layouts.REGEXP.getRegex(regexp);
@@ -314,7 +314,7 @@ public abstract class RegexpNodes {
         }
         */
         //check();
-        Encoding enc = str.getByteList().getEncoding();
+        Encoding enc = str.getEncoding();
         if (!enc.isAsciiCompatible()) {
             if (enc != pattern.getEncoding()) {
                 //encodingMatchError(getRuntime(), pattern, enc);
@@ -337,31 +337,42 @@ public abstract class RegexpNodes {
         return enc;
     }
 
-    public static void initialize(RubyContext context, DynamicObject regexp, Node currentNode, ByteList setSource, int options) {
+    public static void initialize(RubyContext context, DynamicObject regexp, Node currentNode, Rope setSource, int options) {
         assert RubyGuards.isRubyRegexp(regexp);
-        setSource(regexp, setSource);
-        setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
-        setRegex(regexp, compile(currentNode, context, setSource, Layouts.REGEXP.getOptions(regexp)));
+        final RegexpOptions regexpOptions = RegexpOptions.fromEmbeddedOptions(options);
+        final Regex regex = compile(currentNode, context, setSource, regexpOptions);
+
+        // The RegexpNodes.compile operation may modify the encoding of the source rope. This modified copy is stored
+        // in the Regex object as the "user object". Since ropes are immutable, we need to take this updated copy when
+        // constructing the final regexp.
+        setSource(regexp, (Rope) regex.getUserObject());
+        setOptions(regexp, regexpOptions);
+        setRegex(regexp, regex);
     }
 
-    public static void initialize(DynamicObject regexp, Regex setRegex, ByteList setSource) {
+    public static void initialize(DynamicObject regexp, Regex setRegex, Rope setSource) {
         assert RubyGuards.isRubyRegexp(regexp);
         setRegex(regexp, setRegex);
         setSource(regexp, setSource);
     }
 
-    public static DynamicObject createRubyRegexp(RubyContext context, Node currentNode, DynamicObject regexpClass, ByteList regex, RegexpOptions options) {
-        return Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), RegexpNodes.compile(currentNode, context, regex, options), regex, options, null);
+    public static DynamicObject createRubyRegexp(RubyContext context, Node currentNode, DynamicObject regexpClass, Rope source, RegexpOptions options) {
+        final Regex regexp = RegexpNodes.compile(currentNode, context, source, options);
+
+        // The RegexpNodes.compile operation may modify the encoding of the source rope. This modified copy is stored
+        // in the Regex object as the "user object". Since ropes are immutable, we need to take this updated copy when
+        // constructing the final regexp.
+        return Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), regexp, (Rope) regexp.getUserObject(), options, null);
     }
 
-    public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, ByteList source, RegexpOptions options) {
+    public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, Rope source, RegexpOptions options) {
         final DynamicObject regexp = Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
 
-    public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, ByteList source) {
+    public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, Rope source) {
         final DynamicObject regexp = Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
@@ -419,7 +430,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(pattern)")
         public DynamicObject escape(DynamicObject pattern) {
-            return createString(StringOperations.encodeByteList(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteList(pattern)), true).toString(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeByteList(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteListReadOnly(pattern)), true).toString(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -468,8 +479,9 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(raw)")
         public DynamicObject quoteString(DynamicObject raw) {
-            boolean isAsciiOnly = StringOperations.getByteList(raw).getEncoding().isAsciiCompatible() && StringOperations.scanForCodeRange(raw) == CR_7BIT;
-            return createString(org.jruby.RubyRegexp.quote19(StringOperations.getByteList(raw), isAsciiOnly));
+            final Rope rope = StringOperations.rope(raw);
+            boolean isAsciiOnly = rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CR_7BIT;
+            return createString(org.jruby.RubyRegexp.quote19(StringOperations.getByteListReadOnly(raw), isAsciiOnly));
         }
 
         @Specialization(guards = "isRubySymbol(raw)")
@@ -502,7 +514,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public DynamicObject source(DynamicObject regexp) {
-            return createString(Layouts.REGEXP.getSource(regexp).dup());
+            return createString(Layouts.REGEXP.getSource(regexp));
         }
 
     }
@@ -517,7 +529,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), Layouts.REGEXP.getSource(regexp), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
+            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), Layouts.REGEXP.getSource(regexp).getUnsafeByteList(), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
         }
 
     }
