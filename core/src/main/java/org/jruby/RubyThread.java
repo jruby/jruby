@@ -756,7 +756,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "name=", required = 1)
     public IRubyObject setName(IRubyObject name) {
-        Ruby runtime = getRuntime();
+        final Ruby runtime = getRuntime();
 
         if (!name.isNil()) {
             RubyString nameStr = StringSupport.checkEmbeddedNulls(runtime, name);
@@ -767,7 +767,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             name = nameStr.newFrozen();
         }
         this.threadName = name;
-        setThreadName(getRuntime(), getNativeThread(), null, -1, false);
+        setThreadName(runtime, getNativeThread(), null, -1, false);
         return name;
     }
 
