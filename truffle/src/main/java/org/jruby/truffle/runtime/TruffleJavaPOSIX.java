@@ -26,6 +26,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
 
+    private static class OpenFile {
+
+        private final RandomAccessFile randomAccessFile;
+        private final int flags;
+
+        private OpenFile(RandomAccessFile randomAccessFile, int flags) {
+            this.randomAccessFile = randomAccessFile;
+            this.flags = flags;
+        }
+
+        public RandomAccessFile getRandomAccessFile() {
+            return randomAccessFile;
+        }
+
+        public int getFlags() {
+            return flags;
+        }
+    }
+
     private static final int STDIN = 0;
     private static final int STDOUT = 1;
     private static final int STDERR = 2;
@@ -33,7 +52,7 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     private final RubyContext context;
 
     private final AtomicInteger nextFileHandle = new AtomicInteger(3);
-    private final Map<Integer, RandomAccessFile> fileHandles = new ConcurrentHashMap<>();
+    private final Map<Integer, OpenFile> fileHandles = new ConcurrentHashMap<>();
 
     public TruffleJavaPOSIX(RubyContext context, POSIX delegateTo) {
         super(delegateTo);
@@ -49,6 +68,12 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
                 case STDOUT:
                 case STDERR:
                     return OpenFlags.O_WRONLY.intValue();
+            }
+
+            final OpenFile openFile = fileHandles.get(fd);
+
+            if (openFile != null) {
+                return openFile.getFlags();
             }
         }
 
@@ -98,7 +123,7 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
             return -1;
         }
 
-        fileHandles.put(fileHandle, randomAccessFile);
+        fileHandles.put(fileHandle, new OpenFile(randomAccessFile, flags));
 
         return fileHandle;
     }
@@ -125,17 +150,17 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
             return n;
         }
 
-        final RandomAccessFile randomAccessFile = fileHandles.get(fd);
+        final OpenFile openFile = fileHandles.get(fd);
 
-        if (randomAccessFile != null) {
+        if (openFile != null) {
             try {
-                randomAccessFile.read(buf, offset, n);
+                openFile.getRandomAccessFile().read(buf, offset, n);
             } catch (IOException e) {
                 return -1;
             }
 
             try {
-                randomAccessFile.seek(randomAccessFile.getFilePointer() + n);
+                openFile.getRandomAccessFile().seek(openFile.getRandomAccessFile().getFilePointer() + n);
             } catch (IOException e) {
                 return -1;
             }
