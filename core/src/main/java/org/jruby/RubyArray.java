@@ -2805,8 +2805,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return runtime.getNil();
     }
 
-    private boolean flatten(ThreadContext context, int level, RubyArray result) {
-        Ruby runtime = context.runtime;
+    // MRI array.c flatten
+    private boolean flatten(ThreadContext context, final int level, final RubyArray result) {
+        final Ruby runtime = context.runtime;
         RubyArray stack = new RubyArray(runtime, ARRAY_DEFAULT_SIZE, false);
         IdentityHashMap<Object, Object> memo = new IdentityHashMap<Object, Object>();
         RubyArray ary = this;
@@ -2840,10 +2841,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 if (stack.realLength == 0) break;
                 memo.remove(ary);
                 tmp = stack.pop(context);
-                i = (int)((RubyFixnum)tmp).getLongValue();
-                ary = (RubyArray)stack.pop(context);
+                i = (int) ((RubyFixnum) tmp).getLongValue();
+                ary = (RubyArray) stack.pop(context);
             }
-        } catch (ArrayIndexOutOfBoundsException aioob) {
+        } catch (ArrayIndexOutOfBoundsException ex) {
             concurrentModification();
         }
         return modified;
