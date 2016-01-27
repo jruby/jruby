@@ -69,6 +69,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
+import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
@@ -80,9 +81,13 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
+import static org.jruby.truffle.runtime.core.StringOperations.encoding;
+import static org.jruby.truffle.runtime.core.StringOperations.rope;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,20 +99,26 @@ import java.util.List;
 public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "character_ascii_p")
+    @ImportStatic(StringGuards.class)
     public static abstract class CharacterAsciiPrimitiveNode extends RubiniusPrimitiveNode {
 
         public CharacterAsciiPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "is7Bit(character)")
         public boolean isCharacterAscii(DynamicObject character) {
-            final ByteList bytes = StringOperations.getByteList(character);
+            return ! rope(character).isEmpty();
+        }
+
+        @Specialization(guards = "!is7Bit(character)")
+        public boolean isCharacterAsciiMultiByte(DynamicObject character) {
+            final Rope rope = rope(character);
             final int codepoint = StringSupport.preciseCodePoint(
-                    bytes.getEncoding(),
-                    bytes.getUnsafeBytes(),
-                    bytes.getBegin(),
-                    bytes.getBegin() + bytes.getRealSize());
+                    rope.getEncoding(),
+                    rope.getBytes(),
+                    0,
+                    rope.byteLength());
 
             final boolean found = codepoint != -1;
 
@@ -125,12 +136,41 @@ public abstract class StringPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public boolean isCharacterPrintable(DynamicObject character) {
-            final ByteList bytes = StringOperations.getByteList(character);
-            final Encoding encoding = bytes.getEncoding();
+            final Rope rope = rope(character);
+            final Encoding encoding = rope.getEncoding();
 
-            final int codepoint = encoding.mbcToCode(bytes.unsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+            final int codepoint = encoding.mbcToCode(rope.getBytes(), 0, rope.byteLength());
 
             return encoding.isPrint(codepoint);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_append")
+    public static abstract class StringAppendPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract DynamicObject executeStringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other);
+
+        @Specialization(guards = "isRubyString(other)")
+        public DynamicObject stringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other) {
+            final Rope left = rope(string);
+            final Rope right = rope(other);
+
+            final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.areCompatible(string, other);
+
+            if (compatibleEncoding == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(
+                        String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
+            }
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, compatibleEncoding));
+
+            return string;
         }
 
     }
@@ -149,7 +189,8 @@ public abstract class StringPrimitiveNodes {
         @Specialization
         public DynamicObject stringAwkSplit(DynamicObject string, int lim) {
             final List<DynamicObject> ret = new ArrayList<>();
-            final ByteList value = StringOperations.getByteList(string);
+            final Rope rope = rope(string);
+            final ByteList value = rope.getUnsafeByteList();
             final boolean limit = lim > 0;
             int i = lim > 0 ? 1 : 0;
 
@@ -162,7 +203,7 @@ public abstract class StringPrimitiveNodes {
             boolean skip = true;
 
             int e = 0, b = 0;
-            final boolean singlebyte = StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), enc);
+            final boolean singlebyte = rope.isSingleByteOptimizable();
             while (p < end) {
                 final int c;
                 if (singlebyte) {
@@ -206,10 +247,11 @@ public abstract class StringPrimitiveNodes {
         private DynamicObject makeString(DynamicObject source, int index, int length) {
             assert RubyGuards.isRubyString(source);
 
-            final ByteList bytes = new ByteList(StringOperations.getByteList(source), index, length);
-            bytes.setEncoding(StringOperations.getByteList(source).getEncoding());
+            final ByteList bytes = new ByteList(StringOperations.getByteListReadOnly(source), index, length);
+            bytes.setEncoding(Layouts.STRING.getRope(source).getEncoding());
 
-            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), bytes, StringSupport.CR_UNKNOWN, null);
+            // TODO (nirvdrum 08-Jan-16) We should be able to work out the code range from the parent string in some cases.
+            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
             taintResultNode.maybeTaint(source, ret);
 
             return ret;
@@ -231,13 +273,13 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, NotProvided length) {
-            final Object subString = stringByteSubstring(frame, string, index, 1);
+            final DynamicObject subString = (DynamicObject) stringByteSubstring(frame, string, index, 1);
 
             if (subString == nil()) {
                 return subString;
             }
 
-            if (StringOperations.getByteList((DynamicObject) subString).length() == 0) {
+            if (rope(subString).isEmpty()) {
                 return nil();
             }
 
@@ -246,25 +288,24 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, int length) {
-            final ByteList bytes = StringOperations.getByteList(string);
-
             if (length < 0) {
                 return nil();
             }
 
+            final Rope rope = rope(string);
             final int stringLength = getSizeNode().executeInteger(frame, string);
             final int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
-            if (normalizedIndex < 0 || normalizedIndex > bytes.length()) {
+            if (normalizedIndex < 0 || normalizedIndex > rope.byteLength()) {
                 return nil();
             }
 
-            if (normalizedIndex + length > bytes.length()) {
-                length = bytes.length() - normalizedIndex;
+            if (normalizedIndex + length > rope.byteLength()) {
+                length = rope.byteLength() - normalizedIndex;
             }
 
-            final int codeRange = Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT ? StringSupport.CR_7BIT : StringSupport.CR_UNKNOWN;
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length), codeRange, null);
+            final Rope substringRope = RopeOperations.substring(rope, normalizedIndex, length);
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringRope, null);
 
             return taintResultNode.maybeTaint(string, result);
         }
@@ -371,10 +412,10 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public DynamicObject stringCheckNullSafe(DynamicObject string) {
-            final ByteList byteList = StringOperations.getByteList(string);
+            final byte[] bytes = rope(string).getBytes();
 
-            for (int i = 0; i < byteList.length(); i++) {
-                if (byteList.get(i) == 0) {
+            for (int i = 0; i < bytes.length; i++) {
+                if (bytes[i] == 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("string contains NULL byte", this));
                 }
@@ -395,19 +436,18 @@ public abstract class StringPrimitiveNodes {
             stringByteSubstringNode = StringPrimitiveNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {});
         }
 
-        @Specialization
+        @Specialization(guards = "indexOutOfBounds(string, byteIndex)")
+        public Object stringChrAtOutOfBounds(DynamicObject string, int byteIndex) {
+            return false;
+        }
+
+        @Specialization(guards = "!indexOutOfBounds(string, byteIndex)")
         public Object stringChrAt(VirtualFrame frame, DynamicObject string, int byteIndex) {
             // Taken from Rubinius's Character::create_from.
 
-            final ByteList bytes = StringOperations.getByteList(string);
-
-            if (byteIndex < 0 || byteIndex >= bytes.getRealSize()) {
-                return nil();
-            }
-
-            final int p = bytes.getBegin() + byteIndex;
-            final int end = bytes.getBegin() + bytes.getRealSize();
-            final int c = preciseLength(bytes, p, end);
+            final Rope rope = rope(string);
+            final int end = rope.byteLength();
+            final int c = preciseLength(rope, byteIndex, end);
 
             if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
                 return nil();
@@ -422,8 +462,12 @@ public abstract class StringPrimitiveNodes {
         }
 
         @TruffleBoundary
-        private int preciseLength(final ByteList bytes, final int p, final int end) {
-            return StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
+        private int preciseLength(final Rope rope, final int p, final int end) {
+            return StringSupport.preciseLength(rope.getEncoding(), rope.getBytes(), p, end);
+        }
+
+        protected static boolean indexOutOfBounds(DynamicObject string, int byteIndex) {
+            return ((byteIndex < 0) || (byteIndex >= rope(string).byteLength()));
         }
 
     }
@@ -477,8 +521,8 @@ public abstract class StringPrimitiveNodes {
                 size = stringLength;
             }
 
-            final ByteList bytes = StringOperations.getByteList(string);
-            final ByteList otherBytes = StringOperations.getByteList(other);
+            final ByteList bytes = StringOperations.getByteListReadOnly(string);
+            final ByteList otherBytes = StringOperations.getByteListReadOnly(other);
 
             return ByteList.memcmp(bytes.getUnsafeBytes(), bytes.getBegin(), size,
                     otherBytes.getUnsafeBytes(), otherBytes.getBegin() + start, size);
@@ -495,14 +539,14 @@ public abstract class StringPrimitiveNodes {
 
         public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
 
-        @Specialization(guards = "string == other")
-        public boolean stringEqualsSameObject(DynamicObject string, DynamicObject other) {
+        @Specialization(guards = "ropeEqual(string, other)")
+        public boolean stringEqualsRopeEquals(DynamicObject string, DynamicObject other) {
             return true;
         }
 
         @Specialization(guards = {
-                "string != other",
                 "isRubyString(other)",
+                "!ropeEqual(string, other)",
                 "!areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
         })
         public boolean stringEqualNotComparable(DynamicObject string, DynamicObject other,
@@ -517,47 +561,28 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = {
-                "string != other",
                 "isRubyString(other)",
+                "!ropeEqual(string, other)",
                 "areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
         })
-        public boolean stringEqual(DynamicObject string, DynamicObject other,
-                                   @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
-                                   @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible,
-                                   @Cached("createBinaryProfile()") ConditionProfile sameByteListProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile differentHashCodeProfile,
-                                   @Cached("createBinaryProfile()") ConditionProfile differentSizeProfile) {
-            final ByteList a = StringOperations.getByteList(string);
-            final ByteList b = StringOperations.getByteList(other);
+        public boolean equal(DynamicObject string, DynamicObject other,
+                                 @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
+                                 @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible,
+                                 @Cached("createBinaryProfile()") ConditionProfile differentSizeProfile) {
 
-            if (sameByteListProfile.profile(a == b)) {
-                return true;
-            }
+            final Rope a = Layouts.STRING.getRope(string);
+            final Rope b = Layouts.STRING.getRope(other);
 
-            if (differentSizeProfile.profile(a.realSize() != b.realSize())) {
+            if (differentSizeProfile.profile(a.byteLength() != b.byteLength())) {
                 return false;
             }
 
-            // We could use the ByteList.hash values here as a quick != check if they are both nonzero,
-            // but we would need to access the field directly as calling hashCode() could cause a traversal.
-
-            final byte[] stringBytes = a.unsafeBytes();
-            final byte[] otherBytes = b.unsafeBytes();
-            final int stringBegin = a.begin();
-            final int otherBegin = b.begin();
-
-            for (int i = 0; i < a.realSize(); i++) {
-                if (stringBytes[i + stringBegin] != otherBytes[i + otherBegin]) {
-                    return false;
-                }
-            }
-
-            return true;
+            return Arrays.equals(a.getBytes(), b.getBytes());
         }
 
         protected boolean areComparable(DynamicObject first, DynamicObject second,
@@ -571,18 +596,18 @@ public abstract class StringPrimitiveNodes {
             assert RubyGuards.isRubyString(first);
             assert RubyGuards.isRubyString(second);
 
-            final ByteList firstByteList = StringOperations.getByteList(first);
-            final ByteList secondByteList = StringOperations.getByteList(second);
+            final Rope firstRope = Layouts.STRING.getRope(first);
+            final Rope secondRope = Layouts.STRING.getRope(second);
 
-            if (sameEncodingProfile.profile(firstByteList.getEncoding() == secondByteList.getEncoding())) {
+            if (sameEncodingProfile.profile(firstRope.getEncoding() == secondRope.getEncoding())) {
                 return true;
             }
 
-            if (firstStringEmptyProfile.profile(firstByteList.realSize() == 0)) {
+            if (firstStringEmptyProfile.profile(firstRope.isEmpty())) {
                 return true;
             }
 
-            if (secondStringEmptyProfile.profile(secondByteList.realSize() == 0)) {
+            if (secondStringEmptyProfile.profile(secondRope.isEmpty())) {
                 return true;
             }
 
@@ -594,18 +619,25 @@ public abstract class StringPrimitiveNodes {
                     return true;
                 }
 
-                if (secondStringAsciiCompatible.profile(secondByteList.getEncoding().isAsciiCompatible())) {
+                if (secondStringAsciiCompatible.profile(secondRope.getEncoding().isAsciiCompatible())) {
                     return true;
                 }
             }
 
             if (secondStringCR7BitProfile.profile(secondCodeRange == StringSupport.CR_7BIT)) {
-                if (firstStringAsciiCompatible.profile(firstByteList.getEncoding().isAsciiCompatible())) {
+                if (firstStringAsciiCompatible.profile(firstRope.getEncoding().isAsciiCompatible())) {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        protected static boolean ropeEqual(DynamicObject first, DynamicObject second) {
+            assert RubyGuards.isRubyString(first);
+            assert RubyGuards.isRubyString(second);
+
+            return rope(first) == rope(second);
         }
     }
 
@@ -621,54 +653,51 @@ public abstract class StringPrimitiveNodes {
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization(guards = "isSingleByte(string)")
-        public Object stringFindCharacterSingleByte(DynamicObject string, int offset) {
+        @Specialization(guards = "offset < 0")
+        public Object stringFindCharacterNegativeOffset(DynamicObject string, int offset) {
+            return nil();
+        }
+
+        @Specialization(guards = { "offset >= 0", "isSingleByte(string)" })
+        public Object stringFindCharacterSingleByte(DynamicObject string, int offset,
+                                                    @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
             // Taken from Rubinius's String::find_character.
 
-            if (offset < 0) {
+            final Rope rope = rope(string);
+            if (offsetTooLargeProfile.profile(offset >= rope.byteLength())) {
                 return nil();
             }
 
-            final ByteList byteList = StringOperations.getByteList(string);
-            if (offset >= byteList.getRealSize()) {
-                return nil();
-            }
-
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_7BIT, null);
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.substring(rope, offset, 1), null);
 
             return propagate(string, ret);
         }
 
-        @Specialization(guards = "!isSingleByte(string)")
-        public Object stringFindCharacter(DynamicObject string, int offset) {
+        @Specialization(guards = { "offset >= 0", "!isSingleByte(string)" })
+        public Object stringFindCharacter(DynamicObject string, int offset,
+                                          @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
             // Taken from Rubinius's String::find_character.
 
-            if (offset < 0) {
+            final Rope rope = rope(string);
+            if (offsetTooLargeProfile.profile(offset >= rope.byteLength())) {
                 return nil();
             }
 
-            final ByteList byteList = StringOperations.getByteList(string);
-            if (offset >= byteList.getRealSize()) {
-                return nil();
-            }
-
-            final ByteList bytes = byteList;
-            final Encoding enc = bytes.getEncoding();
-            final int clen = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+            final Encoding enc = rope.getEncoding();
+            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), rope.begin(), rope.begin() + rope.realSize());
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
-                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, clen), StringSupport.CR_UNKNOWN, null);
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.substring(rope, offset, clen), null);
             } else {
-                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_7BIT, null);
+                // TODO (nirvdrum 13-Jan-16) We know that the code range is CR_7BIT. Ensure we're not wasting time figuring that out again in the substring creation.
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.substring(rope, offset, 1), null);
             }
 
             return propagate(string, ret);
         }
 
         private Object propagate(DynamicObject string, DynamicObject ret) {
-            StringOperations.getByteList(ret).setEncoding(StringOperations.getByteList(string).getEncoding());
-            Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(string));
             return maybeTaint(string, ret);
         }
 
@@ -677,6 +706,7 @@ public abstract class StringPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
+
             return taintResultNode.maybeTaint(source, value);
         }
 
@@ -778,9 +808,9 @@ public abstract class StringPrimitiveNodes {
             // Rubinius will pass in a byte index for the `start` value, but StringSupport.index requires a character index.
             final int charIndex = byteIndexToCharIndexNode.executeStringBytCharacterIndex(frame, string, start, 0);
 
-            final int index = StringSupport.index(StringOperations.getCodeRangeable(string),
-                    StringOperations.getCodeRangeable(pattern),
-                    charIndex, StringOperations.getByteList(string).getEncoding());
+            final int index = StringSupport.index(StringOperations.getCodeRangeableReadOnly(string),
+                    StringOperations.getCodeRangeableReadOnly(pattern),
+                    charIndex, Layouts.STRING.getRope(string).getEncoding());
 
             if (index == -1) {
                 return nil();
@@ -799,6 +829,8 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        public abstract int executeInt(VirtualFrame frame, DynamicObject string, int index, int start);
+
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public int stringCharacterByteIndex(DynamicObject string, int index, int start) {
             return start + index;
@@ -806,10 +838,9 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public int stringCharacterByteIndexMultiByteEncoding(DynamicObject string, int index, int start) {
-            final ByteList bytes = StringOperations.getByteList(string);
+            final Rope rope = rope(string);
 
-            return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin() + start,
-                    bytes.getBegin() + bytes.getRealSize(), index) - bytes.begin();
+            return StringSupport.nth(rope.getEncoding(), rope.getBytes(), start, rope.byteLength(), index);
         }
     }
 
@@ -832,7 +863,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
         public int stringByteCharacterIndexFixedWidth(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
-            return index / StringOperations.getByteList(string).getEncoding().minLength();
+            return index / encoding(string).minLength();
         }
 
         @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "!isFixedWidthEncoding(string)", "isValidUtf8(string)" })
@@ -848,14 +879,15 @@ public abstract class StringPrimitiveNodes {
         public int stringByteCharacterIndex(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index and Encoding::find_byte_character_index.
 
-            final ByteList bytes = StringOperations.getByteList(string);
-            final Encoding encoding = bytes.getEncoding();
-            int p = bytes.begin() + start;
-            final int end = bytes.begin() + bytes.realSize();
+            final Rope rope = rope(string);
+            final byte[] bytes = rope.getBytes();
+            final Encoding encoding = rope.getEncoding();
+            int p = start;
+            final int end = bytes.length;
             int charIndex = 0;
 
             while (p < end && index > 0) {
-                final int charLen = StringSupport.length(encoding, bytes.getUnsafeBytes(), p, end);
+                final int charLen = StringSupport.length(encoding, bytes, p, end);
                 p += charLen;
                 index -= charLen;
                 charIndex++;
@@ -879,18 +911,19 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int total = StringOperations.getByteList(string).length();
-            int p = StringOperations.getByteList(string).getBegin();
+            final Rope stringRope = Layouts.STRING.getRope(string);
+            final int total = stringRope.byteLength();
+            int p = StringOperations.getByteListReadOnly(string).getBegin();
             final int e = p + total;
-            int pp = StringOperations.getByteList(pattern).getBegin();
-            final int pe = pp + StringOperations.getByteList(pattern).length();
+            int pp = StringOperations.getByteListReadOnly(pattern).getBegin();
+            final int pe = pp + Layouts.STRING.getRope(pattern).byteLength();
             int s;
             int ss;
 
-            final byte[] stringBytes = StringOperations.getByteList(string).getUnsafeBytes();
-            final byte[] patternBytes = StringOperations.getByteList(pattern).getUnsafeBytes();
+            final byte[] stringBytes = StringOperations.getByteListReadOnly(string).getUnsafeBytes();
+            final byte[] patternBytes = StringOperations.getByteListReadOnly(pattern).getUnsafeBytes();
 
-            if (StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), StringOperations.getByteList(string).getEncoding())) {
+            if (stringRope.isSingleByteOptimizable()) {
                 for(s = p += offset, ss = pp; p < e; s = ++p) {
                     if (stringBytes[p] != patternBytes[pp]) continue;
 
@@ -910,7 +943,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final Encoding enc = StringOperations.getByteList(string).getEncoding();
+            final Encoding enc = Layouts.STRING.getRope(string).getEncoding();
             int index = 0;
             int c;
 
@@ -976,9 +1009,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public Object stringByteIndexSingleByte(DynamicObject string, int index, int start,
                                                 @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile) {
-            final ByteList byteList = StringOperations.getByteList(string);
-
-            if (indexTooLargeProfile.profile(byteList.realSize() < index)) {
+            if (indexTooLargeProfile.profile(index > rope(string).byteLength())) {
                 return nil();
             }
 
@@ -991,11 +1022,10 @@ public abstract class StringPrimitiveNodes {
                                       @Cached("createBinaryProfile()") ConditionProfile invalidByteProfile) {
             // Taken from Rubinius's String::byte_index.
 
-            final ByteList bytes = StringOperations.getByteList(string);
-
-            final Encoding enc = bytes.getEncoding();
-            int p = bytes.getBegin();
-            final int e = p + bytes.getRealSize();
+            final Rope rope = rope(string);
+            final Encoding enc = rope.getEncoding();
+            int p = rope.getBegin();
+            final int e = p + rope.getRealSize();
 
             int i, k = index;
 
@@ -1005,7 +1035,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             for (i = 0; i < k && p < e; i++) {
-                final int c = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), p, e);
+                final int c = StringSupport.preciseLength(enc, rope.getBytes(), p, e);
 
                 // If it's an invalid byte, just treat it as a single byte
                 if(invalidByteProfile.profile(! StringSupport.MBCLEN_CHARFOUND_P(c))) {
@@ -1018,40 +1048,40 @@ public abstract class StringPrimitiveNodes {
             if (indexTooLargeProfile.profile(i < k)) {
                 return nil();
             } else {
-                return p - bytes.begin();
+                return p - rope.begin();
             }
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object stringByteIndex(DynamicObject string, DynamicObject pattern, int offset) {
+        public Object stringByteIndex(DynamicObject string, DynamicObject pattern, int offset,
+                                      @Cached("createBinaryProfile()") ConditionProfile emptyPatternProfile,
+                                      @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
             // Taken from Rubinius's String::byte_index.
-
-            final int match_size = StringOperations.getByteList(pattern).length();
 
             if (offset < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative start given", this));
             }
 
-            if (match_size == 0) return offset;
+            final Rope stringRope = rope(string);
+            final Rope patternRope = rope(pattern);
 
-            if (StringOperations.scanForCodeRange(string) == StringSupport.CR_BROKEN) {
+            if (emptyPatternProfile.profile(patternRope.isEmpty())) return offset;
+
+            if (brokenCodeRangeProfile.profile(StringOperations.scanForCodeRange(string) == StringSupport.CR_BROKEN)) {
                 return nil();
             }
 
-            final ByteList stringByteList = StringOperations.getByteList(string);
-            final ByteList patternByteList = StringOperations.getByteList(pattern);
-
-            final Encoding encoding = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(pattern), this);
-            int p = stringByteList.getBegin();
-            final int e = p + stringByteList.getRealSize();
-            int pp = patternByteList.getBegin();
-            final int pe = pp + patternByteList.getRealSize();
+            final Encoding encoding = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeableReadOnly(pattern), this);
+            int p = stringRope.getBegin();
+            final int e = p + stringRope.getRealSize();
+            int pp = patternRope.getBegin();
+            final int pe = pp + patternRope.getRealSize();
             int s;
             int ss;
 
-            final byte[] stringBytes = stringByteList.getUnsafeBytes();
-            final byte[] patternBytes = patternByteList.getUnsafeBytes();
+            final byte[] stringBytes = stringRope.getBytes();
+            final byte[] patternBytes = patternRope.getBytes();
 
             for(s = p, ss = pp; p < e; s = ++p) {
                 if (stringBytes[p] != patternBytes[pp]) continue;
@@ -1068,7 +1098,7 @@ public abstract class StringPrimitiveNodes {
                     final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
 
                     if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
-                        return s - stringByteList.begin();
+                        return s - stringRope.begin();
                     } else {
                         return nil();
                     }
@@ -1095,7 +1125,7 @@ public abstract class StringPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative index given", this));
             }
 
-            final ByteList bytes = StringOperations.getByteList(string);
+            final ByteList bytes = StringOperations.getByteListReadOnly(string);
             final int p = bytes.getBegin();
             final int end = p + bytes.getRealSize();
 
@@ -1129,17 +1159,19 @@ public abstract class StringPrimitiveNodes {
             int dst = dest;
             int cnt = size;
 
-            final ByteList otherBytes = StringOperations.getByteList(other);
+            final ByteList otherBytes = StringOperations.getByteListReadOnly(other);
             int osz = otherBytes.length();
             if(negativeStartOffsetProfile.profile(src < 0)) src = 0;
             if(sizeTooLargeInReplacementProfile.profile(cnt > osz - src)) cnt = osz - src;
 
-            final ByteList stringBytes = StringOperations.getByteList(string);
+            final ByteList stringBytes = Layouts.STRING.getRope(string).toByteListCopy();
             int sz = stringBytes.unsafeBytes().length - stringBytes.begin();
             if(negativeDestinationOffsetProfile.profile(dst < 0)) dst = 0;
             if(sizeTooLargeInStringProfile.profile(cnt > sz - dst)) cnt = sz - dst;
 
             System.arraycopy(otherBytes.unsafeBytes(), otherBytes.begin() + src, stringBytes.getUnsafeBytes(), stringBytes.begin() + dest, cnt);
+
+            Layouts.STRING.setRope(string, StringOperations.ropeFromByteList(stringBytes));
 
             return string;
         }
@@ -1152,7 +1184,7 @@ public abstract class StringPrimitiveNodes {
         protected boolean offsetTooLarge(int offset, DynamicObject string) {
             assert RubyGuards.isRubyString(string);
 
-            return offset >= StringOperations.getByteList(string).realSize();
+            return offset >= Layouts.STRING.getRope(string).byteLength();
         }
 
         protected boolean offsetTooLargeRaw(int offset, DynamicObject string) {
@@ -1161,7 +1193,7 @@ public abstract class StringPrimitiveNodes {
             // This bounds checks on the total capacity rather than the virtual
             // size() of the String. This allows for string adjustment within
             // the capacity without having to change the virtual size first.
-            final ByteList byteList = StringOperations.getByteList(string);
+            final ByteList byteList = StringOperations.getByteListReadOnly(string);
             return offset >= (byteList.unsafeBytes().length - byteList.begin());
         }
 
@@ -1176,7 +1208,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public DynamicObject stringResizeCapacity(DynamicObject string, int capacity) {
-            StringOperations.getByteList(string).ensure(capacity);
+            // TODO (nirvdrum 11-Jan-16): Any calls to this are suspect now that we use ropes. We don't have a way to preallocate a buffer to mutate.
             return string;
         }
 
@@ -1200,9 +1232,9 @@ public abstract class StringPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative start given", this));
             }
 
-            final ByteList buf = StringOperations.getByteList(string);
+            final ByteList buf = StringOperations.getByteListReadOnly(string);
             final int total = buf.getRealSize();
-            final int matchSize = StringOperations.getByteList(pattern).getRealSize();
+            final int matchSize = Layouts.STRING.getRope(pattern).byteLength();
 
             if (pos >= total) {
                 pos = total - 1;
@@ -1214,7 +1246,7 @@ public abstract class StringPrimitiveNodes {
                 }
 
                 case 1: {
-                    final int matcher = StringOperations.getByteList(pattern).get(0);
+                    final int matcher = StringOperations.getByteListReadOnly(pattern).get(0);
 
                     while (pos >= 0) {
                         if (buf.get(pos) == matcher) {
@@ -1235,7 +1267,7 @@ public abstract class StringPrimitiveNodes {
                     int cur = pos;
 
                     while (cur >= 0) {
-                        if (ByteList.memcmp(StringOperations.getByteList(string).getUnsafeBytes(), cur, StringOperations.getByteList(pattern).getUnsafeBytes(), 0, matchSize) == 0) {
+                        if (ByteList.memcmp(StringOperations.getByteListReadOnly(string).getUnsafeBytes(), cur, StringOperations.getByteListReadOnly(pattern).getUnsafeBytes(), 0, matchSize) == 0) {
                             return cur;
                         }
 
@@ -1262,20 +1294,20 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = "value == 0")
         public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
             ByteList bytes = new ByteList(new byte[size]);
-            return allocateObjectNode.allocate(stringClass, bytes, StringSupport.CR_UNKNOWN, null);
+            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
         }
 
         @Specialization(guards = "value != 0")
         public DynamicObject stringPattern(DynamicObject stringClass, int size, int value) {
             final byte[] bytes = new byte[size];
             Arrays.fill(bytes, (byte) value);
-            return allocateObjectNode.allocate(stringClass, new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(new ByteList(bytes), StringSupport.CR_UNKNOWN), null);
         }
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject stringPattern(DynamicObject stringClass, int size, DynamicObject string) {
             final byte[] bytes = new byte[size];
-            final ByteList byteList = StringOperations.getByteList(string);
+            final ByteList byteList = StringOperations.getByteListReadOnly(string);
 
             if (byteList.length() > 0) {
                 for (int n = 0; n < size; n += byteList.length()) {
@@ -1283,9 +1315,70 @@ public abstract class StringPrimitiveNodes {
                 }
             }
 
-            return allocateObjectNode.allocate(stringClass, new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(new ByteList(bytes), StringSupport.CR_UNKNOWN), null);
         }
 
+    }
+
+    @RubiniusPrimitive(name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
+    public static abstract class StringSplicePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringSplicePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = { "indexAtStartBound(spliceByteIndex)", "isRubyString(other)" })
+        public Object splicePrepend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace) {
+            final Rope original = rope(string);
+            final Rope left = rope(other);
+            final Rope right = RopeOperations.substring(original, byteCountToReplace, original.byteLength() - byteCountToReplace);
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, right.getEncoding()));
+
+            return string;
+        }
+
+        @Specialization(guards = { "indexAtEndBound(string, spliceByteIndex)", "isRubyString(other)" })
+        public Object spliceAppend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace) {
+            final Rope left = rope(string);
+            final Rope right = rope(other);
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, right, left.getEncoding()));
+
+            return string;
+        }
+
+        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)" })
+        public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace) {
+            final Rope source = rope(string);
+            final Rope insert = rope(other);
+            final int rightSideStartingIndex = spliceByteIndex + byteCountToReplace;
+
+            final Rope splitLeft = RopeOperations.substring(source, 0, spliceByteIndex);
+            final Rope splitRight = RopeOperations.substring(source, rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
+            final Rope joinedLeft = RopeOperations.concat(splitLeft, insert, source.getEncoding());
+            final Rope joinedRight = RopeOperations.concat(joinedLeft, splitRight, source.getEncoding());
+
+            Layouts.STRING.setRope(string, joinedRight);
+
+            return string;
+        }
+
+        protected  boolean indexAtStartBound(int index) {
+            return index == 0;
+        }
+
+        protected boolean indexAtEndBound(DynamicObject string, int index) {
+            assert RubyGuards.isRubyString(string);
+
+            return index == rope(string).byteLength();
+        }
+
+        protected boolean indexAtEitherBounds(DynamicObject string, int index) {
+            assert RubyGuards.isRubyString(string);
+
+            return indexAtStartBound(index) || indexAtEndBound(string, index);
+        }
     }
 
     @RubiniusPrimitive(name = "string_to_inum")
@@ -1300,7 +1393,7 @@ public abstract class StringPrimitiveNodes {
         public Object stringToInum(DynamicObject string, int fixBase, boolean strict) {
             try {
                 final org.jruby.RubyInteger result = ConvertBytes.byteListToInum19(getContext().getRuntime(),
-                        StringOperations.getByteList(string),
+                        StringOperations.getByteListReadOnly(string),
                         fixBase,
                         strict);
 
@@ -1321,7 +1414,22 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject stringByteAppend(DynamicObject string, DynamicObject other) {
-            StringOperations.getByteList(string).append(StringOperations.getByteList(other));
+            final Rope left = rope(string);
+            final Rope right = rope(other);
+
+            // The semantics of this primitive are such that the original string's byte[] should be extended without
+            // any modification to the other properties of the string. This is counter-intuitive because adding bytes
+            // from another string may very well change the code range for the source string. Updating the code range,
+            // however, breaks other things so we can't do it. As an example, StringIO starts with an empty UTF-8
+            // string and then appends ASCII-8BIT bytes, but must retain the original UTF-8 encoding. The binary contents
+            // of the ASCII-8BIT string could give the resulting string a CR_BROKEN code range on UTF-8, but if we do
+            // this, StringIO ceases to work -- the resulting string must retain the original CR_7BIT code range. It's
+            // ugly, but seems to be due to a difference in how Rubinius keeps track of byte optimizable strings.
+
+            final Rope rightConverted = RopeOperations.create(right.getBytes(), left.getEncoding(), left.getCodeRange());
+
+            Layouts.STRING.setRope(string, RopeOperations.concat(left, rightConverted, left.getEncoding()));
+
             return string;
         }
 
@@ -1340,8 +1448,8 @@ public abstract class StringPrimitiveNodes {
 
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 
-        @Specialization(guards = { "isSingleByteOptimizable(string)", "len >= 0" })
-        public Object stringSubstringSingleByteOptimizable(DynamicObject string, int beg, int len,
+        @Specialization(guards = { "len >= 0" , "isSingleByteOptimizable(string)" })
+        public Object stringSubstring(DynamicObject string, int beg, int len,
                                                            @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
@@ -1349,11 +1457,12 @@ public abstract class StringPrimitiveNodes {
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile) {
             // Taken from org.jruby.RubyString#substr19.
-            final int length = StringOperations.getByteList(string).getRealSize();
-            if (emptyStringProfile.profile(length == 0)) {
+            final Rope rope = rope(string);
+            if (emptyStringProfile.profile(rope.isEmpty())) {
                 len = 0;
             }
 
+            final int length = rope.byteLength();
             if (tooLargeBeginProfile.profile(beg > length)) {
                 return nil();
             }
@@ -1375,16 +1484,18 @@ public abstract class StringPrimitiveNodes {
                 beg = 0;
             }
 
-            return makeSubstring(string, beg, len);
+            return makeRope(string, beg, len);
         }
 
         @TruffleBoundary
-        @Specialization(guards = { "!isSingleByteOptimizable(string)", "len >= 0" })
+        @Specialization(guards = { "len >= 0", "!isSingleByteOptimizable(string)" })
         public Object stringSubstring(DynamicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
 
-            final int length = StringOperations.getByteList(string).getRealSize();
-            if (length == 0) {
+            final Rope rope = rope(string);
+            final int length = rope.byteLength();
+
+            if (rope.isEmpty()) {
                 len = 0;
             }
 
@@ -1392,12 +1503,11 @@ public abstract class StringPrimitiveNodes {
                 len = length - beg;
             }
 
-            final ByteList value = StringOperations.getByteList(string);
-            final Encoding enc = value.getEncoding();
+            final Encoding enc = rope.getEncoding();
             int p;
-            int s = value.getBegin();
+            int s = 0;
             int end = s + length;
-            byte[]bytes = value.getUnsafeBytes();
+            byte[]bytes = rope.getBytes();
 
             if (beg < 0) {
                 if (len > -beg) len = -beg;
@@ -1413,14 +1523,14 @@ public abstract class StringPrimitiveNodes {
                     if (p == -1) {
                         return nil();
                     }
-                    return makeSubstring(string, p - s, e - p);
+                    return makeRope(string, p - s, e - p);
                 } else {
-                    beg += StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeable(string), enc);
+                    beg += StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string), enc);
                     if (beg < 0) {
                         return nil();
                     }
                 }
-            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeable(string), enc)) {
+            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string), enc)) {
                 return nil();
             }
             if (len == 0) {
@@ -1444,7 +1554,7 @@ public abstract class StringPrimitiveNodes {
             } else {
                 len = StringSupport.offset(enc, bytes, p, end, len);
             }
-            return makeSubstring(string, p - s, len);
+            return makeRope(string, p - s, len);
         }
 
         @Specialization(guards = "len < 0")
@@ -1452,7 +1562,7 @@ public abstract class StringPrimitiveNodes {
             return nil();
         }
 
-        private DynamicObject makeSubstring(DynamicObject string, int beg, int len) {
+        private DynamicObject makeRope(DynamicObject string, int beg, int len) {
             assert RubyGuards.isRubyString(string);
 
             if (allocateNode == null) {
@@ -1467,8 +1577,7 @@ public abstract class StringPrimitiveNodes {
 
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
-                    new ByteList(StringOperations.getByteList(string), beg, len),
-                    StringSupport.CR_UNKNOWN,
+                    RopeOperations.substring(Layouts.STRING.getRope(string), beg, len),
                     null);
 
             taintResultNode.maybeTaint(string, ret);

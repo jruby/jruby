@@ -1169,10 +1169,17 @@ public class BodyTranslator extends Translator {
                 rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
             } else if (path.equals(coreRubiniusPath + "common/integer.rb")) {
                 rename = methodName.equals("downto") || methodName.equals("upto");
+            } else if (path.equals(coreRubiniusPath + "common/string.rb")) {
+                rename = methodName.equals("<<");
             }
 
             if (rename) {
-                methodName = methodName + "_internal";
+                // <<_internal is an invalid method name, so we need to rename to its alias for String#{<<,concat}.
+                if (methodName.equals("<<")) {
+                    methodName = "concat_internal";
+                } else {
+                    methodName = methodName + "_internal";
+                }
             }
         }
 

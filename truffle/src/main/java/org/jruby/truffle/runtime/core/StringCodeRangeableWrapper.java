@@ -27,7 +27,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        return Layouts.STRING.getCodeRange(string);
+        return StringOperations.getCodeRange(string);
     }
 
     @Override
@@ -41,8 +41,8 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
     }
 
     @Override
-    public final void setCodeRange(int newCodeRange) {
-        Layouts.STRING.setCodeRange(string, newCodeRange);
+    public void setCodeRange(int newCodeRange) {
+        StringOperations.setCodeRange(string, newCodeRange);
     }
 
     @Override
@@ -57,12 +57,12 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void modify() {
-        StringOperations.modify(string);
+        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
     }
 
     @Override
     public final void modify(int length) {
-        StringOperations.modify(string, length);
+        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
     }
 
     @Override

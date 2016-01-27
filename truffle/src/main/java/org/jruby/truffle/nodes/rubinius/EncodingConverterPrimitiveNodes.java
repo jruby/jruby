@@ -30,7 +30,10 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
+import static org.jruby.truffle.runtime.core.StringOperations.rope;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding::Converter} class..
@@ -54,8 +57,6 @@ public abstract class EncodingConverterPrimitiveNodes {
     @RubiniusPrimitive(name = "encoding_converter_primitive_convert")
     public static abstract class PrimitiveConvertNode extends RubiniusPrimitiveNode {
 
-        private final ConditionProfile nonNullSourceProfile = ConditionProfile.createBinaryProfile();
-
         public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -69,7 +70,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         @Specialization(guards = {"isNil(source)", "isRubyString(target)"})
         public Object primitiveConvertNilSource(DynamicObject encodingConverter, DynamicObject source,
                                                         DynamicObject target, int offset, int size, int options) {
-            return primitiveConvertHelper(encodingConverter, new ByteList(), source, target, offset, size, options);
+            return primitiveConvertHelper(encodingConverter, source, target, offset, size, options);
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)"})
@@ -78,23 +79,18 @@ public abstract class EncodingConverterPrimitiveNodes {
 
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
-            StringOperations.modify(source);
-            StringOperations.clearCodeRange(source);
-
-            return primitiveConvertHelper(encodingConverter, StringOperations.getByteList(source), source, target, offset, size, options);
+            return primitiveConvertHelper(encodingConverter, source, target, offset, size, options);
         }
 
         @TruffleBoundary
-        private Object primitiveConvertHelper(DynamicObject encodingConverter, ByteList inBytes, DynamicObject source,
+        private Object primitiveConvertHelper(DynamicObject encodingConverter, DynamicObject source,
                                               DynamicObject target, int offset, int size, int options) {
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
             final boolean nonNullSource = source != nil();
-
-            StringOperations.modify(target);
-            StringOperations.clearCodeRange(target);
-
-            final ByteList outBytes = StringOperations.getByteList(target);
+            Rope sourceRope = nonNullSource ? rope(source) : RopeOperations.EMPTY_UTF8_ROPE;
+            final Rope targetRope = rope(target);
+            final ByteList outBytes = targetRope.toByteListCopy();
 
             final Ptr inPtr = new Ptr();
             final Ptr outPtr = new Ptr();
@@ -107,9 +103,9 @@ public abstract class EncodingConverterPrimitiveNodes {
             if (size == -1) {
                 size = 16; // in MRI, this is RSTRING_EMBED_LEN_MAX
 
-                if (nonNullSourceProfile.profile(nonNullSource)) {
-                    if (size < StringOperations.getByteList(source).getRealSize()) {
-                        size = StringOperations.getByteList(source).getRealSize();
+                if (nonNullSource) {
+                    if (size < sourceRope.byteLength()) {
+                        size = sourceRope.byteLength();
                     }
                 }
             }
@@ -137,16 +133,16 @@ public abstract class EncodingConverterPrimitiveNodes {
 
                 outBytes.ensure((int) outputByteEnd);
 
-                inPtr.p = inBytes.getBegin();
-                outPtr.p = outBytes.getBegin() + offset;
+                inPtr.p = 0;
+                outPtr.p = offset;
                 int os = outPtr.p + size;
-                EConvResult res = ec.convert(inBytes.getUnsafeBytes(), inPtr, inBytes.getRealSize() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, os, options);
+                EConvResult res = ec.convert(sourceRope.getBytes(), inPtr, sourceRope.byteLength() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, os, options);
 
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 
-                if (nonNullSourceProfile.profile(nonNullSource)) {
-                    StringOperations.getByteList(source).setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
-                    StringOperations.getByteList(source).setBegin(inPtr.p);
+                if (nonNullSource) {
+                    sourceRope = RopeOperations.substring(sourceRope, inPtr.p, sourceRope.byteLength() - inPtr.p);
+                    Layouts.STRING.setRope(source, sourceRope);
                 }
 
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
@@ -162,6 +158,8 @@ public abstract class EncodingConverterPrimitiveNodes {
                 if (ec.destinationEncoding != null) {
                     outBytes.setEncoding(ec.destinationEncoding);
                 }
+
+                Layouts.STRING.setRope(target, StringOperations.ropeFromByteList(outBytes));
 
                 return getSymbol(res.symbolicName());
             }

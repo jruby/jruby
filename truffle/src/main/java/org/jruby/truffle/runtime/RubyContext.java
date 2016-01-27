@@ -476,7 +476,7 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     public org.jruby.RubyString toJRubyString(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return runtime.newString(StringOperations.getByteList(string).dup());
+        return runtime.newString(StringOperations.rope(string).toByteListCopy());
     }
 
     @TruffleBoundary

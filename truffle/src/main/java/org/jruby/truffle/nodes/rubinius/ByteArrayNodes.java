@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Rubinius::ByteArray")
@@ -54,11 +55,12 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
-            final int prependLength = StringOperations.getByteList(string).getUnsafeBytes().length;
+            final Rope rope = StringOperations.rope(string);
+            final int prependLength = rope.byteLength();
             final int originalLength = Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
             final byte[] prependedBytes = new byte[newLength];
-            System.arraycopy(StringOperations.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
+            System.arraycopy(rope.getBytes(), 0, prependedBytes, 0, prependLength);
             System.arraycopy(Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
             return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), new ByteList(prependedBytes));
         }
@@ -111,7 +113,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(pattern)")
         public Object getByte(VirtualFrame frame, DynamicObject bytes, DynamicObject pattern, int start, int length) {
-            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteList(pattern));
+            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteListReadOnly(pattern));
 
             if (index == -1) {
                 return nil();

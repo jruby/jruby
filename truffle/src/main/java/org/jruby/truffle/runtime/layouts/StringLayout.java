@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,7 +15,7 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.runtime.rope.Rope;
 
 @Layout
 public interface StringLayout extends BasicObjectLayout {
@@ -24,19 +24,15 @@ public interface StringLayout extends BasicObjectLayout {
                                            DynamicObject metaClass);
 
     DynamicObject createString(DynamicObjectFactory factory,
-                               ByteList byteList,
-                               int codeRange,
+                               Rope rope,
                                @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
 
     boolean isString(ObjectType objectType);
     boolean isString(DynamicObject dynamicObject);
     boolean isString(Object dynamicObject);
 
-    ByteList getByteList(DynamicObject object);
-    void setByteList(DynamicObject object, ByteList byteList);
-
-    int getCodeRange(DynamicObject object);
-    void setCodeRange(DynamicObject object, int codeRange);
+    Rope getRope(DynamicObject object);
+    void setRope(DynamicObject object, Rope rope);
 
     StringCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
     void setCodeRangeableWrapper(DynamicObject object, StringCodeRangeableWrapper codeRangeableWrapper);

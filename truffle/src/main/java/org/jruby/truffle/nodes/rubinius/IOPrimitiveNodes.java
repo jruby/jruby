@@ -205,8 +205,8 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
         public boolean fnmatch(DynamicObject pattern, DynamicObject path, int flags) {
-            final ByteList patternBytes = StringOperations.getByteList(pattern);
-            final ByteList pathBytes = StringOperations.getByteList(path);
+            final ByteList patternBytes = StringOperations.getByteListReadOnly(pattern);
+            final ByteList pathBytes = StringOperations.getByteListReadOnly(path);
             return Dir.fnmatch(patternBytes.getUnsafeBytes(),
                     patternBytes.getBegin(),
                     patternBytes.getBegin() + patternBytes.getRealSize(),
@@ -404,7 +404,7 @@ public abstract class IOPrimitiveNodes {
         public int write(DynamicObject file, DynamicObject string) {
             final int fd = Layouts.IO.getDescriptor(file);
 
-            final ByteList byteList = StringOperations.getByteList(string);
+            final ByteList byteList = StringOperations.getByteListReadOnly(string);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
                 getContext().getDebugStandardOut().write(byteList.unsafeBytes(), byteList.begin(), byteList.length());

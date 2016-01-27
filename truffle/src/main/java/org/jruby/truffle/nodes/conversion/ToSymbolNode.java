@@ -36,7 +36,7 @@ public abstract class ToSymbolNode extends RubyNode {
 
     @Specialization(guards = "isRubyString(string)")
     protected DynamicObject toSymbolString(DynamicObject string) {
-        return getSymbol(StringOperations.getByteList(string));
+        return getSymbol(StringOperations.getByteListReadOnly(string));
     }
 
     @Specialization
