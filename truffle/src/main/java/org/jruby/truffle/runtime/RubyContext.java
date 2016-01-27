@@ -171,8 +171,11 @@ public class RubyContext extends ExecutionContext {
 
         this.runtime = runtime;
 
-        // JRuby+Truffle uses POSIX for all IO - we need the native version
-        posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
+        if (options.POSIX_USE_JAVA) {
+            posix = new TruffleJavaPOSIX(this, POSIXFactory.getJavaPOSIX(new TrufflePOSIXHandler(this)));
+        } else {
+            posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
+        }
 
         nativeSockets = LibraryLoader.create(NativeSockets.class).library("c").load();
 
