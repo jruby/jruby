@@ -57,7 +57,7 @@ public class RubyNameError extends RubyException {
     @JRubyClass(name = "NameError::Message", parent = "Data")
     public static final class RubyNameErrorMessage extends RubyObject {
 
-        static ObjectAllocator NAMEERRORMESSAGE_ALLOCATOR = new ObjectAllocator() {
+        private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
             @Override
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new RubyNameErrorMessage(runtime);
@@ -135,21 +135,21 @@ public class RubyNameError extends RubyException {
         }
     }
 
-    private static ObjectAllocator NAMEERROR_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator NAMEERROR_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNameError(runtime, klass);
         }
     };
 
-    public static RubyClass createNameErrorClass(Ruby runtime, RubyClass standardErrorClass) {
+    static RubyClass createNameErrorClass(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass, NAMEERROR_ALLOCATOR);
         nameErrorClass.defineAnnotatedMethods(RubyNameError.class);
         return nameErrorClass;
     }
 
-    public static RubyClass createNameErrorMessageClass(Ruby runtime, RubyClass nameErrorClass) {
-        RubyClass messageClass = nameErrorClass.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage.NAMEERRORMESSAGE_ALLOCATOR);
+    static RubyClass createNameErrorMessageClass(Ruby runtime, RubyClass nameErrorClass) {
+        RubyClass messageClass = nameErrorClass.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage.ALLOCATOR);
         messageClass.defineAnnotatedMethods(RubyNameErrorMessage.class);
         return messageClass;
     }
