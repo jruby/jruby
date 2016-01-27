@@ -595,11 +595,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         final Ruby runtime = getRuntime();
 
         final DynamicMethod respondTo = getMetaClass().searchMethod("respond_to?");
-        final DynamicMethod respondToMissing = getMetaClass().searchMethod("respond_to_missing?");
 
         // fastest path; builtin respond_to? and respond_to_missing? so we just check isMethodBound
         if ( respondTo.equals(runtime.getRespondToMethod()) &&
-             respondToMissing.equals(runtime.getRespondToMissingMethod()) ) {
+             getMetaClass().searchMethod("respond_to_missing?").equals(runtime.getRespondToMissingMethod()) ) {
             return getMetaClass().isMethodBound(name, false);
         }
 
