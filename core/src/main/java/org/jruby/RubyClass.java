@@ -621,8 +621,8 @@ public class RubyClass extends RubyModule {
      *
      * MRI: rb_check_funcall
      */
-    public IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
-        return finvokeChecked(context, self, name, IRubyObject.NULL_ARRAY);
+    public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
+        return checkFuncallDefault(context, self, name, IRubyObject.NULL_ARRAY);
     }
 
     /**
@@ -630,13 +630,16 @@ public class RubyClass extends RubyModule {
      *
      * MRI: rb_check_funcall
      */
-    public IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
-        RubyClass klass = self.getMetaClass();
-        DynamicMethod me;
-        if (!checkFuncallRespondTo(context, self.getMetaClass(), self, name))
-            return null;
+    public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
+        return checkFuncallDefault(context, self, name, args);
+    }
 
-        me = searchMethod(name);
+    // MRI: rb_check_funcall_default
+    private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, String name, IRubyObject[] args) {
+        final RubyClass klass = self.getMetaClass();
+        if (!checkFuncallRespondTo(context, klass, self, name)) return null; // return def;
+
+        DynamicMethod me = searchMethod(name);
         if (!checkFuncallCallable(context, me, CallType.FUNCTIONAL, self)) {
             return checkFuncallMissing(context, klass, self, name, args);
         }
@@ -699,19 +702,29 @@ public class RubyClass extends RubyModule {
 
     // MRI: check_funcall_missing
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {
-        Ruby runtime = context.runtime;
-        if (klass.isMethodBuiltin("method_missing")) {
-            return null;
+        final Ruby runtime = context.runtime;
+
+        DynamicMethod me = klass.searchMethod("respond_to_missing?");
+        // MRI: basic_obj_respond_to_missing ...
+        if ( me != null && ! me.isUndefined() ) {
+            IRubyObject ret;
+            if (me.getArity().getValue() == 1) {
+                ret = me.call(context, self, klass, "respond_to_missing?", runtime.newSymbol(method));
+            } else {
+                ret = me.call(context, self, klass, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
+            }
+            if ( ! ret.isTrue() ) return null;
         }
-        else {
-            final IRubyObject $ex = context.getErrorInfo();
-            try {
-                return checkFuncallExec(context, self, method, args);
-            }
-            catch (RaiseException e) {
-                context.setErrorInfo($ex); // restore $!
-                return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
-            }
+
+        if ( klass.isMethodBuiltin("method_missing") ) return null;
+
+        final IRubyObject $ex = context.getErrorInfo();
+        try {
+            return checkFuncallExec(context, self, method, args);
+        }
+        catch (RaiseException e) {
+            context.setErrorInfo($ex); // restore $!
+            return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
         }
     }
 
