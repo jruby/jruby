@@ -11,8 +11,12 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.LeafRope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -28,7 +32,7 @@ public class SymbolTable {
     private final RubyContext context;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final WeakHashMap<ByteList, WeakReference<DynamicObject>> symbolsTable = new WeakHashMap<>();
+    private final WeakHashMap<Rope, WeakReference<DynamicObject>> symbolsTable = new WeakHashMap<>();
 
     public SymbolTable(RubyContext context) {
         this.context = context;
@@ -36,15 +40,20 @@ public class SymbolTable {
 
     @CompilerDirectives.TruffleBoundary
     public DynamicObject getSymbol(String string) {
-        return getSymbol(StringOperations.createByteList(string));
+        return getSymbol(RopeOperations.create(ByteList.encode(string, "ISO-8859-1"), USASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN));
     }
 
     @CompilerDirectives.TruffleBoundary
     public DynamicObject getSymbol(ByteList bytes) {
+        return getSymbol(StringOperations.ropeFromByteList(bytes));
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public synchronized DynamicObject getSymbol(Rope rope) {
         lock.readLock().lock();
 
         try {
-            final WeakReference<DynamicObject> symbolReference = symbolsTable.get(bytes);
+            final WeakReference<DynamicObject> symbolReference = symbolsTable.get(rope);
 
             if (symbolReference != null) {
                 final DynamicObject symbol = symbolReference.get();
@@ -60,7 +69,7 @@ public class SymbolTable {
         lock.writeLock().lock();
 
         try {
-            final WeakReference<DynamicObject> symbolReference = symbolsTable.get(bytes);
+            final WeakReference<DynamicObject> symbolReference = symbolsTable.get(rope);
 
             if (symbolReference != null) {
                 final DynamicObject symbol = symbolReference.get();
@@ -70,17 +79,18 @@ public class SymbolTable {
                 }
             }
 
-            final ByteList storedBytes = bytes.dup();
-
             final DynamicObject symbolClass = context.getCoreLibrary().getSymbolClass();
+            final Rope flattenedRope = RopeOperations.flatten(rope);
+            final String string = ByteList.decode(flattenedRope.getBytes(), flattenedRope.begin(), flattenedRope.byteLength(), "ISO-8859-1");
 
             final DynamicObject newSymbol = Layouts.SYMBOL.createSymbol(
                     Layouts.CLASS.getInstanceFactory(symbolClass),
-                    storedBytes.toString(), storedBytes,
-                    storedBytes.toString().hashCode(),
-                    StringSupport.CR_UNKNOWN, null);
+                    string,
+                    flattenedRope,
+                    string.hashCode(),
+                    null);
 
-            symbolsTable.put(storedBytes, new WeakReference<>(newSymbol));
+            symbolsTable.put(flattenedRope, new WeakReference<>(newSymbol));
             return newSymbol;
         } finally {
             lock.writeLock().unlock();

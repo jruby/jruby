@@ -62,6 +62,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
@@ -2403,13 +2404,13 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(format)", "byteListsEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
+        @Specialization(guards = {"isRubyString(format)", "ropesEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
         public DynamicObject packCached(
                 VirtualFrame frame,
                 DynamicObject array,
                 DynamicObject format,
-                @Cached("privatizeByteList(format)") ByteList cachedFormat,
-                @Cached("byteListLength(cachedFormat)") int cachedFormatLength,
+                @Cached("privatizeRope(format)") Rope cachedFormat,
+                @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final PackResult result;
 
@@ -2438,7 +2439,7 @@ public abstract class ArrayNodes {
                 throw handleException(e);
             }
 
-            return finishPack(StringOperations.getByteList(format).length(), result);
+            return finishPack(Layouts.STRING.getRope(format).byteLength(), result);
         }
 
         private RuntimeException handleException(PackException exception) {

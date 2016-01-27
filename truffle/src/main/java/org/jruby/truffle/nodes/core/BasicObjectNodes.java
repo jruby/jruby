@@ -152,7 +152,7 @@ public abstract class BasicObjectNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
-            return getContext().instanceEval(StringOperations.getByteList(string), receiver, "(eval)", this);
+            return getContext().instanceEval(StringOperations.getByteListReadOnly(string), receiver, "(eval)", this);
         }
 
         @Specialization

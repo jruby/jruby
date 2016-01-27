@@ -58,6 +58,11 @@ class String
     raise ArgumentError, "String#chr_at primitive failed"
   end
 
+  def append(str)
+    Rubinius.primitive :string_append
+    raise TypeError, "String#append primitive only accepts Strings"
+  end
+
   def byteslice(index_or_range, length=undefined)
     Rubinius.primitive :string_byte_substring
 
