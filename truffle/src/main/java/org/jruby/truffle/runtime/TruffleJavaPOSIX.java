@@ -206,6 +206,25 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     }
 
     @Override
+    public int close(int fd) {
+        final OpenFile openFile = fileHandles.get(fd);
+
+        if (openFile != null) {
+            fileHandles.remove(fd);
+
+            try {
+                openFile.getRandomAccessFile().close();
+            } catch (IOException e) {
+                return -1;
+            }
+
+            return 0;
+        }
+
+        return super.close(fd);
+    }
+
+    @Override
     public int getgid() {
         return 0;
     }
