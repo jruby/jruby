@@ -9,43 +9,39 @@
  */
 package org.jruby.truffle.runtime.rope;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
-import org.jruby.truffle.runtime.core.StringOperations;
 
 public class ConcatRope extends Rope {
 
     private final Rope left;
     private final Rope right;
 
-    private byte[] bytes;
-
-    public ConcatRope(Rope left, Rope right, Encoding encoding) {
+    public ConcatRope(Rope left, Rope right, Encoding encoding, int codeRange, boolean singleByteOptimizable, int depth) {
         super(encoding,
-                StringOperations.commonCodeRange(left.getCodeRange(), right.getCodeRange()),
-                left.isSingleByteOptimizable() && right.isSingleByteOptimizable(),
+                codeRange,
+                singleByteOptimizable,
                 left.byteLength() + right.byteLength(),
                 left.characterLength() + right.characterLength(),
-                Math.max(left.depth(), right.depth()) + 1);
+                depth,
+                null);
 
         this.left = left;
         this.right = right;
     }
 
     @Override
-    public byte[] getBytes() {
-        if (bytes == null) {
-            final byte[] leftBytes = left.getBytes();
-            final byte[] rightBytes = right.getBytes();
-
-            bytes = new byte[leftBytes.length + rightBytes.length];
-            System.arraycopy(leftBytes, 0, bytes, 0, leftBytes.length);
-            System.arraycopy(rightBytes, 0, bytes, leftBytes.length, rightBytes.length);
+    @TruffleBoundary
+    public int get(int index) {
+        if (index < left.byteLength()) {
+            return left.get(index);
         }
 
-        return bytes;
+        return right.get(index - left.byteLength());
     }
 
     @Override
+    @TruffleBoundary
     public byte[] extractRange(int offset, int length) {
         byte[] leftBytes;
         byte[] rightBytes;
@@ -76,26 +72,6 @@ public class ConcatRope extends Rope {
         return right.extractRange(offset - leftLength, length);
     }
 
-    @Override
-    public int hashCode() {
-        return left.hashCode() + right.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o instanceof ConcatRope) {
-            final ConcatRope other = (ConcatRope) o;
-
-            return left.equals(other.left) && right.equals(other.right);
-        }
-
-        return false;
-    }
-
     public Rope getLeft() {
         return left;
     }
@@ -103,4 +79,11 @@ public class ConcatRope extends Rope {
     public Rope getRight() {
         return right;
     }
+
+    @Override
+    public String toString() {
+        // This should be used for debugging only.
+        return left.toString() + right.toString();
+    }
+
 }

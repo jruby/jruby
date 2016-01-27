@@ -9,8 +9,11 @@
  */
 package org.jruby.truffle.runtime.rope;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 import org.jruby.util.ByteList;
+
+import java.util.Arrays;
 
 public abstract class Rope {
 
@@ -20,14 +23,17 @@ public abstract class Rope {
     private final int byteLength;
     private final int characterLength;
     private final int ropeDepth;
+    private int hashCode = 0;
+    private byte[] bytes;
 
-    protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth) {
+    protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
         this.encoding = encoding;
         this.codeRange = codeRange;
         this.singleByteOptimizable = singleByteOptimizable;
         this.byteLength = byteLength;
         this.characterLength = characterLength;
         this.ropeDepth = ropeDepth;
+        this.bytes = bytes;
     }
 
     public final int characterLength() {
@@ -48,7 +54,20 @@ public abstract class Rope {
 
     public final ByteList toByteListCopy() { return new ByteList(getBytes(), getEncoding(), true); }
 
-    public abstract byte[] getBytes();
+    public abstract int get(int index);
+
+    public final byte[] getRawBytes() {
+        return bytes;
+    }
+
+    public final byte[] getBytes() {
+        if (bytes == null) {
+            CompilerDirectives.transferToInterpreter();
+            bytes = RopeOperations.flattenBytes(this);
+        }
+
+        return bytes;
+    }
 
     public byte[] getBytesCopy() {
         return getBytes().clone();
@@ -72,12 +91,6 @@ public abstract class Rope {
         return ropeDepth;
     }
 
-    @Override
-    public String toString() {
-        // This should be used for debugging only.
-        return new String(getBytes());
-    }
-
     public int begin() {
         return 0;
     }
@@ -93,4 +106,34 @@ public abstract class Rope {
     public int getRealSize() {
         return realSize();
     }
+
+    @Override
+    public int hashCode() {
+        if (hashCode == 0) {
+            hashCode = RopeOperations.hashForRange(this, 1, 0, byteLength);
+        }
+
+        return hashCode;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o instanceof Rope) {
+            final Rope other = (Rope) o;
+
+            if ((hashCode != 0) && (other.hashCode != 0) && (hashCode != other.hashCode)) {
+                return false;
+            }
+
+            // TODO (nirvdrum 21-Jan-16): We really should be taking the encoding into account here. We're currenly not because it breaks the symbol table.
+            return byteLength() == other.byteLength() && Arrays.equals(getBytes(), other.getBytes());
+        }
+
+        return false;
+    }
+
 }

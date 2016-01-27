@@ -32,6 +32,7 @@ import org.jcodings.Encoding;
 import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -58,20 +59,9 @@ public abstract class StringOperations {
     }
 
     // Since ByteList.toString does not decode properly
-    @TruffleBoundary
+    @CompilerDirectives.TruffleBoundary
     public static String getString(RubyContext context, DynamicObject string) {
-        return Helpers.decodeByteList(context.getRuntime(), StringOperations.getByteListReadOnly(string));
-    }
-
-    public static StringCodeRangeableWrapper getCodeRangeable(DynamicObject string) {
-        StringCodeRangeableWrapper wrapper = Layouts.STRING.getCodeRangeableWrapper(string);
-
-        if (wrapper == null) {
-            wrapper = new StringCodeRangeableWrapper(string);
-            Layouts.STRING.setCodeRangeableWrapper(string, wrapper);
-        }
-
-        return wrapper;
+        return RopeOperations.decodeRope(context.getRuntime(), StringOperations.rope(string));
     }
 
     public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
@@ -119,17 +109,6 @@ public abstract class StringOperations {
         }
     }
 
-    public static int scanForCodeRange(DynamicObject string) {
-        int cr = StringOperations.getCodeRange(string);
-
-        if (cr == StringSupport.CR_UNKNOWN) {
-            cr = slowCodeRangeScan(string);
-            StringOperations.setCodeRange(string, cr);
-        }
-
-        return cr;
-    }
-
     public static boolean isCodeRangeValid(DynamicObject string) {
         return StringOperations.getCodeRange(string) == StringSupport.CR_VALID;
     }
@@ -159,12 +138,13 @@ public abstract class StringOperations {
         keepCodeRange(string);
     }
 
-    @TruffleBoundary
+    @CompilerDirectives.TruffleBoundary
     public static Encoding checkEncoding(DynamicObject string, CodeRangeable other) {
-        final Encoding encoding = StringSupport.areCompatible(getCodeRangeableReadOnly(string), other);
+        final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, ((StringCodeRangeableWrapper) other).getString());
 
         // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
         if (encoding == null) {
+            CompilerDirectives.transferToInterpreter();
             throw Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime().newEncodingCompatibilityError(
                     String.format("incompatible character encodings: %s and %s",
                             Layouts.STRING.getRope(string).getEncoding().toString(),
@@ -174,16 +154,10 @@ public abstract class StringOperations {
         return encoding;
     }
 
-    @TruffleBoundary
-    private static int slowCodeRangeScan(DynamicObject string) {
-        final ByteList byteList = StringOperations.getByteListReadOnly(string);
-        return StringSupport.codeRangeScan(byteList.getEncoding(), byteList);
-    }
-
     public static void forceEncoding(DynamicObject string, Encoding encoding) {
         modify(string);
         final Rope oldRope = Layouts.STRING.getRope(string);
-        Layouts.STRING.setRope(string, RopeOperations.withEncoding(oldRope, encoding, StringSupport.CR_UNKNOWN));
+        StringOperations.setRope(string, RopeOperations.withEncoding(oldRope, encoding, StringSupport.CR_UNKNOWN));
     }
 
     public static int normalizeIndex(int length, int index) {
@@ -192,17 +166,18 @@ public abstract class StringOperations {
 
     public static int clampExclusiveIndex(DynamicObject string, int index) {
         assert RubyGuards.isRubyString(string);
-        return ArrayOperations.clampExclusiveIndex(StringOperations.getByteListReadOnly(string).length(), index);
+
+        // TODO (nirvdrum 21-Jan-16): Verify this is supposed to be the byteLength and not the characterLength.
+        return ArrayOperations.clampExclusiveIndex(StringOperations.rope(string).byteLength(), index);
     }
 
-    @TruffleBoundary
-    public static Encoding checkEncoding(RubyContext context, DynamicObject string, CodeRangeable other, Node node) {
-        final Encoding encoding = StringSupport.areCompatible(getCodeRangeableReadOnly(string), other);
+    public static Encoding checkEncoding(RubyContext context, DynamicObject string, DynamicObject other, Node node) {
+        final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
         if (encoding == null) {
             throw new RaiseException(context.getCoreLibrary().encodingCompatibilityErrorIncompatible(
-                    Layouts.STRING.getRope(string).getEncoding().toString(),
-                    other.getByteList().getEncoding().toString(),
+                    rope(string).getEncoding().toString(),
+                    rope(other).getEncoding().toString(),
                     node));
         }
 
@@ -220,28 +195,6 @@ public abstract class StringOperations {
 
     public static ByteList getByteListReadOnly(DynamicObject object) {
         return Layouts.STRING.getRope(object).getUnsafeByteList();
-    }
-
-    // TODO (nirdvrum 07-Jan-16) Either remove this method or Rope#byteLength -- the latter doesn't require materializing the full byte array.
-    public static int byteLength(DynamicObject object) {
-        return Layouts.STRING.getRope(object).byteLength();
-    }
-
-    public static int commonCodeRange(int first, int second) {
-        if (first == second) {
-            return first;
-        }
-
-        if ((first == StringSupport.CR_UNKNOWN) || (second == StringSupport.CR_UNKNOWN)) {
-            return StringSupport.CR_UNKNOWN;
-        }
-
-        if ((first == StringSupport.CR_BROKEN) || (second == StringSupport.CR_BROKEN)) {
-            return StringSupport.CR_BROKEN;
-        }
-
-        // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
-        return StringSupport.CR_VALID;
     }
 
     public static Rope ropeFromByteList(ByteList byteList) {
@@ -262,6 +215,13 @@ public abstract class StringOperations {
         assert RubyGuards.isRubyString(string);
 
         return Layouts.STRING.getRope(string);
+    }
+
+    public static void setRope(DynamicObject string, Rope rope) {
+        assert RubyGuards.isRubyString(string);
+
+        Layouts.STRING.setRope(string, rope);
+        Layouts.STRING.setRubiniusDataArray(string, null);
     }
 
     public static Encoding encoding(DynamicObject string) {

@@ -14,7 +14,7 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.joni.Regex;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.RegexpOptions;
 
 @Layout
@@ -25,7 +25,7 @@ public interface RegexpLayout extends BasicObjectLayout {
 
     DynamicObject createRegexp(DynamicObjectFactory factory,
                                @Nullable Regex regex,
-                               @Nullable ByteList source,
+                               @Nullable Rope source,
                                RegexpOptions options,
                                @Nullable Object cachedNames);
 
@@ -35,8 +35,8 @@ public interface RegexpLayout extends BasicObjectLayout {
     Regex getRegex(DynamicObject object);
     void setRegex(DynamicObject object, Regex value);
 
-    ByteList getSource(DynamicObject object);
-    void setSource(DynamicObject object, ByteList value);
+    Rope getSource(DynamicObject object);
+    void setSource(DynamicObject object, Rope value);
 
     RegexpOptions getOptions(DynamicObject object);
     void setOptions(DynamicObject object, RegexpOptions value);

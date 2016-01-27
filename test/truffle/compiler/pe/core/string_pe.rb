@@ -17,9 +17,10 @@ example "'こにちわ'.length", 4
 example "'abc'.bytesize", 3
 example "'こにちわ'.bytesize", 12
 
-tagged_example "'abc' == 'abc'", true # seems to fail sometimes
+example "'abc' == 'abc'", true
 example "x = 'abc'; x == x", true
 example "x = 'abc'; x == x.dup", true
+example "x = 'abc'; 'abc' == x.dup", true
 
 example "'abc'.ascii_only?", true
 example "'こにちわ'.ascii_only?", false

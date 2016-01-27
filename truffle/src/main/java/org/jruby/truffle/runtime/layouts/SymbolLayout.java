@@ -13,6 +13,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 
 @org.jruby.truffle.om.dsl.api.Layout
@@ -23,9 +24,8 @@ public interface SymbolLayout extends BasicObjectLayout {
 
     DynamicObject createSymbol(DynamicObjectFactory factory,
                                String string,
-                               ByteList byteList,
+                               Rope rope,
                                int hashCode,
-                               int codeRange,
                                @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
 
     boolean isSymbol(Object object);
@@ -33,12 +33,9 @@ public interface SymbolLayout extends BasicObjectLayout {
 
     String getString(DynamicObject object);
 
-    ByteList getByteList(DynamicObject object);
+    Rope getRope(DynamicObject object);
 
     int getHashCode(DynamicObject object);
-
-    int getCodeRange(DynamicObject object);
-    void setCodeRange(DynamicObject object, int codeRange);
 
     SymbolCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
     void setCodeRangeableWrapper(DynamicObject object, SymbolCodeRangeableWrapper codeRangeableWrapper);

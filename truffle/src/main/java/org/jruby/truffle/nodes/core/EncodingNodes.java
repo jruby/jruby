@@ -32,7 +32,9 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -128,7 +130,7 @@ public abstract class EncodingNodes {
                 "isRubyString(first)", "isRubyString(second)"
         }, contains =  "isCompatibleStringStringCached")
         public DynamicObject isCompatibleStringStringUncached(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = areCompatible(first, second);
+            final Encoding compatibleEncoding = compatibleEncodingForStrings(first, second);
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -190,7 +192,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyRegexp(first)", "isRubySymbol(second)"})
         public Object isCompatibleRegexpSymbol(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.SYMBOL.getByteList(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.SYMBOL.getRope(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -202,7 +204,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(first)", "isRubyRegexp(second)"})
         public Object isCompatibleSymbolRegexp(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.SYMBOL.getByteList(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.SYMBOL.getRope(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -248,18 +250,41 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        public static Encoding areCompatible(DynamicObject first, DynamicObject second) {
+        public static Encoding compatibleEncodingForStrings(DynamicObject first, DynamicObject second) {
+            // Taken from org.jruby.RubyEncoding#areCompatible.
+
             assert RubyGuards.isRubyString(first);
             assert RubyGuards.isRubyString(second);
 
-            final Encoding firstEncoding = Layouts.STRING.getRope(first).getEncoding();
-            final Encoding secondEncoding = Layouts.STRING.getRope(second).getEncoding();
+            final Rope firstRope = StringOperations.rope(first);
+            final Rope secondRope = StringOperations.rope(second);
 
-            if (firstEncoding == secondEncoding) {
-                return firstEncoding;
+            final Encoding firstEncoding = firstRope.getEncoding();
+            final Encoding secondEncoding = secondRope.getEncoding();
+
+            if (firstEncoding == null || secondEncoding == null) return null;
+            if (firstEncoding == secondEncoding) return firstEncoding;
+
+            if (secondRope.isEmpty()) return firstEncoding;
+            if (firstRope.isEmpty()) {
+                return firstEncoding.isAsciiCompatible() && isAsciiOnly(secondRope) ? firstEncoding : secondEncoding;
             }
 
-            return org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeableReadOnly(first), StringOperations.getCodeRangeableReadOnly(second));
+            if (!firstEncoding.isAsciiCompatible() || !secondEncoding.isAsciiCompatible()) return null;
+
+            if (firstRope.getCodeRange() != secondRope.getCodeRange()) {
+                if (firstRope.getCodeRange() == StringSupport.CR_7BIT) return secondEncoding;
+                if (secondRope.getCodeRange() == StringSupport.CR_7BIT) return firstEncoding;
+            }
+            if (secondRope.getCodeRange() == StringSupport.CR_7BIT) return firstEncoding;
+            if (firstRope.getCodeRange() == StringSupport.CR_7BIT) return secondEncoding;
+
+            return null;
+        }
+
+        @TruffleBoundary
+        private static boolean isAsciiOnly(Rope rope) {
+            return rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == StringSupport.CR_7BIT;
         }
 
         protected Encoding extractEncoding(DynamicObject string) {

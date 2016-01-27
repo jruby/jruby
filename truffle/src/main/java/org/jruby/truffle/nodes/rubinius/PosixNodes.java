@@ -21,6 +21,8 @@ import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.nodes.core.RopeNodes;
+import org.jruby.truffle.nodes.core.RopeNodesFactory;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
@@ -698,8 +700,11 @@ public abstract class PosixNodes {
     @CoreMethod(names = "getcwd", isModuleFunction = true, required = 2)
     public abstract static class GetcwdNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+
         public GetcwdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -708,7 +713,7 @@ public abstract class PosixNodes {
             // We just ignore maxSize - I think this is ok
 
             final String path = getContext().getRuntime().getCurrentDirectory();
-            Layouts.STRING.setRope(resultPath, RopeOperations.create(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), StringSupport.CR_UNKNOWN));
+            StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), StringSupport.CR_UNKNOWN));
             return resultPath;
         }
 

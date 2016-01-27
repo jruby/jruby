@@ -15,52 +15,31 @@ import java.util.Arrays;
 
 public abstract class LeafRope extends Rope {
 
-    private final byte[] bytes;
-    private int hashCode = -1;
-
     public LeafRope(byte[] bytes, Encoding encoding, int codeRange, boolean singleByteOptimizable, int characterLength) {
-        super(encoding, codeRange, singleByteOptimizable, bytes.length, characterLength, 1);
-        this.bytes = bytes;
+        super(encoding, codeRange, singleByteOptimizable, bytes.length, characterLength, 1, bytes);
     }
 
     @Override
-    public byte[] getBytes() {
-        return bytes;
+    public int get(int index) {
+        return getRawBytes()[index];
     }
 
     @Override
     public byte[] extractRange(int offset, int length) {
-        assert offset + length <= bytes.length;
+        assert offset + length <= byteLength();
 
         final int trueLength = Math.min(length, byteLength());
         final byte[] ret = new byte[trueLength];
 
-        System.arraycopy(bytes, offset, ret, 0, trueLength);
+        System.arraycopy(getRawBytes(), offset, ret, 0, trueLength);
 
         return ret;
     }
 
     @Override
-    public int hashCode() {
-        if (hashCode == -1) {
-            hashCode = Arrays.hashCode(bytes) + getEncoding().hashCode();
-        }
-
-        return hashCode;
+    public String toString() {
+        // This should be used for debugging only.
+        return RopeOperations.decodeUTF8(this);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o instanceof LeafRope) {
-            final LeafRope other = (LeafRope) o;
-
-            return getEncoding() == other.getEncoding() && Arrays.equals(bytes, other.getBytes());
-        }
-
-        return false;
-    }
 }

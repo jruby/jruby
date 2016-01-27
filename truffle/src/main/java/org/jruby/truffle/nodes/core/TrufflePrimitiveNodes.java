@@ -43,6 +43,7 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
@@ -452,6 +453,57 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject debugPrint(DynamicObject string) {
             System.err.println(string.toString());
             return nil();
+        }
+
+    }
+
+    @CoreMethod(names = "debug_print_rope", onSingleton = true, required = 1, optional = 1)
+    public abstract static class DebugPrintRopeNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
+
+        public DebugPrintRopeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(context, sourceSection, null, null, null);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject debugPrintDefault(DynamicObject string, NotProvided printString) {
+            return debugPrint(string, true);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject debugPrint(DynamicObject string, boolean printString) {
+            System.err.println("Legend: ");
+            System.err.println("BN = Bytes Null? (byte[] not yet populated)");
+            System.err.println("BL = Byte Length");
+            System.err.println("CL = Character Length");
+            System.err.println("CR = Code Range");
+            System.err.println("O = Offset (SubstringRope only)");
+            System.err.println("D = Depth");
+            System.err.println("LD = Left Depth (ConcatRope only)");
+            System.err.println("RD = Right Depth (ConcatRope only)");
+
+            return debugPrintRopeNode.executeDebugPrint(StringOperations.rope(string), 0, printString);
+        }
+
+    }
+
+    @CoreMethod(names = "flatten_rope", onSingleton = true, required = 1)
+    public abstract static class FlattenRopeNode extends CoreMethodArrayArgumentsNode {
+
+        public FlattenRopeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject debugPrint(DynamicObject string) {
+            final Rope flattened = RopeOperations.flatten(StringOperations.rope(string));
+
+            return createString(flattened);
         }
 
     }

@@ -72,6 +72,7 @@ import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.runtime.loader.FeatureLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
@@ -511,7 +512,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = {
                 "isRubyString(source)",
-                "byteListsEqual(source, cachedSource)",
+                "ropesEqual(source, cachedSource)",
                 "!parseDependsOnDeclarationFrame(cachedRootNode)"
         }, limit = "getCacheLimit()")
         public Object evalNoBindingCached(
@@ -520,7 +521,7 @@ public abstract class KernelNodes {
                 NotProvided binding,
                 NotProvided filename,
                 NotProvided lineNumber,
-                @Cached("privatizeByteList(source)") ByteList cachedSource,
+                @Cached("privatizeRope(source)") Rope cachedSource,
                 @Cached("compileSource(frame, source)") RootNodeWrapper cachedRootNode,
                 @Cached("createCallTarget(cachedRootNode)") CallTarget cachedCallTarget,
                 @Cached("create(cachedCallTarget)") DirectCallNode callNode
@@ -1870,13 +1871,13 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = { "isRubyString(format)", "byteListsEqual(format, cachedFormat)" })
+        @Specialization(guards = { "isRubyString(format)", "ropesEqual(format, cachedFormat)" })
         public DynamicObject formatCached(
                 VirtualFrame frame,
                 DynamicObject format,
                 Object[] arguments,
-                @Cached("privatizeByteList(format)") ByteList cachedFormat,
-                @Cached("byteListLength(cachedFormat)") int cachedFormatLength,
+                @Cached("privatizeRope(format)") Rope cachedFormat,
+                @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final PackResult result;
 

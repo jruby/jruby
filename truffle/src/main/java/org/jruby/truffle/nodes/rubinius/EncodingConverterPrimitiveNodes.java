@@ -23,6 +23,8 @@ import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.EncodingConverterNodes;
+import org.jruby.truffle.nodes.core.RopeNodes;
+import org.jruby.truffle.nodes.core.RopeNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
@@ -57,8 +59,11 @@ public abstract class EncodingConverterPrimitiveNodes {
     @RubiniusPrimitive(name = "encoding_converter_primitive_convert")
     public static abstract class PrimitiveConvertNode extends RubiniusPrimitiveNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+
         public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
@@ -141,8 +146,8 @@ public abstract class EncodingConverterPrimitiveNodes {
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 
                 if (nonNullSource) {
-                    sourceRope = RopeOperations.substring(sourceRope, inPtr.p, sourceRope.byteLength() - inPtr.p);
-                    Layouts.STRING.setRope(source, sourceRope);
+                    sourceRope = makeSubstringNode.executeMake(sourceRope, inPtr.p, sourceRope.byteLength() - inPtr.p);
+                    StringOperations.setRope(source, sourceRope);
                 }
 
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
@@ -159,7 +164,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                     outBytes.setEncoding(ec.destinationEncoding);
                 }
 
-                Layouts.STRING.setRope(target, StringOperations.ropeFromByteList(outBytes));
+                StringOperations.setRope(target, StringOperations.ropeFromByteList(outBytes));
 
                 return getSymbol(res.symbolicName());
             }

@@ -32,7 +32,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int scanForCodeRange() {
-        return StringOperations.scanForCodeRange(string);
+        return StringOperations.codeRange(string);
     }
 
     @Override
@@ -80,4 +80,8 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
         return StringOperations.getByteList(string);
     }
 
+
+    public DynamicObject getString() {
+        return string;
+    }
 }

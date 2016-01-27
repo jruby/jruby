@@ -15,22 +15,16 @@ public class SubstringRope extends Rope {
     private final Rope child;
     private final int offset;
 
-    private byte[] bytes;
-
     public SubstringRope(Rope child, int offset, int byteLength, int characterLength, int codeRange) {
         // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
-        super(child.getEncoding(), codeRange, child.isSingleByteOptimizable(), byteLength, characterLength, child.depth() + 1);
+        super(child.getEncoding(), codeRange, child.isSingleByteOptimizable(), byteLength, characterLength, child.depth() + 1, null);
         this.child = child;
         this.offset = offset;
     }
 
     @Override
-    public byte[] getBytes() {
-        if (bytes == null) {
-            bytes = child.extractRange(offset, byteLength());
-        }
-
-        return bytes;
+    public int get(int index) {
+        return child.get(index + offset);
     }
 
     @Override
@@ -46,6 +40,12 @@ public class SubstringRope extends Rope {
 
     public int getOffset() {
         return offset;
+    }
+
+    @Override
+    public String toString() {
+        // This should be used for debugging only.
+        return child.toString().substring(offset, offset + byteLength());
     }
 
 }
