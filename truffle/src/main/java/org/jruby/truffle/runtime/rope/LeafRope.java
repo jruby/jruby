@@ -25,11 +25,6 @@ public abstract class LeafRope extends Rope {
     }
 
     @Override
-    public byte[] calculateBytes() {
-        throw new UnsupportedOperationException("LeafRope's bytes are always known. There is no need to calculate them.");
-    }
-
-    @Override
     public byte[] extractRange(int offset, int length) {
         assert offset + length <= byteLength();
 
@@ -47,10 +42,4 @@ public abstract class LeafRope extends Rope {
         return RopeOperations.decodeUTF8(this);
     }
 
-    @Override
-    protected void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength) {
-        assert offset + byteLength <= byteLength();
-
-        System.arraycopy(getRawBytes(), offset, buffer, bufferPosition, byteLength);
-    }
 }

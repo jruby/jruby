@@ -42,19 +42,6 @@ public class ConcatRope extends Rope {
 
     @Override
     @TruffleBoundary
-    public byte[] calculateBytes() {
-        final byte[] leftBytes = left.getBytes();
-        final byte[] rightBytes = right.getBytes();
-
-        final byte[] bytes = new byte[leftBytes.length + rightBytes.length];
-        System.arraycopy(leftBytes, 0, bytes, 0, leftBytes.length);
-        System.arraycopy(rightBytes, 0, bytes, leftBytes.length, rightBytes.length);
-
-        return bytes;
-    }
-
-    @Override
-    @TruffleBoundary
     public byte[] extractRange(int offset, int length) {
         byte[] leftBytes;
         byte[] rightBytes;
@@ -99,28 +86,4 @@ public class ConcatRope extends Rope {
         return left.toString() + right.toString();
     }
 
-    @Override
-    protected void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength) {
-        if (getRawBytes() != null) {
-            System.arraycopy(getRawBytes(), offset, buffer, bufferPosition, byteLength);
-        } else {
-            final int leftLength = left.byteLength();
-
-            if (offset < leftLength) {
-                // The left branch might not be large enough to extract the full hash code we want. In that case,
-                // we'll extract what we can and extract the difference from the right side.
-                if (offset + byteLength > leftLength) {
-                    final int coveredByLeft = leftLength - offset;
-
-                    left.fillBytes(buffer, bufferPosition, offset, coveredByLeft);
-                    right.fillBytes(buffer, bufferPosition + coveredByLeft, 0, byteLength - coveredByLeft);
-
-                } else {
-                    left.fillBytes(buffer, bufferPosition, offset, byteLength);
-                }
-            } else {
-                right.fillBytes(buffer, bufferPosition, offset - leftLength, byteLength);
-            }
-        }
-    }
 }

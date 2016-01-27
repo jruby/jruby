@@ -10,8 +10,6 @@
 
 package org.jruby.truffle.runtime.rope;
 
-import org.jruby.RubyEncoding;
-
 public class SubstringRope extends Rope {
 
     private final Rope child;
@@ -27,11 +25,6 @@ public class SubstringRope extends Rope {
     @Override
     public int get(int index) {
         return child.get(index + offset);
-    }
-
-    @Override
-    public byte[] calculateBytes() {
-        return child.extractRange(offset, byteLength());
     }
 
     @Override
@@ -55,12 +48,4 @@ public class SubstringRope extends Rope {
         return child.toString().substring(offset, offset + byteLength());
     }
 
-    @Override
-    protected void fillBytes(byte[] buffer, int bufferPosition, int offset, int byteLength) {
-        if (getRawBytes() != null) {
-            System.arraycopy(getRawBytes(), offset, buffer, bufferPosition, byteLength);
-        } else {
-            child.fillBytes(buffer, bufferPosition, offset + this.offset, byteLength);
-        }
-    }
 }
