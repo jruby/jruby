@@ -1619,6 +1619,9 @@ public final class Ruby implements Constantizable {
         interrupt = defineClassIfAllowed("Interrupt", signalException);
         typeError = defineClassIfAllowed("TypeError", standardError);
         argumentError = defineClassIfAllowed("ArgumentError", standardError);
+        if (profile.allowClass("UncaughtThrowError")) {
+            uncaughtThrowError = RubyUncaughtThrowError.createUncaughtThrowErrorClass(this, argumentError);
+        }
         indexError = defineClassIfAllowed("IndexError", standardError);
         if (profile.allowClass("StopIteration")) {
             stopIteration = RubyStopIteration.createStopIterationClass(this, indexError);
@@ -2449,6 +2452,10 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getArgumentError() {
         return argumentError;
+    }
+
+    public RubyClass getUncaughtThrowError() {
+        return uncaughtThrowError;
     }
 
     public RubyClass getIndexError() {
@@ -4944,7 +4951,7 @@ public final class Ruby implements Constantizable {
             groupStruct, procStatusClass, exceptionClass, runtimeError, ioError,
             scriptError, nameError, nameErrorMessage, noMethodError, signalException,
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
-            systemCallError, fatal, interrupt, typeError, argumentError, indexError, stopIteration,
+            systemCallError, fatal, interrupt, typeError, argumentError, uncaughtThrowError, indexError, stopIteration,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
