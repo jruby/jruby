@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime;
 
+import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
@@ -159,6 +160,10 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
                 read = openFile.getRandomAccessFile().read(buf, offset, n);
             } catch (IOException e) {
                 return -1;
+            }
+
+            if (read == -1) {
+                errno(Errno.ETIMEDOUT.intValue());
             }
 
             return read;
