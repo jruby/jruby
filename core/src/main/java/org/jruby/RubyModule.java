@@ -1703,10 +1703,13 @@ public class RubyModule extends RubyObject {
         }
 
         if (method.isUndefined()) {
-            throw runtime.newNameError("undefined method '" + name + "' for " +
-                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
+            throw runtime.newNameError(undefinedMethodMessage(name, getName(), isModule()), name);
         }
         return method;
+    }
+
+    public static String undefinedMethodMessage(final String name, final String modName, final boolean isModule) {
+        return "undefined method `" + name + "' for " + (isModule ? "module" : "class") + " `" + modName + "'";
     }
 
     /**
