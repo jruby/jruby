@@ -1171,11 +1171,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @JRubyMethod(name = "%", required = 1)
-    public IRubyObject op_format(ThreadContext context, IRubyObject arg) {
+    public RubyString op_format(ThreadContext context, IRubyObject arg) {
         return opFormatCommon(context, arg);
     }
 
-    private IRubyObject opFormatCommon(ThreadContext context, IRubyObject arg) {
+    private RubyString opFormatCommon(ThreadContext context, IRubyObject arg) {
         IRubyObject tmp;
         if (arg instanceof RubyHash) {
             tmp = arg;

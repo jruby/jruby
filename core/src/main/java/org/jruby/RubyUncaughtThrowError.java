@@ -29,6 +29,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -59,12 +60,22 @@ public class RubyUncaughtThrowError extends RubyException {
         this.message = runtime.getNil();
     }
 
+    public static RubyUncaughtThrowError newUncaughtThrowError(final Ruby runtime,
+        IRubyObject tag, IRubyObject value, RubyString message) {
+        RubyUncaughtThrowError error = new RubyUncaughtThrowError(runtime, runtime.getUncaughtThrowError());
+        error.tag = tag;
+        error.value = value;
+        error.message = message;
+        return error;
+    }
+
     @Override
     @JRubyMethod(required = 2, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         this.tag = args[0]; this.value = args[1];
         if ( args.length > 2 ) this.message = args[2];
-        super.initialize(NULL_ARRAY, block); // already set message
+        // makes no-sense for us to have a cause or does it ?!
+        // super.initialize(NULL_ARRAY, block); // already set message
         return this;
     }
 
@@ -73,6 +84,17 @@ public class RubyUncaughtThrowError extends RubyException {
 
     @JRubyMethod
     public IRubyObject value() { return value; }
+
+    @Override
+    public RubyString to_s(ThreadContext context) {
+        if ( message.isNil() ) {
+            return RubyString.newEmptyString(context.runtime);
+        }
+        if ( tag == null ) return message.asString();
+
+        final RubyString str = message.asString();
+        return str.op_format(context, context.runtime.newArrayNoCopy(tag));
+    }
 
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
