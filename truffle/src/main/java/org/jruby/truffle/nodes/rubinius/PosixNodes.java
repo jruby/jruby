@@ -17,18 +17,21 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.nodes.core.RopeNodes;
+import org.jruby.truffle.nodes.core.RopeNodesFactory;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.runtime.rope.RopeOperations;
+import org.jruby.util.StringSupport;
+import static org.jruby.truffle.runtime.core.StringOperations.decodeUTF8;
 
 import java.nio.charset.StandardCharsets;
 
@@ -45,7 +48,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int access(DynamicObject path, int mode) {
-            final String pathString = RubyEncoding.decodeUTF8(StringOperations.getByteList(path).getUnsafeBytes(), StringOperations.getByteList(path).getBegin(), StringOperations.getByteList(path).getRealSize());
+            final String pathString = decodeUTF8(path);
             return posix().access(pathString, mode);
         }
 
@@ -61,7 +64,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int chmod(DynamicObject path, int mode) {
-            return posix().chmod(path.toString(), mode);
+            return posix().chmod(decodeUTF8(path), mode);
         }
 
     }
@@ -76,7 +79,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int chown(DynamicObject path, int owner, int group) {
-            return posix().chown(path.toString(), owner, group);
+            return posix().chown(decodeUTF8(path), owner, group);
         }
 
     }
@@ -179,9 +182,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public DynamicObject getenv(DynamicObject name) {
-            final String nameString = RubyEncoding.decodeUTF8(StringOperations.getByteList(name).getUnsafeBytes(), StringOperations.getByteList(name).getBegin(), StringOperations.getByteList(name).getRealSize());
-
-            Object result = posix().getenv(nameString);
+            Object result = posix().getenv(decodeUTF8(name));
 
             if (result == null) {
                 return nil();
@@ -330,10 +331,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyString(path)", "isRubyPointer(pointer)"})
         public int readlink(DynamicObject path, DynamicObject pointer, int bufsize) {
-            final ByteList byteList = StringOperations.getByteList(path);
-            final String pathString = RubyEncoding.decodeUTF8(byteList.unsafeBytes(), byteList.begin(), byteList.length());
-
-            final int result = posix().readlink(pathString, Layouts.POINTER.getPointer(pointer), bufsize);
+            final int result = posix().readlink(decodeUTF8(path), Layouts.POINTER.getPointer(pointer), bufsize);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
@@ -354,10 +352,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = { "isRubyString(name)", "isRubyString(value)" })
         public int setenv(DynamicObject name, DynamicObject value, int overwrite) {
-            final String nameString = RubyEncoding.decodeUTF8(StringOperations.getByteList(name).getUnsafeBytes(), StringOperations.getByteList(name).getBegin(), StringOperations.getByteList(name).getRealSize());
-            final String valueString = RubyEncoding.decodeUTF8(StringOperations.getByteList(value).getUnsafeBytes(), StringOperations.getByteList(value).getBegin(), StringOperations.getByteList(value).getRealSize());
-
-            return posix().setenv(nameString, valueString, overwrite);
+            return posix().setenv(decodeUTF8(name), decodeUTF8(value), overwrite);
         }
 
     }
@@ -372,9 +367,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyString(path)", "isRubyString(other)"})
         public int link(DynamicObject path, DynamicObject other) {
-            final String pathString = RubyEncoding.decodeUTF8(StringOperations.getByteList(path).getUnsafeBytes(), StringOperations.getByteList(path).getBegin(), StringOperations.getByteList(path).getRealSize());
-            final String otherString = RubyEncoding.decodeUTF8(StringOperations.getByteList(other).getUnsafeBytes(), StringOperations.getByteList(other).getBegin(), StringOperations.getByteList(other).getRealSize());
-            return posix().link(pathString, otherString);
+            return posix().link(decodeUTF8(path), decodeUTF8(other));
         }
 
     }
@@ -389,8 +382,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int unlink(DynamicObject path) {
-            final ByteList byteList = StringOperations.getByteList(path);
-            return posix().unlink(RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize()));
+            return posix().unlink(decodeUTF8(path));
         }
 
     }
@@ -419,10 +411,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public int unsetenv(DynamicObject name) {
-            final ByteList byteList = StringOperations.getByteList(name);
-            final String nameString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-
-            return posix().unsetenv(nameString);
+            return posix().unsetenv(decodeUTF8(name));
         }
 
     }
@@ -437,10 +426,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyString(path)", "isRubyPointer(pointer)"})
         public int utimes(DynamicObject path, DynamicObject pointer) {
-            final ByteList byteList = StringOperations.getByteList(path);
-            final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-
-            final int result = posix().utimes(pathString, Layouts.POINTER.getPointer(pointer));
+            final int result = posix().utimes(decodeUTF8(path), Layouts.POINTER.getPointer(pointer));
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
@@ -691,9 +677,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyString(path)", "isRubyString(other)"})
         public int rename(DynamicObject path, DynamicObject other) {
-            final String pathString = RubyEncoding.decodeUTF8(StringOperations.getByteList(path).getUnsafeBytes(), StringOperations.getByteList(path).getBegin(), StringOperations.getByteList(path).getRealSize());
-            final String otherString = RubyEncoding.decodeUTF8(StringOperations.getByteList(other).getUnsafeBytes(), StringOperations.getByteList(other).getBegin(), StringOperations.getByteList(other).getRealSize());
-            return posix().rename(pathString, otherString);
+            return posix().rename(decodeUTF8(path), decodeUTF8(other));
         }
 
     }
@@ -716,8 +700,11 @@ public abstract class PosixNodes {
     @CoreMethod(names = "getcwd", isModuleFunction = true, required = 2)
     public abstract static class GetcwdNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+
         public GetcwdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -726,7 +713,7 @@ public abstract class PosixNodes {
             // We just ignore maxSize - I think this is ok
 
             final String path = getContext().getRuntime().getCurrentDirectory();
-            StringOperations.getByteList(resultPath).replace(path.getBytes(StandardCharsets.UTF_8));
+            StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), StringSupport.CR_UNKNOWN));
             return resultPath;
         }
 
@@ -870,8 +857,8 @@ public abstract class PosixNodes {
         @Specialization(guards = {"isRubyString(hostName)", "isRubyString(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfoString(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
-                    StringOperations.getByteList(hostName),
-                    StringOperations.getByteList(serviceName),
+                    StringOperations.getByteListReadOnly(hostName),
+                    StringOperations.getByteListReadOnly(serviceName),
                     Layouts.POINTER.getPointer(hintsPointer),
                     Layouts.POINTER.getPointer(resultsPointer));
         }
@@ -880,7 +867,7 @@ public abstract class PosixNodes {
         @Specialization(guards = {"isRubyString(hostName)", "isNil(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfo(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
-                    StringOperations.getByteList(hostName),
+                    StringOperations.getByteListReadOnly(hostName),
                     null,
                     Layouts.POINTER.getPointer(hintsPointer),
                     Layouts.POINTER.getPointer(resultsPointer));

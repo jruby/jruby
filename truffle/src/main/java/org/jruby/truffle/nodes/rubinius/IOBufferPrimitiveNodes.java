@@ -51,6 +51,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 
 public abstract class IOBufferPrimitiveNodes {
@@ -90,8 +91,8 @@ public abstract class IOBufferPrimitiveNodes {
         public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
             Layouts.IO_BUFFER.setWriteSynced(ioBuffer, false);
 
-            final ByteList byteList = StringOperations.getByteList(string);
-            int stringSize = byteList.realSize() - startPosition;
+            final Rope rope = StringOperations.rope(string);
+            int stringSize = rope.byteLength() - startPosition;
             final int usedSpace = Layouts.IO_BUFFER.getUsed(ioBuffer);
             final int availableSpace = IOBUFFER_SIZE - usedSpace;
 
@@ -102,7 +103,7 @@ public abstract class IOBufferPrimitiveNodes {
             ByteList storage = Layouts.BYTE_ARRAY.getBytes(Layouts.IO_BUFFER.getStorage(ioBuffer));
 
             // Data is copied here - can we do something COW?
-            System.arraycopy(byteList.unsafeBytes(), byteList.begin() + startPosition, storage.getUnsafeBytes(), storage.begin() + usedSpace, stringSize);
+            System.arraycopy(rope.getBytes(), startPosition, storage.getUnsafeBytes(), storage.begin() + usedSpace, stringSize);
 
             Layouts.IO_BUFFER.setUsed(ioBuffer, usedSpace + stringSize);
 

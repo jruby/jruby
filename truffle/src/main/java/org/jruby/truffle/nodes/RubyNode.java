@@ -24,6 +24,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
 
@@ -156,6 +157,10 @@ public abstract class RubyNode extends Node {
         return getContext().getSymbol(name);
     }
 
+    public DynamicObject getSymbol(Rope name) {
+        return getContext().getSymbol(name);
+    }
+
     /** Creates a String from the ByteList, with unknown CR */
     protected DynamicObject createString(ByteList bytes) {
         return StringOperations.createString(getContext(), bytes);
@@ -164,6 +169,10 @@ public abstract class RubyNode extends Node {
     /** Creates a String from the ByteList, with 7-bit CR */
     protected DynamicObject create7BitString(ByteList bytes) {
         return StringOperations.create7BitString(getContext(), bytes);
+    }
+
+    protected DynamicObject createString(Rope rope) {
+        return StringOperations.createString(getContext(), rope);
     }
 
     protected POSIX posix() {
