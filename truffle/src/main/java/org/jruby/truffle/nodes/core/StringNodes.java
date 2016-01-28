@@ -1332,12 +1332,14 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyString(from)")
-        public Object initializeCopy(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
+        @Specialization(guards = "self == from")
+        public Object initializeCopySelfIsSameAsFrom(DynamicObject self, DynamicObject from) {
+            return self;
+        }
 
+
+        @Specialization(guards = { "self != from", "isRubyString(from)" })
+        public Object initializeCopy(DynamicObject self, DynamicObject from) {
             StringOperations.setRope(self, rope(from));
 
             return self;

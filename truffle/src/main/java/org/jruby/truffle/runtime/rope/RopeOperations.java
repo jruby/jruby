@@ -119,6 +119,8 @@ public class RopeOperations {
     public static long calculateCodeRangeAndLength(Encoding encoding, byte[] bytes, int start, int end) {
         if (bytes.length == 0) {
             return StringSupport.pack(0, encoding.isAsciiCompatible() ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
+        } else if (encoding == ASCIIEncoding.INSTANCE) {
+            return strLengthWithCodeRangeBinaryString(bytes, start, end);
         } else if (encoding.isAsciiCompatible()) {
             return StringSupport.strLengthWithCodeRangeAsciiCompatible(encoding, bytes, start, end);
         } else {
@@ -131,6 +133,19 @@ public class RopeOperations {
         return StringSupport.strLength(enc, bytes, p, end);
     }
 
+    private static long strLengthWithCodeRangeBinaryString(byte[] bytes, int start, int end) {
+        int codeRange = StringSupport.CR_7BIT;
+
+        for (int i = start; i < end; i++) {
+            if (bytes[i] < 0) {
+                codeRange = StringSupport.CR_VALID;
+                break;
+            }
+        }
+
+        return StringSupport.pack(end - start, codeRange);
+    }
+
     public static LeafRope flatten(Rope rope) {
         if (rope instanceof LeafRope) {
             return (LeafRope) rope;
@@ -139,7 +154,6 @@ public class RopeOperations {
         return create(flattenBytes(rope), rope.getEncoding(), rope.getCodeRange());
     }
 
-    @TruffleBoundary
     /**
      * Performs an iterative depth first search of the Rope tree to calculate its byte[] without needing to populate
      * the byte[] for each level beneath. Every LeafRope has its byte[] populated by definition. The goal is to determine
@@ -150,6 +164,7 @@ public class RopeOperations {
      * of stack frame management. Additionally, a recursive algorithm will eventually overflow the stack if the Rope
      * tree is too deep.
      */
+    @TruffleBoundary
     public static byte[] flattenBytes(Rope rope) {
         if (rope instanceof LeafRope) {
             return rope.getRawBytes();
@@ -176,6 +191,47 @@ public class RopeOperations {
 
             // An empty rope trivially cannot contribute to filling the output buffer.
             if (current.isEmpty()) {
+                continue;
+            }
+
+            if (current.getRawBytes() != null) {
+                // In the absence of any SubstringRopes, we always take the full contents of the current rope.
+                if (substringLengths.isEmpty()) {
+                    System.arraycopy(current.getRawBytes(), offset, buffer, bufferPosition, current.byteLength());
+                    bufferPosition += current.byteLength();
+                } else {
+                    int bytesToCopy = substringLengths.pop();
+                    final int currentBytesToCopy;
+
+                    // If we reach here, this rope is a descendant of a SubstringRope at some level. Based on
+                    // the currently calculated byte[] offset and the number of bytes to extract, determine how many
+                    // bytes we can copy to the buffer.
+                    if (bytesToCopy > (current.byteLength() - offset)) {
+                        currentBytesToCopy = current.byteLength() - offset;
+                    } else {
+                        currentBytesToCopy = bytesToCopy;
+                    }
+
+                    System.arraycopy(current.getRawBytes(), offset, buffer, bufferPosition, currentBytesToCopy);
+                    bufferPosition += currentBytesToCopy;
+                    bytesToCopy -= currentBytesToCopy;
+
+                    // If this rope wasn't able to satisfy the remaining byte count from the ancestor SubstringRope,
+                    // update the byte count for the next item in the work queue.
+                    if (bytesToCopy > 0) {
+                        substringLengths.push(bytesToCopy);
+                    }
+                }
+
+                // By definition, offsets only affect the start of the rope. Once we've copied bytes out of a rope,
+                // we need to reset the offset or subsequent items in the work queue will copy from the wrong location.
+                //
+                // NB: In contrast to the number of bytes to extract, the offset can be shared and updated by multiple
+                // levels of SubstringRopes. Thus, we do not need to maintain offsets in a stack and it is appropriate
+                // to clear the offset after the first time we use it, since it will have been updated accordingly at
+                // each SubstringRope encountered for this SubstringRope ancestry chain.
+                offset = 0;
+
                 continue;
             }
 
@@ -210,7 +266,8 @@ public class RopeOperations {
                 final SubstringRope substringRope = (SubstringRope) current;
 
                 // If this SubstringRope is a descendant of another SubstringRope, we need to increment the offset
-                // so that when we finally reach a LeafRope, we're extracting bytes from the correct location.
+                // so that when we finally reach a rope with its byte[] filled, we're extracting bytes from the correct
+                // location.
                 offset += substringRope.getOffset();
 
                 workStack.push(substringRope.getChild());
@@ -248,43 +305,6 @@ public class RopeOperations {
                         substringLengths.push(adjustedByteLength);
                     }
                 }
-            } else if (current instanceof LeafRope) {
-                // In the absence of any SubstringRopes, we always take the full contents of the LeafRope.
-                if (substringLengths.isEmpty()) {
-                    System.arraycopy(current.getRawBytes(), offset, buffer, bufferPosition, current.byteLength());
-                    bufferPosition += current.byteLength();
-                } else {
-                    int bytesToCopy = substringLengths.pop();
-                    final int currentBytesToCopy;
-
-                    // If we reach here, this LeafRope is a descendant of a SubstringRope at some level. Based on
-                    // the currently calculated byte[] offset and the number of bytes to extract, determine how many
-                    // bytes we can copy to the buffer.
-                    if (bytesToCopy > (current.byteLength() - offset)) {
-                        currentBytesToCopy = current.byteLength() - offset;
-                    } else {
-                        currentBytesToCopy = bytesToCopy;
-                    }
-
-                    System.arraycopy(current.getRawBytes(), offset, buffer, bufferPosition, currentBytesToCopy);
-                    bufferPosition += currentBytesToCopy;
-                    bytesToCopy -= currentBytesToCopy;
-
-                    // If this LeafRope wasn't able to satisfy the remaining byte count from the ancestor SubstringRope,
-                    // update the byte count for the next item in the work queue.
-                    if (bytesToCopy > 0) {
-                        substringLengths.push(bytesToCopy);
-                    }
-                }
-
-                // By definition, offsets only affect the start of the rope. Once we've copied bytes out of a LeafRope,
-                // we need to reset the offset or subsequent items in the work queue will copy from the wrong location.
-                //
-                // NB: In contrast to the number of bytes to extract, the offset can be shared and updated by multiple
-                // levels of SubstringRopes. Thus, we do not need to maintain offsets in a stack and it is appropriate
-                // to clear the offset after the first time we use it, since it will have been updated accordingly at
-                // each SubstringRope encountered for this SubstringRope ancestry chain.
-                offset = 0;
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException("Don't know how to flatten rope of type: " + rope.getClass().getName());

@@ -20,6 +20,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.rope.AsciiOnlyLeafRope;
@@ -308,7 +309,25 @@ public abstract class RopeNodes {
             return new InvalidLeafRope(bytes, encoding);
         }
 
-        @Specialization(guards = "isUnknown(codeRange)")
+        @Specialization(guards = { "isUnknown(codeRange)", "isBinaryString(encoding)" })
+        public LeafRope makeUnknownLeafRopeBinary(byte[] bytes, Encoding encoding, int codeRange,
+                                            @Cached("createBinaryProfile()") ConditionProfile discovered7BitProfile) {
+            int newCodeRange = StringSupport.CR_7BIT;
+            for (int i = 0; i < bytes.length; i++) {
+                if (bytes[i] < 0) {
+                    newCodeRange = StringSupport.CR_VALID;
+                    break;
+                }
+            }
+
+            if (discovered7BitProfile.profile(newCodeRange == StringSupport.CR_7BIT)) {
+                return new AsciiOnlyLeafRope(bytes, encoding);
+            }
+
+            return new ValidLeafRope(bytes, encoding, bytes.length);
+        }
+
+        @Specialization(guards = { "isUnknown(codeRange)", "!isBinaryString(encoding)" })
         public LeafRope makeUnknownLeafRope(byte[] bytes, Encoding encoding, int codeRange,
                                             @Cached("createBinaryProfile()") ConditionProfile discovered7BitProfile,
                                             @Cached("createBinaryProfile()") ConditionProfile discoveredValidProfile) {
@@ -327,7 +346,6 @@ public abstract class RopeNodes {
             return new InvalidLeafRope(bytes, encoding);
         }
 
-
         protected static boolean is7Bit(int codeRange) {
             return codeRange == StringSupport.CR_7BIT;
         }
@@ -342,6 +360,10 @@ public abstract class RopeNodes {
 
         protected static boolean isUnknown(int codeRange) {
             return codeRange == StringSupport.CR_UNKNOWN;
+        }
+
+        protected static boolean isBinaryString(Encoding encoding) {
+            return encoding == ASCIIEncoding.INSTANCE;
         }
     }
 

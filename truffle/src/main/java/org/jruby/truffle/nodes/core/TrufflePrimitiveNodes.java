@@ -498,9 +498,8 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
-        public DynamicObject debugPrint(DynamicObject string) {
+        public DynamicObject flattenRope(DynamicObject string) {
             final Rope flattened = RopeOperations.flatten(StringOperations.rope(string));
 
             return createString(flattened);

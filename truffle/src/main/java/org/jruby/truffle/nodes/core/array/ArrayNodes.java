@@ -25,6 +25,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.format.parser.PackCompiler;
@@ -65,6 +66,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
+import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 
@@ -2398,10 +2400,12 @@ public abstract class ArrayNodes {
     @ImportStatic(StringCachingGuards.class)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private TaintNode taintNode;
 
         public PackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = {"isRubyString(format)", "ropesEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
@@ -2461,7 +2465,13 @@ public abstract class ArrayNodes {
         }
 
         private DynamicObject finishPack(int formatLength, PackResult result) {
-            final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
+            byte[] bytes = (byte[]) result.getOutput();
+            if (bytes.length != result.getOutputLength()) {
+                bytes = Arrays.copyOf(bytes, result.getOutputLength());
+            }
+
+            final Rope rope = makeLeafRopeNode.executeMake(bytes, ASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN);
+            final DynamicObject string = createString(rope);
 
             if (formatLength == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
