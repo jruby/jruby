@@ -805,6 +805,11 @@ public class RubyKernel {
             }
         }
 
+        if ( argc > 0 ) { // for argc == 0 we will be raising $!
+            // NOTE: getErrorInfo needs to happen before new RaiseException(...)
+            if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
+        }
+
         maybeRaiseJavaException(runtime, args, argc, cause);
 
         RaiseException raise;
@@ -837,10 +842,7 @@ public class RubyKernel {
             printExceptionSummary(context, runtime, raise.getException());
         }
 
-        if ( argc > 0 ) { // for argc == 0 we're already raising $!
-            if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
-            raise.getException().setCause(cause);
-        }
+        if ( argc > 0 ) raise.getException().setCause(cause);
 
         throw raise;
     }
