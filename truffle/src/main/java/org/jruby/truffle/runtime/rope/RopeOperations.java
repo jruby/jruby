@@ -119,6 +119,8 @@ public class RopeOperations {
     public static long calculateCodeRangeAndLength(Encoding encoding, byte[] bytes, int start, int end) {
         if (bytes.length == 0) {
             return StringSupport.pack(0, encoding.isAsciiCompatible() ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
+        } else if (encoding == ASCIIEncoding.INSTANCE) {
+            return strLengthWithCodeRangeBinaryString(bytes, start, end);
         } else if (encoding.isAsciiCompatible()) {
             return StringSupport.strLengthWithCodeRangeAsciiCompatible(encoding, bytes, start, end);
         } else {
@@ -129,6 +131,19 @@ public class RopeOperations {
     @TruffleBoundary
     public static int strLength(Encoding enc, byte[] bytes, int p, int end) {
         return StringSupport.strLength(enc, bytes, p, end);
+    }
+
+    private static long strLengthWithCodeRangeBinaryString(byte[] bytes, int start, int end) {
+        int codeRange = StringSupport.CR_7BIT;
+
+        for (int i = start; i < end; i++) {
+            if (bytes[i] < 0) {
+                codeRange = StringSupport.CR_VALID;
+                break;
+            }
+        }
+
+        return StringSupport.pack(end - start, codeRange);
     }
 
     public static LeafRope flatten(Rope rope) {
