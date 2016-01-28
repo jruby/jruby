@@ -188,7 +188,7 @@ module ShellUtils
       args.unshift "-ttool/jruby_eclipse"
     end
 
-    sh env_vars, 'ruby', 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
+    sh env_vars, Utilities.find_jruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
   end
 end
 
