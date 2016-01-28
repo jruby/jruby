@@ -2465,7 +2465,12 @@ public abstract class ArrayNodes {
         }
 
         private DynamicObject finishPack(int formatLength, PackResult result) {
-            final Rope rope = makeLeafRopeNode.executeMake(Arrays.copyOfRange((byte[]) result.getOutput(), 0, result.getOutputLength()), ASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN);
+            byte[] bytes = (byte[]) result.getOutput();
+            if (bytes.length != result.getOutputLength()) {
+                bytes = Arrays.copyOf(bytes, result.getOutputLength());
+            }
+
+            final Rope rope = makeLeafRopeNode.executeMake(bytes, ASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN);
             final DynamicObject string = createString(rope);
 
             if (formatLength == 0) {
