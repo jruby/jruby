@@ -48,9 +48,6 @@ import org.jruby.RubyNil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Arrays;
-import java.util.List;
-
 public class TypeConverter {
 
     /**
@@ -370,7 +367,7 @@ public class TypeConverter {
 
     // MRI: rb_Array
     public static RubyArray rb_Array(ThreadContext context, IRubyObject val) {
-        IRubyObject tmp = checkArrayType(val);
+        IRubyObject tmp = checkArrayType(val); // to_ary
 
         if (tmp.isNil()) {
             tmp = convertToTypeWithCheck19(val, context.runtime.getArray(), "to_a");
