@@ -82,7 +82,6 @@ import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -268,6 +267,10 @@ public abstract class StringPrimitiveNodes {
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
 
+        public static StringByteSubstringPrimitiveNode create(RubyContext context, SourceSection sourceSection) {
+            return StringPrimitiveNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[]{});
+        }
+
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
@@ -423,13 +426,11 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_chr_at", lowerFixnumParameters = 0)
+    @ImportStatic(StringGuards.class)
     public static abstract class StringChrAtPrimitiveNode extends RubiniusPrimitiveNode {
-
-        @Child private StringByteSubstringPrimitiveNode stringByteSubstringNode;
 
         public StringChrAtPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            stringByteSubstringNode = StringPrimitiveNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {});
         }
 
         @Specialization(guards = "indexOutOfBounds(string, byteIndex)")
@@ -437,8 +438,15 @@ public abstract class StringPrimitiveNodes {
             return false;
         }
 
-        @Specialization(guards = "!indexOutOfBounds(string, byteIndex)")
-        public Object stringChrAt(VirtualFrame frame, DynamicObject string, int byteIndex) {
+        @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "isSingleByteOptimizable(string)" })
+        public Object stringChrAtSingleByte(VirtualFrame frame, DynamicObject string, int byteIndex,
+                                            @Cached("create(getContext(), getSourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
+            return stringByteSubstringNode.stringByteSubstring(frame, string, byteIndex, 1);
+        }
+
+        @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "!isSingleByteOptimizable(string)" })
+        public Object stringChrAt(VirtualFrame frame, DynamicObject string, int byteIndex,
+                                  @Cached("create(getContext(), getSourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             // Taken from Rubinius's Character::create_from.
 
             final Rope rope = rope(string);
