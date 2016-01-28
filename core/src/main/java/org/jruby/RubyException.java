@@ -195,9 +195,8 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "cause")
     public IRubyObject cause(ThreadContext context) {
-        IRubyObject nil = context.nil;
-        if (cause != nil) return cause;
-        return nil;
+        assert cause != null;
+        return cause;
     }
 
     public void setCause(IRubyObject cause) {
