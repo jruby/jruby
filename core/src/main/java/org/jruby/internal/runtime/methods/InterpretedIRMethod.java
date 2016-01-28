@@ -4,6 +4,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -28,22 +29,16 @@ import java.io.ByteArrayOutputStream;
 /**
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
  */
-public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Compilable<InterpreterContext> {
+public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
-    private Signature signature;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
-
-    protected final IRScope method;
 
     protected InterpreterContext interpreterContext = null;
     protected int callCount = 0;
 
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        super(implementationClass, visibility, method.getName());
-        this.method = method;
-        this.method.getStaticScope().determineModule();
-        this.signature = getStaticScope().getSignature();
+        super(method, visibility, implementationClass);
 
         // -1 jit.threshold is way of having interpreter not promote full builds.
         if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
@@ -54,30 +49,8 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    public IRScope getIRScope() {
-        return method;
-    }
-
     public void setCallCount(int callCount) {
         this.callCount = callCount;
-    }
-
-    public StaticScope getStaticScope() {
-        return method.getStaticScope();
-    }
-
-    public ArgumentDescriptor[] getArgumentDescriptors() {
-        ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return ((IRMethod) method).getArgumentDescriptors();
-    }
-
-    public Signature getSignature() {
-        return signature;
-    }
-
-    @Override
-    public Arity getArity() {
-        return signature.arity();
     }
 
     protected void post(InterpreterContext ic, ThreadContext context) {
@@ -98,6 +71,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     // FIXME: for subclasses we should override this method since it can be simple get
     // FIXME: to avoid cost of synch call in lazilyacquire we can save the ic here
+    @Override
     public InterpreterContext ensureInstrsReady() {
         if (interpreterContext == null) {
             if (method instanceof IRMethod) {
@@ -294,13 +268,5 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     public String getClassName(ThreadContext context) {
         return null;
-    }
-
-    public String getFile() {
-        return method.getFileName();
-    }
-
-    public int getLine() {
-        return method.getLineNumber();
     }
 }
