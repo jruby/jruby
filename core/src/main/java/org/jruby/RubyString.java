@@ -113,6 +113,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
 public class RubyString extends RubyObject implements EncodingCapable, MarshalEncoding, CodeRangeable {
+    public static final String DEBUG_INFO_FIELD = "@debug_created_info";
 
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
@@ -886,7 +887,21 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private void frozenCheck(boolean runtimeError) {
-        if (isFrozen()) throw getRuntime().newFrozenError("string", runtimeError);
+        if (isFrozen()) {
+            if (getRuntime().getInstanceConfig().isDebuggingFrozenStringLiteral()) {
+                IRubyObject obj = getInstanceVariable(DEBUG_INFO_FIELD);
+
+                if (obj != null && obj instanceof RubyArray) {
+                    RubyArray info = (RubyArray) obj;
+                    if (info.getLength() == 2) {
+                        throw getRuntime().newRaiseException(getRuntime().getRuntimeError(),
+                                "can't modify frozen String, created at " + info.eltInternal(0) + ":" + info.eltInternal(1));
+                    }
+                }
+            }
+
+            throw getRuntime().newFrozenError("string", runtimeError);
+        }
     }
 
     /** rb_str_modify

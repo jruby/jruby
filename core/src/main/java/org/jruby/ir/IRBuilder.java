@@ -4,6 +4,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyString;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
@@ -3378,11 +3379,29 @@ public class IRBuilder {
     public Operand buildStr(StrNode strNode) {
         if (strNode instanceof FileNode) return new Filename();
 
-        Operand literal = strNode.isFrozen() ?
+        Operand literal = strNode.isFrozen() && !manager.getInstanceConfig().isDebuggingFrozenStringLiteral() ?
                 new FrozenString(strNode.getValue(), strNode.getCodeRange()) :
                 new StringLiteral(strNode.getValue(), strNode.getCodeRange());
 
-        return copyAndReturnValue(literal);
+        Operand result;
+
+        // This logic might be slightly different than MRI in cases.  This is defined as any frozen string literal
+        // we be able to be debugged.  In MRI, they only do this is the iseq mode is set to frozen-string-literal.
+        // So we might actually debug more instances of frozen string but this way seems more logical.
+        if (strNode.isFrozen() && manager.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
+            Variable stringReference = createTemporaryVariable();
+            addInstr(new CopyInstr(stringReference, literal));
+            // FIXME: I think we want to hide this and not make user accessible?  Seems like it could have utility to be user-exposed though.
+            // FIXME: Also we are manually dyn-dispatching to freeze and not calling it internally. Maybe also ok?
+            Operand[] pair = new Operand[] { new FrozenString(strNode.getPosition().getFile()), new Fixnum(strNode.getPosition().getLine()) };
+            addInstr(new PutFieldInstr(stringReference, RubyString.DEBUG_INFO_FIELD, new Array(pair)));
+            result = createTemporaryVariable();
+            addInstr(CallInstr.create(scope, (Variable) result, "freeze", stringReference, NO_ARGS, null));
+        } else {
+            result = copyAndReturnValue(literal);
+        }
+
+        return result;
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {

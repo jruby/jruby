@@ -426,6 +426,18 @@ public class ArgumentProcessor {
                         Options.DEBUG_FULLTRACE.force("true");
                         RubyInstanceConfig.FULL_TRACE_ENABLED = true;
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        config.setDebuggingFrozenStringLiteral(true);
+                        break FOR;
+                    } else if (argument.startsWith("--debug=")) {
+                        for (String debug : valueListFor(argument, "debug")) {
+                            boolean all = debug.equals("all");
+                            if (debug.equals("frozen-string-literal") || all) {
+                                config.setDebuggingFrozenStringLiteral(true);
+                                continue;
+                            }
+
+                            config.getError().println("warning: unknown argument for --debug: `" + debug + "'");
+                        }
                         break FOR;
                     } else if (argument.equals("--jdb")) {
                         config.setDebug(true);
@@ -491,6 +503,9 @@ public class ArgumentProcessor {
                     } else if (VERSION_FLAG.matcher(argument).matches()) {
                         config.getError().println("warning: " + argument + " ignored");
                         break FOR;
+                    } else if (argument.equals("--debug-frozen-string-literal")) {
+                        config.setDebuggingFrozenStringLiteral(true);
+                        break FOR;
                     } else if (argument.equals("--disable-gems")) {
                         config.setDisableGems(true);
                         break FOR;
@@ -500,12 +515,7 @@ public class ArgumentProcessor {
                         config.setFrozenStringLiteral(true);
                         break FOR;
                     } else if (argument.startsWith("--disable=")) {
-                        String disablesStr = argument.substring("--disable=".length());
-                        String[] disables = disablesStr.split(",");
-
-                        if (disables.length == 0) errorMissingEquals("disable");
-
-                        for (String disable : disables) {
+                        for (String disable : valueListFor(argument, "disable")) {
                             boolean all = disable.equals("all");
                             if (disable.equals("gems") || all) {
                                 config.setDisableGems(true);
@@ -529,14 +539,9 @@ public class ArgumentProcessor {
                         config.setFrozenStringLiteral(true);
                         break FOR;
                     } else if (argument.startsWith("--enable=")) {
-                        String enablesString = argument.substring("--enable=".length());
-                        String[] enables = enablesString.split(",");
-
-                        if (enables.length == 0) errorMissingEquals("enable");
-
-                        for (String enable : enables) {
+                        for (String enable : valueListFor(argument, "enable")) {
                             boolean all = enable.equals("all");
-                            if (enable.equals("frozen-string-literal") || enable.equals("frozen-string-literal") || all) {
+                            if (enable.equals("frozen-string-literal") || enable.equals("frozen_string_literal") || all) {
                                 config.setFrozenStringLiteral(true);
                                 continue;
                             }
@@ -602,6 +607,15 @@ public class ArgumentProcessor {
                     throw new MainExitException(1, "jruby: unknown option " + argument);
             }
         }
+    }
+
+    private String[] valueListFor(String argument, String key) {
+        int length = key.length() + 3; // 3 is from -- and = (e.g. --disable=)
+        String[] values = argument.substring(length).split(",");
+
+        if (values.length == 0) errorMissingEquals(key);
+
+        return values;
     }
 
     private void disallowedInRubyOpts(String option) {

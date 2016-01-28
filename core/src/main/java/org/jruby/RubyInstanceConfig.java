@@ -1462,6 +1462,14 @@ public class RubyInstanceConfig {
         this.frozenStringLiteral = frozenStringLiteral;
     }
 
+    public boolean isDebuggingFrozenStringLiteral() {
+        return debuggingFrozenStringLiteral;
+    }
+
+    public void setDebuggingFrozenStringLiteral(boolean debuggingFrozenStringLiteral) {
+        this.debuggingFrozenStringLiteral = debuggingFrozenStringLiteral;
+    }
+
     public static ClassLoader defaultClassLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
@@ -1563,6 +1571,7 @@ public class RubyInstanceConfig {
     private boolean hasScriptArgv = false;
     private boolean preferIPv4 = Options.PREFER_IPV4.load();
     private boolean frozenStringLiteral = false;
+    private boolean debuggingFrozenStringLiteral = false;
     private String jrubyHome;
 
     /**
