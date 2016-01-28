@@ -706,7 +706,7 @@ public class RubyClass extends RubyModule {
 
         DynamicMethod me = klass.searchMethod("respond_to_missing?");
         // MRI: basic_obj_respond_to_missing ...
-        if ( me != null && ! me.isUndefined() ) {
+        if ( me != null && ! me.isUndefined() && ! me.isBuiltin() ) {
             IRubyObject ret;
             if (me.getArity().getValue() == 1) {
                 ret = me.call(context, self, klass, "respond_to_missing?", runtime.newSymbol(method));
