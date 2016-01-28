@@ -83,12 +83,6 @@ matrix:
     #  dist: trusty
     #  group: edge
     #  jdk: oraclejdk9
-  allow_failures: # due Ruby-2.3 new features
-    - env: PHASE='-Ptruffle-specs-language'
-    - env: PHASE='-Ptruffle-specs-core'
-    - env: PHASE='-Ptruffle-specs-library'
-    - env: PHASE='-Ptruffle-specs-truffle'
-    - env: PHASE='-Ptruffle-mri-tests'
 
 branches:
   only:
