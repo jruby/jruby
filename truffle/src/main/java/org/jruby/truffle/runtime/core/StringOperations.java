@@ -155,7 +155,6 @@ public abstract class StringOperations {
     }
 
     public static void forceEncoding(DynamicObject string, Encoding encoding) {
-        modify(string);
         final Rope oldRope = Layouts.STRING.getRope(string);
         StringOperations.setRope(string, RopeOperations.withEncoding(oldRope, encoding, StringSupport.CR_UNKNOWN));
     }
