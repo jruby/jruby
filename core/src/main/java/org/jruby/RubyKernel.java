@@ -842,7 +842,7 @@ public class RubyKernel {
             printExceptionSummary(context, runtime, raise.getException());
         }
 
-        if ( argc > 0 ) raise.getException().setCause(cause);
+        if ( argc > 0 && cause != raise.getException() ) raise.getException().setCause(cause);
 
         throw raise;
     }
@@ -874,7 +874,7 @@ public class RubyKernel {
                 if (ex.getCause() == null && cause instanceof ConcreteJavaProxy) {
                     // allow raise java.lang.RuntimeException.new, cause: myCurrentException()
                     maybeThrowable = ((ConcreteJavaProxy) cause).getObject();
-                    if (maybeThrowable instanceof Throwable) {
+                    if (maybeThrowable instanceof Throwable && ex != maybeThrowable) {
                         ex.initCause((Throwable) maybeThrowable);
                     }
                 }
