@@ -156,10 +156,10 @@ public abstract class StringPrimitiveNodes {
             makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
         }
 
-        public abstract DynamicObject executeStringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other);
+        public abstract DynamicObject executeStringAppend(DynamicObject string, DynamicObject other);
 
         @Specialization(guards = "isRubyString(other)")
-        public DynamicObject stringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other) {
+        public DynamicObject stringAppend(DynamicObject string, DynamicObject other) {
             final Rope left = rope(string);
             final Rope right = rope(other);
 

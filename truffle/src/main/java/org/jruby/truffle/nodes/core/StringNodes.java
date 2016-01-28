@@ -439,13 +439,13 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards =  { "isRubyString(other)", "!is7Bit(string) || !is7Bit(other)" })
-        public Object concatString(VirtualFrame frame, DynamicObject string, DynamicObject other) {
+        public Object concatString(DynamicObject string, DynamicObject other) {
             if (stringAppendNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 stringAppendNode = insert(StringPrimitiveNodesFactory.StringAppendPrimitiveNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
             }
 
-            return stringAppendNode.executeStringAppend(frame, string, other);
+            return stringAppendNode.executeStringAppend(string, other);
         }
 
         @Specialization(guards = "!isRubyString(other)")
