@@ -188,7 +188,7 @@ public class RaiseException extends JumpException {
      * Gets the exception
      * @return Returns a RubyException
      */
-    public RubyException getException() {
+    public final RubyException getException() {
         return exception;
     }
 
@@ -257,7 +257,7 @@ public class RaiseException extends JumpException {
      * Sets the exception
      * @param newException The exception to set
      */
-    protected void setException(RubyException newException, boolean nativeException) {
+    protected final void setException(RubyException newException, boolean nativeException) {
         this.exception = newException;
         this.nativeException = nativeException;
     }
