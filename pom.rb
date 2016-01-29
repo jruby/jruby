@@ -70,7 +70,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'rspec-expectations.version' => '3.3.1',
               'rspec-mocks.version' => '3.3.2',
               'minitest.version' => '5.4.1',
-              'test-unit.version' => '3.0.3',
+              'test-unit.version' => '3.1.1',
               'power_assert.version' => '0.2.3',
               'diff-lcs.version' => '1.1.3',
               'racc.version' => '1.4.13',
