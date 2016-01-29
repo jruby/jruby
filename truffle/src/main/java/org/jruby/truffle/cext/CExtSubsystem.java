@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.cext;
+package org.jruby.truffle.cext;
 
 public interface CExtSubsystem {
 
