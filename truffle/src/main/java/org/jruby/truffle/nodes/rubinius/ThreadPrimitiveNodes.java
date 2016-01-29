@@ -29,7 +29,7 @@ import static org.jruby.RubyThread.*;
 public class ThreadPrimitiveNodes {
 
     @RubiniusPrimitive(name = "thread_raise")
-    public static abstract class ThreadRaisePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class ThreadRaisePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public ThreadRaisePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -60,7 +60,7 @@ public class ThreadPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "thread_get_priority")
-    public static abstract class ThreadGetPriorityPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class ThreadGetPriorityPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
         public ThreadGetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -78,7 +78,7 @@ public class ThreadPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "thread_set_priority")
-    public static abstract class ThreadSetPriorityPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class ThreadSetPriorityPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
         public ThreadSetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }

@@ -39,6 +39,10 @@ public abstract class ToIntNode extends RubyNode {
     private final ConditionProfile wasLong = ConditionProfile.createBinaryProfile();
     private final ConditionProfile wasLongInRange = ConditionProfile.createBinaryProfile();
 
+    public static ToIntNode create(RubyContext context, SourceSection sourceSection) {
+        return ToIntNodeGen.create(context, sourceSection, null);
+    }
+
     public ToIntNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

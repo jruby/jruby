@@ -43,9 +43,12 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
+import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.io.IOException;
@@ -214,7 +217,7 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject dumpString(DynamicObject string) {
             final StringBuilder builder = new StringBuilder();
 
-            final ByteList byteList = StringOperations.getByteList(string);
+            final ByteList byteList = StringOperations.getByteListReadOnly(string);
 
             for (int i = 0; i < byteList.length(); i++) {
                 builder.append(String.format("\\x%02x", byteList.get(i)));
@@ -450,6 +453,56 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject debugPrint(DynamicObject string) {
             System.err.println(string.toString());
             return nil();
+        }
+
+    }
+
+    @CoreMethod(names = "debug_print_rope", onSingleton = true, required = 1, optional = 1)
+    public abstract static class DebugPrintRopeNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
+
+        public DebugPrintRopeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(context, sourceSection, null, null, null);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject debugPrintDefault(DynamicObject string, NotProvided printString) {
+            return debugPrint(string, true);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject debugPrint(DynamicObject string, boolean printString) {
+            System.err.println("Legend: ");
+            System.err.println("BN = Bytes Null? (byte[] not yet populated)");
+            System.err.println("BL = Byte Length");
+            System.err.println("CL = Character Length");
+            System.err.println("CR = Code Range");
+            System.err.println("O = Offset (SubstringRope only)");
+            System.err.println("D = Depth");
+            System.err.println("LD = Left Depth (ConcatRope only)");
+            System.err.println("RD = Right Depth (ConcatRope only)");
+
+            return debugPrintRopeNode.executeDebugPrint(StringOperations.rope(string), 0, printString);
+        }
+
+    }
+
+    @CoreMethod(names = "flatten_rope", onSingleton = true, required = 1)
+    public abstract static class FlattenRopeNode extends CoreMethodArrayArgumentsNode {
+
+        public FlattenRopeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject flattenRope(DynamicObject string) {
+            final Rope flattened = RopeOperations.flatten(StringOperations.rope(string));
+
+            return createString(flattened);
         }
 
     }
@@ -809,7 +862,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject createSimpleString() {
-            return createString(new ByteList(new byte[]{'t', 'e', 's', 't'}, false));
+            return createString(RopeOperations.create(new byte[]{'t', 'e', 's', 't'}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT));
         }
     }
 

@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -22,6 +23,8 @@ import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeGen;
+import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
+import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
@@ -31,7 +34,7 @@ public final class InterpolatedStringNode extends RubyNode {
 
     @Children private final ToSNode[] children;
 
-    @Child private CallDispatchHeadNode concatNode;
+    @Child private StringPrimitiveNodes.StringAppendPrimitiveNode appendNode;
     @Child private CallDispatchHeadNode dupNode;
     @Child private IsTaintedNode isTaintedNode;
     @Child private TaintNode taintNode;
@@ -41,7 +44,7 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, ToSNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        concatNode = DispatchHeadNodeFactory.createMethodCall(context);
+        appendNode = StringPrimitiveNodesFactory.StringAppendPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[] {});
         dupNode = DispatchHeadNodeFactory.createMethodCall(context);
         isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
         taintNode = TaintNodeGen.create(context, sourceSection, null);
@@ -72,15 +75,16 @@ public final class InterpolatedStringNode extends RubyNode {
     private Object concat(VirtualFrame frame, Object[] strings) {
         // TODO(CS): there is a lot of copying going on here - and I think this is sometimes inner loop stuff
 
-        Object builder = null;
+        DynamicObject builder = null;
 
+        // TODO (nirvdrum 11-Jan-16) Rewrite to avoid massively unbalanced trees.
         for (Object string : strings) {
             assert RubyGuards.isRubyString(string);
 
             if (builder == null) {
-                builder = dupNode.call(frame, string, "dup", null);
+                builder = (DynamicObject) dupNode.call(frame, string, "dup", null);
             } else {
-                builder = concatNode.call(frame, builder, "concat", null, string);
+                builder = appendNode.executeStringAppend(builder, (DynamicObject) string);
             }
         }
 

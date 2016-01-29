@@ -16,14 +16,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
-import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.util.ByteList;
 
 public abstract class StatPrimitiveNodes {
 
@@ -159,7 +157,7 @@ public abstract class StatPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "stat_stat")
-    public static abstract class StatStatPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StatStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private WriteHeadObjectFieldNode writeStatNode;
 
@@ -172,9 +170,7 @@ public abstract class StatPrimitiveNodes {
         @Specialization(guards = "isRubyString(path)")
         public int stat(DynamicObject rubyStat, DynamicObject path) {
             final FileStat stat = posix().allocateStat();
-            final ByteList byteList = StringOperations.getByteList(path);
-            final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-            final int code = posix().stat(pathString, stat);
+            final int code = posix().stat(StringOperations.decodeUTF8(path), stat);
 
             if (code == 0) {
                 writeStatNode.execute(rubyStat, stat);
@@ -191,7 +187,7 @@ public abstract class StatPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "stat_fstat")
-    public static abstract class StatFStatPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StatFStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private WriteHeadObjectFieldNode writeStatNode;
 
@@ -216,7 +212,7 @@ public abstract class StatPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "stat_lstat")
-    public static abstract class StatLStatPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StatLStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private WriteHeadObjectFieldNode writeStatNode;
 
@@ -245,7 +241,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    public static abstract class StatReadPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StatReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private ReadHeadObjectFieldNode readStatNode;
 

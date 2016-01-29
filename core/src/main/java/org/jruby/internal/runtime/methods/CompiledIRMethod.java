@@ -1,8 +1,11 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -14,18 +17,18 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.io.ByteArrayOutputStream;
 import java.lang.invoke.MethodHandle;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.util.cli.Options;
 
-public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
+public class CompiledIRMethod extends AbstractIRMethod {
     protected final MethodHandle variable;
 
     protected final MethodHandle specific;
     protected final int specificArity;
 
-    protected final IRScope method;
-    private final StaticScope staticScope;
     private final boolean hasExplicitCallProtocol;
     private final boolean hasKwargs;
 
@@ -36,27 +39,17 @@ public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, Pos
 
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
                             Visibility visibility, RubyModule implementationClass, boolean hasKwargs) {
-        super(implementationClass, visibility, method.getName());
+        super(method, visibility, implementationClass);
         this.variable = variable;
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg
         // unboxing -- it was a simple path to hacking this in).
         this.specificArity = hasKwargs ? -1 : specificArity;
-        this.method = method;
         this.method.getStaticScope().determineModule();
-        this.staticScope = method.getStaticScope();
         this.hasExplicitCallProtocol = method.hasExplicitCallProtocol();
         this.hasKwargs = hasKwargs;
 
         setHandle(variable);
-    }
-
-    public IRScope getIRMethod() {
-        return method;
-    }
-
-    public StaticScope getStaticScope() {
-        return method.getStaticScope();
     }
 
     public MethodHandle getHandleFor(int arity) {
@@ -67,18 +60,20 @@ public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, Pos
         return null;
     }
 
-    @Override
-    public Signature getSignature() {
-        return staticScope.getSignature();
-    }
-
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return ((IRMethod)method).getArgumentDescriptors();
     }
 
     @Override
-    public Arity getArity() {
-        return getSignature().arity();
+    public InterpreterContext ensureInstrsReady() {
+        // FIXME: duplicated from MixedModeIRMethod
+        if (method instanceof IRMethod) {
+            return ((IRMethod) method).lazilyAcquireInterpreterContext();
+        }
+
+        InterpreterContext ic = method.getInterpreterContext();
+
+        return ic;
     }
 
     protected void post(ThreadContext context) {

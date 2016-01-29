@@ -188,7 +188,7 @@ module ShellUtils
       args.unshift "-ttool/jruby_eclipse"
     end
 
-    sh env_vars, 'ruby', 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
+    sh env_vars, Utilities.find_jruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
   end
 end
 
@@ -230,7 +230,10 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt bench debug [--ruby-backtrace] [vm-args] benchmark    run a single benchmark with options for compiler debugging'
+    puts 'jt bench debug [options] [vm-args] benchmark    run a single benchmark with options for compiler debugging'
+    puts '    --igv                                      make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
+    puts '        --full                                 show all phases, not just up to the Truffle partial escape'
+    puts '    --ruby-backtrace                           print a Ruby backtrace on any compilation failures'
     puts 'jt bench reference [benchmarks]                run a set of benchmarks and record a reference point'
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
@@ -483,6 +486,16 @@ module Commands
     case command
     when 'debug'
       vm_args = ['-G:+TraceTruffleCompilation', '-G:+DumpOnError']
+      if args.delete '--igv'
+        warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
+        Utilities.ensure_igv_running
+
+        if args.delete('--full')
+          vm_args.push '-G:Dump=Truffle'
+        else
+          vm_args.push '-G:Dump=TrufflePartialEscape'
+        end
+      end
       if args.delete '--ruby-backtrace'
         vm_args.push '-G:+TruffleCompilationExceptionsAreThrown'
       else

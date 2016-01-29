@@ -318,7 +318,7 @@ public final class StringSupport {
         }
     }
 
-    private static long strLengthWithCodeRangeAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
+    public static long strLengthWithCodeRangeAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
         int cr = 0, c = 0;
         while (p < end) {
             if (Encoding.isAscii(bytes[p])) {
@@ -340,7 +340,7 @@ public final class StringSupport {
         return pack(c, cr == 0 ? CR_7BIT : cr);
     }
 
-    private static long strLengthWithCodeRangeNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
+    public static long strLengthWithCodeRangeNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
         int cr = 0, c = 0;
         for (c = 0; p < end; c++) {
             int cl = preciseLength(enc, bytes, p, end);
@@ -364,7 +364,7 @@ public final class StringSupport {
     }
 
     // arg cannot be negative
-    static long pack(int result, int arg) {
+    public static long pack(int result, int arg) {
         return ((long)arg << 31) | result;
     }
 

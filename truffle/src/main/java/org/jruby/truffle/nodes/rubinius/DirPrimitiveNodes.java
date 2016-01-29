@@ -53,7 +53,7 @@ import java.io.File;
 public abstract class DirPrimitiveNodes {
 
     @RubiniusPrimitive(name = "dir_allocate")
-    public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -67,7 +67,7 @@ public abstract class DirPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "dir_open")
-    public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -106,7 +106,7 @@ public abstract class DirPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "dir_read")
-    public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -138,7 +138,7 @@ public abstract class DirPrimitiveNodes {
 
 
     @RubiniusPrimitive(name = "dir_control")
-    public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirControlPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -164,7 +164,7 @@ public abstract class DirPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "dir_close")
-    public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

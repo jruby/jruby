@@ -261,7 +261,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object o = ForeignAccess.getReceiver(frame);
-            return RubyGuards.isRubyString(o) && StringOperations.getByteList(((DynamicObject) o)).length() == 1;
+            return RubyGuards.isRubyString(o) && StringOperations.rope((DynamicObject) o).byteLength() == 1;
         }
     }
 
@@ -273,7 +273,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return StringOperations.getByteList(((DynamicObject) ForeignAccess.getReceiver(frame))).get(0);
+            return StringOperations.getByteListReadOnly(((DynamicObject) ForeignAccess.getReceiver(frame))).get(0);
         }
     }
 
@@ -367,10 +367,10 @@ public abstract class InteropNode extends RubyNode {
             if (RubyGuards.isRubyString(ForeignAccess.getReceiver(frame))) {
                 final DynamicObject string = (DynamicObject) ForeignAccess.getReceiver(frame);
                 final int index = (int) ForeignAccess.getArguments(frame).get(labelIndex);
-                if (index >= StringOperations.getByteList(string).length()) {
+                if (index >= Layouts.STRING.getRope(string).byteLength()) {
                     return 0;
                 } else {
-                    return (byte) StringOperations.getByteList(string).get(index);
+                    return (byte) StringOperations.getByteListReadOnly(string).get(index);
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();

@@ -44,7 +44,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (RubyGuards.isRubySymbol(cachedName)) {
             cachedNameAsSymbol = (DynamicObject) cachedName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            cachedNameAsSymbol = context.getSymbol(StringOperations.getByteList((DynamicObject) cachedName));
+            cachedNameAsSymbol = context.getSymbol(StringOperations.rope((DynamicObject) cachedName));
         } else if (cachedName instanceof String) {
             cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {
@@ -72,7 +72,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            return (RubyGuards.isRubyString(methodName)) && StringOperations.getByteList((DynamicObject) cachedName).equal(StringOperations.getByteList((DynamicObject) methodName));
+            return (RubyGuards.isRubyString(methodName)) && StringOperations.rope((DynamicObject) cachedName).equals(StringOperations.rope((DynamicObject) methodName));
         } else {
             throw new UnsupportedOperationException();
         }

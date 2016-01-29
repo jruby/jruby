@@ -11,17 +11,20 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Rubinius::ByteArray")
@@ -39,8 +42,21 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public int getByte(DynamicObject bytes, int index) {
-            return Layouts.BYTE_ARRAY.getBytes(bytes).get(index) & 0xff;
+        public int getByte(DynamicObject bytes, int index,
+                              @Cached("createBinaryProfile()") ConditionProfile nullByteIndexProfile) {
+            final ByteList byteList = Layouts.BYTE_ARRAY.getBytes(bytes);
+
+            // Handling out-of-bounds issues like this is non-standard. In Rubinius, it would raise an exception instead.
+            // We're modifying the semantics to address a primary use case for this class: Rubinius's @data array
+            // in the String class. Rubinius Strings are NULL-terminated and their code working with Strings takes
+            // advantage of that fact. So, where they expect to receive a NULL byte, we'd be out-of-bounds and raise
+            // an exception. Simply appending a NULL byte may trigger a full copy of the original byte[], which we
+            // want to avoid. The compromise is bending on the semantics here.
+            if (nullByteIndexProfile.profile(index == byteList.realSize())) {
+                return 0;
+            }
+
+            return byteList.get(index) & 0xff;
         }
 
     }
@@ -54,11 +70,12 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
-            final int prependLength = StringOperations.getByteList(string).getUnsafeBytes().length;
+            final Rope rope = StringOperations.rope(string);
+            final int prependLength = rope.byteLength();
             final int originalLength = Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
             final byte[] prependedBytes = new byte[newLength];
-            System.arraycopy(StringOperations.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
+            System.arraycopy(rope.getBytes(), 0, prependedBytes, 0, prependLength);
             System.arraycopy(Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
             return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), new ByteList(prependedBytes));
         }
@@ -102,21 +119,18 @@ public abstract class ByteArrayNodes {
     @CoreMethod(names = "locate", required = 3, lowerFixnumParameters = {1, 2})
     public abstract static class LocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private StringNodes.SizeNode sizeNode;
-
         public LocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] {});
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object getByte(VirtualFrame frame, DynamicObject bytes, DynamicObject pattern, int start, int length) {
-            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteList(pattern));
+        public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
+            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteListReadOnly(pattern));
 
             if (index == -1) {
                 return nil();
             } else {
-                return start + index + sizeNode.executeInteger(frame, pattern);
+                return start + index + StringOperations.rope(pattern).characterLength();
             }
         }
 
