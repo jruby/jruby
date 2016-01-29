@@ -1002,7 +1002,7 @@ public abstract class KernelNodes {
         }
 
         protected int getCacheLimit() {
-            return getContext().getOptions().INSTANCE_VARIABLE_LOOKUP_CACHE;
+            return getContext().getOptions().INSTANCE_VARIABLE_CACHE;
         }
 
     }
@@ -1064,7 +1064,7 @@ public abstract class KernelNodes {
         }
 
         protected int getCacheLimit() {
-            return getContext().getOptions().INSTANCE_VARIABLE_LOOKUP_CACHE;
+            return getContext().getOptions().INSTANCE_VARIABLE_CACHE;
         }
 
     }

@@ -124,7 +124,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected int getCacheLimit() {
-        return getContext().getOptions().CONSTANT_LOOKUP_CACHE;
+        return getContext().getOptions().CONSTANT_CACHE;
     }
 
 }

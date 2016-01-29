@@ -238,8 +238,8 @@ public class Options {
     public static final Option<Integer> TRUFFLE_METHOD_TO_PROC_CACHE = integer(TRUFFLE, "truffle.to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Method#to_proc cache size");
     public static final Option<Integer> TRUFFLE_IS_A_CACHE = integer(TRUFFLE, "truffle.is_a.cache", TRUFFLE_DEFAULT_CACHE.load(), "Kernel#is_a? and #kind_of? cache size");
     public static final Option<Integer> TRUFFLE_BIND_CACHE = integer(TRUFFLE, "truffle.bind.cache", TRUFFLE_DEFAULT_CACHE.load(), "Test for being able to bind a method to a module cache size");
-    public static final Option<Integer> TRUFFLE_CONSTANT_LOOKUP_CACHE = integer(TRUFFLE, "truffle.constant_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Constant lookup cache size");
-    public static final Option<Integer> TRUFFLE_INSTANCE_VARIABLE_LOOKUP_CACHE = integer(TRUFFLE, "truffle.instance_variable_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Object field lookup cache size");
+    public static final Option<Integer> TRUFFLE_CONSTANT_CACHE = integer(TRUFFLE, "truffle.constant.cache", TRUFFLE_DEFAULT_CACHE.load(), "Constant cache size");
+    public static final Option<Integer> TRUFFLE_INSTANCE_VARIABLE_CACHE = integer(TRUFFLE, "truffle.instance_variable.cache", TRUFFLE_DEFAULT_CACHE.load(), "Instance variable cache size");
     public static final Option<Integer> TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE = integer(TRUFFLE, "truffle.binding_local_variable.cache", TRUFFLE_DEFAULT_CACHE.load(), "Binding#local_variable_get/set cache size");
     public static final Option<Integer> TRUFFLE_SYMBOL_TO_PROC_CACHE = integer(TRUFFLE, "truffle.symbol_to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Symbol#to_proc cache size");
     public static final Option<Integer> TRUFFLE_ALLOCATE_CLASS_CACHE = integer(TRUFFLE, "truffle.allocate_class.cache", TRUFFLE_DEFAULT_CACHE.load(), "Allocation size class cache size");
