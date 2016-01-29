@@ -2555,13 +2555,21 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     // MRI: select_bang_ensure
-    private void selectBangEnsure(final Ruby runtime, final int len, final int beg, int len0, int len1) {
-        int i1 = len0, i2 = len1;
+    private void selectBangEnsure(final Ruby runtime, final int len, final int beg,
+        int i1, int i2) {
         if (i2 < i1) {
+            realLength = len - i1 + i2;
             if (i1 < len) {
                 safeArrayCopy(runtime, values, beg + i1, values, beg + i2, len - i1);
             }
-            realLength = len - i1 + i2;
+            else if (realLength > 0) {
+                // nil out left-overs to avoid leaks (MRI doesn't)
+                try {
+                    Helpers.fillNil(values, beg + i2, beg + i1, runtime);
+                } catch (ArrayIndexOutOfBoundsException ex) {
+                    concurrentModification(runtime, ex);
+                }
+            }
         }
     }
 
