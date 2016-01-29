@@ -15,8 +15,8 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.nodes.literal.NilNode;
+import org.jruby.truffle.language.literal.LiteralNode;
+import org.jruby.truffle.language.literal.NilNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.ArrayList;

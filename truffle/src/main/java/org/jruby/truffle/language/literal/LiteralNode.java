@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.literal;
+package org.jruby.truffle.language.literal;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
@@ -17,23 +17,21 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 @NodeInfo(cost = NodeCost.NONE)
-public class FloatLiteralNode extends RubyNode {
+public class LiteralNode extends RubyNode {
 
-    private final double value;
+    private final Object object;
 
-    public FloatLiteralNode(RubyContext context, SourceSection sourceSection, double value) {
+    public LiteralNode(RubyContext context, SourceSection sourceSection, Object object) {
         super(context, sourceSection);
-        this.value = value;
-    }
-
-    @Override
-    public double executeDouble(VirtualFrame frame) {
-        return value;
+        this.object = object;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeDouble(frame);
+        return object;
     }
 
+    public Object getObject() {
+        return object;
+    }
 }
