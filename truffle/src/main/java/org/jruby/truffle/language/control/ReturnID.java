@@ -7,15 +7,10 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.control;
-
-import com.oracle.truffle.api.nodes.ControlFlowException;
+package org.jruby.truffle.language.control;
 
 /**
- * Controls re-trying an iteration in a control structure or method.
+ * Ties returns to their methods
  */
-public final class RetryException extends ControlFlowException {
-
-    private static final long serialVersionUID = -1675586631300635765L;
-
+public class ReturnID {
 }

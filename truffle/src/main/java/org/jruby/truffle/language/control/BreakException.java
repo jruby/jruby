@@ -7,25 +7,31 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.control;
+package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 
 /**
- * Controls moving to the next iteration in a control structure or method.
+ * Controls a break from a control structure or method.
  */
-public final class NextException extends ControlFlowException {
+public final class BreakException extends ControlFlowException {
 
+    private final BreakID breakID;
     private final Object result;
 
-    public NextException(Object result) {
+    public BreakException(BreakID breakID, Object result) {
+        this.breakID = breakID;
         this.result = result;
+    }
+
+    public BreakID getBreakID() {
+        return breakID;
     }
 
     public Object getResult() {
         return result;
     }
 
-    private static final long serialVersionUID = -302759969186731457L;
+    private static final long serialVersionUID = -8650123232850256133L;
 
 }

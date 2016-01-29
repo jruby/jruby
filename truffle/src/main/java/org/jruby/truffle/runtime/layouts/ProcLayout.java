@@ -17,7 +17,7 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.truffle.runtime.control.FrameOnStackMarker;
+import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 

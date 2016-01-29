@@ -20,9 +20,9 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.ThreadExitException;
-import org.jruby.truffle.runtime.control.TruffleFatalException;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.control.ThreadExitException;
+import org.jruby.truffle.language.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ExceptionTranslatingNode extends RubyNode {

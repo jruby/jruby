@@ -19,7 +19,7 @@ import org.jruby.truffle.nodes.arguments.ReadBlockNode;
 import org.jruby.truffle.nodes.core.MethodNodesFactory.CallNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.ReturnID;
+import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 

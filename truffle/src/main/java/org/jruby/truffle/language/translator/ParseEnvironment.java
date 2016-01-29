@@ -10,9 +10,9 @@
 package org.jruby.truffle.language.translator;
 
 import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.ReturnID;
+import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.BreakID;
+import org.jruby.truffle.language.control.BreakID;
 
 /**
  * Translator environment, unique per parse/translation.

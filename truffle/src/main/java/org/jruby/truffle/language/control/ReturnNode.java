@@ -7,35 +7,31 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.control;
+package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
- * Cast to boolean and negate, as {@code BasicObject#!}.
+ * Represents an explicit return. The return ID indicates where we should be returning to - this can
+ * be non-trivial if you have blocks.
  */
-public class NotNode extends RubyNode {
+public class ReturnNode extends RubyNode {
 
-    @Child private BooleanCastNode child;
+    private final ReturnID returnID;
+    @Child private RubyNode value;
 
-    public NotNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public ReturnNode(RubyContext context, SourceSection sourceSection, ReturnID returnID, RubyNode value) {
         super(context, sourceSection);
-        this.child = BooleanCastNodeGen.create(context, sourceSection, child);
-    }
-
-    @Override
-    public boolean executeBoolean(VirtualFrame frame) {
-        return !child.executeBoolean(frame);
+        this.returnID = returnID;
+        this.value = value;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeBoolean(frame);
+        throw new ReturnException(returnID, value.execute(frame));
     }
 
 }

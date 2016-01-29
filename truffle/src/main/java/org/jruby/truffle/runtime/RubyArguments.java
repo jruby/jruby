@@ -16,7 +16,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.control.FrameOnStackMarker;
+import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public final class RubyArguments {

@@ -14,7 +14,7 @@ import jnr.constants.platform.Errno;
 import jnr.posix.POSIXHandler;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 
 import java.io.File;
 import java.io.InputStream;

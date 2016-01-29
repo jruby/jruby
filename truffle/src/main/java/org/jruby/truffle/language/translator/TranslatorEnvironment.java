@@ -15,9 +15,9 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.locals.ReadLocalNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
-import org.jruby.truffle.runtime.BreakID;
+import org.jruby.truffle.language.control.BreakID;
 import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.ReturnID;
+import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 

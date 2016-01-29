@@ -7,23 +7,35 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.control;
+package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RetryException;
 
-public class RetryNode extends RubyNode {
+/**
+ * Cast to boolean and negate, as {@code BasicObject#!}.
+ */
+public class NotNode extends RubyNode {
 
-    public RetryNode(RubyContext context, SourceSection sourceSection) {
+    @Child private BooleanCastNode child;
+
+    public NotNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
+        this.child = BooleanCastNodeGen.create(context, sourceSection, child);
+    }
+
+    @Override
+    public boolean executeBoolean(VirtualFrame frame) {
+        return !child.executeBoolean(frame);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new RetryException();
+        return executeBoolean(frame);
     }
 
 }

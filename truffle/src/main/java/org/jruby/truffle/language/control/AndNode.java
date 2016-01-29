@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.control;
+package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -18,16 +18,16 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
- * Represents a Ruby {@code or} or {@code ||} expression.
+ * Represents a Ruby {@code and} or {@code &&} expression.
  */
-public class OrNode extends RubyNode {
+public class AndNode extends RubyNode {
 
     @Child private RubyNode left;
     @Child private BooleanCastNode leftCast;
     @Child private RubyNode right;
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
-    public OrNode(RubyContext context, SourceSection sourceSection, RubyNode left, RubyNode right) {
+    public AndNode(RubyContext context, SourceSection sourceSection, RubyNode left, RubyNode right) {
         super(context, sourceSection);
         this.left = left;
         leftCast = BooleanCastNodeGen.create(context, sourceSection, null);
@@ -38,9 +38,10 @@ public class OrNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object leftValue = left.execute(frame);
         if (conditionProfile.profile(leftCast.executeBoolean(frame, leftValue))) {
-            return leftValue;
-        } else {
+            // Right expression evaluated and returned if left expression returns true.
             return right.execute(frame);
+        } else {
+            return leftValue;
         }
     }
 }

@@ -15,11 +15,11 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.ReturnID;
+import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.RetryException;
-import org.jruby.truffle.runtime.control.ReturnException;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.control.RetryException;
+import org.jruby.truffle.language.control.ReturnException;
 
 public class CatchForMethodNode extends RubyNode {
 

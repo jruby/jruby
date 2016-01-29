@@ -7,10 +7,9 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.control;
+package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
-import org.jruby.truffle.runtime.ReturnID;
 
 /**
  * Controls an explicit return from a method.

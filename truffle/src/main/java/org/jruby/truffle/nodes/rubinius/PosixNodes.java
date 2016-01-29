@@ -26,10 +26,9 @@ import org.jruby.truffle.nodes.core.RopeNodesFactory;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.StringSupport;
 import static org.jruby.truffle.runtime.core.StringOperations.decodeUTF8;
 

@@ -19,13 +19,14 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
+import org.jruby.truffle.language.control.NotNode;
+import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
-import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.control.AndNode;
-import org.jruby.truffle.nodes.control.IfNode;
+import org.jruby.truffle.language.control.AndNode;
+import org.jruby.truffle.language.control.IfNode;
 import org.jruby.truffle.nodes.core.ProcNodes.Type;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.locals.FlipFlopStateNode;

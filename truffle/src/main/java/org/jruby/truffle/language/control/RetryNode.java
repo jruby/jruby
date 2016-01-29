@@ -7,23 +7,22 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.control;
+package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RedoException;
 
-public class RedoNode extends RubyNode {
+public class RetryNode extends RubyNode {
 
-    public RedoNode(RubyContext context, SourceSection sourceSection) {
+    public RetryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new RedoException();
+        throw new RetryException();
     }
 
 }

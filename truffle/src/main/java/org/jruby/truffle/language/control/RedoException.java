@@ -7,15 +7,15 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.control;
+package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 
 /**
- * Controls breaking out of a shell.
+ * Controls re-doing an iteration in a control structure or method.
  */
-public final class BreakShellException extends ControlFlowException {
+public final class RedoException extends ControlFlowException {
 
-    private static final long serialVersionUID = 6448983812696841922L;
+    private static final long serialVersionUID = -4717868827111714052L;
 
 }
