@@ -19,7 +19,7 @@ import org.jruby.ast.StarNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.arguments.*;
+import org.jruby.truffle.language.arguments.*;
 import org.jruby.truffle.nodes.cast.SplatCastNode;
 import org.jruby.truffle.nodes.cast.SplatCastNodeGen;
 import org.jruby.truffle.language.control.IfNode;

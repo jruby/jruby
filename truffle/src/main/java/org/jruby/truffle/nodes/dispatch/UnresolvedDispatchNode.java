@@ -16,7 +16,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;

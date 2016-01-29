@@ -15,7 +15,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;

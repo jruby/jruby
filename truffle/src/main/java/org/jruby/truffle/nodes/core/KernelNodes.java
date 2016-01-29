@@ -32,6 +32,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.format.parser.PrintfCompiler;
 import org.jruby.truffle.format.runtime.PackResult;
 import org.jruby.truffle.format.runtime.exceptions.*;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;

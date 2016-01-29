@@ -22,7 +22,7 @@ import org.jruby.truffle.nodes.conversion.ToSymbolNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.language.control.RaiseException;

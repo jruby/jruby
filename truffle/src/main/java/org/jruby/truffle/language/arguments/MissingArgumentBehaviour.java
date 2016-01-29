@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.arguments;
+package org.jruby.truffle.language.arguments;
 
 public enum MissingArgumentBehaviour {
     RUNTIME_ERROR, UNDEFINED, NIL;

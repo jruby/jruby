@@ -31,7 +31,7 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.FrameOnStackMarker;

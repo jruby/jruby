@@ -22,7 +22,7 @@ import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeGen;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class TaintResultNode extends RubyNode {

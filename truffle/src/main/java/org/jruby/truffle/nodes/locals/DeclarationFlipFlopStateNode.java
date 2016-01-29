@@ -14,7 +14,7 @@ import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 
 public class DeclarationFlipFlopStateNode extends FlipFlopStateNode {
 

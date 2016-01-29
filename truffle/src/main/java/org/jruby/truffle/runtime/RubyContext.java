@@ -29,6 +29,7 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
 import org.jruby.truffle.nodes.RubyGuards;

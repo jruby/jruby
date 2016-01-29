@@ -17,7 +17,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 
 public class ReturnEnumeratorIfNoBlockNode extends RubyNode {

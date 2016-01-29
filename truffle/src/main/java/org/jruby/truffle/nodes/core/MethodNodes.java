@@ -33,7 +33,7 @@ import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
