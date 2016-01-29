@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
-import org.jruby.truffle.translator.BodyTranslator;
+import org.jruby.truffle.language.translator.BodyTranslator;
 import org.jruby.util.RegexpOptions;
 
 public class InterpolatedRegexpNode extends RubyNode {

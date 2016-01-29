@@ -67,7 +67,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;

@@ -74,8 +74,8 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
-import org.jruby.truffle.translator.TranslatorDriver;
-import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.translator.TranslatorDriver;
+import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;

@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.translator;
+package org.jruby.truffle.language.translator;
 
 import org.jruby.ast.*;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
