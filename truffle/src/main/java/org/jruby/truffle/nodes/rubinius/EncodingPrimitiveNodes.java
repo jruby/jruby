@@ -14,7 +14,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
@@ -23,7 +22,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 public abstract class EncodingPrimitiveNodes {
 
     @RubiniusPrimitive(name = "encoding_get_object_encoding", needsSelf = false)
-    public static abstract class EncodingGetObjectEncodingNode extends RubiniusPrimitiveNode {
+    public static abstract class EncodingGetObjectEncodingNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public EncodingGetObjectEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

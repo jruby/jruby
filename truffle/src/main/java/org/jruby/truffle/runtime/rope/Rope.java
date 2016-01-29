@@ -25,6 +25,7 @@ public abstract class Rope {
     private final int ropeDepth;
     private int hashCode = 0;
     private byte[] bytes;
+    private ByteList unsafeByteList;
 
     protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
         this.encoding = encoding;
@@ -49,7 +50,12 @@ public abstract class Rope {
     }
 
     public final ByteList getUnsafeByteList() {
-        return new ByteList(getBytes(), getEncoding(), false);
+        if (unsafeByteList == null) {
+            CompilerDirectives.transferToInterpreter();
+            unsafeByteList = new ByteList(getBytes(), getEncoding(), false);
+        }
+
+        return unsafeByteList;
     }
 
     public final ByteList toByteListCopy() { return new ByteList(getBytes(), getEncoding(), true); }

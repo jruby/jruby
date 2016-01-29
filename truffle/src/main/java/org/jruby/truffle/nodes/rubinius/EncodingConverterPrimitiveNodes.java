@@ -16,7 +16,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -43,7 +42,7 @@ import static org.jruby.truffle.runtime.core.StringOperations.rope;
 public abstract class EncodingConverterPrimitiveNodes {
 
     @RubiniusPrimitive(name = "encoding_converter_allocate")
-    public static abstract class EncodingConverterAllocateNode extends RubiniusPrimitiveNode {
+    public static abstract class EncodingConverterAllocateNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public EncodingConverterAllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -57,7 +56,7 @@ public abstract class EncodingConverterPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "encoding_converter_primitive_convert")
-    public static abstract class PrimitiveConvertNode extends RubiniusPrimitiveNode {
+    public static abstract class PrimitiveConvertNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
 
@@ -173,7 +172,7 @@ public abstract class EncodingConverterPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "encoding_converter_putback")
-    public static abstract class EncodingConverterPutbackNode extends RubiniusPrimitiveNode {
+    public static abstract class EncodingConverterPutbackNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public EncodingConverterPutbackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -218,7 +217,7 @@ public abstract class EncodingConverterPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "encoding_converter_last_error")
-    public static abstract class EncodingConverterLastErrorNode extends RubiniusPrimitiveNode {
+    public static abstract class EncodingConverterLastErrorNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newLookupTableNode;
         @Child private CallDispatchHeadNode lookupTableWriteNode;
@@ -273,7 +272,7 @@ public abstract class EncodingConverterPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "encoding_converter_primitive_errinfo")
-    public static abstract class EncodingConverterErrinfoNode extends RubiniusPrimitiveNode {
+    public static abstract class EncodingConverterErrinfoNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public EncodingConverterErrinfoNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

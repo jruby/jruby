@@ -20,7 +20,7 @@ import java.lang.ref.WeakReference;
 public abstract class WeakRefPrimitiveNodes {
 
     @RubiniusPrimitive(name = "weakref_new", needsSelf = false)
-    public static abstract class WeakRefNewPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class WeakRefNewPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public WeakRefNewPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -34,7 +34,7 @@ public abstract class WeakRefPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "weakref_set_object")
-    public static abstract class WeakRefSetObjectPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class WeakRefSetObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public WeakRefSetObjectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -49,7 +49,7 @@ public abstract class WeakRefPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "weakref_object")
-    public static abstract class WeakRefObjectPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class WeakRefObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public WeakRefObjectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

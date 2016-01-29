@@ -23,7 +23,7 @@ import java.math.BigInteger;
 public abstract class RandomizerPrimitiveNodes {
 
     @RubiniusPrimitive(name = "randomizer_allocate", needsSelf = false)
-    public static abstract class RandomizerAllocatePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RandomizerAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RandomizerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -37,7 +37,7 @@ public abstract class RandomizerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "randomizer_seed")
-    public static abstract class RandomizerSeedPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RandomizerSeedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RandomizerSeedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -68,7 +68,7 @@ public abstract class RandomizerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "randomizer_rand_float")
-    public static abstract class RandomizerRandFloatPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RandomizerRandFloatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RandomizerRandFloatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -86,7 +86,7 @@ public abstract class RandomizerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "randomizer_rand_int")
-    public static abstract class RandomizerRandIntPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RandomizerRandIntPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RandomizerRandIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -112,7 +112,7 @@ public abstract class RandomizerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "randomizer_gen_seed")
-    public static abstract class RandomizerGenSeedPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RandomizerGenSeedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RandomizerGenSeedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

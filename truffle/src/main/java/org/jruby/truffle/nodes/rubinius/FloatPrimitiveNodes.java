@@ -30,7 +30,7 @@ import java.util.Locale;
 public abstract class FloatPrimitiveNodes {
 
     @RubiniusPrimitive(name = "float_dtoa")
-    public static abstract class FloatDToAPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class FloatDToAPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public FloatDToAPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -79,7 +79,7 @@ public abstract class FloatPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "float_signbit_p")
-    public static abstract class FloatSignBitNode extends RubiniusPrimitiveNode {
+    public static abstract class FloatSignBitNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public FloatSignBitNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -94,7 +94,7 @@ public abstract class FloatPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "float_round")
-    public static abstract class FloatRoundPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class FloatRoundPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 

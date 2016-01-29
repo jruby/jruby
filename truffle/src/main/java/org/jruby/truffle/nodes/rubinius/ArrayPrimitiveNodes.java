@@ -16,7 +16,7 @@ import org.jruby.truffle.runtime.RubyContext;
 public abstract class ArrayPrimitiveNodes {
 
     @RubiniusPrimitive(name = "tuple_copy_from")
-    public static abstract class TupleCopyFromPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class TupleCopyFromPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public TupleCopyFromPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
