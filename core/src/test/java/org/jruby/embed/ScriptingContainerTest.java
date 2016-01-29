@@ -160,7 +160,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         String expResult = "jruby " + Constants.VERSION;
         String result = instance.getSupportedRubyVersion();
-        assertTrue(result.startsWith(expResult));
+        assertTrue("'"+ result +"' does not start with: " + expResult, result.startsWith(expResult));
         instance.terminate();
     }
 
@@ -2646,8 +2646,8 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         // note that instance.getLoadPath is not the load-path of the runtime !!!
         String[] results = instance.runScriptlet("$LOAD_PATH").toString().split(", ");
-        for(String result : results){
-            assertTrue(result + " containt lib/ruby/", result.contains("lib/ruby/"));
+        for (String result : results){
+            assertTrue(result + " does not contain lib/ruby/", result.contains("lib/ruby/"));
         }
     }
 
