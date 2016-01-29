@@ -4133,7 +4133,7 @@ public class RubyModule extends RubyObject {
 
         // MRI does strlen to check for \0 vs Ruby string length.
         if ((nameString.getEncoding() != resultEncoding && !nameString.isAsciiOnly()) ||
-                nameString.toString().contains("\0")) {
+                nameString.toString().indexOf('\0') > -1 ) {
             nameString = (RubyString) nameString.inspect();
         }
 
