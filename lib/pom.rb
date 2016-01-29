@@ -20,7 +20,8 @@ default_gems =
    ImportedGem.new( 'psych', '2.0.15' ),
    ImportedGem.new( 'json', '${json.version}' ),
    ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
-   ImportedGem.new( 'racc', '${racc.version}')
+   ImportedGem.new( 'racc', '${racc.version}'),
+   #ImportedGem.new( 'did_you_mean', '1.0.0'),
   ]
 
 project 'JRuby Lib Setup' do
@@ -44,7 +45,7 @@ project 'JRuby Lib Setup' do
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
   extension 'org.torquebox.mojo:mavengem-wagon:0.2.0'
-  
+
   repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
 
   plugin( :clean,
@@ -63,8 +64,11 @@ project 'JRuby Lib Setup' do
 
   default_gemnames = default_gems.collect { |g| g.name }
 
-  # TODO no hardcoded group-ids
-  plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :provided do
+  plugin :dependency,
+    :useRepositoryLayout => true,
+    :outputDirectory => 'ruby/stdlib',
+    :excludeGroupIds => 'rubygems', # TODO no hardcoded group-ids
+    :includeScope => :provided do
     execute_goal 'copy-dependencies', :phase => 'generate-resources'
   end
 
@@ -117,6 +121,7 @@ project 'JRuby Lib Setup' do
                                         :wrappers => true,
                                         :ignore_dependencies => true,
                                         :install_dir => ghome )
+        def installer.ensure_required_ruby_version_met; end
         installer.install
       end
     end
