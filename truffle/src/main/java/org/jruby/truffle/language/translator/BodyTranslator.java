@@ -56,7 +56,7 @@ import org.jruby.truffle.nodes.dispatch.RubyCallNode;
 import org.jruby.truffle.nodes.exceptions.*;
 import org.jruby.truffle.language.globals.*;
 import org.jruby.truffle.language.literal.*;
-import org.jruby.truffle.nodes.locals.*;
+import org.jruby.truffle.language.locals.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.rubinius.*;

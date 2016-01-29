@@ -7,34 +7,33 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.locals;
+package org.jruby.truffle.language.locals;
 
 import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 
-public class LocalFlipFlopStateNode extends FlipFlopStateNode {
+public class InitFlipFlopSlotNode extends RubyNode {
 
     private final FrameSlot frameSlot;
 
-    public LocalFlipFlopStateNode(SourceSection sourceSection, FrameSlot frameSlot) {
-        super(sourceSection);
+    public InitFlipFlopSlotNode(RubyContext context, SourceSection sourceSection,
+                                FrameSlot frameSlot) {
+        super(context, sourceSection);
         this.frameSlot = frameSlot;
     }
 
     @Override
-    public boolean getState(VirtualFrame frame) {
-        try {
-            return frame.getBoolean(frameSlot);
-        } catch (FrameSlotTypeException e) {
-            throw new IllegalStateException();
-        }
+    public void executeVoid(VirtualFrame frame) {
+        frame.setBoolean(frameSlot, false);
     }
 
     @Override
-    public void setState(VirtualFrame frame, boolean state) {
-        frame.setBoolean(frameSlot, state);
+    public Object execute(VirtualFrame frame) {
+        executeVoid(frame);
+        return null;
     }
 
 }

@@ -26,7 +26,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.control.SequenceNode;
-import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
+import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.CatchNextNode;
 import org.jruby.truffle.nodes.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.nodes.methods.CatchReturnAsErrorNode;

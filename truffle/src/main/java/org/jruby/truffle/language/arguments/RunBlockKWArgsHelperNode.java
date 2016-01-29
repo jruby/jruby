@@ -14,10 +14,10 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
-import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
-import org.jruby.truffle.nodes.locals.WriteFrameSlotNode;
-import org.jruby.truffle.nodes.locals.WriteFrameSlotNodeGen;
+import org.jruby.truffle.language.locals.ReadFrameSlotNode;
+import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
+import org.jruby.truffle.language.locals.WriteFrameSlotNode;
+import org.jruby.truffle.language.locals.WriteFrameSlotNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 

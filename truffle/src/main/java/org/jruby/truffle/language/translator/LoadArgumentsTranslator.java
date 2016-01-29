@@ -28,8 +28,8 @@ import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
 import org.jruby.truffle.nodes.core.array.ArraySliceNodeGen;
 import org.jruby.truffle.nodes.core.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.language.literal.NilNode;
-import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
-import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
+import org.jruby.truffle.language.locals.ReadLocalVariableNode;
+import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.*;
