@@ -628,8 +628,7 @@ public class Bootstrap {
         if (accessor instanceof FieldVariableAccessor) {
             direct = true;
             int offset = ((FieldVariableAccessor)accessor).getOffset();
-            Class cls = REIFIED_OBJECT_CLASSES[offset];
-            setValue = findStatic(cls, "setVariableChecked", methodType(void.class, cls, Object.class));
+            setValue = findVirtual(self.getClass(), "setVariable" + offset, methodType(void.class, Object.class));
             setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, IRubyObject.class));
         } else {
             setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
@@ -681,6 +680,18 @@ public class Bootstrap {
     private static MethodHandle findStatic(Lookup lookup, Class target, String name, MethodType type) {
         try {
             return lookup.findStatic(target, name, type);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static MethodHandle findVirtual(Class target, String name, MethodType type) {
+        return findVirtual(lookup(), target, name, type);
+    }
+
+    private static MethodHandle findVirtual(Lookup lookup, Class target, String name, MethodType type) {
+        try {
+            return lookup.findVirtual(target, name, type);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

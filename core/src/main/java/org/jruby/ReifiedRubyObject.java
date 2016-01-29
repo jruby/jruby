@@ -27,78 +27,101 @@
 package org.jruby;
 
 /**
- * A RubyObject that provides a direct field for four stored variables, to avoid
+ * A RubyObject that provides a direct field for up to ten stored variables, to avoid
  * the overhead of creating and managing a separate array and reference.
  */
-public class RubyObjectVar3 extends ReifiedRubyObject {
-    /**
-     * Standard path for object creation. Objects are entered into ObjectSpace
-     * only if ObjectSpace is enabled.
-     */
-    public RubyObjectVar3(Ruby runtime, RubyClass metaClass) {
+public abstract class ReifiedRubyObject extends RubyObject {
+    public ReifiedRubyObject(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
 
+    @Override
     public Object getVariable(int i) {
-        switch (i) {
-            case 0: return var0;
-            case 1: return var1;
-            case 2: return var2;
-            case 3: return var3;
-            default: return super.getVariable(i);
-        }
+        return super.getVariable(i);
     }
 
     @Override
     public void setVariable(int index, Object value) {
-        ensureInstanceVariablesSettable();
-        switch (index) {
-            case 0: var0 = value; break;
-            case 1: var1 = value; break;
-            case 2: var2 = value; break;
-            case 3: var3 = value; break;
-            default: super.setVariable(index, value);
-        }
+        super.setVariable(index, value);
     }
 
     public Object getVariable0() {
-        return var0;
+        return getVariable(0);
     }
 
     public Object getVariable1() {
-        return var1;
+        return getVariable(1);
     }
 
     public Object getVariable2() {
-        return var2;
+        return getVariable(2);
     }
 
     public Object getVariable3() {
-        return var3;
+        return getVariable(3);
+    }
+
+    public Object getVariable4() {
+        return getVariable(4);
+    }
+
+    public Object getVariable5() {
+        return getVariable(5);
+    }
+
+    public Object getVariable6() {
+        return getVariable(6);
+    }
+
+    public Object getVariable7() {
+        return getVariable(7);
+    }
+
+    public Object getVariable8() {
+        return getVariable(8);
+    }
+
+    public Object getVariable9() {
+        return getVariable(9);
     }
 
     public void setVariable0(Object value) {
-        ensureInstanceVariablesSettable();
-        var0 = value;
+        setVariable(0, value);
     }
 
     public void setVariable1(Object value) {
-        ensureInstanceVariablesSettable();
-        var1 = value;
+        setVariable(1, value);
     }
 
     public void setVariable2(Object value) {
-        ensureInstanceVariablesSettable();
-        var2 = value;
+        setVariable(2, value);
     }
 
     public void setVariable3(Object value) {
-        ensureInstanceVariablesSettable();
-        var3 = value;
+        setVariable(3, value);
     }
 
-    public Object var0;
-    public Object var1;
-    public Object var2;
-    public Object var3;
+    public void setVariable4(Object value) {
+        setVariable(4, value);
+    }
+
+    public void setVariable5(Object value) {
+        setVariable(5, value);
+    }
+
+    public void setVariable6(Object value) {
+        setVariable(6, value);
+    }
+
+    public void setVariable7(Object value) {
+        setVariable(7, value);
+    }
+
+    public void setVariable8(Object value) {
+        setVariable(8, value);
+    }
+
+    public void setVariable9(Object value) {
+        setVariable(9, value);
+    }
 }

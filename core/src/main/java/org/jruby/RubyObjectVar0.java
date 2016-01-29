@@ -30,7 +30,7 @@ package org.jruby;
  * A RubyObject that provides a direct field for one stored variable, to avoid
  * the overhead of creating and managing a separate array and reference.
  */
-public class RubyObjectVar0 extends RubyObject {
+public class RubyObjectVar0 extends ReifiedRubyObject {
     /**
      * Standard path for object creation. Objects are entered into ObjectSpace
      * only if ObjectSpace is enabled.
@@ -38,10 +38,31 @@ public class RubyObjectVar0 extends RubyObject {
     public RubyObjectVar0(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
-    
-    public static void setVariableChecked(RubyObjectVar0 self, Object value) {
-        self.ensureInstanceVariablesSettable();
-        self.var0 = value;
+
+    @Override
+    public Object getVariable(int i) {
+        switch (i) {
+            case 0: return var0;
+            default: return super.getVariable(i);
+        }
+    }
+
+    @Override
+    public void setVariable(int index, Object value) {
+        ensureInstanceVariablesSettable();
+        switch (index) {
+            case 0: var0 = value; break;
+            default: super.setVariable(index, value);
+        }
+    }
+
+    public Object getVariable0() {
+        return var0;
+    }
+
+    public void setVariable0(Object value) {
+        ensureInstanceVariablesSettable();
+        var0 = value;
     }
     
     public Object var0;

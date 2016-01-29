@@ -26,6 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.ivars;
 
+import org.jruby.ReifiedRubyObject;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyObjectVar9;
@@ -54,7 +55,7 @@ public class VariableAccessorVar9 extends FieldVariableAccessor {
      * @return the variable's value
      */
     public Object get(Object object) {
-        return ((RubyObjectVar9)object).var9;
+        return ((ReifiedRubyObject) object).getVariable9();
     }
 
     /**
@@ -94,6 +95,6 @@ public class VariableAccessorVar9 extends FieldVariableAccessor {
      * @param value the variable's value
      */
     public static void setVariable(RubyBasicObject self, RubyClass realClass, int index, Object value) {
-        ((RubyObjectVar9)self).var9 = value;
+        ((ReifiedRubyObject) self).setVariable9(value);
     }
 }

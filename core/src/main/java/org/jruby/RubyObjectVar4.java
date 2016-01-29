@@ -30,7 +30,7 @@ package org.jruby;
  * A RubyObject that provides a direct field for five stored variables, to avoid
  * the overhead of creating and managing a separate array and reference.
  */
-public class RubyObjectVar4 extends RubyObjectVar3 {
+public class RubyObjectVar4 extends ReifiedRubyObject {
     /**
      * Standard path for object creation. Objects are entered into ObjectSpace
      * only if ObjectSpace is enabled.
@@ -38,11 +38,79 @@ public class RubyObjectVar4 extends RubyObjectVar3 {
     public RubyObjectVar4(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
-    
-    public static void setVariableChecked(RubyObjectVar4 self, Object value) {
-        self.ensureInstanceVariablesSettable();
-        self.var4 = value;
+
+    public Object getVariable(int i) {
+        switch (i) {
+            case 0: return var0;
+            case 1: return var1;
+            case 2: return var2;
+            case 3: return var3;
+            case 4: return var4;
+            default: return super.getVariable(i);
+        }
     }
-    
+
+    @Override
+    public void setVariable(int index, Object value) {
+        ensureInstanceVariablesSettable();
+        switch (index) {
+            case 0: var0 = value; break;
+            case 1: var1 = value; break;
+            case 2: var2 = value; break;
+            case 3: var3 = value; break;
+            case 4: var4 = value; break;
+            default: super.setVariable(index, value);
+        }
+    }
+
+    public Object getVariable0() {
+        return var0;
+    }
+
+    public Object getVariable1() {
+        return var1;
+    }
+
+    public Object getVariable2() {
+        return var2;
+    }
+
+    public Object getVariable3() {
+        return var3;
+    }
+
+    public Object getVariable4() {
+        return var4;
+    }
+
+    public void setVariable0(Object value) {
+        ensureInstanceVariablesSettable();
+        var0 = value;
+    }
+
+    public void setVariable1(Object value) {
+        ensureInstanceVariablesSettable();
+        var1 = value;
+    }
+
+    public void setVariable2(Object value) {
+        ensureInstanceVariablesSettable();
+        var2 = value;
+    }
+
+    public void setVariable3(Object value) {
+        ensureInstanceVariablesSettable();
+        var3 = value;
+    }
+
+    public void setVariable4(Object value) {
+        ensureInstanceVariablesSettable();
+        var4 = value;
+    }
+
+    public Object var0;
+    public Object var1;
+    public Object var2;
+    public Object var3;
     public Object var4;
 }
