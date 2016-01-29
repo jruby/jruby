@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
@@ -52,7 +53,7 @@ import static org.jruby.util.StringSupport.CR_7BIT;
 public abstract class RegexpNodes {
 
     @TruffleBoundary
-    public static Object matchCommon(RubyContext context, DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, int startPos) {
+    public static Object matchCommon(RubyContext context, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, int startPos) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
 
@@ -66,15 +67,15 @@ public abstract class RegexpNodes {
         final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), sourceRope.begin() + sourceRope.realSize());
         int range = sourceRope.begin() + sourceRope.realSize();
 
-        return matchCommon(context, regexp, source, operator, setNamedCaptures, matcher, sourceRope.begin() + startPos, range);
+        return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, sourceRope.begin() + startPos, range);
     }
 
     @TruffleBoundary
-    public static Object matchCommon(RubyContext context, DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
+    public static Object matchCommon(RubyContext context, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
 
-        final ByteList bytes = StringOperations.getByteListReadOnly(source);
+        final Rope sourceRope = StringOperations.rope(source);
 
         final int match = matcher.search(startPos, range, Option.DEFAULT);
 
@@ -106,7 +107,7 @@ public abstract class RegexpNodes {
                 final Object groupString;
 
                 if (start > -1 && end > -1) {
-                    groupString = createSubstring(source, start, end - start);
+                    groupString = createSubstring(makeSubstringNode, source, start, end - start);
                 } else {
                     groupString = nil;
                 }
@@ -116,14 +117,14 @@ public abstract class RegexpNodes {
                 if (start == -1 || end == -1) {
                     values[n] = nil;
                 } else {
-                    values[n] = createSubstring(source, start, end - start);
+                    values[n] = createSubstring(makeSubstringNode, source, start, end - start);
                 }
             }
         }
 
-        final DynamicObject pre = createSubstring(source, 0, region.beg[0]);
-        final DynamicObject post = createSubstring(source, region.end[0], bytes.length() - region.end[0]);
-        final DynamicObject global = createSubstring(source, region.beg[0], region.end[0] - region.beg[0]);
+        final DynamicObject pre = createSubstring(makeSubstringNode, source, 0, region.beg[0]);
+        final DynamicObject post = createSubstring(makeSubstringNode, source, region.end[0], sourceRope.byteLength() - region.end[0]);
+        final DynamicObject global = createSubstring(makeSubstringNode, source, region.beg[0], region.end[0] - region.beg[0]);
 
         final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getMatchDataClass()),
                 source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd(), null, null);
@@ -157,7 +158,7 @@ public abstract class RegexpNodes {
                     final int start = region.beg[nth];
                     final int end = region.end[nth];
                     if (start != -1) {
-                        value = createSubstring(source, start, end - start);
+                        value = createSubstring(makeSubstringNode, source, start, end - start);
                     } else {
                         value = nil;
                     }
@@ -175,11 +176,13 @@ public abstract class RegexpNodes {
     }
 
     @TruffleBoundary
-    private static DynamicObject createSubstring(DynamicObject source, int start, int length) {
+    private static DynamicObject createSubstring(RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject source, int start, int length) {
         assert RubyGuards.isRubyString(source);
 
-        final ByteList bytes = new ByteList(StringOperations.getByteListReadOnly(source), start, length);
-        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), StringOperations.ropeFromByteList(bytes, StringOperations.getCodeRange(source)), null);
+        final Rope sourceRope = StringOperations.rope(source);
+        final Rope substringRope = makeSubstringNode.executeMake(sourceRope, start, length);
+
+        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), substringRope, null);
 
         return ret;
     }
@@ -381,16 +384,18 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private CallDispatchHeadNode toSNode;
         @Child private ToStrNode toStrNode;
 
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
         public Object match(DynamicObject regexp, DynamicObject string) {
-            return matchCommon(getContext(), regexp, string, true, true, 0);
+            return matchCommon(getContext(), makeSubstringNode, regexp, string, true, true, 0);
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
@@ -454,13 +459,16 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "match_start", required = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+
         public MatchStartNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(DynamicObject regexp, DynamicObject string, int startPos) {
-            final Object matchResult = matchCommon(getContext(), regexp, string, false, false, startPos);
+            final Object matchResult = matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, startPos);
             if (RubyGuards.isRubyMatchData(matchResult) && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).numRegs > 0
                 && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).beg[0] == startPos) {
                 return matchResult;
@@ -495,13 +503,16 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "search_from", required = 2)
     public abstract static class SearchFromNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+
         public SearchFromNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
         public Object searchFrom(DynamicObject regexp, DynamicObject string, int startPos) {
-            return matchCommon(getContext(), regexp, string, false, false, startPos);
+            return matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, startPos);
         }
     }
 

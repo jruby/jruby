@@ -44,6 +44,10 @@ public abstract class RopeNodes {
     })
     public abstract static class MakeSubstringNode extends RubyNode {
 
+        public static MakeSubstringNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
+        }
+
         public MakeSubstringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }

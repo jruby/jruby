@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -20,6 +21,7 @@ import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.nodes.core.RegexpGuards;
 import org.jruby.truffle.nodes.core.RegexpNodes;
+import org.jruby.truffle.nodes.core.RopeNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -135,7 +137,8 @@ public abstract class RegexpPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
-        public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
+        public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward,
+                                   @Cached("create(getContext(), getSourceSection())") RopeNodes.MakeSubstringNode makeSubstringNode) {
             final Rope stringRope = StringOperations.rope(string);
             final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
             final Encoding enc = RegexpNodes.checkEncoding(regexp, stringRope, true);
@@ -146,10 +149,10 @@ public abstract class RegexpPrimitiveNodes {
 
             if (forward) {
                 // Search forward through the string.
-                return RegexpNodes.matchCommon(getContext(), regexp, string, false, false, matcher, start + stringRope.begin(), end + stringRope.begin());
+                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, start + stringRope.begin(), end + stringRope.begin());
             } else {
                 // Search backward through the string.
-                return RegexpNodes.matchCommon(getContext(), regexp, string, false, false, matcher, end + stringRope.begin(), start + stringRope.begin());
+                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, end + stringRope.begin(), start + stringRope.begin());
             }
         }
 
