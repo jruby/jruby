@@ -1605,10 +1605,16 @@ public class RubyLexer extends LexingCommon {
         } else {
             result = Tokens.tIVAR;                    
         }
-        
-        if (c != EOF && (Character.isDigit(c) || !isIdentifierChar(c))) {
+
+        if (c == EOF || Character.isSpaceChar(c)) {
+            if (result == Tokens.tIVAR) {
+                compile_error("`@' without identifiers is not allowed as an instance variable name");
+            }
+
+            compile_error("`@@' without identifiers is not allowed as a class variable name");
+        } else if (Character.isDigit(c) || !isIdentifierChar(c)) {
             pushback(c);
-            if ((lex_p - tokp) == 1) {
+            if (result == Tokens.tIVAR) {
                 compile_error(PID.IVAR_BAD_NAME, "`@" + ((char) c) + "' is not allowed as an instance variable name");
             }
             compile_error(PID.CVAR_BAD_NAME, "`@@" + ((char) c) + "' is not allowed as a class variable name");

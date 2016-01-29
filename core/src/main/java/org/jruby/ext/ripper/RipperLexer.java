@@ -1679,11 +1679,19 @@ public class RipperLexer extends LexingCommon {
             c = nextc();
             result = Tokens.tCVAR;
         } else {
-            result = Tokens.tIVAR;                    
+            result = Tokens.tIVAR;
         }
-        
-        if (c != EOF && (Character.isDigit(c) || !isIdentifierChar(c))) {
-            if (tokenBuffer.length() == 1) {
+
+        if (c == EOF || Character.isSpaceChar(c)) {
+            if (result == Tokens.tIVAR) {
+                compile_error("`@' without identifiers is not allowed as an instance variable name");
+                return EOF;
+            }
+
+            compile_error("`@@' without identifiers is not allowed as a class variable name");
+            return EOF;
+        } else if (Character.isDigit(c) || !isIdentifierChar(c)) {
+            if (result == Tokens.tIVAR) {
                 compile_error("`@" + ((char) c) + "' is not allowed as an instance variable name");
                 return EOF;
             }
