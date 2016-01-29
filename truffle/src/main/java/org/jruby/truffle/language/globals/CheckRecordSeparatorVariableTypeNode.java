@@ -7,36 +7,34 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.globals;
+package org.jruby.truffle.language.globals;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 
-public class WriteReadOnlyGlobalNode extends RubyNode {
+public class CheckRecordSeparatorVariableTypeNode extends RubyNode {
 
-    private final String name;
-    @Child private RubyNode value;
+    @Child private RubyNode child;
 
-    public WriteReadOnlyGlobalNode(RubyContext context, SourceSection sourceSection, String name, RubyNode value) {
+    public CheckRecordSeparatorVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        this.name = name;
-        this.value = value;
+        this.child = child;
     }
 
-    public void executeVoid(VirtualFrame frame) {
-        value.executeVoid(frame);
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().nameErrorReadOnly(name, this));
-    }
-
-    @Override
     public Object execute(VirtualFrame frame) {
-        executeVoid(frame);
-        return nil();
+        final Object childValue = child.execute(frame);
+
+        if (!(RubyGuards.isRubyString(childValue)) && childValue != nil()) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorMustBe("$/", "String", this));
+        }
+
+        return childValue;
     }
 
 }

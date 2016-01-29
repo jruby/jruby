@@ -7,31 +7,33 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.globals;
+package org.jruby.truffle.language.globals;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
-public class CheckMatchVariableTypeNode extends RubyNode {
+public class CheckStdoutVariableTypeNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public CheckMatchVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public CheckStdoutVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }
 
     public Object execute(VirtualFrame frame) {
+        CompilerDirectives.transferToInterpreter();
+
         final Object childValue = child.execute(frame);
 
-        if (!(RubyGuards.isRubyMatchData(childValue) || childValue == nil() || childValue == nil())) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(childValue, "MatchData", this));
+        if (childValue == nil() || ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(childValue), "write") == null) {
+            throw new RaiseException(getContext().getCoreLibrary().typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(childValue)).getName()), this));
         }
 
         return childValue;

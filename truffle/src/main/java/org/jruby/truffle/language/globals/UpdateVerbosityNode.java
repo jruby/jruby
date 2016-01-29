@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -7,32 +7,32 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.globals;
+package org.jruby.truffle.language.globals;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
 
-public class CheckRecordSeparatorVariableTypeNode extends RubyNode {
+public class UpdateVerbosityNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public CheckRecordSeparatorVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public UpdateVerbosityNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }
 
     public Object execute(VirtualFrame frame) {
+        CompilerDirectives.transferToInterpreter();
+
         final Object childValue = child.execute(frame);
 
-        if (!(RubyGuards.isRubyString(childValue)) && childValue != nil()) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorMustBe("$/", "String", this));
-        }
+        final IRubyObject jrubyValue = getContext().toJRuby(childValue);
+
+        getContext().getRuntime().setVerbose(jrubyValue);
 
         return childValue;
     }

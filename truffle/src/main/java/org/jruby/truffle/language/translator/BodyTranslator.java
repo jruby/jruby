@@ -54,7 +54,7 @@ import org.jruby.truffle.nodes.defined.DefinedNode;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.dispatch.RubyCallNode;
 import org.jruby.truffle.nodes.exceptions.*;
-import org.jruby.truffle.nodes.globals.*;
+import org.jruby.truffle.language.globals.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.locals.*;
 import org.jruby.truffle.nodes.methods.*;
