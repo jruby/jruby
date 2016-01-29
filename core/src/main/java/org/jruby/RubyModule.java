@@ -2568,6 +2568,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "public", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbPublic(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
         setVisibility(context, args, PUBLIC);
         return this;
     }
@@ -2577,6 +2578,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "protected", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbProtected(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
         setVisibility(context, args, PROTECTED);
         return this;
     }
@@ -2586,6 +2588,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "private", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbPrivate(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
         setVisibility(context, args, PRIVATE);
         return this;
     }
@@ -2655,12 +2658,14 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_class_method", rest = true)
     public RubyModule public_class_method(IRubyObject[] args) {
+        checkFrozen();
         getSingletonClass().setMethodVisibility(args, PUBLIC);
         return this;
     }
 
     @JRubyMethod(name = "private_class_method", rest = true)
     public RubyModule private_class_method(IRubyObject[] args) {
+        checkFrozen();
         getSingletonClass().setMethodVisibility(args, PRIVATE);
         return this;
     }
