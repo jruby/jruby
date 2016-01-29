@@ -2388,26 +2388,27 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         modify();
 
-        int len0 = 0, len1 = 0;
+        final Ruby runtime = context.runtime;
+        final int len = realLength; final int beg = begin;
 
-        final int len = realLength; // final int beg = begin; might change on modify
+        int len0 = 0, len1 = 0;
         try {
-            int i1, i2; final Ruby runtime = context.runtime;
+            int i1, i2;
             for (i1 = i2 = 0; i1 < len; len0 = ++i1) {
+                final IRubyObject[] values = this.values;
                 // Do not coarsen the "safe" check, since it will misinterpret
                 // AIOOBE from the yield (see JRUBY-5434)
                 IRubyObject value = safeArrayRef(runtime, values, begin + i1);
 
                 if (!block.yield(context, value).isTrue()) continue;
 
-                if (i1 != i2) {
-                    store(i2, value);
-                }
+                if (i1 != i2) safeArraySet(runtime, values, beg + i2, value);
                 len1 = ++i2;
             }
             return (i1 == i2) ? context.nil : this;
-        } finally {
-            selectBangEnsure(len, len0, len1);
+        }
+        finally {
+            selectBangEnsure(runtime, len, beg, len0, len1);
         }
     }
 
@@ -2528,32 +2529,37 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject rejectBang(ThreadContext context, Block block) {
         modify();
 
-        int len0 = 0, len1 = 0;
+        final Ruby runtime = context.runtime;
+        final int len = realLength; final int beg = begin;
 
-        final int len = realLength; // final int beg = begin; might change on modify
+        int len0 = 0, len1 = 0;
         try {
-            int i1, i2; final Ruby runtime = context.runtime;
+            int i1, i2;
             for (i1 = i2 = 0; i1 < len; len0 = ++i1) {
+                final IRubyObject[] values = this.values;
                 // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
                 // See JRUBY-5434
-                IRubyObject v = safeArrayRef(runtime, values, begin + i1);
-                if (block.yield(context, v).isTrue()) continue;
-                if (i1 != i2) store(i2, v);
+                IRubyObject value = safeArrayRef(runtime, values, beg + i1);
+
+                if (block.yield(context, value).isTrue()) continue;
+
+                if (i1 != i2) safeArraySet(runtime, values, beg + i2, value);
                 len1 = ++i2;
             }
 
             return (i1 == i2) ? context.nil : this;
-        } finally {
-            selectBangEnsure(len, len0, len1);
+        }
+        finally {
+            selectBangEnsure(runtime, len, beg, len0, len1);
         }
     }
 
     // MRI: select_bang_ensure
-    private void selectBangEnsure(final int len, int len0, int len1) {
+    private void selectBangEnsure(final Ruby runtime, final int len, final int beg, int len0, int len1) {
         int i1 = len0, i2 = len1;
         if (i2 < i1) {
             if (i1 < len) {
-                System.arraycopy(values, begin + i1, values, begin + i2, len - i1);
+                safeArrayCopy(runtime, values, beg + i1, values, beg + i2, len - i1);
             }
             realLength = len - i1 + i2;
         }
@@ -4488,7 +4494,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         safeArrayCopy(getRuntime(), source, sourceStart, target, targetStart, length);
     }
 
-    private void safeArrayCopy(Ruby runtime, IRubyObject[] source, int sourceStart, IRubyObject[] target, int targetStart, int length) {
+    private static void safeArrayCopy(Ruby runtime, IRubyObject[] source, int sourceStart, IRubyObject[] target, int targetStart, int length) {
         try {
             System.arraycopy(source, sourceStart, target, targetStart, length);
         } catch (ArrayIndexOutOfBoundsException ex) {
