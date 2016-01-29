@@ -17,6 +17,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
@@ -31,6 +32,7 @@ import java.util.Deque;
 public class RopeOperations {
 
     public static final Rope EMPTY_ASCII_8BIT_ROPE = create(new byte[] {}, ASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
+    public static final Rope EMPTY_US_ASCII_ROPE = create(new byte [] {}, USASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
     public static final Rope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT);
 
     public static LeafRope create(byte[] bytes, Encoding encoding, int codeRange) {

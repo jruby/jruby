@@ -21,6 +21,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.rope.AsciiOnlyLeafRope;
@@ -49,7 +51,22 @@ public abstract class RopeNodes {
         public abstract Rope executeMake(Rope base, int offset, int byteLength);
 
         @Specialization(guards = "byteLength == 0")
-        public Rope substringZeroLength(Rope base, int offset, int byteLength) {
+        public Rope substringZeroLength(Rope base, int offset, int byteLength,
+                                        @Cached("createBinaryProfile()") ConditionProfile isUTF8,
+                                        @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
+                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit) {
+            if (isUTF8.profile(base.getEncoding() == UTF8Encoding.INSTANCE)) {
+                return RopeOperations.EMPTY_UTF8_ROPE;
+            }
+
+            if (isUSAscii.profile(base.getEncoding() == USASCIIEncoding.INSTANCE)) {
+                return RopeOperations.EMPTY_US_ASCII_ROPE;
+            }
+
+            if (isAscii8Bit.profile(base.getEncoding() == ASCIIEncoding.INSTANCE)) {
+                return RopeOperations.EMPTY_ASCII_8BIT_ROPE;
+            }
+
             return RopeOperations.withEncoding(RopeOperations.EMPTY_UTF8_ROPE, base.getEncoding());
         }
 
