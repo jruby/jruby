@@ -7,17 +7,13 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.callgraph;
+package org.jruby.truffle.tools.callgraph;
 
-public class CallsMethod implements Calls {
+public class CallsForeign implements Calls {
 
-    private final MethodVersion methodVersion;
+    public static final CallsForeign INSTANCE = new CallsForeign();
 
-    public CallsMethod(MethodVersion methodVersion) {
-        this.methodVersion = methodVersion;
+    private CallsForeign() {
     }
 
-    public MethodVersion getMethodVersion() {
-        return methodVersion;
-    }
 }

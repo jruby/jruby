@@ -7,13 +7,13 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.callgraph;
+package org.jruby.truffle.tools.callgraph;
 
-public class CallsForeign implements Calls {
+public class CallsMegamorphic implements Calls {
 
-    public static final CallsForeign INSTANCE = new CallsForeign();
+    public static final CallsMegamorphic INSTANCE = new CallsMegamorphic();
 
-    private CallsForeign() {
+    private CallsMegamorphic() {
     }
 
 }
