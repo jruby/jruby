@@ -423,7 +423,7 @@ public abstract class ArrayNodes {
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    createString(StringOperations.encodeByteList(method.getName(), UTF8Encoding.INSTANCE)), args);
+                    createString(StringOperations.encodeRope(method.getName(), UTF8Encoding.INSTANCE)), args);
         }
 
     }

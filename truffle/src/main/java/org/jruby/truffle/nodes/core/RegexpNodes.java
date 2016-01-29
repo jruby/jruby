@@ -430,7 +430,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(pattern)")
         public DynamicObject escape(DynamicObject pattern) {
-            return createString(StringOperations.encodeByteList(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteListReadOnly(pattern)), true).toString(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteListReadOnly(pattern)), true).toString(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -486,7 +486,7 @@ public abstract class RegexpNodes {
 
         @Specialization(guards = "isRubySymbol(raw)")
         public DynamicObject quoteSymbol(DynamicObject raw) {
-            return quoteString(createString(StringOperations.encodeByteList(Layouts.SYMBOL.getString(raw), UTF8Encoding.INSTANCE)));
+            return quoteString(createString(StringOperations.encodeRope(Layouts.SYMBOL.getString(raw), UTF8Encoding.INSTANCE)));
         }
 
     }

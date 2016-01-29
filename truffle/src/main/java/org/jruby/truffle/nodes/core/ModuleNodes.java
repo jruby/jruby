@@ -1353,7 +1353,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            return createString(StringOperations.encodeByteList(fields.getName(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(fields.getName(), UTF8Encoding.INSTANCE));
         }
     }
 
@@ -1894,7 +1894,7 @@ public abstract class ModuleNodes {
         @Specialization
         public DynamicObject toS(DynamicObject module) {
             final String name = Layouts.MODULE.getFields(module).getName();
-            return createString(StringOperations.encodeByteList(name, UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(name, UTF8Encoding.INSTANCE));
         }
 
     }

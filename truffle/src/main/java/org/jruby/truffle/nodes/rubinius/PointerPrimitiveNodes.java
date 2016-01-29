@@ -309,7 +309,7 @@ public abstract class PointerPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "type == TYPE_STRING")
         public DynamicObject getAtOffsetString(DynamicObject pointer, int offset, int type) {
-            return createString(StringOperations.encodeByteList(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE));
         }
 
         @Specialization(guards = "type == TYPE_PTR")

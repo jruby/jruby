@@ -2024,14 +2024,14 @@ public abstract class BigDecimalNodes {
         @TruffleBoundary
         @Specialization(guards = "isNormal(value)")
         public Object unscaled(DynamicObject value) {
-            return createString(StringOperations.encodeByteList(Layouts.BIG_DECIMAL.getValue(value).abs().stripTrailingZeros().unscaledValue().toString(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(Layouts.BIG_DECIMAL.getValue(value).abs().stripTrailingZeros().unscaledValue().toString(), UTF8Encoding.INSTANCE));
         }
 
         @Specialization(guards = "!isNormal(value)")
         public Object unscaledSpecial(DynamicObject value) {
             final String type = Layouts.BIG_DECIMAL.getType(value).getRepresentation();
             String string = type.startsWith("-") ? type.substring(1) : type;
-            return createString(StringOperations.encodeByteList(string, UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(string, UTF8Encoding.INSTANCE));
         }
 
     }

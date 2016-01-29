@@ -212,7 +212,7 @@ public abstract class TimePrimitiveNodes {
                 final Object timeZone = Layouts.TIME.getZone(time);
                 if (timeZone == nil()) {
                     final String zoneString = TimeZoneParser.getShortZoneName(dateTime, dateTime.getZone());
-                    zone = createString(StringOperations.encodeByteList(zoneString, UTF8Encoding.INSTANCE));
+                    zone = createString(StringOperations.encodeRope(zoneString, UTF8Encoding.INSTANCE));
                 } else {
                     zone = timeZone;
                 }
@@ -291,7 +291,7 @@ public abstract class TimePrimitiveNodes {
             } else if (utcoffset == nil()) {
                 zone = TimeZoneParser.parse(this, StringOperations.getString(getContext(), envZon));
                 final String zoneName = TimeZoneParser.getShortZoneName(new DateTime(year, month, mday, hour, min, sec), zone);
-                zoneToStore = createString(StringOperations.encodeByteList(zoneName, UTF8Encoding.INSTANCE));
+                zoneToStore = createString(StringOperations.encodeRope(zoneName, UTF8Encoding.INSTANCE));
                 relativeOffset = false;
             } else if (utcoffset instanceof Integer) {
                 zone = DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000);

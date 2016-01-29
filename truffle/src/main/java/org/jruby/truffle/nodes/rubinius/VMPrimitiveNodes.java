@@ -201,7 +201,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
-            return createString(StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -222,7 +222,7 @@ public abstract class VMPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
             }
-            return createString(StringOperations.encodeByteList(passwd.getHome(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(passwd.getHome(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -527,8 +527,8 @@ public abstract class VMPrimitiveNodes {
                 }
 
                 Object[] objects = new Object[]{
-                        createString(StringOperations.encodeByteList(key, UTF8Encoding.INSTANCE)),
-                        createString(StringOperations.encodeByteList(stringValue, UTF8Encoding.INSTANCE)) };
+                        createString(StringOperations.encodeRope(key, UTF8Encoding.INSTANCE)),
+                        createString(StringOperations.encodeRope(stringValue, UTF8Encoding.INSTANCE)) };
                 sectionKeyValues.add(Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
             }
 

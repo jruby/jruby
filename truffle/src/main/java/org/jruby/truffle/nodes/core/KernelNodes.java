@@ -149,7 +149,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return createString(StringOperations.encodeByteList(resultBuilder.toString(), EncodingOperations.getEncoding(EncodingNodes.getEncoding("UTF-8"))));
+            return createString(StringOperations.encodeRope(resultBuilder.toString(), EncodingOperations.getEncoding(EncodingNodes.getEncoding("UTF-8"))));
         }
 
     }
@@ -801,7 +801,7 @@ public abstract class KernelNodes {
                 }
             });
 
-            final DynamicObject rubyLine = createString(StringOperations.encodeByteList(line, UTF8Encoding.INSTANCE));
+            final DynamicObject rubyLine = createString(StringOperations.encodeRope(line, UTF8Encoding.INSTANCE));
 
             // Set the local variable $_ in the caller
 
@@ -2063,7 +2063,7 @@ public abstract class KernelNodes {
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return createString(StringOperations.encodeByteList("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE));
         }
 
     }

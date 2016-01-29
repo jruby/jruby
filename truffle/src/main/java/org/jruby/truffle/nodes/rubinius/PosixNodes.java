@@ -188,7 +188,7 @@ public abstract class PosixNodes {
                 return nil();
             }
 
-            return createString(StringOperations.encodeByteList((String) result, UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope((String) result, UTF8Encoding.INSTANCE));
         }
     }
 

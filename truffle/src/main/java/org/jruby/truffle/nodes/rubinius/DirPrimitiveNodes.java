@@ -127,7 +127,7 @@ public abstract class DirPrimitiveNodes {
                 final String[] contents = (String[]) Layouts.DIR.getContents(dir);
 
                 if (position < contents.length) {
-                    return createString(StringOperations.encodeByteList(contents[position], UTF8Encoding.INSTANCE));
+                    return createString(StringOperations.encodeRope(contents[position], UTF8Encoding.INSTANCE));
                 } else {
                     return nil();
                 }

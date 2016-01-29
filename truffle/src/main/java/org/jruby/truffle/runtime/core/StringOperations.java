@@ -212,8 +212,8 @@ public abstract class StringOperations {
         return RopeOperations.create(bytes, encoding, codeRange);
     }
 
-    public static Rope encode7BitRope(CharSequence value, Encoding encoding) {
-        return encodeRope(value, encoding, StringSupport.CR_7BIT);
+    public static Rope encodeRope(CharSequence value, Encoding encoding) {
+        return encodeRope(value, encoding, StringSupport.CR_UNKNOWN);
     }
 
     public static ByteList getByteList(DynamicObject object) {

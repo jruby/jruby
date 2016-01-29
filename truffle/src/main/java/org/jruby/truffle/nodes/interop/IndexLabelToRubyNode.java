@@ -36,6 +36,6 @@ public abstract class IndexLabelToRubyNode extends TargetableRubyNode {
 
     @TruffleBoundary
     private DynamicObject toString(String index) {
-        return createString(StringOperations.encodeByteList(index, UTF8Encoding.INSTANCE));
+        return createString(StringOperations.encodeRope(index, UTF8Encoding.INSTANCE));
     }
 }

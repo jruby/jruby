@@ -100,7 +100,7 @@ public abstract class TimeNodes {
             final DynamicObject zoneName = (DynamicObject) readTimeZoneNode.execute(frame);
             final DateTimeZone dateTimeZone = TimePrimitiveNodes.TimeZoneParser.parse(this, StringOperations.getString(getContext(), zoneName));
             final String shortZoneName = TimePrimitiveNodes.TimeZoneParser.getShortZoneName(time, dateTimeZone);
-            final DynamicObject zone = createString(StringOperations.encodeByteList(shortZoneName, UTF8Encoding.INSTANCE));
+            final DynamicObject zone = createString(StringOperations.encodeRope(shortZoneName, UTF8Encoding.INSTANCE));
             final DateTime dateTime = Layouts.TIME.getDateTime(time);
 
             Layouts.TIME.setIsUtc(time, false);
