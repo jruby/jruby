@@ -25,7 +25,7 @@ import org.jruby.truffle.nodes.core.FloatNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -38,6 +38,10 @@ public abstract class ToIntNode extends RubyNode {
     private final ConditionProfile wasInteger = ConditionProfile.createBinaryProfile();
     private final ConditionProfile wasLong = ConditionProfile.createBinaryProfile();
     private final ConditionProfile wasLongInRange = ConditionProfile.createBinaryProfile();
+
+    public static ToIntNode create(RubyContext context, SourceSection sourceSection) {
+        return ToIntNodeGen.create(context, sourceSection, null);
+    }
 
     public ToIntNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

@@ -18,11 +18,10 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
-import org.jruby.truffle.runtime.core.StringOperations;
 
 /**
  * Yield to the current block.
@@ -81,7 +80,7 @@ public class YieldNode extends RubyNode {
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return nil();
         } else {
-            return create7BitString(StringOperations.encodeByteList("yield", UTF8Encoding.INSTANCE));
+            return create7BitString("yield", UTF8Encoding.INSTANCE);
         }
     }
 

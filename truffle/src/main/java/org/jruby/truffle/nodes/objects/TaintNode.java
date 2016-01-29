@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -61,7 +61,7 @@ public abstract class TaintNode extends RubyNode {
     public Object taint(DynamicObject object) {
         if (writeTaintNode == null) {
             CompilerDirectives.transferToInterpreter();
-            writeTaintNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER));
+            writeTaintNode = insert(WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER));
         }
         writeTaintNode.execute(object, true);
         return object;

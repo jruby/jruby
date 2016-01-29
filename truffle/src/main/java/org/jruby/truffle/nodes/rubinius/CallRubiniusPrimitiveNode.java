@@ -13,9 +13,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.ReturnID;
+import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.ReturnException;
+import org.jruby.truffle.language.control.ReturnException;
 
 /**
  * Node which wraps a {@link RubiniusPrimitiveNode}, providing the implicit control flow that you get with calls to

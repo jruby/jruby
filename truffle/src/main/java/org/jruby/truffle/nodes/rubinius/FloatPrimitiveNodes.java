@@ -18,8 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Locale;
@@ -30,7 +29,7 @@ import java.util.Locale;
 public abstract class FloatPrimitiveNodes {
 
     @RubiniusPrimitive(name = "float_dtoa")
-    public static abstract class FloatDToAPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class FloatDToAPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public FloatDToAPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -73,13 +72,13 @@ public abstract class FloatPrimitiveNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{create7BitString(StringOperations.encodeByteList(string, UTF8Encoding.INSTANCE)), decimal, sign, string.length()}, 4);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{create7BitString(string, UTF8Encoding.INSTANCE), decimal, sign, string.length()}, 4);
         }
 
     }
 
     @RubiniusPrimitive(name = "float_signbit_p")
-    public static abstract class FloatSignBitNode extends RubiniusPrimitiveNode {
+    public static abstract class FloatSignBitNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public FloatSignBitNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -94,7 +93,7 @@ public abstract class FloatPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "float_round")
-    public static abstract class FloatRoundPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class FloatRoundPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 

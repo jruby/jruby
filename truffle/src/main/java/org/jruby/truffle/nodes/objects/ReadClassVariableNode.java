@@ -19,8 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ReadClassVariableNode extends RubyNode {
@@ -69,7 +68,7 @@ public class ReadClassVariableNode extends RubyNode {
         if (value == null) {
             return nil();
         } else {
-            return create7BitString(StringOperations.encodeByteList("class variable", UTF8Encoding.INSTANCE));
+            return create7BitString("class variable", UTF8Encoding.INSTANCE);
         }
     }
 

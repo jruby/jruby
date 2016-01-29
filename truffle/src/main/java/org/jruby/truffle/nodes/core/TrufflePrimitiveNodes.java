@@ -34,9 +34,9 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.backtrace.BacktraceInterleaver;
-import org.jruby.truffle.runtime.cext.CExtManager;
-import org.jruby.truffle.runtime.cext.CExtSubsystem;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.cext.CExtManager;
+import org.jruby.truffle.cext.CExtSubsystem;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -127,7 +127,7 @@ public abstract class TrufflePrimitiveNodes {
                 return nil();
             }
 
-            return createString(StringOperations.encodeByteList(source, UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(source, UTF8Encoding.INSTANCE));
         }
 
     }
@@ -200,7 +200,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject javaClassOf(Object value) {
-            return createString(StringOperations.encodeByteList(value.getClass().getSimpleName(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(value.getClass().getSimpleName(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -223,7 +223,7 @@ public abstract class TrufflePrimitiveNodes {
                 builder.append(String.format("\\x%02x", byteList.get(i)));
             }
 
-            return createString(StringOperations.encodeByteList(builder.toString(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(builder.toString(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -267,7 +267,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject graalVersion() {
-            return createString(StringOperations.encodeByteList(System.getProperty("graal.version", "unknown"), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(System.getProperty("graal.version", "unknown"), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -309,7 +309,7 @@ public abstract class TrufflePrimitiveNodes {
                 final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
 
                 if (source.getKey().getPath() != null) {
-                    converted.put(createString(StringOperations.encodeByteList(source.getKey().getPath(), UTF8Encoding.INSTANCE)), array);
+                    converted.put(createString(StringOperations.encodeRope(source.getKey().getPath(), UTF8Encoding.INSTANCE)), array);
                 }
             }
 
@@ -517,7 +517,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return createString(StringOperations.encodeByteList(getContext().getRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(getContext().getRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -531,7 +531,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject hostOS() {
-            return createString(StringOperations.encodeByteList(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE));
         }
 
     }

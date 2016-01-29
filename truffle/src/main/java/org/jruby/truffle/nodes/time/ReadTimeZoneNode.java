@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.language.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.util.ByteList;
@@ -41,7 +41,7 @@ public class ReadTimeZoneNode extends RubyNode {
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
         envNode = new ReadLiteralConstantNode(context, sourceSection,
                 new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()), "ENV");
-        TZ = create7BitString(StringOperations.encodeByteList("TZ", UTF8Encoding.INSTANCE));
+        TZ = create7BitString("TZ", UTF8Encoding.INSTANCE);
     }
 
     @Override

@@ -39,9 +39,9 @@ import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.format.parser.UnpackCompiler;
-import org.jruby.truffle.format.runtime.PackResult;
-import org.jruby.truffle.format.runtime.exceptions.*;
+import org.jruby.truffle.core.format.parser.UnpackCompiler;
+import org.jruby.truffle.core.format.runtime.PackResult;
+import org.jruby.truffle.core.format.runtime.exceptions.*;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.StringCachingGuards;
@@ -62,7 +62,7 @@ import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -312,7 +312,7 @@ public abstract class StringNodes {
                 respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToNode.doesRespondToString(frame, b, create7BitString(StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE)), false)) {
+            if (respondToNode.doesRespondToString(frame, b, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
                 if (objectEqualNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -360,7 +360,7 @@ public abstract class StringNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToToStrNode.doesRespondToString(frame, b, create7BitString(StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE)), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, b, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -384,7 +384,7 @@ public abstract class StringNodes {
                 respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToCmpNode.doesRespondToString(frame, b, create7BitString(StringOperations.encodeByteList("<=>", UTF8Encoding.INSTANCE)), false)) {
+            if (respondToCmpNode.doesRespondToString(frame, b, create7BitString("<=>", UTF8Encoding.INSTANCE), false)) {
                 if (cmpNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -439,13 +439,13 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards =  { "isRubyString(other)", "!is7Bit(string) || !is7Bit(other)" })
-        public Object concatString(VirtualFrame frame, DynamicObject string, DynamicObject other) {
+        public Object concatString(DynamicObject string, DynamicObject other) {
             if (stringAppendNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 stringAppendNode = insert(StringPrimitiveNodesFactory.StringAppendPrimitiveNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
             }
 
-            return stringAppendNode.executeStringAppend(frame, string, other);
+            return stringAppendNode.executeStringAppend(string, other);
         }
 
         @Specialization(guards = "!isRubyString(other)")
@@ -1613,12 +1613,14 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = "isRubyString(other)")
-        public DynamicObject replace(DynamicObject string, DynamicObject other) {
-            if (string == other) {
-                return string;
-            }
+        @Specialization(guards = "string == other")
+        public DynamicObject replaceStringIsSameAsOther(DynamicObject string, DynamicObject other) {
+            return string;
+        }
 
+
+        @Specialization(guards = { "string != other", "isRubyString(other)" })
+        public DynamicObject replace(DynamicObject string, DynamicObject other) {
             StringOperations.setRope(string, rope(other));
 
             return string;

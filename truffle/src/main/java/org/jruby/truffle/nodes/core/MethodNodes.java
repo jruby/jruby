@@ -33,9 +33,9 @@ import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -190,7 +190,7 @@ public abstract class MethodNodes {
             if (sourceSection.getSource() == null) {
                 return nil();
             } else {
-                DynamicObject file = createString(StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
+                DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             }

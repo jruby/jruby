@@ -23,8 +23,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
@@ -667,7 +666,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject value, NotProvided base) {
-            return create7BitString(StringOperations.encodeByteList(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE));
+            return create7BitString(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
@@ -678,7 +677,7 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return create7BitString(StringOperations.encodeByteList(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE));
+            return create7BitString(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE);
         }
 
     }

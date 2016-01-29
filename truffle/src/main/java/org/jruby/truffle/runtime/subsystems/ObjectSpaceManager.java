@@ -16,7 +16,7 @@ import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.RubyGC;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.lang.ref.ReferenceQueue;

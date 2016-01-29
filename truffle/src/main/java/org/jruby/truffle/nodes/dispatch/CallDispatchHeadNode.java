@@ -15,7 +15,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 
 public class CallDispatchHeadNode extends DispatchHeadNode {
 

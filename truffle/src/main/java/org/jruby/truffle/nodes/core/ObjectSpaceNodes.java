@@ -24,7 +24,7 @@ import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectGraph;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
@@ -86,7 +86,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return ReadHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER, 0L);
+            return ReadHeadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {

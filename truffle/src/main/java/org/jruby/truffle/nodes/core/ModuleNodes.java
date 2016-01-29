@@ -31,19 +31,20 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.arguments.CheckArityNode;
-import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
-import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.CheckArityNode;
+import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.*;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
-import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.GenerateAccessorNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
@@ -58,7 +59,7 @@ import org.jruby.truffle.nodes.methods.GetCurrentVisibilityNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.ModuleFields;
@@ -67,7 +68,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
@@ -1353,7 +1354,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            return createString(StringOperations.encodeByteList(fields.getName(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(fields.getName(), UTF8Encoding.INSTANCE));
         }
     }
 
@@ -1894,7 +1895,7 @@ public abstract class ModuleNodes {
         @Specialization
         public DynamicObject toS(DynamicObject module) {
             final String name = Layouts.MODULE.getFields(module).getName();
-            return createString(StringOperations.encodeByteList(name, UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(name, UTF8Encoding.INSTANCE));
         }
 
     }

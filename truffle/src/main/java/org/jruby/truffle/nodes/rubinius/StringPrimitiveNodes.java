@@ -56,7 +56,10 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -68,6 +71,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ArrayAttributeCastNodeGen;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.nodes.core.RopeNodes;
@@ -77,12 +81,11 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -100,7 +103,7 @@ public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "character_ascii_p")
     @ImportStatic(StringGuards.class)
-    public static abstract class CharacterAsciiPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class CharacterAsciiPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public CharacterAsciiPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -127,7 +130,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "character_printable_p")
-    public static abstract class CharacterPrintablePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class CharacterPrintablePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public CharacterPrintablePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -147,7 +150,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_append")
-    public static abstract class StringAppendPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringAppendPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeConcatNode makeConcatNode;
 
@@ -156,10 +159,10 @@ public abstract class StringPrimitiveNodes {
             makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
         }
 
-        public abstract DynamicObject executeStringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other);
+        public abstract DynamicObject executeStringAppend(DynamicObject string, DynamicObject other);
 
         @Specialization(guards = "isRubyString(other)")
-        public DynamicObject stringAppend(VirtualFrame frame, DynamicObject string, DynamicObject other) {
+        public DynamicObject stringAppend(DynamicObject string, DynamicObject other) {
             final Rope left = rope(string);
             final Rope right = rope(other);
 
@@ -179,7 +182,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_awk_split")
-    public static abstract class StringAwkSplitPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringAwkSplitPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
@@ -262,11 +265,20 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_byte_substring")
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "string"),
+            @NodeChild(type = RubyNode.class, value = "index"),
+            @NodeChild(type = RubyNode.class, value = "length")
+    })
     public static abstract class StringByteSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
+
+        public static StringByteSubstringPrimitiveNode create(RubyContext context, SourceSection sourceSection) {
+            return StringPrimitiveNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(context, sourceSection, null, null, null);
+        }
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -275,15 +287,30 @@ public abstract class StringPrimitiveNodes {
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, NotProvided length) {
-            final DynamicObject subString = (DynamicObject) stringByteSubstring(frame, string, index, 1);
+        @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
+            return ArrayAttributeCastNodeGen.create(getContext(), getSourceSection(), "index", index);
+        }
 
-            if (subString == nil()) {
+        @CreateCast("length") public RubyNode coerceLengthToInt(RubyNode length) {
+            return ArrayAttributeCastNodeGen.create(getContext(), getSourceSection(), "length", length);
+        }
+
+        public Object executeStringByteSubstring(DynamicObject string, Object index, Object length) { return nil(); }
+
+        @Specialization
+        public Object stringByteSubstring(DynamicObject string, int index, NotProvided length,
+                                          @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile lengthTooLongProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile nilSubstringProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile emptySubstringProfile) {
+            final DynamicObject subString = (DynamicObject) stringByteSubstring(string, index, 1, negativeLengthProfile, indexOutOfBoundsProfile, lengthTooLongProfile);
+
+            if (nilSubstringProfile.profile(subString == nil())) {
                 return subString;
             }
 
-            if (rope(subString).isEmpty()) {
+            if (emptySubstringProfile.profile(rope(subString).isEmpty())) {
                 return nil();
             }
 
@@ -291,8 +318,11 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, int length) {
-            if (length < 0) {
+        public Object stringByteSubstring(DynamicObject string, int index, int length,
+                                          @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile lengthTooLongProfile) {
+            if (negativeLengthProfile.profile(length < 0)) {
                 return nil();
             }
 
@@ -300,11 +330,11 @@ public abstract class StringPrimitiveNodes {
             final int stringLength = rope.characterLength();
             final int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
-            if (normalizedIndex < 0 || normalizedIndex > rope.byteLength()) {
+            if (indexOutOfBoundsProfile.profile(normalizedIndex < 0 || normalizedIndex > rope.byteLength())) {
                 return nil();
             }
 
-            if (normalizedIndex + length > rope.byteLength()) {
+            if (lengthTooLongProfile.profile(normalizedIndex + length > rope.byteLength())) {
                 length = rope.byteLength() - normalizedIndex;
             }
 
@@ -314,93 +344,15 @@ public abstract class StringPrimitiveNodes {
             return taintResultNode.maybeTaint(string, result);
         }
 
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, long length) {
-            return stringByteSubstring(frame, string, (long) index, length);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, double length) {
-            return stringByteSubstring(frame, string, index, (int) length);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(DynamicObject string, int index, DynamicObject length) {
-            return null;
-        }
-
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, long index, NotProvided length) {
-            return stringByteSubstring(frame, string, index, 1);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, long index, int length) {
-            return stringByteSubstring(frame, string, index, (long) length);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, long index, long length) {
-            if (index > Integer.MAX_VALUE || index < Integer.MIN_VALUE) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("index out of int range", this));
-            }
-            if (length > Integer.MAX_VALUE || length < Integer.MIN_VALUE) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("length out of int range", this));
-            }
-            return stringByteSubstring(frame, string, (int) index, (int) length);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame,DynamicObject string, long index, double length) {
-            return stringByteSubstring(frame, string, index, (int) length);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(DynamicObject string, long index, DynamicObject length) {
-            return null;
-        }
-
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, double index, NotProvided length) {
-            return stringByteSubstring(frame, string, (int) index, 1);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, double index, int length) {
-            return stringByteSubstring(frame, string, (int) index, length);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, double index, long length) {
-            return stringByteSubstring(frame, string, (int) index, length);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, double index, double length) {
-            return stringByteSubstring(frame, string, (int) index, (int) length);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(DynamicObject string, double index, DynamicObject length) {
-            return null;
-        }
-
         @Specialization(guards = "isRubyRange(range)")
         public Object stringByteSubstring(DynamicObject string, DynamicObject range, NotProvided length) {
-            return null;
-        }
-
-        @Specialization(guards = "!isRubyRange(index)")
-        public Object stringByteSubstring(DynamicObject string, DynamicObject index, Object length) {
             return null;
         }
 
     }
 
     @RubiniusPrimitive(name = "string_check_null_safe", needsSelf = false)
-    public static abstract class StringCheckNullSafePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringCheckNullSafePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringCheckNullSafePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -423,13 +375,11 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_chr_at", lowerFixnumParameters = 0)
-    public static abstract class StringChrAtPrimitiveNode extends RubiniusPrimitiveNode {
-
-        @Child private StringByteSubstringPrimitiveNode stringByteSubstringNode;
+    @ImportStatic(StringGuards.class)
+    public static abstract class StringChrAtPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringChrAtPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            stringByteSubstringNode = StringPrimitiveNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {});
         }
 
         @Specialization(guards = "indexOutOfBounds(string, byteIndex)")
@@ -437,8 +387,15 @@ public abstract class StringPrimitiveNodes {
             return false;
         }
 
-        @Specialization(guards = "!indexOutOfBounds(string, byteIndex)")
-        public Object stringChrAt(VirtualFrame frame, DynamicObject string, int byteIndex) {
+        @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "isSingleByteOptimizable(string)" })
+        public Object stringChrAtSingleByte(DynamicObject string, int byteIndex,
+                                            @Cached("create(getContext(), getSourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
+            return stringByteSubstringNode.executeStringByteSubstring(string, byteIndex, 1);
+        }
+
+        @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "!isSingleByteOptimizable(string)" })
+        public Object stringChrAt(DynamicObject string, int byteIndex,
+                                  @Cached("create(getContext(), getSourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             // Taken from Rubinius's Character::create_from.
 
             final Rope rope = rope(string);
@@ -454,7 +411,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            return stringByteSubstringNode.stringByteSubstring(frame, string, byteIndex, n);
+            return stringByteSubstringNode.executeStringByteSubstring(string, byteIndex, n);
         }
 
         @TruffleBoundary
@@ -469,7 +426,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_compare_substring")
-    public static abstract class StringCompareSubstringPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringCompareSubstringPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -525,7 +482,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_equal", needsSelf = true)
-    public static abstract class StringEqualPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringEqualPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -637,7 +594,7 @@ public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "string_find_character")
     @ImportStatic(StringGuards.class)
-    public static abstract class StringFindCharacterNode extends RubiniusPrimitiveNode {
+    public static abstract class StringFindCharacterNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
@@ -709,7 +666,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_from_codepoint", needsSelf = false)
-    public static abstract class StringFromCodepointPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringFromCodepointPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringFromCodepointPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -766,7 +723,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_to_f", needsSelf = false)
-    public static abstract class StringToFPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringToFPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringToFPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -785,7 +742,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_index", lowerFixnumParameters = 1)
-    public static abstract class StringIndexPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child StringByteCharacterIndexNode byteIndexToCharIndexNode;
 
@@ -819,7 +776,7 @@ public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
     @ImportStatic(StringGuards.class)
-    public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveNode {
+    public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public CharacterByteIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -842,7 +799,7 @@ public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "string_byte_character_index", needsSelf = false)
     @ImportStatic(StringGuards.class)
-    public static abstract class StringByteCharacterIndexNode extends RubiniusPrimitiveNode {
+    public static abstract class StringByteCharacterIndexNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringByteCharacterIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -894,7 +851,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_character_index", needsSelf = false, lowerFixnumParameters = 2)
-    public static abstract class StringCharacterIndexPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringCharacterIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -998,7 +955,7 @@ public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "string_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
     @ImportStatic(StringGuards.class)
-    public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1108,7 +1065,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_previous_byte_index")
-    public static abstract class StringPreviousByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringPreviousByteIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringPreviousByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1139,7 +1096,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_copy_from", needsSelf = false, lowerFixnumParameters = { 2, 3, 4 })
-    public static abstract class StringCopyFromPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringCopyFromPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringCopyFromPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1200,7 +1157,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 1)
-    public static abstract class StringResizeCapacityPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringResizeCapacityPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringResizeCapacityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1215,7 +1172,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_rindex", lowerFixnumParameters = 1)
-    public static abstract class StringRindexPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringRindexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringRindexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1284,7 +1241,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_pattern", lowerFixnumParameters = { 0, 1 })
-    public static abstract class StringPatternPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringPatternPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
@@ -1327,7 +1284,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
-    public static abstract class StringSplicePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringSplicePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeConcatNode appendMakeConcatNode;
         @Child private RopeNodes.MakeConcatNode prependMakeConcatNode;
@@ -1431,7 +1388,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_to_inum")
-    public static abstract class StringToInumPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringToInumPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringToInumPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1455,7 +1412,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_byte_append")
-    public static abstract class StringByteAppendPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringByteAppendPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeConcatNode makeConcatNode;
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
@@ -1491,7 +1448,7 @@ public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "string_substring", lowerFixnumParameters = { 0, 1 })
     @ImportStatic(StringGuards.class)
-    public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
@@ -1648,7 +1605,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_from_bytearray", needsSelf = false, lowerFixnumParameters = { 1, 2 })
-    public static abstract class StringFromByteArrayPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringFromByteArrayPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringFromByteArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

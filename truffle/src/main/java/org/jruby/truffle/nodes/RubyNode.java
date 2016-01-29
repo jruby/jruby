@@ -19,14 +19,17 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
+import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
@@ -52,7 +55,7 @@ public abstract class RubyNode extends Node {
     public abstract Object execute(VirtualFrame frame);
 
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString(StringOperations.encodeByteList("expression", UTF8Encoding.INSTANCE));
+        return create7BitString("expression", UTF8Encoding.INSTANCE);
     }
 
     // Execute without returning the result
@@ -166,9 +169,8 @@ public abstract class RubyNode extends Node {
         return StringOperations.createString(getContext(), bytes);
     }
 
-    /** Creates a String from the ByteList, with 7-bit CR */
-    protected DynamicObject create7BitString(ByteList bytes) {
-        return StringOperations.create7BitString(getContext(), bytes);
+    protected DynamicObject create7BitString(CharSequence value, Encoding encoding) {
+        return StringOperations.createString(getContext(), StringOperations.encodeRope(value, encoding, StringSupport.CR_7BIT));
     }
 
     protected DynamicObject createString(Rope rope) {

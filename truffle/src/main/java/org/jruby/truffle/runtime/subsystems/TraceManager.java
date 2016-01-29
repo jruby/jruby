@@ -22,7 +22,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubySyntaxTag;
 import org.jruby.truffle.runtime.core.StringOperations;

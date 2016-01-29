@@ -44,7 +44,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -53,7 +53,7 @@ import java.io.File;
 public abstract class DirPrimitiveNodes {
 
     @RubiniusPrimitive(name = "dir_allocate")
-    public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -67,7 +67,7 @@ public abstract class DirPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "dir_open")
-    public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -106,7 +106,7 @@ public abstract class DirPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "dir_read")
-    public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -120,14 +120,14 @@ public abstract class DirPrimitiveNodes {
             Layouts.DIR.setPosition(dir, position + 1);
 
             if (position == -2) {
-                return create7BitString(StringOperations.encodeByteList(".", UTF8Encoding.INSTANCE));
+                return create7BitString(".", UTF8Encoding.INSTANCE);
             } else if (position == -1) {
-                return create7BitString(StringOperations.encodeByteList("..", UTF8Encoding.INSTANCE));
+                return create7BitString("..", UTF8Encoding.INSTANCE);
             } else {
                 final String[] contents = (String[]) Layouts.DIR.getContents(dir);
 
                 if (position < contents.length) {
-                    return createString(StringOperations.encodeByteList(contents[position], UTF8Encoding.INSTANCE));
+                    return createString(StringOperations.encodeRope(contents[position], UTF8Encoding.INSTANCE));
                 } else {
                     return nil();
                 }
@@ -138,7 +138,7 @@ public abstract class DirPrimitiveNodes {
 
 
     @RubiniusPrimitive(name = "dir_control")
-    public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirControlPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -164,7 +164,7 @@ public abstract class DirPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "dir_close")
-    public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

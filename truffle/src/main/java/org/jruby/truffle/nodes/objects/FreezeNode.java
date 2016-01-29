@@ -71,7 +71,7 @@ public abstract class FreezeNode extends RubyNode {
     public Object freeze(DynamicObject object) {
         if (writeFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();
-            writeFrozenNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.FROZEN_IDENTIFIER));
+            writeFrozenNode = insert(WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER));
         }
 
         writeFrozenNode.execute(object, true);

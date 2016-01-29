@@ -14,9 +14,8 @@ import com.oracle.truffle.api.utilities.ValueProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.StringOperations;
 
 public class SelfNode extends RubyNode {
 
@@ -33,7 +32,7 @@ public class SelfNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString(StringOperations.encodeByteList("self", UTF8Encoding.INSTANCE));
+        return create7BitString("self", UTF8Encoding.INSTANCE);
     }
 
 }

@@ -16,14 +16,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
-import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.util.ByteList;
 
 public abstract class StatPrimitiveNodes {
 
@@ -159,13 +157,13 @@ public abstract class StatPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "stat_stat")
-    public static abstract class StatStatPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StatStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private WriteHeadObjectFieldNode writeStatNode;
 
         public StatStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(getContext(), STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -189,13 +187,13 @@ public abstract class StatPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "stat_fstat")
-    public static abstract class StatFStatPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StatFStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private WriteHeadObjectFieldNode writeStatNode;
 
         public StatFStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(getContext(), STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -214,13 +212,13 @@ public abstract class StatPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "stat_lstat")
-    public static abstract class StatLStatPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StatLStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private WriteHeadObjectFieldNode writeStatNode;
 
         public StatLStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(getContext(), STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -243,13 +241,13 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    public static abstract class StatReadPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StatReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private ReadHeadObjectFieldNode readStatNode;
 
         public StatReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readStatNode = ReadHeadObjectFieldNodeGen.create(STAT_IDENTIFIER, null);
+            readStatNode = ReadHeadObjectFieldNodeGen.create(getContext(), STAT_IDENTIFIER, null);
         }
 
         public FileStat getStat(DynamicObject rubyStat) {

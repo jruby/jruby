@@ -17,10 +17,9 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -210,7 +209,7 @@ public class RubyCallNode extends RubyNode {
             return nil();
         }
 
-        return create7BitString(StringOperations.encodeByteList("method", UTF8Encoding.INSTANCE));
+        return create7BitString("method", UTF8Encoding.INSTANCE);
     }
 
     private Object respondToMissing(VirtualFrame frame, Object receiverObject) {

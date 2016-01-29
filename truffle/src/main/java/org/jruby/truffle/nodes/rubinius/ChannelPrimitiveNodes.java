@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 public abstract class ChannelPrimitiveNodes {
 
     @RubiniusPrimitive(name = "channel_new")
-    public static abstract class ChannelNewPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class ChannelNewPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public ChannelNewPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

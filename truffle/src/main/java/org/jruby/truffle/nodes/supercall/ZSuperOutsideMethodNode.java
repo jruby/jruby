@@ -14,10 +14,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -55,7 +54,7 @@ public class ZSuperOutsideMethodNode extends RubyNode {
         if (superMethod == null) {
             return nil();
         } else {
-            return create7BitString(StringOperations.encodeByteList("super", UTF8Encoding.INSTANCE));
+            return create7BitString("super", UTF8Encoding.INSTANCE);
         }
     }
 

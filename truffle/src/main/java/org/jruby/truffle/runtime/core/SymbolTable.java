@@ -49,7 +49,7 @@ public class SymbolTable {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public synchronized DynamicObject getSymbol(Rope rope) {
+    public DynamicObject getSymbol(Rope rope) {
         lock.readLock().lock();
 
         try {

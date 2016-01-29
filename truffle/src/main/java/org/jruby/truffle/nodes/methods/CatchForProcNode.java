@@ -15,10 +15,10 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.NextException;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.RedoException;
-import org.jruby.truffle.runtime.control.RetryException;
+import org.jruby.truffle.language.control.NextException;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.control.RedoException;
+import org.jruby.truffle.language.control.RetryException;
 
 public class CatchForProcNode extends RubyNode {
 

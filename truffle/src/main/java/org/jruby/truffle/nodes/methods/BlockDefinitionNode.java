@@ -16,13 +16,13 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.ProcNodes.Type;
-import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
-import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.locals.ReadFrameSlotNode;
+import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.FrameOnStackMarker;
+import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.BreakID;
+import org.jruby.truffle.language.control.BreakID;
 
 /**
  * Create a RubyProc to pass as a block to the called method.

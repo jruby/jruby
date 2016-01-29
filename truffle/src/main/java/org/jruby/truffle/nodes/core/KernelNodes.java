@@ -29,9 +29,10 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.format.parser.PrintfCompiler;
-import org.jruby.truffle.format.runtime.PackResult;
-import org.jruby.truffle.format.runtime.exceptions.*;
+import org.jruby.truffle.core.format.parser.PrintfCompiler;
+import org.jruby.truffle.core.format.runtime.PackResult;
+import org.jruby.truffle.core.format.runtime.exceptions.*;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -62,7 +63,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -74,8 +75,8 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
-import org.jruby.truffle.translator.TranslatorDriver;
-import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.translator.TranslatorDriver;
+import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
@@ -149,7 +150,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return createString(StringOperations.encodeByteList(resultBuilder.toString(), EncodingOperations.getEncoding(EncodingNodes.getEncoding("UTF-8"))));
+            return createString(StringOperations.encodeRope(resultBuilder.toString(), EncodingOperations.getEncoding(EncodingNodes.getEncoding("UTF-8"))));
         }
 
     }
@@ -801,7 +802,7 @@ public abstract class KernelNodes {
                 }
             });
 
-            final DynamicObject rubyLine = createString(StringOperations.encodeByteList(line, UTF8Encoding.INSTANCE));
+            final DynamicObject rubyLine = createString(StringOperations.encodeRope(line, UTF8Encoding.INSTANCE));
 
             // Set the local variable $_ in the caller
 
@@ -958,8 +959,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        protected static final int LIMIT = Options.FIELD_LOOKUP_CACHE;
-
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
             return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
@@ -967,7 +966,7 @@ public abstract class KernelNodes {
 
         @Specialization(
                 guards = { "isRubySymbol(name)", "name == cachedName" },
-                limit = "LIMIT")
+                limit = "getCacheLimit()")
         public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
                 @Cached("name") DynamicObject cachedName,
                 @Cached("createReadFieldNode(checkName(symbolToString(cachedName)))") ReadHeadObjectFieldNode readHeadObjectFieldNode) {
@@ -999,7 +998,11 @@ public abstract class KernelNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadFieldNode(String name) {
-            return ReadHeadObjectFieldNodeGen.create(name, nil());
+            return ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().INSTANCE_VARIABLE_CACHE;
         }
 
     }
@@ -1016,8 +1019,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        protected static final int LIMIT = Options.FIELD_LOOKUP_CACHE;
-
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
             return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
@@ -1025,7 +1026,7 @@ public abstract class KernelNodes {
 
         @Specialization(
                 guards = { "isRubySymbol(name)", "name == cachedName" },
-                limit = "LIMIT")
+                limit = "getCacheLimit()")
         public Object instanceVariableSetSymbolCached(DynamicObject object, DynamicObject name, Object value,
                                                       @Cached("name") DynamicObject cachedName,
                                                       @Cached("createWriteFieldNode(checkName(symbolToString(cachedName)))") WriteHeadObjectFieldNode writeHeadObjectFieldNode) {
@@ -1059,7 +1060,11 @@ public abstract class KernelNodes {
         }
 
         protected WriteHeadObjectFieldNode createWriteFieldNode(String name) {
-            return WriteHeadObjectFieldNodeGen.create(name);
+            return WriteHeadObjectFieldNodeGen.create(getContext(), name);
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().INSTANCE_VARIABLE_CACHE;
         }
 
     }
@@ -2063,7 +2068,7 @@ public abstract class KernelNodes {
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return createString(StringOperations.encodeByteList("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE));
         }
 
     }
@@ -2079,7 +2084,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = WriteHeadObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
+            writeTaintNode = WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
         }
 
         @Specialization

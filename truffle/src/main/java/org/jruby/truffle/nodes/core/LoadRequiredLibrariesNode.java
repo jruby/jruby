@@ -16,7 +16,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 
@@ -37,7 +37,7 @@ public class LoadRequiredLibrariesNode extends RubyNode {
         Object self = RubyArguments.getSelf(frame.getArguments());
 
         for (String requiredLibrary : getRequiredLibraries()) {
-            requireNode.call(frame, self, "require", null, createString(StringOperations.encodeByteList(requiredLibrary, UTF8Encoding.INSTANCE)));
+            requireNode.call(frame, self, "require", null, createString(StringOperations.encodeRope(requiredLibrary, UTF8Encoding.INSTANCE)));
         }
 
         return nil();

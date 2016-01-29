@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Collections;

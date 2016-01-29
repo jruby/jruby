@@ -58,7 +58,6 @@ public abstract class BlockBody {
     }
 
     public void setEvalType(EvalType evalType) {
-        System.err.println("setEvalType unimplemented in " + this.getClass().getName());
     }
 
     public boolean canCallDirect() {

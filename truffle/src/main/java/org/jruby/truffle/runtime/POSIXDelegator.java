@@ -310,6 +310,11 @@ public abstract class POSIXDelegator implements POSIX {
     }
 
     @Override
+    public int mkfifo(String path, int mode) {
+        return delegateTo.mkfifo(path, mode);
+    }
+
+    @Override
     public String readlink(String path) throws IOException {
         return delegateTo.readlink(path);
     }

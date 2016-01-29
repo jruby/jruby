@@ -14,11 +14,10 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.language.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ReadLiteralConstantNode extends RubyNode {
@@ -74,7 +73,7 @@ public class ReadLiteralConstantNode extends RubyNode {
         if (constant == null) {
             return nil();
         } else {
-            return create7BitString(StringOperations.encodeByteList("constant", UTF8Encoding.INSTANCE));
+            return create7BitString("constant", UTF8Encoding.INSTANCE);
         }
     }
 

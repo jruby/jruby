@@ -26,10 +26,9 @@ import org.jruby.truffle.nodes.core.RopeNodesFactory;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.StringSupport;
 import static org.jruby.truffle.runtime.core.StringOperations.decodeUTF8;
 
@@ -188,7 +187,7 @@ public abstract class PosixNodes {
                 return nil();
             }
 
-            return createString(StringOperations.encodeByteList((String) result, UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope((String) result, UTF8Encoding.INSTANCE));
         }
     }
 
@@ -850,7 +849,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isNil(hostName)", "isRubyString(serviceName)"})
         public int getaddrinfoNil(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
-            return getaddrinfoString(create7BitString(StringOperations.encodeByteList("0.0.0.0", UTF8Encoding.INSTANCE)), serviceName, hintsPointer, resultsPointer);
+            return getaddrinfoString(create7BitString("0.0.0.0", UTF8Encoding.INSTANCE), serviceName, hintsPointer, resultsPointer);
         }
 
         @CompilerDirectives.TruffleBoundary

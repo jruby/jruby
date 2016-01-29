@@ -18,16 +18,16 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import org.jruby.truffle.nodes.ShapeCachingGuards;
-import org.jruby.truffle.runtime.Options;
+import org.jruby.truffle.runtime.RubyContext;
 
 @ImportStatic(ShapeCachingGuards.class)
 public abstract class WriteHeadObjectFieldNode extends Node {
 
-    protected static final int CACHE_LIMIT = Options.FIELD_LOOKUP_CACHE;
-
+    private final RubyContext context;
     private final Object name;
 
-    public WriteHeadObjectFieldNode(Object name) {
+    public WriteHeadObjectFieldNode(RubyContext context, Object name) {
+        this.context = context;
         this.name = name;
     }
 
@@ -43,7 +43,7 @@ public abstract class WriteHeadObjectFieldNode extends Node {
                     "object.getShape() == cachedShape"
             },
             assumptions = { "cachedShape.getValidAssumption()", "validLocation" },
-            limit = "CACHE_LIMIT")
+            limit = "getCacheLimit()")
     public void writeExistingField(DynamicObject object, Object value,
             @Cached("getLocation(object, value)") Location location,
             @Cached("object.getShape()") Shape cachedShape,
@@ -62,7 +62,7 @@ public abstract class WriteHeadObjectFieldNode extends Node {
                     "location == null",
                     "object.getShape() == oldShape" },
             assumptions = { "oldShape.getValidAssumption()", "newShape.getValidAssumption()", "validLocation" },
-            limit = "CACHE_LIMIT")
+            limit = "getCacheLimit()")
     public void writeNewField(DynamicObject object, Object value,
             @Cached("getLocation(object, value)") Location location,
             @Cached("object.getShape()") Shape oldShape,
@@ -110,6 +110,10 @@ public abstract class WriteHeadObjectFieldNode extends Node {
 
     protected Assumption createAssumption() {
         return Truffle.getRuntime().createAssumption("object location is valid");
+    }
+
+    protected int getCacheLimit() {
+        return context.getOptions().INSTANCE_VARIABLE_CACHE;
     }
 
 }

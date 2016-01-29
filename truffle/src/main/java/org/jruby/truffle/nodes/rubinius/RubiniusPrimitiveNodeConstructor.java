@@ -12,11 +12,11 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
-import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.runtime.ReturnID;
+import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 
@@ -42,6 +42,10 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
         int argumentsCount = getPrimitiveArity();
         final List<RubyNode> arguments = new ArrayList<>(argumentsCount);
+        List<List<Class<?>>> signatures = factory.getNodeSignatures();
+
+        assert signatures.size() == 1;
+        List<Class<?>> signature = signatures.get(0);
 
         if (annotation.needsSelf()) {
             arguments.add(new SelfNode(context, sourceSection));
@@ -53,8 +57,17 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
             arguments.add(transformArgument(readArgumentNode, n));
         }
 
-        return new CallRubiniusPrimitiveNode(context, sourceSection,
-                factory.createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])), returnID);
+        if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
+            return new CallRubiniusPrimitiveNode(context, sourceSection,
+                    factory.createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])), returnID);
+        } else {
+            final Object[] varargs = new Object[2 + arguments.size()];
+            varargs[0] = context;
+            varargs[1] = sourceSection;
+            System.arraycopy(arguments.toArray(new RubyNode[arguments.size()]), 0, varargs, 2, arguments.size());
+
+            return new CallRubiniusPrimitiveNode(context, sourceSection, factory.createNode(varargs), returnID);
+        }
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {

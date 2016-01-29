@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -20,8 +21,9 @@ import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.nodes.core.RegexpGuards;
 import org.jruby.truffle.nodes.core.RegexpNodes;
+import org.jruby.truffle.nodes.core.RopeNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
@@ -35,7 +37,7 @@ import org.jruby.util.RegexpSupport;
 public abstract class RegexpPrimitiveNodes {
 
     @RubiniusPrimitive(name = "regexp_fixed_encoding_p")
-    public static abstract class RegexpFixedEncodingPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RegexpFixedEncodingPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpFixedEncodingPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -50,7 +52,7 @@ public abstract class RegexpPrimitiveNodes {
 
     @RubiniusPrimitive(name = "regexp_initialize", lowerFixnumParameters = 1)
     @ImportStatic(RegexpGuards.class)
-    public static abstract class RegexpInitializePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RegexpInitializePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpInitializePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -78,7 +80,7 @@ public abstract class RegexpPrimitiveNodes {
 
     @RubiniusPrimitive(name = "regexp_options")
     @ImportStatic(RegexpGuards.class)
-    public static abstract class RegexpOptionsPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RegexpOptionsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpOptionsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -98,7 +100,7 @@ public abstract class RegexpPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "regexp_propagate_last_match")
-    public static abstract class RegexpPropagateLastMatchPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RegexpPropagateLastMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpPropagateLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -114,7 +116,7 @@ public abstract class RegexpPrimitiveNodes {
 
     @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
     @ImportStatic(RegexpGuards.class)
-    public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpSearchRegionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -135,7 +137,8 @@ public abstract class RegexpPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
-        public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
+        public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward,
+                                   @Cached("create(getContext(), getSourceSection())") RopeNodes.MakeSubstringNode makeSubstringNode) {
             final Rope stringRope = StringOperations.rope(string);
             final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
             final Encoding enc = RegexpNodes.checkEncoding(regexp, stringRope, true);
@@ -146,17 +149,17 @@ public abstract class RegexpPrimitiveNodes {
 
             if (forward) {
                 // Search forward through the string.
-                return RegexpNodes.matchCommon(getContext(), regexp, string, false, false, matcher, start + stringRope.begin(), end + stringRope.begin());
+                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, start + stringRope.begin(), end + stringRope.begin());
             } else {
                 // Search backward through the string.
-                return RegexpNodes.matchCommon(getContext(), regexp, string, false, false, matcher, end + stringRope.begin(), start + stringRope.begin());
+                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, end + stringRope.begin(), start + stringRope.begin());
             }
         }
 
     }
 
     @RubiniusPrimitive(name = "regexp_set_last_match")
-    public static abstract class RegexpSetLastMatchPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RegexpSetLastMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpSetLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -177,7 +180,7 @@ public abstract class RegexpPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "regexp_set_block_last_match")
-    public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpSetBlockLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

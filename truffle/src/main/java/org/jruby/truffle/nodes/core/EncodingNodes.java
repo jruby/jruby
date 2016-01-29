@@ -28,7 +28,7 @@ import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -486,19 +486,19 @@ public abstract class EncodingNodes {
             }
 
             final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
-            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, create7BitString(StringOperations.encodeByteList("internal", UTF8Encoding.INSTANCE)), indexLookup(encodings, defaultInternalEncoding));
+            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, create7BitString("internal", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultInternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
-            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, create7BitString(StringOperations.encodeByteList("external", UTF8Encoding.INSTANCE)), indexLookup(encodings, defaultExternalEncoding));
+            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, create7BitString("external", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultExternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getLocaleEncoding();
-            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, create7BitString(StringOperations.encodeByteList("locale", UTF8Encoding.INSTANCE)), indexLookup(encodings, localeEncoding));
+            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, create7BitString("locale", UTF8Encoding.INSTANCE), indexLookup(encodings, localeEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getLocaleEncoding();
-            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, create7BitString(StringOperations.encodeByteList("filesystem", UTF8Encoding.INSTANCE)), indexLookup(encodings, filesystemEncoding));
+            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, create7BitString("filesystem", UTF8Encoding.INSTANCE), indexLookup(encodings, filesystemEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;

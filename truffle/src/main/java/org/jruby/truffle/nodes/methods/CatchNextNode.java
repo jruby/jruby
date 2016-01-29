@@ -14,7 +14,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.NextException;
+import org.jruby.truffle.language.control.NextException;
 
 /**
  * Catch a {@code next} jump at the root of a method.

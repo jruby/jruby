@@ -17,7 +17,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.methods.InternalMethod;

@@ -38,7 +38,7 @@ public abstract class ExceptionNodes {
         final Object[] array = new Object[lines.size()];
 
         for (int n = 0;n < lines.size(); n++) {
-            array[n] = StringOperations.createString(context, StringOperations.encodeByteList(lines.get(n), UTF8Encoding.INSTANCE));
+            array[n] = StringOperations.createString(context, StringOperations.encodeRope(lines.get(n), UTF8Encoding.INSTANCE));
         }
 
         return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
@@ -84,7 +84,7 @@ public abstract class ExceptionNodes {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readCustomBacktrace = ReadHeadObjectFieldNodeGen.create("@custom_backtrace", null);
+            readCustomBacktrace = ReadHeadObjectFieldNodeGen.create(getContext(), "@custom_backtrace", null);
         }
 
         @Specialization
@@ -135,7 +135,7 @@ public abstract class ExceptionNodes {
             final Object message = Layouts.EXCEPTION.getMessage(exception);
             if (message == null) {
                 final String className = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
-                return createString(StringOperations.encodeByteList(className, UTF8Encoding.INSTANCE));
+                return createString(StringOperations.encodeRope(className, UTF8Encoding.INSTANCE));
             } else {
                 return message;
             }

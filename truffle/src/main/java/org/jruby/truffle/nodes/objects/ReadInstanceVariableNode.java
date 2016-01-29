@@ -30,7 +30,7 @@ public class ReadInstanceVariableNode extends RubyNode {
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.receiver = receiver;
-        readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
+        readNode = ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
     }
 
     @Override
@@ -52,7 +52,7 @@ public class ReadInstanceVariableNode extends RubyNode {
             final DynamicObject receiverRubyObject = (DynamicObject) receiverObject;
 
             if (receiverRubyObject.getShape().hasProperty(readNode.getName())) {
-                return create7BitString(StringOperations.encodeByteList("instance-variable", UTF8Encoding.INSTANCE));
+                return create7BitString("instance-variable", UTF8Encoding.INSTANCE);
             } else {
                 return nil();
             }

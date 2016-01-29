@@ -48,7 +48,7 @@ import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
@@ -60,7 +60,7 @@ public abstract class IOBufferPrimitiveNodes {
     private static final int STACK_BUF_SZ = 8192;
 
     @RubiniusPrimitive(name = "iobuffer_allocate")
-    public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
 
@@ -81,7 +81,7 @@ public abstract class IOBufferPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "iobuffer_unshift", lowerFixnumParameters = 1)
-    public static abstract class IOBufferUnshiftPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class IOBufferUnshiftPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOBufferUnshiftPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -113,7 +113,7 @@ public abstract class IOBufferPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "iobuffer_fill")
-    public static abstract class IOBufferFillPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class IOBufferFillPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOBufferFillPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

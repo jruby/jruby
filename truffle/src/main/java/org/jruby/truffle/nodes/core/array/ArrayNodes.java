@@ -28,15 +28,15 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.format.parser.PackCompiler;
-import org.jruby.truffle.format.runtime.PackResult;
-import org.jruby.truffle.format.runtime.exceptions.*;
+import org.jruby.truffle.core.format.parser.PackCompiler;
+import org.jruby.truffle.core.format.runtime.PackResult;
+import org.jruby.truffle.core.format.runtime.exceptions.*;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.StringCachingGuards;
-import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
-import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.coerce.ToAryNodeGen;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
@@ -45,17 +45,17 @@ import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
-import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
+import org.jruby.truffle.language.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -64,7 +64,6 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 
@@ -308,7 +307,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToStrNode.doesRespondToString(frame, object, create7BitString(StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE)), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
                 return ruby(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -423,7 +422,7 @@ public abstract class ArrayNodes {
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    createString(StringOperations.encodeByteList(method.getName(), UTF8Encoding.INSTANCE)), args);
+                    createString(StringOperations.encodeRope(method.getName(), UTF8Encoding.INSTANCE)), args);
         }
 
     }
@@ -1409,7 +1408,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToAryNode.doesRespondToString(frame, object, create7BitString(StringOperations.encodeByteList("to_ary", UTF8Encoding.INSTANCE)), true)) {
+            if (respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));

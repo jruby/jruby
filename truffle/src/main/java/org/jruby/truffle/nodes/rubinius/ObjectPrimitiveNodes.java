@@ -34,7 +34,7 @@ import org.jruby.truffle.runtime.object.ObjectIDOperations;
 public abstract class ObjectPrimitiveNodes {
 
     @RubiniusPrimitive(name = "object_id")
-    public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveNode {
+    public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public ObjectIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -98,17 +98,17 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return ReadHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER, 0L);
+            return ReadHeadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected WriteHeadObjectFieldNode createWriteObjectIDNode() {
-            return WriteHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER);
+            return WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER);
         }
 
     }
 
     @RubiniusPrimitive(name = "object_infect", needsSelf = false)
-    public static abstract class ObjectInfectPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class ObjectInfectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private IsTaintedNode isTaintedNode;
         @Child private TaintNode taintNode;

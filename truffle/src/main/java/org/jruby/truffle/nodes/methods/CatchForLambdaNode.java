@@ -14,10 +14,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.control.*;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.ReturnID;
+import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.*;
 
 public class CatchForLambdaNode extends RubyNode {
 

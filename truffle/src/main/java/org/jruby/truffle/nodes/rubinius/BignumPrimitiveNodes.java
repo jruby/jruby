@@ -25,7 +25,7 @@ import java.math.BigInteger;
 public abstract class BignumPrimitiveNodes {
 
     @RubiniusPrimitive(name = "bignum_compare")
-    public abstract static class BignumCompareNode extends RubiniusPrimitiveNode {
+    public abstract static class BignumCompareNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public BignumCompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -63,7 +63,7 @@ public abstract class BignumPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "bignum_pow")
-    public static abstract class BignumPowPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class BignumPowPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
 

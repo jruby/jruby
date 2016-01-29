@@ -18,8 +18,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class WriteInstanceVariableNode extends RubyNode {
@@ -32,7 +31,7 @@ public class WriteInstanceVariableNode extends RubyNode {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;
-        writeNode = WriteHeadObjectFieldNodeGen.create(name);
+        writeNode = WriteHeadObjectFieldNodeGen.create(getContext(), name);
     }
 
     @Override
@@ -52,7 +51,7 @@ public class WriteInstanceVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString(StringOperations.encodeByteList("assignment", UTF8Encoding.INSTANCE));
+        return create7BitString("assignment", UTF8Encoding.INSTANCE);
     }
 
 }

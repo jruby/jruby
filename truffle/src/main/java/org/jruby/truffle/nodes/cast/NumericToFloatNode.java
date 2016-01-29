@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.objects.IsANode;
 import org.jruby.truffle.nodes.objects.IsANodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 
 /**
  * Casts a value into a Ruby Float (double).

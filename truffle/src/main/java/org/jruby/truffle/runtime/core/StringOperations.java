@@ -29,18 +29,20 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
-import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
+
+import java.nio.charset.Charset;
 
 public abstract class StringOperations {
 
@@ -186,6 +188,31 @@ public abstract class StringOperations {
     @TruffleBoundary
     public static ByteList encodeByteList(CharSequence value, Encoding encoding) {
         return RubyString.encodeBytelist(value, encoding);
+    }
+
+    @TruffleBoundary
+    public static Rope encodeRope(CharSequence value, Encoding encoding, int codeRange) {
+        // Taken from org.jruby.RubyString#encodeByteList.
+
+        Charset charset = encoding.getCharset();
+
+        // if null charset, fall back on Java default charset
+        if (charset == null) charset = Charset.defaultCharset();
+
+        byte[] bytes;
+        if (charset == RubyEncoding.UTF8) {
+            bytes = RubyEncoding.encodeUTF8(value);
+        } else if (charset == RubyEncoding.UTF16) {
+            bytes = RubyEncoding.encodeUTF16(value);
+        } else {
+            bytes = RubyEncoding.encode(value, charset);
+        }
+
+        return RopeOperations.create(bytes, encoding, codeRange);
+    }
+
+    public static Rope encodeRope(CharSequence value, Encoding encoding) {
+        return encodeRope(value, encoding, StringSupport.CR_UNKNOWN);
     }
 
     public static ByteList getByteList(DynamicObject object) {
