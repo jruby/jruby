@@ -1650,6 +1650,8 @@ public class RipperLexer extends LexingCommon {
         case '=':
             setState(LexState.EXPR_BEG);
             return Tokens.tOP_ASGN;
+        case '.':
+            return Tokens.tANDDOT;
         }
         pushback(c);
 

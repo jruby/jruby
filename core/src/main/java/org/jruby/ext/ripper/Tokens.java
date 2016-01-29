@@ -180,6 +180,7 @@ public interface Tokens {
     int tHEREDOC_BEG = RipperParser.tHEREDOC_BEG;
     int tHEREDOC_END = RipperParser.tHEREDOC_END;
     int k__END__   = RipperParser.k__END__;
+    int tANDDOT     = RipperParser.tANDDOT;
 
     String[] operators = {"+@", "-@", "**", "<=>", "==", "===", "!=", ">=", "<=", "&&",
                           "||", "=~", "!~", "..", "...", "[]", "[]=", "<<", ">>", "::"};
