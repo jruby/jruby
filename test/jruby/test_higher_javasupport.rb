@@ -800,7 +800,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
       java_class.declared_method 'indexOf'
       fail('not failed')
     rescue NameError => e
-      assert e.message.index "undefined method 'indexOf'"
+      assert e.message.index "undefined method `indexOf'"
     end
   end
 
