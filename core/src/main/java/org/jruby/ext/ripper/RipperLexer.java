@@ -1163,6 +1163,7 @@ public class RipperLexer extends LexingCommon {
             case ' ': return "on_words_sep";
             case Tokens.tBANG: return "on_op";
             case Tokens.tPERCENT: return "on_op";
+            case Tokens.tANDDOT: return "on_op";
             case Tokens.tAMPER2: return "on_op";
             case Tokens.tSTAR2: return "on_op";
             case Tokens.tPLUS: return "on_op";
