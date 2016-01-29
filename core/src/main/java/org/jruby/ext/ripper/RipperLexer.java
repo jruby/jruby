@@ -1907,7 +1907,12 @@ public class RipperLexer extends LexingCommon {
             return identifierToken(last_state, Tokens.tGVAR, ("$" + (char) c).intern());
         default:
             if (!isIdentifierChar(c)) {
-                compile_error("`$" + ((char) c) + "' is not allowed as a global variable name");
+                if (c == EOF || Character.isSpaceChar(c)) {
+                    compile_error("`$' without identifiers is not allowed as a global variable name");
+                } else {
+                    pushback(c);
+                    compile_error("`$" + ((char) c) + "' is not allowed as a global variable name");
+                }
                 return EOF;
             }
         

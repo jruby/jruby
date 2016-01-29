@@ -1833,10 +1833,14 @@ public class RubyLexer extends LexingCommon {
             return identifierToken(Tokens.tGVAR, ("$" + (char) c).intern());
         default:
             if (!isIdentifierChar(c)) {
-                pushback(c);
-                compile_error(PID.CVAR_BAD_NAME, "`$" + ((char) c) + "' is not allowed as a global variable name");
+                if (c == EOF || Character.isSpaceChar(c)) {
+                    compile_error(PID.CVAR_BAD_NAME, "`$' without identifiers is not allowed as a global variable name");
+                } else {
+                    pushback(c);
+                    compile_error(PID.CVAR_BAD_NAME, "`$" + ((char) c) + "' is not allowed as a global variable name");
+                }
             }
-        
+
             last_state = lex_state;
             setState(LexState.EXPR_END);
 
