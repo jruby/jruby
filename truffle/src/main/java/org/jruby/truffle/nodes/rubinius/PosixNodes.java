@@ -850,7 +850,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isNil(hostName)", "isRubyString(serviceName)"})
         public int getaddrinfoNil(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
-            return getaddrinfoString(create7BitString(StringOperations.encodeByteList("0.0.0.0", UTF8Encoding.INSTANCE)), serviceName, hintsPointer, resultsPointer);
+            return getaddrinfoString(create7BitString("0.0.0.0", UTF8Encoding.INSTANCE), serviceName, hintsPointer, resultsPointer);
         }
 
         @CompilerDirectives.TruffleBoundary

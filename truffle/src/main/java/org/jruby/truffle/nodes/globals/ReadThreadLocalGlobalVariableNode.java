@@ -44,7 +44,7 @@ public class ReadThreadLocalGlobalVariableNode extends RubyNode {
         final DynamicObject threadLocalVariablesObject = threadLocalVariablesObjectNode.executeDynamicObject(frame);
 
         if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(threadLocalVariablesObject) != nil()) {
-            return create7BitString(StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE));
+            return create7BitString("global-variable", UTF8Encoding.INSTANCE);
         } else {
             return nil();
         }

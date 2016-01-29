@@ -1070,13 +1070,13 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject inspect(int n) {
-            return create7BitString(StringOperations.encodeByteList(Integer.toString(n), USASCIIEncoding.INSTANCE));
+            return create7BitString(Integer.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject inspect(long n) {
-            return create7BitString(StringOperations.encodeByteList(Long.toString(n), USASCIIEncoding.INSTANCE));
+            return create7BitString(Long.toString(n), USASCIIEncoding.INSTANCE);
         }
 
     }
@@ -1124,13 +1124,13 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(int n, NotProvided base) {
-            return create7BitString(StringOperations.encodeByteList(Integer.toString(n), USASCIIEncoding.INSTANCE));
+            return create7BitString(Integer.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(long n, NotProvided base) {
-            return create7BitString(StringOperations.encodeByteList(Long.toString(n), USASCIIEncoding.INSTANCE));
+            return create7BitString(Long.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
@@ -1141,7 +1141,7 @@ public abstract class FixnumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return create7BitString(StringOperations.encodeByteList(Long.toString(n, base), USASCIIEncoding.INSTANCE));
+            return create7BitString(Long.toString(n, base), USASCIIEncoding.INSTANCE);
         }
 
     }

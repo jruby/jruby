@@ -42,7 +42,7 @@ public class WriteDeclarationVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString(StringOperations.encodeByteList("assignment", UTF8Encoding.INSTANCE));
+        return create7BitString("assignment", UTF8Encoding.INSTANCE);
     }
 
 }

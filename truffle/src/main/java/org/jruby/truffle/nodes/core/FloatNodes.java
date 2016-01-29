@@ -730,8 +730,7 @@ public abstract class FloatNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject javaToS(double value) {
-            return create7BitString(
-                    StringOperations.encodeByteList(String.format("%.15g", value), USASCIIEncoding.INSTANCE));
+            return create7BitString(String.format("%.15g", value), USASCIIEncoding.INSTANCE);
         }
 
     }

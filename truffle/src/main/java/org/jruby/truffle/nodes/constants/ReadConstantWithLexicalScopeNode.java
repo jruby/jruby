@@ -65,7 +65,7 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode implements Restar
         if (constant == null) {
             return nil();
         } else {
-            return create7BitString(StringOperations.encodeByteList("constant", UTF8Encoding.INSTANCE));
+            return create7BitString("constant", UTF8Encoding.INSTANCE);
         }
     }
 

@@ -52,7 +52,7 @@ public class ReadInstanceVariableNode extends RubyNode {
             final DynamicObject receiverRubyObject = (DynamicObject) receiverObject;
 
             if (receiverRubyObject.getShape().hasProperty(readNode.getName())) {
-                return create7BitString(StringOperations.encodeByteList("instance-variable", UTF8Encoding.INSTANCE));
+                return create7BitString("instance-variable", UTF8Encoding.INSTANCE);
             } else {
                 return nil();
             }

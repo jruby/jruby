@@ -120,9 +120,9 @@ public abstract class DirPrimitiveNodes {
             Layouts.DIR.setPosition(dir, position + 1);
 
             if (position == -2) {
-                return create7BitString(StringOperations.encodeByteList(".", UTF8Encoding.INSTANCE));
+                return create7BitString(".", UTF8Encoding.INSTANCE);
             } else if (position == -1) {
-                return create7BitString(StringOperations.encodeByteList("..", UTF8Encoding.INSTANCE));
+                return create7BitString("..", UTF8Encoding.INSTANCE);
             } else {
                 final String[] contents = (String[]) Layouts.DIR.getContents(dir);
 

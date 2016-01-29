@@ -667,7 +667,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject value, NotProvided base) {
-            return create7BitString(StringOperations.encodeByteList(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE));
+            return create7BitString(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
@@ -678,7 +678,7 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return create7BitString(StringOperations.encodeByteList(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE));
+            return create7BitString(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE);
         }
 
     }

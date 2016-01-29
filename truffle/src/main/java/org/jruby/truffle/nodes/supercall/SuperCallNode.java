@@ -82,7 +82,7 @@ public class SuperCallNode extends RubyNode {
         if (superMethod == null) {
             return nil();
         } else {
-            return create7BitString(StringOperations.encodeByteList("super", UTF8Encoding.INSTANCE));
+            return create7BitString("super", UTF8Encoding.INSTANCE);
         }
     }
 

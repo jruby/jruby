@@ -308,7 +308,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToStrNode.doesRespondToString(frame, object, create7BitString(StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE)), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
                 return ruby(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -1409,7 +1409,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToAryNode.doesRespondToString(frame, object, create7BitString(StringOperations.encodeByteList("to_ary", UTF8Encoding.INSTANCE)), true)) {
+            if (respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));

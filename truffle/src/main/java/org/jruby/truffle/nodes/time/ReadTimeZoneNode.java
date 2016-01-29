@@ -41,7 +41,7 @@ public class ReadTimeZoneNode extends RubyNode {
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
         envNode = new ReadLiteralConstantNode(context, sourceSection,
                 new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()), "ENV");
-        TZ = create7BitString(StringOperations.encodeByteList("TZ", UTF8Encoding.INSTANCE));
+        TZ = create7BitString("TZ", UTF8Encoding.INSTANCE);
     }
 
     @Override

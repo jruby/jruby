@@ -210,7 +210,7 @@ public class RubyCallNode extends RubyNode {
             return nil();
         }
 
-        return create7BitString(StringOperations.encodeByteList("method", UTF8Encoding.INSTANCE));
+        return create7BitString("method", UTF8Encoding.INSTANCE);
     }
 
     private Object respondToMissing(VirtualFrame frame, Object receiverObject) {

@@ -32,7 +32,7 @@ public class ReadLastBacktraceNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString(StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE));
+        return create7BitString("global-variable", UTF8Encoding.INSTANCE);
     }
 
     @Override

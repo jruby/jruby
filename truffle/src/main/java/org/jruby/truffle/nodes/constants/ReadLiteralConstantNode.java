@@ -74,7 +74,7 @@ public class ReadLiteralConstantNode extends RubyNode {
         if (constant == null) {
             return nil();
         } else {
-            return create7BitString(StringOperations.encodeByteList("constant", UTF8Encoding.INSTANCE));
+            return create7BitString("constant", UTF8Encoding.INSTANCE);
         }
     }
 

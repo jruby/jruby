@@ -58,12 +58,12 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
         if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(readFrameSlotNode.getFrameSlot().getIdentifier())) {
             if (ALWAYS_DEFINED_GLOBALS.contains(readFrameSlotNode.getFrameSlot().getIdentifier())
                     || readFrameSlotNode.executeRead(RubyArguments.getDeclarationFrame(frame, frameDepth)) != nil()) {
-                return create7BitString(StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE));
+                return create7BitString("global-variable", UTF8Encoding.INSTANCE);
             } else {
                 return nil();
             }
         } else {
-            return create7BitString(StringOperations.encodeByteList("local-variable", UTF8Encoding.INSTANCE));
+            return create7BitString("local-variable", UTF8Encoding.INSTANCE);
         }
     }
 

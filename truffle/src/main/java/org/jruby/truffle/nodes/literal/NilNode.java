@@ -33,7 +33,7 @@ public class NilNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString(StringOperations.encodeByteList("nil", UTF8Encoding.INSTANCE));
+        return create7BitString("nil", UTF8Encoding.INSTANCE);
     }
 
 }

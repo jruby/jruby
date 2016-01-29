@@ -81,7 +81,7 @@ public class YieldNode extends RubyNode {
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return nil();
         } else {
-            return create7BitString(StringOperations.encodeByteList("yield", UTF8Encoding.INSTANCE));
+            return create7BitString("yield", UTF8Encoding.INSTANCE);
         }
     }
 

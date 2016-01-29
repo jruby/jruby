@@ -42,7 +42,7 @@ public class ReadGlobalVariableNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(globalVariablesObject) != nil()) {
-            return create7BitString(StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE));
+            return create7BitString("global-variable", UTF8Encoding.INSTANCE);
         } else {
             return nil();
         }

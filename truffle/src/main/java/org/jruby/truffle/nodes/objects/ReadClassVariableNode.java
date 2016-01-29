@@ -69,7 +69,7 @@ public class ReadClassVariableNode extends RubyNode {
         if (value == null) {
             return nil();
         } else {
-            return create7BitString(StringOperations.encodeByteList("class variable", UTF8Encoding.INSTANCE));
+            return create7BitString("class variable", UTF8Encoding.INSTANCE);
         }
     }
 
