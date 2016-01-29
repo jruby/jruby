@@ -84,7 +84,7 @@ public abstract class ExceptionNodes {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readCustomBacktrace = ReadHeadObjectFieldNodeGen.create("@custom_backtrace", null);
+            readCustomBacktrace = ReadHeadObjectFieldNodeGen.create(getContext(), "@custom_backtrace", null);
         }
 
         @Specialization

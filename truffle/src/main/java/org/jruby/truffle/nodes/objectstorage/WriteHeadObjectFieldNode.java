@@ -19,13 +19,16 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import org.jruby.truffle.nodes.ShapeCachingGuards;
 import org.jruby.truffle.runtime.Options;
+import org.jruby.truffle.runtime.RubyContext;
 
 @ImportStatic(ShapeCachingGuards.class)
 public abstract class WriteHeadObjectFieldNode extends Node {
 
+    private final RubyContext context;
     private final Object name;
 
-    public WriteHeadObjectFieldNode(Object name) {
+    public WriteHeadObjectFieldNode(RubyContext context, Object name) {
+        this.context = context;
         this.name = name;
     }
 
@@ -111,7 +114,7 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     }
 
     protected int getCacheLimit() {
-        return Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
+        return context.getOptions().INSTANCE_VARIABLE_LOOKUP_CACHE;
     }
 
 }

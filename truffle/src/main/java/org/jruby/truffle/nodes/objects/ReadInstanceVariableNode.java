@@ -30,7 +30,7 @@ public class ReadInstanceVariableNode extends RubyNode {
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.receiver = receiver;
-        readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
+        readNode = ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
     }
 
     @Override

@@ -998,11 +998,11 @@ public abstract class KernelNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadFieldNode(String name) {
-            return ReadHeadObjectFieldNodeGen.create(name, nil());
+            return ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
         }
 
         protected int getCacheLimit() {
-            return Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
+            return getContext().getOptions().INSTANCE_VARIABLE_LOOKUP_CACHE;
         }
 
     }
@@ -1060,11 +1060,11 @@ public abstract class KernelNodes {
         }
 
         protected WriteHeadObjectFieldNode createWriteFieldNode(String name) {
-            return WriteHeadObjectFieldNodeGen.create(name);
+            return WriteHeadObjectFieldNodeGen.create(getContext(), name);
         }
 
         protected int getCacheLimit() {
-            return Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
+            return getContext().getOptions().INSTANCE_VARIABLE_LOOKUP_CACHE;
         }
 
     }
@@ -2084,7 +2084,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = WriteHeadObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
+            writeTaintNode = WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
         }
 
         @Specialization

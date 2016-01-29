@@ -163,7 +163,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(getContext(), STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -193,7 +193,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatFStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(getContext(), STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -218,7 +218,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatLStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(getContext(), STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -247,7 +247,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readStatNode = ReadHeadObjectFieldNodeGen.create(STAT_IDENTIFIER, null);
+            readStatNode = ReadHeadObjectFieldNodeGen.create(getContext(), STAT_IDENTIFIER, null);
         }
 
         public FileStat getStat(DynamicObject rubyStat) {

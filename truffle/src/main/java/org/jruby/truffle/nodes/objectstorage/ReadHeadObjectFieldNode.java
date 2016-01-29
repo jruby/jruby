@@ -19,13 +19,16 @@ import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.ShapeCachingGuards;
 import org.jruby.truffle.runtime.Options;
+import org.jruby.truffle.runtime.RubyContext;
 
 @ImportStatic(ShapeCachingGuards.class)
 public abstract class ReadHeadObjectFieldNode extends Node {
+    private final RubyContext context;
     private final Object defaultValue;
     protected final Object name;
 
-    public ReadHeadObjectFieldNode(Object name, Object defaultValue) {
+    public ReadHeadObjectFieldNode(RubyContext context, Object name, Object defaultValue) {
+        this.context = context;
         this.name = name;
         this.defaultValue = defaultValue;
     }
@@ -62,7 +65,7 @@ public abstract class ReadHeadObjectFieldNode extends Node {
     }
 
     protected int getCacheLimit() {
-        return Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
+        return context.getOptions().INSTANCE_VARIABLE_LOOKUP_CACHE;
     }
 
 }

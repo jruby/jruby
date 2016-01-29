@@ -29,7 +29,7 @@ public class WriteGlobalVariableNode extends RubyNode {
         super(context, sourceSection);
         this.globalVariablesObject = context.getCoreLibrary().getGlobalVariablesObject();
         this.rhs = rhs;
-        writeNode = WriteHeadObjectFieldNodeGen.create(name);
+        writeNode = WriteHeadObjectFieldNodeGen.create(getContext(), name);
     }
 
     @Override

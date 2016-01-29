@@ -28,7 +28,7 @@ public class ReadThreadLocalGlobalVariableNode extends RubyNode {
     public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
         this.threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
-        readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
+        readNode = ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
     }
 
     @Override

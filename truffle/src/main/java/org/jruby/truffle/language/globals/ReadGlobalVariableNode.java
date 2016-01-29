@@ -28,7 +28,7 @@ public class ReadGlobalVariableNode extends RubyNode {
     public ReadGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
         this.globalVariablesObject = context.getCoreLibrary().getGlobalVariablesObject();
-        readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
+        readNode = ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
     }
 
     @Override

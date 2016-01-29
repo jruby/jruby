@@ -86,7 +86,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return ReadHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER, 0L);
+            return ReadHeadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {

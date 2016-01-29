@@ -31,7 +31,7 @@ public class WriteInstanceVariableNode extends RubyNode {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;
-        writeNode = WriteHeadObjectFieldNodeGen.create(name);
+        writeNode = WriteHeadObjectFieldNodeGen.create(getContext(), name);
     }
 
     @Override

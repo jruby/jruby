@@ -61,7 +61,7 @@ public abstract class TaintNode extends RubyNode {
     public Object taint(DynamicObject object) {
         if (writeTaintNode == null) {
             CompilerDirectives.transferToInterpreter();
-            writeTaintNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER));
+            writeTaintNode = insert(WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER));
         }
         writeTaintNode.execute(object, true);
         return object;
