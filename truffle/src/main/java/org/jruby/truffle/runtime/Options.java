@@ -37,7 +37,7 @@ public class Options {
     public final int IS_A_CACHE = org.jruby.util.cli.Options.TRUFFLE_IS_A_CACHE.load();
     public final int BIND_CACHE = org.jruby.util.cli.Options.TRUFFLE_BIND_CACHE.load();
     public final int CONSTANT_LOOKUP_CACHE = org.jruby.util.cli.Options.TRUFFLE_CONSTANT_LOOKUP_CACHE.load();
-    public static final int FIELD_LOOKUP_CACHE = org.jruby.util.cli.Options.TRUFFLE_FIELD_LOOKUP_CACHE.load();
+    public static final int INSTANCE_VARIABLE_LOOKUP_CACHE = org.jruby.util.cli.Options.TRUFFLE_INSTANCE_VARIABLE_LOOKUP_CACHE.load();
     public final int BINDING_LOCAL_VARIABLE_CACHE = org.jruby.util.cli.Options.TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE.load();
     public final int SYMBOL_TO_PROC_CACHE = org.jruby.util.cli.Options.TRUFFLE_SYMBOL_TO_PROC_CACHE.load();
     public final int ALLOCATE_CLASS_CACHE = org.jruby.util.cli.Options.TRUFFLE_ALLOCATE_CLASS_CACHE.load();

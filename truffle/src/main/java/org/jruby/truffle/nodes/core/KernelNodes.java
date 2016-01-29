@@ -959,7 +959,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        protected static final int LIMIT = Options.FIELD_LOOKUP_CACHE;
+        protected static final int LIMIT = Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
 
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
@@ -1017,7 +1017,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        protected static final int LIMIT = Options.FIELD_LOOKUP_CACHE;
+        protected static final int LIMIT = Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
 
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {

@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.Options;
 @ImportStatic(ShapeCachingGuards.class)
 public abstract class WriteHeadObjectFieldNode extends Node {
 
-    protected static final int CACHE_LIMIT = Options.FIELD_LOOKUP_CACHE;
+    protected static final int CACHE_LIMIT = Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
 
     private final Object name;
 

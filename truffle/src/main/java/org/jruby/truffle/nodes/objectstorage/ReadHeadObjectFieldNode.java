@@ -62,7 +62,7 @@ public abstract class ReadHeadObjectFieldNode extends Node {
     }
 
     protected int getCacheLimit() {
-        return Options.FIELD_LOOKUP_CACHE;
+        return Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
     }
 
 }
