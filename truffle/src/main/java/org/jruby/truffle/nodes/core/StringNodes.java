@@ -1613,12 +1613,14 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = "isRubyString(other)")
-        public DynamicObject replace(DynamicObject string, DynamicObject other) {
-            if (string == other) {
-                return string;
-            }
+        @Specialization(guards = "string == other")
+        public DynamicObject replaceStringIsSameAsOther(DynamicObject string, DynamicObject other) {
+            return string;
+        }
 
+
+        @Specialization(guards = { "string != other", "isRubyString(other)" })
+        public DynamicObject replace(DynamicObject string, DynamicObject other) {
             StringOperations.setRope(string, rope(other));
 
             return string;
