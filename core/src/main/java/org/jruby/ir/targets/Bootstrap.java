@@ -570,8 +570,7 @@ public class Bootstrap {
         if (accessor instanceof FieldVariableAccessor) {
             direct = true;
             int offset = ((FieldVariableAccessor)accessor).getOffset();
-            Class cls = REIFIED_OBJECT_CLASSES[offset];
-            getValue = lookup().findGetter(cls, "var" + offset, Object.class);
+            getValue = lookup().findGetter(self.getClass(), "var" + offset, Object.class);
             getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class));
         } else {
             getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
