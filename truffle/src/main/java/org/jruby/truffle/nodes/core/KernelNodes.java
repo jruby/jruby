@@ -959,8 +959,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        protected static final int LIMIT = Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
-
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
             return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
@@ -968,7 +966,7 @@ public abstract class KernelNodes {
 
         @Specialization(
                 guards = { "isRubySymbol(name)", "name == cachedName" },
-                limit = "LIMIT")
+                limit = "getCacheLimit()")
         public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
                 @Cached("name") DynamicObject cachedName,
                 @Cached("createReadFieldNode(checkName(symbolToString(cachedName)))") ReadHeadObjectFieldNode readHeadObjectFieldNode) {
@@ -1003,6 +1001,10 @@ public abstract class KernelNodes {
             return ReadHeadObjectFieldNodeGen.create(name, nil());
         }
 
+        protected int getCacheLimit() {
+            return Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
+        }
+
     }
 
     @CoreMethod(names = { "instance_variable_set", "__instance_variable_set__" }, raiseIfFrozenSelf = true, required = 2)
@@ -1017,8 +1019,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        protected static final int LIMIT = Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
-
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
             return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
@@ -1026,7 +1026,7 @@ public abstract class KernelNodes {
 
         @Specialization(
                 guards = { "isRubySymbol(name)", "name == cachedName" },
-                limit = "LIMIT")
+                limit = "getCacheLimit()")
         public Object instanceVariableSetSymbolCached(DynamicObject object, DynamicObject name, Object value,
                                                       @Cached("name") DynamicObject cachedName,
                                                       @Cached("createWriteFieldNode(checkName(symbolToString(cachedName)))") WriteHeadObjectFieldNode writeHeadObjectFieldNode) {
@@ -1061,6 +1061,10 @@ public abstract class KernelNodes {
 
         protected WriteHeadObjectFieldNode createWriteFieldNode(String name) {
             return WriteHeadObjectFieldNodeGen.create(name);
+        }
+
+        protected int getCacheLimit() {
+            return Options.INSTANCE_VARIABLE_LOOKUP_CACHE;
         }
 
     }
