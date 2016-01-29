@@ -3282,6 +3282,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject deprecate_constant(ThreadContext context, IRubyObject rname) {
+        checkFrozen();
+
         deprecateConstant(context.runtime, validateConstant(rname));
         return this;
     }
@@ -3296,6 +3298,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject private_constant(ThreadContext context, IRubyObject rubyName) {
+        checkFrozen();
+
         String name = validateConstant(rubyName);
 
         setConstantVisibility(context, name, true);
@@ -3314,6 +3318,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject public_constant(ThreadContext context, IRubyObject rubyName) {
+        checkFrozen();
+
         String name = validateConstant(rubyName);
 
         setConstantVisibility(context, name, false);
@@ -3348,7 +3354,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "prepended", required = 1, visibility = PRIVATE)
     public IRubyObject prepended(ThreadContext context, IRubyObject other) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     private void setConstantVisibility(ThreadContext context, String name, boolean hidden) {
@@ -4156,6 +4162,13 @@ public class RubyModule extends RubyObject {
             }
             throw getRuntime().newFrozenError("Module");
         }
+    }
+
+    @Override
+    public final void checkFrozen() {
+       if ( isFrozen() ) {
+           throw getRuntime().newFrozenError(isClass() ? "class" : "module");
+       }
     }
 
     protected boolean constantTableContains(String name) {
