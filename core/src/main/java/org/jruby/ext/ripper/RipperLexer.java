@@ -155,11 +155,14 @@ public class RipperLexer extends LexingCommon {
     }
 
     public void warn(String message) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        parser.dispatch("warn", getRuntime().newString(message));
     }
-    
-    public void warning(String message) {
-        throw new UnsupportedOperationException("Not supported yet.");
+
+    public void warning(String fmt) {
+        parser.dispatch("warning", getRuntime().newString(fmt));
+    }
+    public void warning(String fmt, String arg) {
+        parser.dispatch("warning", getRuntime().newString(fmt), getRuntime().newString(arg));
     }
     
     public enum Keyword {
@@ -302,7 +305,8 @@ public class RipperLexer extends LexingCommon {
         commandStart = true;
         current_enc = src.getEncoding();
     }
-    
+
+    int last_cr_line;
     protected int tokp = 0; // Where last token started
     protected ByteList lexb = null;
     protected int lex_p = 0; // Where current position is in current line
@@ -319,7 +323,8 @@ public class RipperLexer extends LexingCommon {
     private int ruby_sourceline = 0;
     private int heredoc_end = 0;
     private int line_count = 0;
-    
+    private boolean tokenSeen = false;
+
     /**
      * Has lexing started yet?
      */
@@ -391,9 +396,15 @@ public class RipperLexer extends LexingCommon {
         
         int c = p(lex_p);
         lex_p++;
-        if (c == '\r' && peek('\n')) {
-            lex_p++;
-            c = '\n';
+        if (c == '\r') {
+            if (peek('\n')) {
+                lex_p++;
+                c = '\n';
+            } else if (ruby_sourceline > last_cr_line) {
+                last_cr_line = ruby_sourceline;
+                warn("encountered \\\\r in middle of line, treated as a mere space");
+                c = ' ';
+            }
         }
 
 //        System.out.println("C: " + (char) c + ", LEXP: " + lex_p + ", PEND: "+ lex_pend);
@@ -588,7 +599,10 @@ public class RipperLexer extends LexingCommon {
 
     @Override
     protected void setCompileOptionFlag(String name, ByteList value) {
-
+        if (tokenSeen) {
+            warning("`%s' is ignored after any tokens", name);
+            return;
+        }
     }
 
     @Override
@@ -1341,6 +1355,7 @@ public class RipperLexer extends LexingCommon {
         int c;
         boolean spaceSeen = false;
         boolean commandState;
+        boolean tokenSeen = this.tokenSeen;
         
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this, src);
@@ -1365,6 +1380,7 @@ public class RipperLexer extends LexingCommon {
 
         commandState = commandStart;
         commandStart = false;
+        this.tokenSeen = true;
 
         loop: for(;;) {
             boolean fallthru = false;
@@ -1400,6 +1416,7 @@ public class RipperLexer extends LexingCommon {
                 continue;
             }
             case '#': { /* it's a comment */
+                this.tokenSeen = tokenSeen;
                 if (!parseMagicComment(getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p))) {
                     if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
                 }
@@ -1410,6 +1427,7 @@ public class RipperLexer extends LexingCommon {
             }
             /* fall through */
             case '\n':
+                this.tokenSeen = tokenSeen;
                 switch (lex_state) {
                     case EXPR_BEG:
                     case EXPR_FNAME:

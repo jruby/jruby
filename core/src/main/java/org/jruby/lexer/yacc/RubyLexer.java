@@ -395,7 +395,6 @@ public class RubyLexer extends LexingCommon {
     private boolean __end__seen = false;
     protected boolean eofp = false;
     private boolean has_shebang = false;
-    protected ByteList delayed = null;
     private int ruby_sourceline = 0;
     private int heredoc_end = 0;
     private int line_count = 0;
