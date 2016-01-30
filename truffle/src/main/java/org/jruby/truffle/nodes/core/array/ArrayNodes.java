@@ -25,6 +25,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -2469,26 +2470,28 @@ public abstract class ArrayNodes {
                 bytes = Arrays.copyOf(bytes, result.getOutputLength());
             }
 
-            final Rope rope = makeLeafRopeNode.executeMake(bytes, ASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN);
-            final DynamicObject string = createString(rope);
-
+            final Encoding encoding;
             if (formatLength == 0) {
-                StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
+                encoding = USASCIIEncoding.INSTANCE;
             } else {
                 switch (result.getEncoding()) {
                     case DEFAULT:
                     case ASCII_8BIT:
+                        encoding = ASCIIEncoding.INSTANCE;
                         break;
                     case US_ASCII:
-                        StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
+                        encoding = USASCIIEncoding.INSTANCE;
                         break;
                     case UTF_8:
-                        StringOperations.forceEncoding(string, UTF8Encoding.INSTANCE);
+                        encoding = UTF8Encoding.INSTANCE;
                         break;
                     default:
                         throw new UnsupportedOperationException();
                 }
             }
+
+            final Rope rope = makeLeafRopeNode.executeMake(bytes, encoding, StringSupport.CR_UNKNOWN);
+            final DynamicObject string = createString(rope);
 
             if (result.isTainted()) {
                 if (taintNode == null) {
