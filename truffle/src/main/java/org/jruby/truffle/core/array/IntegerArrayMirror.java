@@ -7,47 +7,58 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.array;
+package org.jruby.truffle.core.array;
 
-public class EmptyArrayMirror extends BasicArrayMirror {
+import java.util.Arrays;
+
+class IntegerArrayMirror extends BasicArrayMirror {
+
+    private final int[] array;
+
+    public IntegerArrayMirror(int[] array) {
+        this.array = array;
+    }
 
     @Override
     public int getLength() {
-        return 0;
+        return array.length;
     }
 
     @Override
     public Object get(int index) {
-        throw new IndexOutOfBoundsException();
+        return array[index];
     }
 
     @Override
     public void set(int index, Object value) {
-        throw new IndexOutOfBoundsException();
+        array[index] = (int) value;
     }
 
     @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
-        return new EmptyArrayMirror();
+        return new IntegerArrayMirror(Arrays.copyOf(array, newLength));
     }
 
     @Override
     public void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count) {
-        if (sourceStart > 0 || count > 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        System.arraycopy(array, sourceStart, destination.getArray(), destinationStart, count);
+    }
+
+    @Override
+    public Object[] getBoxedCopy(int newLength) {
+        return ArrayUtils.box(array, newLength);
     }
 
     @Override
     public void copyTo(Object[] destination, int sourceStart, int destinationStart, int count) {
-        if (sourceStart > 0 || count > 0) {
-            throw new IndexOutOfBoundsException();
+        for (int n = 0; n < count; n++) {
+            destination[destinationStart + n] = array[sourceStart + n];
         }
     }
 
     @Override
     public Object getArray() {
-        return null;
+        return array;
     }
 
 }

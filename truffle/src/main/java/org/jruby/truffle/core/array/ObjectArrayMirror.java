@@ -7,15 +7,13 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.array;
+package org.jruby.truffle.core.array;
 
-import java.util.Arrays;
+class ObjectArrayMirror extends BasicArrayMirror {
 
-class DoubleArrayMirror extends BasicArrayMirror {
+    private final Object[] array;
 
-    private final double[] array;
-
-    public DoubleArrayMirror(double[] array) {
+    public ObjectArrayMirror(Object[] array) {
         this.array = array;
     }
 
@@ -31,12 +29,12 @@ class DoubleArrayMirror extends BasicArrayMirror {
 
     @Override
     public void set(int index, Object value) {
-        array[index] = (double) value;
+        array[index] = value;
     }
 
     @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
-        return new DoubleArrayMirror(Arrays.copyOf(array, newLength));
+        return new ObjectArrayMirror(ArrayUtils.grow(array, newLength));
     }
 
     @Override
@@ -46,9 +44,7 @@ class DoubleArrayMirror extends BasicArrayMirror {
 
     @Override
     public void copyTo(Object[] destination, int sourceStart, int destinationStart, int count) {
-        for (int n = 0; n < count; n++) {
-            destination[destinationStart + n] = array[sourceStart + n];
-        }
+        System.arraycopy(array, sourceStart, destination, destinationStart, count);
     }
 
     @Override

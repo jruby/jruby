@@ -19,9 +19,6 @@ import org.jruby.truffle.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.hash.BucketsStrategy;
-import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashLookupResult;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class LookupEntryNode extends RubyNode {

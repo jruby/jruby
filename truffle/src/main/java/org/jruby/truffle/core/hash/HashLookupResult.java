@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.hash;
+package org.jruby.truffle.core.hash;
 
 /**
  * The result of looking for an entry (an {@link Entry}) in a Ruby hash. We get the previous entry in the lookup chain

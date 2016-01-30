@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.hash;
+package org.jruby.truffle.core.hash;
 
 /**
  * An entry in the Ruby hash. That is, a container for a key and a value, and a member of two lists - the chain of

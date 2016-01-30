@@ -7,15 +7,15 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.array;
+package org.jruby.truffle.core.array;
 
 import java.util.Arrays;
 
-class IntegerArrayMirror extends BasicArrayMirror {
+class DoubleArrayMirror extends BasicArrayMirror {
 
-    private final int[] array;
+    private final double[] array;
 
-    public IntegerArrayMirror(int[] array) {
+    public DoubleArrayMirror(double[] array) {
         this.array = array;
     }
 
@@ -31,22 +31,17 @@ class IntegerArrayMirror extends BasicArrayMirror {
 
     @Override
     public void set(int index, Object value) {
-        array[index] = (int) value;
+        array[index] = (double) value;
     }
 
     @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
-        return new IntegerArrayMirror(Arrays.copyOf(array, newLength));
+        return new DoubleArrayMirror(Arrays.copyOf(array, newLength));
     }
 
     @Override
     public void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count) {
         System.arraycopy(array, sourceStart, destination.getArray(), destinationStart, count);
-    }
-
-    @Override
-    public Object[] getBoxedCopy(int newLength) {
-        return ArrayUtils.box(array, newLength);
     }
 
     @Override

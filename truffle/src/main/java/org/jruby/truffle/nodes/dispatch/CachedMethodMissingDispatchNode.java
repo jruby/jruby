@@ -18,7 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNode;
 import org.jruby.truffle.nodes.objects.MetaClassWithShapeCacheNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
