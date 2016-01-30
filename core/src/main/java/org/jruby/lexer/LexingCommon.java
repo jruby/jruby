@@ -96,7 +96,7 @@ public abstract class LexingCommon {
         return -1;
     }
 
-    public static final String magicString = "([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*";
+    public static final String magicString = "^[^\\S]*([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*[^\\S]*$";
     public static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
 
 
@@ -109,27 +109,29 @@ public abstract class LexingCommon {
         if (beg >= 0) {
             int end = magicCommentMarker(magicLine, beg);
             if (end < 0) return false;
-            length = end - beg - 3; // -3 is to skip past beg
+            length = end - beg - 3; // -3 is to backup over end just found
+        } else {
+            beg = 0;
         }
 
-        int realSize = magicLine.getRealSize();
-        int begin = magicLine.getBegin();
-        Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + realSize);
-        int result = RubyRegexp.matcherSearch(runtime, matcher, begin, begin + realSize, Option.NONE);
+        int begin = magicLine.getBegin() + beg;
+        Matcher matcher = magicRegexp.matcher(magicLine.unsafeBytes(), begin, begin + length);
+        int result = RubyRegexp.matcherSearch(runtime, matcher, begin, begin + length, Option.NONE);
 
         if (result < 0) return false;
 
         // Regexp is guaranteed to have three matches
         int begs[] = matcher.getRegion().beg;
         int ends[] = matcher.getRegion().end;
-        String name = magicLine.subSequence(begs[1], ends[1]).toString().replace('-', '_');
+        String name = magicLine.subSequence(beg + begs[1], beg + ends[1]).toString().replace('-', '_');
+        ByteList value = magicLine.makeShared(beg + begs[2], ends[2] - begs[2]);
 
         if ("coding".equals(name) || "encoding".equals(name)) {
-            magicCommentEncoding(magicLine.makeShared(begs[2], ends[2] - begs[2]));
+            magicCommentEncoding(value);
         } else if ("frozen_string_literal".equals(name)) {
-            setCompileOptionFlag(name, magicLine.makeShared(begs[2], ends[2] - begs[2]));
+            setCompileOptionFlag(name, value);
         } else if ("warn_indent".equals(name)) {
-            setTokenInfo(name, magicLine.makeShared(begs[2], ends[2] - begs[2]));
+            setTokenInfo(name, value);
         } else {
             return false;
         }
