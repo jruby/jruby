@@ -16,7 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.nodes.SourceNode;
-import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
+import org.jruby.truffle.core.FixnumOrBignumNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.math.BigInteger;

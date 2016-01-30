@@ -32,7 +32,7 @@ import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.EncodingNodes;
+import org.jruby.truffle.core.EncodingNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;

@@ -18,7 +18,7 @@ import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ClassNodes;
+import org.jruby.truffle.core.ClassNodes;
 import org.jruby.truffle.language.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.ModuleChain;
