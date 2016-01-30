@@ -4482,7 +4482,7 @@ states[574] = new RipperParserState() {
 };
 states[575] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.keyword_arg(((IRubyObject)yyVals[0+yyTop]), null);
+                    yyVal = p.keyword_arg(((IRubyObject)yyVals[0+yyTop]), p.getContext().getRuntime().getFalse());
     return yyVal;
   }
 };
@@ -4494,7 +4494,7 @@ states[576] = new RipperParserState() {
 };
 states[577] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.keyword_arg(((IRubyObject)yyVals[0+yyTop]), null);
+                    yyVal = p.keyword_arg(((IRubyObject)yyVals[0+yyTop]), p.getContext().getRuntime().getFalse());
     return yyVal;
   }
 };

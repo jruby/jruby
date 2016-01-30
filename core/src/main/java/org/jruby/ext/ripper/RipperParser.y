@@ -1927,14 +1927,14 @@ f_kw            : f_label arg_value {
                     $$ = p.keyword_arg($1, $2);
                 }
                 | f_label {
-                    $$ = p.keyword_arg($1, null);
+                    $$ = p.keyword_arg($1, p.getContext().getRuntime().getFalse());
                 }
 
 f_block_kw      : f_label primary_value {
                     $$ = p.keyword_arg($1, $2);
                 }
                 | f_label {
-                    $$ = p.keyword_arg($1, null);
+                    $$ = p.keyword_arg($1, p.getContext().getRuntime().getFalse());
                 }
 
 f_block_kwarg   : f_block_kw {
