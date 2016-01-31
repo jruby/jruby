@@ -19,6 +19,7 @@ import org.jruby.truffle.core.format.runtime.PackEncoding;
 import org.jruby.truffle.core.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.runtime.RubyLanguage;
+import org.jruby.util.StringSupport;
 
 /**
  * The node at the root of a pack expression.
@@ -46,6 +47,8 @@ public class PackRootNode extends RootNode {
         frame.setInt(PackFrameDescriptor.SOURCE_POSITION_SLOT, 0);
         frame.setObject(PackFrameDescriptor.OUTPUT_SLOT, new byte[expectedLength]);
         frame.setInt(PackFrameDescriptor.OUTPUT_POSITION_SLOT, 0);
+        frame.setInt(PackFrameDescriptor.STRING_LENGTH_SLOT, 0);
+        frame.setInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT, StringSupport.CR_7BIT);
         frame.setBoolean(PackFrameDescriptor.TAINT_SLOT, false);
 
         child.execute(frame);
@@ -79,7 +82,27 @@ public class PackRootNode extends RootNode {
             throw new IllegalStateException(e);
         }
 
-        return new PackResult(output, outputLength, taint, encoding);
+        final int stringLength;
+
+        if (encoding == PackEncoding.UTF_8) {
+            try {
+                stringLength = frame.getInt(PackFrameDescriptor.STRING_LENGTH_SLOT);
+            } catch (FrameSlotTypeException e) {
+                throw new IllegalStateException(e);
+            }
+        } else {
+            stringLength = outputLength;
+        }
+
+        final int stringCodeRange;
+
+        try {
+            stringCodeRange = frame.getInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT);
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
+
+        return new PackResult(output, outputLength, stringLength, stringCodeRange, taint, encoding);
     }
 
     @Override

@@ -44,6 +44,7 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
         writeBytes(frame,
                 (byte)(((value >>> 6) & 0xff) | 0xc0),
                 (byte)((value & 0x3f) | 0x80));
+        increaseStringLength(frame, -2 + 1);
         return null;
     }
 
@@ -53,6 +54,7 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
                 (byte)(((value >>> 12) & 0xff) | 0xe0),
                 (byte)(((value >>> 6) & 0x3f) | 0x80),
                 (byte)((value & 0x3f) | 0x80));
+        increaseStringLength(frame, -3 + 1);
         return null;
     }
 
@@ -63,6 +65,7 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
                 (byte)(((value >>> 12) & 0x3f) | 0x80),
                 (byte)(((value >>> 6) & 0x3f) | 0x80),
                 (byte)((value & 0x3f) | 0x80));
+        increaseStringLength(frame, -4 + 1);
         return null;
     }
 
@@ -74,6 +77,7 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
                 (byte)(((value >>> 12) & 0x3f) | 0x80),
                 (byte)(((value >>> 6) & 0x3f) | 0x80),
                 (byte)((value & 0x3f) | 0x80));
+        increaseStringLength(frame, -5 + 1);
         return null;
     }
 
@@ -86,6 +90,7 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
                 (byte)(((value >>> 12) & 0x3f) | 0x80),
                 (byte)(((value >>> 6) & 0x3f) | 0x80),
                 (byte)((value & 0x3f) | 0x80));
+        increaseStringLength(frame, -6 + 1);
         return null;
     }
 

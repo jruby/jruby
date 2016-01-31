@@ -61,7 +61,9 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.rope.AsciiOnlyLeafRope;
 import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.ValidLeafRope;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 
@@ -2487,7 +2489,13 @@ public abstract class ArrayNodes {
                 }
             }
 
-            final Rope rope = makeLeafRopeNode.executeMake(bytes, encoding, StringSupport.CR_UNKNOWN);
+            /*
+             * TODO CS 31-Jan-16 what can I usefully do with the code range? Create AsciiOnlyLeafRope? I'm not setting
+             * it in the pack nodes yet so it's always just VALID. Also can I use an AsciiOnlyLeafRope for a binary
+             * string that has bytes with the MSB set?
+             */
+
+            final Rope rope = new ValidLeafRope(bytes, encoding, result.getStringLength());
             final DynamicObject string = createString(rope);
 
             if (result.isTainted()) {
