@@ -352,6 +352,112 @@ public class Bootstrap {
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
     }
 
+    static MethodHandle buildAttrHandle(InvokeSite site, DynamicMethod method, IRubyObject self, RubyClass dispatchClass) {
+        if (method instanceof AttrReaderMethod) {
+            AttrReaderMethod attrReader = (AttrReaderMethod) method;
+            String varName = attrReader.getVariableName();
+
+            // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
+            VariableAccessor accessor = dispatchClass.getRealClass().getVariableAccessorForWrite(varName);
+
+            // Ruby to attr reader
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                //            if (accessor instanceof FieldVariableAccessor) {
+                //                LOG.info(site.name() + "\tbound as field attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                //            } else {
+                //                LOG.info(site.name() + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                //            }
+            }
+
+            return createAttrReaderHandle(site, self, dispatchClass.getRealClass(), accessor);
+        } else if (method instanceof AttrWriterMethod) {
+            AttrWriterMethod attrReader = (AttrWriterMethod)method;
+            String varName = attrReader.getVariableName();
+
+            // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
+            VariableAccessor accessor = dispatchClass.getRealClass().getVariableAccessorForWrite(varName);
+
+            // Ruby to attr reader
+//            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+//                if (accessor instanceof FieldVariableAccessor) {
+//                    LOG.info(site.name() + "\tbound as field attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+//                } else {
+//                    LOG.info(site.name() + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+//                }
+//            }
+
+            return createAttrWriterHandle(site, self, dispatchClass.getRealClass(), accessor);
+        }
+
+        return null;
+    }
+
+    private static MethodHandle createAttrReaderHandle(InvokeSite site, IRubyObject self, RubyClass cls, VariableAccessor accessor) {
+        MethodHandle nativeTarget;
+
+        MethodHandle filter = Binder
+                .from(IRubyObject.class, IRubyObject.class)
+                .insert(1, cls.getRuntime().getNil())
+                .cast(IRubyObject.class, IRubyObject.class, IRubyObject.class)
+                .invokeStaticQuiet(lookup(), Bootstrap.class, "valueOrNil");
+
+        MethodHandle getValue;
+
+        // FIXME: Duplicated from ivar get
+        if (accessor instanceof FieldVariableAccessor) {
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            getValue = Binder.from(site.type())
+                    .drop(0, 2)
+                    .filterReturn(filter)
+                    .cast(methodType(Object.class, self.getClass()))
+                    .getFieldQuiet(LOOKUP, "var" + offset);
+        } else {
+            getValue = Binder.from(site.type())
+                    .drop(0, 2)
+                    .filterReturn(filter)
+                    .cast(methodType(Object.class, RubyBasicObject.class))
+                    .append(accessor.getIndex())
+                    .invokeVirtualQuiet(LOOKUP, "getVariable");
+        }
+
+        // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
+
+        return getValue;
+    }
+
+    public static IRubyObject valueOrNil(IRubyObject value, IRubyObject nil) {
+        return value == null ? nil : value;
+    }
+
+    private static MethodHandle createAttrWriterHandle(InvokeSite site, IRubyObject self, RubyClass cls, VariableAccessor accessor) {
+        MethodHandle nativeTarget;
+
+        MethodHandle filter = Binder
+                .from(IRubyObject.class, Object.class)
+                .drop(0)
+                .constant(cls.getRuntime().getNil());
+
+        MethodHandle setValue;
+
+        if (accessor instanceof FieldVariableAccessor) {
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            setValue = Binder.from(site.type())
+                    .drop(0, 2)
+                    .filterReturn(filter)
+                    .cast(methodType(void.class, self.getClass(), Object.class))
+                    .invokeVirtualQuiet(LOOKUP, "setVariable" + offset);
+        } else {
+            setValue = Binder.from(site.type())
+                    .drop(0, 2)
+                    .filterReturn(filter)
+                    .cast(methodType(void.class, RubyBasicObject.class, Object.class))
+                    .insert(1, accessor.getIndex())
+                    .invokeVirtualQuiet(LOOKUP, "setVariable");
+        }
+
+        return setValue;
+    }
+
     static MethodHandle buildJittedHandle(InvokeSite site, DynamicMethod method, boolean blockGiven) {
         MethodHandle mh = null;
         SmartBinder binder;

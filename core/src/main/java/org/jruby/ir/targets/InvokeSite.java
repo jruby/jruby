@@ -128,7 +128,7 @@ public abstract class InvokeSite extends MutableCallSite {
             return callMethodMissing(entry, callType, context, self, methodName, args, block);
         }
 
-        MethodHandle mh = getHandle(selfClass, this, method);
+        MethodHandle mh = getHandle(self, selfClass, method);
 
         updateInvocationTarget(mh, self, selfClass, entry, switchPoint);
 
@@ -182,13 +182,14 @@ public abstract class InvokeSite extends MutableCallSite {
         return binder.binder();
     }
 
-    MethodHandle getHandle(RubyClass dispatchClass, InvokeSite site, DynamicMethod method) throws Throwable {
+    MethodHandle getHandle(IRubyObject self, RubyClass dispatchClass, DynamicMethod method) throws Throwable {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
-        MethodHandle mh = Bootstrap.buildNativeHandle(site, method, blockGiven);
-        if (mh == null) mh = Bootstrap.buildIndyHandle(site, method, method.getImplementationClass());
-        if (mh == null) mh = Bootstrap.buildJittedHandle(site, method, blockGiven);
-        if (mh == null) mh = Bootstrap.buildGenericHandle(site, method, dispatchClass);
+        MethodHandle mh = Bootstrap.buildNativeHandle(this, method, blockGiven);
+        if (mh == null) mh = Bootstrap.buildIndyHandle(this, method, method.getImplementationClass());
+        if (mh == null) mh = Bootstrap.buildJittedHandle(this, method, blockGiven);
+        if (mh == null) mh = Bootstrap.buildAttrHandle(this, method, self, dispatchClass);
+        if (mh == null) mh = Bootstrap.buildGenericHandle(this, method, dispatchClass);
 
         assert mh != null : "we should have a method handle of some sort by now";
 
