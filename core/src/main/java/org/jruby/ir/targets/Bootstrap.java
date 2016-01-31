@@ -12,7 +12,6 @@ import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.JIT;
-import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
@@ -137,22 +136,6 @@ public class Bootstrap {
         return site;
     }
 
-    public static CallSite searchConst(Lookup lookup, String name, MethodType type, int noPrivateConsts) {
-        MutableCallSite site = new MutableCallSite(type);
-        String[] bits = name.split(":");
-        String constName = bits[1];
-
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .append(site, constName.intern())
-                .append(noPrivateConsts == 0 ? false : true)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, bits[0]);
-
-        site.setTarget(handle);
-
-        return site;
-    }
-
     public static Handle string() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class));
     }
@@ -179,10 +162,6 @@ public class Bootstrap {
 
     public static Handle ivar() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "ivar", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
-    }
-
-    public static Handle searchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
     public static Handle global() {
@@ -708,113 +687,21 @@ public class Bootstrap {
     ///////////////////////////////////////////////////////////////////////////
     // constant lookup
 
-    public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
-
-        // Lexical lookup
-        Ruby runtime = context.getRuntime();
-        RubyModule object = runtime.getObject();
-        IRubyObject constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
-
-        // Inheritance lookup
-        RubyModule module = null;
-        if (constant == null) {
-            // SSS FIXME: Is this null check case correct?
-            module = staticScope == null ? object : staticScope.getModule();
-            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
-        }
-
-        // Call const_missing or cache
-        if (constant == null) {
-            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
-        }
-
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
-
-        // bind constant until invalidated
-        MethodHandle target = Binder.from(site.type())
-                .drop(0, 2)
-                .constant(constant);
-        MethodHandle fallback = Binder.from(site.type())
-                .append(site, constName)
-                .append(noPrivateConsts)
-                .invokeStatic(LOOKUP, Bootstrap.class, "searchConst");
-
-        site.setTarget(switchPoint.guardWithTest(target, fallback));
-
-        return constant;
+    public static Handle searchConst() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
     }
 
-    public static IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
-        Ruby runtime = context.runtime;
-        RubyModule module;
+    public static CallSite searchConst(Lookup lookup, String searchType, MethodType type, String constName, int publicOnly) {
+        ConstantLookupSite site = new ConstantLookupSite(type, constName, publicOnly == 0 ? false : true);
 
-        if (cmVal instanceof RubyModule) {
-            module = (RubyModule) cmVal;
-        } else {
-            throw runtime.newTypeError(cmVal + " is not a type/class");
-        }
+        MethodHandle handle = Binder
+                .from(lookup, type)
+                .insert(0, site)
+                .invokeVirtualQuiet(LOOKUP, searchType);
 
-        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+        site.setTarget(handle);
 
-        if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
-        }
-
-        // This caching does not take into consideration sites that have many different module targets.
-        //
-        if (true) {
-            return constant;
-        }
-
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
-
-        // bind constant until invalidated
-        MethodHandle target = Binder.from(site.type())
-                .drop(0, 2)
-                .constant(constant);
-        MethodHandle fallback = Binder.from(site.type())
-                .append(site, constName)
-                .append(noPrivateConsts)
-                .invokeStatic(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
-
-        // test that module is same as before
-        MethodHandle test = Binder.from(site.type().changeReturnType(boolean.class))
-                .drop(0, 1)
-                .insert(1, module.id)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testArg0ModuleMatch");
-        target = guardWithTest(test, target, fallback);
-        site.setTarget(switchPoint.guardWithTest(target, fallback));
-
-        if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) {
-            LOG.info(constName + "\tretrieved and cached from type " + cmVal.getMetaClass());// + " added to PIC" + extractSourceInfo(site));
-        }
-
-        return constant;
-    }
-
-    public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope scope, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
-        Ruby runtime = context.runtime;
-
-        IRubyObject constant = scope.getConstantInner(constName);
-
-        if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
-        }
-
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
-
-        // bind constant until invalidated
-        MethodHandle target = Binder.from(site.type())
-                .drop(0, 2)
-                .constant(constant);
-        MethodHandle fallback = Binder.from(site.type())
-                .append(site, constName)
-                .append(noPrivateConsts)
-                .invokeStatic(LOOKUP, Bootstrap.class, "lexicalSearchConst");
-
-        site.setTarget(switchPoint.guardWithTest(target, fallback));
-
-        return constant;
+        return site;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -832,7 +719,6 @@ public class Bootstrap {
     }
 
     public static boolean testArg0ModuleMatch(IRubyObject arg0, int id) {
-        System.out.println("testing " + arg0 + " for match (id = " + ((RubyModule)arg0).id + "): " + (arg0 instanceof RubyModule && ((RubyModule)arg0).id == id));
         return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
     }
 
