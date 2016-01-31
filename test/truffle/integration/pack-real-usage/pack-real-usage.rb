@@ -6,6 +6,7 @@ Infinity = Float::INFINITY
 NaN = Float::NAN
 
 def assert_equal(one, two)
+  raise "Expected size: `#{one.b.size}` Actual size: `#{two.size}`" if one.b.size != two.size
   raise "Expected: `#{one.b}` Actual: `#{two}`" if one.b != two
 end
 
