@@ -427,6 +427,21 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(names = "mime_type_supported?", isModuleFunction = true, needsSelf = false, required =1)
+    public abstract static class MimeTypeSupportedNode extends CoreMethodArrayArgumentsNode {
+
+        public MimeTypeSupportedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(mimeType)")
+        public boolean isMimeTypeSupported(DynamicObject mimeType) {
+            return getContext().getEnv().isMimeTypeSupported(mimeType.toString());
+        }
+
+    }
+
     @CoreMethod(names = "eval", isModuleFunction = true, needsSelf = false, required = 2)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class EvalNode extends CoreMethodArrayArgumentsNode {
