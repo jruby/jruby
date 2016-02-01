@@ -27,10 +27,10 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
-import static org.jruby.truffle.runtime.core.StringOperations.decodeUTF8;
+import static org.jruby.truffle.core.StringOperations.decodeUTF8;
 
 import java.nio.charset.StandardCharsets;
 

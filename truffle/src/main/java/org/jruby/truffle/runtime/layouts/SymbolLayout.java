@@ -12,9 +12,8 @@ package org.jruby.truffle.runtime.layouts;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
+import org.jruby.truffle.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.util.ByteList;
 
 @org.jruby.truffle.om.dsl.api.Layout
 public interface SymbolLayout extends BasicObjectLayout {

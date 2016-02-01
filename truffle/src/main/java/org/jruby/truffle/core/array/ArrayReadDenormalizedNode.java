@@ -19,7 +19,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({

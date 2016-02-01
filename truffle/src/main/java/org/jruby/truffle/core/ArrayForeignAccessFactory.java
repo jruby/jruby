@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.core;
+package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
@@ -22,16 +22,15 @@ import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
 
-public class StringForeignAccessFactory implements ForeignAccess.Factory10 {
-
+public class ArrayForeignAccessFactory implements ForeignAccess.Factory10 {
     private final RubyContext context;
 
-    private StringForeignAccessFactory(RubyContext context) {
+    private ArrayForeignAccessFactory(RubyContext context) {
         this.context = context;
     }
 
     public static ForeignAccess create(RubyContext context) {
-        return ForeignAccess.create(DynamicObject.class, new StringForeignAccessFactory(context));
+        return ForeignAccess.create(DynamicObject.class, new ArrayForeignAccessFactory(context));
     }
 
     @Override
@@ -46,7 +45,7 @@ public class StringForeignAccessFactory implements ForeignAccess.Factory10 {
 
     @Override
     public CallTarget accessIsBoxed() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringIsBoxed(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsBoxedPrimitive(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
@@ -61,12 +60,12 @@ public class StringForeignAccessFactory implements ForeignAccess.Factory10 {
 
     @Override
     public CallTarget accessUnbox() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringUnbox(context, SourceSection.createUnavailable("", ""))));
+        return null;
     }
 
     @Override
     public CallTarget accessRead() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringRead(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createRead(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
@@ -75,7 +74,7 @@ public class StringForeignAccessFactory implements ForeignAccess.Factory10 {
     }
 
     @Override
-    public CallTarget accessExecute(int arity) {
+    public CallTarget accessExecute(int i) {
         return null;
     }
 

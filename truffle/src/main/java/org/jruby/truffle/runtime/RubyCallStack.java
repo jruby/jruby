@@ -18,7 +18,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.CoreSourceSection;
+import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;

@@ -22,7 +22,7 @@
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  *
  */
-package org.jruby.truffle.runtime.core;
+package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -32,7 +32,6 @@ import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.core.EncodingNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;

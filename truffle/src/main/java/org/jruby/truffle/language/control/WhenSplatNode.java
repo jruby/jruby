@@ -19,7 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.core.ArrayOperations;
 
 public class WhenSplatNode extends RubyNode {
 

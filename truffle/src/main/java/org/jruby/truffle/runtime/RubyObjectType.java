@@ -13,9 +13,8 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
-import org.jruby.runtime.Helpers;
+import org.jruby.truffle.core.*;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 

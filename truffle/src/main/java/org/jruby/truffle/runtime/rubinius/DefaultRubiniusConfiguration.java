@@ -43,7 +43,7 @@ import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;

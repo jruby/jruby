@@ -7,31 +7,39 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.core;
+package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
 
-public class BasicForeignAccessFactory implements ForeignAccess.Factory10 {
+public class HashForeignAccessFactory implements ForeignAccess.Factory10, ForeignAccess.Factory {
 
     private final RubyContext context;
 
-    private BasicForeignAccessFactory(RubyContext context) {
+    private HashForeignAccessFactory(RubyContext context) {
         this.context = context;
     }
 
     public static ForeignAccess create(RubyContext context) {
-        return ForeignAccess.create(DynamicObject.class, new BasicForeignAccessFactory(context));
+        final HashForeignAccessFactory hashFactory = new HashForeignAccessFactory(context);
+        return ForeignAccess.create(null, hashFactory);
+    }
+
+
+    @Override
+    public boolean canHandle(TruffleObject to) {
+        return RubyGuards.isRubyHash(to);
     }
 
     @Override
@@ -51,17 +59,17 @@ public class BasicForeignAccessFactory implements ForeignAccess.Factory10 {
 
     @Override
     public CallTarget accessHasSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyFalse(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyTrue(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
     public CallTarget accessGetSize() {
-        return null;
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createGetSize(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
     public CallTarget accessUnbox() {
-        return null;
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsBoxedPrimitive(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override

@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.ModuleFields;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "Class")

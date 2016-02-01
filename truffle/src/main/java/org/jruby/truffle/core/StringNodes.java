@@ -63,9 +63,6 @@ import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.core.EncodingOperations;
-import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
-import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
@@ -77,8 +74,8 @@ import java.util.Arrays;
 
 import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_UTF8_ROPE;
-import static org.jruby.truffle.runtime.core.StringOperations.rope;
-import static org.jruby.truffle.runtime.core.StringOperations.encoding;
+import static org.jruby.truffle.core.StringOperations.rope;
+import static org.jruby.truffle.core.StringOperations.encoding;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {

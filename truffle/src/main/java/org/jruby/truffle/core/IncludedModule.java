@@ -7,18 +7,24 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.core;
+package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.ModuleChain;
 
-public class PrependMarker implements ModuleChain {
+/**
+ * A reference to an included RubyModule.
+ */
+public class IncludedModule implements ModuleChain {
+    private final DynamicObject includedModule;
     @CompilerDirectives.CompilationFinal
     private ModuleChain parentModule;
 
-    public PrependMarker(ModuleChain parentModule) {
-        assert parentModule != null;
+    public IncludedModule(DynamicObject includedModule, ModuleChain parentModule) {
+        assert RubyGuards.isRubyModule(includedModule);
+        this.includedModule = includedModule;
         this.parentModule = parentModule;
     }
 
@@ -29,7 +35,12 @@ public class PrependMarker implements ModuleChain {
 
     @Override
     public DynamicObject getActualModule() {
-        throw new UnsupportedOperationException();
+        return includedModule;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + includedModule + ")";
     }
 
     @Override

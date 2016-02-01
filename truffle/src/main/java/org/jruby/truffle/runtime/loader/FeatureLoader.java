@@ -19,8 +19,8 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.array.ArrayMirror;
 import org.jruby.truffle.core.array.ArrayReflector;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.core.ArrayOperations;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.core.ArrayOperations;
+import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.io.File;
