@@ -24,7 +24,7 @@ import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 

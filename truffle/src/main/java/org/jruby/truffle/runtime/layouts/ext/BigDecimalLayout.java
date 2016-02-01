@@ -11,7 +11,7 @@ package org.jruby.truffle.runtime.layouts.ext;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import org.jruby.truffle.nodes.ext.BigDecimalNodes;
+import org.jruby.truffle.ext.BigDecimalNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.layouts.BasicObjectLayout;
 

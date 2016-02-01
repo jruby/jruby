@@ -14,7 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.RubyGC;
-import org.jruby.truffle.nodes.core.ThreadNodes;
+import org.jruby.truffle.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;

@@ -20,13 +20,13 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.FloatNodes;
-import org.jruby.truffle.nodes.core.FloatNodesFactory;
+import org.jruby.truffle.core.FloatNodes;
+import org.jruby.truffle.core.FloatNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value = "child", type = RubyNode.class)

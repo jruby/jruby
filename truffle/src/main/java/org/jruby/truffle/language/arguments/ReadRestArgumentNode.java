@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**

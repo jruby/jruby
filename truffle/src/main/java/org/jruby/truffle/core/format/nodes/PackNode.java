@@ -19,7 +19,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.core.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.util.ByteList;
 
 import java.util.Arrays;

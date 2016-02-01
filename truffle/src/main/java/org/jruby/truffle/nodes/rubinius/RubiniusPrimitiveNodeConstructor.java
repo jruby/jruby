@@ -14,11 +14,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
+import org.jruby.truffle.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.core.array.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.List;

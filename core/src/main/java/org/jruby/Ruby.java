@@ -4807,6 +4807,24 @@ public final class Ruby implements Constantizable {
         return constant;
     }
 
+    /**
+     * Set the base Class#new method.
+     *
+     * @param baseNewMethod
+     */
+    public void setBaseNewMethod(DynamicMethod baseNewMethod) {
+        this.baseNewMethod = baseNewMethod;
+    }
+
+    /**
+     * Get the base Class#new method.
+     *
+     * @return the base Class#new method
+     */
+    public DynamicMethod getBaseNewMethod() {
+        return baseNewMethod;
+    }
+
     @Deprecated
     public int getSafeLevel() {
         return 0;
@@ -5160,4 +5178,9 @@ public final class Ruby implements Constantizable {
      * accesses.
      */
     private final Object constant;
+
+    /**
+     * The built-in Class#new method, so we can bind more directly to allocate and initialize.
+     */
+    private DynamicMethod baseNewMethod;
 }

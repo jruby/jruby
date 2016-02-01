@@ -14,7 +14,7 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
 
 import org.jruby.RubyThread;
-import org.jruby.truffle.nodes.core.InterruptMode;
+import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.om.dsl.api.Volatile;

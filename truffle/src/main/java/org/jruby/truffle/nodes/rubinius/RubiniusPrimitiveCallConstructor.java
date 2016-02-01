@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.language.arguments.NodeArrayToObjectArrayNode;
 import org.jruby.truffle.language.arguments.ReadAllArgumentsNode;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
-import org.jruby.truffle.nodes.core.MethodNodesFactory.CallNodeFactory;
+import org.jruby.truffle.core.MethodNodesFactory.CallNodeFactory;
 import org.jruby.truffle.language.literal.LiteralNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.language.control.ReturnID;

@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.StringOperations;
 
 public class WriteClassVariableNode extends RubyNode {
 

@@ -28,8 +28,8 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
-import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.core.StringOperations;
+import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({

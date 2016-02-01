@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.core.ArrayOperations;
 
 /**
  * Yield to the current block.

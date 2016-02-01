@@ -19,7 +19,7 @@ import org.jruby.truffle.core.format.runtime.PackEncoding;
 import org.jruby.truffle.core.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.runtime.RubyLanguage;
-import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.core.array.ArrayUtils;
 
 public class UnpackRootNode extends RootNode {
 

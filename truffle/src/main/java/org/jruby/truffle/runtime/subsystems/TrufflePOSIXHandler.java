@@ -12,7 +12,7 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIXHandler;
-import org.jruby.truffle.nodes.core.ExceptionNodes;
+import org.jruby.truffle.core.ExceptionNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 

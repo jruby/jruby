@@ -16,8 +16,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.hash.BucketsStrategy;
-import org.jruby.truffle.runtime.hash.HashOperations;
+import org.jruby.truffle.core.hash.BucketsStrategy;
+import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.ArrayList;

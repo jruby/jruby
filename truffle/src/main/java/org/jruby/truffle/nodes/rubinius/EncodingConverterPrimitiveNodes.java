@@ -21,20 +21,20 @@ import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.EncodingConverterNodes;
-import org.jruby.truffle.nodes.core.RopeNodes;
-import org.jruby.truffle.nodes.core.RopeNodesFactory;
+import org.jruby.truffle.core.EncodingConverterNodes;
+import org.jruby.truffle.core.RopeNodes;
+import org.jruby.truffle.core.RopeNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
-import static org.jruby.truffle.runtime.core.StringOperations.rope;
+import static org.jruby.truffle.core.StringOperations.rope;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding::Converter} class..

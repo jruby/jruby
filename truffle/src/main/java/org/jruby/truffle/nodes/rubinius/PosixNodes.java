@@ -18,19 +18,19 @@ import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.platform.Platform;
-import org.jruby.truffle.nodes.core.CoreClass;
-import org.jruby.truffle.nodes.core.CoreMethod;
-import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.nodes.core.RopeNodes;
-import org.jruby.truffle.nodes.core.RopeNodesFactory;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.RopeNodes;
+import org.jruby.truffle.core.RopeNodesFactory;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
-import static org.jruby.truffle.runtime.core.StringOperations.decodeUTF8;
+import static org.jruby.truffle.core.StringOperations.decodeUTF8;
 
 import java.nio.charset.StandardCharsets;
 
