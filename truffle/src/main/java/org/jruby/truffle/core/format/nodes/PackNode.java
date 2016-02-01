@@ -171,7 +171,15 @@ public abstract class PackNode extends Node {
     }
 
     protected void setStringCodeRange(VirtualFrame frame, int codeRange) {
-        frame.setInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT, codeRange);
+        try {
+            final int existingCodeRange = frame.getInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT);
+
+            if (codeRange > existingCodeRange) {
+                frame.setInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT, codeRange);
+            }
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /**

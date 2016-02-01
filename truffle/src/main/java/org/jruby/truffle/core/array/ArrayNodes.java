@@ -62,6 +62,7 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.rope.AsciiOnlyLeafRope;
+import org.jruby.truffle.runtime.rope.InvalidLeafRope;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.ValidLeafRope;
 import org.jruby.util.Memo;
@@ -2489,13 +2490,15 @@ public abstract class ArrayNodes {
                 }
             }
 
-            /*
-             * TODO CS 31-Jan-16 what can I usefully do with the code range? Create AsciiOnlyLeafRope? I'm not setting
-             * it in the pack nodes yet so it's always just VALID. Also can I use an AsciiOnlyLeafRope for a binary
-             * string that has bytes with the MSB set?
-             */
 
-            final Rope rope = new ValidLeafRope(bytes, encoding, result.getStringLength());
+            final Rope rope;
+            if (result.getStringCodeRange() == StringSupport.CR_VALID) {
+                // TODO (nirvdrum 01-Feb-16): We probably should have a node for creating ropes with a known character length.
+                rope = new ValidLeafRope(bytes, encoding, result.getStringLength());
+            } else {
+                rope = makeLeafRopeNode.executeMake(bytes, encoding, result.getStringCodeRange());
+            }
+
             final DynamicObject string = createString(rope);
 
             if (result.isTainted()) {
