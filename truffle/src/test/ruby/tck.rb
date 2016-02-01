@@ -85,6 +85,13 @@ end
 
 Truffle::Interop.export_method(:complex_add)
 
+def complex_add_with_method(a, b)
+  Truffle::Interop.write_property a, :imaginary, Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
+  Truffle::Interop.write_property a, :real, Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
+end
+
+Truffle::Interop.export_method(:complex_add_with_method)
+
 def complex_sum_real(complexes)
   complexes = Truffle::Interop.enumerable(complexes)
 
