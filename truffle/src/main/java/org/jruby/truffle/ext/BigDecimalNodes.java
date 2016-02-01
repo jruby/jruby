@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.ext;
+package org.jruby.truffle.ext;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -35,10 +35,10 @@ import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.BigDecimalCastNodeGen;
-import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.BigDecimalCoerceNodeGen;
-import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
-import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
+import org.jruby.truffle.ext.BigDecimalNodesFactory.BigDecimalCastNodeGen;
+import org.jruby.truffle.ext.BigDecimalNodesFactory.BigDecimalCoerceNodeGen;
+import org.jruby.truffle.ext.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
+import org.jruby.truffle.ext.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
 import org.jruby.truffle.nodes.internal.UnreachableCodeBranch;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
@@ -235,7 +235,7 @@ public abstract class BigDecimalNodes {
             @NodeChild(value = "self", type = RubyNode.class),
             @NodeChild(value = "digits", type = RubyNode.class)
     })
-    @ImportStatic(org.jruby.truffle.nodes.ext.BigDecimalNodes.Type.class)
+    @ImportStatic(org.jruby.truffle.ext.BigDecimalNodes.Type.class)
     public abstract static class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
         private final static Pattern NUMBER_PATTERN;
