@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime;
+package org.jruby.truffle.platform.posix;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
@@ -15,6 +15,7 @@ import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
 import jnr.posix.LibC;
 import jnr.posix.POSIX;
+import org.jruby.truffle.runtime.RubyContext;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
