@@ -113,6 +113,7 @@ public abstract class IRVisitor {
     public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr receiveprereqdarginstr) { error(receiveprereqdarginstr); }
     public void ReceiveRestArgInstr(ReceiveRestArgInstr receiverestarginstr) { error(receiverestarginstr); }
     public void ReceiveSelfInstr(ReceiveSelfInstr receiveselfinstr) { error(receiveselfinstr); }
+    public void ReceiveSingleBlockArgInstr(ReceiveSingleBlockArgInstr receivesingleblockarg) { error(receivesingleblockarg); }
     public void RecordEndBlockInstr(RecordEndBlockInstr recordendblockinstr) { error(recordendblockinstr); }
     public void ReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr reqdargmultipleasgninstr) { error(reqdargmultipleasgninstr); }
     public void RescueEQQInstr(RescueEQQInstr rescueeqqinstr) { error(rescueeqqinstr); }

@@ -3442,6 +3442,13 @@ public class IRBuilder {
     }
 
     public Operand buildVCall(VCallNode node) {
+        // Intrinsic for processing possibly-multiple block args into one
+        if (node.getName().equals("__single_block_arg__")) {
+            Variable result = createTemporaryVariable();
+            addInstr(new ReceiveSingleBlockArgInstr(result));
+            return result;
+        }
+
         return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, createTemporaryVariable(),
                 node.getName(), buildSelf(), NO_ARGS, null));
     }

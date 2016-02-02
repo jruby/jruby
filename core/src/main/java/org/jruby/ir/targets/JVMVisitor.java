@@ -1697,6 +1697,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void ReceiveSingleBlockArgInstr(ReceiveSingleBlockArgInstr receivesingleblockarg) {
+        jvmMethod().loadContext();
+        jvmMethod().loadArgs();
+        jvmMethod().invokeIRHelper("receiveSingleBlockArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class));
+        jvmStoreLocal(receivesingleblockarg.getResult());
+    }
+
+    @Override
     public void RecordEndBlockInstr(RecordEndBlockInstr recordEndBlockInstr) {
         jvmMethod().loadContext();
 

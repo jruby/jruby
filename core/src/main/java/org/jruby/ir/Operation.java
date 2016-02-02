@@ -52,6 +52,7 @@ public enum Operation {
     RECV_RUBY_EXC(OpFlags.f_is_arg_receive),
     RECV_JRUBY_EXC(OpFlags.f_is_arg_receive),
     LOAD_IMPLICIT_CLOSURE(OpFlags.f_is_arg_receive),
+    RECV_SINGLE_BLOCK_ARG(OpFlags.f_is_arg_receive),
 
     /** Instruction to reify an passed-in block to a Proc for def foo(&b) */
     REIFY_CLOSURE(0),

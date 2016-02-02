@@ -1737,4 +1737,11 @@ public class IRRuntimeHelpers {
 
         return block;
     }
+
+    @JIT @Interp
+    public static IRubyObject receiveSingleBlockArg(ThreadContext context, IRubyObject... args) {
+        if (args.length == 0) return context.nil;
+        if (args.length == 1) return args[0];
+        return context.runtime.newArrayNoCopy(args);
+    }
 }

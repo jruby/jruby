@@ -285,6 +285,9 @@ public class InterpreterEngine {
             case LOAD_IMPLICIT_CLOSURE:
                 setResult(temp, currDynScope, instr.getResult(), blockArg);
                 return;
+            case RECV_SINGLE_BLOCK_ARG:
+                setResult(temp, currDynScope, instr.getResult(), IRRuntimeHelpers.receiveSingleBlockArg(context, args));
+                break;
             default:
                 result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
                 setResult(temp, currDynScope, instr.getResult(), result);

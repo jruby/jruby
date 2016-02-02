@@ -238,6 +238,8 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                                 putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
                         break;
                     }
+                    case RECV_SINGLE_BLOCK_ARG:
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), arg1);
 
                     case BUILD_COMPOUND_STRING: case CONST_MISSING:
                     default:
@@ -440,6 +442,8 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                                 putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
                         break;
                     }
+                    case RECV_SINGLE_BLOCK_ARG:
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), IRRuntimeHelpers.receiveSingleBlockArg(context, arg1, arg2));
 
                     case BUILD_COMPOUND_STRING: case CONST_MISSING:
                     default:
@@ -643,6 +647,8 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                                 putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
                         break;
                     }
+                    case RECV_SINGLE_BLOCK_ARG:
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), IRRuntimeHelpers.receiveSingleBlockArg(context, arg1, arg2, arg3));
 
                     case BUILD_COMPOUND_STRING: case CONST_MISSING:
                     default:
@@ -847,6 +853,8 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                                 putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
                         break;
                     }
+                    case RECV_SINGLE_BLOCK_ARG:
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), IRRuntimeHelpers.receiveSingleBlockArg(context, arg1, arg2, arg3, arg4));
 
                     case BUILD_COMPOUND_STRING: case CONST_MISSING:
                     default:
@@ -1043,6 +1051,8 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                                 putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
                         break;
                     }
+                    case RECV_SINGLE_BLOCK_ARG:
+                        setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), context.nil);
 
                     case BUILD_COMPOUND_STRING: case CONST_MISSING:
                     default:

@@ -105,4 +105,46 @@ module Enumerable
     klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8
     Enumerator::Lazy.new(klass.new(self, :each, []))
   end
+
+  # Enumerable#inject is modified from Rubinius
+
+  Undefined = Object.new
+  private_constant :Undefined
+
+  def inject(initial=Undefined, sym=Undefined)
+    if !block_given? or !(undefined_sym = Undefined.equal?(sym))
+      if undefined_sym
+        sym = initial
+        initial = Undefined
+      end
+
+      # Do the sym version
+
+      sym = sym.to_sym
+
+      each do
+        o = __single_block_arg__
+
+        if Undefined.equal? initial
+          initial = o
+        else
+          initial = initial.__send__(sym, o)
+        end
+      end
+
+      # Block version
+    else
+      each do
+        o = __single_block_arg__
+
+        if Undefined.equal? initial
+          initial = o
+        else
+          initial = yield(initial, o)
+        end
+      end
+    end
+
+    Undefined.equal?(initial) ? nil : initial
+  end
 end
