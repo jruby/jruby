@@ -474,9 +474,9 @@ class TestIO < Test::Unit::TestCase
     assert_equal 'abc', @stringio.gets('c')
   end
 
-  if false # FIXME: Disabled until (if ever) we need it for new IO logic (in 9k)
   # JRUBY-6137
   def test_rubyio_fileno_mapping_leak; require 'jruby'
+    pend "TODO: refactor JRuby.runtime.fileno_int_map_size"
     starting_count = JRuby.runtime.fileno_int_map_size
     io = org.jruby.RubyIO.new(JRuby.runtime, org.jruby.util.io.STDIO::ERR)
     open_io_count = JRuby.runtime.fileno_int_map_size
@@ -485,7 +485,6 @@ class TestIO < Test::Unit::TestCase
     closed_io_count = JRuby.runtime.fileno_int_map_size
     assert_equal(starting_count, closed_io_count)
   end if defined? JRUBY_VERSION
-  end
 
   # JRUBY-1222
   def test_stringio_gets_utf8
