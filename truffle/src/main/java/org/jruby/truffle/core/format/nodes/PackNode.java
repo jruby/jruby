@@ -21,6 +21,7 @@ import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 
@@ -197,6 +198,7 @@ public abstract class PackNode extends Node {
         final int outputPosition = getOutputPosition(frame);
         output[outputPosition] = value;
         setOutputPosition(frame, outputPosition + 1);
+        setStringCodeRange(frame, value >= 0 ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
         increaseStringLength(frame, 1);
     }
 

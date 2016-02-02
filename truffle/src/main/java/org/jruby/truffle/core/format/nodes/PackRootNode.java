@@ -48,7 +48,7 @@ public class PackRootNode extends RootNode {
         frame.setObject(PackFrameDescriptor.OUTPUT_SLOT, new byte[expectedLength]);
         frame.setInt(PackFrameDescriptor.OUTPUT_POSITION_SLOT, 0);
         frame.setInt(PackFrameDescriptor.STRING_LENGTH_SLOT, 0);
-        frame.setInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT, StringSupport.CR_7BIT);
+        frame.setInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT, StringSupport.CR_UNKNOWN);
         frame.setBoolean(PackFrameDescriptor.TAINT_SLOT, false);
 
         child.execute(frame);
