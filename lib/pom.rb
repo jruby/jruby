@@ -83,11 +83,11 @@ project 'JRuby Lib Setup' do
     specs = File.join( gem_home, 'specifications' )
     cache = File.join( gem_home, 'cache' )
     jruby_gems = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared' )
-    default_specs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
-                               'specifications', 'default' )
-    bin_stubs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
-                           'gems' )
+    default_specs = File.join( jruby_gems, 'specifications', 'default' )
+    bin_stubs = File.join( jruby_gems, 'gems' )
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
+    stdlib_dir = File.join( ruby_dir, 'stdlib' )
+
     FileUtils.mkdir_p( default_specs )
 
     # have an empty openssl.rb so we do not run in trouble with not having
@@ -137,31 +137,26 @@ project 'JRuby Lib Setup' do
         puts "--- gem #{g.name}-#{version} ---"
 
         # copy the gem content to stdlib
-        stdlib_dir = File.join( ruby_dir, 'stdlib' )
+
         puts "copy gem content to #{stdlib_dir}"
         # assume default require_path
         require_base = File.join( gems, "#{g.name}-#{version}*", 'lib' )
         require_files = File.join( require_base, '*' )
 
         # copy in new ones and mark writable for future updates (e.g. minitest)
-        stdlib_locs = []
-        Dir[ require_files ].each do |f|
-          puts "copying: #{f} to #{stdlib_dir}"
+        stdlib_locs = Dir[ require_files ].map do |f|
+          puts " copying: #{f} to #{stdlib_dir}" if $VERBOSE
           FileUtils.cp_r( f, stdlib_dir )
 
           stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
-          if File.directory?(stdlib_loc)
-            stdlib_locs += Dir[stdlib_loc + "/*"].to_a
-          else
-            stdlib_locs << stdlib_loc
-          end
+          File.directory?(stdlib_loc) ? Dir[stdlib_loc + "/*"].to_a : stdlib_loc
         end
+        stdlib_locs.flatten!
 
         # fix permissions on copied files
         stdlib_locs.each do |f|
           next if File.writable? f
-
-          puts "fixing permissions: #{f}"
+          puts " fixing permissions: #{f}" if $VERBOSE
           # TODO: better way to just set it writable without changing all modes?
           FileUtils.chmod_R(0644, f)
         end
@@ -198,11 +193,11 @@ project 'JRuby Lib Setup' do
 
     # patch jruby-openssl - remove file which should be only inside gem
     # use this instead of FileUtils.rm_f - issue #1698
-    f = File.join( ruby_dir, 'stdlib', 'jruby-openssl.rb' )
+    f = File.join( stdlib_dir, 'jruby-openssl.rb' )
     File.delete( f ) if File.exists?( f )
 
     # we do not want rubygems_plugin.rb within jruby
-    f = File.join( ruby_dir, 'stdlib', 'rubygems_plugin.rb' )
+    f = File.join( stdlib_dir, 'rubygems_plugin.rb' )
     File.delete( f ) if File.exists?( f )
 
     # fix file permissions of installed gems
@@ -224,7 +219,7 @@ project 'JRuby Lib Setup' do
       File.open( f, "w" ) { |file| file.print( new_content ) }
     end
 
-    puts 'generate the missing bat files'
+    puts 'generating missing .bat files'
     Dir[File.join( jruby_home, 'bin', '*' )].each do |fn|
       next unless File.file?(fn)
       next if fn =~ /.bat$/
@@ -233,7 +228,7 @@ project 'JRuby Lib Setup' do
         line = io.readline rescue ""
         line =~ /^#!.*ruby/
       end
-      puts "Generating #{File.basename(fn)}.bat"
+      puts " generating #{File.basename(fn)}.bat" if $VERBOSE
       File.open("#{fn}.bat", "wb") do |f|
         f.print "@ECHO OFF\r\n"
         f.print "@\"%~dp0jruby.exe\" -S #{File.basename(fn)} %*\r\n"
@@ -257,7 +252,7 @@ project 'JRuby Lib Setup' do
   # we have no sources and attach an empty jar later in the build to
   # satisfy oss.sonatype.org upload
 
-  plugin( :source, 'skipSource' =>  'true' )
+  plugin( :source, 'skipSource' => 'true' )
 
   # this plugin is configured to attach empty jars for sources and javadocs
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
