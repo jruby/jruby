@@ -13,12 +13,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.ValueProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.language.control.SideEffectFreeNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 
-public class SelfNode extends RubyNode implements SideEffectFreeNode {
+public class SelfNode extends RubyNode {
 
     private final ValueProfile valueProfile = ValueProfile.createPrimitiveProfile();
 
