@@ -52,8 +52,7 @@ class TestIO < Test::Unit::TestCase
     # In this case we will have f close (which will pull the rug
     # out from under g) and thus make g try the ops and fail
     f = File.open(@file)
-    g = IO.new(f.fileno)
-    @to_close << g
+    @to_close << g = IO.new(f.fileno)
     f.close
     assert_raises(Errno::EBADF) { g.readchar }
     assert_raises(Errno::EBADF) { g.readline }
@@ -65,13 +64,22 @@ class TestIO < Test::Unit::TestCase
     assert_raises(IOError) { g.sysread 1 }
 
     f = File.open(@file, "w")
-    g = IO.new(f.fileno)
-    @to_close << g
+    @to_close << g = IO.new(f.fileno)
     f.close
     assert_nothing_raised { g.print "" }
     assert_nothing_raised { g.write "" }
     assert_nothing_raised { g.puts "" }
     assert_nothing_raised { g.putc 'c' }
+    assert_raises(Errno::EBADF) { g.syswrite "" }
+
+    f = File.open(@file, "w")
+    @to_close << g = IO.new(f.fileno)
+    g.sync = true
+    f.close
+    assert_nothing_raised { g.print "" }
+    assert_nothing_raised { g.write "" }
+    assert_raises(Errno::EBADF) { g.puts "" }
+    assert_raises(Errno::EBADF) { g.putc 'c' }
     assert_raises(Errno::EBADF) { g.syswrite "" }
   end
 
