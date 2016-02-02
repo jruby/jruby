@@ -117,28 +117,28 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         if (encoding == null) encoding = getRuntime().getEncodingService().loadEncoding(name);
         return encoding;
     }
-    
+
     private static Encoding extractEncodingFromObject(IRubyObject obj) {
         if (obj instanceof RubyEncoding) return ((RubyEncoding) obj).getEncoding();
         if (obj instanceof RubySymbol) return ((RubySymbol) obj).asString().getEncoding();
         if (obj instanceof EncodingCapable) return ((EncodingCapable) obj).getEncoding();
-        
+
         return null;
     }
 
     public static Encoding areCompatible(IRubyObject obj1, IRubyObject obj2) {
         Encoding enc1 = extractEncodingFromObject(obj1);
         Encoding enc2 = extractEncodingFromObject(obj2);
-        
+
         if (enc1 == null || enc2 == null) return null;
         if (enc1 == enc2) return enc1;
 
         if (obj2 instanceof RubyString && ((RubyString) obj2).getByteList().getRealSize() == 0) return enc1;
         if (obj1 instanceof RubyString && ((RubyString) obj1).getByteList().getRealSize() == 0) {
-            return enc1.isAsciiCompatible() && obj2 instanceof RubyString && 
+            return enc1.isAsciiCompatible() && obj2 instanceof RubyString &&
                     ((RubyString) obj2).isAsciiOnly() ? enc1 : enc2;
         }
-        
+
         if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
 
         if (!(obj2 instanceof RubyString) && enc2 instanceof USASCIIEncoding) return enc1;
@@ -263,7 +263,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     public static byte[] encode(CharSequence cs, Charset charset) {
-        ByteBuffer buffer = charset.encode(cs.toString());
+        ByteBuffer buffer = charset.encode(CharBuffer.wrap(cs));
         byte[] bytes = new byte[buffer.limit()];
         buffer.get(bytes);
         return bytes;
@@ -291,7 +291,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static String decode(byte[] bytes, Charset charset) {
         return charset.decode(ByteBuffer.wrap(bytes)).toString();
     }
-    
+
     private static class UTF8Coder {
         private final CharsetEncoder encoder = UTF8.newEncoder();
         private final CharsetDecoder decoder = UTF8.newDecoder();
@@ -303,15 +303,15 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         private final ByteBuffer byteBuffer = ByteBuffer.allocate(BUF_SIZE);
         private final CharBuffer charBuffer = CharBuffer.allocate(BUF_SIZE);
 
-        public UTF8Coder() {
+        UTF8Coder() {
             decoder.onMalformedInput(CodingErrorAction.REPLACE);
             decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
         }
 
-        public byte[] encode(CharSequence cs) {
+        public final byte[] encode(CharSequence cs) {
             ByteBuffer buffer;
             if (cs.length() > CHAR_THRESHOLD) {
-                buffer = UTF8.encode(cs.toString());
+                buffer = UTF8.encode(CharBuffer.wrap(cs));
             } else {
                 buffer = byteBuffer;
                 CharBuffer cbuffer = charBuffer;
@@ -322,13 +322,13 @@ public class RubyEncoding extends RubyObject implements Constantizable {
                 encoder.encode(cbuffer, buffer, true);
                 buffer.flip();
             }
-            
+
             byte[] bytes = new byte[buffer.limit()];
             buffer.get(bytes);
             return bytes;
         }
-        
-        public String decode(byte[] bytes, int start, int length) {
+
+        public final String decode(byte[] bytes, int start, int length) {
             CharBuffer cbuffer;
             if (length > CHAR_THRESHOLD) {
                 cbuffer = UTF8.decode(ByteBuffer.wrap(bytes, start, length));
@@ -342,11 +342,11 @@ public class RubyEncoding extends RubyObject implements Constantizable {
                 decoder.decode(buffer, cbuffer, true);
                 cbuffer.flip();
             }
-            
+
             return cbuffer.toString();
         }
-        
-        public String decode(byte[] bytes) {
+
+        public final String decode(byte[] bytes) {
             return decode(bytes, 0, bytes.length);
         }
     }
@@ -366,7 +366,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             ref = new SoftReference<UTF8Coder>(coder);
             UTF8_CODER.set(ref);
         }
-        
+
         return coder;
     }
 
@@ -381,7 +381,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
         ByteList name = new ByteList(service.getLocaleEncoding().getName());
-        
+
         return RubyString.newUsAsciiStringNoCopy(runtime, name);
     }
 
@@ -390,25 +390,25 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static IRubyObject name_list(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
-        
+
         RubyArray result = runtime.newArray(service.getEncodings().size() + service.getAliases().size());
         HashEntryIterator i;
         i = service.getEncodings().entryIterator();
         while (i.hasNext()) {
-            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
+            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
-        i = service.getAliases().entryIterator();        
+        i = service.getAliases().entryIterator();
         while (i.hasNext()) {
-            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
+            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
 
         result.append(runtime.newString(EXTERNAL));
         result.append(runtime.newString(LOCALE));
-        
+
         return result;
     }
 
@@ -423,10 +423,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         RubyHash result = RubyHash.newHash(runtime);
 
         while (i.hasNext()) {
-            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
+            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             IRubyObject alias = RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context);
-            IRubyObject name = RubyString.newUsAsciiStringShared(runtime, 
+            IRubyObject name = RubyString.newUsAsciiStringShared(runtime,
                                 ((RubyEncoding)list[e.value.getIndex()]).name).freeze(context);
             result.fastASet(alias, name);
         }
@@ -496,15 +496,15 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         HashEntryIterator i;
         i = service.getEncodings().entryIterator();
         while (i.hasNext()) {
-            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
+            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
                 result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
-        i = service.getAliases().entryIterator();        
+        i = service.getAliases().entryIterator();
         while (i.hasNext()) {
-            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
+            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
                 result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
@@ -512,7 +512,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         }
         result.append(runtime.newString(EXTERNAL));
         result.append(runtime.newString(LOCALE));
-        
+
         return result;
     }
 
