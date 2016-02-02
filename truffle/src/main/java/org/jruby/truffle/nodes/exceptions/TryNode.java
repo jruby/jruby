@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.exceptions;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -74,9 +75,8 @@ public class TryNode extends RubyNode {
         }
     }
 
+    @ExplodeLoop
     private Object handleException(VirtualFrame frame, RaiseException exception) {
-        CompilerDirectives.transferToInterpreter();
-
         for (RescueNode rescue : rescueParts) {
             if (rescue.canHandle(frame, exception.getRubyException())) {
                 return setLastExceptionAndRunRescue(frame, exception, rescue);
