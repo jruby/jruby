@@ -60,13 +60,11 @@ module Kernel
     #--
     # TODO request access to the C implementation of this to speed up RubyGems
 
-    spec = Gem::Specification.stubs.find { |s|
-      s.activated? and s.contains_requirable_file? path
-    }
+    spec = Gem::Specification.find_active_stub_by_path path
 
     begin
       RUBYGEMS_ACTIVATION_MONITOR.exit
-      return gem_original_require(spec.to_fullpath(path) || path)
+      return gem_original_require(path)
     end if spec
 
     # Attempt to find +path+ in any unresolved gems...
@@ -105,7 +103,7 @@ module Kernel
 
       # Ok, now find a gem that has no conflicts, starting
       # at the highest version.
-      valid = found_specs.select { |s| s.conflicts.empty? }.last
+      valid = found_specs.reject { |s| s.has_conflicts? }.last
 
       unless valid then
         le = Gem::LoadError.new "unable to find a version of '#{names.first}' to activate"
