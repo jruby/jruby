@@ -107,7 +107,7 @@ public class BacktraceFormatter {
         final Activation activation = activations.get(0);
 
         if (activation == Activation.OMITTED_LIMIT) {
-            return "(omitted due to -Xtruffle.backtraces.limit)";
+            return OMITTED_LIMIT;
         }
 
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
