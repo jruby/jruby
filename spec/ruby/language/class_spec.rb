@@ -15,8 +15,7 @@ describe "The class keyword" do
 
   ruby_version_is "2.3" do
     it "does not raise a SyntaxError when opening a class without a semicolon" do
-      lambda { eval "class ClassSpecsKeywordWithoutSemicolon end" }
-        .should_not raise_error(SyntaxError)
+      eval "class ClassSpecsKeywordWithoutSemicolon end"
       ClassSpecsKeywordWithoutSemicolon.should be_an_instance_of(Class)
     end
   end

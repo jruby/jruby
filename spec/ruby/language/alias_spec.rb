@@ -183,8 +183,9 @@ describe "The alias keyword" do
   end
 
   it "raises a NameError when passed a missing name" do
-    lambda { @meta.class_eval { alias undef_method not_exist } }.should raise_error(NameError)
-    # a NameError and not a NoMethodError
-    lambda { @meta.class_eval { alias undef_method not_exist } }.should_not raise_error(NoMethodError)
+    lambda { @meta.class_eval { alias undef_method not_exist } }.should raise_error(NameError) { |e|
+      # a NameError and not a NoMethodError
+      e.class.should == NameError
+    }
   end
 end

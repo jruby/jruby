@@ -1,7 +1,7 @@
 describe "Hash#compare_by_identity" do
   before :each do
-    @h = new_hash
-    @idh = new_hash.compare_by_identity
+    @h = {}
+    @idh = {}.compare_by_identity
   end
 
   it "causes future comparisons on the receiver to be made by identity" do
@@ -12,7 +12,7 @@ describe "Hash#compare_by_identity" do
   end
 
   it "returns self" do
-    h = new_hash
+    h = {}
     h[:foo] = :bar
     h.compare_by_identity.should == h
   end
@@ -88,18 +88,18 @@ end
 
 describe "Hash#compare_by_identity?" do
   it "returns false by default" do
-    h = new_hash
+    h = {}
     h.compare_by_identity?.should be_false
   end
 
   it "returns true once #compare_by_identity has been invoked on self" do
-    h = new_hash
+    h = {}
     h.compare_by_identity
     h.compare_by_identity?.should be_true
   end
 
   it "returns true when called multiple times on the same ident hash" do
-    h = new_hash
+    h = {}
     h.compare_by_identity
     h.compare_by_identity?.should be_true
     h.compare_by_identity?.should be_true

@@ -150,4 +150,13 @@ end
       (1 << 64).instance_eval { def foo; end }
     end.should raise_error(TypeError)
   end
+
+  it "evaluates procs originating from methods" do
+    def meth(arg); arg; end
+
+    m = method(:meth)
+    obj = Object.new
+
+    obj.instance_eval(&m).should == obj
+  end
 end

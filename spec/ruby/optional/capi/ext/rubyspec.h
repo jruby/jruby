@@ -1,7 +1,7 @@
 #ifndef RUBYSPEC_H
 #define RUBYSPEC_H
 
-/* Define convenience macros similar to the RubySpec guards to assist
+/* Define convenience macros similar to the mspec guards to assist
  * with version incompatibilities.
  */
 
@@ -35,6 +35,9 @@
 
 /* Array */
 #define HAVE_RB_ARRAY                      1
+#ifdef RUBY_VERSION_IS_2_1
+#define HAVE_RARRAY_AREF                   1
+#endif
 #define HAVE_RARRAY_LEN                    1
 #define HAVE_RARRAY_PTR                    1
 #define HAVE_RB_ARY_AREF                   1
@@ -519,7 +522,6 @@
 #define HAVE_RB_STR_UPDATE                 1
 #define HAVE_RB_STR_INSPECT                1
 #define HAVE_RB_STR_INTERN                 1
-#define HAVE_RB_STR_LEN                    1
 #define HAVE_RB_STR_NEW                    1
 #define HAVE_RB_STR_NEW2                   1
 #define HAVE_RB_STR_NEW3                   1

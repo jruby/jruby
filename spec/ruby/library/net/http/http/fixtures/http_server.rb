@@ -46,10 +46,14 @@ module NetHTTPSpecs
     @server = nil
     @server_thread = nil
 
+    def port
+      @server ? @server.config[:Port] : 3333
+    end
+
     def start_server
       server_config = {
         BindAddress: "localhost",
-        Port: 3333,
+        Port: 0,
         Logger: WEBrick::Log.new(NullWriter.new),
         AccessLog: [],
         ServerType: Thread

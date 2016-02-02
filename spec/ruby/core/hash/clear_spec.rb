@@ -3,24 +3,24 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Hash#clear" do
   it "removes all key, value pairs" do
-    h = new_hash(1 => 2, 3 => 4)
+    h = { 1 => 2, 3 => 4 }
     h.clear.should equal(h)
-    h.should == new_hash
+    h.should == {}
   end
 
   it "does not remove default values" do
-    h = new_hash 5
+    h = Hash.new(5)
     h.clear
     h.default.should == 5
 
-    h = new_hash("a" => 100, "b" => 200)
+    h = { "a" => 100, "b" => 200 }
     h.default = "Go fish"
     h.clear
     h["z"].should == "Go fish"
   end
 
   it "does not remove default procs" do
-    h = new_hash { 5 }
+    h = Hash.new { 5 }
     h.clear
     h.default_proc.should_not == nil
   end

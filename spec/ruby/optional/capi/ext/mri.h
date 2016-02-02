@@ -7,9 +7,4 @@
 
 #undef HAVE_RB_PROTECT_INSPECT
 
-/* RubySpec assumes following are public API */
-#ifndef rb_str_len
-int rb_str_len(VALUE);
-#endif
-
 #endif

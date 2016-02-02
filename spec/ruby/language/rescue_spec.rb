@@ -7,9 +7,7 @@ end
 class ArbitraryException < StandardError
 end
 
-def exception_list
-  [SpecificExampleException, ArbitraryException]
-end
+exception_list = [SpecificExampleException, ArbitraryException]
 
 describe "The rescue keyword" do
   before :each do
@@ -17,12 +15,11 @@ describe "The rescue keyword" do
   end
 
   it "can be used to handle a specific exception" do
-    lambda do
-      begin
-        raise SpecificExampleException, "Raising this to be handled below"
-      rescue SpecificExampleException
-      end
-    end.should_not raise_error
+    begin
+      raise SpecificExampleException, "Raising this to be handled below"
+    rescue SpecificExampleException
+      :caught
+    end.should == :caught
   end
 
   it "can capture the raised exception in a local variable" do
@@ -34,14 +31,13 @@ describe "The rescue keyword" do
   end
 
   it "can rescue multiple raised exceptions with a single rescue block" do
-    lambda do
-      [lambda{raise ArbitraryException}, lambda{raise SpecificExampleException}].each do |block|
-        begin
-          block.call
-        rescue SpecificExampleException, ArbitraryException
-        end
+    [lambda{raise ArbitraryException}, lambda{raise SpecificExampleException}].map do |block|
+      begin
+        block.call
+      rescue SpecificExampleException, ArbitraryException
+        :caught
       end
-    end.should_not raise_error
+    end.should == [:caught, :caught]
   end
 
   it "can rescue a splatted list of exceptions" do
@@ -53,18 +49,16 @@ describe "The rescue keyword" do
     end
     caught_it.should be_true
     caught = []
-    lambda do
-      [lambda{raise ArbitraryException}, lambda{raise SpecificExampleException}].each do |block|
-        begin
-          block.call
-        rescue *exception_list
-          caught << $!
-        end
+    [lambda{raise ArbitraryException}, lambda{raise SpecificExampleException}].each do |block|
+      begin
+        block.call
+      rescue *exception_list
+        caught << $!
       end
-    end.should_not raise_error
+    end
     caught.size.should == 2
     exception_list.each do |exception_class|
-      caught.map{|e| e.class}.include?(exception_class).should be_true
+      caught.map{|e| e.class}.should include(exception_class)
     end
   end
 

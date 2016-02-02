@@ -543,12 +543,6 @@ describe "C-API String function" do
         chars.should == [120, 121, 122]
       end
     end
-
-    describe "rb_str_len" do
-      it "returns the string's length" do
-        @s.rb_str_len("dewdrops").should == 8
-      end
-    end
   end
 end
 

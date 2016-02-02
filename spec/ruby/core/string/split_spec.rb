@@ -50,6 +50,8 @@ describe "String#split with String" do
   it "returns at most limit fields when limit > 1" do
     "hai".split("hai", 2).should == ["", ""]
 
+    "1,2".split(",", 3).should == ["1", "2"]
+
     "1,2,,3,4,,".split(',', 2).should == ["1", "2,,3,4,,"]
     "1,2,,3,4,,".split(',', 3).should == ["1", "2", ",3,4,,"]
     "1,2,,3,4,,".split(',', 4).should == ["1", "2", "", "3,4,,"]
@@ -112,7 +114,12 @@ describe "String#split with String" do
   it "splits between characters when its argument is an empty string" do
     "hi!".split("").should == ["h", "i", "!"]
     "hi!".split("", -1).should == ["h", "i", "!", ""]
+    "hi!".split("", 0).should == ["h", "i", "!"]
+    "hi!".split("", 1).should == ["hi!"]
     "hi!".split("", 2).should == ["h", "i!"]
+    "hi!".split("", 3).should == ["h", "i", "!"]
+    "hi!".split("", 4).should == ["h", "i", "!", ""]
+    "hi!".split("", 5).should == ["h", "i", "!", ""]
   end
 
   it "tries converting its pattern argument to a string via to_str" do
@@ -216,6 +223,8 @@ describe "String#split with Regexp" do
   it "returns at most limit fields when limit > 1" do
     "hai".split(/hai/, 2).should == ["", ""]
 
+    "1,2".split(/,/, 3).should == ["1", "2"]
+
     "1,2,,3,4,,".split(/,/, 2).should == ["1", "2,,3,4,,"]
     "1,2,,3,4,,".split(/,/, 3).should == ["1", "2", ",3,4,,"]
     "1,2,,3,4,,".split(/,/, 4).should == ["1", "2", "", "3,4,,"]
@@ -263,7 +272,12 @@ describe "String#split with Regexp" do
   it "splits between characters when regexp matches a zero-length string" do
     "hello".split(//).should == ["h", "e", "l", "l", "o"]
     "hello".split(//, -1).should == ["h", "e", "l", "l", "o", ""]
+    "hello".split(//, 0).should == ["h", "e", "l", "l", "o"]
+    "hello".split(//, 1).should == ["hello"]
     "hello".split(//, 2).should == ["h", "ello"]
+    "hello".split(//, 5).should == ["h", "e", "l", "l", "o"]
+    "hello".split(//, 6).should == ["h", "e", "l", "l", "o", ""]
+    "hello".split(//, 7).should == ["h", "e", "l", "l", "o", ""]
 
     "hi mom".split(/\s*/).should == ["h", "i", "m", "o", "m"]
 

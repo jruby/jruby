@@ -62,9 +62,10 @@ describe "Module#undef_method" do
   end
 
   it "raises a NameError when passed a missing name" do
-    lambda { @module.send :undef_method, :not_exist }.should raise_error(NameError)
-    # a NameError and not a NoMethodError
-    lambda { @module.send :undef_method, :not_exist }.should_not raise_error(NoMethodError)
+    lambda { @module.send :undef_method, :not_exist }.should raise_error(NameError) { |e|
+      # a NameError and not a NoMethodError
+      e.class.should == NameError
+    }
   end
 
   describe "on frozen instance" do
