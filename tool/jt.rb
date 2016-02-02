@@ -424,7 +424,7 @@ module Commands
 
     if args.first == 'fast'
       args.shift
-      options += %w[--excl-tag slow]
+      options += %w[--excl-tag slow -T-Xtruffle.backtraces.limit=4]
     end
 
     if args.delete('--graal')
