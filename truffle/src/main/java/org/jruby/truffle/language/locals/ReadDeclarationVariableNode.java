@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.language.control.SideEffectFreeNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -23,7 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ReadDeclarationVariableNode extends ReadLocalNode {
+public class ReadDeclarationVariableNode extends ReadLocalNode implements SideEffectFreeNode {
 
     private final int frameDepth;
 

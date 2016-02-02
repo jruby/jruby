@@ -14,11 +14,12 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.language.control.SideEffectFreeNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.translator.Translator;
 
-public class ReadLocalVariableNode extends ReadLocalNode {
+public class ReadLocalVariableNode extends ReadLocalNode implements SideEffectFreeNode {
 
     @Child private ReadFrameSlotNode readFrameSlotNode;
 

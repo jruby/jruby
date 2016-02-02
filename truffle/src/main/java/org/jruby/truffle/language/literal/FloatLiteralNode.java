@@ -13,11 +13,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.control.SideEffectFreeNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 @NodeInfo(cost = NodeCost.NONE)
-public class FloatLiteralNode extends RubyNode {
+public class FloatLiteralNode extends RubyNode implements SideEffectFreeNode {
 
     private final double value;
 

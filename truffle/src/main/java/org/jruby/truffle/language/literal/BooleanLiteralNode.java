@@ -14,12 +14,13 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.language.control.SideEffectFreeNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 // For isDefined() and convenience
 @NodeInfo(cost = NodeCost.NONE)
-public class BooleanLiteralNode extends RubyNode {
+public class BooleanLiteralNode extends RubyNode implements SideEffectFreeNode {
 
     private final boolean value;
 
