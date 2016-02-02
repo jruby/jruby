@@ -107,6 +107,11 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected String complexAddWithMethod() {
+        return "complex_add_with_method";
+    }
+
+    @Override
     protected String complexSumReal() {
         return "complex_sum_real";
     }
@@ -114,6 +119,11 @@ public class RubyTckTest extends TruffleTCK {
     @Override
     protected String complexCopy() {
         return "complex_copy";
+    }
+
+    @Override
+    protected String valuesObject() {
+        return "values_object";
     }
 
     @Override
