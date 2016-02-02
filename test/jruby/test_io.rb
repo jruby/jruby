@@ -12,22 +12,18 @@ class TestIO < Test::Unit::TestCase
 
   def setup
     @to_close = []
-    @file = "TestIO_tmp"
-    @file2 = "Test2IO_tmp"
-    @file3 = "Test3IO_tmp"
-    if (WINDOWS)
-      @devnull = 'NUL:'
-    else
-      @devnull = '/dev/null'
-    end
+    @to_unlink = []
+    @to_unlink << @file = "TestIO_tmp"
+    @to_unlink << @file2 = "Test2IO_tmp"
+    @to_unlink << @file3 = "Test3IO_tmp"
+
+    @devnull = WINDOWS ? 'NUL:' : '/dev/null'
     @stringio = StringIO.new 'abcde'
   end
 
   def teardown
-    @to_close.each {|io| io.close rescue nil }
-    File.unlink @file rescue nil
-    File.unlink @file2 rescue nil
-    File.unlink @file3 rescue nil
+    @to_close.each { |io| io.close rescue nil }
+    @to_unlink.each { |path| File.unlink(path) rescue nil }
   end
 
   def test_puts_on_a_recursive_array
@@ -85,12 +81,12 @@ class TestIO < Test::Unit::TestCase
     # original IO
     f = File.new(@file2, "w")
     @to_close << f
-    assert_raises(Errno::EINVAL) { g = IO.new(f.fileno, "r") }
+    assert_raises(Errno::EINVAL) { IO.new(f.fileno, "r") }
     f.close
 
     f = File.new(@file, "r")
     @to_close << f
-    assert_raises(Errno::EINVAL) { g = IO.new(f.fileno, "w") }
+    assert_raises(Errno::EINVAL) { IO.new(f.fileno, "w") }
     f.close
   end
 
@@ -493,8 +489,58 @@ class TestIO < Test::Unit::TestCase
 
   # JRUBY-1222
   def test_stringio_gets_utf8
-    @stringio = StringIO.new("®\r\n®\r\n")
-    assert_equal "®\r\n", @stringio.gets("\r\n")
-    assert_equal "®\r\n", @stringio.gets("\r\n")
+    stringio = StringIO.new("®\r\n®\r\n")
+    assert_equal "®\r\n", stringio.gets("\r\n")
+    assert_equal "®\r\n", stringio.gets("\r\n")
   end
+
+  # JRUBY-5436
+  def test_open_with_dash_encoding
+    filename = 'test.txt'
+    io = File.new(filename, 'w+:US-ASCII:-')
+    assert_nil io.internal_encoding
+  ensure
+    io.close
+    File.unlink(filename)
+  end
+
+  def test_gets_limit
+    File.open(@file, 'w') { |f| f.write 'abcde' }
+
+    File.open(@file) do |f|
+      assert_equal 'ab', f.gets(2)
+    end
+  end
+
+  def test_gets_separator_limit
+    File.open(@file, 'w') { |f| f.write 'abcde' }
+
+    File.open(@file) do |f|
+      assert_equal 'ab', f.gets('c', 2)
+    end
+  end
+
+  def test_gets_nil_separator_limit
+    File.open(@file, 'w') { |f| f.write 'abcde' }
+
+    File.open(@file) do |f|
+      assert_equal 'ab', f.gets(nil, 2)
+    end
+  end
+
+  def test_stringio_gets_limit
+    stringio = StringIO.new 'abcde'
+    assert_equal 'ab', stringio.gets(2)
+  end
+
+  def test_stringio_gets_separator_limit
+    stringio = StringIO.new 'abcde'
+    assert_equal 'ab', stringio.gets('c', 2)
+  end
+
+  def test_stringio_gets_nil_separator_limit
+    stringio = StringIO.new 'abcde'
+    assert_equal 'ab', stringio.gets(nil, 2)
+  end
+
 end
