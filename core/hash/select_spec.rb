@@ -5,24 +5,24 @@ require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Hash#select" do
   before :each do
-    @hsh = new_hash(1 => 2, 3 => 4, 5 => 6)
-    @empty = new_hash
+    @hsh = { 1 => 2, 3 => 4, 5 => 6 }
+    @empty = {}
   end
 
   it "yields two arguments: key and value" do
     all_args = []
-    new_hash(1 => 2, 3 => 4).select { |*args| all_args << args }
+    { 1 => 2, 3 => 4 }.select { |*args| all_args << args }
     all_args.sort.should == [[1, 2], [3, 4]]
   end
 
   it "returns a Hash of entries for which block is true" do
-    a_pairs = new_hash('a' => 9, 'c' => 4, 'b' => 5, 'd' => 2).select { |k,v| v % 2 == 0 }
+    a_pairs = { 'a' => 9, 'c' => 4, 'b' => 5, 'd' => 2 }.select { |k,v| v % 2 == 0 }
     a_pairs.should be_an_instance_of(Hash)
     a_pairs.sort.should == [['c', 4], ['d', 2]]
   end
 
   it "processes entries with the same order as reject" do
-    h = new_hash(a: 9, c: 4, b: 5, d: 2)
+    h = { a: 9, c: 4, b: 5, d: 2 }
 
     select_pairs = []
     reject_pairs = []
@@ -41,27 +41,27 @@ describe "Hash#select" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :select)
-  it_behaves_like(:enumeratorized_with_origin_size, :select, new_hash(1 => 2, 3 => 4, 5 => 6))
+  it_behaves_like(:enumeratorized_with_origin_size, :select, { 1 => 2, 3 => 4, 5 => 6 })
 end
 
 describe "Hash#select!" do
   before :each do
-    @hsh = new_hash(1 => 2, 3 => 4, 5 => 6)
-    @empty = new_hash
+    @hsh = { 1 => 2, 3 => 4, 5 => 6 }
+    @empty = {}
   end
 
   it "is equivalent to keep_if if changes are made" do
-    h = new_hash(a: 2)
+    h = { a: 2 }
     h.select! { |k,v| v <= 1 }.should equal h
 
-    h = new_hash(1 => 2, 3 => 4)
+    h = { 1 => 2, 3 => 4 }
     all_args_select = []
     h.dup.select! { |*args| all_args_select << args }
     all_args_select.should == [[1, 2], [3, 4]]
   end
 
   it "returns nil if no changes were made" do
-    new_hash(a: 1).select! { |k,v| v <= 1 }.should == nil
+    { a: 1 }.select! { |k,v| v <= 1 }.should == nil
   end
 
   it "raises a RuntimeError if called on an empty frozen instance" do
@@ -73,5 +73,5 @@ describe "Hash#select!" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :select!)
-  it_behaves_like(:enumeratorized_with_origin_size, :select!, new_hash(1 => 2, 3 => 4, 5 => 6))
+  it_behaves_like(:enumeratorized_with_origin_size, :select!, { 1 => 2, 3 => 4, 5 => 6 })
 end

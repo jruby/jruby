@@ -1,8 +1,9 @@
+sudo: false
 language: ruby
 rvm:
-  - 2.0.0-p647
-  - 2.1.7
-  - 2.2.3
+  - 2.0.0-p648
+  - 2.1.8
+  - 2.2.4
   - ruby-head
 install:
   - git clone https://github.com/ruby/mspec.git ../mspec

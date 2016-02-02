@@ -2,7 +2,7 @@ require File.expand_path('../../spec_helper', __FILE__)
 
 describe "Magic comment" do
   it "is optional" do
-    lambda { eval("__ENCODING__") }.should_not raise_error(SyntaxError)
+    eval("__ENCODING__").should be_an_instance_of(Encoding)
   end
 
   it "determines __ENCODING__" do

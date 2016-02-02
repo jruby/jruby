@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Hash#shift" do
   it "removes a pair from hash and return it" do
-    h = new_hash(a: 1, b: 2, "c" => 3, nil => 4, [] => 5)
+    h = { a: 1, b: 2, "c" => 3, nil => 4, [] => 5 }
     h2 = h.dup
 
     h.size.times do |i|
@@ -13,16 +13,16 @@ describe "Hash#shift" do
       h.size.should == h2.size - i - 1
     end
 
-    h.should == new_hash
+    h.should == {}
   end
 
   it "returns nil from an empty hash" do
-    new_hash.shift.should == nil
+    {}.shift.should == nil
   end
 
   it "returns (computed) default for empty hashes" do
-    new_hash(5).shift.should == 5
-    h = new_hash { |*args| args }
+    Hash.new(5).shift.should == 5
+    h = Hash.new { |*args| args }
     h.shift.should == [h, nil]
   end
 

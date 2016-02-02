@@ -147,22 +147,16 @@ describe "The super keyword" do
 
   # Rubinius ticket github#157
   it "calls method_missing when a superclass method is not found" do
-    lambda {
-      Super::MM_B.new.is_a?(Hash).should == false
-    }.should_not raise_error(NoMethodError)
+    Super::MM_B.new.is_a?(Hash).should == false
   end
 
   # Rubinius ticket github#180
   it "respects the original module a method is aliased from" do
-    lambda {
-      Super::Alias3.new.name3.should == [:alias2, :alias1]
-    }.should_not raise_error(RuntimeError)
+    Super::Alias3.new.name3.should == [:alias2, :alias1]
   end
 
   it "sees the included version of a module a method is alias from" do
-    lambda {
-      Super::AliasWithSuper::Trigger.foo.should == [:b, :a]
-    }.should_not raise_error(NoMethodError)
+    Super::AliasWithSuper::Trigger.foo.should == [:b, :a]
   end
 
   it "passes along modified rest args when they weren't originally empty" do

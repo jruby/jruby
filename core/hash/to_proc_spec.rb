@@ -6,7 +6,7 @@ ruby_version_is "2.3" do
     before :each do
       @key = Object.new
       @value = Object.new
-      @hash = new_hash @key => @value
+      @hash = { @key => @value }
       @default = Object.new
       @unstored = Object.new
     end

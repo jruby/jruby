@@ -86,10 +86,11 @@ def compile_extension(name)
   dldflags  = "#{RbConfig::CONFIG["LDFLAGS"]} #{RbConfig::CONFIG["DLDFLAGS"]}"
   dldflags.sub!(/-Wl,-soname,\S+/, '')
 
-  output = `#{ldshared} #{obj} #{libpath} #{dldflags} #{libs} -o #{lib}`
+  link_cmd = "#{ldshared} #{obj} #{libpath} #{dldflags} #{libs} -o #{lib}"
+  output = `#{link_cmd}`
 
   unless $?.success?
-    puts "ERROR:\n#{output}"
+    puts "ERROR:\n#{link_cmd}\n#{output}"
     raise "Unable to link \"#{source}\""
   end
 

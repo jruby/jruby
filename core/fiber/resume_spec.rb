@@ -12,28 +12,5 @@ with_feature :fiber do
       fiber2 = Fiber.new { fiber1.resume; :fiber2 }
       fiber2.resume.should == :fiber2
     end
-
-    with_feature :fork do
-      ruby_bug "redmine #595", "3.0.0" do
-        it "executes the ensure clause" do
-          rd, wr = IO.pipe
-          if Kernel.fork then
-            wr.close
-            rd.read.should == "executed"
-            rd.close
-          else
-            rd.close
-            Fiber.new {
-              begin
-                Fiber.yield
-              ensure
-                wr.write "executed"
-              end
-            }.resume
-            exit 0
-          end
-        end
-      end
-    end
   end
 end
