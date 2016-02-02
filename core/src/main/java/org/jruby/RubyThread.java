@@ -87,6 +87,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.runtime.Visibility.*;
+import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -1531,8 +1532,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         return myContext.createCallerLocations(level, length, getNativeThread().getStackTrace());
     }
-
-    static final StackTraceElement[] EMPTY_STACK_TRACE = new StackTraceElement[0];
 
     public StackTraceElement[] javaBacktrace() {
         if (threadImpl instanceof NativeThread) {

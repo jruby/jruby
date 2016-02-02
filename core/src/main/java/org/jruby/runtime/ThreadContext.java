@@ -765,7 +765,7 @@ public final class ThreadContext {
         if (javaStackTrace == null || javaStackTrace.length == 0) return "";
 
         return TraceType.printBacktraceJRuby(
-                new BacktraceData(javaStackTrace, new BacktraceElement[0], true, false, false).getBacktraceWithoutRuby(),
+                new BacktraceData(javaStackTrace, BacktraceElement.EMPTY_ARRAY, true, false, false).getBacktraceWithoutRuby(),
                 ex.getClass().getName(),
                 ex.getLocalizedMessage(),
                 color);

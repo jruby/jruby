@@ -141,7 +141,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        new BacktraceElement[0],
+                        BacktraceElement.EMPTY_ARRAY,
                         true,
                         false,
                         false);
