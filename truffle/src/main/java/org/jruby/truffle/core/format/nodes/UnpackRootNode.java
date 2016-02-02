@@ -77,7 +77,7 @@ public class UnpackRootNode extends RootNode {
             throw new IllegalStateException(e);
         }
 
-        return new PackResult(output, outputLength, taint, encoding);
+        return new PackResult(output, outputLength, -1, -1, taint, encoding);
     }
 
     @Override
