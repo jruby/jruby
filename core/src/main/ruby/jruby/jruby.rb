@@ -38,8 +38,10 @@ module JRuby
       java.lang.Thread.currentThread.setContextClassLoader loader
     end
 
+    DEFAULT_FILENAME = '-'.dup; private_constant :DEFAULT_FILENAME
+
     # Parse the given block or the provided content, returning a JRuby AST node.
-    def parse(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, lineno = 0, &block)
+    def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
       if block
         block_r = reference0(block)
         body = block_r.body
@@ -51,7 +53,7 @@ module JRuby
         body.body_node
       else
         content = content.to_str
-        filename = filename.to_str unless default_filename
+        filename = filename.to_str unless filename.equal?(DEFAULT_FILENAME)
 
         signature = [org.jruby.util.ByteList, java.lang.String, org.jruby.runtime.DynamicScope, Java::int, Java::boolean]
         runtime.java_send :parse, signature, reference0(content).byte_list, filename, nil, lineno, extra_position_info
@@ -59,11 +61,11 @@ module JRuby
     end
     alias ast_for parse
 
-    def compile_ir(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, &block)
+    def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
       runtime = JRuby.runtime
       manager = org.jruby.ir.IRManager.new(runtime.instance_config)
       manager.dry_run = true
-      if default_filename
+      if filename.equal?(DEFAULT_FILENAME)
         node = parse(content, &block)
       else
         node = parse(content, filename, extra_position_info, &block)
@@ -77,8 +79,8 @@ module JRuby
 
     # Parse and compile the given block or provided content, returning a new
     # CompiledScript instance.
-    def compile(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, &block)
-      irscope = compile_ir(content, filename)
+    def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
+      irscope = compile_ir(content, filename, extra_position_info, &block)
 
       visitor = org.jruby.ir.targets.JVMVisitor.new
       context = org.jruby.ir.targets.JVMVisitorMethodContext.new
