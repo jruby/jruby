@@ -1,0 +1,1 @@
+fails:IO#sync is false by default for STDOUT
