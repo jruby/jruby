@@ -447,20 +447,25 @@ public class TraceType {
     }
 
     public static IRubyObject generateMRIBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {
-        if (trace == null) {
-            return runtime.getNil();
-        }
+        if (trace == null) return runtime.getNil();
 
-        RubyArray traceArray = RubyArray.newArray(runtime);
+        final RubyClass stringClass = runtime.getString();
+        final IRubyObject[] traceArray = new IRubyObject[trace.length];
+        final StringBuilder line = new StringBuilder();
 
         for (int i = 0; i < trace.length; i++) {
             RubyStackTraceElement element = trace[i];
-
-            RubyString str = RubyString.newString(runtime, element.getFileName() + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + "'");
-            traceArray.append(str);
+            line.setLength(0);
+            line.append( element.getFileName() )
+                .append(':')
+                .append( element.getLineNumber() )
+                .append(":in `")
+                .append( element.getMethodName() )
+                .append('\'');
+            traceArray[i] = new RubyString(runtime, stringClass, line.toString()); // must toString
         }
 
-        return traceArray;
+        return RubyArray.newArrayNoCopy(runtime, traceArray);
     }
 
     private static void printErrorPos(ThreadContext context, PrintStream errorStream) {
