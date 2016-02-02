@@ -755,6 +755,15 @@ public class ParserSupport {
         return new OpAsgnNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
     }
 
+    public Node newOpConstAsgn(ISourcePosition position, Node lhs, String operatorName, Node rhs) {
+        // FIXME: Maybe need to fixup position?
+        if (lhs != null) {
+            return new OpAsgnConstDeclNode(position, lhs, operatorName, rhs);
+        } else {
+            return new BeginNode(position, NilImplicitNode.NIL);
+        }
+    }
+
     public boolean isLazy(String callType) {
         return "&.".equals(callType);
     }

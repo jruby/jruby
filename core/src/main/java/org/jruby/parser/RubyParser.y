@@ -479,8 +479,8 @@ stmt            : kALIAS fitem {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    support.yyerror("can't make alias for the number variables");
-                    $$ = null;
+                    ISourcePosition pos = $1.getPosition();
+                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $2), $4, $5);
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
@@ -1055,10 +1055,12 @@ arg             : lhs '=' arg {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
-                    support.yyerror("constant re-assignment");
+                    ISourcePosition pos = support.getPosition($1);
+                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), $4, $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg {
-                    support.yyerror("constant re-assignment");
+                    ISourcePosition pos = lexer.getPosition();
+                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, $1), $3, $4);
                 }
                 | backref tOP_ASGN arg {
                     support.backrefAssignError($1);

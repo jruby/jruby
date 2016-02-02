@@ -1963,8 +1963,8 @@ states[37] = new ParserState() {
 };
 states[38] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.yyerror("can't make alias for the number variables");
-                    yyVal = null;
+                    ISourcePosition pos = ((Node)yyVals[-4+yyTop]).getPosition();
+                    yyVal = support.newOpConstAsgn(pos, support.new_colon2(pos, ((Node)yyVals[-4+yyTop]), ((String)yyVals[-3+yyTop])), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2923,13 +2923,15 @@ states[225] = new ParserState() {
 };
 states[226] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.yyerror("constant re-assignment");
+                    ISourcePosition pos = support.getPosition(((Node)yyVals[-4+yyTop]));
+                    yyVal = support.newOpConstAsgn(pos, support.new_colon2(pos, ((Node)yyVals[-4+yyTop]), ((String)yyVals[-2+yyTop])), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[227] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.yyerror("constant re-assignment");
+                    ISourcePosition pos = lexer.getPosition();
+                    yyVal = support.newOpConstAsgn(pos, new Colon3Node(pos, ((String)yyVals[-3+yyTop])), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -5330,7 +5332,7 @@ states[646] = new ParserState() {
   }
 };
 }
-					// line 2548 "RubyParser.y"
+					// line 2550 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5345,4 +5347,4 @@ states[646] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10134 "-"
+					// line 10136 "-"

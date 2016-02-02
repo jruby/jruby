@@ -436,6 +436,7 @@ public class IRBuilder {
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
             case NILNODE: return buildNil();
             case OPASGNANDNODE: return buildOpAsgnAnd((OpAsgnAndNode) node);
+            case OPASGNCONSTDECLNODE: return buildOpAsgnConstDeclNode((OpAsgnConstDeclNode) node);
             case OPASGNNODE: return buildOpAsgn((OpAsgnNode) node);
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node);
             case OPELEMENTASGNNODE: return buildOpElementAsgn((OpElementAsgnNode) node);
@@ -1278,19 +1279,42 @@ public class IRBuilder {
         return nearestModuleBodyDepth == -1 ? scope.getCurrentScopeVariable() : CurrentScope.ScopeFor(nearestModuleBodyDepth);
     }
 
-    public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand val) {
+    public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            addInstr(new PutConstInstr(findContainerModule(), constDeclNode.getName(), val));
+            return putConstant(constDeclNode.getName(), value);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
-            Operand module = build(((Colon2Node) constNode).getLeftNode());
-            addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
+            return putConstant((Colon2Node) constNode, value);
         } else { // colon3, assign in Object
-            addInstr(new PutConstInstr(new ObjectClass(), constDeclNode.getName(), val));
+            return putConstant((Colon3Node) constNode, value);
         }
+    }
 
-        return val;
+    private Operand putConstant(String name, Operand value) {
+        addInstr(new PutConstInstr(findContainerModule(), name, value));
+
+        return value;
+    }
+
+    private Operand putConstant(Colon3Node node, Operand value) {
+        addInstr(new PutConstInstr(new ObjectClass(), node.getName(), value));
+
+        return value;
+    }
+
+    private Operand putConstant(Colon2Node node, Operand value) {
+        addInstr(new PutConstInstr(build(node.getLeftNode()), node.getName(), value));
+
+        return value;
+    }
+
+    private Operand putConstantAssignment(OpAsgnConstDeclNode node, Operand value) {
+        Node constNode = node.getFirstNode();
+
+        if (constNode instanceof Colon2Node) return putConstant((Colon2Node) constNode, value);
+
+        return putConstant((Colon3Node) constNode, value);
     }
 
     private void genInheritanceSearchInstrs(Operand startingModule, Variable constVal, Label foundLabel, boolean noPrivateConstants, String name) {
@@ -2910,6 +2934,39 @@ public class IRBuilder {
         addInstr(new LabelInstr(endLabel));
 
         return result;
+    }
+
+    // FIXME: All three paths feel a bit inefficient.  They all interact with the constant first to know
+    // if it exists or whether it should raise if it doesn't...then it will access it against for the put
+    // logic.  I could avoid that work but then there would be quite a bit more logic in Java.   This is a
+    // pretty esoteric corner of Ruby so I am not inclined to put anything more than a comment that it can be
+    // improved.
+    public Operand buildOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
+        String op = node.getOperator();
+
+        if ("||".equals(op)) {
+            Variable result = createTemporaryVariable();
+            Label isDefined = getNewLabel();
+            Label done = getNewLabel();
+            Variable defined = createTemporaryVariable();
+            addInstr(new CopyInstr(defined, buildGetDefinition(node.getFirstNode())));
+            addInstr(BNEInstr.create(isDefined, defined, manager.getNil()));
+            addInstr(new CopyInstr(result, putConstantAssignment(node, build(node.getSecondNode()))));
+            addInstr(new JumpInstr(done));
+            addInstr(new LabelInstr(isDefined));
+            addInstr(new CopyInstr(result, build(node.getFirstNode())));
+            addInstr(new LabelInstr(done));
+            return result;
+        } else if ("&&".equals(op)) {
+            build(node.getFirstNode()); // Get once to make sure it is there or will throw if not
+            return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, build(node.getSecondNode()))));
+        }
+
+        Variable result = createTemporaryVariable();
+        Operand lhs = build(node.getFirstNode());
+        Operand rhs = build(node.getSecondNode());
+        addInstr(CallInstr.create(scope, result, node.getOperator(), lhs, new Operand[] { rhs }, null));
+        return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, result)));
     }
 
     // Translate "x &&= y" --> "x = y if is_true(x)" -->
