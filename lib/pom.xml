@@ -222,6 +222,7 @@ DO NOT MODIFIY - GENERATED CODE
           <exclude>bin/jruby*-*</exclude>
           <exclude>**/.*</exclude>
           <exclude>lib/ruby/stdlib/rubygems/defaults/jruby_native.rb</exclude>
+          <exclude>lib/ruby/stdlib/gauntlet*.rb</exclude>
         </excludes>
       </resource>
     </resources>
