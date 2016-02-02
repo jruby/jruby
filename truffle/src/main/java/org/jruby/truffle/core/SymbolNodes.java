@@ -19,6 +19,8 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.control.SequenceNode;
@@ -137,8 +139,8 @@ public abstract class SymbolNodes {
                     .getCallNode().getEncapsulatingSourceSection();
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                    sourceSection, null, Arity.NO_ARGUMENTS, Layouts.SYMBOL.getString(symbol),
-                    true, null, false, false, false);
+                    sourceSection, null, Arity.AT_LEAST_ONE, Layouts.SYMBOL.getString(symbol),
+                    true, ArgumentDescriptor.ANON_REST, false, false, false);
 
             final RubyRootNode rootNode = new RubyRootNode(
                     getContext(), sourceSection,
