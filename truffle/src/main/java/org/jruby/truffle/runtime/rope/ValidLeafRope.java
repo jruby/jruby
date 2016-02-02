@@ -11,12 +11,11 @@
 package org.jruby.truffle.runtime.rope;
 
 import org.jcodings.Encoding;
-import org.jruby.util.StringSupport;
 
 public class ValidLeafRope extends LeafRope {
 
     public ValidLeafRope(byte[] bytes, Encoding encoding, int characterLength) {
-        super(bytes, encoding, StringSupport.CR_VALID, encoding.isSingleByte(), characterLength);
+        super(bytes, encoding, CodeRange.CR_VALID, encoding.isSingleByte(), characterLength);
     }
 
 }

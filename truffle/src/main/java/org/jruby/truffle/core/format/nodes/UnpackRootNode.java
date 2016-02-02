@@ -20,6 +20,7 @@ import org.jruby.truffle.core.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.runtime.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayUtils;
+import org.jruby.truffle.runtime.rope.CodeRange;
 
 public class UnpackRootNode extends RootNode {
 
@@ -77,7 +78,7 @@ public class UnpackRootNode extends RootNode {
             throw new IllegalStateException(e);
         }
 
-        return new PackResult(output, outputLength, -1, -1, taint, encoding);
+        return new PackResult(output, outputLength, -1, CodeRange.CR_BROKEN, taint, encoding);
     }
 
     @Override

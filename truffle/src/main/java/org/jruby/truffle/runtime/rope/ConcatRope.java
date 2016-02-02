@@ -17,7 +17,7 @@ public class ConcatRope extends Rope {
     private final Rope left;
     private final Rope right;
 
-    public ConcatRope(Rope left, Rope right, Encoding encoding, int codeRange, boolean singleByteOptimizable, int depth) {
+    public ConcatRope(Rope left, Rope right, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int depth) {
         super(encoding,
                 codeRange,
                 singleByteOptimizable,

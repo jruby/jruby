@@ -11,12 +11,11 @@
 package org.jruby.truffle.runtime.rope;
 
 import org.jcodings.Encoding;
-import org.jruby.util.StringSupport;
 
 public class AsciiOnlyLeafRope extends LeafRope {
 
     public AsciiOnlyLeafRope(byte[] bytes, Encoding encoding) {
-        super(bytes, encoding, StringSupport.CR_7BIT, true, bytes.length);
+        super(bytes, encoding, CodeRange.CR_7BIT, true, bytes.length);
     }
 
 }

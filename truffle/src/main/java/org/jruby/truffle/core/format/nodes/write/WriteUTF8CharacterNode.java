@@ -18,6 +18,7 @@ import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.runtime.exceptions.RangeException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.StringOperations;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.util.StringSupport;
 
 /**
@@ -40,9 +41,9 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
                 (byte) value);
 
         if (StringOperations.isUTF8ValidOneByte((byte) value)) {
-            setStringCodeRange(frame, StringSupport.CR_7BIT);
+            setStringCodeRange(frame, CodeRange.CR_7BIT);
         } else {
-            setStringCodeRange(frame, StringSupport.CR_BROKEN);
+            setStringCodeRange(frame, CodeRange.CR_BROKEN);
         }
 
         return null;
@@ -59,9 +60,9 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
         increaseStringLength(frame, -2 + 1);
 
         if (StringOperations.isUTF8ValidTwoBytes(bytes)) {
-            setStringCodeRange(frame, StringSupport.CR_VALID);
+            setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
-            setStringCodeRange(frame, StringSupport.CR_BROKEN);
+            setStringCodeRange(frame, CodeRange.CR_BROKEN);
         }
 
         return null;
@@ -79,9 +80,9 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
         increaseStringLength(frame, -3 + 1);
 
         if (StringOperations.isUTF8ValidThreeBytes(bytes)) {
-            setStringCodeRange(frame, StringSupport.CR_VALID);
+            setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
-            setStringCodeRange(frame, StringSupport.CR_BROKEN);
+            setStringCodeRange(frame, CodeRange.CR_BROKEN);
         }
 
         return null;
@@ -100,9 +101,9 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
         increaseStringLength(frame, -4 + 1);
 
         if (StringOperations.isUTF8ValidFourBytes(bytes)) {
-            setStringCodeRange(frame, StringSupport.CR_VALID);
+            setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
-            setStringCodeRange(frame, StringSupport.CR_BROKEN);
+            setStringCodeRange(frame, CodeRange.CR_BROKEN);
         }
 
         return null;
@@ -122,9 +123,9 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
         increaseStringLength(frame, -5 + 1);
 
         if (StringOperations.isUTF8ValidFiveBytes(bytes)) {
-            setStringCodeRange(frame, StringSupport.CR_VALID);
+            setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
-            setStringCodeRange(frame, StringSupport.CR_BROKEN);
+            setStringCodeRange(frame, CodeRange.CR_BROKEN);
         }
 
         return null;
@@ -145,9 +146,9 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
         increaseStringLength(frame, -6 + 1);
 
         if (StringOperations.isUTF8ValidSixBytes(bytes)) {
-            setStringCodeRange(frame, StringSupport.CR_VALID);
+            setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
-            setStringCodeRange(frame, StringSupport.CR_BROKEN);
+            setStringCodeRange(frame, CodeRange.CR_BROKEN);
         }
 
         return null;

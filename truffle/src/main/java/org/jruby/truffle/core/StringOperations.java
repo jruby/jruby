@@ -35,11 +35,11 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
-import org.jruby.util.StringSupport;
 
 import java.nio.charset.Charset;
 
@@ -47,12 +47,12 @@ public abstract class StringOperations {
 
     /** Creates a String from the ByteList, with unknown CR */
     public static DynamicObject createString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_UNKNOWN), null);
     }
 
     /** Creates a String from the ByteList, with 7-bit CR */
     public static DynamicObject create7BitString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, StringSupport.CR_7BIT), null);
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_7BIT), null);
     }
 
     public static DynamicObject createString(RubyContext context, Rope rope) {
@@ -68,7 +68,7 @@ public abstract class StringOperations {
     public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
         return new StringCodeRangeableWrapper(string) {
             private final ByteList byteList = StringOperations.rope(string).toByteListCopy();
-            int codeRange = StringOperations.getCodeRange(string);
+            int codeRange = StringOperations.getCodeRange(string).toInt();
 
             @Override
             public void setCodeRange(int newCodeRange) {
@@ -96,13 +96,13 @@ public abstract class StringOperations {
         };
     }
 
-    public static int getCodeRange(DynamicObject string) {
+    public static CodeRange getCodeRange(DynamicObject string) {
         return Layouts.STRING.getRope(string).getCodeRange();
     }
 
     public static void setCodeRange(DynamicObject string, int codeRange) {
         // TODO (nirvdrum 07-Jan-16) Code range is now stored in the rope and ropes are immutable -- all calls to this method are suspect.
-        final int existingCodeRange = StringOperations.getCodeRange(string);
+        final int existingCodeRange = StringOperations.getCodeRange(string).toInt();
 
         if (existingCodeRange != codeRange) {
             CompilerDirectives.transferToInterpreter();
@@ -111,15 +111,15 @@ public abstract class StringOperations {
     }
 
     public static boolean isCodeRangeValid(DynamicObject string) {
-        return StringOperations.getCodeRange(string) == StringSupport.CR_VALID;
+        return StringOperations.getCodeRange(string) == CodeRange.CR_VALID;
     }
 
     public static void clearCodeRange(DynamicObject string) {
-        StringOperations.setCodeRange(string, StringSupport.CR_UNKNOWN);
+        StringOperations.setCodeRange(string, CodeRange.CR_UNKNOWN.toInt());
     }
 
     public static void keepCodeRange(DynamicObject string) {
-        if (StringOperations.getCodeRange(string) == StringSupport.CR_BROKEN) {
+        if (StringOperations.getCodeRange(string) == CodeRange.CR_BROKEN) {
             clearCodeRange(string);
         }
     }
@@ -157,7 +157,7 @@ public abstract class StringOperations {
 
     public static void forceEncoding(DynamicObject string, Encoding encoding) {
         final Rope oldRope = Layouts.STRING.getRope(string);
-        StringOperations.setRope(string, RopeOperations.withEncoding(oldRope, encoding, StringSupport.CR_UNKNOWN));
+        StringOperations.setRope(string, RopeOperations.withEncoding(oldRope, encoding, CodeRange.CR_UNKNOWN));
     }
 
     public static int normalizeIndex(int length, int index) {
@@ -190,7 +190,7 @@ public abstract class StringOperations {
     }
 
     @TruffleBoundary
-    public static Rope encodeRope(CharSequence value, Encoding encoding, int codeRange) {
+    public static Rope encodeRope(CharSequence value, Encoding encoding, CodeRange codeRange) {
         // Taken from org.jruby.RubyString#encodeByteList.
 
         Charset charset = encoding.getCharset();
@@ -211,7 +211,7 @@ public abstract class StringOperations {
     }
 
     public static Rope encodeRope(CharSequence value, Encoding encoding) {
-        return encodeRope(value, encoding, StringSupport.CR_UNKNOWN);
+        return encodeRope(value, encoding, CodeRange.CR_UNKNOWN);
     }
 
     public static ByteList getByteList(DynamicObject object) {
@@ -223,12 +223,17 @@ public abstract class StringOperations {
     }
 
     public static Rope ropeFromByteList(ByteList byteList) {
-        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), StringSupport.CR_UNKNOWN);
+        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), CodeRange.CR_UNKNOWN);
+    }
+
+    public static Rope ropeFromByteList(ByteList byteList, CodeRange codeRange) {
+        // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
+        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
     }
 
     public static Rope ropeFromByteList(ByteList byteList, int codeRange) {
         // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
-        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
+        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
     }
 
     @TruffleBoundary
@@ -255,7 +260,7 @@ public abstract class StringOperations {
         return rope(string).getEncoding();
     }
 
-    public static int codeRange(DynamicObject string) {
+    public static CodeRange codeRange(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
         return rope(string).getCodeRange();

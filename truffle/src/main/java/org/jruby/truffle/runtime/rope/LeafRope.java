@@ -11,11 +11,9 @@ package org.jruby.truffle.runtime.rope;
 
 import org.jcodings.Encoding;
 
-import java.util.Arrays;
-
 public abstract class LeafRope extends Rope {
 
-    public LeafRope(byte[] bytes, Encoding encoding, int codeRange, boolean singleByteOptimizable, int characterLength) {
+    public LeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int characterLength) {
         super(encoding, codeRange, singleByteOptimizable, bytes.length, characterLength, 1, bytes);
     }
 

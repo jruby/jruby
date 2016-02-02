@@ -12,7 +12,7 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
+import org.jruby.truffle.runtime.rope.CodeRange;
 
 public class RegexpGuards {
 
@@ -25,7 +25,7 @@ public class RegexpGuards {
     }
 
     public static boolean isValidEncoding(DynamicObject string) {
-        return StringOperations.codeRange(string) != StringSupport.CR_BROKEN;
+        return StringOperations.codeRange(string) != CodeRange.CR_BROKEN;
     }
 
 }

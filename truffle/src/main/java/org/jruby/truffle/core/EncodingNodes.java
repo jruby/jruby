@@ -30,9 +30,9 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -271,18 +271,18 @@ public abstract class EncodingNodes {
             if (!firstEncoding.isAsciiCompatible() || !secondEncoding.isAsciiCompatible()) return null;
 
             if (firstRope.getCodeRange() != secondRope.getCodeRange()) {
-                if (firstRope.getCodeRange() == StringSupport.CR_7BIT) return secondEncoding;
-                if (secondRope.getCodeRange() == StringSupport.CR_7BIT) return firstEncoding;
+                if (firstRope.getCodeRange() == CodeRange.CR_7BIT) return secondEncoding;
+                if (secondRope.getCodeRange() == CodeRange.CR_7BIT) return firstEncoding;
             }
-            if (secondRope.getCodeRange() == StringSupport.CR_7BIT) return firstEncoding;
-            if (firstRope.getCodeRange() == StringSupport.CR_7BIT) return secondEncoding;
+            if (secondRope.getCodeRange() == CodeRange.CR_7BIT) return firstEncoding;
+            if (firstRope.getCodeRange() == CodeRange.CR_7BIT) return secondEncoding;
 
             return null;
         }
 
         @TruffleBoundary
         private static boolean isAsciiOnly(Rope rope) {
-            return rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == StringSupport.CR_7BIT;
+            return rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CodeRange.CR_7BIT;
         }
 
         protected Encoding extractEncoding(DynamicObject string) {

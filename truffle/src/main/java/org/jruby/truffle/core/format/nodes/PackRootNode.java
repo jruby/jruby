@@ -19,6 +19,7 @@ import org.jruby.truffle.core.format.runtime.PackEncoding;
 import org.jruby.truffle.core.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.runtime.RubyLanguage;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.util.StringSupport;
 
 /**
@@ -94,10 +95,10 @@ public class PackRootNode extends RootNode {
             stringLength = outputLength;
         }
 
-        final int stringCodeRange;
+        final CodeRange stringCodeRange;
 
         try {
-            stringCodeRange = frame.getInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT);
+            stringCodeRange = CodeRange.fromInt(frame.getInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT));
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }

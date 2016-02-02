@@ -15,7 +15,7 @@ public class SubstringRope extends Rope {
     private final Rope child;
     private final int offset;
 
-    public SubstringRope(Rope child, int offset, int byteLength, int characterLength, int codeRange) {
+    public SubstringRope(Rope child, int offset, int byteLength, int characterLength, CodeRange codeRange) {
         // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
         super(child.getEncoding(), codeRange, child.isSingleByteOptimizable(), byteLength, characterLength, child.depth() + 1, null);
         this.child = child;

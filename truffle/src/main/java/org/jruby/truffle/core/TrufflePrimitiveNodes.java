@@ -40,12 +40,12 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
-import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.io.IOException;
@@ -859,7 +859,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject createSimpleString() {
-            return createString(RopeOperations.create(new byte[]{'t', 'e', 's', 't'}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT));
+            return createString(RopeOperations.create(new byte[]{'t', 'e', 's', 't'}, UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
         }
     }
 

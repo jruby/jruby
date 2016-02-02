@@ -9,16 +9,18 @@
  */
 package org.jruby.truffle.core.format.runtime;
 
+import org.jruby.truffle.runtime.rope.CodeRange;
+
 public class PackResult {
 
     private final Object output;
     private final int outputLength;
     private final int stringLength;
-    private final int stringCodeRange;
+    private final CodeRange stringCodeRange;
     private final boolean tainted;
     private final PackEncoding encoding;
 
-    public PackResult(Object output, int outputLength, int stringLength, int stringCodeRange, boolean tainted, PackEncoding encoding) {
+    public PackResult(Object output, int outputLength, int stringLength, CodeRange stringCodeRange, boolean tainted, PackEncoding encoding) {
         this.output = output;
         this.outputLength = outputLength;
         this.stringLength = stringLength;
@@ -39,7 +41,7 @@ public class PackResult {
         return stringLength;
     }
 
-    public int getStringCodeRange() {
+    public CodeRange getStringCodeRange() {
         return stringCodeRange;
     }
 

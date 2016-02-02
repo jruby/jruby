@@ -26,12 +26,12 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        return StringOperations.getCodeRange(string);
+        return StringOperations.getCodeRange(string).toInt();
     }
 
     @Override
     public int scanForCodeRange() {
-        return StringOperations.codeRange(string);
+        return StringOperations.codeRange(string).toInt();
     }
 
     @Override
