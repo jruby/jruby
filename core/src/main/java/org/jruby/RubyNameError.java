@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -46,7 +46,7 @@ import org.jruby.util.Sprintf;
 public class RubyNameError extends RubyException {
     private IRubyObject name;
 
-    /** 
+    /**
      * Nested class whose instances act as thunks reacting to to_str method
      * called from (Exception#to_str, Exception#message)
      * MRI equivalent: rb_cNameErrorMesg, class name: "message", construction method: "!",
@@ -164,25 +164,38 @@ public class RubyNameError extends RubyException {
         super(runtime, exceptionClass, message);
         this.name = name == null ? runtime.getNil() : runtime.newString(name);
     }
-    
+
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, IRubyObject name) {
         super(runtime, exceptionClass, message);
         this.name = name;
     }
 
     @JRubyMethod(name = "exception", meta = true)
+    public static IRubyObject exception(ThreadContext context, IRubyObject recv) {
+        return newNameError(recv, NULL_ARRAY);
+    }
+
+    @JRubyMethod(name = "exception", meta = true)
     public static RubyException exception(ThreadContext context, IRubyObject recv, IRubyObject message) {
-        return newRubyNameError(recv, message, context.nil);
+        return newNameError(recv, new IRubyObject[] { message });
     }
 
     @JRubyMethod(name = "exception", meta = true)
     public static RubyException exception(ThreadContext context, IRubyObject recv, IRubyObject message, IRubyObject name) {
-        return newRubyNameError(recv, message, name);
+        return newNameError(recv, message, name);
     }
 
-    public static RubyException newRubyNameError(IRubyObject recv, IRubyObject message, IRubyObject name) {
-        RubyClass klass = (RubyClass)recv;
+    private static RubyException newNameError(IRubyObject recv, IRubyObject[] args) {
+        final RubyClass klass = (RubyClass) recv;
+        RubyException newError = (RubyException) klass.allocate();
 
+        newError.callInit(args, Block.NULL_BLOCK);
+
+        return newError;
+    }
+
+    static RubyException newNameError(IRubyObject recv, IRubyObject message, IRubyObject name) {
+        final RubyClass klass = (RubyClass) recv;
         RubyException newError = (RubyException) klass.allocate();
 
         newError.callInit(message, name, Block.NULL_BLOCK);
@@ -190,11 +203,12 @@ public class RubyNameError extends RubyException {
         return newError;
     }
 
-    @JRubyMethod(required = 1, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 2, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        this.message = args[0];
+        if ( args.length > 0 ) this.message = args[0];
         if ( args.length > 1 ) this.name = args[1];
+        else this.name = getRuntime().getNil();
         super.initialize(NULL_ARRAY, block); // message already set
         return this;
     }
