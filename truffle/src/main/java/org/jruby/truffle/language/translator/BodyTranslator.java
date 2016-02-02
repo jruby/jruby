@@ -2674,8 +2674,6 @@ public class BodyTranslator extends Translator {
                 && rescueBody.getExceptionNodes() == null
                 && rescueBody.getBodyNode() instanceof SideEffectFree
                 && rescueBody.getOptRescueNode() == null) {
-            System.err.println("opt! " + sourceSection.getShortDescription());
-
             tryPart = new DisablingBacktracesNode(context, sourceSection, tryPart);
 
             RubyNode bodyNode;
