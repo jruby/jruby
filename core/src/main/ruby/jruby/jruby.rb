@@ -87,13 +87,7 @@ module JRuby
       top_self = JRuby.runtime.top_self
       static_scope.module = top_self.class
 
-      script = CompiledScript.new
-      script.name = filename
-      script.class_name = irscope.name
-      script.original_script = content
-      script.code = bytes
-
-      script
+      CompiledScript.new(filename, irscope.name, content, bytes)
     end
   end
 
@@ -126,7 +120,16 @@ module JRuby
   end
 
   class CompiledScript
-    attr_accessor :name, :class_name, :original_script, :code
+
+    attr_reader :name, :class_name, :original_script, :code
+
+    # @private
+    def initialize(filename, class_name, content, bytes)
+      @name = filename
+      @class_name = class_name
+      @original_script = content
+      @code = bytes
+    end
 
     def to_s
       @original_script
@@ -147,6 +150,7 @@ module JRuby
 
       writer.to_s
     end
+
   end
 
   # @private
