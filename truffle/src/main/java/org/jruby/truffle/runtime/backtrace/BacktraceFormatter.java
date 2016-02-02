@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -27,6 +28,8 @@ import java.util.EnumSet;
 import java.util.List;
 
 public class BacktraceFormatter {
+
+    public static final String OMITTED = "(omitted due to -Xtruffle.backtraces.limit)";
 
     public enum FormattingFlags {
         OMIT_FROM_PREFIX,
@@ -48,7 +51,7 @@ public class BacktraceFormatter {
 
     // for debugging
     public static List<String> rubyBacktrace(RubyContext context) {
-        return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(null, RubyCallStack.getBacktrace(null));
+        return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, RubyCallStack.getBacktrace(context, null));
     }
 
     // for debugging
@@ -67,21 +70,21 @@ public class BacktraceFormatter {
     }
 
     @TruffleBoundary
-    public void printBacktrace(DynamicObject exception, Backtrace backtrace) {
-        printBacktrace(exception, backtrace, new PrintWriter(System.err, true));
+    public void printBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
+        printBacktrace(context, exception, backtrace, new PrintWriter(System.err, true));
     }
 
     @TruffleBoundary
-    public void printBacktrace(DynamicObject exception, Backtrace backtrace, PrintWriter writer) {
-        for (String line : formatBacktrace(exception, backtrace)) {
+    public void printBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace, PrintWriter writer) {
+        for (String line : formatBacktrace(context, exception, backtrace)) {
             writer.println(line);
         }
     }
 
-    public List<String> formatBacktrace(DynamicObject exception, Backtrace backtrace) {
+    public List<String> formatBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
         try {
             if (backtrace == null) {
-                backtrace = RubyCallStack.getBacktrace(null);
+                backtrace = RubyCallStack.getBacktrace(context, null);
             }
             final List<Activation> activations = backtrace.getActivations();
             final ArrayList<String> lines = new ArrayList<>();
@@ -102,6 +105,11 @@ public class BacktraceFormatter {
         final StringBuilder builder = new StringBuilder();
 
         final Activation activation = activations.get(0);
+
+        if (activation == Activation.OMITTED) {
+            return "(omitted due to -Xtruffle.backtraces.limit)";
+        }
+
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
         final String reportedName;
@@ -160,6 +168,11 @@ public class BacktraceFormatter {
 
     public String formatLine(List<Activation> activations, int n) {
         final Activation activation = activations.get(n);
+
+        if (activation == Activation.OMITTED) {
+            return OMITTED;
+        }
+
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
         String reportedName;
@@ -198,10 +211,14 @@ public class BacktraceFormatter {
 
     private SourceSection nextUserSourceSection(List<Activation> activations, int n) {
         while (n < activations.size()) {
-            SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
+            final Node callNode = activations.get(n).getCallNode();
 
-            if (!isCore(sourceSection)) {
-                return sourceSection;
+            if (callNode != null) {
+                final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
+
+                if (!isCore(sourceSection)) {
+                    return sourceSection;
+                }
             }
 
             n++;

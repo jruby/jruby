@@ -52,16 +52,18 @@ public abstract class RubyCallStack {
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }
 
-    public static Backtrace getBacktrace(Node currentNode) {
-        return getBacktrace(currentNode, 0);
+    public static Backtrace getBacktrace(RubyContext context, Node currentNode) {
+        return getBacktrace(context, currentNode, 0);
     }
 
-    public static Backtrace getBacktrace(Node currentNode, int omit) {
-        return getBacktrace(currentNode, omit, false);
+    public static Backtrace getBacktrace(RubyContext context, Node currentNode, int omit) {
+        return getBacktrace(context, currentNode, omit, false);
     }
 
-    public static Backtrace getBacktrace(Node currentNode, final int omit, final boolean filterNullSourceSection) {
+    public static Backtrace getBacktrace(RubyContext context, Node currentNode, final int omit, final boolean filterNullSourceSection) {
         CompilerAsserts.neverPartOfCompilation();
+
+        final int limit = context.getOptions().BACKTRACES_LIMIT;
 
         final ArrayList<Activation> activations = new ArrayList<>();
 
@@ -75,11 +77,16 @@ public abstract class RubyCallStack {
             activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
         }
 
-        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
+        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
             int depth = 1;
 
             @Override
-            public InternalMethod visitFrame(FrameInstance frameInstance) {
+            public Object visitFrame(FrameInstance frameInstance) {
+                if (depth > limit) {
+                    activations.add(Activation.OMITTED);
+                    return new Object();
+                }
+
                 // Multiple top level methods (require) introduce null call nodes - ignore them
 
                 if (frameInstance.getCallNode() != null && depth >= omit) {
@@ -88,6 +95,7 @@ public abstract class RubyCallStack {
                                 frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
                     }
                 }
+
                 depth++;
 
                 return null;

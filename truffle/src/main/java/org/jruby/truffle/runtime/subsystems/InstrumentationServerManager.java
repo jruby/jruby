@@ -66,11 +66,11 @@ public class InstrumentationServerManager {
                         @Override
                         public void run(DynamicObject thread, Node currentNode) {
                             try {
-                                Backtrace backtrace = RubyCallStack.getBacktrace(null);
+                                Backtrace backtrace = RubyCallStack.getBacktrace(context, null);
 
                                 synchronized (this) {
                                     // Not thread-safe so keep the formatting synchronized for now.
-                                    final List<String> lines = BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(null, backtrace);
+                                    final List<String> lines = BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, backtrace);
 
                                     builder.append(String.format("#%d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
                                     builder.append("\n");

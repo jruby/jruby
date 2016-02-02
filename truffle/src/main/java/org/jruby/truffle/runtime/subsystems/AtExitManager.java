@@ -84,7 +84,7 @@ public class AtExitManager {
         if (Layouts.BASIC_OBJECT.getLogicalClass(rubyException) == context.getCoreLibrary().getSystemExitClass()) {
             // Do not show SystemExit errors, just track them for the exit status
         } else {
-            BacktraceFormatter.createDefaultFormatter(context).printBacktrace(rubyException, Layouts.EXCEPTION.getBacktrace(rubyException));
+            BacktraceFormatter.createDefaultFormatter(context).printBacktrace(context, rubyException, Layouts.EXCEPTION.getBacktrace(rubyException));
         }
         return rubyException;
     }

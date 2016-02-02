@@ -327,7 +327,7 @@ public abstract class KernelNodes {
         public DynamicObject callerLocations(int omit, int length) {
             final DynamicObject threadBacktraceLocationClass = getContext().getCoreLibrary().getThreadBacktraceLocationClass();
 
-            final Backtrace backtrace = RubyCallStack.getBacktrace(this, 1 + omit, true);
+            final Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), this, 1 + omit, true);
 
             int locationsCount = backtrace.getActivations().size();
 
