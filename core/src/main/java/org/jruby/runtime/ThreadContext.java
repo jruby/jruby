@@ -337,7 +337,7 @@ public final class ThreadContext {
     }
 
     public void setFiber(ThreadFiber fiber) {
-        this.fiber = new WeakReference(fiber);
+        this.fiber = new WeakReference<ThreadFiber>(fiber);
     }
 
     public void setRootFiber(ThreadFiber rootFiber) {
@@ -667,16 +667,18 @@ public final class ThreadContext {
 
         if (trace == null) return nil;
 
-        RubyArray newTrace = runtime.newArray(trace.length);
+        final RubyClass stringClass = runtime.getString();
+        final IRubyObject[] traceArray = new IRubyObject[trace.length];
 
-        for (int i = level; i - level < trace.length; i++) {
-            RubyString str = RubyString.newString(runtime, trace[i - level].mriStyleString());
-            newTrace.append(str);
+        for (int i = 0; i < trace.length; i++) {
+            traceArray[i] = new RubyString(runtime, stringClass, trace[i].mriStyleString());
         }
 
-        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(newTrace);
+        RubyArray backTrace = RubyArray.newArrayNoCopy(runtime, traceArray);
 
-        return newTrace;
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
+
+        return backTrace;
     }
 
     /**
