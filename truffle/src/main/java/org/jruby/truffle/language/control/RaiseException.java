@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.control;
 
+import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 
 /**
@@ -17,7 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
  * to throw them. The error messages match MRI. Note that throwing is different to raising in Ruby,
  * which is the reason we have both {@link ThrowException} and {@link RaiseException}.
  */
-public class RaiseException extends RuntimeException {
+public class RaiseException extends ControlFlowException {
 
     // TODO CS 1-Mar-15 shouldn't this be a ControlFlowException?
 

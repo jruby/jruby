@@ -51,9 +51,6 @@ public class TryNode extends RubyNode {
 
             try {
                 result = tryPart.execute(frame);
-            } catch (ControlFlowException exception) {
-                controlFlowProfile.enter();
-                throw exception;
             } catch (RaiseException exception) {
                 raiseExceptionProfile.enter();
 
@@ -63,6 +60,9 @@ public class TryNode extends RubyNode {
                     getContext().getSafepointManager().poll(this);
                     continue;
                 }
+            } catch (ControlFlowException exception) {
+                controlFlowProfile.enter();
+                throw exception;
             }
 
             elseProfile.enter();
