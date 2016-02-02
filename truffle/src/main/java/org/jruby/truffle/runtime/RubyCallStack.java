@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.core.CoreSourceSection;
@@ -62,6 +63,10 @@ public abstract class RubyCallStack {
 
     public static Backtrace getBacktrace(RubyContext context, Node currentNode, final int omit, final boolean filterNullSourceSection) {
         CompilerAsserts.neverPartOfCompilation();
+
+        if (context.getOptions().BACKTRACES_OMIT_UNUSED && DisablingBacktracesNode.areBacktracesDisabled()) {
+            return new Backtrace(new Activation[]{Activation.OMITTED_UNUSED});
+        }
 
         final int limit = context.getOptions().BACKTRACES_LIMIT;
 

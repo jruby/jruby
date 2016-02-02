@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 public class Activation {
 
     public static final Activation OMITTED_LIMIT = new Activation(null, null);
+    public static final Activation OMITTED_UNUSED = new Activation(null, null);
 
     private final Node callNode;
     private final MaterializedFrame materializedFrame;
