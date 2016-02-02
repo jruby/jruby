@@ -61,7 +61,10 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.rope.AsciiOnlyLeafRope;
+import org.jruby.truffle.runtime.rope.InvalidLeafRope;
 import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.runtime.rope.ValidLeafRope;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 
@@ -2487,7 +2490,15 @@ public abstract class ArrayNodes {
                 }
             }
 
-            final Rope rope = makeLeafRopeNode.executeMake(bytes, encoding, StringSupport.CR_UNKNOWN);
+
+            final Rope rope;
+            if (result.getStringCodeRange() == StringSupport.CR_VALID) {
+                // TODO (nirvdrum 01-Feb-16): We probably should have a node for creating ropes with a known character length.
+                rope = new ValidLeafRope(bytes, encoding, result.getStringLength());
+            } else {
+                rope = makeLeafRopeNode.executeMake(bytes, encoding, result.getStringCodeRange());
+            }
+
             final DynamicObject string = createString(rope);
 
             if (result.isTainted()) {

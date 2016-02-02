@@ -13,12 +13,16 @@ public class PackResult {
 
     private final Object output;
     private final int outputLength;
+    private final int stringLength;
+    private final int stringCodeRange;
     private final boolean tainted;
     private final PackEncoding encoding;
 
-    public PackResult(Object output, int outputLength, boolean tainted, PackEncoding encoding) {
+    public PackResult(Object output, int outputLength, int stringLength, int stringCodeRange, boolean tainted, PackEncoding encoding) {
         this.output = output;
         this.outputLength = outputLength;
+        this.stringLength = stringLength;
+        this.stringCodeRange = stringCodeRange;
         this.tainted = tainted;
         this.encoding = encoding;
     }
@@ -29,6 +33,14 @@ public class PackResult {
 
     public int getOutputLength() {
         return outputLength;
+    }
+
+    public int getStringLength() {
+        return stringLength;
+    }
+
+    public int getStringCodeRange() {
+        return stringCodeRange;
     }
 
     public boolean isTainted() {

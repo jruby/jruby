@@ -21,6 +21,7 @@ import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 
@@ -154,6 +155,34 @@ public abstract class PackNode extends Node {
         frame.setInt(PackFrameDescriptor.OUTPUT_POSITION_SLOT, position);
     }
 
+    protected int getStringLength(VirtualFrame frame) {
+        try {
+            return frame.getInt(PackFrameDescriptor.STRING_LENGTH_SLOT);
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    protected void setStringLength(VirtualFrame frame, int length) {
+        frame.setInt(PackFrameDescriptor.STRING_LENGTH_SLOT, length);
+    }
+
+    protected void increaseStringLength(VirtualFrame frame, int additionalLength) {
+        setStringLength(frame, getStringLength(frame) + additionalLength);
+    }
+
+    protected void setStringCodeRange(VirtualFrame frame, int codeRange) {
+        try {
+            final int existingCodeRange = frame.getInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT);
+
+            if (codeRange > existingCodeRange) {
+                frame.setInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT, codeRange);
+            }
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     /**
      * Set the output to be tainted.
      */
@@ -169,6 +198,8 @@ public abstract class PackNode extends Node {
         final int outputPosition = getOutputPosition(frame);
         output[outputPosition] = value;
         setOutputPosition(frame, outputPosition + 1);
+        setStringCodeRange(frame, value >= 0 ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
+        increaseStringLength(frame, 1);
     }
 
     /**
@@ -193,6 +224,7 @@ public abstract class PackNode extends Node {
         final int outputPosition = getOutputPosition(frame);
         System.arraycopy(values, valuesStart, output, outputPosition, valuesLength);
         setOutputPosition(frame, outputPosition + valuesLength);
+        increaseStringLength(frame, valuesLength);
     }
 
     /**
@@ -203,6 +235,7 @@ public abstract class PackNode extends Node {
             ensureCapacity(frame, length);
             final int outputPosition = getOutputPosition(frame);
             setOutputPosition(frame, outputPosition + length);
+            increaseStringLength(frame, length);
         }
     }
 
