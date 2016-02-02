@@ -2200,12 +2200,10 @@ public abstract class StringNodes {
             final int end = p + len;
             int op = len;
             final byte[] reversedBytes = new byte[len];
-            boolean single = true;
 
             while (p < end) {
                 int cl = StringSupport.length(enc, originalBytes, p, end);
                 if (cl > 1 || (originalBytes[p] & 0x80) != 0) {
-                    single = false;
                     op -= cl;
                     System.arraycopy(originalBytes, p, reversedBytes, op, cl);
                     p += cl;
@@ -2214,13 +2212,7 @@ public abstract class StringNodes {
                 }
             }
 
-            // TODO (nirvdrum 09-Jan-16): If we guarantee no strings can have an unknown code range, this check can be removed.
-            CodeRange codeRange = rope.getCodeRange();
-            if (codeRange == CodeRange.CR_UNKNOWN) {
-                codeRange = single ? CodeRange.CR_7BIT : CodeRange.CR_VALID;
-            }
-
-            StringOperations.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), codeRange));
+            StringOperations.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), rope.getCodeRange()));
 
             return string;
         }
