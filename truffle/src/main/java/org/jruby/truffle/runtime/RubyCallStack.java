@@ -83,7 +83,7 @@ public abstract class RubyCallStack {
             @Override
             public Object visitFrame(FrameInstance frameInstance) {
                 if (depth > limit) {
-                    activations.add(Activation.OMITTED);
+                    activations.add(Activation.OMITTED_LIMIT);
                     return new Object();
                 }
 
