@@ -15,11 +15,13 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.core.CoreSourceSection;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -58,13 +60,20 @@ public abstract class RubyCallStack {
     }
 
     public static Backtrace getBacktrace(RubyContext context, Node currentNode, int omit) {
-        return getBacktrace(context, currentNode, omit, false);
+        return getBacktrace(context, currentNode, omit, null);
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode, final int omit, final boolean filterNullSourceSection) {
+    public static Backtrace getBacktrace(RubyContext context, Node currentNode, int omit, DynamicObject exception) {
+        return getBacktrace(context, currentNode, omit, false, exception);
+    }
+
+    public static Backtrace getBacktrace(RubyContext context, Node currentNode, final int omit, final boolean filterNullSourceSection, DynamicObject exception) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (context.getOptions().BACKTRACES_OMIT_UNUSED && DisablingBacktracesNode.areBacktracesDisabled()) {
+        if (exception != null
+                && context.getOptions().BACKTRACES_OMIT_UNUSED
+                && DisablingBacktracesNode.areBacktracesDisabled()
+                && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(exception), context.getCoreLibrary().getStandardErrorClass())) {
             return new Backtrace(new Activation[]{Activation.OMITTED_UNUSED});
         }
 
