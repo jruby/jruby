@@ -1,8 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-no_silent_rescue = "2.3"
-
 describe "Comparable#==" do
   a = b = nil
   before :each do
@@ -50,13 +48,13 @@ describe "Comparable#==" do
       a.should_receive(:<=>).once.and_return("abc")
     end
 
-    ruby_version_is ""...no_silent_rescue do
+    ruby_version_is ""..."2.3" do
       it "returns false" do
         (a == b).should be_false
       end
     end
 
-    ruby_version_is no_silent_rescue do
+    ruby_version_is "2.3" do
       it "raises an ArgumentError" do
         lambda { (a == b) }.should raise_error(ArgumentError)
       end
@@ -69,14 +67,14 @@ describe "Comparable#==" do
         a.should_receive(:<=>).once.and_raise(StandardError)
       end
 
-      ruby_version_is ""...no_silent_rescue do
+      ruby_version_is ""..."2.3" do
         # Behaviour confirmed by MRI test suite
         it "returns false" do
           (a == b).should be_false
         end
       end
 
-      ruby_version_is no_silent_rescue do
+      ruby_version_is "2.3" do
         it "lets it go through" do
           lambda { (a == b) }.should raise_error(StandardError)
         end
@@ -89,13 +87,13 @@ describe "Comparable#==" do
         a.should_receive(:<=>).once.and_raise(TypeError)
       end
 
-      ruby_version_is ""...no_silent_rescue do
+      ruby_version_is ""..."2.3" do
         it "returns false" do
           (a == b).should be_false
         end
       end
 
-      ruby_version_is no_silent_rescue do
+      ruby_version_is "2.3" do
         it "lets it go through" do
           lambda { (a == b) }.should raise_error(TypeError)
         end

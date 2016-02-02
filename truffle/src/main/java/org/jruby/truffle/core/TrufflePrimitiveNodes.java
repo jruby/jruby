@@ -636,7 +636,7 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public DynamicObject printBacktrace() {
             final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
-                    .formatBacktrace(null, RubyCallStack.getBacktrace(this));
+                    .formatBacktrace(getContext(), null, RubyCallStack.getBacktrace(getContext(), this));
 
             for (String line : rubyBacktrace) {
                 System.err.println(line);
@@ -658,7 +658,7 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public DynamicObject printInterleavedBacktrace() {
             final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
-                    .formatBacktrace(null, RubyCallStack.getBacktrace(this));
+                    .formatBacktrace(getContext(), null, RubyCallStack.getBacktrace(getContext(), this));
 
             final StackTraceElement[] javaStacktrace = new Exception().getStackTrace();
 

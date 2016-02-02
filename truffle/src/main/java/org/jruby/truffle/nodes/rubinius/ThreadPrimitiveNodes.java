@@ -42,14 +42,14 @@ public class ThreadPrimitiveNodes {
         }
 
         @TruffleBoundary
-        public static void raiseInThread(RubyContext context, DynamicObject rubyThread, final DynamicObject exception, Node currentNode) {
+        public static void raiseInThread(final RubyContext context, DynamicObject rubyThread, final DynamicObject exception, Node currentNode) {
             final Thread javaThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber()));
 
             context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new SafepointAction() {
                 @Override
                 public void run(DynamicObject currentThread, Node currentNode) {
                     if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
-                        Backtrace backtrace = RubyCallStack.getBacktrace(currentNode);
+                        Backtrace backtrace = RubyCallStack.getBacktrace(context, currentNode);
                         Layouts.EXCEPTION.setBacktrace(exception, backtrace);
                     }
                     throw new RaiseException(exception);

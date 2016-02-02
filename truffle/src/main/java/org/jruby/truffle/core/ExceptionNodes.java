@@ -32,7 +32,7 @@ public abstract class ExceptionNodes {
     @TruffleBoundary
     public static DynamicObject backtraceAsRubyStringArray(RubyContext context, DynamicObject exception, Backtrace backtrace) {
         final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX))
-                .formatBacktrace(exception, backtrace);
+                .formatBacktrace(context, exception, backtrace);
 
         final Object[] array = new Object[lines.size()];
 
@@ -115,7 +115,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
-            Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
+            Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), this, offset);
             Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }

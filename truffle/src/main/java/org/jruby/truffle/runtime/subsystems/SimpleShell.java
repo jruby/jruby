@@ -65,7 +65,7 @@ public class SimpleShell {
 
                 case "frame":
                     currentFrameIndex = Integer.parseInt(tokenizer.nextToken());
-                    currentFrame = RubyCallStack.getBacktrace(currentNode).getActivations().get(currentFrameIndex).getMaterializedFrame();
+                    currentFrame = RubyCallStack.getBacktrace(context, currentNode).getActivations().get(currentFrameIndex).getMaterializedFrame();
                     break;
 
                 default:
@@ -92,7 +92,7 @@ public class SimpleShell {
                     } catch (RaiseException e) {
                         final Object rubyException = e.getRubyException();
 
-                        BacktraceFormatter.createDefaultFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException), System.console().writer());
+                        BacktraceFormatter.createDefaultFormatter(context).printBacktrace(context, (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException), System.console().writer());
                     }
             }
         }
@@ -101,7 +101,7 @@ public class SimpleShell {
     private void backtrace(Node currentNode) {
         int n = 0;
 
-        for (Activation activation : RubyCallStack.getBacktrace(currentNode).getActivations()) {
+        for (Activation activation : RubyCallStack.getBacktrace(context, currentNode).getActivations()) {
             if (n == currentFrameIndex) {
                 System.console().writer().print("  ▶");
             } else {

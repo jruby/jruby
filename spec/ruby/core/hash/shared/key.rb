@@ -1,6 +1,6 @@
 describe :hash_key_p, shared: true do
   it "returns true if argument is a key" do
-    h = new_hash(a: 1, b: 2, c: 3, 4 => 0)
+    h = { a: 1, b: 2, c: 3, 4 => 0 }
     h.send(@method, :a).should == true
     h.send(@method, :b).should == true
     h.send(@method, 2).should == false
@@ -13,16 +13,16 @@ describe :hash_key_p, shared: true do
   end
 
   it "returns true if the key's matching value was nil" do
-    new_hash(xyz: nil).send(@method, :xyz).should == true
+    { xyz: nil }.send(@method, :xyz).should == true
   end
 
   it "returns true if the key's matching value was false" do
-    new_hash(xyz: false).send(@method, :xyz).should == true
+    { xyz: false }.send(@method, :xyz).should == true
   end
 
   it "returns true if the key is nil" do
-    new_hash(nil => 'b').send(@method, nil).should == true
-    new_hash(nil => nil).send(@method, nil).should == true
+    { nil => 'b' }.send(@method, nil).should == true
+    { nil => nil }.send(@method, nil).should == true
   end
 
   it "compares keys with the same #hash value via #eql?" do
@@ -33,6 +33,6 @@ describe :hash_key_p, shared: true do
     y.stub!(:hash).and_return(42)
     y.should_receive(:eql?).and_return(false)
 
-    new_hash(x => nil).send(@method, y).should == false
+    { x => nil }.send(@method, y).should == false
   end
 end

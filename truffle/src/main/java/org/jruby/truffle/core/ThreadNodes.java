@@ -182,7 +182,7 @@ public abstract class ThreadNodes {
             getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new SafepointAction() {
                 @Override
                 public void run(DynamicObject thread, Node currentNode) {
-                    final Backtrace backtrace = RubyCallStack.getBacktrace(currentNode);
+                    final Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), currentNode);
                     result[0] = ExceptionNodes.backtraceAsRubyStringArray(getContext(), null, backtrace);
                 }
             });

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 
 @CoreClass(name = "Thread::Backtrace::Location")
@@ -33,6 +34,10 @@ public class ThreadBacktraceLocationNodes {
         @Specialization
         public DynamicObject absolutePath(DynamicObject threadBacktraceLocation) {
             final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
+
+            if (activation.getCallNode() == null) {
+                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED, UTF8Encoding.INSTANCE));
+            }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
@@ -83,6 +88,10 @@ public class ThreadBacktraceLocationNodes {
         @Specialization
         public DynamicObject toS(DynamicObject threadBacktraceLocation) {
             final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
+
+            if (activation.getCallNode() == null) {
+                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED, UTF8Encoding.INSTANCE));
+            }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 

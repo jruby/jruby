@@ -2,17 +2,17 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Hash" do
   it "includes Enumerable" do
-    hash_class.include?(Enumerable).should == true
+    Hash.include?(Enumerable).should == true
   end
 end
 
 describe "Hash#hash" do
   it "returns a value which doesn't depend on the hash order" do
-    new_hash(0=>2, 11=>1).hash.should == new_hash(11=>1, 0=>2).hash
+    { 0=>2, 11=>1 }.hash.should == { 11=>1, 0=>2 }.hash
   end
 
   it "generates a hash for recursive hash structures" do
-    h = new_hash
+    h = {}
     h[:a] = h
     (h.hash == h[:a].hash).should == true
   end

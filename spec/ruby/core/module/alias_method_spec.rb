@@ -38,9 +38,10 @@ describe "Module#alias_method" do
   end
 
   it "fails if origin method not found" do
-    lambda { @class.make_alias :ni, :san }.should raise_error(NameError)
-    # a NameError and not a NoMethodError
-    lambda { @class.make_alias :ni, :san }.should_not raise_error(NoMethodError)
+    lambda { @class.make_alias :ni, :san }.should raise_error(NameError) { |e|
+      # a NameError and not a NoMethodError
+      e.class.should == NameError
+    }
   end
 
   it "raises RuntimeError if frozen" do

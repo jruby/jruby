@@ -3,18 +3,18 @@ describe :hash_equal, shared: true do
     value = mock('x')
     value.should_not_receive(:==)
     value.should_not_receive(:eql?)
-    new_hash(1 => value).send(@method, new_hash(2 => value)).should be_false
+    { 1 => value }.send(@method, { 2 => value }).should be_false
   end
 
   it "returns false when the numbers of keys differ without comparing any elements" do
     obj = mock('x')
-    h = new_hash(obj => obj)
+    h = { obj => obj }
 
     obj.should_not_receive(:==)
     obj.should_not_receive(:eql?)
 
-    new_hash.send(@method, h).should be_false
-    h.send(@method, new_hash).should be_false
+    {}.send(@method, h).should be_false
+    h.send(@method, {}).should be_false
   end
 
   it "first compares keys via hash" do
@@ -23,7 +23,7 @@ describe :hash_equal, shared: true do
     y = mock('y')
     y.should_receive(:hash).and_return(0)
 
-    new_hash(x => 1).send(@method, new_hash(y => 1)).should be_false
+    { x => 1 }.send(@method, { y => 1 }).should be_false
   end
 
   it "does not compare keys with different hash codes via eql?" do
@@ -38,11 +38,11 @@ describe :hash_equal, shared: true do
     def x.hash() 0 end
     def y.hash() 1 end
 
-    new_hash(x => 1).send(@method, new_hash(y => 1)).should be_false
+    { x => 1 }.send(@method, { y => 1 }).should be_false
   end
 
   it "computes equality for recursive hashes" do
-    h = new_hash
+    h = {}
     h[:a] = h
     h.send(@method, h[:a]).should be_true
     (h == h[:a]).should be_true

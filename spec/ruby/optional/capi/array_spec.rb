@@ -216,6 +216,15 @@ describe "C-API Array function" do
     end
   end
 
+  ruby_version_is "2.1" do
+    describe "RARRAY_AREF" do
+      # This macro does NOT do any bounds checking!
+      it "returns an element from the array" do
+        @s.RARRAY_AREF([1, 2, 3], 1).should == 2
+      end
+    end
+  end
+
   describe "rb_assoc_new" do
     it "returns an array containing the two elements" do
       @s.rb_assoc_new(1, 2).should == [1, 2]
