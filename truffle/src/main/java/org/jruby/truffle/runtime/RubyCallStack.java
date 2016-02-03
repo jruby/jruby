@@ -101,9 +101,7 @@ public abstract class RubyCallStack {
                     return new Object();
                 }
 
-                // Multiple top level methods (require) introduce null call nodes - ignore them
-
-                if (frameInstance.getCallNode() != null && depth >= omit) {
+                if (!ignoreFrame(frameInstance) && depth >= omit) {
                     if (!filterNullSourceSection || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
                         activations.add(new Activation(frameInstance.getCallNode(),
                                 frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
@@ -118,6 +116,16 @@ public abstract class RubyCallStack {
         });
 
         return new Backtrace(activations.toArray(new Activation[activations.size()]));
+    }
+
+    private static boolean ignoreFrame(FrameInstance frameInstance) {
+        // Nodes with no call node are top-level - we may have multiple of them due to require
+
+        if (frameInstance.getCallNode() == null) {
+            return true;
+        }
+
+        return false;
     }
 
     public static Node getTopMostUserCallNode() {
