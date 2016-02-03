@@ -61,7 +61,7 @@ end
 
 expected = [
   "/backtraces.rb:85:in `block (5 levels) in <main>'",
-  "/backtraces.rb:77:in `m3'",
+  "/backtraces.rb:77:in `m2'",
   "/backtraces.rb:84:in `block (4 levels) in <main>'",
   "/backtraces.rb:83:in `tap'",
   "/backtraces.rb:83:in `block (3 levels) in <main>'",
@@ -73,7 +73,7 @@ expected = [
   "/backtraces.rb:80:in `<main>'"
 ]
 
-def m3
+def m2
   yield
 end
 
@@ -81,7 +81,7 @@ check(expected) do
   [1].each do |n|
     {a: 1}.each do |k, v|
       true.tap do |t|
-        m3 do
+        m2 do
           raise 'm2-message'
         end
       end
