@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -146,7 +147,7 @@ public class BacktraceFormatter {
                 builder.append("'");
             }
         } else {
-            builder.append("foreign");
+            builder.append(formatForeign(activation.getCallNode()));
         }
 
         if (!flags.contains(FormattingFlags.OMIT_EXCEPTION) && exception != null) {
@@ -227,7 +228,7 @@ public class BacktraceFormatter {
             builder.append(reportedName);
             builder.append("'");
         } else {
-            builder.append("foreign");
+            builder.append(formatForeign(activation.getCallNode()));
         }
 
         return builder.toString();
@@ -268,6 +269,40 @@ public class BacktraceFormatter {
         }
 
         return path.startsWith(SourceLoader.TRUFFLE_SCHEME);
+    }
+
+    private String formatForeign(Node callNode) {
+        final StringBuilder builder = new StringBuilder();
+
+        final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
+
+        if (sourceSection != null) {
+            final String shortDescription = sourceSection.getShortDescription();
+
+            if (shortDescription.trim().equals(":")) {
+                builder.append(getRootOrTopmostNode(callNode).getClass().getSimpleName());
+            } else {
+                builder.append(sourceSection.getShortDescription());
+
+                if (sourceSection.getIdentifier() != null && !sourceSection.getIdentifier().isEmpty()) {
+                    builder.append(":in `");
+                    builder.append(sourceSection.getIdentifier());
+                    builder.append("'");
+                }
+            }
+        } else {
+            builder.append(getRootOrTopmostNode(callNode).getClass().getSimpleName());
+        }
+
+        return builder.toString();
+    }
+
+    private Node getRootOrTopmostNode(Node node) {
+        while (node.getParent() != null) {
+            node = node.getParent();
+        }
+
+        return node;
     }
 
 }
