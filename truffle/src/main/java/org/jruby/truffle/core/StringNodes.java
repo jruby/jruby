@@ -2491,22 +2491,29 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class UpcaseBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+
         public UpcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public DynamicObject upcaseSingleByte(DynamicObject string) {
+        public DynamicObject upcaseSingleByte(DynamicObject string,
+                                              @Cached("createBinaryProfile()") ConditionProfile isEmptyProfile,
+                                              @Cached("createBinaryProfile()") ConditionProfile modifiedProfile) {
             final Rope rope = rope(string);
-            final ByteList bytes = rope.toByteListCopy();
 
-            if (rope.isEmpty()) {
+            if (isEmptyProfile.profile(rope.isEmpty())) {
                 return nil();
             }
 
-            final boolean modified = singleByteUpcase(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-            if (modified) {
-                StringOperations.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
+            final byte[] bytes = rope.getBytesCopy();
+            final boolean modified = singleByteUpcase(bytes, 0, bytes.length);
+
+            if (modifiedProfile.profile(modified)) {
+                final Rope newRope = makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange());
+                StringOperations.setRope(string, newRope);
 
                 return string;
             } else {

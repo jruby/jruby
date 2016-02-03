@@ -74,6 +74,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.language.control.BreakID;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
@@ -1039,7 +1040,7 @@ public class BodyTranslator extends Translator {
 
         // TODO (pitr 01-Dec-2015): remove when RUBY_PLATFORM is set to "truffle"
         if (name.equals("RUBY_PLATFORM") && getSourcePath(sourceSection).contains("test/xml_mini/jdom_engine_test.rb")) {
-            final LiteralNode ret = new LiteralNode(context, sourceSection, StringOperations.createString(context, StringOperations.encodeByteList("truffle", UTF8Encoding.INSTANCE)));
+            final LiteralNode ret = new LiteralNode(context, sourceSection, StringOperations.createString(context, StringOperations.encodeRope("truffle", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT)));
             return addNewlineIfNeeded(node, ret);
         }
 
@@ -2815,9 +2816,8 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSymbolNode(org.jruby.ast.SymbolNode node) {
-        final ByteList byteList = StringOperations.createByteList(node.getName());
-        byteList.setEncoding(node.getEncoding());
-        final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), context.getSymbol(byteList));
+        final Rope rope = StringOperations.createRope(node.getName(), node.getEncoding());
+        final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), context.getSymbol(rope));
         return addNewlineIfNeeded(node, ret);
     }
 

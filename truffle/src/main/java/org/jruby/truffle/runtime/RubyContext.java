@@ -296,7 +296,7 @@ public class RubyContext extends ExecutionContext {
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeByteList(arg.toString(), UTF8Encoding.INSTANCE)));
+            ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeRope(arg.toString(), UTF8Encoding.INSTANCE)));
         }
 
         // Set the load path
@@ -315,7 +315,7 @@ public class RubyContext extends ExecutionContext {
                     pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
                 }
 
-                ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(pathString, UTF8Encoding.INSTANCE)));
+                ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(pathString, UTF8Encoding.INSTANCE)));
             }
         }
 
@@ -336,21 +336,21 @@ public class RubyContext extends ExecutionContext {
         home = home + "/";
 
         // Libraries copied unmodified from MRI
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE)));
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE)));
 
         // Our own implementations
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE)));
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE)));
 
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE)));
+            ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE)));
         }
 
         // Shims
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
     }
 
     // TODO (eregon, 10/10/2015): this check could be done when a Symbol is created to be much cheaper

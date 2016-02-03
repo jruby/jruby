@@ -30,7 +30,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
@@ -185,11 +184,6 @@ public abstract class StringOperations {
     }
 
     @TruffleBoundary
-    public static ByteList encodeByteList(CharSequence value, Encoding encoding) {
-        return RubyString.encodeBytelist(value, encoding);
-    }
-
-    @TruffleBoundary
     public static Rope encodeRope(CharSequence value, Encoding encoding, CodeRange codeRange) {
         // Taken from org.jruby.RubyString#encodeByteList.
 
@@ -212,6 +206,11 @@ public abstract class StringOperations {
 
     public static Rope encodeRope(CharSequence value, Encoding encoding) {
         return encodeRope(value, encoding, CodeRange.CR_UNKNOWN);
+    }
+
+    @TruffleBoundary
+    public static Rope createRope(String s, Encoding encoding) {
+        return RopeOperations.create(ByteList.encode(s, "ISO-8859-1"), encoding, CodeRange.CR_UNKNOWN);
     }
 
     public static ByteList getByteList(DynamicObject object) {

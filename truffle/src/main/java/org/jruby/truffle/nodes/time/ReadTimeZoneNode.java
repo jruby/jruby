@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.StringOperations;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.runtime.rope.Rope;
 
 public class ReadTimeZoneNode extends RubyNode {
     
@@ -33,7 +33,7 @@ public class ReadTimeZoneNode extends RubyNode {
     private final ConditionProfile tzNilProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile tzStringProfile = ConditionProfile.createBinaryProfile();
 
-    private static final ByteList defaultZone = StringOperations.encodeByteList(DateTimeZone.getDefault().toString(), UTF8Encoding.INSTANCE);
+    private static final Rope defaultZone = StringOperations.encodeRope(DateTimeZone.getDefault().toString(), UTF8Encoding.INSTANCE);
     private final DynamicObject TZ;
     
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
@@ -51,7 +51,7 @@ public class ReadTimeZoneNode extends RubyNode {
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tzNilProfile.profile(tz == nil())) {
-            return createString(defaultZone.dup());
+            return createString(defaultZone);
         } else if (tzStringProfile.profile(RubyGuards.isRubyString(tz))) {
             return tz;
         } else {
