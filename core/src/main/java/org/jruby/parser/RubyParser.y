@@ -2519,7 +2519,7 @@ call_op 	: tDOT {
 
 call_op2        : call_op
                 | tCOLON2 {
-                    $$ = tCOLON2;
+                    $$ = "::";
                 }
   
 opt_terms       : /* none */ | terms

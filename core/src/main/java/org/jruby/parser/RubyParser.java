@@ -5303,7 +5303,7 @@ states[629] = new ParserState() {
 };
 states[631] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = tCOLON2;
+                    yyVal = "::";
     return yyVal;
   }
 };
