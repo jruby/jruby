@@ -36,6 +36,7 @@ import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
+import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
@@ -1009,14 +1010,13 @@ public class JVMVisitor extends IRVisitor {
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         emitMethod(method, context);
 
-        Map<Integer, MethodType> signatures = context.getNativeSignatures();
-
-        MethodType signature = signatures.get(-1);
+        MethodType variable = context.getNativeSignature(-1); // always a variable arity handle
+        assert(variable != null);
 
         String defSignature = pushHandlesForDef(
                 context.getJittedName(),
-                signatures,
-                signature,
+                context.getNativeSignaturesExceptVariable(),
+                variable,
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, IRubyObject.class));
 
@@ -1039,13 +1039,13 @@ public class JVMVisitor extends IRVisitor {
         m.loadContext();
 
         emitMethod(method, context);
-        Map<Integer, MethodType> signatures = context.getNativeSignatures();
 
-        MethodType variable = signatures.get(-1); // always a variable arity handle
+        MethodType variable = context.getNativeSignature(-1); // always a variable arity handle
+        assert(variable != null);
 
         String defSignature = pushHandlesForDef(
                 context.getJittedName(),
-                signatures,
+                context.getNativeSignaturesExceptVariable(),
                 variable,
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, DynamicScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, DynamicScope.class, IRubyObject.class));
@@ -1058,22 +1058,20 @@ public class JVMVisitor extends IRVisitor {
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod", defSignature);
     }
 
-    public String pushHandlesForDef(String name, Map<Integer, MethodType> signatures, MethodType variable, String variableOnly, String variableAndSpecific) {
+    private String pushHandlesForDef(String name, IntHashMap<MethodType> signaturesExceptVariable, MethodType variable, String variableOnly, String variableAndSpecific) {
         String defSignature;
 
         jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(variable.returnType(), variable.parameterArray())));
 
-        if (signatures.size() == 1) {
+        if (signaturesExceptVariable.size() == 0) {
             defSignature = variableOnly;
         } else {
             defSignature = variableAndSpecific;
 
-            // FIXME: only supports one arity
-            for (Map.Entry<Integer, MethodType> entry : signatures.entrySet()) {
-                if (entry.getKey() == -1) continue; // variable arity signature pushed above
+            for (IntHashMap.Entry<MethodType> entry : signaturesExceptVariable.entrySet()) {
                 jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(entry.getValue().returnType(), entry.getValue().parameterArray())));
                 jvmAdapter().pushInt(entry.getKey());
-                break;
+                break; // FIXME: only supports one arity
             }
         }
         return defSignature;
