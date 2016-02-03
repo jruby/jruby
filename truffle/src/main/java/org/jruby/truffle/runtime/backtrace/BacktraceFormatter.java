@@ -85,23 +85,27 @@ public class BacktraceFormatter {
     }
 
     public List<String> formatBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
-        try {
-            if (backtrace == null) {
-                backtrace = RubyCallStack.getBacktrace(context, null);
-            }
-            final List<Activation> activations = backtrace.getActivations();
-            final ArrayList<String> lines = new ArrayList<>();
-
-            lines.add(formatInLine(activations, exception));
-
-            for (int n = 1; n < activations.size(); n++) {
-                lines.add(formatFromLine(activations, n));
-            }
-
-            return lines;
-        } catch (Exception e) {
-            return Collections.singletonList(String.format("(exception while constructing backtrace: %s %s)", e.getMessage(), e.getStackTrace()[0].toString()));
+        if (backtrace == null) {
+            backtrace = RubyCallStack.getBacktrace(context, null);
         }
+        final List<Activation> activations = backtrace.getActivations();
+        final ArrayList<String> lines = new ArrayList<>();
+
+        try {
+            lines.add(formatInLine(activations, exception));
+        } catch (Exception e) {
+            lines.add(String.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
+        }
+
+        for (int n = 1; n < activations.size(); n++) {
+            try {
+                lines.add(formatFromLine(activations, n));
+            } catch (Exception e) {
+                lines.add(String.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
+            }
+        }
+
+        return lines;
     }
 
     private String formatInLine(List<Activation> activations, DynamicObject exception) {
