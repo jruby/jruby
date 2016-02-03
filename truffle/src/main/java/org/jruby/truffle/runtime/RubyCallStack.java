@@ -144,6 +144,10 @@ public abstract class RubyCallStack {
             return true;
         }
 
+        if (callNode.getEncapsulatingSourceSection() == null) {
+            return true;
+        }
+
         return false;
     }
 
