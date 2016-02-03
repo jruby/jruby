@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.backtrace;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -237,7 +238,23 @@ public class BacktraceFormatter {
     }
 
     private boolean isCore(SourceSection sourceSection) {
-        return sourceSection == null || sourceSection.getSource() == null || (sourceSection.getSource().getPath() != null && sourceSection.getSource().getPath().startsWith(SourceLoader.TRUFFLE_SCHEME));
+        if (sourceSection == null) {
+            return true;
+        }
+
+        final Source source = sourceSection.getSource();
+
+        if (source == null) {
+            return true;
+        }
+
+        final String path = source.getPath();
+
+        if (path == null) {
+            return true;
+        }
+
+        return path.startsWith(SourceLoader.TRUFFLE_SCHEME);
     }
 
 }
