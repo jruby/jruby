@@ -88,3 +88,49 @@ check(expected) do
     end
   end
 end
+
+js = 'application/javascript'
+
+if defined?(Truffle) && Truffle::Interop.mime_type_supported?(js)
+  def foo(_)
+    raise 'foo-message'
+  end
+
+  Truffle::Interop.export_method :foo
+  Truffle::Interop.eval js, "foo = Interop.import('foo')"
+
+  Truffle::Interop.eval js, "function bar() { foo(); }"
+
+  Truffle::Interop.eval js, "Interop.export('bar', bar)"
+  Truffle::Interop.import_method :bar
+
+  def baz(_)
+    bar(self)
+  end
+
+  Truffle::Interop.export_method :baz
+  Truffle::Interop.eval js, "baz = Interop.import('baz')"
+
+  Truffle::Interop.eval js, "function bob() { baz(); }"
+
+  Truffle::Interop.eval js, "Interop.export('bob', bob)"
+  Truffle::Interop.import_method :bob
+
+  expected = [
+    "/backtraces.rb:96:in `foo'",
+    "(eval):1",
+    "/backtraces.rb:108:in `bar'",
+    "/backtraces.rb:108:in `baz'",
+    "(eval):1",
+    "/backtraces.rb:132:in `bob'",
+    "/backtraces.rb:132:in `block in <main>'",
+    "/backtraces.rb:11:in `check'",
+    "/backtraces.rb:131:in `<main>'"
+  ]
+
+  check(expected) do
+    bob(self)
+  end
+else
+  puts "JavaScript doesn't appear to be available - skipping polylgot backtrace tests"
+end
