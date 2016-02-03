@@ -1461,24 +1461,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @Override
-    public IRubyObject initialize(ThreadContext context) {
-        return initialize19(context);
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        return initialize19(context, arg0);
-    }
-
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    @Override
-    public IRubyObject initialize19(ThreadContext context) {
+    public IRubyObject initialize(ThreadContext context) {
         return this;
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
         replace19(arg0);
         return this;
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0) {
+        return initialize(context, arg0);
     }
 
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
