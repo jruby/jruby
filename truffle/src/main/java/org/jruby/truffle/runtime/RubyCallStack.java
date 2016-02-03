@@ -125,6 +125,14 @@ public abstract class RubyCallStack {
             return true;
         }
 
+        final RootNode rootNode = frameInstance.getCallNode().getRootNode();
+
+        // Ignore the lazy root node
+
+        if (rootNode instanceof LazyRubyRootNode) {
+            return true;
+        }
+
         return false;
     }
 
