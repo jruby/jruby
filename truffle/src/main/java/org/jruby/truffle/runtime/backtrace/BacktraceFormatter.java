@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
@@ -121,27 +122,31 @@ public class BacktraceFormatter {
             return OMITTED_UNUSED;
         }
 
-        final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
-        final SourceSection reportedSourceSection;
-        final String reportedName;
+        if (activation.getCallNode().getRootNode() instanceof RubyRootNode) {
+            final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
+            final SourceSection reportedSourceSection;
+            final String reportedName;
 
-        if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
-            reportedSourceSection = nextUserSourceSection(activations, 1);
-            reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
-        } else {
-            reportedSourceSection = sourceSection;
-            reportedName = reportedSourceSection.getIdentifier();
-        }
+            if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
+                reportedSourceSection = nextUserSourceSection(activations, 1);
+                reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+            } else {
+                reportedSourceSection = sourceSection;
+                reportedName = reportedSourceSection.getIdentifier();
+            }
 
-        if (reportedSourceSection == null || reportedSourceSection.getSource() == null) {
-            builder.append("???");
+            if (reportedSourceSection == null || reportedSourceSection.getSource() == null) {
+                builder.append("???");
+            } else {
+                builder.append(reportedSourceSection.getSource().getName());
+                builder.append(":");
+                builder.append(reportedSourceSection.getStartLine());
+                builder.append(":in `");
+                builder.append(reportedName);
+                builder.append("'");
+            }
         } else {
-            builder.append(reportedSourceSection.getSource().getName());
-            builder.append(":");
-            builder.append(reportedSourceSection.getStartLine());
-            builder.append(":in `");
-            builder.append(reportedName);
-            builder.append("'");
+            builder.append("foreign");
         }
 
         if (!flags.contains(FormattingFlags.OMIT_EXCEPTION) && exception != null) {
@@ -188,38 +193,42 @@ public class BacktraceFormatter {
             return OMITTED_UNUSED;
         }
 
-        final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
-        final SourceSection reportedSourceSection;
-        String reportedName;
-
-        if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
-            reportedSourceSection = nextUserSourceSection(activations, n);
-
-            try {
-                reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
-            } catch (Exception e) {
-                reportedName = "???";
-            }
-        } else {
-            reportedSourceSection = sourceSection;
-            reportedName = sourceSection.getIdentifier();
-        }
-
         final StringBuilder builder = new StringBuilder();
 
-        if (reportedSourceSection == null) {
-            builder.append("???");
-        } else if (reportedSourceSection.getSource() == null) {
-            builder.append(reportedSourceSection.getShortDescription());
-        } else {
-            builder.append(reportedSourceSection.getSource().getName());
-            builder.append(":");
-            builder.append(reportedSourceSection.getStartLine());
-        }
+        if (activation.getCallNode().getRootNode() instanceof RubyRootNode) {
+            final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
+            final SourceSection reportedSourceSection;
+            String reportedName;
 
-        builder.append(":in `");
-        builder.append(reportedName);
-        builder.append("'");
+            if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
+                reportedSourceSection = nextUserSourceSection(activations, n);
+
+                try {
+                    reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+                } catch (Exception e) {
+                    reportedName = "???";
+                }
+            } else {
+                reportedSourceSection = sourceSection;
+                reportedName = sourceSection.getIdentifier();
+            }
+
+            if (reportedSourceSection == null) {
+                builder.append("???");
+            } else if (reportedSourceSection.getSource() == null) {
+                builder.append(reportedSourceSection.getShortDescription());
+            } else {
+                builder.append(reportedSourceSection.getSource().getName());
+                builder.append(":");
+                builder.append(reportedSourceSection.getStartLine());
+            }
+
+            builder.append(":in `");
+            builder.append(reportedName);
+            builder.append("'");
+        } else {
+            builder.append("foreign");
+        }
 
         return builder.toString();
     }
