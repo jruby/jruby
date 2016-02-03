@@ -3019,7 +3019,11 @@ public class BodyTranslator extends Translator {
                 methodParent = methodParent.getParent();
             }
 
-            return "block in " + methodParent.getNamedMethodName();
+            if (environment.getBlockDepth() > 1) {
+                return String.format("block (%d levels) in %s", environment.getBlockDepth(), methodParent.getNamedMethodName());
+            } else {
+                return String.format("block in %s", methodParent.getNamedMethodName());
+            }
         } else {
             return environment.getNamedMethodName();
         }
