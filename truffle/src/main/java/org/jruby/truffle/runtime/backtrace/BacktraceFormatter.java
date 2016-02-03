@@ -96,6 +96,10 @@ public class BacktraceFormatter {
         try {
             lines.add(formatInLine(activations, exception));
         } catch (Exception e) {
+            if (context.getOptions().EXCEPTIONS_PRINT_JAVA) {
+                e.printStackTrace();
+            }
+
             lines.add(String.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
         }
 
@@ -103,6 +107,10 @@ public class BacktraceFormatter {
             try {
                 lines.add(formatFromLine(activations, n));
             } catch (Exception e) {
+                if (context.getOptions().EXCEPTIONS_PRINT_JAVA) {
+                    e.printStackTrace();
+                }
+
                 lines.add(String.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
             }
         }
