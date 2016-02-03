@@ -33,6 +33,7 @@ public class BacktraceFormatter {
     public static final String OMITTED_UNUSED = "(omitted as the rescue expression was pure; use -Xtruffle.backtraces.omit_for_unused=false to disable)";
 
     public enum FormattingFlags {
+        OMIT_EXCEPTION,
         OMIT_FROM_PREFIX,
         INCLUDE_CORE_FILES
     }
@@ -138,7 +139,7 @@ public class BacktraceFormatter {
             builder.append("'");
         }
 
-        if (exception != null) {
+        if (!flags.contains(FormattingFlags.OMIT_EXCEPTION) && exception != null) {
             String message;
             try {
                 Object messageObject = context.send(exception, "message", null);
