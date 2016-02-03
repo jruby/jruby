@@ -16,8 +16,10 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
+import org.jruby.truffle.nodes.LazyRubyRootNode;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.core.CoreSourceSection;
@@ -119,17 +121,25 @@ public abstract class RubyCallStack {
     }
 
     private static boolean ignoreFrame(FrameInstance frameInstance) {
+        final Node callNode = frameInstance.getCallNode();
+
         // Nodes with no call node are top-level - we may have multiple of them due to require
 
-        if (frameInstance.getCallNode() == null) {
+        if (callNode == null) {
             return true;
         }
 
-        final RootNode rootNode = frameInstance.getCallNode().getRootNode();
+        // Ignore the call to run_jruby_root
 
-        // Ignore the lazy root node
+        // TODO CS 2-Feb-16 should find a better way to detect this than a string
 
-        if (rootNode instanceof LazyRubyRootNode) {
+        final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
+
+        if (sourceSection != null && sourceSection.getSource() != null && sourceSection.getSource().getName().equals("run_jruby_root")) {
+            return true;
+        }
+
+        if (callNode.getRootNode() instanceof LazyRubyRootNode) {
             return true;
         }
 
