@@ -185,9 +185,9 @@ public class JITCompiler implements JITCompilerMBean {
     private static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup().in(Ruby.class);
 
     private class FullBuildTask implements Runnable {
-        private final Compilable method;
+        private final Compilable<InterpreterContext> method;
 
-        public FullBuildTask(Compilable method) {
+        FullBuildTask(Compilable<InterpreterContext> method) {
             this.method = method;
         }
 
@@ -487,7 +487,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         private byte[] bytecode;
         private long compileTime;
-        private String name;
+        private final String name;
     }
 
     public static class BlockJITClassGenerator {
@@ -505,8 +505,8 @@ public class JITCompiler implements JITCompilerMBean {
             } else {
                 digestString = key;
             }
-            this.className = packageName + "/" + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
-            this.name = this.className.replaceAll("/", ".");
+            this.className = packageName + '/' + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + '_' + digestString;
+            this.name = this.className.replace('/', '.');
             this.methodName = methodName;
             this.body = body;
             this.visitor = visitor;
@@ -574,7 +574,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         private byte[] bytecode;
         private long compileTime;
-        private String name;
+        private final String name;
     }
 
     static void log(RubyModule implementationClass, String file, int line, String name, String message, String... reason) {
