@@ -105,17 +105,15 @@ public abstract class ArrayAppendManyNode extends RubyNode {
         final int oldSize = Layouts.ARRAY.getSize(array);
         final int newSize = oldSize + otherSize;
 
-        final ArrayMirror newStoreMirror;
-
         if (extendProfile.profile(newSize > storeMirror.getLength())) {
-            newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacity(storeMirror.getLength(), newSize));
+            final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacity(storeMirror.getLength(), newSize));
+            otherStoreMirror.copyTo(newStoreMirror, 0, oldSize, otherSize);
+            Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
+            Layouts.ARRAY.setSize(array, newSize);
         } else {
-            newStoreMirror = storeMirror;
+            otherStoreMirror.copyTo(storeMirror, 0, oldSize, otherSize);
+            Layouts.ARRAY.setSize(array, newSize);
         }
-
-        otherStoreMirror.copyTo(newStoreMirror, 0, oldSize, otherSize);
-        Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
-        Layouts.ARRAY.setSize(array, newSize);
     }
 
     // Append something else into an Object[]
@@ -147,17 +145,16 @@ public abstract class ArrayAppendManyNode extends RubyNode {
         final int newSize = oldSize + otherSize;
 
         final Object[] oldStore = (Object[]) Layouts.ARRAY.getStore(array);
-        final Object[] newStore;
 
         if (extendProfile.profile(newSize > oldStore.length)) {
-            newStore = ArrayUtils.grow(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
+            final Object[] newStore = ArrayUtils.grow(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
+            otherStoreMirror.copyTo(newStore, 0, oldSize, otherSize);
+            Layouts.ARRAY.setStore(array, newStore);
+            Layouts.ARRAY.setSize(array, newSize);
         } else {
-            newStore = oldStore;
+            otherStoreMirror.copyTo(oldStore, 0, oldSize, otherSize);
+            Layouts.ARRAY.setSize(array, newSize);
         }
-
-        otherStoreMirror.copyTo(newStore, 0, oldSize, otherSize);
-        Layouts.ARRAY.setStore(array, newStore);
-        Layouts.ARRAY.setSize(array, newSize);
     }
 
     // Append forcing a generalization from int[] to long[]
