@@ -11,17 +11,14 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.io.ByteArrayOutputStream;
 import java.lang.invoke.MethodHandle;
-
-import org.jruby.runtime.Helpers;
-import org.jruby.util.cli.Options;
 
 public class CompiledIRMethod extends AbstractIRMethod {
     protected final MethodHandle variable;
@@ -88,80 +85,50 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        try {
-            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, name, args, block);
+        if (!hasExplicitCallProtocol) return callNoProtocol(context, self, name, args, block);
 
-            if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
+        if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
-            return (IRubyObject)this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
-        } catch (Throwable t) {
-            Helpers.throwException(t);
-            // not reached
-            return null;
-        }
+        return invokeExact(this.variable, context, staticScope, self, args, block, implementationClass, name);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        try {
-            if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
+        if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
 
-            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, block);
+        if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, block);
 
-            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, block, implementationClass, name);
-        } catch (Throwable t) {
-            Helpers.throwException(t);
-            // not reached
-            return null;
-        }
+        return invokeExact(this.specific, context, staticScope, self, block, implementationClass, name);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        try {
-            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, arg0, block);
+        if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, arg0, block);
 
-            if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
+        if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
 
-            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, block, implementationClass, name);
-        } catch (Throwable t) {
-            Helpers.throwException(t);
-            // not reached
-            return null;
-        }
+        return invokeExact(this.specific, context, staticScope, self, arg0, block, implementationClass, name);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        try {
-            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, arg0, arg1, block);
+        if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, arg0, arg1, block);
 
-            if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
+        if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
 
-            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, block, implementationClass, name);
-        } catch (Throwable t) {
-            Helpers.throwException(t);
-            // not reached
-            return null;
-        }
+        return invokeExact(this.specific, context, staticScope, self, arg0, arg1, block, implementationClass, name);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        try {
-            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, arg0, arg1, arg2, block);
+        if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, arg0, arg1, arg2, block);
 
-            if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, block);
+        if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, block);
 
-            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
-        } catch (Throwable t) {
-            Helpers.throwException(t);
-            // not reached
-            return null;
-        }
+        return invokeExact(this.specific, context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
     }
 
-    private IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) throws Throwable {
+    private IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) {
         StaticScope staticScope = this.staticScope;
         RubyModule implementationClass = this.implementationClass;
         pre(context, staticScope, implementationClass, self, name, block);
@@ -169,13 +136,12 @@ public class CompiledIRMethod extends AbstractIRMethod {
         if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
         try {
-            return (IRubyObject)this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
-        } finally {
-            post(context);
+            return invokeExact(this.variable, context, staticScope, self, args, block, implementationClass, name);
         }
+        finally { post(context); }
     }
 
-    public IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) throws Throwable {
+    public final IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
 
         StaticScope staticScope = this.staticScope;
@@ -183,13 +149,12 @@ public class CompiledIRMethod extends AbstractIRMethod {
         pre(context, staticScope, implementationClass, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, block, implementationClass, name);
-        } finally {
-            post(context);
+            return invokeExact(this.specific, context, staticScope, self, block, implementationClass, name);
         }
+        finally { post(context); }
     }
 
-    public IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) throws Throwable {
+    public final IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         if (specificArity != 1) return call(context, self, clazz, name, Helpers.arrayOf(arg0), block);
 
         StaticScope staticScope = this.staticScope;
@@ -197,13 +162,12 @@ public class CompiledIRMethod extends AbstractIRMethod {
         pre(context, staticScope, implementationClass, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, block, implementationClass, name);
-        } finally {
-            post(context);
+            return invokeExact(this.specific, context, staticScope, self, arg0, block, implementationClass, name);
         }
+        finally { post(context); }
     }
 
-    public IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+    public final IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (specificArity != 2) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1), block);
 
         StaticScope staticScope = this.staticScope;
@@ -211,13 +175,12 @@ public class CompiledIRMethod extends AbstractIRMethod {
         pre(context, staticScope, implementationClass, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, block, implementationClass, name);
-        } finally {
-            post(context);
+            return invokeExact(this.specific, context, staticScope, self, arg0, arg1, block, implementationClass, name);
         }
+        finally { post(context); }
     }
 
-    public IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+    public final IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (specificArity != 3) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1, arg2), block);
 
         StaticScope staticScope = this.staticScope;
@@ -225,10 +188,9 @@ public class CompiledIRMethod extends AbstractIRMethod {
         pre(context, staticScope, implementationClass, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
-        } finally {
-            post(context);
+            return invokeExact(this.specific, context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
         }
+        finally { post(context); }
     }
 
     @Override
@@ -243,4 +205,70 @@ public class CompiledIRMethod extends AbstractIRMethod {
     public int getLine() {
         return method.getLineNumber();
     }
+
+    private static IRubyObject invokeExact(MethodHandle method,
+            ThreadContext context, StaticScope staticScope, IRubyObject self,
+            IRubyObject[] args, Block block,
+            RubyModule implementationClass, String name) {
+        try {
+            return (IRubyObject) method.invokeExact(context, staticScope, self, args, block, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    private static IRubyObject invokeExact(MethodHandle method,
+            ThreadContext context, StaticScope staticScope, IRubyObject self,
+            Block block,
+            RubyModule implementationClass, String name) {
+        try {
+            return (IRubyObject) method.invokeExact(context, staticScope, self, block, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    private static IRubyObject invokeExact(MethodHandle method,
+            ThreadContext context, StaticScope staticScope, IRubyObject self,
+            IRubyObject arg0, Block block,
+            RubyModule implementationClass, String name) {
+        try {
+            return (IRubyObject) method.invokeExact(context, staticScope, self, arg0, block, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    private static IRubyObject invokeExact(MethodHandle method,
+            ThreadContext context, StaticScope staticScope, IRubyObject self,
+            IRubyObject arg0, IRubyObject arg1, Block block,
+            RubyModule implementationClass, String name) {
+        try {
+            return (IRubyObject) method.invokeExact(context, staticScope, self, arg0, arg1, block, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    private static IRubyObject invokeExact(MethodHandle method,
+            ThreadContext context, StaticScope staticScope, IRubyObject self,
+            IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block,
+            RubyModule implementationClass, String name) {
+        try {
+            return (IRubyObject) method.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
 }
