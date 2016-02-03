@@ -226,9 +226,10 @@ public class JVMVisitor extends IRVisitor {
                     !argScope.getSignature().hasKwargs()) {
                 // we have only required arguments...emit a signature appropriate to that arity
                 String[] args = new String[argScope.getSignature().required()];
-                Class[] types = Helpers.arrayOf(Class.class, args.length, IRubyObject.class);
+                Class[] types = new Class[args.length]; // Class...
                 for (int i = 0; i < args.length; i++) {
                     args[i] = "arg" + i;
+                    types[i] = IRubyObject.class;
                 }
                 return METHOD_SIGNATURE_BASE.insertArgs(3, args, types);
             }
@@ -253,14 +254,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void emitMethod(IRMethod method, JVMVisitorMethodContext context) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
 
         emitWithSignatures(method, context, name);
     }
 
     public void emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(method.getFileName());
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
         jvm.pushscript(clsName, method.getFileName());
 
         emitWithSignatures(method, context, name);
@@ -271,7 +272,7 @@ public class JVMVisitor extends IRVisitor {
 
     public void emitBlockJIT(IRClosure closure, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(closure.getFileName());
-        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
         jvm.pushscript(clsName, closure.getFileName());
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, true);

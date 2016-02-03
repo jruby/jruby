@@ -314,7 +314,7 @@ public class JITCompiler implements JITCompilerMBean {
                 }
             } catch (Throwable t) {
                 if (config.isJitLogging()) {
-                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "Could not compile; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + '.' + methodName, "Could not compile; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
                     if (config.isJitLoggingVerbose()) {
                         t.printStackTrace();
                     }
@@ -477,7 +477,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         @Override
         public String toString() {
-            return methodName + "() at " + method.getFile() + ":" + method.getLine();
+            return methodName + "() at " + method.getFile() + ':' + method.getLine();
         }
 
         private final String packageName;
@@ -564,7 +564,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         @Override
         public String toString() {
-            return "{} at " + body.getFile() + ":" + body.getLine();
+            return "{} at " + body.getFile() + ':' + body.getLine();
         }
 
         private final String packageName;
