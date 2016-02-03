@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.control;
 
+import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 
 /**
@@ -17,9 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
  * to throw them. The error messages match MRI. Note that throwing is different to raising in Ruby,
  * which is the reason we have both {@link ThrowException} and {@link RaiseException}.
  */
-public class RaiseException extends RuntimeException {
-
-    // TODO CS 1-Mar-15 shouldn't this be a ControlFlowException?
+public class RaiseException extends ControlFlowException {
 
     private final DynamicObject rubyException;
 

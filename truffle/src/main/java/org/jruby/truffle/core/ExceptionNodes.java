@@ -118,7 +118,7 @@ public abstract class ExceptionNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
-            Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), this, offset);
+            Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), this, offset, exception);
             Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
