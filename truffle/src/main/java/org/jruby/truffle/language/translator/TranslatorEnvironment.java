@@ -36,7 +36,7 @@ public class TranslatorEnvironment {
     private final List<FrameSlot> flipFlopStates = new ArrayList<>();
 
     private final ReturnID returnID;
-    private final boolean isBlock;
+    private final int blockDepth;
     private BreakID breakID;
 
     private final boolean ownScopeForAssignments;
@@ -55,7 +55,7 @@ public class TranslatorEnvironment {
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
             ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-            SharedMethodInfo sharedMethodInfo, String namedMethodName, boolean isBlock, BreakID breakID,
+            SharedMethodInfo sharedMethodInfo, String namedMethodName, int blockDepth, BreakID breakID,
             FrameDescriptor frameDescriptor) {
         this.context = context;
         this.parent = parent;
@@ -66,14 +66,14 @@ public class TranslatorEnvironment {
         this.neverAssignInParentScope = neverAssignInParentScope;
         this.sharedMethodInfo = sharedMethodInfo;
         this.namedMethodName = namedMethodName;
-        this.isBlock = isBlock;
+        this.blockDepth = blockDepth;
         this.breakID = breakID;
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
             ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-            SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock, BreakID breakID) {
-        this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock, breakID,
+            SharedMethodInfo methodIdentifier, String namedMethodName, int blockDepth, BreakID breakID) {
+        this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, blockDepth, breakID,
                 new FrameDescriptor(context.getCoreLibrary().getNilObject()));
     }
 
@@ -107,7 +107,7 @@ public class TranslatorEnvironment {
     }
 
     public FrameSlot declareVarWhereAllowed(String name) {
-        if (isBlock) {
+        if (isBlock()) {
             return parent.declareVarWhereAllowed(name);
         } else {
             return declareVar(name);
@@ -216,7 +216,11 @@ public class TranslatorEnvironment {
     }
 
     public boolean isBlock() {
-        return isBlock;
+        return blockDepth > 0;
+    }
+
+    public int getBlockDepth() {
+        return blockDepth;
     }
 
     public BreakID getBreakID() {
