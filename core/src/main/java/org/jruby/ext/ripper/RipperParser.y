@@ -1791,15 +1791,12 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
 backref         : tNTH_REF
                 | tBACK_REF
 
-superclass      : term {
-                    $$ = null;
-                }
-                | tLT {
+superclass      : tLT {
                    p.setState(LexState.EXPR_BEG);
                 } expr_value term {
                     $$ = $3;
                 }
-                | error term {
+                | /* none */ {
                    $$ = null;
                 }
 

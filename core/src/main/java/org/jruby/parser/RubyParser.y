@@ -2191,16 +2191,13 @@ backref         : tNTH_REF {
                     $$ = $1;
                 }
 
-superclass      : term {
-                    $$ = null;
-                }
-                | tLT {
+superclass      : tLT {
                    lexer.setState(LexState.EXPR_BEG);
                    lexer.commandStart = true;
                 } expr_value term {
                     $$ = $3;
                 }
-                | error term {
+                | /* none */ {
                    $$ = null;
                 }
 
