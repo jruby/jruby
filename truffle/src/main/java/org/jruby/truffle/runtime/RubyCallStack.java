@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.InternalRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.nodes.LazyRubyRootNode;
@@ -139,7 +140,7 @@ public abstract class RubyCallStack {
             return true;
         }
 
-        if (callNode.getRootNode() instanceof LazyRubyRootNode) {
+        if (callNode.getRootNode() instanceof InternalRootNode) {
             return true;
         }
 
