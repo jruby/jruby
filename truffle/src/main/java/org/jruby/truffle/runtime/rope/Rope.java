@@ -60,7 +60,7 @@ public abstract class Rope {
 
     public final ByteList toByteListCopy() { return new ByteList(getBytes(), getEncoding(), true); }
 
-    public abstract int get(int index);
+    protected abstract byte getByteSlow(int index);
 
     public final byte[] getRawBytes() {
         return bytes;
@@ -139,6 +139,14 @@ public abstract class Rope {
         }
 
         return false;
+    }
+
+    public byte get(int index) {
+        if (bytes != null) {
+            return bytes[index];
+        }
+
+        return getByteSlow(index);
     }
 
 }

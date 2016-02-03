@@ -23,8 +23,8 @@ public class SubstringRope extends Rope {
     }
 
     @Override
-    public int get(int index) {
-        return child.get(index + offset);
+    public byte getByteSlow(int index) {
+        return child.getByteSlow(index + offset);
     }
 
     @Override

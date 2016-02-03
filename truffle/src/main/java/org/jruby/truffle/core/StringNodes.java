@@ -68,7 +68,6 @@ import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.*;
-import org.jruby.util.io.EncodingUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -1571,19 +1570,31 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "ord")
+    @ImportStatic(StringGuards.class)
     public abstract static class OrdNode extends CoreMethodArrayArgumentsNode {
 
         public OrdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isEmpty(string)")
+        public int ordEmpty(DynamicObject string) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("empty string", this));
+        }
+
+        // TODO (nirvdrum 03-Feb-16): Is it possible to have a single-byte optimizable string that isn't ASCII-compatible?
+        @Specialization(guards = { "!isEmpty(string)", "isSingleByteOptimizable(string)" })
+        public int ordAsciiOnly(DynamicObject string) {
+            return rope(string).get(0) & 0xff;
+        }
+
+        @Specialization(guards = { "!isEmpty(string)", "!isSingleByteOptimizable(string)" })
         public int ord(DynamicObject string) {
-            final StringCodeRangeableWrapper codeRangeable = StringOperations.getCodeRangeableReadOnly(string);
-            final ByteList bytes = codeRangeable.getByteList();
+            final Rope rope = rope(string);
 
             try {
-                return codePoint(EncodingUtils.STR_ENC_GET(codeRangeable), bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+                return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.realSize());
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
@@ -1594,6 +1605,7 @@ public abstract class StringNodes {
         private int codePoint(Encoding encoding, byte[] bytes, int p, int end) {
             return StringSupport.codePoint(encoding, bytes, p, end);
         }
+
     }
 
     @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameter = 0)
