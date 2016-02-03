@@ -94,17 +94,15 @@ public abstract class ArrayAppendOneNode extends RubyNode {
         final int oldSize = Layouts.ARRAY.getSize(array);
         final int newSize = oldSize + 1;
 
-        final ArrayMirror newStoreMirror;
-
         if (extendProfile.profile(newSize > storeMirror.getLength())) {
-            newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacityForOneMore(storeMirror.getLength()));
+            final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacityForOneMore(storeMirror.getLength()));
+            newStoreMirror.set(oldSize, value);
+            Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
+            Layouts.ARRAY.setSize(array, newSize);
         } else {
-            newStoreMirror = storeMirror;
+            storeMirror.set(oldSize, value);
+            Layouts.ARRAY.setSize(array, newSize);
         }
-
-        newStoreMirror.set(oldSize, value);
-        Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
-        Layouts.ARRAY.setSize(array, newSize);
     }
 
     // Append forcing a generalization from int[] to long[]
