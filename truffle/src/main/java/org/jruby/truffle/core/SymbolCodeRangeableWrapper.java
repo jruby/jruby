@@ -9,13 +9,12 @@
  */
 package org.jruby.truffle.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
-import org.jruby.util.StringSupport;
 
 public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
@@ -32,25 +31,17 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        return Layouts.SYMBOL.getRope(symbol).getCodeRange();
+        return Layouts.SYMBOL.getRope(symbol).getCodeRange().toInt();
     }
 
-    @CompilerDirectives.TruffleBoundary
     @Override
     public int scanForCodeRange() {
-        int cr = Layouts.SYMBOL.getRope(symbol).getCodeRange();
-
-        if (cr == StringSupport.CR_UNKNOWN) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException("The code range should never be unknown");
-        }
-
-        return cr;
+        return Layouts.SYMBOL.getRope(symbol).getCodeRange().toInt();
     }
 
     @Override
     public boolean isCodeRangeValid() {
-        return Layouts.SYMBOL.getRope(symbol).getCodeRange() == StringSupport.CR_VALID;
+        return Layouts.SYMBOL.getRope(symbol).getCodeRange() == CodeRange.CR_VALID;
     }
 
     @Override

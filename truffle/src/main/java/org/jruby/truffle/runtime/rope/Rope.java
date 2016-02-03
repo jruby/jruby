@@ -18,7 +18,7 @@ import java.util.Arrays;
 public abstract class Rope {
 
     private final Encoding encoding;
-    private final int codeRange;
+    private final CodeRange codeRange;
     private final boolean singleByteOptimizable;
     private final int byteLength;
     private final int characterLength;
@@ -27,7 +27,7 @@ public abstract class Rope {
     private byte[] bytes;
     private ByteList unsafeByteList;
 
-    protected Rope(Encoding encoding, int codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
+    protected Rope(Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
         this.encoding = encoding;
         this.codeRange = codeRange;
         this.singleByteOptimizable = singleByteOptimizable;
@@ -84,7 +84,7 @@ public abstract class Rope {
         return encoding;
     }
 
-    public final int getCodeRange() {
+    public final CodeRange getCodeRange() {
         return codeRange;
     }
 

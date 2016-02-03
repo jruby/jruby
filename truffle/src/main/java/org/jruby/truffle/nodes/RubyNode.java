@@ -25,6 +25,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
@@ -169,7 +170,7 @@ public abstract class RubyNode extends Node {
     }
 
     protected DynamicObject create7BitString(CharSequence value, Encoding encoding) {
-        return StringOperations.createString(getContext(), StringOperations.encodeRope(value, encoding, StringSupport.CR_7BIT));
+        return StringOperations.createString(getContext(), StringOperations.encodeRope(value, encoding, CodeRange.CR_7BIT));
     }
 
     protected DynamicObject createString(Rope rope) {

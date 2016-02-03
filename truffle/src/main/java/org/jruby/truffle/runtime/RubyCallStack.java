@@ -15,10 +15,15 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
+import org.jruby.truffle.nodes.LazyRubyRootNode;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.core.CoreSourceSection;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -57,11 +62,22 @@ public abstract class RubyCallStack {
     }
 
     public static Backtrace getBacktrace(RubyContext context, Node currentNode, int omit) {
-        return getBacktrace(context, currentNode, omit, false);
+        return getBacktrace(context, currentNode, omit, null);
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode, final int omit, final boolean filterNullSourceSection) {
+    public static Backtrace getBacktrace(RubyContext context, Node currentNode, int omit, DynamicObject exception) {
+        return getBacktrace(context, currentNode, omit, false, exception);
+    }
+
+    public static Backtrace getBacktrace(RubyContext context, Node currentNode, final int omit, final boolean filterNullSourceSection, DynamicObject exception) {
         CompilerAsserts.neverPartOfCompilation();
+
+        if (exception != null
+                && context.getOptions().BACKTRACES_OMIT_UNUSED
+                && DisablingBacktracesNode.areBacktracesDisabled()
+                && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(exception), context.getCoreLibrary().getStandardErrorClass())) {
+            return new Backtrace(new Activation[]{Activation.OMITTED_UNUSED});
+        }
 
         final int limit = context.getOptions().BACKTRACES_LIMIT;
 
@@ -83,13 +99,11 @@ public abstract class RubyCallStack {
             @Override
             public Object visitFrame(FrameInstance frameInstance) {
                 if (depth > limit) {
-                    activations.add(Activation.OMITTED);
+                    activations.add(Activation.OMITTED_LIMIT);
                     return new Object();
                 }
 
-                // Multiple top level methods (require) introduce null call nodes - ignore them
-
-                if (frameInstance.getCallNode() != null && depth >= omit) {
+                if (!ignoreFrame(frameInstance) && depth >= omit) {
                     if (!filterNullSourceSection || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
                         activations.add(new Activation(frameInstance.getCallNode(),
                                 frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
@@ -104,6 +118,32 @@ public abstract class RubyCallStack {
         });
 
         return new Backtrace(activations.toArray(new Activation[activations.size()]));
+    }
+
+    private static boolean ignoreFrame(FrameInstance frameInstance) {
+        final Node callNode = frameInstance.getCallNode();
+
+        // Nodes with no call node are top-level - we may have multiple of them due to require
+
+        if (callNode == null) {
+            return true;
+        }
+
+        // Ignore the call to run_jruby_root
+
+        // TODO CS 2-Feb-16 should find a better way to detect this than a string
+
+        final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
+
+        if (sourceSection != null && sourceSection.getSource() != null && sourceSection.getSource().getName().equals("run_jruby_root")) {
+            return true;
+        }
+
+        if (callNode.getRootNode() instanceof LazyRubyRootNode) {
+            return true;
+        }
+
+        return false;
     }
 
     public static Node getTopMostUserCallNode() {

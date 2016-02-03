@@ -64,6 +64,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.*;
@@ -520,7 +521,7 @@ public abstract class StringNodes {
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
                     byteList.setEncoding(encoding(string));
-                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(byteList, StringSupport.CR_UNKNOWN), null);
+                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(byteList, CodeRange.CR_UNKNOWN), null);
                 }
 
                 end = StringOperations.normalizeIndex(stringLength, end);
@@ -1768,7 +1769,7 @@ public abstract class StringNodes {
             ByteList outputBytes = dumpCommon(string);
             outputBytes.setEncoding(encoding(string));
 
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, StringSupport.CR_7BIT), null);
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, CodeRange.CR_7BIT), null);
 
             return result;
         }
@@ -1792,7 +1793,7 @@ public abstract class StringNodes {
 
             outputBytes.setEncoding(ASCIIEncoding.INSTANCE);
 
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, StringSupport.CR_7BIT), null);
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, CodeRange.CR_7BIT), null);
 
             return result;
         }
@@ -1845,7 +1846,7 @@ public abstract class StringNodes {
 
             final Rope left = leftMakeSubstringNode.executeMake(rope, 0, normalizedIndex);
             final Rope right = rightMakeSubstringNode.executeMake(rope, normalizedIndex + 1, rope.byteLength() - normalizedIndex - 1);
-            final Rope middle = makeLeafRopeNode.executeMake(new byte[] { (byte) value }, rope.getEncoding(), StringSupport.CR_UNKNOWN);
+            final Rope middle = makeLeafRopeNode.executeMake(new byte[] { (byte) value }, rope.getEncoding(), CodeRange.CR_UNKNOWN);
             final Rope composed = composedMakeConcatNode.executeMake(middleMakeConcatNode.executeMake(left, middle, rope.getEncoding()), right, rope.getEncoding());
 
             StringOperations.setRope(string, composed);
@@ -2199,12 +2200,10 @@ public abstract class StringNodes {
             final int end = p + len;
             int op = len;
             final byte[] reversedBytes = new byte[len];
-            boolean single = true;
 
             while (p < end) {
                 int cl = StringSupport.length(enc, originalBytes, p, end);
                 if (cl > 1 || (originalBytes[p] & 0x80) != 0) {
-                    single = false;
                     op -= cl;
                     System.arraycopy(originalBytes, p, reversedBytes, op, cl);
                     p += cl;
@@ -2213,13 +2212,7 @@ public abstract class StringNodes {
                 }
             }
 
-            // TODO (nirvdrum 09-Jan-16): If we guarantee no strings can have an unknown code range, this check can be removed.
-            int codeRange = rope.getCodeRange();
-            if (codeRange == StringSupport.CR_UNKNOWN) {
-                codeRange = single ? StringSupport.CR_7BIT : StringSupport.CR_VALID;
-            }
-
-            StringOperations.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), codeRange));
+            StringOperations.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), rope.getCodeRange()));
 
             return string;
         }

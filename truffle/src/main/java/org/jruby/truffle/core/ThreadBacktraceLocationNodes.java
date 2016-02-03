@@ -36,7 +36,7 @@ public class ThreadBacktraceLocationNodes {
             final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             if (activation.getCallNode() == null) {
-                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED, UTF8Encoding.INSTANCE));
+                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED_LIMIT, UTF8Encoding.INSTANCE));
             }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -90,7 +90,7 @@ public class ThreadBacktraceLocationNodes {
             final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             if (activation.getCallNode() == null) {
-                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED, UTF8Encoding.INSTANCE));
+                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED_LIMIT, UTF8Encoding.INSTANCE));
             }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();

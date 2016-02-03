@@ -29,28 +29,30 @@ import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+import static org.jruby.truffle.runtime.rope.CodeRange.*;
+
 public class RopeOperations {
 
-    public static final LeafRope EMPTY_ASCII_8BIT_ROPE = create(new byte[] {}, ASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
-    public static final LeafRope EMPTY_US_ASCII_ROPE = create(new byte [] {}, USASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
-    public static final LeafRope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, StringSupport.CR_7BIT);
+    public static final LeafRope EMPTY_ASCII_8BIT_ROPE = create(new byte[] {}, ASCIIEncoding.INSTANCE, CR_7BIT);
+    public static final LeafRope EMPTY_US_ASCII_ROPE = create(new byte [] {}, USASCIIEncoding.INSTANCE, CR_7BIT);
+    public static final LeafRope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, CR_7BIT);
 
-    public static LeafRope create(byte[] bytes, Encoding encoding, int codeRange) {
+    public static LeafRope create(byte[] bytes, Encoding encoding, CodeRange codeRange) {
         int characterLength = -1;
 
-        if (codeRange == StringSupport.CR_UNKNOWN) {
+        if (codeRange == CR_UNKNOWN) {
             final long packedLengthAndCodeRange = calculateCodeRangeAndLength(encoding, bytes, 0, bytes.length);
 
-            codeRange = StringSupport.unpackArg(packedLengthAndCodeRange);
+            codeRange = CodeRange.fromInt(StringSupport.unpackArg(packedLengthAndCodeRange));
             characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
-        } else if (codeRange == StringSupport.CR_VALID) {
+        } else if (codeRange == CR_VALID) {
             characterLength = strLength(encoding, bytes, 0, bytes.length);
         }
 
         switch(codeRange) {
-            case StringSupport.CR_7BIT: return new AsciiOnlyLeafRope(bytes, encoding);
-            case StringSupport.CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
-            case StringSupport.CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
+            case CR_7BIT: return new AsciiOnlyLeafRope(bytes, encoding);
+            case CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
+            case CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: {
                 CompilerDirectives.transferToInterpreter();
                 throw new RuntimeException(String.format("Unknown code range type: %d", codeRange));
@@ -58,7 +60,7 @@ public class RopeOperations {
         }
     }
 
-    public static Rope withEncoding(Rope originalRope, Encoding newEncoding, int newCodeRange) {
+    public static Rope withEncoding(Rope originalRope, Encoding newEncoding, CodeRange newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
         }
@@ -120,7 +122,7 @@ public class RopeOperations {
     @TruffleBoundary
     public static long calculateCodeRangeAndLength(Encoding encoding, byte[] bytes, int start, int end) {
         if (bytes.length == 0) {
-            return StringSupport.pack(0, encoding.isAsciiCompatible() ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
+            return StringSupport.pack(0, encoding.isAsciiCompatible() ? CR_7BIT.toInt() : CR_VALID.toInt());
         } else if (encoding == ASCIIEncoding.INSTANCE) {
             return strLengthWithCodeRangeBinaryString(bytes, start, end);
         } else if (encoding.isAsciiCompatible()) {
@@ -136,16 +138,16 @@ public class RopeOperations {
     }
 
     private static long strLengthWithCodeRangeBinaryString(byte[] bytes, int start, int end) {
-        int codeRange = StringSupport.CR_7BIT;
+        CodeRange codeRange = CR_7BIT;
 
         for (int i = start; i < end; i++) {
             if (bytes[i] < 0) {
-                codeRange = StringSupport.CR_VALID;
+                codeRange = CR_VALID;
                 break;
             }
         }
 
-        return StringSupport.pack(end - start, codeRange);
+        return StringSupport.pack(end - start, codeRange.toInt());
     }
 
     public static LeafRope flatten(Rope rope) {

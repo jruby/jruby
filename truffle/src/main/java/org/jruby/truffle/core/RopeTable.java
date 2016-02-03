@@ -12,9 +12,9 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
-import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -28,7 +28,7 @@ public class RopeTable {
     private final WeakHashMap<Key, WeakReference<Rope>> ropesTable = new WeakHashMap<>();
 
     @CompilerDirectives.TruffleBoundary
-    public Rope getRope(byte[] bytes, Encoding encoding, int codeRange) {
+    public Rope getRope(byte[] bytes, Encoding encoding, CodeRange codeRange) {
         final Key key = new Key(bytes, encoding);
 
         lock.readLock().lock();
@@ -100,7 +100,7 @@ public class RopeTable {
 
         @Override
         public String toString() {
-            return RopeOperations.create(bytes, encoding, StringSupport.CR_UNKNOWN).toString();
+            return RopeOperations.create(bytes, encoding, CodeRange.CR_UNKNOWN).toString();
         }
 
     }

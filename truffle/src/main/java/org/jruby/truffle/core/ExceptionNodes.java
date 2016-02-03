@@ -14,6 +14,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
@@ -31,7 +33,7 @@ public abstract class ExceptionNodes {
 
     @TruffleBoundary
     public static DynamicObject backtraceAsRubyStringArray(RubyContext context, DynamicObject exception, Backtrace backtrace) {
-        final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX))
+        final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX, BacktraceFormatter.FormattingFlags.OMIT_EXCEPTION))
                 .formatBacktrace(context, exception, backtrace);
 
         final Object[] array = new Object[lines.size()];
@@ -113,9 +115,10 @@ public abstract class ExceptionNodes {
             return captureBacktrace(exception, 1);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
-            Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), this, offset);
+            Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), this, offset, exception);
             Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
@@ -145,13 +148,16 @@ public abstract class ExceptionNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createRubyException(rubyClass);
+            return allocateObjectNode.allocate(rubyClass, null, null);
         }
 
     }

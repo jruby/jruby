@@ -14,8 +14,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.util.StringSupport;
 
 public class StringGuards {
 
@@ -26,7 +26,7 @@ public class StringGuards {
 
     public static boolean is7Bit(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringOperations.getCodeRange(string) == StringSupport.CR_7BIT;
+        return StringOperations.getCodeRange(string) == CodeRange.CR_7BIT;
     }
 
     public static boolean isAsciiCompatible(DynamicObject string) {
@@ -49,7 +49,7 @@ public class StringGuards {
         assert RubyGuards.isRubyString(string);
         final Rope rope = StringOperations.rope(string);
 
-        return (rope.getCodeRange() == StringSupport.CR_VALID) || (rope.getCodeRange() == StringSupport.CR_7BIT);
+        return (rope.getCodeRange() == CodeRange.CR_VALID) || (rope.getCodeRange() == CodeRange.CR_7BIT);
     }
 
     public static boolean isFixedWidthEncoding(DynamicObject string) {
@@ -69,6 +69,6 @@ public class StringGuards {
 
     public static boolean isBrokenCodeRange(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringOperations.codeRange(string) == StringSupport.CR_BROKEN;
+        return StringOperations.codeRange(string) == CodeRange.CR_BROKEN;
     }
 }

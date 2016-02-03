@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.backtrace;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -29,9 +30,11 @@ import java.util.List;
 
 public class BacktraceFormatter {
 
-    public static final String OMITTED = "(omitted due to -Xtruffle.backtraces.limit)";
+    public static final String OMITTED_LIMIT = "(omitted due to -Xtruffle.backtraces.limit)";
+    public static final String OMITTED_UNUSED = "(omitted as the rescue expression was pure; use -Xtruffle.backtraces.omit_for_unused=false to disable)";
 
     public enum FormattingFlags {
+        OMIT_EXCEPTION,
         OMIT_FROM_PREFIX,
         INCLUDE_CORE_FILES
     }
@@ -106,8 +109,12 @@ public class BacktraceFormatter {
 
         final Activation activation = activations.get(0);
 
-        if (activation == Activation.OMITTED) {
-            return "(omitted due to -Xtruffle.backtraces.limit)";
+        if (activation == Activation.OMITTED_LIMIT) {
+            return OMITTED_LIMIT;
+        }
+
+        if (activation == Activation.OMITTED_UNUSED) {
+            return OMITTED_UNUSED;
         }
 
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -133,7 +140,7 @@ public class BacktraceFormatter {
             builder.append("'");
         }
 
-        if (exception != null) {
+        if (!flags.contains(FormattingFlags.OMIT_EXCEPTION) && exception != null) {
             String message;
             try {
                 Object messageObject = context.send(exception, "message", null);
@@ -169,8 +176,12 @@ public class BacktraceFormatter {
     public String formatLine(List<Activation> activations, int n) {
         final Activation activation = activations.get(n);
 
-        if (activation == Activation.OMITTED) {
-            return OMITTED;
+        if (activation == Activation.OMITTED_LIMIT) {
+            return OMITTED_LIMIT;
+        }
+
+        if (activation == Activation.OMITTED_UNUSED) {
+            return OMITTED_UNUSED;
         }
 
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -227,7 +238,23 @@ public class BacktraceFormatter {
     }
 
     private boolean isCore(SourceSection sourceSection) {
-        return sourceSection == null || sourceSection.getSource() == null || (sourceSection.getSource().getPath() != null && sourceSection.getSource().getPath().startsWith(SourceLoader.TRUFFLE_SCHEME));
+        if (sourceSection == null) {
+            return true;
+        }
+
+        final Source source = sourceSection.getSource();
+
+        if (source == null) {
+            return true;
+        }
+
+        final String path = source.getPath();
+
+        if (path == null) {
+            return true;
+        }
+
+        return path.startsWith(SourceLoader.TRUFFLE_SCHEME);
     }
 
 }

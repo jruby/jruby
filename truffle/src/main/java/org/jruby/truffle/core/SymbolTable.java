@@ -14,10 +14,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ public class SymbolTable {
 
     @CompilerDirectives.TruffleBoundary
     public DynamicObject getSymbol(String string) {
-        return getSymbol(RopeOperations.create(ByteList.encode(string, "ISO-8859-1"), USASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN));
+        return getSymbol(RopeOperations.create(ByteList.encode(string, "ISO-8859-1"), USASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN));
     }
 
     @CompilerDirectives.TruffleBoundary

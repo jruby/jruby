@@ -20,8 +20,8 @@ import org.jruby.truffle.core.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 
@@ -171,12 +171,12 @@ public abstract class PackNode extends Node {
         setStringLength(frame, getStringLength(frame) + additionalLength);
     }
 
-    protected void setStringCodeRange(VirtualFrame frame, int codeRange) {
+    protected void setStringCodeRange(VirtualFrame frame, CodeRange codeRange) {
         try {
             final int existingCodeRange = frame.getInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT);
 
-            if (codeRange > existingCodeRange) {
-                frame.setInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT, codeRange);
+            if (codeRange.toInt() > existingCodeRange) {
+                frame.setInt(PackFrameDescriptor.STRING_CODE_RANGE_SLOT, codeRange.toInt());
             }
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
@@ -198,7 +198,7 @@ public abstract class PackNode extends Node {
         final int outputPosition = getOutputPosition(frame);
         output[outputPosition] = value;
         setOutputPosition(frame, outputPosition + 1);
-        setStringCodeRange(frame, value >= 0 ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
+        setStringCodeRange(frame, value >= 0 ? CodeRange.CR_7BIT : CodeRange.CR_VALID);
         increaseStringLength(frame, 1);
     }
 

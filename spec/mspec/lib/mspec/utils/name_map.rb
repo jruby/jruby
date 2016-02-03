@@ -110,7 +110,7 @@ class NameMap
       ms.map! { |x| x.to_s }
       hash["#{name}#"] = ms.sort unless ms.empty?
 
-      map hash, m.constants, name
+      map hash, m.constants(false), name
     end
 
     hash

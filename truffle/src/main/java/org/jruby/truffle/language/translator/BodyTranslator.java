@@ -20,6 +20,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
+import org.jruby.ast.SideEffectFree;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
@@ -28,6 +29,7 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.language.control.*;
+import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
@@ -839,7 +841,7 @@ public class BodyTranslator extends Translator {
             }
 
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
-                    returnId, true, true, sharedMethodInfo, name, false, null);
+                    returnId, true, true, sharedMethodInfo, name, 0, null);
 
             final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, false);
 
@@ -1209,7 +1211,7 @@ public class BodyTranslator extends Translator {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), arity, methodName, false, argumentDescriptors, false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, false, null);
+                context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, 0, null);
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
@@ -1840,7 +1842,7 @@ public class BodyTranslator extends Translator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, parseEnvironment, returnID, hasOwnScope, false,
-                sharedMethodInfo, namedMethodName, true, parseEnvironment.allocateBreakID());
+                sharedMethodInfo, namedMethodName, environment.getBlockDepth() + 1, parseEnvironment.allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
 
         if (isProc) {
@@ -2667,59 +2669,78 @@ public class BodyTranslator extends Translator {
 
         org.jruby.ast.RescueBodyNode rescueBody = node.getRescueNode();
 
-        while (rescueBody != null) {
-            if (rescueBody.getExceptionNodes() != null) {
-                if (rescueBody.getExceptionNodes() instanceof org.jruby.ast.ArrayNode) {
-                    final org.jruby.ast.Node[] exceptionNodes = ((org.jruby.ast.ArrayNode) rescueBody.getExceptionNodes()).children();
+        if (context.getOptions().BACKTRACES_OMIT_UNUSED
+                && rescueBody != null
+                && rescueBody.getExceptionNodes() == null
+                && rescueBody.getBodyNode() instanceof SideEffectFree
+                && rescueBody.getOptRescueNode() == null) {
+            tryPart = new DisablingBacktracesNode(context, sourceSection, tryPart);
 
-                    final RubyNode[] handlingClasses = new RubyNode[exceptionNodes.length];
+            RubyNode bodyNode;
 
-                    for (int n = 0; n < handlingClasses.length; n++) {
-                        handlingClasses[n] = exceptionNodes[n].accept(this);
-                    }
-
-                    RubyNode translatedBody;
-
-                    if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                        translatedBody = nilNode(sourceSection);
-                    } else {
-                        translatedBody = rescueBody.getBodyNode().accept(this);
-                    }
-
-                    final RescueClassesNode rescueNode = new RescueClassesNode(context, sourceSection, handlingClasses, translatedBody);
-                    rescueNodes.add(rescueNode);
-                } else if (rescueBody.getExceptionNodes() instanceof org.jruby.ast.SplatNode) {
-                    final org.jruby.ast.SplatNode splat = (org.jruby.ast.SplatNode) rescueBody.getExceptionNodes();
-
-                    final RubyNode splatTranslated = translateNodeOrNil(sourceSection, splat.getValue());
-
-                    RubyNode bodyTranslated;
-
-                    if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                        bodyTranslated = nilNode(sourceSection);
-                    } else {
-                        bodyTranslated = rescueBody.getBodyNode().accept(this);
-                    }
-
-                    final RescueSplatNode rescueNode = new RescueSplatNode(context, sourceSection, splatTranslated, bodyTranslated);
-                    rescueNodes.add(rescueNode);
-                } else {
-                    unimplemented(node);
-                }
+            if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+                bodyNode = nilNode(sourceSection);
             } else {
-                RubyNode bodyNode;
-
-                if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                    bodyNode = nilNode(sourceSection);
-                } else {
-                    bodyNode = rescueBody.getBodyNode().accept(this);
-                }
-
-                final RescueAnyNode rescueNode = new RescueAnyNode(context, sourceSection, bodyNode);
-                rescueNodes.add(rescueNode);
+                bodyNode = rescueBody.getBodyNode().accept(this);
             }
 
-            rescueBody = rescueBody.getOptRescueNode();
+            final RescueAnyNode rescueNode = new RescueAnyNode(context, sourceSection, bodyNode);
+            rescueNodes.add(rescueNode);
+        } else {
+            while (rescueBody != null) {
+                if (rescueBody.getExceptionNodes() != null) {
+                    if (rescueBody.getExceptionNodes() instanceof org.jruby.ast.ArrayNode) {
+                        final org.jruby.ast.Node[] exceptionNodes = ((org.jruby.ast.ArrayNode) rescueBody.getExceptionNodes()).children();
+
+                        final RubyNode[] handlingClasses = new RubyNode[exceptionNodes.length];
+
+                        for (int n = 0; n < handlingClasses.length; n++) {
+                            handlingClasses[n] = exceptionNodes[n].accept(this);
+                        }
+
+                        RubyNode translatedBody;
+
+                        if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+                            translatedBody = nilNode(sourceSection);
+                        } else {
+                            translatedBody = rescueBody.getBodyNode().accept(this);
+                        }
+
+                        final RescueClassesNode rescueNode = new RescueClassesNode(context, sourceSection, handlingClasses, translatedBody);
+                        rescueNodes.add(rescueNode);
+                    } else if (rescueBody.getExceptionNodes() instanceof org.jruby.ast.SplatNode) {
+                        final org.jruby.ast.SplatNode splat = (org.jruby.ast.SplatNode) rescueBody.getExceptionNodes();
+
+                        final RubyNode splatTranslated = translateNodeOrNil(sourceSection, splat.getValue());
+
+                        RubyNode bodyTranslated;
+
+                        if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+                            bodyTranslated = nilNode(sourceSection);
+                        } else {
+                            bodyTranslated = rescueBody.getBodyNode().accept(this);
+                        }
+
+                        final RescueSplatNode rescueNode = new RescueSplatNode(context, sourceSection, splatTranslated, bodyTranslated);
+                        rescueNodes.add(rescueNode);
+                    } else {
+                        unimplemented(node);
+                    }
+                } else {
+                    RubyNode bodyNode;
+
+                    if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+                        bodyNode = nilNode(sourceSection);
+                    } else {
+                        bodyNode = rescueBody.getBodyNode().accept(this);
+                    }
+
+                    final RescueAnyNode rescueNode = new RescueAnyNode(context, sourceSection, bodyNode);
+                    rescueNodes.add(rescueNode);
+                }
+
+                rescueBody = rescueBody.getOptRescueNode();
+            }
         }
 
         RubyNode elsePart;
@@ -2998,7 +3019,11 @@ public class BodyTranslator extends Translator {
                 methodParent = methodParent.getParent();
             }
 
-            return "block in " + methodParent.getNamedMethodName();
+            if (environment.getBlockDepth() > 1) {
+                return String.format("block (%d levels) in %s", environment.getBlockDepth(), methodParent.getNamedMethodName());
+            } else {
+                return String.format("block in %s", methodParent.getNamedMethodName());
+            }
         } else {
             return environment.getNamedMethodName();
         }

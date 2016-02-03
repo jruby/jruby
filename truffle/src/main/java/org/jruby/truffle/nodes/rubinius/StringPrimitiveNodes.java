@@ -85,6 +85,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.EncodingOperations;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
@@ -562,11 +563,11 @@ public abstract class StringPrimitiveNodes {
                 return true;
             }
 
-            final int firstCodeRange = firstRope.getCodeRange();
-            final int secondCodeRange = secondRope.getCodeRange();
+            final CodeRange firstCodeRange = firstRope.getCodeRange();
+            final CodeRange secondCodeRange = secondRope.getCodeRange();
 
-            if (firstStringCR7BitProfile.profile(firstCodeRange == StringSupport.CR_7BIT)) {
-                if (secondStringCR7BitProfile.profile(secondCodeRange == StringSupport.CR_7BIT)) {
+            if (firstStringCR7BitProfile.profile(firstCodeRange == CodeRange.CR_7BIT)) {
+                if (secondStringCR7BitProfile.profile(secondCodeRange == CodeRange.CR_7BIT)) {
                     return true;
                 }
 
@@ -575,7 +576,7 @@ public abstract class StringPrimitiveNodes {
                 }
             }
 
-            if (secondStringCR7BitProfile.profile(secondCodeRange == StringSupport.CR_7BIT)) {
+            if (secondStringCR7BitProfile.profile(secondCodeRange == CodeRange.CR_7BIT)) {
                 if (firstStringAsciiCompatible.profile(firstRope.getEncoding().isAsciiCompatible())) {
                     return true;
                 }
@@ -1023,7 +1024,7 @@ public abstract class StringPrimitiveNodes {
 
             if (emptyPatternProfile.profile(patternRope.isEmpty())) return offset;
 
-            if (brokenCodeRangeProfile.profile(stringRope.getCodeRange() == StringSupport.CR_BROKEN)) {
+            if (brokenCodeRangeProfile.profile(stringRope.getCodeRange() == CodeRange.CR_BROKEN)) {
                 return nil();
             }
 
@@ -1255,14 +1256,14 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = "value == 0")
         public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
             ByteList bytes = new ByteList(new byte[size]);
-            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(bytes, StringSupport.CR_UNKNOWN), null);
+            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(bytes, CodeRange.CR_UNKNOWN), null);
         }
 
         @Specialization(guards = "value != 0")
         public DynamicObject stringPattern(DynamicObject stringClass, int size, int value) {
             final byte[] bytes = new byte[size];
             Arrays.fill(bytes, (byte) value);
-            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(new ByteList(bytes), StringSupport.CR_UNKNOWN), null);
+            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(new ByteList(bytes), CodeRange.CR_UNKNOWN), null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -1278,7 +1279,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             // TODO (nirvdrum 21-Jan-16): Verify the encoding and code range are correct.
-            return allocateObjectNode.allocate(stringClass, makeLeafRopeNode.executeMake(bytes, encoding(string), StringSupport.CR_UNKNOWN), null);
+            return allocateObjectNode.allocate(stringClass, makeLeafRopeNode.executeMake(bytes, encoding(string), CodeRange.CR_UNKNOWN), null);
         }
 
     }
