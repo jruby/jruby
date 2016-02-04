@@ -20,13 +20,13 @@ import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
-import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
-import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
-import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.language.objects.ObjectIDOperations;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Object} class.

@@ -57,7 +57,7 @@ import org.jruby.truffle.runtime.loader.FeatureLoader;
 import org.jruby.truffle.runtime.loader.SourceCache;
 import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.platform.darwin.CrtExterns;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.platform.RubiniusConfiguration;

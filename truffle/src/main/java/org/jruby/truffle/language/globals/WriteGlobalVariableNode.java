@@ -14,8 +14,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
-import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class WriteGlobalVariableNode extends RubyNode {
