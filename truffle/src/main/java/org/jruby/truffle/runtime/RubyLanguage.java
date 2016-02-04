@@ -25,7 +25,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.truffle.nodes.LazyRubyRootNode;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
+import org.jruby.truffle.instrument.RubyWrapperNode;
 
 import java.io.IOException;
 

@@ -42,7 +42,7 @@ import org.jruby.truffle.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.core.SetTopLevelBindingNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
-import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
+import org.jruby.truffle.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.language.control.RaiseException;
