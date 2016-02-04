@@ -22,7 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.rubinius.TimePrimitiveNodes;
-import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
+import org.jruby.truffle.core.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
