@@ -35,7 +35,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.language.arguments.IsRubiniusUndefinedNode;
-import org.jruby.truffle.nodes.cast.*;
+import org.jruby.truffle.core.cast.*;
 import org.jruby.truffle.nodes.coerce.ToProcNodeGen;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.language.constants.ReadLiteralConstantNode;

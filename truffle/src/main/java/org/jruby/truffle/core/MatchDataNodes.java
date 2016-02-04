@@ -21,7 +21,7 @@ import org.joni.Region;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.TaintResultNode;
+import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;

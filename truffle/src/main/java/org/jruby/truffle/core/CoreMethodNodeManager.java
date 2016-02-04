@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.language.arguments.*;
-import org.jruby.truffle.nodes.cast.TaintResultNode;
+import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;

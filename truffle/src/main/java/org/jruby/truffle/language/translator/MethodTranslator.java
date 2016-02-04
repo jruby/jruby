@@ -24,7 +24,7 @@ import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.language.arguments.*;
-import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
+import org.jruby.truffle.core.cast.ArrayCastNodeGen;
 import org.jruby.truffle.language.control.AndNode;
 import org.jruby.truffle.language.control.IfNode;
 import org.jruby.truffle.core.ProcNodes.Type;

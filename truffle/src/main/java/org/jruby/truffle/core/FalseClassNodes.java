@@ -13,7 +13,7 @@ import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
+import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 
 @CoreClass(name = "FalseClass")

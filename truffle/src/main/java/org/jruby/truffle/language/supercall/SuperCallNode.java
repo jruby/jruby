@@ -11,8 +11,8 @@ package org.jruby.truffle.language.supercall;
 
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
+import org.jruby.truffle.core.cast.ProcOrNullNode;
+import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.CallMethodNode;

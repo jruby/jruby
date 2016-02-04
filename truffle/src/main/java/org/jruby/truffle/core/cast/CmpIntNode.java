@@ -18,7 +18,7 @@
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
  */
 
-package org.jruby.truffle.nodes.cast;
+package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;

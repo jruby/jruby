@@ -12,8 +12,8 @@ package org.jruby.truffle.language.dispatch;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
+import org.jruby.truffle.core.cast.BooleanCastNode;
+import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 

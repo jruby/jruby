@@ -20,7 +20,7 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
+import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
