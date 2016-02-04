@@ -1297,33 +1297,34 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "syswrite", required = 1)
     public IRubyObject syswrite(ThreadContext context, IRubyObject obj) {
-       Ruby runtime = context.runtime;
+       final Ruby runtime = context.runtime;
 
-        try {
-            RubyString string = obj.asString();
-            OpenFile myOpenFile = getOpenFileChecked();
+       try {
+           final OpenFile openFile = getOpenFileChecked();
 
-            myOpenFile.checkWritable(runtime);
+            openFile.checkWritable(runtime);
 
-            Stream writeStream = myOpenFile.getWriteStream();
+            Stream writeStream = openFile.getWriteStream();
 
-            if (myOpenFile.isWriteBuffered()) {
+            if (writeStream.writeDataBuffered()) {
                 runtime.getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "syswrite for buffered IO");
             }
 
             if (!writeStream.getDescriptor().isWritable()) {
-                myOpenFile.checkClosed(runtime);
+                openFile.checkClosed(runtime);
             }
 
-            context.getThread().beforeBlockingCall();
-            int read = writeStream.getDescriptor().write(string.getByteList());
+            RubyString string = obj.asString();
 
-            if (read == -1) {
+            context.getThread().beforeBlockingCall();
+            int bytesWritten = writeStream.getDescriptor().write(string.getByteList());
+
+            if (bytesWritten == -1) {
                 // TODO? I think this ends up propagating from normal Java exceptions
                 // sys_fail(openFile.getPath())
             }
 
-            return runtime.newFixnum(read);
+            return runtime.newFixnum(bytesWritten);
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
         } catch (BadDescriptorException e) {
@@ -1347,19 +1348,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public IRubyObject doWriteNonblock(ThreadContext context, IRubyObject obj, boolean useException) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
         OpenFile myOpenFile = getOpenFileChecked();
 
         try {
-            myOpenFile.checkWritable(context.runtime);
+            myOpenFile.checkWritable(runtime);
             RubyString str = obj.asString();
             if (str.getByteList().length() == 0) {
-                return context.runtime.newFixnum(0);
+                return runtime.newFixnum(0);
             }
 
             if (myOpenFile.isWriteBuffered()) {
-                context.runtime.getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "write_nonblock for buffered IO");
+                runtime.getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "write_nonblock for buffered IO");
             }
 
             ChannelStream stream = (ChannelStream)myOpenFile.getWriteStream();
@@ -1838,20 +1839,20 @@ public class RubyIO extends RubyObject implements IOEncodable {
             whence = RubyNumeric.fix2int(args[1].convertToInteger());
         }
 
-        OpenFile myOpenFile = getOpenFileChecked();
+        final OpenFile openFile = getOpenFileChecked();
 
         try {
 
-            if (myOpenFile.isReadable() && myOpenFile.isReadBuffered()) {
+            if (openFile.isReadable() && openFile.isReadBuffered()) {
                 throw context.runtime.newIOError("sysseek for buffered IO");
             }
-            if (myOpenFile.isWritable() && myOpenFile.isWriteBuffered()) {
+            if (openFile.isWritable() && openFile.isWriteBuffered()) {
                 context.runtime.getWarnings().warn(ID.SYSSEEK_BUFFERED_IO, "sysseek for buffered IO");
             }
 
-            pos = myOpenFile.getMainStreamSafe().getDescriptor().lseek(offset, whence);
+            pos = openFile.getMainStreamSafe().getDescriptor().lseek(offset, whence);
 
-            myOpenFile.getMainStreamSafe().clearerr();
+            openFile.getMainStreamSafe().clearerr();
         } catch (BadDescriptorException ex) {
             throw context.runtime.newErrnoEBADFError();
         } catch (InvalidValueException e) {
@@ -2957,19 +2958,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "sysread", required = 1, optional = 1)
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
-        int len = (int)RubyNumeric.num2long(args[0]);
-        if (len < 0) throw getRuntime().newArgumentError("Negative size");
+        final Ruby runtime = context.runtime;
+
+        final int len = (int) RubyNumeric.num2long(args[0]);
+        if (len < 0) throw runtime.newArgumentError("Negative size");
 
         try {
             RubyString str;
             ByteList buffer;
             if (args.length == 1 || args[1].isNil()) {
                 if (len == 0) {
-                    return RubyString.newEmptyString(getRuntime());
+                    return RubyString.newEmptyString(runtime);
                 }
 
                 buffer = new ByteList(len);
-                str = RubyString.newString(getRuntime(), buffer);
+                str = RubyString.newString(runtime, buffer);
             } else {
                 str = args[1].convertToString();
                 str.modify(len);
@@ -2982,39 +2985,41 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 buffer.length(0);
             }
 
-            OpenFile myOpenFile = getOpenFileChecked();
+            final OpenFile openFile = getOpenFileChecked();
 
-            myOpenFile.checkReadable(getRuntime());
+            openFile.checkReadable(runtime);
 
-            if (myOpenFile.getMainStreamSafe().readDataBuffered()) {
+            Stream readStream = openFile.getMainStreamSafe();
+
+            if (readStream.readDataBuffered()) {
                 throw getRuntime().newIOError("sysread for buffered IO");
             }
 
             // TODO: Ruby locks the string here
 
-            waitReadable(myOpenFile.getMainStreamSafe());
-            myOpenFile.checkClosed(getRuntime());
+            waitReadable(readStream);
+            openFile.checkClosed(runtime);
 
             // We don't check RubyString modification since JRuby doesn't have
             // GIL. Other threads are free to change anytime.
 
-            int bytesRead = myOpenFile.getMainStreamSafe().getDescriptor().read(len, str.getByteList());
+            int bytesRead = readStream.getDescriptor().read(len, str.getByteList());
 
             // TODO: Ruby unlocks the string here
 
             if (bytesRead == -1 || (bytesRead == 0 && len > 0)) {
-                throw getRuntime().newEOFError();
+                throw runtime.newEOFError();
             }
 
             str.setTaint(true);
 
             return str;
         } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
+            throw runtime.newErrnoEBADFError();
         } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
+            throw runtime.newErrnoEINVALError();
         } catch (EOFException e) {
-            throw getRuntime().newEOFError();
+            throw runtime.newEOFError();
     	} catch (IOException e) {
             synthesizeSystemCallError(e);
             return null;
