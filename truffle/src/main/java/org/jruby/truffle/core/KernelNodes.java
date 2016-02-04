@@ -52,7 +52,7 @@ import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.methods.LookupMethodNode;
 import org.jruby.truffle.language.methods.LookupMethodNodeGen;
-import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.language.objects.*;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;

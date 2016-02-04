@@ -13,8 +13,8 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.objects.IsFrozenNode;
-import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
+import org.jruby.truffle.language.objects.IsFrozenNode;
+import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 

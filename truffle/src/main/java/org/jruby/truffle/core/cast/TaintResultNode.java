@@ -18,10 +18,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.objects.IsTaintedNode;
-import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
-import org.jruby.truffle.nodes.objects.TaintNode;
-import org.jruby.truffle.nodes.objects.TaintNodeGen;
+import org.jruby.truffle.language.objects.IsTaintedNode;
+import org.jruby.truffle.language.objects.IsTaintedNodeGen;
+import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 

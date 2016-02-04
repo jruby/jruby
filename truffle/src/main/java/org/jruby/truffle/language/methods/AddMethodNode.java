@@ -11,8 +11,8 @@ package org.jruby.truffle.language.methods;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.objects.SingletonClassNode;
-import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
+import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;

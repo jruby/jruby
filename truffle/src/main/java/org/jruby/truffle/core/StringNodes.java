@@ -56,7 +56,7 @@ import org.jruby.truffle.core.array.ArrayCoreMethodNode;
 import org.jruby.truffle.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.language.objects.*;
 import org.jruby.truffle.core.rubinius.ByteArrayNodes;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;

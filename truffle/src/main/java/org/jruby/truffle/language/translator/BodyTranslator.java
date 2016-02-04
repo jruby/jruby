@@ -59,7 +59,7 @@ import org.jruby.truffle.language.globals.*;
 import org.jruby.truffle.language.literal.*;
 import org.jruby.truffle.language.locals.*;
 import org.jruby.truffle.language.methods.*;
-import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.language.objects.*;
 import org.jruby.truffle.core.rubinius.*;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.runtime.ConstantReplacer;

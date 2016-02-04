@@ -18,7 +18,7 @@ import com.oracle.truffle.api.nodes.NodeVisitor;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.objects.OpenModuleNode;
+import org.jruby.truffle.language.objects.OpenModuleNode;
 import org.jruby.truffle.runtime.RubyLanguage;
 import org.jruby.truffle.runtime.RubySyntaxTag;
 
