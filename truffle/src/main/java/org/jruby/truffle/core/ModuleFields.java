@@ -129,17 +129,18 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         assert RubyGuards.isRubyModule(from);
 
         // Do not copy name, the copy is an anonymous module
-        this.methods.putAll(Layouts.MODULE.getFields(from).methods);
-        this.constants.putAll(Layouts.MODULE.getFields(from).constants);
-        this.classVariables.putAll(Layouts.MODULE.getFields(from).classVariables);
+        final ModuleFields fields = Layouts.MODULE.getFields(from);
+        this.methods.putAll(fields.methods);
+        this.constants.putAll(fields.constants);
+        this.classVariables.putAll(fields.classVariables);
 
-        if (Layouts.MODULE.getFields(from).start.getParentModule() != Layouts.MODULE.getFields(from)) {
-            this.parentModule = Layouts.MODULE.getFields(from).start.getParentModule();
+        if (fields.start.getParentModule() != fields) {
+            this.parentModule = fields.start.getParentModule();
         } else {
-            this.parentModule = Layouts.MODULE.getFields(from).parentModule;
+            this.parentModule = fields.parentModule;
         }
 
-        for (DynamicObject ancestor : Layouts.MODULE.getFields(from).ancestors()) {
+        for (DynamicObject ancestor : fields.ancestors()) {
             Layouts.MODULE.getFields(ancestor).addDependent(rubyModuleObject);
         }
     }
