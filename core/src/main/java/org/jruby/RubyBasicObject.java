@@ -233,9 +233,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context) {
+    public IRubyObject initialize(ThreadContext context) {
         return context.nil;
     }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context) {
+        return initialize(context);
+    }
+
+    //public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+    //    return initialize(context);
+    //}
 
     /**
      * Standard path for object creation. Objects are entered into ObjectSpace
