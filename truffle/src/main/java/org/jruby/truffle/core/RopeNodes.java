@@ -131,7 +131,7 @@ public abstract class RopeNodes {
                 }
             }
 
-            return executeMake(root, offset, byteLength);
+            return makeSubstring(root, offset, byteLength, is7BitProfile);
         }
 
         private Rope makeSubstring(Rope base, int offset, int byteLength, ConditionProfile is7BitProfile) {
