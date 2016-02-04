@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNode {

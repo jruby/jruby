@@ -27,7 +27,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;

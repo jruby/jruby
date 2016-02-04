@@ -31,7 +31,7 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.supercall.SuperCallNode;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;

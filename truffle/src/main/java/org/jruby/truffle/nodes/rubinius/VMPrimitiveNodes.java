@@ -63,7 +63,7 @@ import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.nodes.objects.IsANode;
 import org.jruby.truffle.nodes.objects.IsANodeGen;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThrowException;

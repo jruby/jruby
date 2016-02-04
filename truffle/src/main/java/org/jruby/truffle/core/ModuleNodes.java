@@ -57,7 +57,7 @@ import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.GetCurrentVisibilityNode;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;

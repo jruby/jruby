@@ -49,7 +49,7 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.language.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -65,7 +65,6 @@ import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.ValidLeafRope;
 import org.jruby.util.Memo;
-import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 
