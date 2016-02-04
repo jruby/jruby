@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.supercall;
+package org.jruby.truffle.language.supercall;
 
 import java.util.Arrays;
 
