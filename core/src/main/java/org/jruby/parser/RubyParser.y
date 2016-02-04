@@ -128,10 +128,19 @@ public class RubyParser {
     protected ParserSupport support;
     protected RubyLexer lexer;
 
+    public RubyParser(LexerSource source, IRubyWarnings warnings) {
+        this.support = new ParserSupport();
+        this.lexer = new RubyLexer(support, source, warnings);
+        support.setLexer(lexer);
+        support.setWarnings(warnings);
+    }
+
+    @Deprecated
     public RubyParser(LexerSource source) {
         this(new ParserSupport(), source);
     }
 
+    @Deprecated
     public RubyParser(ParserSupport support, LexerSource source) {
         this.support = support;
         lexer = new RubyLexer(support, source);

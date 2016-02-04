@@ -131,10 +131,19 @@ public class RubyParser {
     protected ParserSupport support;
     protected RubyLexer lexer;
 
+    public RubyParser(LexerSource source, IRubyWarnings warnings) {
+        this.support = new ParserSupport();
+        this.lexer = new RubyLexer(support, source, warnings);
+        support.setLexer(lexer);
+        support.setWarnings(warnings);
+    }
+
+    @Deprecated
     public RubyParser(LexerSource source) {
         this(new ParserSupport(), source);
     }
 
+    @Deprecated
     public RubyParser(ParserSupport support, LexerSource source) {
         this.support = support;
         lexer = new RubyLexer(support, source);
@@ -145,7 +154,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 149 "-"
+					// line 158 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -5340,7 +5349,7 @@ states[646] = new ParserState() {
   }
 };
 }
-					// line 2557 "RubyParser.y"
+					// line 2566 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5355,4 +5364,4 @@ states[646] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10120 "-"
+					// line 10129 "-"

@@ -31,9 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import java.io.BufferedInputStream;
 import java.io.FileInputStream;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -49,7 +47,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
-import org.jruby.util.ShellLauncher;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -118,9 +115,8 @@ public class Parser {
         }
 
         long startTime = System.nanoTime();
-        RubyParser parser = new RubyParser(lexerSource);
-        RubyParserResult result = null;
-        parser.setWarnings(runtime.getWarnings());
+        RubyParser parser = new RubyParser(lexerSource, runtime.getWarnings());
+        RubyParserResult result;
         try {
             result = parser.parse(configuration);
             if (parser.lexer.isEndSeen() && configuration.isSaveData()) {

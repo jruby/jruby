@@ -361,6 +361,14 @@ public class RubyLexer extends LexingCommon {
         leftParenBegin = value;
     }
 
+    public RubyLexer(ParserSupport support, LexerSource source, IRubyWarnings warnings) {
+        this.parserSupport = support;
+        this.src = source;
+        this.warnings = warnings;
+        reset();
+    }
+
+    @Deprecated
     public RubyLexer(ParserSupport support, LexerSource source) {
         this.parserSupport = support;
         this.src = source;
@@ -455,7 +463,7 @@ public class RubyLexer extends LexingCommon {
                 c = '\n';
             } else if (ruby_sourceline > last_cr_line) {
                 last_cr_line = ruby_sourceline;
-                warnings.warn(ID.VOID_VALUE_EXPRESSION, src.getFilename(), ruby_sourceline, "encountered \\\\r in middle of line, treated as a mere space");
+                warnings.warn(ID.VOID_VALUE_EXPRESSION, src.getFilename(), ruby_sourceline, "encountered \\r in middle of line, treated as a mere space");
                 c = ' ';
             }
         }
