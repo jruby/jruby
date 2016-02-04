@@ -16,6 +16,73 @@ import org.jruby.util.ByteList;
  * Code and constants common to both ripper and main parser.
  */
 public abstract class LexingCommon {
+    protected int heredoc_indent = 0;
+    protected int heredoc_line_indent = 0;
+
+    public int getHeredocIndent() {
+        return heredoc_indent;
+    }
+
+    protected int dedent_string(ByteList string, int width) {
+        long len = string.realSize();
+        int i, col = 0;
+        byte[] str = string.unsafeBytes();
+        int begin = string.begin();
+
+        for (i = 0; i < len && col < width; i++) {
+            if (str[begin + i] == ' ') {
+                col++;
+            } else if (str[begin + i] == '\t') {
+                int n = TAB_WIDTH * (col / TAB_WIDTH + 1);
+                if (n > width) break;
+                col = n;
+            } else {
+                break;
+            }
+        }
+
+        string.setBegin(begin + i);
+        string.setRealSize((int) len - i);
+        return i;
+    }
+
+    public void reset() {
+        heredoc_indent = 0;
+        heredoc_line_indent = 0;
+    }
+
+    public void setHeredocLineIndent(int heredoc_line_indent) {
+        this.heredoc_line_indent = heredoc_line_indent;
+    }
+
+    public void setHeredocIndent(int heredoc_indent) {
+        this.heredoc_indent = heredoc_indent;
+    }
+
+    public boolean update_heredoc_indent(int c) {
+        if (heredoc_line_indent == -1) {
+            if (c == '\n') heredoc_line_indent = 0;
+        } else if (c == ' ') {
+            heredoc_line_indent++;
+            return true;
+        } else if (c == '\t') {
+            int w = (heredoc_line_indent / TAB_WIDTH) + 1;
+            heredoc_line_indent = w * TAB_WIDTH;
+            return true;
+        } else if (c != '\n') {
+            if (heredoc_indent > heredoc_line_indent) heredoc_indent = heredoc_line_indent;
+            heredoc_line_indent = -1;
+        }
+
+        return false;
+    }
+
+    protected abstract void magicCommentEncoding(ByteList encoding);
+    protected abstract void setCompileOptionFlag(String name, ByteList value);
+    protected abstract void setTokenInfo(String name, ByteList value);
+
+    public static final int TAB_WIDTH = 8;
+
     // ruby constants for strings (should this be moved somewhere else?)
     public static final int STR_FUNC_ESCAPE=0x01;
     public static final int STR_FUNC_EXPAND=0x02;
@@ -138,8 +205,4 @@ public abstract class LexingCommon {
 
         return true;
     }
-
-    protected abstract void magicCommentEncoding(ByteList encoding);
-    protected abstract void setCompileOptionFlag(String name, ByteList value);
-    protected abstract void setTokenInfo(String name, ByteList value);
 }

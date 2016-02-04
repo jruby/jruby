@@ -118,6 +118,12 @@ public class HeredocTerm extends StrTerm {
                             break;
                     }
                 }
+
+                if (lexer.getHeredocIndent() > 0) {
+                    for (long i = 0; p + i < pend && lexer.update_heredoc_indent(lexer.p(p)); i++) {}
+                    lexer.setHeredocLineIndent(0);
+                }
+
                 if (str != null) {
                     str.append(lbuf.makeShared(p, pend - p));
                 } else {
@@ -126,6 +132,11 @@ public class HeredocTerm extends StrTerm {
 
                 if (pend < lexer.lex_pend) str.append('\n');
                 lexer.lex_goto_eol();
+
+                if (lexer.getHeredocIndent() > 0) {
+                    lexer.setValue(str);
+                    return Tokens.tSTRING_CONTENT;
+                }
                 // MRI null checks str in this case but it is unconditionally non-null?
                 if (lexer.nextc() == -1) return error(lexer, len, null, eos);
             } while (!lexer.whole_match_p(eos, indent));
@@ -161,6 +172,12 @@ public class HeredocTerm extends StrTerm {
                     return Tokens.tSTRING_CONTENT;
                 }
                 tok.append(lexer.nextc());
+
+                if (lexer.getHeredocIndent() > 0) {
+                    lexer.lex_goto_eol();
+                    lexer.setValue(lexer.createStr(tok, 0));
+                    return Tokens.tSTRING_CONTENT;
+                }
 
                 if ((c = lexer.nextc()) == EOF) return error(lexer, len, str, eos);
             } while (!lexer.whole_match_p(eos, indent));

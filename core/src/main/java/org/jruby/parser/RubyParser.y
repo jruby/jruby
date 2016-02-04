@@ -1893,11 +1893,16 @@ string          : tCHAR {
                 }
 
 string1         : tSTRING_BEG string_contents tSTRING_END {
+                    lexer.heredoc_dedent($2);
+		    lexer.setHeredocIndent(0);
                     $$ = $2;
                 }
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     ISourcePosition position = support.getPosition($2);
+
+                    lexer.heredoc_dedent($2);
+		    lexer.setHeredocIndent(0);
 
                     if ($2 == null) {
                         $$ = new XStrNode(position, null, StringSupport.CR_7BIT);
@@ -2028,14 +2033,19 @@ string_content  : tSTRING_CONTENT {
                 } {
                    $$ = lexer.getBraceNest();
                    lexer.setBraceNest(0);
+                } {
+                   $$ = lexer.getHeredocIndent();
+                   lexer.setHeredocIndent(0);
                 } compstmt tSTRING_DEND {
                    lexer.getConditionState().restart();
                    lexer.setStrTerm($<StrTerm>2);
                    lexer.getCmdArgumentState().reset($<Long>3.longValue());
                    lexer.setState($<LexState>4);
                    lexer.setBraceNest($<Integer>5);
+                   lexer.setHeredocIndent($<Integer>6);
+                   lexer.setHeredocLineIndent(-1);
 
-                   $$ = support.newEvStrNode(support.getPosition($6), $6);
+                   $$ = support.newEvStrNode(support.getPosition($7), $7);
                 }
 
 string_dvar     : tGVAR {

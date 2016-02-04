@@ -53,6 +53,7 @@ import org.jruby.ast.BignumNode;
 import org.jruby.ast.ComplexNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
+import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.NumericNode;
@@ -366,7 +367,8 @@ public class RubyLexer extends LexingCommon {
         reset();
     }
     
-    public final void reset() {
+    public void reset() {
+        super.reset();
         token = 0;
         yaccValue = null;
         setState(null);
@@ -459,6 +461,30 @@ public class RubyLexer extends LexingCommon {
         }
 
         return c;
+    }
+
+    public void heredoc_dedent(Node root) {
+        int indent = heredoc_indent;
+
+        if (indent <= 0 || root == null) return;
+
+        if (root instanceof StrNode) {
+            StrNode str = (StrNode) root;
+            dedent_string(str.getValue(), indent);
+        } else if (root instanceof ListNode) {
+            ListNode list = (ListNode) root;
+            int length = list.size();
+            // FIXME: I need a test case to see how this fails because MRI has bol (begin of line) boolean when
+            // it encounters non-str/dstr nodes but I am missing the knowledge to understand why it is needed
+            // and our layout is not as general as theirs so I cannot just nd->lit.
+            for (int i = 0; i < length; i++) {
+                Node child = list.get(i);
+
+                if (child instanceof StrNode) {
+                    dedent_string(((StrNode) child).getValue(), indent);
+                }
+            }
+        }
     }
 
     public boolean peek(int c) {
@@ -1000,6 +1026,11 @@ public class RubyLexer extends LexingCommon {
         if (c == '-') {
             c = nextc();
             func = STR_FUNC_INDENT;
+        } else if (c == '~') {
+            c = nextc();
+            func = STR_FUNC_INDENT;
+            heredoc_indent = Integer.MAX_VALUE;
+            heredoc_line_indent = 0;
         }
         
         ByteList markerValue;
@@ -1030,7 +1061,7 @@ public class RubyLexer extends LexingCommon {
             if (!isIdentifierChar(c)) {
                 pushback(c);
                 if ((func & STR_FUNC_INDENT) != 0) {
-                    pushback('-');
+                    pushback(heredoc_indent > 0 ? '~' : '-');
                 }
                 return 0;
             }

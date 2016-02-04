@@ -943,7 +943,15 @@ public class ParserSupport {
         
         if (head instanceof EvStrNode) {
             head = createDStrNode(head.getPosition()).add(head);
-        } 
+        }
+
+        if (lexer.getHeredocIndent() > 0) {
+            if (head instanceof StrNode) {
+                head = createDStrNode(head.getPosition()).add(head);
+            } else if (head instanceof DStrNode) {
+                return list_append(head, tail);
+            }
+        }
 
         if (tail instanceof StrNode) {
             if (head instanceof StrNode) {
