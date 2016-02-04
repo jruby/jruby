@@ -227,7 +227,7 @@ public class ParserSupport {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "Statement not reached.");
+            warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
