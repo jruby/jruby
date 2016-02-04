@@ -7,9 +7,9 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.dispatch;
+package org.jruby.truffle.language.dispatch;
 
-public enum MissingBehavior {
-    RETURN_MISSING,
-    CALL_METHOD_MISSING
+public enum DispatchAction {
+    CALL_METHOD,
+    RESPOND_TO_METHOD
 }

@@ -20,10 +20,10 @@ import org.jruby.truffle.core.format.nodes.PackGuards;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.runtime.exceptions.CantConvertException;
 import org.jruby.truffle.core.format.runtime.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.dispatch.DispatchNode;
+import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 

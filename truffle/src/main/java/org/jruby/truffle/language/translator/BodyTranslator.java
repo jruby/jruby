@@ -54,7 +54,7 @@ import org.jruby.truffle.nodes.debug.AssertConstantNodeGen;
 import org.jruby.truffle.nodes.debug.AssertNotCompiledNodeGen;
 import org.jruby.truffle.language.defined.DefinedNode;
 import org.jruby.truffle.language.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.dispatch.RubyCallNode;
+import org.jruby.truffle.language.dispatch.RubyCallNode;
 import org.jruby.truffle.nodes.exceptions.*;
 import org.jruby.truffle.language.globals.*;
 import org.jruby.truffle.language.literal.*;
