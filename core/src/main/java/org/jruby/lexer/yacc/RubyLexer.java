@@ -1869,7 +1869,17 @@ public class RubyLexer extends LexingCommon {
                 return Tokens.tGVAR;
             }
 
-            yaccValue = new NthRefNode(getPosition(), Integer.parseInt(createTokenString().substring(1).intern()));
+            int ref;
+            String refAsString = createTokenString();
+
+            try {
+                ref = Integer.parseInt(refAsString.substring(1).intern());
+            } catch (NumberFormatException e) {
+                warnings.warn(ID.AMBIGUOUS_ARGUMENT, "`" + refAsString + "' is too big for a number variable, always nil");
+                ref = 0;
+            }
+
+            yaccValue = new NthRefNode(getPosition(), ref);
             return Tokens.tNTH_REF;
         case '0':
             setState(LexState.EXPR_END);
