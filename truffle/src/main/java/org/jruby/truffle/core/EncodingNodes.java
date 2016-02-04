@@ -22,7 +22,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;

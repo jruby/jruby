@@ -8,7 +8,7 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.nodes;
+package org.jruby.truffle.language;
 
 import org.jruby.truffle.runtime.layouts.Layouts;
 

@@ -17,7 +17,7 @@ import com.oracle.truffle.api.instrument.WrapperNode;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyNode;
 
 @NodeInfo(cost = NodeCost.NONE)
 public final class RubyWrapperNode extends RubyNode implements WrapperNode {

@@ -47,7 +47,7 @@ import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;

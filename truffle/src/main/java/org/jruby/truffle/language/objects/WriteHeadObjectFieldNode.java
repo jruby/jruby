@@ -17,7 +17,7 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
-import org.jruby.truffle.nodes.ShapeCachingGuards;
+import org.jruby.truffle.language.ShapeCachingGuards;
 import org.jruby.truffle.runtime.RubyContext;
 
 @ImportStatic(ShapeCachingGuards.class)

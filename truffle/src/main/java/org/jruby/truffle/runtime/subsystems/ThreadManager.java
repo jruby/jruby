@@ -15,7 +15,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.FiberNodes;
 import org.jruby.truffle.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;

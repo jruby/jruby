@@ -22,9 +22,9 @@ import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
-import org.jruby.truffle.nodes.LazyRubyRootNode;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.LazyRubyRootNode;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.instrument.RubyWrapperNode;
 
 import java.io.IOException;

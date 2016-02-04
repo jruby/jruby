@@ -18,7 +18,7 @@ import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.*;
 import org.jruby.truffle.core.cast.SplatCastNode;
 import org.jruby.truffle.core.cast.SplatCastNodeGen;

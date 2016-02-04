@@ -21,7 +21,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.fixnum.FixnumNodesFactory.RightShiftNodeFactory;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;

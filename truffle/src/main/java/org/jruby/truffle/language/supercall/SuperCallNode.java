@@ -10,7 +10,7 @@
 package org.jruby.truffle.language.supercall;
 
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;

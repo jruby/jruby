@@ -28,7 +28,7 @@ import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.LineToProbesMap;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.BindingNodes;
 import org.jruby.truffle.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;

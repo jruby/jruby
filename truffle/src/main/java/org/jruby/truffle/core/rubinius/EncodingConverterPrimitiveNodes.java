@@ -20,7 +20,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.EncodingConverterNodes;
 import org.jruby.truffle.core.RopeNodes;
 import org.jruby.truffle.core.RopeNodesFactory;

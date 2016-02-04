@@ -11,8 +11,8 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.NodeArrayToObjectArrayNode;
 import org.jruby.truffle.language.arguments.ReadAllArgumentsNode;
 import org.jruby.truffle.language.arguments.ReadBlockNode;

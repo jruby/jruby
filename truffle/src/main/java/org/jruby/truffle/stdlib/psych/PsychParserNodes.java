@@ -51,7 +51,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.RubyEncoding;
 import org.jruby.runtime.Helpers;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.CoreClass;
