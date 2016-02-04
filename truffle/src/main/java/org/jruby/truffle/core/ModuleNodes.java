@@ -42,7 +42,7 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.TaintResultNode;
-import org.jruby.truffle.nodes.coerce.*;
+import org.jruby.truffle.core.coerce.*;
 import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.core.ModuleNodesFactory.GenerateAccessorNodeGen;

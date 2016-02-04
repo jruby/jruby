@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -7,7 +7,8 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.coerce;
+
+package org.jruby.truffle.core.coerce;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -23,45 +24,43 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
-
 @NodeChild(value = "child", type = RubyNode.class)
-public abstract class ToAryNode extends RubyNode {
+public abstract class ToStrNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toAryNode;
+    @Child private CallDispatchHeadNode toStrNode;
 
-    public ToAryNode(RubyContext context, SourceSection sourceSection) {
+    public ToStrNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
+        toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    @Specialization(guards = "isRubyArray(array)")
-    public DynamicObject coerceRubyArray(DynamicObject array) {
-        return array;
+    public abstract DynamicObject executeToStr(VirtualFrame frame, Object object);
+
+    @Specialization(guards = "isRubyString(string)")
+    public DynamicObject coerceRubyString(DynamicObject string) {
+        return string;
     }
 
-    @Specialization(guards = "!isRubyArray(object)")
+    @Specialization(guards = "!isRubyString(object)")
     public DynamicObject coerceObject(VirtualFrame frame, Object object) {
-        if (toAryNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-        }
-
         final Object coerced;
         try {
-            coerced = toAryNode.call(frame, object, "to_ary", null);
+            coerced = toStrNode.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Array", this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
             } else {
                 throw e;
             }
         }
 
-        if (RubyGuards.isRubyArray(coerced)) {
+        if (RubyGuards.isRubyString(coerced)) {
             return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "Array", "to_ary", coerced, this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
     }
+
 }

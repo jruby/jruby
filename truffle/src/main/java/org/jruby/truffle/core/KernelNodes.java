@@ -40,7 +40,7 @@ import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.NumericToFloatNode;
 import org.jruby.truffle.core.cast.NumericToFloatNodeGen;
-import org.jruby.truffle.nodes.coerce.*;
+import org.jruby.truffle.core.coerce.*;
 import org.jruby.truffle.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.core.KernelNodesFactory.SingletonMethodsNodeFactory;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -7,10 +7,10 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-
-package org.jruby.truffle.nodes.coerce;
+package org.jruby.truffle.core.coerce;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -25,50 +25,50 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
- * Take a Symbol or some object accepting #to_str
- * and convert it to a RubySymbol or a RubyString.
+ * Casts an object to a Ruby Proc object.
  */
-@NodeChild(value = "child", type = RubyNode.class)
-public abstract class NameToSymbolOrStringNode extends RubyNode {
+@NodeChild("child")
+public abstract class ToProcNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toStr;
-
-    public NameToSymbolOrStringNode(RubyContext context, SourceSection sourceSection) {
+    public ToProcNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toStr = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public abstract DynamicObject executeToSymbolOrString(VirtualFrame frame, Object name);
-
-    @Specialization(guards = "isRubySymbol(symbol)")
-    public DynamicObject coerceRubySymbol(DynamicObject symbol) {
-        return symbol;
+    @Specialization(guards = "isNil(nil)")
+    public DynamicObject doNil(Object nil) {
+        return nil();
     }
 
-    @Specialization(guards = "isRubyString(string)")
-    public DynamicObject coerceRubyString(DynamicObject string) {
-        return string;
+    @Specialization(guards = "isRubyProc(proc)")
+    public DynamicObject doRubyProc(DynamicObject proc) {
+        return proc;
     }
 
-    @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
-    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
+    @Specialization(guards = "!isRubyProc(object)")
+    public DynamicObject doObject(VirtualFrame frame, Object object,
+            @Cached("createCallNode()") CallDispatchHeadNode toProc) {
         final Object coerced;
         try {
-            coerced = toStr.call(frame, object, "to_str", null);
+            coerced = toProc.call(frame, object, "to_proc", null);
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Proc", this));
             } else {
                 throw e;
             }
         }
 
-        if (RubyGuards.isRubyString(coerced)) {
+        if (RubyGuards.isRubyProc(coerced)) {
             return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "Proc", "to_proc", coerced, this));
         }
     }
+
+    protected CallDispatchHeadNode createCallNode() {
+        return DispatchHeadNodeFactory.createMethodCall(getContext());
+    }
+
 }

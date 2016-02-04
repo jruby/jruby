@@ -8,7 +8,7 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.nodes.coerce;
+package org.jruby.truffle.core.coerce;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -24,28 +24,37 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
+/**
+ * Take a Symbol or some object accepting #to_str
+ * and convert it to a Java String.
+ */
 @NodeChild(value = "child", type = RubyNode.class)
-public abstract class ToStrNode extends RubyNode {
+public abstract class NameToJavaStringNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toStrNode;
+    @Child private CallDispatchHeadNode toStr;
 
-    public ToStrNode(RubyContext context, SourceSection sourceSection) {
+    public NameToJavaStringNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
+        toStr = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public abstract DynamicObject executeToStr(VirtualFrame frame, Object object);
+    public abstract String executeToJavaString(VirtualFrame frame, Object name);
+
+    @Specialization(guards = "isRubySymbol(symbol)")
+    public String coerceRubySymbol(DynamicObject symbol) {
+        return Layouts.SYMBOL.getString(symbol);
+    }
 
     @Specialization(guards = "isRubyString(string)")
-    public DynamicObject coerceRubyString(DynamicObject string) {
-        return string;
+    public String coerceRubyString(DynamicObject string) {
+        return string.toString();
     }
 
-    @Specialization(guards = "!isRubyString(object)")
-    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
+    @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
+    public String coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
         try {
-            coerced = toStrNode.call(frame, object, "to_str", null);
+            coerced = toStr.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
@@ -56,11 +65,10 @@ public abstract class ToStrNode extends RubyNode {
         }
 
         if (RubyGuards.isRubyString(coerced)) {
-            return (DynamicObject) coerced;
+            return coerced.toString();
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
     }
-
 }
