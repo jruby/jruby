@@ -19,8 +19,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.interop.RubyToIndexLabelNode;
-import org.jruby.truffle.nodes.interop.RubyToIndexLabelNodeGen;
+import org.jruby.truffle.interop.RubyToIndexLabelNode;
+import org.jruby.truffle.interop.RubyToIndexLabelNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 
 public final class CachedForeignDispatchNode extends CachedDispatchNode {
