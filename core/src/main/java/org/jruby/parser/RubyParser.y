@@ -1359,9 +1359,6 @@ primary         : literal
                     lexer.setState(LexState.EXPR_ENDARG); 
                 } rparen {
                     lexer.getCmdArgumentState().reset($<Long>2.longValue());
-                    if (Options.PARSER_WARN_GROUPED_EXPRESSIONS.load()) {
-                      support.warning(ID.GROUPED_EXPRESSION, $1, "(...) interpreted as grouped expression");
-                    }
                     $$ = $3;
                 }
                 | tLPAREN compstmt tRPAREN {

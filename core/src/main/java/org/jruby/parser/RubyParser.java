@@ -3423,9 +3423,6 @@ states[312] = new ParserState() {
 states[313] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     lexer.getCmdArgumentState().reset(((Long)yyVals[-3+yyTop]).longValue());
-                    if (Options.PARSER_WARN_GROUPED_EXPRESSIONS.load()) {
-                      support.warning(ID.GROUPED_EXPRESSION, ((ISourcePosition)yyVals[-4+yyTop]), "(...) interpreted as grouped expression");
-                    }
                     yyVal = ((Node)yyVals[-2+yyTop]);
     return yyVal;
   }
@@ -5349,7 +5346,7 @@ states[646] = new ParserState() {
   }
 };
 }
-					// line 2566 "RubyParser.y"
+					// line 2563 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5364,4 +5361,4 @@ states[646] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10129 "-"
+					// line 10126 "-"
