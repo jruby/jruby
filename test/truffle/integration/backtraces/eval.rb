@@ -8,7 +8,7 @@
 
 require_relative 'backtraces'
 
-# Not compliant with MRI - here as a regression test
+# TODO CS 3-Feb-16 Not compliant with MRI - here as a regression test
 
 def m1
   eval 'm2'
