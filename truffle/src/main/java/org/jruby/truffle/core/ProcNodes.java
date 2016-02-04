@@ -39,7 +39,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
+import org.jruby.truffle.util.ArgumentDescriptorUtils;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {

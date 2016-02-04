@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.util.Function;
+import org.jruby.truffle.util.Function;
 import org.jruby.util.IdUtil;
 
 import java.util.HashMap;

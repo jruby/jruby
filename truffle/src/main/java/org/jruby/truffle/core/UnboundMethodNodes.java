@@ -25,7 +25,7 @@ import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
+import org.jruby.truffle.util.ArgumentDescriptorUtils;
 
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {

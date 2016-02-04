@@ -12,7 +12,7 @@ package org.jruby.truffle.tools.callgraph;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.util.IdProvider;
+import org.jruby.truffle.util.IdProvider;
 
 import java.io.PrintStream;
 
