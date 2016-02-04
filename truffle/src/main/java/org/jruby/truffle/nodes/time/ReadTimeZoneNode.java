@@ -17,7 +17,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
+import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.literal.LiteralNode;
