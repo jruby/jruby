@@ -7,9 +7,10 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.methods;
+package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -17,41 +18,44 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
- * Define a method from a module body (module/class/class << self ... end).
+ * Define a method from a method literal (def mymethod ... end).
+ * That is, store the definition of a method and when executed
+ * produce the executable object that results.
  */
-public class ModuleBodyDefinitionNode extends RubyNode {
+public class MethodDefinitionNode extends RubyNode {
 
     private final String name;
     private final SharedMethodInfo sharedMethodInfo;
     private final CallTarget callTarget;
-    private final boolean captureBlock;
 
-    public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-            CallTarget callTarget, boolean captureBlock) {
+    @Child private GetDefaultDefineeNode getDefaultDefineeNode;
+
+    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo, CallTarget callTarget) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
-        this.captureBlock = captureBlock;
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
         final DynamicObject dummyModule = getContext().getCoreLibrary().getObjectClass();
         final Visibility dummyVisibility = Visibility.PUBLIC;
 
-        final DynamicObject capturedBlock;
-
-        if (captureBlock) {
-            capturedBlock = RubyArguments.getBlock(frame.getArguments());
+        final DynamicObject capturedDefaultDefinee;
+        if (RubyArguments.getDeclarationContext(frame.getArguments()) == DeclarationContext.INSTANCE_EVAL) {
+            if (getDefaultDefineeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                getDefaultDefineeNode = insert(new GetDefaultDefineeNode(getContext(), getSourceSection()));
+            }
+            capturedDefaultDefinee = getDefaultDefineeNode.execute(frame);
         } else {
-            capturedBlock = null;
+            capturedDefaultDefinee = null;
         }
 
-        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, capturedBlock, null);
+        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, null,
+                capturedDefaultDefinee);
     }
 
     @Override

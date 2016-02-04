@@ -10,7 +10,7 @@
 package org.jruby.truffle.tools.callgraph;
 
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 import java.util.Collection;
 import java.util.Collections;

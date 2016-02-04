@@ -19,14 +19,14 @@ import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeGen;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
 import org.jruby.truffle.nodes.conversion.ToSymbolNodeGen;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 
 public class UncachedDispatchNode extends DispatchNode {
 

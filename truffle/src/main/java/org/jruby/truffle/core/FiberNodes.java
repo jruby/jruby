@@ -22,7 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.core.FiberNodesFactory.FiberTransferNodeFactory;
-import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.core.rubinius.ThreadPrimitiveNodes.ThreadRaisePrimitiveNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.BreakException;

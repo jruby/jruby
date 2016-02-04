@@ -15,13 +15,13 @@ import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.methods.CallMethodNode;
-import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
+import org.jruby.truffle.language.methods.CallMethodNode;
+import org.jruby.truffle.language.methods.CallMethodNodeGen;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;

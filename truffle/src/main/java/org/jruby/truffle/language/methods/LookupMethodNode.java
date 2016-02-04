@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.methods;
+package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.dsl.Cached;
@@ -23,7 +23,6 @@ import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
  * Caches {@link ModuleOperations#lookupMethod(DynamicObject, String)}

@@ -18,7 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 
 public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 

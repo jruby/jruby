@@ -39,7 +39,7 @@ import org.jruby.truffle.cext.CExtSubsystem;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;

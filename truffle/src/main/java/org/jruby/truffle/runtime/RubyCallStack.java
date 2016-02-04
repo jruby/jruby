@@ -20,12 +20,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.InternalRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
-import org.jruby.truffle.nodes.LazyRubyRootNode;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 
 import java.util.ArrayList;
 

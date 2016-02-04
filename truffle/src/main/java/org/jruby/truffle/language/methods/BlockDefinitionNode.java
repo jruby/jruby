@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.methods;
+package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -21,7 +21,6 @@ import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.FrameOnStackMarker;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.language.control.BreakID;
 
 /**

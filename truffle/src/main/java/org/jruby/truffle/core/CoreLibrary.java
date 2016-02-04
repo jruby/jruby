@@ -59,7 +59,7 @@ import org.jruby.truffle.language.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.util.cli.OutputStrings;

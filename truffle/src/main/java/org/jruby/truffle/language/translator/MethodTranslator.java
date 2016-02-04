@@ -32,15 +32,15 @@ import org.jruby.truffle.language.dispatch.RespondToNode;
 import org.jruby.truffle.language.locals.FlipFlopStateNode;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
-import org.jruby.truffle.nodes.methods.*;
+import org.jruby.truffle.language.methods.*;
 import org.jruby.truffle.language.supercall.ReadSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.supercall.ZSuperOutsideMethodNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.methods.Arity;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.Arity;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

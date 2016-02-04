@@ -16,11 +16,11 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.StringOperations;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 

@@ -18,7 +18,7 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,

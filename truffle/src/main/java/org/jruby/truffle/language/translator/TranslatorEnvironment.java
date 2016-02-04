@@ -19,7 +19,7 @@ import org.jruby.truffle.language.control.BreakID;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -7,29 +7,34 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.methods;
+package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.control.*;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.language.control.NextException;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.RedoException;
-import org.jruby.truffle.language.control.RetryException;
 
-public class CatchForProcNode extends RubyNode {
+public class CatchForLambdaNode extends RubyNode {
 
     @Child private RubyNode body;
+    private final ReturnID returnID;
+
+    private final BranchProfile returnProfile = BranchProfile.create();
+    private final ConditionProfile matchingReturnProfile = ConditionProfile.createBinaryProfile();
 
     private final BranchProfile redoProfile = BranchProfile.create();
     private final BranchProfile nextProfile = BranchProfile.create();
+    private final BranchProfile breakProfile = BranchProfile.create();
 
-    public CatchForProcNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
+    public CatchForLambdaNode(RubyContext context, SourceSection sourceSection, RubyNode body, ReturnID returnID) {
         super(context, sourceSection);
         this.body = body;
+        this.returnID = returnID;
     }
 
     @Override
@@ -37,6 +42,16 @@ public class CatchForProcNode extends RubyNode {
         while (true) {
             try {
                 return body.execute(frame);
+            } catch (ReturnException e) {
+                returnProfile.enter();
+                if (matchingReturnProfile.profile(e.getReturnID() == returnID)) {
+                    return e.getValue();
+                } else {
+                    throw e;
+                }
+            } catch (RetryException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().syntaxError("Invalid retry", this));
             } catch (RedoException e) {
                 redoProfile.enter();
                 getContext().getSafepointManager().poll(this);
@@ -44,9 +59,9 @@ public class CatchForProcNode extends RubyNode {
             } catch (NextException e) {
                 nextProfile.enter();
                 return e.getResult();
-            } catch (RetryException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().syntaxError("Invalid retry", this));
+            } catch (BreakException e) {
+                breakProfile.enter();
+                return e.getResult();
             }
         }
     }

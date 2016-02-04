@@ -27,7 +27,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -35,7 +35,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 
 import java.util.List;
 
