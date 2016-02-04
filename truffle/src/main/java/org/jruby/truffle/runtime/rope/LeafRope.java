@@ -18,7 +18,7 @@ public abstract class LeafRope extends Rope {
     }
 
     @Override
-    public int get(int index) {
+    public byte getByteSlow(int index) {
         return getRawBytes()[index];
     }
 

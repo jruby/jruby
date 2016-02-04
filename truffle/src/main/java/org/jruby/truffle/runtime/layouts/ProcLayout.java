@@ -18,8 +18,8 @@ import org.jruby.truffle.core.ProcNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.language.control.FrameOnStackMarker;
-import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 // A instance of Proc behaves either as a proc or lambda (its type).
 // Kernel#lambda is the only primitive which can produce a lambda-semantics Proc from a proc-semantics one.

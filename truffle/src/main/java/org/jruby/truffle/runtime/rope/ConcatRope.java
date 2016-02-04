@@ -32,12 +32,12 @@ public class ConcatRope extends Rope {
 
     @Override
     @TruffleBoundary
-    public int get(int index) {
+    public byte getByteSlow(int index) {
         if (index < left.byteLength()) {
-            return left.get(index);
+            return left.getByteSlow(index);
         }
 
-        return right.get(index - left.byteLength());
+        return right.getByteSlow(index - left.byteLength());
     }
 
     @Override

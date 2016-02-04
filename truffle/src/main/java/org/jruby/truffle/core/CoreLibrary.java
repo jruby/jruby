@@ -30,27 +30,27 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory;
-import org.jruby.truffle.ext.BigDecimalNodesFactory;
-import org.jruby.truffle.ext.DigestNodesFactory;
-import org.jruby.truffle.ext.EtcNodesFactory;
-import org.jruby.truffle.ext.ObjSpaceNodesFactory;
-import org.jruby.truffle.ext.psych.PsychEmitterNodesFactory;
-import org.jruby.truffle.ext.psych.PsychParserNodes;
-import org.jruby.truffle.ext.psych.PsychParserNodesFactory;
-import org.jruby.truffle.nodes.objects.FreezeNode;
-import org.jruby.truffle.nodes.objects.FreezeNodeGen;
-import org.jruby.truffle.nodes.objects.SingletonClassNode;
-import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
-import org.jruby.truffle.nodes.rubinius.AtomicReferenceNodesFactory;
-import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
-import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
-import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
+import org.jruby.truffle.stdlib.BigDecimalNodesFactory;
+import org.jruby.truffle.stdlib.DigestNodesFactory;
+import org.jruby.truffle.stdlib.EtcNodesFactory;
+import org.jruby.truffle.stdlib.ObjSpaceNodesFactory;
+import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
+import org.jruby.truffle.stdlib.psych.PsychParserNodes;
+import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
+import org.jruby.truffle.language.objects.FreezeNode;
+import org.jruby.truffle.language.objects.FreezeNodeGen;
+import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.language.objects.SingletonClassNodeGen;
+import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
+import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
+import org.jruby.truffle.core.rubinius.PosixNodesFactory;
+import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
@@ -59,7 +59,7 @@ import org.jruby.truffle.language.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.util.cli.OutputStrings;
@@ -611,14 +611,14 @@ public class CoreLibrary {
         globals.define("$\"", globals.get("$LOADED_FEATURES", nilObject), 0);
         globals.define("$,", nilObject, 0);
         globals.define("$*", argv, 0);
-        globals.define("$0", StringOperations.createString(context, StringOperations.encodeByteList(context.getRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)), 0);
+        globals.define("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)), 0);
 
         globals.define("$DEBUG", context.getRuntime().isDebug(), 0);
 
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         globals.define("$VERBOSE", value, 0);
 
-        final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeByteList(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
+        final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
@@ -630,15 +630,15 @@ public class CoreLibrary {
     private void initializeConstants() {
         // Set constants
 
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_VERSION", StringOperations.createString(context, StringOperations.encodeByteList(Constants.RUBY_VERSION, UTF8Encoding.INSTANCE)));
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "JRUBY_VERSION", StringOperations.createString(context, StringOperations.encodeByteList(Constants.VERSION, UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_VERSION", StringOperations.createString(context, StringOperations.encodeRope(Constants.RUBY_VERSION, UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "JRUBY_VERSION", StringOperations.createString(context, StringOperations.encodeRope(Constants.VERSION, UTF8Encoding.INSTANCE)));
         Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_PATCHLEVEL", 0);
         Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_REVISION", Constants.RUBY_REVISION);
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_ENGINE", StringOperations.createString(context, StringOperations.encodeByteList(Constants.ENGINE + "+truffle", UTF8Encoding.INSTANCE)));
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_PLATFORM", StringOperations.createString(context, StringOperations.encodeByteList(Constants.PLATFORM, UTF8Encoding.INSTANCE)));
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_RELEASE_DATE", StringOperations.createString(context, StringOperations.encodeByteList(Constants.COMPILE_DATE, UTF8Encoding.INSTANCE)));
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_DESCRIPTION", StringOperations.createString(context, StringOperations.encodeByteList(OutputStrings.getVersionString(), UTF8Encoding.INSTANCE)));
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_COPYRIGHT", StringOperations.createString(context, StringOperations.encodeByteList(OutputStrings.getCopyrightString(), UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_ENGINE", StringOperations.createString(context, StringOperations.encodeRope(Constants.ENGINE + "+truffle", UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_PLATFORM", StringOperations.createString(context, StringOperations.encodeRope(Constants.PLATFORM, UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_RELEASE_DATE", StringOperations.createString(context, StringOperations.encodeRope(Constants.COMPILE_DATE, UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_DESCRIPTION", StringOperations.createString(context, StringOperations.encodeRope(OutputStrings.getVersionString(), UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_COPYRIGHT", StringOperations.createString(context, StringOperations.encodeRope(OutputStrings.getCopyrightString(), UTF8Encoding.INSTANCE)));
 
         // BasicObject knows itself
         Layouts.MODULE.getFields(basicObjectClass).setConstant(context, node, "BasicObject", basicObjectClass);
@@ -686,7 +686,7 @@ public class CoreLibrary {
 
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
-            DynamicObject signalName = StringOperations.createString(context, StringOperations.encodeByteList(signal.getKey(), UTF8Encoding.INSTANCE));
+            DynamicObject signalName = StringOperations.createString(context, StringOperations.encodeRope(signal.getKey(), UTF8Encoding.INSTANCE));
             Object[] objects = new Object[]{signalName, signal.getValue()};
             signals[i++] = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), objects, objects.length);
         }
@@ -888,12 +888,12 @@ public class CoreLibrary {
 
     public DynamicObject runtimeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(runtimeErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(runtimeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject systemStackError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(systemStackErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(systemStackErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject frozenError(String className, Node currentNode) {
@@ -903,7 +903,7 @@ public class CoreLibrary {
 
     public DynamicObject argumentError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(argumentErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(argumentErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject argumentErrorOutOfRange(Node currentNode) {
@@ -950,7 +950,7 @@ public class CoreLibrary {
             return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
         }
 
-        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), StringOperations.createString(context, StringOperations.encodeByteList(errnoObj.description(), UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), StringOperations.createString(context, StringOperations.encodeRope(errnoObj.description(), UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject errnoError(int errno, String message, Node currentNode) {
@@ -961,13 +961,13 @@ public class CoreLibrary {
             return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
         }
 
-        final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeByteList(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
+        final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
         return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), errorMessage, RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject indexError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(indexErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(indexErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject indexTooSmallError(String type, int index, int length, Node currentNode) {
@@ -977,7 +977,7 @@ public class CoreLibrary {
 
     public DynamicObject localJumpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(localJumpErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(localJumpErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject noBlockGiven(Node currentNode) {
@@ -1002,7 +1002,7 @@ public class CoreLibrary {
 
     public DynamicObject typeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(typeErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(typeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject typeErrorAllocatorUndefinedFor(DynamicObject rubyClass, Node currentNode) {
@@ -1073,7 +1073,7 @@ public class CoreLibrary {
 
     public DynamicObject nameError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        final DynamicObject nameString = StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE));
+        final DynamicObject nameString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
         DynamicObject nameError = ExceptionNodes.createRubyException(nameErrorClass, nameString, RubyCallStack.getBacktrace(context, currentNode));
         nameError.define("@name", context.getSymbolTable().getSymbol(name), 0);
         return nameError;
@@ -1160,7 +1160,7 @@ public class CoreLibrary {
 
     public DynamicObject noMethodError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        final DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE));
+        final DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
         DynamicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(), messageString, RubyCallStack.getBacktrace(context, currentNode));
         noMethodError.define("@name", context.getSymbolTable().getSymbol(name), 0);
         return noMethodError;
@@ -1196,9 +1196,9 @@ public class CoreLibrary {
 
     public DynamicObject loadError(String message, String path, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE));
+        DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
         DynamicObject loadError = ExceptionNodes.createRubyException(context.getCoreLibrary().getLoadErrorClass(), messageString, RubyCallStack.getBacktrace(context, currentNode));
-        loadError.define("@path", StringOperations.createString(context, StringOperations.encodeByteList(path, UTF8Encoding.INSTANCE)), 0);
+        loadError.define("@path", StringOperations.createString(context, StringOperations.encodeRope(path, UTF8Encoding.INSTANCE)), 0);
         return loadError;
     }
 
@@ -1209,32 +1209,32 @@ public class CoreLibrary {
 
     public DynamicObject zeroDivisionError(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), StringOperations.createString(context, StringOperations.encodeByteList("divided by 0", UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("divided by 0", UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject notImplementedError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(notImplementedErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(String.format("Method %s not implemented", message), UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(notImplementedErrorClass, StringOperations.createString(context, StringOperations.encodeRope(String.format("Method %s not implemented", message), UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject syntaxError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(syntaxErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(syntaxErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject floatDomainError(String value, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(floatDomainErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(value, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(floatDomainErrorClass, StringOperations.createString(context, StringOperations.encodeRope(value, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject mathDomainError(String method, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EDOM), StringOperations.createString(context, StringOperations.encodeByteList(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EDOM), StringOperations.createString(context, StringOperations.encodeRope(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject ioError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(ioErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(ioErrorClass, StringOperations.createString(context, StringOperations.encodeRope(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {
@@ -1259,17 +1259,17 @@ public class CoreLibrary {
 
     public DynamicObject rangeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(rangeErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(rangeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject internalError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringOperations.createString(context, StringOperations.encodeByteList("internal implementation error - " + message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("internal implementation error - " + message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject regexpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(regexpErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(regexpErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject encodingCompatibilityErrorIncompatible(String a, String b, Node currentNode) {
@@ -1279,12 +1279,12 @@ public class CoreLibrary {
 
     public DynamicObject encodingCompatibilityError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(encodingCompatibilityErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(encodingCompatibilityErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject fiberError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(fiberErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(fiberErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject deadFiberCalledError(Node currentNode) {
@@ -1299,22 +1299,22 @@ public class CoreLibrary {
 
     public DynamicObject threadError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(threadErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(threadErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject securityError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(securityErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(securityErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject systemCallError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(systemCallErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
+        return ExceptionNodes.createRubyException(systemCallErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(context, currentNode));
     }
 
     public DynamicObject systemExit(int exitStatus, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        final DynamicObject message = StringOperations.createString(context, StringOperations.encodeByteList("exit", UTF8Encoding.INSTANCE));
+        final DynamicObject message = StringOperations.createString(context, StringOperations.encodeRope("exit", UTF8Encoding.INSTANCE));
         final DynamicObject systemExit = ExceptionNodes.createRubyException(systemExitClass, message, RubyCallStack.getBacktrace(context, currentNode));
         systemExit.define("@status", exitStatus, 0);
         return systemExit;

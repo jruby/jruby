@@ -20,13 +20,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.BasicObjectNodes;
 import org.jruby.truffle.core.BasicObjectNodesFactory;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.IsFrozenNode;
-import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.objects.IsFrozenNode;
+import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 

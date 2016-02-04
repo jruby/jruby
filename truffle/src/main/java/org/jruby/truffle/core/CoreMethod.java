@@ -10,7 +10,7 @@
 package org.jruby.truffle.core;
 
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

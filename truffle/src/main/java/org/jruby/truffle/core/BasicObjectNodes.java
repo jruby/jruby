@@ -20,24 +20,24 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
-import org.jruby.truffle.nodes.dispatch.RubyCallNode;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
-import org.jruby.truffle.nodes.objects.AllocateObjectNode;
-import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.nodes.supercall.SuperCallNode;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.core.cast.BooleanCastNodeGen;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.dispatch.MissingBehavior;
+import org.jruby.truffle.language.dispatch.RubyCallNode;
+import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.supercall.SuperCallNode;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.language.methods.InternalMethod;
 
 import java.util.Arrays;
 import java.util.List;
@@ -261,7 +261,7 @@ public abstract class BasicObjectNodes {
         }
 
         /**
-         * See {@link org.jruby.truffle.nodes.dispatch.DispatchNode#lookup}.
+         * See {@link org.jruby.truffle.language.dispatch.DispatchNode#lookup}.
          * The only way to fail if method is not null and not undefined is visibility.
          */
         private boolean lastCallWasCallingPrivateMethod(Object self, String name) {

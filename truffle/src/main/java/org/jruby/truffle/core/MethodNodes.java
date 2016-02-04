@@ -23,22 +23,22 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.core.cast.ProcOrNullNode;
+import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.core.BasicObjectNodes.ReferenceEqualNode;
-import org.jruby.truffle.nodes.methods.CallMethodNode;
-import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.objects.ClassNode;
-import org.jruby.truffle.nodes.objects.ClassNodeGen;
+import org.jruby.truffle.language.methods.CallMethodNode;
+import org.jruby.truffle.language.methods.CallMethodNodeGen;
+import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.objects.ClassNode;
+import org.jruby.truffle.language.objects.ClassNodeGen;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
+import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.util.ArgumentDescriptorUtils;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {

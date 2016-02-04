@@ -1,3 +1,9 @@
 #!/usr/bin/env bash
 
-ruby -X+T test/truffle/integration/backtraces/backtraces.rb
+set -e
+
+for f in test/truffle/integration/backtraces/*.rb
+do
+  echo $f
+  ruby -X+T $f
+done

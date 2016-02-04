@@ -29,17 +29,17 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.language.control.*;
-import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.ThreadLocalObjectNode;
+import org.jruby.truffle.language.exceptions.*;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.ThreadLocalObjectNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.language.arguments.IsRubiniusUndefinedNode;
-import org.jruby.truffle.nodes.cast.*;
-import org.jruby.truffle.nodes.coerce.ToProcNodeGen;
-import org.jruby.truffle.nodes.constants.ReadConstantWithLexicalScopeNode;
-import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
-import org.jruby.truffle.nodes.constants.WriteConstantNode;
+import org.jruby.truffle.core.cast.*;
+import org.jruby.truffle.core.coerce.ToProcNodeGen;
+import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
+import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
+import org.jruby.truffle.language.constants.WriteConstantNode;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.ModuleNodesFactory.AliasMethodNodeFactory;
 import org.jruby.truffle.core.ModuleNodesFactory.UndefMethodNodeFactory;
@@ -50,19 +50,18 @@ import org.jruby.truffle.core.fixnum.FixnumLiteralNode;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
-import org.jruby.truffle.nodes.debug.AssertConstantNodeGen;
-import org.jruby.truffle.nodes.debug.AssertNotCompiledNodeGen;
+import org.jruby.truffle.debug.AssertConstantNodeGen;
+import org.jruby.truffle.debug.AssertNotCompiledNodeGen;
 import org.jruby.truffle.language.defined.DefinedNode;
 import org.jruby.truffle.language.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.dispatch.RubyCallNode;
-import org.jruby.truffle.nodes.exceptions.*;
+import org.jruby.truffle.language.dispatch.RubyCallNode;
 import org.jruby.truffle.language.globals.*;
 import org.jruby.truffle.language.literal.*;
 import org.jruby.truffle.language.locals.*;
-import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.rubinius.*;
-import org.jruby.truffle.nodes.yield.YieldNode;
+import org.jruby.truffle.language.methods.*;
+import org.jruby.truffle.language.objects.*;
+import org.jruby.truffle.core.rubinius.*;
+import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.runtime.ConstantReplacer;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.language.control.ReturnID;
@@ -71,9 +70,10 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.Arity;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.Arity;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.control.BreakID;
+import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
@@ -1039,7 +1039,7 @@ public class BodyTranslator extends Translator {
 
         // TODO (pitr 01-Dec-2015): remove when RUBY_PLATFORM is set to "truffle"
         if (name.equals("RUBY_PLATFORM") && getSourcePath(sourceSection).contains("test/xml_mini/jdom_engine_test.rb")) {
-            final LiteralNode ret = new LiteralNode(context, sourceSection, StringOperations.createString(context, StringOperations.encodeByteList("truffle", UTF8Encoding.INSTANCE)));
+            final LiteralNode ret = new LiteralNode(context, sourceSection, StringOperations.createString(context, StringOperations.encodeRope("truffle", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT)));
             return addNewlineIfNeeded(node, ret);
         }
 
@@ -2815,9 +2815,8 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSymbolNode(org.jruby.ast.SymbolNode node) {
-        final ByteList byteList = StringOperations.createByteList(node.getName());
-        byteList.setEncoding(node.getEncoding());
-        final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), context.getSymbol(byteList));
+        final Rope rope = StringOperations.createRope(node.getName(), node.getEncoding());
+        final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), context.getSymbol(rope));
         return addNewlineIfNeeded(node, ret);
     }
 

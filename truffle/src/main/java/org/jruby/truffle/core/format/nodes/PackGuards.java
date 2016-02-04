@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.core.format.nodes;
 
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 
 import java.math.BigInteger;
 

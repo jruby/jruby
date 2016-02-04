@@ -11,7 +11,7 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 

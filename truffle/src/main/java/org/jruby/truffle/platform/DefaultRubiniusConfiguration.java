@@ -45,6 +45,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.CodeRange;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -166,7 +167,7 @@ public abstract class DefaultRubiniusConfiguration {
     }
 
     protected static DynamicObject string(RubyContext context, String value) {
-        return StringOperations.create7BitString(context, StringOperations.encodeByteList(value, UTF8Encoding.INSTANCE));
+        return StringOperations.createString(context, StringOperations.encodeRope(value, UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
     }
 
 }

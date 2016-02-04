@@ -21,18 +21,18 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.control.SequenceNode;
-import org.jruby.truffle.nodes.methods.SymbolProcNode;
+import org.jruby.truffle.language.methods.SymbolProcNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.Arity;
-import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.Arity;
+import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {

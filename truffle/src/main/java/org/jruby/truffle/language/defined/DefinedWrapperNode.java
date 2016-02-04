@@ -12,7 +12,7 @@ package org.jruby.truffle.language.defined;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.core.StringOperations;
 

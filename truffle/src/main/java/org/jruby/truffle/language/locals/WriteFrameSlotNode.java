@@ -16,7 +16,7 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 
 @ImportStatic(RubyGuards.class)
 public abstract class WriteFrameSlotNode extends Node {

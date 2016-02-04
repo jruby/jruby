@@ -15,10 +15,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.objects.AllocateObjectNode;
-import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;

@@ -13,7 +13,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.RestArgNode;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.control.SequenceNode;

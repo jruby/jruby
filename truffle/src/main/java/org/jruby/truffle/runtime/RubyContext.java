@@ -33,18 +33,18 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.platform.posix.TruffleJavaPOSIX;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.core.BindingNodes;
 import org.jruby.truffle.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.core.SetTopLevelBindingNode;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
-import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
+import org.jruby.truffle.instrument.RubyDefaultASTProber;
+import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.ArrayOperations;
 import org.jruby.truffle.core.CoreLibrary;
@@ -56,8 +56,8 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.FeatureLoader;
 import org.jruby.truffle.runtime.loader.SourceCache;
 import org.jruby.truffle.runtime.loader.SourceLoader;
-import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.platform.darwin.CrtExterns;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.platform.RubiniusConfiguration;
@@ -296,7 +296,7 @@ public class RubyContext extends ExecutionContext {
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeByteList(arg.toString(), UTF8Encoding.INSTANCE)));
+            ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeRope(arg.toString(), UTF8Encoding.INSTANCE)));
         }
 
         // Set the load path
@@ -315,7 +315,7 @@ public class RubyContext extends ExecutionContext {
                     pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
                 }
 
-                ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(pathString, UTF8Encoding.INSTANCE)));
+                ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(pathString, UTF8Encoding.INSTANCE)));
             }
         }
 
@@ -336,21 +336,21 @@ public class RubyContext extends ExecutionContext {
         home = home + "/";
 
         // Libraries copied unmodified from MRI
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE)));
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE)));
 
         // Our own implementations
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE)));
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE)));
 
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE)));
+            ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE)));
         }
 
         // Shims
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
     }
 
     // TODO (eregon, 10/10/2015): this check could be done when a Symbol is created to be much cheaper

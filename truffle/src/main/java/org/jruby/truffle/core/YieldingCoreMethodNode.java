@@ -13,10 +13,10 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.core.cast.BooleanCastNode;
+import org.jruby.truffle.core.cast.BooleanCastNodeGen;
+import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNode {

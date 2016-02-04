@@ -21,13 +21,14 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubySyntaxTag;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.SourceLoader;
+import org.jruby.truffle.runtime.rope.CodeRange;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,7 +64,7 @@ public class TraceManager {
         final TraceFuncEventFactory lineEventFactory = new TraceFuncEventFactory() {
             @Override
             public StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc) {
-                final DynamicObject event = StringOperations.create7BitString(context, StringOperations.encodeByteList("line", UTF8Encoding.INSTANCE));
+                final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("line", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
 
                 return new BaseEventInstrumentListener(context, traceFunc, event);
             }
@@ -72,7 +73,7 @@ public class TraceManager {
         final TraceFuncEventFactory callEventFactory = new TraceFuncEventFactory() {
             @Override
             public StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc) {
-                final DynamicObject event = StringOperations.create7BitString(context, StringOperations.encodeByteList("call", UTF8Encoding.INSTANCE));
+                final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("call", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
 
                 return new CallEventInstrumentListener(context, traceFunc, event);
             }
@@ -81,7 +82,7 @@ public class TraceManager {
         final TraceFuncEventFactory classEventFactory = new TraceFuncEventFactory() {
             @Override
             public StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc) {
-                final DynamicObject event = StringOperations.create7BitString(context, StringOperations.encodeByteList("class", UTF8Encoding.INSTANCE));
+                final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("class", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
 
                 return new BaseEventInstrumentListener(context, traceFunc, event);
             }
@@ -154,7 +155,7 @@ public class TraceManager {
         private void callSetTraceFunc(Node node, MaterializedFrame frame) {
             final SourceSection sourceSection = node.getEncapsulatingSourceSection();
 
-            final DynamicObject file = StringOperations.createString(context, StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
+            final DynamicObject file = StringOperations.createString(context, StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
             final int line = sourceSection.getStartLine();
 
             final Object classname = context.getCoreLibrary().getNilObject();
@@ -234,7 +235,7 @@ public class TraceManager {
                 line = -1;
             }
 
-            final DynamicObject file = StringOperations.createString(context, StringOperations.encodeByteList(filename, UTF8Encoding.INSTANCE));
+            final DynamicObject file = StringOperations.createString(context, StringOperations.encodeRope(filename, UTF8Encoding.INSTANCE));
 
             if (!context.getOptions().INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
                 return;

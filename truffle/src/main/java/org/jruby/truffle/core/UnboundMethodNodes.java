@@ -17,15 +17,15 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
-import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
-import org.jruby.truffle.nodes.objects.MetaClassNode;
-import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.methods.CanBindMethodToModuleNode;
+import org.jruby.truffle.language.methods.CanBindMethodToModuleNodeGen;
+import org.jruby.truffle.language.objects.MetaClassNode;
+import org.jruby.truffle.language.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
+import org.jruby.truffle.util.ArgumentDescriptorUtils;
 
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {

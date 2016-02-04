@@ -42,24 +42,24 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.format.parser.UnpackCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.core.format.runtime.exceptions.*;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.StringCachingGuards;
-import org.jruby.truffle.nodes.cast.CmpIntNode;
-import org.jruby.truffle.nodes.cast.CmpIntNodeGen;
-import org.jruby.truffle.nodes.cast.TaintResultNode;
-import org.jruby.truffle.nodes.coerce.ToIntNode;
-import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
-import org.jruby.truffle.nodes.coerce.ToStrNode;
-import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.StringCachingGuards;
+import org.jruby.truffle.core.cast.CmpIntNode;
+import org.jruby.truffle.core.cast.CmpIntNodeGen;
+import org.jruby.truffle.core.cast.TaintResultNode;
+import org.jruby.truffle.core.coerce.ToIntNode;
+import org.jruby.truffle.core.coerce.ToIntNodeGen;
+import org.jruby.truffle.core.coerce.ToStrNode;
+import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.array.ArrayCoreMethodNode;
 import org.jruby.truffle.core.fixnum.FixnumLowerNodeGen;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
-import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
-import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.objects.*;
+import org.jruby.truffle.core.rubinius.ByteArrayNodes;
+import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
+import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
@@ -68,7 +68,6 @@ import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.*;
-import org.jruby.util.io.EncodingUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -1571,19 +1570,31 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "ord")
+    @ImportStatic(StringGuards.class)
     public abstract static class OrdNode extends CoreMethodArrayArgumentsNode {
 
         public OrdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isEmpty(string)")
+        public int ordEmpty(DynamicObject string) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("empty string", this));
+        }
+
+        // TODO (nirvdrum 03-Feb-16): Is it possible to have a single-byte optimizable string that isn't ASCII-compatible?
+        @Specialization(guards = { "!isEmpty(string)", "isSingleByteOptimizable(string)" })
+        public int ordAsciiOnly(DynamicObject string) {
+            return rope(string).get(0) & 0xff;
+        }
+
+        @Specialization(guards = { "!isEmpty(string)", "!isSingleByteOptimizable(string)" })
         public int ord(DynamicObject string) {
-            final StringCodeRangeableWrapper codeRangeable = StringOperations.getCodeRangeableReadOnly(string);
-            final ByteList bytes = codeRangeable.getByteList();
+            final Rope rope = rope(string);
 
             try {
-                return codePoint(EncodingUtils.STR_ENC_GET(codeRangeable), bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+                return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.realSize());
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
@@ -1594,6 +1605,7 @@ public abstract class StringNodes {
         private int codePoint(Encoding encoding, byte[] bytes, int p, int end) {
             return StringSupport.codePoint(encoding, bytes, p, end);
         }
+
     }
 
     @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameter = 0)
@@ -2479,22 +2491,29 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class UpcaseBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+
         public UpcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public DynamicObject upcaseSingleByte(DynamicObject string) {
+        public DynamicObject upcaseSingleByte(DynamicObject string,
+                                              @Cached("createBinaryProfile()") ConditionProfile isEmptyProfile,
+                                              @Cached("createBinaryProfile()") ConditionProfile modifiedProfile) {
             final Rope rope = rope(string);
-            final ByteList bytes = rope.toByteListCopy();
 
-            if (rope.isEmpty()) {
+            if (isEmptyProfile.profile(rope.isEmpty())) {
                 return nil();
             }
 
-            final boolean modified = singleByteUpcase(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-            if (modified) {
-                StringOperations.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
+            final byte[] bytes = rope.getBytesCopy();
+            final boolean modified = singleByteUpcase(bytes, 0, bytes.length);
+
+            if (modifiedProfile.profile(modified)) {
+                final Rope newRope = makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange());
+                StringOperations.setRope(string, newRope);
 
                 return string;
             } else {

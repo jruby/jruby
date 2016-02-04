@@ -12,7 +12,7 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 @NodeChildren({

@@ -11,7 +11,7 @@ package org.jruby.truffle.tools.callgraph;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -17,9 +17,10 @@ import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.interop.InteropNode;
+import org.jruby.truffle.language.InternalRootNode;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
 
@@ -102,7 +103,7 @@ public class HashForeignAccessFactory implements ForeignAccess.Factory10, Foreig
         return null;
     }
 
-    protected static final class RubyInteropRootNode extends RootNode {
+    protected static final class RubyInteropRootNode extends RootNode implements InternalRootNode {
 
         @Child private RubyNode node;
 

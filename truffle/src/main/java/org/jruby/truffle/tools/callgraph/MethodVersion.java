@@ -10,7 +10,7 @@
 package org.jruby.truffle.tools.callgraph;
 
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.language.RubyRootNode;
 
 import java.util.HashMap;
 import java.util.Map;

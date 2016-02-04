@@ -14,7 +14,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
 import org.jruby.util.ByteList;
@@ -32,6 +31,7 @@ public class SymbolTable {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final WeakHashMap<Rope, WeakReference<DynamicObject>> symbolsTable = new WeakHashMap<>();
+    private final WeakHashMap<String, WeakReference<DynamicObject>> symbolsTableByString = new WeakHashMap<>();
 
     public SymbolTable(RubyContext context) {
         this.context = context;
@@ -39,7 +39,34 @@ public class SymbolTable {
 
     @CompilerDirectives.TruffleBoundary
     public DynamicObject getSymbol(String string) {
-        return getSymbol(RopeOperations.create(ByteList.encode(string, "ISO-8859-1"), USASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN));
+        lock.readLock().lock();
+
+        try {
+            final WeakReference<DynamicObject> symbolReference = symbolsTableByString.get(string);
+
+            if (symbolReference != null) {
+                final DynamicObject symbol = symbolReference.get();
+
+                if (symbol != null) {
+                    return symbol;
+                }
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
+
+        final Rope rope = StringOperations.createRope(string, USASCIIEncoding.INSTANCE);
+        final DynamicObject symbol = getSymbol(rope);
+
+        lock.writeLock().lock();
+
+        try {
+            symbolsTableByString.put(string, new WeakReference<>(symbol));
+
+            return symbol;
+        } finally {
+        lock.writeLock().unlock();
+        }
     }
 
     @CompilerDirectives.TruffleBoundary
