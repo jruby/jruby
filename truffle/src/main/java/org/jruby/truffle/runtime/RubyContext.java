@@ -44,7 +44,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
+import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.ArrayOperations;
 import org.jruby.truffle.core.CoreLibrary;
