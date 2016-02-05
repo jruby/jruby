@@ -30,6 +30,8 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
+import org.jruby.truffle.core.regexp.RegexpNodesFactory;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;

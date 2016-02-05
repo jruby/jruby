@@ -8,9 +8,10 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.regexp;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.StringOperations;
 
