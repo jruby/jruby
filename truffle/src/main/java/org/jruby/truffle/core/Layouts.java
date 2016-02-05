@@ -12,6 +12,8 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.object.HiddenKey;
 import org.jruby.truffle.core.array.ArrayLayout;
 import org.jruby.truffle.core.array.ArrayLayoutImpl;
+import org.jruby.truffle.core.hash.HashLayout;
+import org.jruby.truffle.core.hash.HashLayoutImpl;
 import org.jruby.truffle.core.string.StringLayout;
 import org.jruby.truffle.core.string.StringLayoutImpl;
 import org.jruby.truffle.stdlib.BigDecimalLayout;
