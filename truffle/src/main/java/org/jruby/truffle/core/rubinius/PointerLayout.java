@@ -7,24 +7,26 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.stdlib;
+package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import jnr.ffi.Pointer;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.core.BasicObjectLayout;
 
-import java.security.MessageDigest;
-
 @Layout
-public interface DigestLayout extends BasicObjectLayout {
+public interface PointerLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createDigestShape(DynamicObject logicalClass,
-                                           DynamicObject metaClass);
+    DynamicObjectFactory createPointerShape(DynamicObject logicalClass,
+                                            DynamicObject metaClass);
 
-    DynamicObject createDigest(DynamicObjectFactory factory,
-                               MessageDigest digest);
+    DynamicObject createPointer(DynamicObjectFactory factory,
+                                Pointer pointer);
 
-    MessageDigest getDigest(DynamicObject object);
+    boolean isPointer(DynamicObject object);
+
+    Pointer getPointer(DynamicObject object);
+    void setPointer(DynamicObject object, Pointer pointer);
 
 }

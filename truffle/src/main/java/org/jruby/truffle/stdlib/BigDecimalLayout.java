@@ -11,9 +11,8 @@ package org.jruby.truffle.stdlib;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import org.jruby.truffle.stdlib.BigDecimalNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.runtime.layouts.BasicObjectLayout;
+import org.jruby.truffle.core.BasicObjectLayout;
 
 import java.math.BigDecimal;
 

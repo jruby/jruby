@@ -7,24 +7,26 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.stdlib;
+package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.core.BasicObjectLayout;
 
-import java.security.MessageDigest;
+import java.math.BigInteger;
 
 @Layout
-public interface DigestLayout extends BasicObjectLayout {
+public interface BignumLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createDigestShape(DynamicObject logicalClass,
+    DynamicObjectFactory createBignumShape(DynamicObject logicalClass,
                                            DynamicObject metaClass);
 
-    DynamicObject createDigest(DynamicObjectFactory factory,
-                               MessageDigest digest);
+    DynamicObject createBignum(DynamicObjectFactory factory,
+                               BigInteger value);
 
-    MessageDigest getDigest(DynamicObject object);
+    boolean isBignum(Object object);
+    boolean isBignum(DynamicObject object);
+
+    BigInteger getValue(DynamicObject object);
 
 }

@@ -7,24 +7,24 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.stdlib;
+package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.core.BasicObjectLayout;
-
-import java.security.MessageDigest;
+import org.jruby.util.Random;
 
 @Layout
-public interface DigestLayout extends BasicObjectLayout {
+public interface RandomizerLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createDigestShape(DynamicObject logicalClass,
-                                           DynamicObject metaClass);
+    DynamicObjectFactory createRandomizerShape(DynamicObject logicalClass,
+                                               DynamicObject metaClass);
 
-    DynamicObject createDigest(DynamicObjectFactory factory,
-                               MessageDigest digest);
+    DynamicObject createRandomizer(DynamicObjectFactory factory,
+                                   Random random);
 
-    MessageDigest getDigest(DynamicObject object);
+    Random getRandom(DynamicObject object);
+    void setRandom(DynamicObject object, Random random);
 
 }
