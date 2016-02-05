@@ -15,7 +15,7 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 
-@Layout(objectTypeSuperclass = "org.jruby.truffle.runtime.RubyObjectType")
+@Layout(objectTypeSuperclass = "org.jruby.truffle.language.RubyObjectType")
 public interface BasicObjectLayout {
 
     DynamicObjectFactory createBasicObjectShape(@Nullable DynamicObject logicalClass,

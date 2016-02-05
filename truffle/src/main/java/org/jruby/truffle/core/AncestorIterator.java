@@ -10,7 +10,7 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.runtime.ModuleChain;
+import org.jruby.truffle.language.ModuleChain;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

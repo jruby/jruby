@@ -21,7 +21,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;

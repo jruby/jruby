@@ -40,7 +40,7 @@ import org.jruby.truffle.stdlib.BigDecimalNodesFactory.BigDecimalCoerceNodeGen;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
 import org.jruby.truffle.language.UnreachableCodeBranch;
-import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.StringOperations;

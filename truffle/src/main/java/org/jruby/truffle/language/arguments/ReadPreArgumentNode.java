@@ -14,7 +14,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ValueProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**

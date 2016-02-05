@@ -11,7 +11,7 @@ package org.jruby.truffle.language.methods;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;

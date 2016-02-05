@@ -23,7 +23,7 @@ import org.jruby.truffle.core.KernelNodes.RequireNode;
 import org.jruby.truffle.core.KernelNodesFactory;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyConstant;
+import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;

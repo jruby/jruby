@@ -51,7 +51,7 @@ import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
 import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.core.rubinius.PosixNodesFactory;
 import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
-import org.jruby.truffle.runtime.RubyCallStack;
+import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;

@@ -12,7 +12,7 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.truffle.runtime.RubyCallStack;
+import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class Warnings {

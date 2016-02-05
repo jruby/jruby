@@ -7,11 +7,10 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime;
+package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.language.RubyGuards;
 
 public class LexicalScope {
     public static final LexicalScope NONE = null;

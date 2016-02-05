@@ -21,7 +21,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNode;
 import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNodeGen;
-import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
