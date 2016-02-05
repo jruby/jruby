@@ -27,7 +27,7 @@ import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.sockets.NativeSockets;
+import org.jruby.truffle.stdlib.sockets.NativeSockets;
 import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)

@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.sockets;
+package org.jruby.truffle.stdlib.sockets;
 
 import jnr.ffi.Pointer;
 import jnr.posix.Timeval;

@@ -61,7 +61,7 @@ import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.platform.darwin.CrtExterns;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.platform.RubiniusConfiguration;
-import org.jruby.truffle.runtime.sockets.NativeSockets;
+import org.jruby.truffle.stdlib.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
