@@ -15,6 +15,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 
 import java.lang.ref.WeakReference;

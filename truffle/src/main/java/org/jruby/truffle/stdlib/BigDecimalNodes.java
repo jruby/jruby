@@ -43,7 +43,7 @@ import org.jruby.truffle.language.UnreachableCodeBranch;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.StringOperations;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.Layouts;
 
 import java.math.BigDecimal;

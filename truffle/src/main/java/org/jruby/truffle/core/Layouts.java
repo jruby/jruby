@@ -10,7 +10,8 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.HiddenKey;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.string.StringLayout;
+import org.jruby.truffle.core.string.StringLayoutImpl;
 import org.jruby.truffle.stdlib.BigDecimalLayout;
 import org.jruby.truffle.stdlib.BigDecimalLayoutImpl;
 import org.jruby.truffle.stdlib.psych.EmitterLayout;

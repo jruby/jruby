@@ -12,6 +12,7 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.string.StringOperations;
 
 public class RegexpGuards {
 

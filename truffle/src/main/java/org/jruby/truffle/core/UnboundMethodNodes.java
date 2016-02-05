@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.language.methods.CanBindMethodToModuleNodeGen;

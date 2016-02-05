@@ -29,6 +29,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.core.rope.*;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyCallStack;

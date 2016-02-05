@@ -33,6 +33,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.parser.PrintfCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.core.format.runtime.exceptions.*;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.*;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;

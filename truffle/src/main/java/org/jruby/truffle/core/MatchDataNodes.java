@@ -19,6 +19,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.joni.Region;
 import org.joni.exception.ValueException;
+import org.jruby.truffle.core.string.StringGuards;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.cast.TaintResultNode;

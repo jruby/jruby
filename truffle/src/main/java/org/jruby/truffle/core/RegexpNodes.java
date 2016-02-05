@@ -28,6 +28,7 @@ import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.core.rope.*;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
