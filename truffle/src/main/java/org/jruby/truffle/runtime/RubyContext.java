@@ -51,7 +51,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.RopeTable;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.core.SymbolTable;
-import org.jruby.truffle.runtime.ffi.LibCClockGetTime;
+import org.jruby.truffle.core.ffi.LibCClockGetTime;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.FeatureLoader;
 import org.jruby.truffle.runtime.loader.SourceCache;
