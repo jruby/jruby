@@ -5,7 +5,7 @@ class TestSyntax < Test::Unit::TestCase
   def assert_syntax_files(test)
     srcdir = File.expand_path("../../..", __FILE__)
     srcdir = File.join(srcdir, test)
-    assert_separately(%W[--disable-gem - #{srcdir}],
+    assert_separately(%W[--disable-gems - #{srcdir}],
                       __FILE__, __LINE__, <<-'eom', timeout: Float::INFINITY)
       dir = ARGV.shift
       for script in Dir["#{dir}/**/*.rb"].sort
