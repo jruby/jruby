@@ -33,7 +33,7 @@ import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.StringOperations;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.methods.InternalMethod;
 

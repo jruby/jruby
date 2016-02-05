@@ -21,16 +21,16 @@ import org.jruby.platform.Platform;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.RopeNodes;
-import org.jruby.truffle.core.RopeNodesFactory;
+import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.StringOperations;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
-import static org.jruby.truffle.core.StringOperations.decodeUTF8;
+import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 
 import java.nio.charset.StandardCharsets;
 

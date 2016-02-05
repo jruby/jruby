@@ -30,7 +30,7 @@ import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.StringOperations;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;

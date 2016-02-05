@@ -22,7 +22,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.literal.LiteralNode;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.StringOperations;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.rope.Rope;
 
 public class ReadTimeZoneNode extends RubyNode {

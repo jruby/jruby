@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.regexp;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -19,6 +19,10 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.joni.Region;
 import org.joni.exception.ValueException;
+import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.string.StringGuards;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.cast.TaintResultNode;

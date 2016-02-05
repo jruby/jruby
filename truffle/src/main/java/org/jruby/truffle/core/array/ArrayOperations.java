@@ -7,11 +7,12 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.array.ArrayReflector;
 import org.jruby.truffle.core.array.ArrayUtils;

@@ -19,7 +19,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.StringOperations;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 public abstract class CachedDispatchNode extends DispatchNode {

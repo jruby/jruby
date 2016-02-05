@@ -62,7 +62,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.adapaters.InputStreamAdapter;
-import org.jruby.truffle.core.StringOperations;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;

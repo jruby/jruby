@@ -15,7 +15,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.core.ArrayOperations;
+import org.jruby.truffle.core.array.ArrayOperations;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
