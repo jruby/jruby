@@ -32,6 +32,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.string.StringNodes;
 import org.jruby.truffle.core.string.StringNodesFactory;
@@ -70,6 +71,7 @@ import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 @CoreClass(name = "Module")
@@ -790,16 +792,18 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject getClassVariables(DynamicObject module) {
-            CompilerDirectives.transferToInterpreter();
+            final Map<String, Object> allClassVariables = ModuleOperations.getAllClassVariables(module);
+            final int size = allClassVariables.size();
+            final Object[] store = new Object[size];
 
-            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-
-            for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
-                ArrayOperations.append(array, getSymbol(variable));
+            int i = 0;
+            for (String variable : allClassVariables.keySet()) {
+                store[i++] = getSymbol(variable);
             }
-            return array;
+            return ArrayHelpers.createArray(getContext(), store, size);
         }
     }
 

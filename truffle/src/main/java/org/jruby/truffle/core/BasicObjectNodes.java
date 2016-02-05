@@ -20,6 +20,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
@@ -40,6 +41,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -201,19 +203,18 @@ public abstract class BasicObjectNodes {
         @Specialization
         public DynamicObject instanceVariables(DynamicObject self) {
             List<Object> keys = self.getShape().getKeyList();
-            final Object[] instanceVariableNames = keys.toArray(new Object[keys.size()]);
 
+            final Object[] instanceVariableNames = keys.toArray(new Object[keys.size()]);
             Arrays.sort(instanceVariableNames);
 
-            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-
+            final List<Object> names = new ArrayList<>();
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
-                    ArrayOperations.append(array, getSymbol((String) name));
+                    names.add(getSymbol((String) name));
                 }
             }
-
-            return array;
+            final int size = names.size();
+            return ArrayHelpers.createArray(getContext(), names.toArray(new Object[size]), size);
         }
 
     }

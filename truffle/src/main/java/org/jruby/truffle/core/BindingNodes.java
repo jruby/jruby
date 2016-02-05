@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.core;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -20,6 +23,8 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
@@ -291,19 +296,18 @@ public abstract class BindingNodes {
 
         @TruffleBoundary
         public static DynamicObject listLocalVariables(RubyContext context, Frame frame) {
-            final DynamicObject array = Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), null, 0);
-
+            final List<Object> names = new ArrayList<>();
             while (frame != null) {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
                     if (slot.getIdentifier() instanceof String && !((String) slot.getIdentifier()).startsWith("rubytruffle_temp_frame_on_stack_marker")) {
-                        ArrayOperations.append(array, context.getSymbol((String) slot.getIdentifier()));
+                        names.add(context.getSymbol((String) slot.getIdentifier()));
                     }
                 }
 
                 frame = RubyArguments.getDeclarationFrame(frame.getArguments());
             }
-
-            return array;
+            final int size = names.size();
+            return ArrayHelpers.createArray(context, names.toArray(new Object[size]), size);
         }
     }
 

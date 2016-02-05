@@ -73,20 +73,21 @@ public abstract class ClassNodes {
 
         model.rubyModuleObject = rubyClass;
 
+        final ModuleFields fields = Layouts.MODULE.getFields(rubyClass);
         if (model.lexicalParent == null) { // bootstrap or anonymous module
-            Layouts.MODULE.getFields(rubyClass).setFullName(Layouts.MODULE.getFields(rubyClass).givenBaseName);
+            fields.setFullName(fields.givenBaseName);
         } else {
-            Layouts.MODULE.getFields(rubyClass).getAdoptedByLexicalParent(context, model.lexicalParent, model.givenBaseName, null);
+            fields.getAdoptedByLexicalParent(context, model.lexicalParent, model.givenBaseName, null);
         }
 
         if (superclass != null) {
             assert RubyGuards.isRubyClass(superclass);
             assert RubyGuards.isRubyClass(rubyClass);
 
-            Layouts.MODULE.getFields(rubyClass).parentModule = Layouts.MODULE.getFields(superclass).start;
+            fields.parentModule = Layouts.MODULE.getFields(superclass).start;
             Layouts.MODULE.getFields(superclass).addDependent(rubyClass);
 
-            Layouts.MODULE.getFields(rubyClass).newVersion();
+            fields.newVersion();
         }
 
         return rubyClass;
@@ -119,19 +120,20 @@ public abstract class ClassNodes {
 
         model.rubyModuleObject = rubyClass;
 
+        final ModuleFields fields = Layouts.MODULE.getFields(rubyClass);
         if (model.lexicalParent != null) {
-            Layouts.MODULE.getFields(rubyClass).getAdoptedByLexicalParent(context, model.lexicalParent, model.givenBaseName, null);
-        } else if (Layouts.MODULE.getFields(rubyClass).givenBaseName != null) { // bootstrap module
-            Layouts.MODULE.getFields(rubyClass).setFullName(Layouts.MODULE.getFields(rubyClass).givenBaseName);
+            fields.getAdoptedByLexicalParent(context, model.lexicalParent, model.givenBaseName, null);
+        } else if (fields.givenBaseName != null) { // bootstrap module
+            fields.setFullName(fields.givenBaseName);
         }
 
         if (superclass != null) {
             assert RubyGuards.isRubyClass(superclass);
 
-            Layouts.MODULE.getFields(rubyClass).parentModule = Layouts.MODULE.getFields(superclass).start;
+            fields.parentModule = Layouts.MODULE.getFields(superclass).start;
             Layouts.MODULE.getFields(superclass).addDependent(rubyClass);
 
-            Layouts.MODULE.getFields(rubyClass).newVersion();
+            fields.newVersion();
         }
 
         DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(superclass);
