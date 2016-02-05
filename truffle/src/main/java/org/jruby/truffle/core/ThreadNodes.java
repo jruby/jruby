@@ -29,9 +29,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.subsystems.FiberManager;
-import org.jruby.truffle.runtime.subsystems.SafepointAction;
-import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.truffle.language.SafepointAction;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;

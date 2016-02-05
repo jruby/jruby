@@ -10,7 +10,7 @@
 package org.jruby.truffle.util;
 
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
+import org.jruby.truffle.core.ThreadManager.BlockingAction;
 
 import java.io.IOException;
 import java.nio.channels.ClosedByInterruptException;

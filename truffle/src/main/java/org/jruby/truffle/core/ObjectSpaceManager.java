@@ -7,17 +7,15 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.subsystems;
+package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.RubyGC;
-import org.jruby.truffle.core.ThreadNodes;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -108,7 +106,7 @@ public class ObjectSpaceManager {
 
         while (true) {
             // Wait on the finalizer queue
-            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(null, new BlockingAction<FinalizerReference>() {
+            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(null, new ThreadManager.BlockingAction<FinalizerReference>() {
                 @Override
                 public FinalizerReference block() throws InterruptedException {
                     return (FinalizerReference) finalizerQueue.remove();

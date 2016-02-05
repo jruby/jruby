@@ -18,7 +18,7 @@ import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.om.dsl.api.Volatile;
-import org.jruby.truffle.runtime.subsystems.FiberManager;
+import org.jruby.truffle.core.FiberManager;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;

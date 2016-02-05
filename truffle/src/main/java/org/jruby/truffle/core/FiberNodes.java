@@ -29,8 +29,7 @@ import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.subsystems.ThreadManager;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
+import org.jruby.truffle.core.ThreadManager.BlockingAction;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;

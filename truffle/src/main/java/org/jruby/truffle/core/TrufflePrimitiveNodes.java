@@ -43,7 +43,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.runtime.rope.CodeRange;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.truffle.runtime.rope.RopeOperations;
-import org.jruby.truffle.runtime.subsystems.SimpleShell;
+import org.jruby.truffle.tools.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.unsafe.UnsafeHolder;
