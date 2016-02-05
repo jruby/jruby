@@ -12,12 +12,14 @@ package org.jruby.truffle.language.loader;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayMirror;
 import org.jruby.truffle.core.array.ArrayReflector;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.string.StringOperations;
@@ -143,13 +145,11 @@ public class FeatureLoader {
         try {
             context.loadFile(expandedPath, currentNode);
         } catch (RaiseException e) {
-            final ArrayMirror mirror = ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
+            final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
             final int length = Layouts.ARRAY.getSize(loadedFeatures);
             for (int i = length - 1; i >= 0; i--) {
-                if (mirror.get(i) == pathString) {
-                    for (int j = length - 1; j > i; j--) {
-                        mirror.set(i - 1, mirror.get(i));
-                    }
+                if (store[i] == pathString) {
+                    ArrayUtils.arraycopy(store, i + 1, store, i, length - i - 1);
                     Layouts.ARRAY.setSize(loadedFeatures, length - 1);
                     break;
                 }
