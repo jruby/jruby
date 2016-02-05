@@ -3,6 +3,7 @@ packaging 'war'
 
 # get jruby dependencies
 properties( 'jruby.version' => '@project.version@',
+            'wildfly.version' => '9.0.2.Final',
             'project.build.sourceEncoding' => 'utf-8' )
 
 pom( 'org.jruby:jruby', '${jruby.version}' )
@@ -15,7 +16,7 @@ repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/
 
 jruby_plugin :gem, :includeRubygemsInResources => true do
   execute_goal :initialize
-end 
+end
 
 execute 'jrubydir', 'initialize' do |ctx|
   require 'jruby/commands'
