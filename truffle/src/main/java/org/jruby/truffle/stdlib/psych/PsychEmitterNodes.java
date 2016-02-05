@@ -51,7 +51,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.adapaters.OutputStreamAdapter;
+import org.jruby.truffle.core.adapaters.OutputStreamAdapter;
 import org.jruby.truffle.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.yaml.snakeyaml.DumperOptions;
