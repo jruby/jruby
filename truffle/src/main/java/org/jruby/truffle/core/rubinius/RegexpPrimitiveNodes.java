@@ -26,7 +26,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
 

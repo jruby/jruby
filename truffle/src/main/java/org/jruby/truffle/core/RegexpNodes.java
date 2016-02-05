@@ -38,9 +38,9 @@ import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPr
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.rope.CodeRange;
-import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.rope.RopeOperations;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.util.*;
 
 import java.nio.charset.StandardCharsets;

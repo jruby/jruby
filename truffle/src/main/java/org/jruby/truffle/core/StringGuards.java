@@ -13,8 +13,8 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.runtime.rope.CodeRange;
-import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
 
 public class StringGuards {
 

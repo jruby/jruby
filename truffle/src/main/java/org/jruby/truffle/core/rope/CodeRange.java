@@ -12,7 +12,7 @@
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  */
 
-package org.jruby.truffle.runtime.rope;
+package org.jruby.truffle.core.rope;
 
 import org.jruby.util.StringSupport;
 

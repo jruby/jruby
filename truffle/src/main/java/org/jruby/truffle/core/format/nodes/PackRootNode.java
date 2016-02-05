@@ -19,7 +19,7 @@ import org.jruby.truffle.core.format.runtime.PackEncoding;
 import org.jruby.truffle.core.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.runtime.rope.CodeRange;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.util.StringSupport;
 
 /**

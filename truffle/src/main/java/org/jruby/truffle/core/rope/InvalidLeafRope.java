@@ -8,14 +8,14 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.runtime.rope;
+package org.jruby.truffle.core.rope;
 
 import org.jcodings.Encoding;
 
-public class ValidLeafRope extends LeafRope {
+public class InvalidLeafRope extends LeafRope {
 
-    public ValidLeafRope(byte[] bytes, Encoding encoding, int characterLength) {
-        super(bytes, encoding, CodeRange.CR_VALID, encoding.isSingleByte(), characterLength);
+    public InvalidLeafRope(byte[] bytes, Encoding encoding) {
+        super(bytes, encoding, CodeRange.CR_BROKEN, false, bytes.length);
     }
 
 }

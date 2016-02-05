@@ -20,7 +20,7 @@ import org.jruby.truffle.core.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.runtime.rope.CodeRange;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.util.ByteList;
 
 import java.util.Arrays;

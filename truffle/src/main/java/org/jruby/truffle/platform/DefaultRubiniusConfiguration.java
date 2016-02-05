@@ -45,7 +45,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.runtime.rope.CodeRange;
+import org.jruby.truffle.core.rope.CodeRange;
 
 import java.math.BigInteger;
 import java.util.Arrays;

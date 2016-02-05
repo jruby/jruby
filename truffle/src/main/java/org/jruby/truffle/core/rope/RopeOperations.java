@@ -11,7 +11,7 @@
  * Some of the code in this class is modified from org.jruby.runtime.Helpers,
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  */
-package org.jruby.truffle.runtime.rope;
+package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -29,7 +29,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import static org.jruby.truffle.runtime.rope.CodeRange.*;
+import static org.jruby.truffle.core.rope.CodeRange.*;
 
 public class RopeOperations {
 

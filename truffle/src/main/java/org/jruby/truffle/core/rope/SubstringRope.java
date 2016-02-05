@@ -8,7 +8,7 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.runtime.rope;
+package org.jruby.truffle.core.rope;
 
 public class SubstringRope extends Rope {
 

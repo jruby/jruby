@@ -29,20 +29,20 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.rope.AsciiOnlyLeafRope;
-import org.jruby.truffle.runtime.rope.CodeRange;
-import org.jruby.truffle.runtime.rope.ConcatRope;
-import org.jruby.truffle.runtime.rope.InvalidLeafRope;
-import org.jruby.truffle.runtime.rope.LeafRope;
-import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.rope.RopeOperations;
-import org.jruby.truffle.runtime.rope.SubstringRope;
-import org.jruby.truffle.runtime.rope.ValidLeafRope;
+import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.ConcatRope;
+import org.jruby.truffle.core.rope.InvalidLeafRope;
+import org.jruby.truffle.core.rope.LeafRope;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.SubstringRope;
+import org.jruby.truffle.core.rope.ValidLeafRope;
 import org.jruby.util.StringSupport;
 
-import static org.jruby.truffle.runtime.rope.CodeRange.CR_7BIT;
-import static org.jruby.truffle.runtime.rope.CodeRange.CR_BROKEN;
-import static org.jruby.truffle.runtime.rope.CodeRange.CR_VALID;
+import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
+import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
+import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 
 public abstract class RopeNodes {
 

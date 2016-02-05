@@ -61,9 +61,9 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.rope.CodeRange;
-import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.rope.ValidLeafRope;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.ValidLeafRope;
 import org.jruby.util.Memo;
 
 import java.util.Arrays;

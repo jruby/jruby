@@ -26,7 +26,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubySyntaxTag;
 import org.jruby.truffle.language.loader.SourceLoader;
-import org.jruby.truffle.runtime.rope.CodeRange;
+import org.jruby.truffle.core.rope.CodeRange;
 
 import java.util.ArrayList;
 import java.util.Collection;

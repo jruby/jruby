@@ -52,7 +52,7 @@ import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.platform.darwin.CrtExterns;
-import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.platform.RubiniusConfiguration;
 import org.jruby.truffle.stdlib.sockets.NativeSockets;
 import org.jruby.truffle.language.translator.TranslatorDriver;

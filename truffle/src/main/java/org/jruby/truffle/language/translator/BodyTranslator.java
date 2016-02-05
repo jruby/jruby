@@ -73,8 +73,8 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.control.BreakID;
-import org.jruby.truffle.runtime.rope.CodeRange;
-import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 

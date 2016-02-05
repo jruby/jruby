@@ -16,7 +16,7 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.runtime.rope.RopeOperations;
+import org.jruby.truffle.core.rope.RopeOperations;
 
 public class RubyObjectType extends ObjectType {
 
