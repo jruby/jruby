@@ -30,6 +30,7 @@ import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.rope.RopeTable;
 import org.jruby.truffle.language.*;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.platform.TrufflePOSIXHandler;

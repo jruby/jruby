@@ -21,7 +21,7 @@ import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.core.RegexpGuards;
 import org.jruby.truffle.core.RegexpNodes;
-import org.jruby.truffle.core.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.StringOperations;

@@ -32,6 +32,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.format.parser.PackCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.core.format.runtime.exceptions.*;
+import org.jruby.truffle.core.rope.*;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -61,9 +62,6 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.rope.ValidLeafRope;
 import org.jruby.util.Memo;
 
 import java.util.Arrays;
