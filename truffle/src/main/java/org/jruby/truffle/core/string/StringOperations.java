@@ -30,7 +30,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
-import org.jruby.truffle.core.ArrayOperations;
+import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.EncodingNodes;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;

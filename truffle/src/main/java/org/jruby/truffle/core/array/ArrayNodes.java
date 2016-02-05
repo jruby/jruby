@@ -55,7 +55,6 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.ArrayOperations;
 import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.Layouts;

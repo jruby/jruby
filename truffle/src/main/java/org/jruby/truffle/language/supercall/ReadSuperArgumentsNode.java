@@ -11,7 +11,7 @@ package org.jruby.truffle.language.supercall;
 
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.ArrayOperations;
+import org.jruby.truffle.core.array.ArrayOperations;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.frame.VirtualFrame;
