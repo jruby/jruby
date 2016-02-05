@@ -43,34 +43,34 @@ import java.util.Map;
 public abstract class EncodingNodes {
 
     // Both are mutated only in CoreLibrary.initializeEncodingConstants().
-    private static DynamicObject[] encodingList = new DynamicObject[EncodingDB.getEncodings().size()];
-    private static Map<String, DynamicObject> lookup = new HashMap<>();
+    private static final DynamicObject[] ENCODING_LIST = new DynamicObject[EncodingDB.getEncodings().size()];
+    private static final Map<String, DynamicObject> LOOKUP = new HashMap<>();
 
     @TruffleBoundary
     public static synchronized DynamicObject getEncoding(Encoding encoding) {
-        return lookup.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
+        return LOOKUP.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
     }
 
     @TruffleBoundary
     public static DynamicObject getEncoding(String name) {
-        return lookup.get(name.toLowerCase(Locale.ENGLISH));
+        return LOOKUP.get(name.toLowerCase(Locale.ENGLISH));
     }
 
     public static DynamicObject getEncoding(int index) {
-        return encodingList[index];
+        return ENCODING_LIST[index];
     }
 
     @TruffleBoundary
     public static void storeEncoding(int encodingListIndex, DynamicObject encoding) {
         assert RubyGuards.isRubyEncoding(encoding);
-        encodingList[encodingListIndex] = encoding;
-        lookup.put(Layouts.ENCODING.getName(encoding).toString().toLowerCase(Locale.ENGLISH), encoding);
+        ENCODING_LIST[encodingListIndex] = encoding;
+        LOOKUP.put(Layouts.ENCODING.getName(encoding).toString().toLowerCase(Locale.ENGLISH), encoding);
     }
 
     @TruffleBoundary
     public static void storeAlias(String aliasName, DynamicObject encoding) {
         assert RubyGuards.isRubyEncoding(encoding);
-        lookup.put(aliasName.toLowerCase(Locale.ENGLISH), encoding);
+        LOOKUP.put(aliasName.toLowerCase(Locale.ENGLISH), encoding);
     }
 
     public static DynamicObject newEncoding(DynamicObject encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
@@ -78,9 +78,9 @@ public abstract class EncodingNodes {
     }
 
     public static Object[] cloneEncodingList() {
-        final Object[] clone = new Object[encodingList.length];
+        final Object[] clone = new Object[ENCODING_LIST.length];
 
-        System.arraycopy(encodingList, 0, clone, 0, encodingList.length);
+        System.arraycopy(ENCODING_LIST, 0, clone, 0, ENCODING_LIST.length);
 
         return clone;
     }
@@ -459,7 +459,7 @@ public abstract class EncodingNodes {
         public Object encodingMap(VirtualFrame frame) {
             Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
-            final DynamicObject[] encodings = encodingList;
+            final DynamicObject[] encodings = ENCODING_LIST;
             for (int i = 0; i < encodings.length; i++) {
                 final Object upcased = upcaseNode.call(frame, createString(Layouts.ENCODING.getName(encodings[i])), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
