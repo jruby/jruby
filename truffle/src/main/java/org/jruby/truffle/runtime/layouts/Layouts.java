@@ -10,12 +10,12 @@
 package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.HiddenKey;
-import org.jruby.truffle.runtime.layouts.ext.BigDecimalLayout;
-import org.jruby.truffle.runtime.layouts.ext.BigDecimalLayoutImpl;
-import org.jruby.truffle.runtime.layouts.ext.psych.EmitterLayout;
-import org.jruby.truffle.runtime.layouts.ext.psych.EmitterLayoutImpl;
-import org.jruby.truffle.runtime.layouts.ext.psych.ParserLayout;
-import org.jruby.truffle.runtime.layouts.ext.psych.ParserLayoutImpl;
+import org.jruby.truffle.stdlib.BigDecimalLayout;
+import org.jruby.truffle.stdlib.BigDecimalLayoutImpl;
+import org.jruby.truffle.stdlib.psych.EmitterLayout;
+import org.jruby.truffle.stdlib.psych.EmitterLayoutImpl;
+import org.jruby.truffle.stdlib.psych.ParserLayout;
+import org.jruby.truffle.stdlib.psych.ParserLayoutImpl;
 import org.jruby.truffle.runtime.layouts.rubinius.*;
 
 public abstract class Layouts {

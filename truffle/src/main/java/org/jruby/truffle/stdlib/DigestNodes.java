@@ -20,7 +20,7 @@ import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
+import org.jruby.truffle.stdlib.DigestLayoutImpl;
 import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 
