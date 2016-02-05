@@ -31,7 +31,7 @@ import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyCallStack;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.backtrace.BacktraceInterleaver;
 import org.jruby.truffle.cext.CExtManager;

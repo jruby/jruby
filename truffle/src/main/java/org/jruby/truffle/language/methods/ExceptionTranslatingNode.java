@@ -19,7 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThreadExitException;
 import org.jruby.truffle.language.control.TruffleFatalException;

@@ -22,7 +22,7 @@ import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.core.CoreSourceSection;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.language.methods.InternalMethod;
 

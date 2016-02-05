@@ -21,7 +21,7 @@ import org.jruby.truffle.core.KernelNodesFactory;
 import org.jruby.truffle.core.ModuleNodes;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 

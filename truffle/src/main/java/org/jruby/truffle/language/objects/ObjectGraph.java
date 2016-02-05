@@ -18,7 +18,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;

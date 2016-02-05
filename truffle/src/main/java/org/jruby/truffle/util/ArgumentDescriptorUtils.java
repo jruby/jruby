@@ -14,7 +14,7 @@ package org.jruby.truffle.util;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ArgumentDescriptorUtils {

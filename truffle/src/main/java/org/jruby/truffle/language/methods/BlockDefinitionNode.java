@@ -19,7 +19,7 @@ import org.jruby.truffle.core.ProcNodes.Type;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.language.control.BreakID;
 

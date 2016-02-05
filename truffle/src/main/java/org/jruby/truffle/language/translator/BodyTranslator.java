@@ -65,7 +65,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.language.ConstantReplacer;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.control.ReturnID;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.StringOperations;

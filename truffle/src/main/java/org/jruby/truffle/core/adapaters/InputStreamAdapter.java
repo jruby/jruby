@@ -10,7 +10,7 @@
 package org.jruby.truffle.core.adapaters;
 
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 import java.io.IOException;
 import java.io.InputStream;

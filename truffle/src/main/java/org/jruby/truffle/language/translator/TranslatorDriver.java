@@ -32,7 +32,7 @@ import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;

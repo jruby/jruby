@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.literal.NilNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 import java.util.*;
 

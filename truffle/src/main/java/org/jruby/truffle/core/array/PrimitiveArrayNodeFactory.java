@@ -12,7 +12,7 @@ package org.jruby.truffle.core.array;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.fixnum.FixnumLiteralNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public abstract class PrimitiveArrayNodeFactory {
 

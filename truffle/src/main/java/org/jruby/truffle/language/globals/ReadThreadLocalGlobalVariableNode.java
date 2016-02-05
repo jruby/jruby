@@ -18,7 +18,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.ThreadLocalObjectNode;
 import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class ReadThreadLocalGlobalVariableNode extends RubyNode {
 

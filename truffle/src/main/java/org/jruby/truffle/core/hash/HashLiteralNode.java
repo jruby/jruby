@@ -21,7 +21,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public abstract class HashLiteralNode extends RubyNode {

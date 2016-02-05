@@ -17,7 +17,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.RetryException;
 import org.jruby.truffle.runtime.layouts.Layouts;

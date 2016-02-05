@@ -24,7 +24,7 @@ import org.jruby.truffle.core.FloatNodes;
 import org.jruby.truffle.core.FloatNodesFactory;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.runtime.layouts.Layouts;

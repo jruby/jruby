@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIXHandler;
 import org.jruby.truffle.core.ExceptionNodes;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.io.File;

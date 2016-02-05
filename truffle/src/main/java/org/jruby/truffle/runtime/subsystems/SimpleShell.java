@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.RubyCallStack;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;

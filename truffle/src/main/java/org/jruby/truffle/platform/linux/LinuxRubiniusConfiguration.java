@@ -37,7 +37,7 @@
  */
 package org.jruby.truffle.platform.linux;
 
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.platform.DefaultRubiniusConfiguration;
 import org.jruby.truffle.platform.RubiniusConfiguration;
 

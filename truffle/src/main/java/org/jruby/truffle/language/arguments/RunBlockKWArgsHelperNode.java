@@ -18,7 +18,7 @@ import org.jruby.truffle.language.locals.ReadFrameSlotNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.language.locals.WriteFrameSlotNode;
 import org.jruby.truffle.language.locals.WriteFrameSlotNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class RunBlockKWArgsHelperNode extends RubyNode {

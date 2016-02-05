@@ -20,7 +20,7 @@ import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyCallStack;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.layouts.Layouts;

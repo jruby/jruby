@@ -29,7 +29,7 @@ import org.jruby.truffle.language.dispatch.DispatchNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.util.ByteList;
 

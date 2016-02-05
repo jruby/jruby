@@ -16,7 +16,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.ModuleOperations;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 public abstract class DispatchNode extends RubyNode {

@@ -50,7 +50,7 @@ import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.adapaters.OutputStreamAdapter;
 import org.jruby.truffle.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;

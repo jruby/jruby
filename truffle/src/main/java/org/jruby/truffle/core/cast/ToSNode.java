@@ -22,7 +22,7 @@ import org.jruby.truffle.core.KernelNodes;
 import org.jruby.truffle.core.KernelNodesFactory;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 @NodeChild(type = RubyNode.class)
 public abstract class ToSNode extends RubyNode {

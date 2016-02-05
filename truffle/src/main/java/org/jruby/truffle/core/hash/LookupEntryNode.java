@@ -18,7 +18,7 @@ import org.jruby.truffle.core.BasicObjectNodes;
 import org.jruby.truffle.core.BasicObjectNodesFactory;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class LookupEntryNode extends RubyNode {

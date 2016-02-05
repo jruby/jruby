@@ -19,7 +19,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.core.InterruptMode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Collections;

@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.util;
 
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.io.IOException;

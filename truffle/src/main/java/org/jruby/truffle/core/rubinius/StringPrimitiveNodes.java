@@ -80,7 +80,7 @@ import org.jruby.truffle.core.StringGuards;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.EncodingOperations;
 import org.jruby.truffle.core.StringOperations;

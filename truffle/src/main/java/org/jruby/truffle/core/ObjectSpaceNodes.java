@@ -23,7 +23,7 @@ import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.language.objects.ObjectGraph;

@@ -15,7 +15,7 @@ import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
 import jnr.posix.LibC;
 import jnr.posix.POSIX;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

@@ -10,7 +10,7 @@
 package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class DoesRespondDispatchHeadNode extends DispatchHeadNode {
 

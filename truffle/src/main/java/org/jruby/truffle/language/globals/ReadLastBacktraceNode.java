@@ -16,7 +16,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class ReadLastBacktraceNode extends RubyNode {
 

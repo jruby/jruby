@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.language;
 
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class ThreadLocalObject extends ThreadLocal<Object> {
 

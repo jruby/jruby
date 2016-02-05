@@ -27,7 +27,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.core.time.ReadTimeZoneNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;

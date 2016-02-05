@@ -17,7 +17,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.control.SequenceNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 import java.util.ArrayList;
 import java.util.List;

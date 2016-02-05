@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.RubyConstant;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayMirror;
 import org.jruby.truffle.core.array.ArrayReflector;
 import org.jruby.truffle.language.control.RaiseException;

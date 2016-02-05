@@ -18,7 +18,7 @@ import org.jruby.truffle.core.format.nodes.read.*;
 import org.jruby.truffle.core.format.nodes.type.AsUnsignedNodeGen;
 import org.jruby.truffle.core.format.nodes.write.WriteValueNodeGen;
 import org.jruby.truffle.core.format.runtime.PackEncoding;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.nio.ByteOrder;

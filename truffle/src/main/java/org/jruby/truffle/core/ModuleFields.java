@@ -23,7 +23,7 @@ import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.ModuleChain;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.RubyConstant;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.language.methods.InternalMethod;

@@ -10,7 +10,7 @@
 package org.jruby.truffle.language.supercall;
 
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.ArrayOperations;
 
 import com.oracle.truffle.api.CompilerAsserts;

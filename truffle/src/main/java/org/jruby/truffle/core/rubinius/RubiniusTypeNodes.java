@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "Rubinius::Type")

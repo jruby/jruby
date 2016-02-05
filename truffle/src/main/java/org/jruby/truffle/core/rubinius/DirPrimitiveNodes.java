@@ -43,7 +43,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;

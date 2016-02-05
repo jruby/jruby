@@ -11,7 +11,7 @@ package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

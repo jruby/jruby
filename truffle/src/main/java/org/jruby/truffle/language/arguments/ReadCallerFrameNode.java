@@ -14,7 +14,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class ReadCallerFrameNode extends RubyNode {
 

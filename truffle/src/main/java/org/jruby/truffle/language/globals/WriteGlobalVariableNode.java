@@ -16,7 +16,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class WriteGlobalVariableNode extends RubyNode {
 

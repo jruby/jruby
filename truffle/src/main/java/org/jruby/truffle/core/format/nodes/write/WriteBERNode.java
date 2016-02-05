@@ -19,7 +19,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.format.nodes.PackGuards;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.runtime.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 

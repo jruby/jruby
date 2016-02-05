@@ -30,7 +30,7 @@ import org.jruby.truffle.core.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.language.literal.NilNode;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 import java.util.*;
 
