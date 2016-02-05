@@ -25,7 +25,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 @NodeChildren({
         @NodeChild("block"),

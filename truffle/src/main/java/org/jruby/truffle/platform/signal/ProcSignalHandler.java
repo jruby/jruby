@@ -14,7 +14,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.ProcNodes;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.SafepointAction;
 
 public class ProcSignalHandler implements SignalHandler {

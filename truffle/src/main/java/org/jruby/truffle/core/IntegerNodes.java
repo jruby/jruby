@@ -20,7 +20,6 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
 

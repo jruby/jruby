@@ -21,7 +21,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 import java.io.IOException;
 import java.io.OutputStream;

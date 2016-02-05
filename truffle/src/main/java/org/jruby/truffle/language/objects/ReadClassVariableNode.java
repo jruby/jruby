@@ -20,7 +20,7 @@ import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 public class ReadClassVariableNode extends RubyNode {
 

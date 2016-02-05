@@ -58,7 +58,6 @@ import org.jruby.truffle.language.methods.GetCurrentVisibilityNode;
 import org.jruby.truffle.language.objects.*;
 import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;

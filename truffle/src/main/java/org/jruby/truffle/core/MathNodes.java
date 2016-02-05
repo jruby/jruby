@@ -24,7 +24,6 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "Math")
 public abstract class MathNodes {

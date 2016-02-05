@@ -25,8 +25,6 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubySyntaxTag;
-import org.jruby.truffle.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.runtime.rope.CodeRange;
 

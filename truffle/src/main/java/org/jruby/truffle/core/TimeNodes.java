@@ -25,7 +25,6 @@ import org.jruby.truffle.core.rubinius.TimePrimitiveNodes;
 import org.jruby.truffle.core.time.ReadTimeZoneNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {

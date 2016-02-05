@@ -27,7 +27,6 @@ import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;

@@ -17,7 +17,7 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 public class CachedBoxedDispatchNode extends CachedDispatchNode {

@@ -20,7 +20,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.loader.SourceLoader;
 
 import java.io.PrintWriter;

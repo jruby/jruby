@@ -23,7 +23,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThreadExitException;
 import org.jruby.truffle.language.control.TruffleFatalException;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 public class ExceptionTranslatingNode extends RubyNode {
 

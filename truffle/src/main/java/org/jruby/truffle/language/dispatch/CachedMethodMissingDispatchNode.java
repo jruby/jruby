@@ -19,7 +19,7 @@ import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNode;
 import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNodeGen;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 public class CachedMethodMissingDispatchNode extends CachedDispatchNode {

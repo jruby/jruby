@@ -45,7 +45,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.ffi.LibCClockGetTime;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.loader.FeatureLoader;
 import org.jruby.truffle.language.loader.SourceCache;
 import org.jruby.truffle.language.loader.SourceLoader;

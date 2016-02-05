@@ -20,7 +20,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.ClassNodes;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 /**
  * Reads the singleton (meta, eigen) class of an object.

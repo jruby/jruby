@@ -56,7 +56,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.ArrayOperations;
 import org.jruby.truffle.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.stdlib.sockets.FDSet;
 import org.jruby.truffle.stdlib.sockets.FDSetFactory;
 import org.jruby.truffle.stdlib.sockets.FDSetFactoryFactory;

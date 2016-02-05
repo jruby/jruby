@@ -24,7 +24,6 @@ import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.util.ArgumentDescriptorUtils;
 
 @CoreClass(name = "UnboundMethod")

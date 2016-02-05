@@ -21,7 +21,7 @@ import org.jruby.truffle.language.literal.LiteralNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstructor {
 

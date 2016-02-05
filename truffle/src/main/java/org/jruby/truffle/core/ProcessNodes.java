@@ -24,7 +24,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.ffi.LibCClockGetTime;
 import org.jruby.truffle.core.ffi.TimeSpec;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalOperations;
 

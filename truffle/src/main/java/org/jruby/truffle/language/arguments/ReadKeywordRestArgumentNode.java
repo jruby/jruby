@@ -18,7 +18,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.core.hash.HashOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 import java.util.ArrayList;
 import java.util.List;

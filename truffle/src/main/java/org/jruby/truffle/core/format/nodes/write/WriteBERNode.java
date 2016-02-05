@@ -20,7 +20,7 @@ import org.jruby.truffle.core.format.nodes.PackGuards;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.runtime.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;

@@ -36,7 +36,6 @@ import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.util.ArgumentDescriptorUtils;

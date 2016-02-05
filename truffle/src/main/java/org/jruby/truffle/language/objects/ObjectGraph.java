@@ -20,7 +20,7 @@ import com.oracle.truffle.api.object.Property;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.Entry;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.SafepointAction;
 
 import java.util.*;

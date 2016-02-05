@@ -20,7 +20,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 
 import java.util.Collections;

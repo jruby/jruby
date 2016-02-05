@@ -22,7 +22,7 @@ import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 /**
  * Caches {@link ModuleOperations#lookupMethod(DynamicObject, String)}
