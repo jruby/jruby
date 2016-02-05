@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.loader;
+package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;

@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.loader.SourceLoader;
+import org.jruby.truffle.language.loader.SourceLoader;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
