@@ -715,8 +715,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isRubyArray(array)")
         public DynamicObject clear(DynamicObject array) {
-            // TODO
-            setStoreAndSize(array, getStore(array), 0);
+            setStoreAndSize(array, null, 0);
             return array;
         }
 
