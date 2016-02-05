@@ -61,7 +61,7 @@ import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.RubiniusTypes;
-import org.jruby.truffle.runtime.signal.SignalOperations;
+import org.jruby.truffle.platform.signal.SignalOperations;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;

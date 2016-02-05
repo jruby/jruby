@@ -69,10 +69,10 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThrowException;
 import org.jruby.truffle.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.signal.ProcSignalHandler;
-import org.jruby.truffle.runtime.signal.Signal;
-import org.jruby.truffle.runtime.signal.SignalHandler;
-import org.jruby.truffle.runtime.signal.SignalOperations;
+import org.jruby.truffle.platform.signal.ProcSignalHandler;
+import org.jruby.truffle.platform.signal.Signal;
+import org.jruby.truffle.platform.signal.SignalHandler;
+import org.jruby.truffle.platform.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.io.PosixShim;
 
