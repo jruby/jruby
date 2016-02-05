@@ -13,7 +13,7 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 @GenerateNodeFactory
 public abstract class RubiniusPrimitiveNode extends RubyNode {

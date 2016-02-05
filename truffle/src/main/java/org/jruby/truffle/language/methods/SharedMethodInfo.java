@@ -11,7 +11,7 @@ package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.language.LexicalScope;
 
 import java.util.Arrays;
 

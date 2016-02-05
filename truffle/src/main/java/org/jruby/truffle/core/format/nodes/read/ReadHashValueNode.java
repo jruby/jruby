@@ -16,7 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.nodes.SourceNode;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChildren({

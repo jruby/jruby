@@ -13,8 +13,8 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.ThreadLocalObject;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.ThreadLocalObject;
 
 /**
  * Wrap a child value in a new {@link ThreadLocal} so that a value can be stored in a location such as a frame without

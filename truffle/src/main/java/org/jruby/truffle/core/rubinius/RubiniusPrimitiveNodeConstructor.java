@@ -17,7 +17,7 @@ import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.control.ReturnID;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 
 import java.util.ArrayList;

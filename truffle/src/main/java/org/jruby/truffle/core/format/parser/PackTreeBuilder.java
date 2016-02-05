@@ -22,7 +22,7 @@ import org.jruby.truffle.core.format.nodes.type.ReinterpretLongNodeGen;
 import org.jruby.truffle.core.format.nodes.type.ToLongNodeGen;
 import org.jruby.truffle.core.format.nodes.write.*;
 import org.jruby.truffle.core.format.runtime.PackEncoding;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.nio.ByteOrder;

@@ -17,10 +17,10 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.subsystems.AtExitManager;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.AtExitManager;
 
 public class TopLevelRaiseHandler extends RubyNode {
 

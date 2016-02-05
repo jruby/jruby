@@ -16,8 +16,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.RubyLanguage;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 /**

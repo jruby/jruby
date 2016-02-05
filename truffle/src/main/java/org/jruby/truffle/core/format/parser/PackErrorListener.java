@@ -13,7 +13,7 @@ import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class PackErrorListener extends BaseErrorListener {

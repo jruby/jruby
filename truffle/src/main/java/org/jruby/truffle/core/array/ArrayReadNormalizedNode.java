@@ -17,8 +17,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),

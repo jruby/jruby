@@ -28,11 +28,11 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 import java.util.Arrays;

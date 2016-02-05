@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.language.dispatch;
 
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class DispatchHeadNodeFactory {
 

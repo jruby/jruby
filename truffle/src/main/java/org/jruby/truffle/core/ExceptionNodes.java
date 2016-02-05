@@ -18,12 +18,11 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
-import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.RubyCallStack;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyCallStack;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.backtrace.Backtrace;
+import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 
 import java.util.EnumSet;
 import java.util.List;

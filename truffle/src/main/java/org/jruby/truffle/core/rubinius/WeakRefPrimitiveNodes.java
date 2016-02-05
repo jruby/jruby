@@ -12,8 +12,8 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 
 import java.lang.ref.WeakReference;
 

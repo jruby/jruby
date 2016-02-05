@@ -20,13 +20,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.cast.DefaultValueNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.ffi.LibCClockGetTime;
-import org.jruby.truffle.runtime.ffi.TimeSpec;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.signal.Signal;
-import org.jruby.truffle.runtime.signal.SignalOperations;
+import org.jruby.truffle.core.ffi.LibCClockGetTime;
+import org.jruby.truffle.core.ffi.TimeSpec;
+import org.jruby.truffle.platform.signal.Signal;
+import org.jruby.truffle.platform.signal.SignalOperations;
 
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {

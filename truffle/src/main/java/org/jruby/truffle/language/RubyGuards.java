@@ -11,9 +11,7 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.ThreadLocalObject;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 public abstract class RubyGuards {
 

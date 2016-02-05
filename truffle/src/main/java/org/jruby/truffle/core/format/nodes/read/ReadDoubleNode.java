@@ -18,7 +18,7 @@ import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.nodes.SourceNode;
 import org.jruby.truffle.core.format.nodes.type.ToDoubleNode;
 import org.jruby.truffle.core.format.nodes.type.ToDoubleNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 /**
  * Read a {@code double} value from the source.

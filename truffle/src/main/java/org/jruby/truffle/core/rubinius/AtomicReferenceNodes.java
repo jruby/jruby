@@ -17,8 +17,8 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 
 import java.util.concurrent.atomic.AtomicReference;
 

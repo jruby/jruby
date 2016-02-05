@@ -60,20 +60,19 @@ import org.jruby.truffle.language.objects.*;
 import org.jruby.truffle.core.rubinius.ByteArrayNodes;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
-import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.rope.CodeRange;
-import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.rope.RopeOperations;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.util.*;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_ASCII_8BIT_ROPE;
-import static org.jruby.truffle.runtime.rope.RopeOperations.EMPTY_UTF8_ROPE;
+import static org.jruby.truffle.core.rope.RopeOperations.EMPTY_ASCII_8BIT_ROPE;
+import static org.jruby.truffle.core.rope.RopeOperations.EMPTY_UTF8_ROPE;
 import static org.jruby.truffle.core.StringOperations.rope;
 import static org.jruby.truffle.core.StringOperations.encoding;
 

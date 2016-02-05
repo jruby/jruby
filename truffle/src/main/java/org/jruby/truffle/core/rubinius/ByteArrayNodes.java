@@ -18,11 +18,11 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.core.*;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Rubinius::ByteArray")

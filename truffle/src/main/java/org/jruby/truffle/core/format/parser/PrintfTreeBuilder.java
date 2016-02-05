@@ -23,7 +23,7 @@ import org.jruby.truffle.core.format.nodes.type.ToStringNodeGen;
 import org.jruby.truffle.core.format.nodes.write.WriteByteNode;
 import org.jruby.truffle.core.format.nodes.write.WriteBytesNodeGen;
 import org.jruby.truffle.core.format.nodes.write.WritePaddedBytesNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.util.ByteList;
 
 import java.util.ArrayList;

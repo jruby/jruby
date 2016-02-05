@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class FlipFlopNode extends RubyNode {
 

@@ -16,7 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.nodes.SourceNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),

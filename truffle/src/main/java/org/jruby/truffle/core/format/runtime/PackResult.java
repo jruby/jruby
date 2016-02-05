@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.core.format.runtime;
 
-import org.jruby.truffle.runtime.rope.CodeRange;
+import org.jruby.truffle.core.rope.CodeRange;
 
 public class PackResult {
 

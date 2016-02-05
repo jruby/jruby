@@ -13,11 +13,8 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.tck.TruffleTCK;
 
-import org.jruby.truffle.runtime.RubyLanguage;
-import org.junit.Ignore;
+import org.jruby.truffle.RubyLanguage;
 import org.junit.Test;
-
-import java.io.IOException;
 
 import static org.junit.Assert.*;
 

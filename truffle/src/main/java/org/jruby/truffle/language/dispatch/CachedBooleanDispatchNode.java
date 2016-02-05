@@ -16,7 +16,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 public class CachedBooleanDispatchNode extends CachedDispatchNode {

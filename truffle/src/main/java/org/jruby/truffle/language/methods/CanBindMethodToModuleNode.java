@@ -16,8 +16,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.language.ModuleOperations;
+import org.jruby.truffle.RubyContext;
 
 /**
  * Caches {@link ModuleOperations#canBindMethodTo} for a method.

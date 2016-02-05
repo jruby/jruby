@@ -16,11 +16,11 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
-import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 import com.oracle.truffle.api.CompilerAsserts;

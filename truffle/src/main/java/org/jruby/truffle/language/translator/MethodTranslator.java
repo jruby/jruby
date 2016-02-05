@@ -37,8 +37,8 @@ import org.jruby.truffle.language.supercall.ReadSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.supercall.ZSuperOutsideMethodNode;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 

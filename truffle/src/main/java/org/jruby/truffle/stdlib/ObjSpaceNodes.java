@@ -16,9 +16,9 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.StringOperations;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.objects.ObjectGraph;
 
 import java.util.Set;

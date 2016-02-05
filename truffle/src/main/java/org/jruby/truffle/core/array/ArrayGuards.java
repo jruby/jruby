@@ -11,7 +11,7 @@ package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 public class ArrayGuards {
 

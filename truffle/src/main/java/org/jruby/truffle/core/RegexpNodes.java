@@ -36,12 +36,11 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.runtime.RubyCallStack;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.rope.CodeRange;
-import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.rope.RopeOperations;
+import org.jruby.truffle.language.RubyCallStack;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.util.*;
 
 import java.nio.charset.StandardCharsets;

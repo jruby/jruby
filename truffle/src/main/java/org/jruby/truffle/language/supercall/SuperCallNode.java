@@ -19,7 +19,7 @@ import org.jruby.truffle.language.methods.CallMethodNode;
 import org.jruby.truffle.language.methods.CallMethodNodeGen;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.methods.InternalMethod;
 

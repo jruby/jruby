@@ -11,7 +11,7 @@ package org.jruby.truffle.core.format.nodes.read;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.core.format.nodes.PackNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class LiteralIntegerNode extends PackNode {
 

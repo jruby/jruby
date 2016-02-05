@@ -20,9 +20,9 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 /**
  * Casts an object to a Ruby Proc object.

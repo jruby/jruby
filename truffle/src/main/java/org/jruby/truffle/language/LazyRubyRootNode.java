@@ -27,10 +27,10 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.RubyLanguage;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.runtime.subsystems.AttachmentsManager;
+import org.jruby.truffle.core.AttachmentsManager;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 

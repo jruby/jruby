@@ -13,7 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.AssumedValue;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public class OnceNode extends RubyNode {
 

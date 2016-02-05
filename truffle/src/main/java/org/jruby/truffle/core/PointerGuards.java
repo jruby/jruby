@@ -13,7 +13,6 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.rubinius.PointerPrimitiveNodes;
-import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class PointerGuards {
 

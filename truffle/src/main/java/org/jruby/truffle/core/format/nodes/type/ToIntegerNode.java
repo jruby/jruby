@@ -18,7 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),

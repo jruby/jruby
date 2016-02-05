@@ -15,7 +15,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 @CoreClass(name = "main")
 public abstract class MainNodes {

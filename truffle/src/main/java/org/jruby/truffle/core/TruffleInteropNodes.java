@@ -25,9 +25,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.StringCachingGuards;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 

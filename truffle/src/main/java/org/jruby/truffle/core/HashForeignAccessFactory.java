@@ -21,8 +21,8 @@ import org.jruby.truffle.language.InternalRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.interop.InteropNode;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.RubyLanguage;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 
 public class HashForeignAccessFactory implements ForeignAccess.Factory10, ForeignAccess.Factory {
 

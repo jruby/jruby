@@ -26,12 +26,11 @@ import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.rope.Rope;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 

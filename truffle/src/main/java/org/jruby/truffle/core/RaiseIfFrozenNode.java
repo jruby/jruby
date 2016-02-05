@@ -16,7 +16,6 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class RaiseIfFrozenNode extends RubyNode {
 

@@ -11,7 +11,7 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public abstract class ArrayPrimitiveNodes {
 

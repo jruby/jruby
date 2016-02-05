@@ -9,9 +9,9 @@
  */
 package org.jruby.truffle.language.translator;
 
-import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.control.ReturnID;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.BreakID;
 
 /**

@@ -17,7 +17,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 public abstract class EncodingOperations {

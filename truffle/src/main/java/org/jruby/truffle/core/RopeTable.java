@@ -12,9 +12,9 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
-import org.jruby.truffle.runtime.rope.CodeRange;
-import org.jruby.truffle.runtime.rope.Rope;
-import org.jruby.truffle.runtime.rope.RopeOperations;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;

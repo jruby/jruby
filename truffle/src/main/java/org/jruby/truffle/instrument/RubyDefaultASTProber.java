@@ -19,8 +19,8 @@ import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.objects.OpenModuleNode;
-import org.jruby.truffle.runtime.RubyLanguage;
-import org.jruby.truffle.runtime.RubySyntaxTag;
+import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.language.RubySyntaxTag;
 
 public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
 

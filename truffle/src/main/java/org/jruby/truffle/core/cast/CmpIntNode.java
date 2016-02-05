@@ -31,9 +31,9 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.core.Layouts;
 
 /**
  * This is a port of MRI's rb_cmpint, as taken from RubyComparable and broken out into specialized nodes.

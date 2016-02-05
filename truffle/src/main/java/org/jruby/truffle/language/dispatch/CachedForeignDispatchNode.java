@@ -21,7 +21,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.interop.RubyToIndexLabelNode;
 import org.jruby.truffle.interop.RubyToIndexLabelNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.RubyContext;
 
 public final class CachedForeignDispatchNode extends CachedDispatchNode {
 
