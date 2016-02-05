@@ -17,10 +17,10 @@ package org.jruby.truffle.core.rope;
 import org.jruby.util.StringSupport;
 
 public enum CodeRange {
-    CR_UNKNOWN(0),
-    CR_7BIT(16),
-    CR_VALID(32),
-    CR_BROKEN(48);
+    CR_UNKNOWN(StringSupport.CR_UNKNOWN),
+    CR_7BIT(StringSupport.CR_7BIT),
+    CR_VALID(StringSupport.CR_VALID),
+    CR_BROKEN(StringSupport.CR_BROKEN);
 
     private final int jrubyValue;
 
