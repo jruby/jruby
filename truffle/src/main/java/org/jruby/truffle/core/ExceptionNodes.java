@@ -21,8 +21,8 @@ import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.language.backtrace.Backtrace;
+import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.EnumSet;
