@@ -31,6 +31,7 @@ import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
+import org.jruby.truffle.core.binding.BindingNodesFactory;
 import org.jruby.truffle.core.bool.FalseClassNodesFactory;
 import org.jruby.truffle.core.bool.TrueClassNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;

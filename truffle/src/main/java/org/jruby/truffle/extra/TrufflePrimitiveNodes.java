@@ -30,6 +30,7 @@ import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.rope.*;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;

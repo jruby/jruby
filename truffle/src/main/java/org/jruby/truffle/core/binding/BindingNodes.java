@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.binding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +24,8 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.array.ArrayHelpers;
-import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;

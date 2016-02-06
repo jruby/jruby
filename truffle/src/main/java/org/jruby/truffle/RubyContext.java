@@ -31,6 +31,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
