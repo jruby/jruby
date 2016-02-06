@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.module;
 
-import org.jruby.truffle.core.PrependMarker;
 import org.jruby.truffle.language.ModuleChain;
 
 public class IncludedModulesIterator extends AncestorIterator {
