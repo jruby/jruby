@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.kernel;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -30,6 +30,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.parser.PrintfCompiler;
@@ -45,9 +46,9 @@ import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.NumericToFloatNode;
 import org.jruby.truffle.core.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.core.coerce.*;
-import org.jruby.truffle.core.KernelNodesFactory.CopyNodeFactory;
-import org.jruby.truffle.core.KernelNodesFactory.SameOrEqualNodeFactory;
-import org.jruby.truffle.core.KernelNodesFactory.SingletonMethodsNodeFactory;
+import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
+import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
+import org.jruby.truffle.core.kernel.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.core.proc.ProcNodes.ProcNewNode;
 import org.jruby.truffle.core.proc.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;

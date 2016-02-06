@@ -35,6 +35,7 @@ import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.fiber.FiberNodesFactory;
+import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.core.method.UnboundMethodNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodes;

@@ -34,6 +34,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.array.ArrayHelpers;
+import org.jruby.truffle.core.kernel.KernelNodes;
+import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.string.StringNodes;
 import org.jruby.truffle.core.string.StringNodesFactory;

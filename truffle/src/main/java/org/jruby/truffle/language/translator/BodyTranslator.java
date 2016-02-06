@@ -29,6 +29,7 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.core.encoding.EncodingNodes;
+import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.InterpolatedRegexpNode;

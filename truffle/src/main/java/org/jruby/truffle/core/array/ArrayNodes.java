@@ -32,6 +32,8 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.format.parser.PackCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.core.format.runtime.exceptions.*;
+import org.jruby.truffle.core.kernel.KernelNodes;
+import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.rope.*;
