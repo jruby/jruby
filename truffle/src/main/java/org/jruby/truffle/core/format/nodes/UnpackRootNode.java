@@ -21,8 +21,9 @@ import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.language.InternalRootNode;
 
-public class UnpackRootNode extends RootNode {
+public class UnpackRootNode extends RootNode implements InternalRootNode {
 
     private final String description;
     private final PackEncoding encoding;
