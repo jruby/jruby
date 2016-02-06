@@ -12,10 +12,9 @@ package org.jruby.truffle.core.hash;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
-import org.jruby.truffle.core.BasicObjectLayout;
+import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.truffle.core.hash.Entry;
 
 @Layout
 public interface HashLayout extends BasicObjectLayout {

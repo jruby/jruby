@@ -30,6 +30,7 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;

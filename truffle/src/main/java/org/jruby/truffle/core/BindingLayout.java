@@ -12,6 +12,7 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.om.dsl.api.Layout;
 
 @Layout

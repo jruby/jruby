@@ -12,7 +12,7 @@ package org.jruby.truffle.core.method;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
-import org.jruby.truffle.core.BasicObjectLayout;
+import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 @org.jruby.truffle.om.dsl.api.Layout

@@ -31,6 +31,8 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.basicobject.BasicObjectNodes;
+import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.parser.PrintfCompiler;
