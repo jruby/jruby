@@ -20,6 +20,7 @@ import org.jruby.truffle.core.fiber.FiberLayout;
 import org.jruby.truffle.core.fiber.FiberLayoutImpl;
 import org.jruby.truffle.core.hash.HashLayout;
 import org.jruby.truffle.core.hash.HashLayoutImpl;
+import org.jruby.truffle.core.range.*;
 import org.jruby.truffle.core.regexp.MatchDataLayout;
 import org.jruby.truffle.core.regexp.MatchDataLayoutImpl;
 import org.jruby.truffle.core.regexp.RegexpLayout;
