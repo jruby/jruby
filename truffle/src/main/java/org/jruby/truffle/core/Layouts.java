@@ -18,6 +18,8 @@ import org.jruby.truffle.core.encoding.EncodingConverterLayout;
 import org.jruby.truffle.core.encoding.EncodingConverterLayoutImpl;
 import org.jruby.truffle.core.encoding.EncodingLayout;
 import org.jruby.truffle.core.encoding.EncodingLayoutImpl;
+import org.jruby.truffle.core.exception.ExceptionLayout;
+import org.jruby.truffle.core.exception.ExceptionLayoutImpl;
 import org.jruby.truffle.core.fiber.FiberLayout;
 import org.jruby.truffle.core.fiber.FiberLayoutImpl;
 import org.jruby.truffle.core.hash.HashLayout;
