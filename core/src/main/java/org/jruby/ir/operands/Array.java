@@ -107,15 +107,18 @@ public class Array extends Operand {
         return new Array(d.decodeOperandArray());
     }
 
-    @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+    public IRubyObject[] retrieveArrayElts(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         IRubyObject[] elements = new IRubyObject[elts.length];
 
         for (int i = 0; i < elements.length; i++) {
             elements[i] = (IRubyObject) elts[i].retrieve(context, self, currScope, currDynScope, temp);
         }
+        return elements;
+    }
 
-        return context.runtime.newArray(elements);
+    @Override
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        return context.runtime.newArray(retrieveArrayElts(context, self, currScope, currDynScope, temp));
     }
 
     @Override

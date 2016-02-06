@@ -174,8 +174,11 @@ public final class Block {
         // SSS FIXME: Later on, we can move this code into IR insructions or
         // introduce a specialized entry-point when we know that this block has
         // explicit call protocol IR instructions.
-        IRubyObject[] args;
-        args = IRRuntimeHelpers.singleBlockArgToArray(value);
+        IRubyObject[] args = IRRuntimeHelpers.singleBlockArgToArray(value);
+        return body.yield(context, this, args, self);
+    }
+
+    public IRubyObject yieldArray(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return body.yield(context, this, args, self);
     }
 

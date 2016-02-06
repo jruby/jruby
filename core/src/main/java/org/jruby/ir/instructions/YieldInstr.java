@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
@@ -72,8 +73,15 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
         if (getYieldArg() == UndefinedValue.UNDEFINED) {
             return IRRuntimeHelpers.yieldSpecific(context, blk);
         } else {
-            IRubyObject yieldVal = (IRubyObject) getYieldArg().retrieve(context, self, currScope, currDynScope, temp);
-            return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
+            Operand yieldOp = getYieldArg();
+            if (unwrapArray && yieldOp instanceof Array && ((Array)yieldOp).size() > 1) {
+                // Special case this path!
+                // Don't build a RubyArray.
+                return blk.yieldArray(context, self, ((Array)yieldOp).retrieveArrayElts(context, self, currScope, currDynScope, temp));
+            } else {
+                IRubyObject yieldVal = (IRubyObject) yieldOp.retrieve(context, self, currScope, currDynScope, temp);
+                return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
+            }
         }
     }
 
