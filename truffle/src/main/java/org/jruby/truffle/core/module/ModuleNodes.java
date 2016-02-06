@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.module;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -32,8 +32,8 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.array.ArrayHelpers;
-import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.string.StringNodes;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -49,9 +49,6 @@ import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.coerce.*;
 import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.control.SequenceNode;
-import org.jruby.truffle.core.ModuleNodesFactory.GenerateAccessorNodeGen;
-import org.jruby.truffle.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
-import org.jruby.truffle.core.ModuleNodesFactory.SetVisibilityNodeGen;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.AddMethodNode;
@@ -423,8 +420,8 @@ public abstract class ModuleNodes {
 
         public AttrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.generateGetterNode = GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
-            this.generateSetterNode = GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
+            this.generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
+            this.generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
         }
 
         @Specialization
@@ -456,8 +453,8 @@ public abstract class ModuleNodes {
 
         public AttrAccessorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.generateGetterNode = GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
-            this.generateSetterNode = GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
+            this.generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
+            this.generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
         }
 
         @Specialization
@@ -478,7 +475,7 @@ public abstract class ModuleNodes {
 
         public AttrReaderNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.generateGetterNode = GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
+            this.generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
         }
 
         @Specialization
@@ -498,7 +495,7 @@ public abstract class ModuleNodes {
 
         public AttrWriterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.generateSetterNode = GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
+            this.generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
         }
 
         @Specialization
@@ -1324,7 +1321,7 @@ public abstract class ModuleNodes {
 
         public ModuleFunctionNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.MODULE_FUNCTION, null, null);
+            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.MODULE_FUNCTION, null, null);
         }
 
         @Specialization
@@ -1396,7 +1393,7 @@ public abstract class ModuleNodes {
 
         public PublicNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
+            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
         }
 
         public abstract DynamicObject executePublic(VirtualFrame frame, DynamicObject module, Object[] args);
@@ -1417,7 +1414,7 @@ public abstract class ModuleNodes {
         public PublicClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
-            this.setMethodVisibilityNode = SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
+            this.setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
         }
 
         @Specialization
@@ -1439,7 +1436,7 @@ public abstract class ModuleNodes {
 
         public PrivateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
+            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
         }
 
         public abstract DynamicObject executePrivate(VirtualFrame frame, DynamicObject module, Object[] args);
@@ -1482,7 +1479,7 @@ public abstract class ModuleNodes {
         public PrivateClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
-            this.setMethodVisibilityNode = SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
+            this.setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
         }
 
         @Specialization
@@ -1780,7 +1777,7 @@ public abstract class ModuleNodes {
 
         public ProtectedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PROTECTED, null, null);
+            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.PROTECTED, null, null);
         }
 
         @Specialization
@@ -1942,7 +1939,7 @@ public abstract class ModuleNodes {
         public SetVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
-            this.setMethodVisibilityNode = SetMethodVisibilityNodeGen.create(context, sourceSection, visibility, null, null);
+            this.setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(context, sourceSection, visibility, null, null);
         }
 
         public abstract DynamicObject executeSetVisibility(VirtualFrame frame, DynamicObject module, Object[] arguments);

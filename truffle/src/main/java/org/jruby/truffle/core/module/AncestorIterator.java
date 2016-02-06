@@ -7,9 +7,10 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.module;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.core.PrependMarker;
 import org.jruby.truffle.language.ModuleChain;
 
 import java.util.Iterator;

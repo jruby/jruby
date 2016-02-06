@@ -7,8 +7,9 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.module;
 
+import org.jruby.truffle.core.PrependMarker;
 import org.jruby.truffle.language.ModuleChain;
 
 public class IncludedModulesIterator extends AncestorIterator {
