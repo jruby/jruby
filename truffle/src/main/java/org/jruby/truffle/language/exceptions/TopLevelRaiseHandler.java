@@ -20,7 +20,7 @@ import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.AtExitManager;
+import org.jruby.truffle.core.kernel.AtExitManager;
 
 public class TopLevelRaiseHandler extends RubyNode {
 

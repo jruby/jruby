@@ -32,7 +32,10 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.format.parser.PackCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.core.format.runtime.exceptions.*;
+import org.jruby.truffle.core.kernel.KernelNodes;
+import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
+import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.rope.*;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -210,6 +213,8 @@ public abstract class ArrayNodes {
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
+        protected abstract Object executeMul(VirtualFrame frame, DynamicObject array, int count);
+
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject mulEmpty(DynamicObject array, int count) {
             if (count < 0) {
@@ -297,7 +302,7 @@ public abstract class ArrayNodes {
             return ruby(frame, "join(sep)", "sep", string);
         }
 
-        @Specialization(guards = {"!isRubyString(object)"})
+        @Specialization(guards = { "!isInteger(object)", "!isRubyString(object)" })
         public Object mulObjectCount(VirtualFrame frame, DynamicObject array, Object object) {
             CompilerDirectives.transferToInterpreter();
             if (respondToToStrNode == null) {
@@ -312,22 +317,7 @@ public abstract class ArrayNodes {
                     toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 final int count = toIntNode.doInt(frame, object);
-                if (count < 0) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
-                }
-                if (getStore(array) instanceof int[]) {
-                    return mulIntegerFixnum(array, count);
-                } else if (getStore(array) instanceof long[]) {
-                    return mulLongFixnum(array, count);
-                } else if (getStore(array) instanceof double[]) {
-                    return mulFloat(array, count);
-                } else if (getStore(array) == null) {
-                    return mulEmpty(array, count);
-                } else {
-                    return mulObject(array, count);
-                }
-
+                return executeMul(frame, array, count);
             }
         }
 

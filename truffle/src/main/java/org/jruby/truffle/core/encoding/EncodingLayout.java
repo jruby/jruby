@@ -12,7 +12,7 @@ package org.jruby.truffle.core.encoding;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jcodings.Encoding;
-import org.jruby.truffle.core.BasicObjectLayout;
+import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.util.ByteList;

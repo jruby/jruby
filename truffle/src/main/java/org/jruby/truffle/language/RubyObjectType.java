@@ -17,6 +17,7 @@ import org.jruby.truffle.core.*;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayForeignAccessFactory;
+import org.jruby.truffle.core.basicobject.BasicForeignAccessFactory;
 import org.jruby.truffle.core.hash.HashForeignAccessFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringForeignAccessFactory;

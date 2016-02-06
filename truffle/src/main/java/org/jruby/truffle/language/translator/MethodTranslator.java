@@ -27,7 +27,7 @@ import org.jruby.truffle.language.arguments.*;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
 import org.jruby.truffle.language.control.AndNode;
 import org.jruby.truffle.language.control.IfNode;
-import org.jruby.truffle.core.ProcNodes.Type;
+import org.jruby.truffle.core.proc.ProcNodes.Type;
 import org.jruby.truffle.language.dispatch.RespondToNode;
 import org.jruby.truffle.language.locals.FlipFlopStateNode;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
