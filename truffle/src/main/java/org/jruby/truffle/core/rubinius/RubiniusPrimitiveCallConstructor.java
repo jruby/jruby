@@ -11,12 +11,12 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.NodeArrayToObjectArrayNode;
 import org.jruby.truffle.language.arguments.ReadAllArgumentsNode;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
-import org.jruby.truffle.core.MethodNodesFactory.CallNodeFactory;
 import org.jruby.truffle.language.literal.LiteralNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.ReturnID;
@@ -40,7 +40,7 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
     @Override
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
         return new CallRubiniusPrimitiveNode(context, sourceSection,
-                CallNodeFactory.create(context, sourceSection, new RubyNode[] {
+                MethodNodesFactory.CallNodeFactory.create(context, sourceSection, new RubyNode[] {
                     new LiteralNode(context, sourceSection, method),
                     new ReadAllArgumentsNode(context, sourceSection),
                     new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
@@ -49,7 +49,7 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
 
     @Override
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
-        return CallNodeFactory.create(context, sourceSection, new RubyNode[] {
+        return MethodNodesFactory.CallNodeFactory.create(context, sourceSection, new RubyNode[] {
                 new LiteralNode(context, sourceSection, method),
                 new NodeArrayToObjectArrayNode(context, sourceSection, arguments),
                 new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)

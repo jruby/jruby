@@ -35,6 +35,7 @@ import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.parser.PrintfCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.core.format.runtime.exceptions.*;
+import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.language.*;
