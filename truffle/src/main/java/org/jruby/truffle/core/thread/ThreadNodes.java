@@ -22,6 +22,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
+import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.NotProvided;

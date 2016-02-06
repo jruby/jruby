@@ -50,7 +50,7 @@ import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.language.constants.WriteConstantNode;
 import org.jruby.truffle.core.*;
-import org.jruby.truffle.core.ProcNodes.Type;
+import org.jruby.truffle.core.proc.ProcNodes.Type;
 import org.jruby.truffle.core.array.*;
 import org.jruby.truffle.core.array.ArrayNodes.PushOneNode;
 import org.jruby.truffle.core.numeric.FixnumLiteralNode;

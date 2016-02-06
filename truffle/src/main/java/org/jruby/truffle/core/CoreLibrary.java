@@ -43,6 +43,7 @@ import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
 import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.core.numeric.IntegerNodesFactory;
+import org.jruby.truffle.core.proc.ProcNodesFactory;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;

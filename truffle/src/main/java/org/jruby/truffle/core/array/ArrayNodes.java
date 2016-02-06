@@ -33,6 +33,7 @@ import org.jruby.truffle.core.format.parser.PackCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.core.format.runtime.exceptions.*;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
+import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.rope.*;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;

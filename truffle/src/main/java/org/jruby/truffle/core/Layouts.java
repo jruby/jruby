@@ -28,6 +28,8 @@ import org.jruby.truffle.core.module.ModuleLayout;
 import org.jruby.truffle.core.module.ModuleLayoutImpl;
 import org.jruby.truffle.core.numeric.BignumLayout;
 import org.jruby.truffle.core.numeric.BignumLayoutImpl;
+import org.jruby.truffle.core.proc.ProcLayout;
+import org.jruby.truffle.core.proc.ProcLayoutImpl;
 import org.jruby.truffle.core.range.*;
 import org.jruby.truffle.core.regexp.MatchDataLayout;
 import org.jruby.truffle.core.regexp.MatchDataLayoutImpl;
