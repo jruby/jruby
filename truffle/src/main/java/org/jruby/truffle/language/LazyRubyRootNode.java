@@ -30,7 +30,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.core.AttachmentsManager;
+import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 

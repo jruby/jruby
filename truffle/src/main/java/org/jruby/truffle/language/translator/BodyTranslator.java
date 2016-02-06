@@ -28,9 +28,14 @@ import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.core.encoding.EncodingNodes;
+import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.core.range.RangeNodesFactory;
+import org.jruby.truffle.core.regexp.InterpolatedRegexpNode;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
+import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.language.control.*;
 import org.jruby.truffle.language.exceptions.*;
@@ -45,12 +50,10 @@ import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.language.constants.WriteConstantNode;
 import org.jruby.truffle.core.*;
-import org.jruby.truffle.core.ModuleNodesFactory.AliasMethodNodeFactory;
-import org.jruby.truffle.core.ModuleNodesFactory.UndefMethodNodeFactory;
 import org.jruby.truffle.core.ProcNodes.Type;
 import org.jruby.truffle.core.array.*;
 import org.jruby.truffle.core.array.ArrayNodes.PushOneNode;
-import org.jruby.truffle.core.fixnum.FixnumLiteralNode;
+import org.jruby.truffle.core.numeric.FixnumLiteralNode;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
@@ -143,7 +146,7 @@ public class BodyTranslator extends Translator {
         final DynamicObject oldName = translateNameNodeToSymbol(node.getOldName());
         final DynamicObject newName = translateNameNodeToSymbol(node.getNewName());
 
-        final RubyNode ret = AliasMethodNodeFactory.create(context, sourceSection,
+        final RubyNode ret = ModuleNodesFactory.AliasMethodNodeFactory.create(context, sourceSection,
                 new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection)),
                 new LiteralNode(context, sourceSection, newName),
                 new LiteralNode(context, sourceSection, oldName));
@@ -2837,7 +2840,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
 
-        final RubyNode ret = UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[]{
+        final RubyNode ret = ModuleNodesFactory.UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[]{
                 new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection)),
                 new LiteralNode(context, sourceSection, new Object[]{ nameSymbol })
         });

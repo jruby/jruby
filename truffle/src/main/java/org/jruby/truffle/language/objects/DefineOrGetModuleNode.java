@@ -18,7 +18,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.KernelNodes;
 import org.jruby.truffle.core.KernelNodesFactory;
-import org.jruby.truffle.core.ModuleNodes;
+import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.RubyContext;

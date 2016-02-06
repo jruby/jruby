@@ -60,7 +60,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.stdlib.sockets.FDSet;
 import org.jruby.truffle.stdlib.sockets.FDSetFactory;
 import org.jruby.truffle.stdlib.sockets.FDSetFactoryFactory;
-import org.jruby.truffle.core.ThreadManager;
+import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;

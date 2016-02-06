@@ -15,6 +15,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.RubyGC;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.thread.ThreadManager;
+import org.jruby.truffle.core.thread.ThreadNodes;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.lang.ref.ReferenceQueue;

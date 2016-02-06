@@ -22,7 +22,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.ThreadManager.BlockingAction;
+import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 
 import java.util.concurrent.locks.ReentrantLock;
 
