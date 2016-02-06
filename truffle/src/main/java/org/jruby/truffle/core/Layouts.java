@@ -55,6 +55,8 @@ import org.jruby.truffle.core.symbol.SymbolLayout;
 import org.jruby.truffle.core.symbol.SymbolLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadLayout;
 import org.jruby.truffle.core.thread.ThreadLayoutImpl;
+import org.jruby.truffle.core.time.TimeLayout;
+import org.jruby.truffle.core.time.TimeLayoutImpl;
 import org.jruby.truffle.stdlib.BigDecimalLayout;
 import org.jruby.truffle.stdlib.BigDecimalLayoutImpl;
 import org.jruby.truffle.stdlib.psych.EmitterLayout;

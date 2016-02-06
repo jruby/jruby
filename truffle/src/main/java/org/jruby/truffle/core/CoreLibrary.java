@@ -66,6 +66,7 @@ import org.jruby.truffle.core.symbol.SymbolNodesFactory;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;
+import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.extra.TrufflePrimitiveNodesFactory;
 import org.jruby.truffle.interop.TruffleInteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;

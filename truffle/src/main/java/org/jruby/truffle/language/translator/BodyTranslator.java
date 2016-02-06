@@ -38,6 +38,7 @@ import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;
+import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.language.control.*;
 import org.jruby.truffle.language.exceptions.*;
 import org.jruby.truffle.language.RubyNode;
