@@ -40,6 +40,7 @@ import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.symbol.SymbolNodesFactory;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;

@@ -24,6 +24,7 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.symbol.SymbolNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
