@@ -27,6 +27,8 @@ import org.jruby.truffle.core.regexp.RegexpLayout;
 import org.jruby.truffle.core.regexp.RegexpLayoutImpl;
 import org.jruby.truffle.core.string.StringLayout;
 import org.jruby.truffle.core.string.StringLayoutImpl;
+import org.jruby.truffle.core.thread.ThreadLayout;
+import org.jruby.truffle.core.thread.ThreadLayoutImpl;
 import org.jruby.truffle.stdlib.BigDecimalLayout;
 import org.jruby.truffle.stdlib.BigDecimalLayoutImpl;
 import org.jruby.truffle.stdlib.psych.EmitterLayout;

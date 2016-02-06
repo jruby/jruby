@@ -73,7 +73,7 @@ import org.jruby.truffle.platform.signal.ProcSignalHandler;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalOperations;
-import org.jruby.truffle.core.ThreadManager;
+import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.util.io.PosixShim;
 
 import java.lang.management.ManagementFactory;

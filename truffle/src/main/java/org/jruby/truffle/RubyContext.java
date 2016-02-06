@@ -33,6 +33,7 @@ import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.rope.RopeTable;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.language.*;
 import org.jruby.truffle.language.arguments.RubyArguments;

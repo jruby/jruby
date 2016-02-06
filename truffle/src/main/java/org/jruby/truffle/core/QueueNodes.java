@@ -25,7 +25,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.ThreadManager.BlockingAction;
+import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.util.MethodHandleUtils;
 
 import java.lang.invoke.MethodHandle;

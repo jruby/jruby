@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.thread;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
@@ -15,6 +15,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.RubyContext;
