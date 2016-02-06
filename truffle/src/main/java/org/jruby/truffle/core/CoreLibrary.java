@@ -46,6 +46,7 @@ import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
 import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.core.numeric.IntegerNodesFactory;
+import org.jruby.truffle.core.objectspace.ObjectSpaceNodesFactory;
 import org.jruby.truffle.core.proc.ProcNodesFactory;
 import org.jruby.truffle.core.queue.QueueNodesFactory;
 import org.jruby.truffle.core.queue.SizedQueueNodesFactory;
