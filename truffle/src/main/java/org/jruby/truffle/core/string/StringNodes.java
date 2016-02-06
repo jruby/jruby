@@ -40,6 +40,8 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.encoding.EncodingNodes;
+import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.parser.UnpackCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.core.format.runtime.exceptions.*;

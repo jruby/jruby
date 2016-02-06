@@ -21,7 +21,7 @@ import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.core.EncodingConverterNodes;
+import org.jruby.truffle.core.encoding.EncodingConverterNodes;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;

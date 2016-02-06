@@ -10,13 +10,14 @@
  * Some of the code in this class is transposed from org.jruby.runtime.encoding.EncodingService,
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.encoding;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.util.ByteList;
 
 public abstract class EncodingOperations {

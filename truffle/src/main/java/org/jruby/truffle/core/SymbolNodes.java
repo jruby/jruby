@@ -21,6 +21,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.control.SequenceNode;
