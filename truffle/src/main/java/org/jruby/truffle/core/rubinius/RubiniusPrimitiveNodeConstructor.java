@@ -11,10 +11,10 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.RubyContext;

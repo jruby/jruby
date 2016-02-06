@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.fixnum;
+package org.jruby.truffle.core.numeric;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -23,7 +23,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.*;
-import org.jruby.truffle.core.fixnum.FixnumNodesFactory.RightShiftNodeFactory;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
@@ -874,7 +873,7 @@ public abstract class FixnumNodes {
         public Object leftShiftNeg(VirtualFrame frame, long a, int b) {
             if (rightShiftNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                rightShiftNode = insert(RightShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{ null, null }));
+                rightShiftNode = insert(FixnumNodesFactory.RightShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{ null, null }));
             }
             return rightShiftNode.executeRightShift(frame, a, -b);
         }

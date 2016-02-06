@@ -53,7 +53,7 @@ import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.ProcNodes.Type;
 import org.jruby.truffle.core.array.*;
 import org.jruby.truffle.core.array.ArrayNodes.PushOneNode;
-import org.jruby.truffle.core.fixnum.FixnumLiteralNode;
+import org.jruby.truffle.core.numeric.FixnumLiteralNode;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;

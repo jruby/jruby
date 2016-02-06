@@ -7,8 +7,6 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-
-
 package org.jruby.truffle.core.coerce;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -18,10 +16,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.core.FloatNodes;
-import org.jruby.truffle.core.FloatNodesFactory;
+import org.jruby.truffle.core.numeric.FloatNodes;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.RubyContext;
