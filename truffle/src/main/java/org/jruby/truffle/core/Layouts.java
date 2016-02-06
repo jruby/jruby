@@ -26,6 +26,8 @@ import org.jruby.truffle.core.fiber.FiberLayout;
 import org.jruby.truffle.core.fiber.FiberLayoutImpl;
 import org.jruby.truffle.core.hash.HashLayout;
 import org.jruby.truffle.core.hash.HashLayoutImpl;
+import org.jruby.truffle.core.klass.ClassLayout;
+import org.jruby.truffle.core.klass.ClassLayoutImpl;
 import org.jruby.truffle.core.method.MethodLayout;
 import org.jruby.truffle.core.method.MethodLayoutImpl;
 import org.jruby.truffle.core.method.UnboundMethodLayout;

@@ -42,6 +42,8 @@ import org.jruby.truffle.core.exception.ExceptionNodes;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
 import org.jruby.truffle.core.fiber.FiberNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.core.klass.ClassNodes;
+import org.jruby.truffle.core.klass.ClassNodesFactory;
 import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.core.method.UnboundMethodNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodes;
