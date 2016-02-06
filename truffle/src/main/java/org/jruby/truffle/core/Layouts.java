@@ -28,6 +28,8 @@ import org.jruby.truffle.core.method.UnboundMethodLayout;
 import org.jruby.truffle.core.method.UnboundMethodLayoutImpl;
 import org.jruby.truffle.core.module.ModuleLayout;
 import org.jruby.truffle.core.module.ModuleLayoutImpl;
+import org.jruby.truffle.core.mutex.MutexLayout;
+import org.jruby.truffle.core.mutex.MutexLayoutImpl;
 import org.jruby.truffle.core.numeric.BignumLayout;
 import org.jruby.truffle.core.numeric.BignumLayoutImpl;
 import org.jruby.truffle.core.proc.ProcLayout;
