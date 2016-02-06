@@ -19,6 +19,8 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.core.fiber.FiberManager;
+import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.NotProvided;

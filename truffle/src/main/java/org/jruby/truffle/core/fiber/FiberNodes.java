@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.core.fiber;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -17,11 +17,11 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.core.*;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.cast.SingleValueCastNode;
 import org.jruby.truffle.core.cast.SingleValueCastNodeGen;
-import org.jruby.truffle.core.FiberNodesFactory.FiberTransferNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.core.rubinius.ThreadPrimitiveNodes.ThreadRaisePrimitiveNode;
 import org.jruby.truffle.RubyContext;
@@ -155,7 +155,7 @@ public abstract class FiberNodes {
     private static Object[] waitForResume(RubyContext context, final DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
 
-        final FiberMessage message = context.getThreadManager().runUntilResult(null, new ThreadManager.BlockingAction<FiberMessage>() {
+        final FiberMessage message = context.getThreadManager().runUntilResult(null, new BlockingAction<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
                 return Layouts.FIBER.getMessageQueue(fiber).take();
@@ -271,7 +271,7 @@ public abstract class FiberNodes {
 
         public ResumeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fiberTransferNode = FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
+            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
         }
 
         @Specialization
@@ -288,7 +288,7 @@ public abstract class FiberNodes {
 
         public YieldNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fiberTransferNode = FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
+            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
         }
 
         @Specialization
