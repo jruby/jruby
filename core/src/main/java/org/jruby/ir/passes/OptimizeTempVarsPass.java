@@ -8,11 +8,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.*;
-import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
-
 
 /**
  * Takes multiple single def-use temporary variables and reduces them to share the same temp variable.

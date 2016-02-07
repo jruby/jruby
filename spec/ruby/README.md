@@ -1,33 +1,44 @@
-# RubySpec
+# The Ruby Spec Suite
 
-[![Build Status](https://travis-ci.org/ruby/rubyspec.svg)](https://travis-ci.org/ruby/rubyspec)
+[![Build Status](https://travis-ci.org/ruby/spec.svg)](https://travis-ci.org/ruby/spec)
 
-RubySpec is an executable specification for the Ruby programming language.  
-The specs describe the Ruby language syntax as well as the core and standard library classes.
+The Ruby Spec Suite is a test suite for the behavior of the Ruby programming language.
 
-The RubySpec files are written using a RSpec-like syntax.
-MSpec is the purpose-built framework for running RubySpec.
+It is not a standardized specification like the ISO one, and does not aim to become one.
+Instead, it is a practical tool to describe and test the behavior of Ruby with code.
+
+Every example code has a textual description, which presents several advantages:
+
+* It is easier to understand the intent of the author
+* It documents how recent versions of Ruby should behave
+* It helps Ruby implementations to agree on a common behavior
+
+The specs are written with syntax similar to RSpec 2.
+They are run with MSpec, the purpose-built framework for running the Ruby Spec Suite.
 For more information, see the [MSpec](http://github.com/ruby/mspec) project.
+
+The specs describe the [language syntax](language/), the [core library](core/) and the [standard library](library/).
+The language specs are grouped by keyword while the core and standard library specs are grouped by class and method.
 
 ### Running the specs
 
 First, clone this repository:
 
-    $ git clone https://github.com/ruby/rubyspec.git
+    $ git clone https://github.com/ruby/spec.git
 
 Then move to it:
 
-    $ cd rubyspec
+    $ cd spec
 
 Clone [MSpec](http://github.com/ruby/mspec):
 
     $ git clone https://github.com/ruby/mspec.git ../mspec
 
-And run the RubySpec suite:
+And run the spec suite:
 
     $ ../mspec/bin/mspec
 
-This will execute all the RubySpec specs using the executable named `ruby` on your current PATH.
+This will execute all the specs using the executable named `ruby` on your current PATH.
 
 ### Running Specs with a Specific Ruby Implementation
 
@@ -59,4 +70,12 @@ In similar fashion, the following commands run the respective specs:
 
 ### Contributing
 
-See [CONTRIBUTING.md](https://github.com/ruby/rubyspec/blob/master/CONTRIBUTING.md).
+See [CONTRIBUTING.md](https://github.com/ruby/spec/blob/master/CONTRIBUTING.md).
+
+### History and RubySpec
+
+This project was originally born from [Rubinius](https://github.com/rubinius/rubinius) tests being converted to the spec style.
+These specs were later extracted to their own project, RubySpec, with a specific vision and principles.
+At the end of 2014, Brian Shirai, the creator of RubySpec, decided to [end RubySpec](http://rubinius.com/2014/12/31/matz-s-ruby-developers-don-t-use-rubyspec/).
+A couple months later, the different repositories were merged and [the project was revived](http://eregon.github.io/rubyspec/2015/07/29/rubyspec-is-reborn.html).
+On 12 January 2016, the name was changed to "The Ruby Spec Suite" for clarity and to let the RubySpec ideology rest in peace.

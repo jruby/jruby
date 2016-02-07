@@ -73,19 +73,21 @@ end
 
 describe "Module#define_method when name is not a special private name" do
   describe "given an UnboundMethod" do
-    it "sets the visibility of the method to the current visibility" do
-      m = Module.new do
-        def foo
+    ruby_version_is "2.1" do
+      it "sets the visibility of the method to the current visibility" do
+        m = Module.new do
+          def foo
+          end
+          private :foo
         end
-        private :foo
+        klass = Class.new do
+          define_method(:bar, m.instance_method(:foo))
+          private
+          define_method(:baz, m.instance_method(:foo))
+        end
+        klass.should have_public_instance_method(:bar)
+        klass.should have_private_instance_method(:baz)
       end
-      klass = Class.new do
-        define_method(:bar, m.instance_method(:foo))
-        private
-        define_method(:baz, m.instance_method(:foo))
-      end
-      klass.should have_public_instance_method(:bar)
-      klass.should have_private_instance_method(:baz)
     end
   end
 end

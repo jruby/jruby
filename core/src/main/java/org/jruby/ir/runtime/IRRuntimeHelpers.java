@@ -14,8 +14,6 @@ import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -833,13 +831,17 @@ public class IRRuntimeHelpers {
     }
 
     public static RubyBoolean isBlockGiven(ThreadContext context, Object blk) {
-        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
+        if (blk instanceof RubyProc) blk = ((RubyProc) blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        Block b = (Block)blk;
-        return context.runtime.newBoolean(b.isGiven());
+        return context.runtime.newBoolean( ((Block) blk).isGiven() );
     }
 
     public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
+        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArguments);
+        return constructRestArg(context, args, keywordArguments, required, argIndex);
+    }
+
+    public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
         RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArguments);
         return constructRestArg(context, args, keywordArguments, required, argIndex);
     }
@@ -848,12 +850,27 @@ public class IRRuntimeHelpers {
         int argsLength = keywordArguments != null ? args.length - 1 : args.length;
         int remainingArguments = argsLength - required;
 
-        if (remainingArguments <= 0) return context.runtime.newArray(IRubyObject.NULL_ARRAY);
+        if (remainingArguments <= 0) return context.runtime.newEmptyArray();
 
         IRubyObject[] restArgs = new IRubyObject[remainingArguments];
         System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
 
-        return context.runtime.newArray(restArgs);
+        return RubyArray.newArrayNoCopy(context.runtime, restArgs);
+    }
+
+    private static IRubyObject constructRestArg(ThreadContext context, IRubyObject[] args, RubyHash keywordArguments, int required, int argIndex) {
+        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+        if ( required == 0 && argsLength == args.length ) {
+            return RubyArray.newArray(context.runtime, args);
+        }
+        int remainingArguments = argsLength - required;
+
+        if (remainingArguments <= 0) return context.runtime.newEmptyArray();
+
+        IRubyObject[] restArgs = new IRubyObject[remainingArguments];
+        System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
+
+        return RubyArray.newArrayNoCopy(context.runtime, restArgs);
     }
 
     @JIT
@@ -924,7 +941,8 @@ public class IRRuntimeHelpers {
     public static IRubyObject instanceSuper(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block) {
         RubyClass superClass = definingModule.getMethodLocation().getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+        IRubyObject rVal = method.isUndefined() ?
+                Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                 : method.call(context, self, superClass, methodName, args, block);
         return rVal;
     }
@@ -938,7 +956,8 @@ public class IRRuntimeHelpers {
     public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block) {
         RubyClass superClass = definingModule.getMetaClass().getMethodLocation().getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+        IRubyObject rVal = method.isUndefined() ?
+            Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                 : method.call(context, self, superClass, methodName, args, block);
         return rVal;
     }
@@ -958,7 +977,7 @@ public class IRRuntimeHelpers {
         RubyClass superClass = implMod.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
 
-        IRubyObject rVal = null;
+        IRubyObject rVal;
         if (method.isUndefined()) {
             rVal = Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block);
         } else {
@@ -1421,7 +1440,7 @@ public class IRRuntimeHelpers {
     public static void pushExitBlock(ThreadContext context, Block blk) {
         context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
     }
-    
+
     @JIT
     public static FunctionalCachingCallSite newFunctionalCachingCallSite(String name) {
         return new FunctionalCachingCallSite(name);
@@ -1624,8 +1643,8 @@ public class IRRuntimeHelpers {
         }
 
         boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
-        org.jruby.runtime.Signature sig = block.getBody().getSignature();
         if (block.type == Block.Type.LAMBDA) {
+            org.jruby.runtime.Signature sig = block.getBody().getSignature();
             // We don't need to check for the 1 required arg case here
             // since that goes down the prepareSingleBlockArgs route
             if (!isProcCall && sig.arityValue() != 1) {

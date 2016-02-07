@@ -279,16 +279,6 @@ public class RubyObject extends RubyBasicObject {
         }
     };
 
-    @Deprecated
-    @Override
-    public IRubyObject initialize() {
-        return getRuntime().getNil();
-    }
-
-    public IRubyObject initialize(ThreadContext context) {
-        return initialize19(context);
-    }
-
     /**
      * Will make sure that this object is added to the current object
      * space.

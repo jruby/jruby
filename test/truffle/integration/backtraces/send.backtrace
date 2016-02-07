@@ -1,0 +1,6 @@
+/send.rb:18:in `m2'
+/send.rb:14:in `send'
+/send.rb:14:in `m1'
+/send.rb:22:in `block in <main>'
+/backtraces.rb:17:in `check'
+/send.rb:21:in `<main>'

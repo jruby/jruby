@@ -240,15 +240,15 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     public void searchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
+        adapter.invokedynamic("searchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), name, noPrivateConsts?1:0);
     }
 
     public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("inheritanceSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
+        adapter.invokedynamic("inheritanceSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.searchConst(), name, noPrivateConsts?1:0);
     }
 
     public void lexicalSearchConst(String name) {
-        adapter.invokedynamic("lexicalSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), 0);
+        adapter.invokedynamic("lexicalSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), name, 0);
     }
 
     public void pushNil() {
@@ -301,16 +301,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 "checkpoint",
                 sig(void.class, ThreadContext.class),
                 Bootstrap.checkpointHandle());
-    }
-
-    @Override
-    public void yield(boolean unwrap) {
-        adapter.invokedynamic("yield", sig(JVM.OBJECT, params(ThreadContext.class, Block.class, JVM.OBJECT)), YieldSite.BOOTSTRAP, unwrap ? 1 : 0);
-    }
-
-    @Override
-    public void yieldSpecific() {
-        adapter.invokedynamic("yieldSpecific", sig(JVM.OBJECT, params(ThreadContext.class, Block.class)), YieldSite.BOOTSTRAP, 0);
     }
 
     @Override

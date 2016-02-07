@@ -4,7 +4,7 @@ ruby_version_is '2.3' do
   describe "Hash#dig" do
 
     it "returns #[] with one arg" do
-      h = { 0 => false, :a => 1 }
+      h = { 0 => false, a: 1 }
       h.dig(:a).should == 1
       h.dig(0).should be_false
       h.dig(1).should be_nil
@@ -24,7 +24,7 @@ ruby_version_is '2.3' do
 
     it "handles type-mixed deep digging" do
       h = {}
-      h[:foo] = [ { :bar => [ 1 ] }, [ obj = Object.new, 'str' ] ]
+      h[:foo] = [ { bar: [ 1 ] }, [ obj = Object.new, 'str' ] ]
       def obj.dig(*args); [ 42 ] end
 
       h.dig(:foo, 0, :bar).should == [ 1 ]

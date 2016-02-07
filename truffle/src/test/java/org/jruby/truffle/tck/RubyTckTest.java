@@ -13,11 +13,8 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.tck.TruffleTCK;
 
-import org.jruby.truffle.runtime.RubyLanguage;
-import org.junit.Ignore;
+import org.jruby.truffle.RubyLanguage;
 import org.junit.Test;
-
-import java.io.IOException;
 
 import static org.junit.Assert.*;
 
@@ -107,6 +104,11 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected String complexAddWithMethod() {
+        return "complex_add_with_method";
+    }
+
+    @Override
     protected String complexSumReal() {
         return "complex_sum_real";
     }
@@ -114,6 +116,11 @@ public class RubyTckTest extends TruffleTCK {
     @Override
     protected String complexCopy() {
         return "complex_copy";
+    }
+
+    @Override
+    protected String valuesObject() {
+        return "values_object";
     }
 
     @Override

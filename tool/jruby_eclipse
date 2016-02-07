@@ -4,10 +4,13 @@
 
 M2REPO = "#{Dir.home}/.m2/repository"
 
-TRUFFLEJARS = %w[
-  /com/oracle/truffle/truffle-api/0.10/truffle-api-0.10.jar
-  /com/oracle/truffle/truffle-debug/0.10/truffle-debug-0.10.jar
+TRUFFLE_VERSION = "0.11"
+
+TRUFFLEJARS = %W[
+  com/oracle/truffle/truffle-api/#{TRUFFLE_VERSION}/truffle-api-#{TRUFFLE_VERSION}.jar
+  com/oracle/truffle/truffle-debug/#{TRUFFLE_VERSION}/truffle-debug-#{TRUFFLE_VERSION}.jar
 ].map { |jar| "#{M2REPO}/#{jar}" }
+
 SNAKEYAMLJAR = "#{M2REPO}/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
 ANTLR4JAR = "#{M2REPO}/org/antlr/antlr4-runtime/4.5/antlr4-runtime-4.5.jar"
 
