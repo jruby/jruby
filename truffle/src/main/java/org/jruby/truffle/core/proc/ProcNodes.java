@@ -41,7 +41,7 @@ import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.util.ArgumentDescriptorUtils;
+import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
