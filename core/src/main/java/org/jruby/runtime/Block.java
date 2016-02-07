@@ -178,7 +178,7 @@ public final class Block {
         return body.yield(context, this, args, self);
     }
 
-    public IRubyObject yieldArray(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+    public IRubyObject yieldValues(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return body.yield(context, this, args, self);
     }
 
