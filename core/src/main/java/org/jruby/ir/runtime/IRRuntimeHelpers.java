@@ -478,6 +478,14 @@ public class IRRuntimeHelpers {
         return b.yieldSpecific(context);
     }
 
+    public static IRubyObject yieldValues(ThreadContext context, Block b, IRubyObject arg0, IRubyObject arg1) {
+        return b.yieldValues(context, new IRubyObject[] {arg0, arg1});
+    }
+
+    public static IRubyObject yieldSpecific(ThreadContext context, Block b, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return b.yieldValues(context, new IRubyObject[]{arg0, arg1, arg2});
+    }
+
     public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, int blockArity, boolean argIsArray) {
         // SSS FIXME: This should not really happen -- so, some places in the runtime library are breaking this contract.
         if (argIsArray && !(value instanceof RubyArray)) argIsArray = false;

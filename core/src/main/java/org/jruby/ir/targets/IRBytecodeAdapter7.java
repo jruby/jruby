@@ -314,6 +314,11 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     @Override
+    public void yieldValues(int arity) {
+        adapter.invokedynamic("yieldValues", sig(JVM.OBJECT, params(ThreadContext.class, Block.class, JVM.OBJECT, arity)), YieldSite.BOOTSTRAP, 0);
+    }
+
+    @Override
     public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
         Handle scopeHandle = new Handle(Opcodes.H_GETSTATIC, getClassData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         long encodedSignature = signature.encode();

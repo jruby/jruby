@@ -828,6 +828,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
+    public void yieldValues(int arity) {
+        invokeIRHelper("yieldValues", sig(IRubyObject.class, params(ThreadContext.class, Block.class, IRubyObject.class, arity)));
+    }
+
+    @Override
     public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
         // FIXME: too much bytecode
         String cacheField = "blockBody" + getClassData().callSiteCount.getAndIncrement();

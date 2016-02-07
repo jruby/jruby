@@ -178,8 +178,8 @@ public final class Block {
         return body.yield(context, this, args, self);
     }
 
-    public IRubyObject yieldValues(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return body.yield(context, this, args, self);
+    public IRubyObject yieldValues(ThreadContext context, IRubyObject[] args) {
+        return body.yield(context, this, args, null);
     }
 
     public Block cloneBlock() {

@@ -2017,8 +2017,17 @@ public class JVMVisitor extends IRVisitor {
         if (yieldinstr.getYieldArg() == UndefinedValue.UNDEFINED) {
             jvmMethod().yieldSpecific();
         } else {
-            visit(yieldinstr.getYieldArg());
-            jvmMethod().yield(yieldinstr.isUnwrapArray());
+            Operand yieldOp = yieldinstr.getYieldArg();
+            if (yieldinstr.isUnwrapArray() && yieldOp instanceof Array && ((Array) yieldOp).size() > 1) {
+                Array yieldValues = (Array) yieldOp;
+                for (Operand yieldValue : yieldValues) {
+                    visit(yieldValue);
+                }
+                jvmMethod().yieldValues(yieldValues.size());
+            } else {
+                visit(yieldinstr.getYieldArg());
+                jvmMethod().yield(yieldinstr.isUnwrapArray());
+            }
         }
 
         jvmStoreLocal(yieldinstr.getResult());

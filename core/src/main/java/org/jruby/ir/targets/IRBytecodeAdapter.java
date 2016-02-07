@@ -584,6 +584,13 @@ public abstract class IRBytecodeAdapter {
     public abstract void yieldSpecific();
 
     /**
+     * Yield a number of flat arguments to a block.
+     *
+     * Stack required: context, block
+     */
+    public abstract void yieldValues(int arity);
+
+    /**
      * Prepare a block for a subsequent call.
      *
      * Stack required: context, self, dynamicScope
