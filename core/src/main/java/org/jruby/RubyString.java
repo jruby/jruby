@@ -5618,6 +5618,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     else {
                         repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, e-p, enc));
                         repl = EncodingUtils.strCompatAndValid(context, repl, enc);
+                        tainted |= repl.isTaint();
                         ((RubyString)buf).cat((RubyString)repl);
                     }
                     p += clen;
@@ -5641,13 +5642,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 else {
                     repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, e - p, enc));
                     repl = EncodingUtils.strCompatAndValid(context, repl, enc);
+                    tainted |= repl.isTaint();
                     ((RubyString)buf).cat((RubyString)repl);
                 }
             }
             cr = CR_VALID;
         }
 
-        buf.setTaint(tainted);
+        buf.setTaint(tainted | isTaint());
         ((RubyString)buf).setEncodingAndCodeRange(enc, cr);
         return buf;
     }
