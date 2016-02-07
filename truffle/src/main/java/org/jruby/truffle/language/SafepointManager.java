@@ -97,7 +97,7 @@ public class SafepointManager {
 
         // We're now running again normally and can run deferred actions
         if (deferredAction != null) {
-            deferredAction.run(thread, currentNode);
+            deferredAction.apply(thread, currentNode);
         }
     }
 
@@ -120,7 +120,7 @@ public class SafepointManager {
 
         try {
             if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != Status.ABORTING) {
-                action.run(thread, currentNode);
+                action.apply(thread, currentNode);
             }
         } finally {
             // wait other threads to finish their action
@@ -174,7 +174,7 @@ public class SafepointManager {
 
         // Run deferred actions after leaving the SafepointManager lock.
         if (deferred) {
-            action.run(context.getThreadManager().getCurrentThread(), currentNode);
+            action.apply(context.getThreadManager().getCurrentThread(), currentNode);
         }
     }
 
@@ -207,14 +207,15 @@ public class SafepointManager {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread
             DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
-            action.run(rubyThread, currentNode);
+            action.apply(rubyThread, currentNode);
         } else {
             pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
                 @Override
-                public void run(DynamicObject rubyThread, Node currentNode) {
+                public Void apply(DynamicObject rubyThread, Node currentNode) {
                     if (Thread.currentThread() == thread) {
-                        action.run(rubyThread, currentNode);
+                        action.apply(rubyThread, currentNode);
                     }
+                    return null;
                 }
             });
         }
@@ -225,14 +226,15 @@ public class SafepointManager {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread
             DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
-            action.run(rubyThread, currentNode);
+            action.apply(rubyThread, currentNode);
         } else {
             pauseAllThreadsAndExecute(currentNode, true, new SafepointAction() {
                 @Override
-                public void run(DynamicObject rubyThread, Node currentNode) {
+                public Void apply(DynamicObject rubyThread, Node currentNode) {
                     if (Thread.currentThread() == thread) {
-                        action.run(rubyThread, currentNode);
+                        action.apply(rubyThread, currentNode);
                     }
+                    return null;
                 }
             });
         }
@@ -242,10 +244,11 @@ public class SafepointManager {
     public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
         pauseAllThreadsAndExecuteFromNonRubyThread(true, new SafepointAction() {
             @Override
-            public void run(DynamicObject rubyThread, Node currentNode) {
+            public Void apply(DynamicObject rubyThread, Node currentNode) {
                 if (Thread.currentThread() == thread) {
-                    action.run(rubyThread, currentNode);
+                    action.apply(rubyThread, currentNode);
                 }
+                return null;
             }
         });
     }

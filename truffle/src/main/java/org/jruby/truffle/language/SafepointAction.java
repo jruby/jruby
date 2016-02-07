@@ -11,9 +11,8 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.util.func.Function2;
 
-public interface SafepointAction {
-
-    void run(DynamicObject thread, Node currentNode);
+public interface SafepointAction extends Function2<Void, DynamicObject, Node> {
 
 }

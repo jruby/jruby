@@ -65,7 +65,7 @@ public class InstrumentationServerManager {
                     context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
 
                         @Override
-                        public void run(DynamicObject thread, Node currentNode) {
+                        public Void apply(DynamicObject thread, Node currentNode) {
                             try {
                                 Backtrace backtrace = RubyCallStack.getBacktrace(context, null);
 
@@ -84,6 +84,8 @@ public class InstrumentationServerManager {
                             } catch (Throwable e) {
                                 e.printStackTrace();
                             }
+
+                            return null;
                         }
 
                     });
@@ -114,9 +116,10 @@ public class InstrumentationServerManager {
                     Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
                     context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
                         @Override
-                        public void run(DynamicObject thread, final Node currentNode) {
+                        public Void apply(DynamicObject thread, final Node currentNode) {
                             new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
                                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
+                            return null;
                         }
                     });
 

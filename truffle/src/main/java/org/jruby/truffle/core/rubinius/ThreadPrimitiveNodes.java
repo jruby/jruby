@@ -47,7 +47,7 @@ public class ThreadPrimitiveNodes {
 
             context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new SafepointAction() {
                 @Override
-                public void run(DynamicObject currentThread, Node currentNode) {
+                public Void apply(DynamicObject currentThread, Node currentNode) {
                     if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
                         Backtrace backtrace = RubyCallStack.getBacktrace(context, currentNode);
                         Layouts.EXCEPTION.setBacktrace(exception, backtrace);
