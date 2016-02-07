@@ -906,6 +906,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]=", required = 2)
     public synchronized IRubyObject op_aset(IRubyObject key, IRubyObject value) {
+        checkFrozen();
+
         key = getSymbolKey(key);
 
         getFiberLocals().put(key, value);
