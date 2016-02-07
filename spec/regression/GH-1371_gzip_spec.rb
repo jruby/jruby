@@ -1,20 +1,21 @@
-require 'zlib'
+describe 'Zlib::GzipWriter' do
 
-class IoLikeObject
-  attr_reader :body
+  before(:all) { require 'zlib' }
 
-  def initialize
-    @body = []
-  end
-
-  def write(str)
-    @body << str
-  end
-end
-
-describe Zlib::GzipWriter do
   GZIP_MAGIC_1 = 0x1F
   GZIP_MAGIC_2 = 0X8B
+
+  class IoLikeObject
+    attr_reader :body
+
+    def initialize
+      @body = []
+    end
+
+    def write(str)
+      @body << str
+    end
+  end
 
   it "doesn't corrupt the output" do
     io_like_object = IoLikeObject.new
@@ -31,11 +32,11 @@ describe Zlib::GzipWriter do
     gzip.flush
 
     # first chunk should still be intact (specifically: it should not be overwritten with the second)
-    first_chunk.should == io_like_object.body[0]
+    expect( first_chunk ).to eql io_like_object.body[0]
 
     gzip.close
 
     # extra sanity check of the gzip "magic bytes"
-    io_like_object.body[0].bytes.to_a[0..1].should == [GZIP_MAGIC_1, GZIP_MAGIC_2]
+    expect( io_like_object.body[0].bytes.to_a[0..1] ).to eql [GZIP_MAGIC_1, GZIP_MAGIC_2]
   end
 end

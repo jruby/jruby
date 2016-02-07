@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
@@ -25,6 +26,7 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
@@ -70,6 +72,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.BreakID;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
@@ -1167,10 +1170,17 @@ public class BodyTranslator extends Translator {
                 rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
             } else if (path.equals(coreRubiniusPath + "common/integer.rb")) {
                 rename = methodName.equals("downto") || methodName.equals("upto");
+            } else if (path.equals(coreRubiniusPath + "common/string.rb")) {
+                rename = methodName.equals("<<");
             }
 
             if (rename) {
-                methodName = methodName + "_internal";
+                // <<_internal is an invalid method name, so we need to rename to its alias for String#{<<,concat}.
+                if (methodName.equals("<<")) {
+                    methodName = "concat_internal";
+                } else {
+                    methodName = methodName + "_internal";
+                }
             }
         }
 
@@ -1205,9 +1215,16 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
+        final MethodDefinitionNode methodDefinitionNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
 
-        return new AddMethodNode(context, sourceSection, classNode, functionExprNode, isDefs);
+        final RubyNode visibilityNode;
+        if (isDefs) {
+            visibilityNode = new LiteralNode(context, sourceSection, Visibility.PUBLIC);
+        } else {
+            visibilityNode = new GetCurrentVisibilityNode(context, sourceSection);
+        }
+
+        return AddMethodNodeGen.create(context, sourceSection, isDefs, true, classNode, methodDefinitionNode, visibilityNode);
     }
 
     @Override
@@ -1670,15 +1687,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "rubinius/common/time.rb")) {
-            if (name.equals("@is_gmt")) {
-                ret = TimeNodesFactory.InternalSetGMTNodeFactory.create(context, sourceSection, self, rhs);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@offset")) {
-                ret = TimeNodesFactory.InternalSetOffsetNodeFactory.create(context, sourceSection, self, rhs);
-                return addNewlineIfNeeded(node, ret);
-            }
-        } else if (path.equals(corePath + "rubinius/common/hash.rb")) {
+        if (path.equals(corePath + "rubinius/common/hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.SetDefaultValueNodeFactory.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
@@ -1762,10 +1771,7 @@ public class BodyTranslator extends Translator {
                 ret = StringNodesFactory.ByteSizeNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@data")) {
-                final RubyNode bytes = StringNodesFactory.BytesNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
-                // Wrap in a StringData instance, see shims.
-                LiteralNode stringDataClass = new LiteralNode(context, sourceSection, context.getCoreLibrary().getStringDataClass());
-                ret = new RubyCallNode(context, sourceSection, "new", stringDataClass, null, false, bytes);
+                ret = StringNodesFactory.DataNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "rubinius/common/time.rb")) {
@@ -2593,9 +2599,13 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRegexpNode(org.jruby.ast.RegexpNode node) {
-        Regex regex = RegexpNodes.compile(currentNode, context, node.getValue(), node.getOptions());
+        final Rope rope = StringOperations.ropeFromByteList(node.getValue());
+        Regex regex = RegexpNodes.compile(currentNode, context, rope, node.getOptions());
 
-        final DynamicObject regexp = RegexpNodes.createRubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue(), node.getOptions());
+        // The RegexpNodes.compile operation may modify the encoding of the source rope. This modified copy is stored
+        // in the Regex object as the "user object". Since ropes are immutable, we need to take this updated copy when
+        // constructing the final regexp.
+        final DynamicObject regexp = RegexpNodes.createRubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, (Rope) regex.getUserObject(), node.getOptions());
         Layouts.REGEXP.getOptions(regexp).setLiteral(true);
 
         final LiteralNode literalNode = new LiteralNode(context, translate(node.getPosition()), regexp);

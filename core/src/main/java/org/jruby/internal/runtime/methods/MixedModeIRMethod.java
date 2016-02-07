@@ -4,8 +4,10 @@ import org.jruby.MetaClass;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -21,13 +23,12 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Compilable<DynamicMethod> {
+import java.io.ByteArrayOutputStream;
+
+public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
-    private Signature signature;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
-
-    protected final IRScope method;
 
     protected static class DynamicMethodBox {
         public volatile DynamicMethod actualMethod;
@@ -37,10 +38,8 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
     protected DynamicMethodBox box = new DynamicMethodBox();
 
     public MixedModeIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
-        this.method = method;
+        super(method, visibility, implementationClass);
         getStaticScope().determineModule();
-        this.signature = getStaticScope().getSignature();
 
         // disable JIT if JIT is disabled
         if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT() ||
@@ -49,30 +48,8 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         }
     }
 
-    public IRScope getIRScope() {
-        return method;
-    }
-
     public DynamicMethod getActualMethod() {
         return box.actualMethod;
-    }
-
-    public StaticScope getStaticScope() {
-        return method.getStaticScope();
-    }
-
-    public ArgumentDescriptor[] getArgumentDescriptors() {
-        ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return ((IRMethod) method).getArgumentDescriptors();
-    }
-
-    public Signature getSignature() {
-        return signature;
-    }
-
-    @Override
-    public Arity getArity() {
-        return signature.arity();
     }
 
     protected void post(InterpreterContext ic, ThreadContext context) {
@@ -97,7 +74,16 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         if (method instanceof IRMethod) {
             return ((IRMethod) method).lazilyAcquireInterpreterContext();
         }
-        return method.getInterpreterContext();
+
+        InterpreterContext ic = method.getInterpreterContext();
+
+        if (Options.IR_PRINT.load()) {
+            ByteArrayOutputStream baos = IRDumper.printIR(method, false);
+
+            LOG.info("Printing simple IR for " + method.getName(), "\n" + new String(baos.toByteArray()));
+        }
+
+        return ic;
     }
 
     @Override
@@ -290,14 +276,6 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         }
     }
 
-    public DynamicMethod getMethodForCaching() {
-        DynamicMethod method = box.actualMethod;
-        if (method instanceof CompiledIRMethod) {
-            return method;
-        }
-        return this;
-    }
-
     @Override
     public void completeBuild(DynamicMethod newMethod) {
         this.box.actualMethod = newMethod;
@@ -339,14 +317,6 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         return className;
     }
 
-    public void setActualMethod(CompiledIRMethod method) {
-        this.box.actualMethod = method;
-    }
-
-    protected void dupBox(MixedModeIRMethod orig) {
-        this.box = orig.box;
-    }
-
     @Override
     public DynamicMethod dup() {
         MixedModeIRMethod x = new MixedModeIRMethod(method, getVisibility(), implementationClass);
@@ -354,14 +324,6 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
 
         return x;
     }
-
-    public String getFile() {
-        return method.getFileName();
-    }
-
-    public int getLine() {
-        return method.getLineNumber();
-   }
 
     public void setCallCount(int callCount) {
         box.callCount = callCount;

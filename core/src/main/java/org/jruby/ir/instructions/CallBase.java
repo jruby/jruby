@@ -260,7 +260,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             Operand meth = getArg1();
             if (!(meth instanceof StringLiteral)) return true; // We don't know
 
-            String name = ((StringLiteral) meth).string;
+            String name = ((StringLiteral) meth).getString();
             // FIXME: ENEBO - Half of these are name and half mname?
             return name.equals("call") || name.equals("eval") || mname.equals("module_eval") ||
                     mname.equals("class_eval") || mname.equals("instance_eval") || name.equals("send") ||

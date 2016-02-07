@@ -87,6 +87,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.runtime.Visibility.*;
+import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -690,22 +691,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(meta = true)
     public static IRubyObject handle_interrupt(ThreadContext context, IRubyObject self, IRubyObject _mask, Block block) {
-        Ruby runtime = context.runtime;
-
         if (!block.isGiven()) {
-            throw runtime.newArgumentError("block is needed");
+            throw context.runtime.newArgumentError("block is needed");
         }
 
-        RubyHash mask = (RubyHash)TypeConverter.convertToTypeWithCheck(_mask, runtime.getHash(), "to_hash");
+        final RubyHash mask = (RubyHash) TypeConverter.convertToType(_mask, context.runtime.getHash(), "to_hash");
 
         mask.visitAll(new RubyHash.Visitor() {
             @Override
             public void visit(IRubyObject key, IRubyObject value) {
                 if (value instanceof RubySymbol) {
-                    RubySymbol sym = (RubySymbol)value;
-                    String symString = sym.toString();
-                    if (!symString.equals("immediate") && !symString.equals("on_blocking") && !symString.equals("never")) {
-                        throw key.getRuntime().newArgumentError("unknown mask signature");
+                    RubySymbol sym = (RubySymbol) value;
+                    switch (sym.toString()) {
+                        case "immediate" : return;
+                        case "on_blocking" : return;
+                        case "never" : return;
+                        default : throw key.getRuntime().newArgumentError("unknown mask signature");
                     }
                 }
             }
@@ -756,7 +757,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "name=", required = 1)
     public IRubyObject setName(IRubyObject name) {
-        Ruby runtime = getRuntime();
+        final Ruby runtime = getRuntime();
 
         if (!name.isNil()) {
             RubyString nameStr = StringSupport.checkEmbeddedNulls(runtime, name);
@@ -767,7 +768,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             name = nameStr.newFrozen();
         }
         this.threadName = name;
-        setThreadName(getRuntime(), getNativeThread(), null, -1, false);
+        setThreadName(runtime, getNativeThread(), null, -1, false);
         return name;
     }
 
@@ -905,6 +906,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]=", required = 2)
     public synchronized IRubyObject op_aset(IRubyObject key, IRubyObject value) {
+        checkFrozen();
+
         key = getSymbolKey(key);
 
         getFiberLocals().put(key, value);
@@ -1512,6 +1515,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // nativeThread can be null if the thread has terminated and GC has claimed it
         if (nativeThread == null) return context.nil;
 
+        // nativeThread may have finished
+        if (!nativeThread.isAlive()) return context.nil;
+
         Ruby runtime = context.runtime;
         Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
         Integer level = ll[0], length = ll[1];
@@ -1525,14 +1531,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         if (myContext == null) return context.nil;
 
+        Thread nativeThread = getNativeThread();
+
+        // nativeThread can be null if the thread has terminated and GC has claimed it
+        if (nativeThread == null) return context.nil;
+
+        // nativeThread may have finished
+        if (!nativeThread.isAlive()) return context.nil;
+
         Ruby runtime = context.runtime;
         Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
         Integer level = ll[0], length = ll[1];
 
         return myContext.createCallerLocations(level, length, getNativeThread().getStackTrace());
     }
-
-    static final StackTraceElement[] EMPTY_STACK_TRACE = new StackTraceElement[0];
 
     public StackTraceElement[] javaBacktrace() {
         if (threadImpl instanceof NativeThread) {

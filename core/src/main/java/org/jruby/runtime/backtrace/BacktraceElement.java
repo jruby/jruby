@@ -4,6 +4,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 
 public class BacktraceElement {
 
+    public static final BacktraceElement[] EMPTY_ARRAY = new BacktraceElement[0];
+
     public BacktraceElement() {
     }
 

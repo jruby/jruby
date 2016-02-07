@@ -12,18 +12,16 @@ module JRuby::Compiler
 
     def generate_javac(files, options)
       files_string = files.join(' ')
-      jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
-        File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
-      end
+      jruby_home = ENV_JAVA['jruby.home']
+      jruby_jar = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
+        File.exist? "#{jruby_home}/lib/#{jar}"
+      end.first
       separator = File::PATH_SEPARATOR
       classpath_string = options[:classpath].size > 0 ? options[:classpath].join(separator) : "."
       javac_opts = options[:javac_options].join(' ')
       target = options[:target]
-      java_home = ENV_JAVA['jruby.home']
 
-      compile_string = "javac #{javac_opts} -d #{target} -cp #{java_home}/lib/#{jruby_jar}#{separator}#{classpath_string} #{files_string}"
-
-      compile_string
+      "javac #{javac_opts} -d #{target} -cp #{jruby_home}/lib/#{jruby_jar}#{separator}#{classpath_string} #{files_string}"
     end
   end
 

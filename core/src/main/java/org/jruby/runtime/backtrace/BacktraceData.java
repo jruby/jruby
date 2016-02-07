@@ -9,6 +9,9 @@ import java.util.Collections;
 import java.util.Map;
 
 public class BacktraceData implements Serializable {
+
+    public static final StackTraceElement[] EMPTY_STACK_TRACE = new StackTraceElement[0];
+
     private RubyStackTraceElement[] backtraceElements;
     private final StackTraceElement[] javaTrace;
     private final BacktraceElement[] rubyTrace;
@@ -25,8 +28,8 @@ public class BacktraceData implements Serializable {
     }
 
     public static final BacktraceData EMPTY = new BacktraceData(
-            new StackTraceElement[0],
-            new BacktraceElement[0],
+            EMPTY_STACK_TRACE,
+            BacktraceElement.EMPTY_ARRAY,
             false,
             false,
             false);

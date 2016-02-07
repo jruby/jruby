@@ -32,26 +32,20 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import org.jcodings.Encoding;
-import org.joni.Matcher;
-import org.joni.Option;
-import org.joni.Regex;
 import org.jruby.Ruby;
-import org.jruby.RubyRegexp;
 import org.jruby.lexer.LexerSource;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
-import static org.jruby.lexer.LexingCommon.*;
-import static org.jruby.lexer.LexingCommon.parseMagicComment;
-
 /**
  *
  * @author enebo
  */
-public class RipperLexer {
+public class RipperLexer extends LexingCommon {
     private static final HashMap<String, Keyword> map;
 
     static {
@@ -161,11 +155,14 @@ public class RipperLexer {
     }
 
     public void warn(String message) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        parser.dispatch("warn", getRuntime().newString(message));
     }
-    
-    public void warning(String message) {
-        throw new UnsupportedOperationException("Not supported yet.");
+
+    public void warning(String fmt) {
+        parser.dispatch("warning", getRuntime().newString(fmt));
+    }
+    public void warning(String fmt, String arg) {
+        parser.dispatch("warning", getRuntime().newString(fmt), getRuntime().newString(arg));
     }
     
     public enum Keyword {
@@ -308,7 +305,8 @@ public class RipperLexer {
         commandStart = true;
         current_enc = src.getEncoding();
     }
-    
+
+    int last_cr_line;
     protected int tokp = 0; // Where last token started
     protected ByteList lexb = null;
     protected int lex_p = 0; // Where current position is in current line
@@ -325,7 +323,8 @@ public class RipperLexer {
     private int ruby_sourceline = 0;
     private int heredoc_end = 0;
     private int line_count = 0;
-    
+    private boolean tokenSeen = false;
+
     /**
      * Has lexing started yet?
      */
@@ -397,9 +396,15 @@ public class RipperLexer {
         
         int c = p(lex_p);
         lex_p++;
-        if (c == '\r' && peek('\n')) {
-            lex_p++;
-            c = '\n';
+        if (c == '\r') {
+            if (peek('\n')) {
+                lex_p++;
+                c = '\n';
+            } else if (ruby_sourceline > last_cr_line) {
+                last_cr_line = ruby_sourceline;
+                warn("encountered \\\\r in middle of line, treated as a mere space");
+                c = ' ';
+            }
         }
 
 //        System.out.println("C: " + (char) c + ", LEXP: " + lex_p + ", PEND: "+ lex_pend);
@@ -585,6 +590,26 @@ public class RipperLexer {
         this.parser = parserSupport;
     }
 
+    @Override
+    protected void magicCommentEncoding(ByteList encoding) {
+        if (!comment_at_top()) return;
+
+        setEncoding(encoding);
+    }
+
+    @Override
+    protected void setCompileOptionFlag(String name, ByteList value) {
+        if (tokenSeen) {
+            warning("`%s' is ignored after any tokens", name);
+            return;
+        }
+    }
+
+    @Override
+    protected void setTokenInfo(String name, ByteList value) {
+
+    }
+
     private void setEncoding(ByteList name) {
         Encoding newEncoding = parser.getRuntime().getEncodingService().loadEncoding(name);
 
@@ -704,22 +729,6 @@ public class RipperLexer {
             setState(LexState.EXPR_BEG);
             break;
         }
-    }
-
-	/**
-	 * @param c the character to test
-	 * @return true if character is a hex value (0-9a-f)
-	 */
-    static boolean isHexChar(int c) {
-        return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
-    }
-
-    /**
-	 * @param c the character to test
-     * @return true if character is an octal value (0-7)
-	 */
-    static boolean isOctChar(int c) {
-        return '0' <= c && c <= '7';
     }
     
     /**
@@ -1168,6 +1177,7 @@ public class RipperLexer {
             case ' ': return "on_words_sep";
             case Tokens.tBANG: return "on_op";
             case Tokens.tPERCENT: return "on_op";
+            case Tokens.tANDDOT: return "on_op";
             case Tokens.tAMPER2: return "on_op";
             case Tokens.tSTAR2: return "on_op";
             case Tokens.tPLUS: return "on_op";
@@ -1345,6 +1355,7 @@ public class RipperLexer {
         int c;
         boolean spaceSeen = false;
         boolean commandState;
+        boolean tokenSeen = this.tokenSeen;
         
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this, src);
@@ -1369,6 +1380,7 @@ public class RipperLexer {
 
         commandState = commandStart;
         commandStart = false;
+        this.tokenSeen = true;
 
         loop: for(;;) {
             boolean fallthru = false;
@@ -1404,12 +1416,9 @@ public class RipperLexer {
                 continue;
             }
             case '#': { /* it's a comment */
-                ByteList encodingName = parseMagicComment(getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p));
-                // FIXME: boolean to mark we already found a magic comment to stop searching.  When found or we went too far
-                if (encodingName != null) {
-                    setEncoding(encodingName);
-                } else if (comment_at_top()) {
-                    set_file_encoding(lex_p, lex_pend);
+                this.tokenSeen = tokenSeen;
+                if (!parseMagicComment(getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p))) {
+                    if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
                 }
                 lex_p = lex_pend;
                 dispatchScanEvent(Tokens.tCOMMENT);
@@ -1418,6 +1427,7 @@ public class RipperLexer {
             }
             /* fall through */
             case '\n':
+                this.tokenSeen = tokenSeen;
                 switch (lex_state) {
                     case EXPR_BEG:
                     case EXPR_FNAME:
@@ -1659,6 +1669,8 @@ public class RipperLexer {
         case '=':
             setState(LexState.EXPR_BEG);
             return Tokens.tOP_ASGN;
+        case '.':
+            return Tokens.tANDDOT;
         }
         pushback(c);
 
@@ -1686,11 +1698,19 @@ public class RipperLexer {
             c = nextc();
             result = Tokens.tCVAR;
         } else {
-            result = Tokens.tIVAR;                    
+            result = Tokens.tIVAR;
         }
-        
-        if (c != EOF && (Character.isDigit(c) || !isIdentifierChar(c))) {
-            if (tokenBuffer.length() == 1) {
+
+        if (c == EOF || Character.isSpaceChar(c)) {
+            if (result == Tokens.tIVAR) {
+                compile_error("`@' without identifiers is not allowed as an instance variable name");
+                return EOF;
+            }
+
+            compile_error("`@@' without identifiers is not allowed as a class variable name");
+            return EOF;
+        } else if (Character.isDigit(c) || !isIdentifierChar(c)) {
+            if (result == Tokens.tIVAR) {
                 compile_error("`@" + ((char) c) + "' is not allowed as an instance variable name");
                 return EOF;
             }
@@ -1914,7 +1934,12 @@ public class RipperLexer {
             return identifierToken(last_state, Tokens.tGVAR, ("$" + (char) c).intern());
         default:
             if (!isIdentifierChar(c)) {
-                compile_error("`$" + ((char) c) + "' is not allowed as a global variable name");
+                if (c == EOF || Character.isSpaceChar(c)) {
+                    compile_error("`$' without identifiers is not allowed as a global variable name");
+                } else {
+                    pushback(c);
+                    compile_error("`$" + ((char) c) + "' is not allowed as a global variable name");
+                }
                 return EOF;
             }
         

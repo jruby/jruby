@@ -12,33 +12,38 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.rope.Rope;
 import org.jruby.util.ByteList;
 
 public abstract class StringCachingGuards {
 
-    public static ByteList privatizeByteList(DynamicObject string) {
+    public static Rope privatizeRope(DynamicObject string) {
         if (RubyGuards.isRubyString(string)) {
-            return StringOperations.getByteList(string).dup();
+            // TODO (nirvdrum 25-Jan-16) Should we flatten the rope to avoid caching a potentially deep rope tree?
+            return StringOperations.rope(string);
         } else {
             return null;
         }
     }
 
-    public static boolean byteListsEqual(DynamicObject string, ByteList byteList) {
+    public static boolean ropesEqual(DynamicObject string, Rope rope) {
         if (RubyGuards.isRubyString(string)) {
+            final Rope stringRope = StringOperations.rope(string);
+
             // equal below does not check encoding
-            if (StringOperations.getByteList(string).getEncoding() != byteList.getEncoding()) {
+            if (stringRope.getEncoding() != rope.getEncoding()) {
                 return false;
             }
-            // TODO CS 8-Nov-15 this code goes off into the woods - need to break it apart and branch profile it
-            return StringOperations.getByteList(string).equal(byteList);
+
+            return stringRope.equals(rope);
         } else {
             return false;
         }
     }
 
-    public static int byteListLength(ByteList byteList) {
-        return byteList.length();
+    public static int ropeLength(Rope rope) {
+        return rope.byteLength();
     }
 
 }

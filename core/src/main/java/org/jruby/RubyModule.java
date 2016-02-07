@@ -1703,10 +1703,13 @@ public class RubyModule extends RubyObject {
         }
 
         if (method.isUndefined()) {
-            throw runtime.newNameError("undefined method '" + name + "' for " +
-                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
+            throw runtime.newNameError(undefinedMethodMessage(name, getName(), isModule()), name);
         }
         return method;
+    }
+
+    public static String undefinedMethodMessage(final String name, final String modName, final boolean isModule) {
+        return "undefined method `" + name + "' for " + (isModule ? "module" : "class") + " `" + modName + "'";
     }
 
     /**
@@ -2565,6 +2568,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "public", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbPublic(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
         setVisibility(context, args, PUBLIC);
         return this;
     }
@@ -2574,6 +2578,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "protected", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbProtected(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
         setVisibility(context, args, PROTECTED);
         return this;
     }
@@ -2583,6 +2588,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "private", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbPrivate(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
         setVisibility(context, args, PRIVATE);
         return this;
     }
@@ -2652,12 +2658,14 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_class_method", rest = true)
     public RubyModule public_class_method(IRubyObject[] args) {
+        checkFrozen();
         getSingletonClass().setMethodVisibility(args, PUBLIC);
         return this;
     }
 
     @JRubyMethod(name = "private_class_method", rest = true)
     public RubyModule private_class_method(IRubyObject[] args) {
+        checkFrozen();
         getSingletonClass().setMethodVisibility(args, PRIVATE);
         return this;
     }
@@ -3279,6 +3287,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject deprecate_constant(ThreadContext context, IRubyObject rname) {
+        checkFrozen();
+
         deprecateConstant(context.runtime, validateConstant(rname));
         return this;
     }
@@ -3293,6 +3303,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject private_constant(ThreadContext context, IRubyObject rubyName) {
+        checkFrozen();
+
         String name = validateConstant(rubyName);
 
         setConstantVisibility(context, name, true);
@@ -3311,6 +3323,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject public_constant(ThreadContext context, IRubyObject rubyName) {
+        checkFrozen();
+
         String name = validateConstant(rubyName);
 
         setConstantVisibility(context, name, false);
@@ -3345,7 +3359,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "prepended", required = 1, visibility = PRIVATE)
     public IRubyObject prepended(ThreadContext context, IRubyObject other) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     private void setConstantVisibility(ThreadContext context, String name, boolean hidden) {
@@ -4130,7 +4144,7 @@ public class RubyModule extends RubyObject {
 
         // MRI does strlen to check for \0 vs Ruby string length.
         if ((nameString.getEncoding() != resultEncoding && !nameString.isAsciiOnly()) ||
-                nameString.toString().contains("\0")) {
+                nameString.toString().indexOf('\0') > -1 ) {
             nameString = (RubyString) nameString.inspect();
         }
 
@@ -4153,6 +4167,13 @@ public class RubyModule extends RubyObject {
             }
             throw getRuntime().newFrozenError("Module");
         }
+    }
+
+    @Override
+    public final void checkFrozen() {
+       if ( isFrozen() ) {
+           throw getRuntime().newFrozenError(isClass() ? "class" : "module");
+       }
     }
 
     protected boolean constantTableContains(String name) {

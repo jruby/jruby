@@ -42,12 +42,12 @@ env:
     - PHASE='-Prake -Dtask=spec:jruby'
     - PHASE='-Prake -Dtask=spec:jrubyc'
     - PHASE='-Prake -Dtask=spec:profiler'
-    - JT='test specs :language'
-    - JT='test specs :core'
-    - JT='test specs :library'
-    - JT='test specs :truffle'
-    - JT='test mri'
-    - JT='test integration'
+    #- JT='test specs :language'
+    #- JT='test specs :core'
+    #- JT='test specs :library'
+    #- JT='test specs :truffle'
+    #- JT='test mri'
+    #- JT='test integration'
 
 matrix:
   include:
@@ -73,8 +73,8 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
-    - env: JT=check_ambiguous_arguments
-      jdk: oraclejdk8
+    #- env: JT=check_ambiguous_arguments
+    #  jdk: oraclejdk8
   allow_failures:
     - env: PHASE='-Prake -Dtask=test:mri:fullint'
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
@@ -83,12 +83,6 @@ matrix:
     #  dist: trusty
     #  group: edge
     #  jdk: oraclejdk9
-  allow_failures: # due Ruby-2.3 new features
-    - env: PHASE='-Ptruffle-specs-language'
-    - env: PHASE='-Ptruffle-specs-core'
-    - env: PHASE='-Ptruffle-specs-library'
-    - env: PHASE='-Ptruffle-specs-truffle'
-    - env: PHASE='-Ptruffle-mri-tests'
 
 branches:
   only:
@@ -100,7 +94,7 @@ branches:
     - ruby-2.3
 
 script: tool/travis_runner.sh
-install: travis_retry ./mvnw -Pbootstrap clean install -Dinvoker.skip -Dmaven.test.skip
+install: travis_retry ./mvnw -Pbootstrap clean install -B -Dinvoker.skip -Dmaven.test.skip
 
 notifications:
   irc:

@@ -62,7 +62,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
@@ -96,7 +95,6 @@ import static org.jruby.anno.FrameField.*;
  */
 @JRubyModule(name="Kernel")
 public class RubyKernel {
-    public final static Class<?> IRUBY_OBJECT = IRubyObject.class;
 
     public static class MethodMissingMethod extends JavaMethodNBlock {
         private final Visibility visibility;
@@ -789,27 +787,80 @@ public class RubyKernel {
 
     @JRubyMethod(name = {"raise", "fail"}, optional = 3, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         int argc = args.length;
 
-        RubyHash opts = extract_raise_opts(context, args);
-        if (opts != null) argc--;
+        // semi extract_raise_opts :
+        IRubyObject cause = null;
+        if ( argc > 0 ) {
+            IRubyObject last = args[argc - 1];
+            if ( last instanceof RubyHash ) {
+                RubyHash opt = (RubyHash) last; RubySymbol key;
+                if ( ! opt.isEmpty() && ( opt.has_key_p( key = runtime.newSymbol("cause") ) == runtime.getTrue() ) ) {
+                    cause = opt.delete(context, key, Block.NULL_BLOCK);
+                    if ( opt.isEmpty() && --argc == 0 ) { // more opts will be passed along
+                        throw runtime.newArgumentError("only cause is given with no arguments");
+                    }
+                }
+            }
+        }
 
+        if ( argc > 0 ) { // for argc == 0 we will be raising $!
+            // NOTE: getErrorInfo needs to happen before new RaiseException(...)
+            if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
+        }
+
+        maybeRaiseJavaException(runtime, args, argc, cause);
+
+        RaiseException raise;
+        switch (argc) {
+            case 0:
+                IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+                if (lastException.isNil()) {
+                    raise = new RaiseException(runtime, runtime.getRuntimeError(), "", false);
+                } else {
+                    // non RubyException value is allowed to be assigned as $!.
+                    raise = new RaiseException((RubyException) lastException);
+                }
+                break;
+            case 1:
+                if (args[0] instanceof RubyString) {
+                    raise = new RaiseException((RubyException) runtime.getRuntimeError().newInstance(context, args, block));
+                } else {
+                    raise = new RaiseException(convertToException(runtime, args[0], null));
+                }
+                break;
+            case 2:
+                raise = new RaiseException(convertToException(runtime, args[0], args[1]));
+                break;
+            default:
+                raise = new RaiseException(convertToException(runtime, args[0], args[1]), args[2]);
+                break;
+        }
+
+        if (runtime.isDebug()) {
+            printExceptionSummary(context, runtime, raise.getException());
+        }
+
+        if ( argc > 0 && cause != raise.getException() ) raise.getException().setCause(cause);
+
+        throw raise;
+    }
+
+    private static void maybeRaiseJavaException(final Ruby runtime,
+        final IRubyObject[] args, final int argc, final IRubyObject cause) {
         // Check for a Java exception
         ConcreteJavaProxy exception = null;
         switch (argc) {
             case 0:
-                if (opts != null) {
-                    throw runtime.newArgumentError("only cause is given with no arguments");
-                }
-
-                if (runtime.getGlobalVariables().get("$!") instanceof ConcreteJavaProxy) {
-                    exception = (ConcreteJavaProxy)runtime.getGlobalVariables().get("$!");
+                IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+                if (lastException instanceof ConcreteJavaProxy) {
+                    exception = (ConcreteJavaProxy) lastException;
                 }
                 break;
             case 1:
                 if (args.length == 1 && args[0] instanceof ConcreteJavaProxy) {
-                    exception = (ConcreteJavaProxy)args[0];
+                    exception = (ConcreteJavaProxy) args[0];
                 }
                 break;
         }
@@ -819,50 +870,17 @@ public class RubyKernel {
             Object maybeThrowable = exception.getObject();
 
             if (maybeThrowable instanceof Throwable) {
-                // yes, we're cheating here.
-                Helpers.throwException((Throwable)maybeThrowable);
-                return recv; // not reached
-            } else {
-                throw runtime.newTypeError("can't raise a non-Throwable Java object");
-            }
-        } else {
-            // FIXME: Pass block down?
-            RaiseException raise;
-            switch (argc) {
-                case 0:
-                    IRubyObject lastException = runtime.getGlobalVariables().get("$!");
-                    if (lastException.isNil()) {
-                        raise = new RaiseException(runtime, runtime.getRuntimeError(), "", false);
-                    } else {
-                        // non RubyException value is allowed to be assigned as $!.
-                        raise = new RaiseException((RubyException) lastException);
+                final Throwable ex = (Throwable) maybeThrowable;
+                if (ex.getCause() == null && cause instanceof ConcreteJavaProxy) {
+                    // allow raise java.lang.RuntimeException.new, cause: myCurrentException()
+                    maybeThrowable = ((ConcreteJavaProxy) cause).getObject();
+                    if (maybeThrowable instanceof Throwable && ex != maybeThrowable) {
+                        ex.initCause((Throwable) maybeThrowable);
                     }
-                    break;
-                case 1:
-                    if (args[0] instanceof RubyString) {
-                        raise = new RaiseException((RubyException) runtime.getRuntimeError().newInstance(context, args, block));
-                    } else {
-                        raise = new RaiseException(convertToException(runtime, args[0], null));
-                    }
-                    break;
-                case 2:
-                    raise = new RaiseException(convertToException(runtime, args[0], args[1]));
-                    break;
-                default:
-                    raise = new RaiseException(convertToException(runtime, args[0], args[1]), args[2]);
-                    break;
+                }
+                Helpers.throwException(ex); return; // not reached
             }
-
-            if (runtime.getDebug().isTrue()) {
-                printExceptionSummary(context, runtime, raise.getException());
-            }
-
-            if (opts != null) {
-                IRubyObject cause = opts.op_aref(context, runtime.newSymbol("cause"));
-                raise.getException().setCause(cause);
-            }
-
-            throw raise;
+            throw runtime.newTypeError("can't raise a non-Throwable Java object");
         }
     }
 
@@ -892,21 +910,6 @@ public class RubyKernel {
                 TypeConverter.convertToType(rEx, runtime.getString(), "to_s"));
 
         runtime.getErrorStream().print(msg);
-    }
-
-    private static RubyHash extract_raise_opts(ThreadContext context, IRubyObject[] args) {
-        int i;
-        if (args.length > 0) {
-            IRubyObject opt = args[args.length-1];
-            if (opt instanceof RubyHash) {
-                if (!((RubyHash)opt).isEmpty()) {
-                    if (!((RubyHash)opt).op_aref(context, context.runtime.newSymbol("cause")).isNil()) {
-                        return (RubyHash) opt;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     /**
@@ -1107,52 +1110,39 @@ public class RubyKernel {
 
     @JRubyMethod(name = "throw", module = true, visibility = PRIVATE)
     public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbThrowInternal(context, tag, IRubyObject.NULL_ARRAY, block, uncaught19);
+        return rbThrowInternal(context, tag, null);
     }
 
     @JRubyMethod(name = "throw", module = true, visibility = PRIVATE)
-    public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject arg, Block block) {
-        return rbThrowInternal(context, tag, new IRubyObject[] {arg}, block, uncaught19);
+    public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject value, Block block) {
+        return rbThrowInternal(context, tag, value);
     }
 
-    private static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject[] args, Block block, Uncaught uncaught) {
-        Ruby runtime = context.runtime;
-        runtime.getGlobalVariables().set("$!", runtime.getNil());
+    private static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject arg) {
+        final Ruby runtime = context.runtime;
+        runtime.getGlobalVariables().set("$!", context.nil);
 
         RubyContinuation.Continuation continuation = context.getActiveCatch(tag);
 
         if (continuation != null) {
-            continuation.args = args;
+            continuation.args = arg == null ? IRubyObject.NULL_ARRAY : new IRubyObject[] { arg };
             throw continuation;
         }
 
         // No catch active for this throw
-        String message;
-        if (tag instanceof RubyString) {
-            message = "uncaught throw `" + tag + "'";
-        } else {
-            message = "uncaught throw " + tag.inspect();
-        }
-        RubyThread currentThread = context.getThread();
+        IRubyObject value = arg == null ? context.nil : arg;
+        String message = "uncaught throw %p";
 
-        if (currentThread == runtime.getThreadService().getMainThread()) {
-            throw uncaught.uncaughtThrow(runtime, message, tag);
-        } else {
+        final RubyThread currentThread = context.getThread();
+        if (currentThread != runtime.getThreadService().getMainThread()) {
             message += " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id()));
-            throw runtime.newArgumentError(message);
         }
+        throw uncaughtThrow(runtime, tag, value, runtime.newString(message));
     }
 
-    private static abstract class Uncaught {
-        public abstract RaiseException uncaughtThrow(Ruby runtime, String message, IRubyObject tag);
+    private static RaiseException uncaughtThrow(Ruby runtime, IRubyObject tag, IRubyObject value, RubyString message) {
+        return new RaiseException( RubyUncaughtThrowError.newUncaughtThrowError(runtime, tag, value, message) );
     }
-
-    private static final Uncaught uncaught19 = new Uncaught() {
-        @Override
-        public RaiseException uncaughtThrow(Ruby runtime, String message, IRubyObject tag) {
-            return runtime.newArgumentError(message);
-        }
-    };
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject message) {

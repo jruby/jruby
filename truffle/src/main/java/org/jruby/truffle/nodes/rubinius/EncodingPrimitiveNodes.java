@@ -14,7 +14,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
@@ -23,7 +22,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 public abstract class EncodingPrimitiveNodes {
 
     @RubiniusPrimitive(name = "encoding_get_object_encoding", needsSelf = false)
-    public static abstract class EncodingGetObjectEncodingNode extends RubiniusPrimitiveNode {
+    public static abstract class EncodingGetObjectEncodingNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public EncodingGetObjectEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -31,12 +30,12 @@ public abstract class EncodingPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
-            return EncodingNodes.getEncoding(StringOperations.getByteList(string).getEncoding());
+            return EncodingNodes.getEncoding(Layouts.STRING.getRope(string).getEncoding());
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
         public DynamicObject encodingGetObjectEncodingSymbol(DynamicObject symbol) {
-            return EncodingNodes.getEncoding(Layouts.SYMBOL.getByteList(symbol).getEncoding());
+            return EncodingNodes.getEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")

@@ -1,0 +1,127 @@
+package org.jruby.internal.runtime;
+
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.anno.MethodDescriptor;
+import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.Interp;
+import org.jruby.ir.instructions.GetFieldInstr;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.PutFieldInstr;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ivars.MethodData;
+import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
+
+    private Signature signature;
+    protected final IRScope method;
+    protected final StaticScope staticScope;
+    protected InterpreterContext interpreterContext = null;
+    protected int callCount = 0;
+    private MethodData methodData;
+
+    public AbstractIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
+        super(implementationClass, visibility, method.getName());
+        this.method = method;
+        this.staticScope = method.getStaticScope();
+        this.staticScope.determineModule();
+        this.signature = staticScope.getSignature();
+
+        // -1 jit.threshold is way of having interpreter not promote full builds.
+        if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
+
+        // If we are printing, do the build right at creation time so we can see it
+        if (Options.IR_PRINT.load()) {
+            ensureInstrsReady();
+        }
+    }
+
+    public IRScope getIRScope() {
+        return method;
+    }
+
+    public void setCallCount(int callCount) {
+        this.callCount = callCount;
+    }
+
+    public StaticScope getStaticScope() {
+        return staticScope;
+    }
+
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        ensureInstrsReady(); // Make sure method is minimally built before returning this info
+        return ((IRMethod) method).getArgumentDescriptors();
+    }
+
+    public abstract InterpreterContext ensureInstrsReady();
+
+    public Signature getSignature() {
+        return signature;
+    }
+
+    @Override
+    public Arity getArity() {
+        return signature.arity();
+    }
+
+    @Override
+    public abstract DynamicMethod dup();
+
+    public String getClassName(ThreadContext context) {
+        return null;
+    }
+
+    public String getFile() {
+        return method.getFileName();
+    }
+
+    public int getLine() {
+        return method.getLineNumber();
+    }
+
+    /**
+     * Additional metadata about this method.
+     */
+    public MethodData getMethodData() {
+        if (methodData == null) {
+            List<String> ivarNames = new ArrayList<>();
+            InterpreterContext context = ensureInstrsReady();
+            for (Instr i : context.getInstructions()) {
+                switch (i.getOperation()) {
+                    case GET_FIELD:
+                        ivarNames.add(((GetFieldInstr) i).getRef());
+                        break;
+                    case PUT_FIELD:
+                        ivarNames.add(((PutFieldInstr) i).getRef());
+                        break;
+                }
+            }
+            methodData = new MethodData(method.getName(), method.getFileName(), ivarNames);
+        }
+
+        return methodData;
+    }
+}

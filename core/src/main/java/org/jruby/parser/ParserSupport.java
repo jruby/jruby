@@ -235,6 +235,12 @@ public class ParserSupport {
         return head;
     }
 
+    // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
+    public AssignableNode assignableInCurr(String name, Node value) {
+        currentScope.addVariableThisScope(name);
+        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
+    }
+
     public Node getOperatorCallNode(Node firstNode, String operator) {
         checkExpression(firstNode);
 
@@ -749,6 +755,15 @@ public class ParserSupport {
         return new OpAsgnNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
     }
 
+    public Node newOpConstAsgn(ISourcePosition position, Node lhs, String operatorName, Node rhs) {
+        // FIXME: Maybe need to fixup position?
+        if (lhs != null) {
+            return new OpAsgnConstDeclNode(position, lhs, operatorName, rhs);
+        } else {
+            return new BeginNode(position, NilImplicitNode.NIL);
+        }
+    }
+
     public boolean isLazy(String callType) {
         return "&.".equals(callType);
     }
@@ -928,7 +943,15 @@ public class ParserSupport {
         
         if (head instanceof EvStrNode) {
             head = createDStrNode(head.getPosition()).add(head);
-        } 
+        }
+
+        if (lexer.getHeredocIndent() > 0) {
+            if (head instanceof StrNode) {
+                head = createDStrNode(head.getPosition()).add(head);
+            } else if (head instanceof DStrNode) {
+                return list_append(head, tail);
+            }
+        }
 
         if (tail instanceof StrNode) {
             if (head instanceof StrNode) {
@@ -1132,7 +1155,7 @@ public class ParserSupport {
         if (name == "_") {
             int count = 0;
             while (current.exists(name) >= 0) {
-                name = "_$" + count++;
+                name = ("_$" + count++).intern();
             }
         }
         

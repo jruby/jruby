@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -46,7 +46,7 @@ import org.jruby.util.Sprintf;
 public class RubyNameError extends RubyException {
     private IRubyObject name;
 
-    /** 
+    /**
      * Nested class whose instances act as thunks reacting to to_str method
      * called from (Exception#to_str, Exception#message)
      * MRI equivalent: rb_cNameErrorMesg, class name: "message", construction method: "!",
@@ -57,7 +57,7 @@ public class RubyNameError extends RubyException {
     @JRubyClass(name = "NameError::Message", parent = "Data")
     public static final class RubyNameErrorMessage extends RubyObject {
 
-        static ObjectAllocator NAMEERRORMESSAGE_ALLOCATOR = new ObjectAllocator() {
+        private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
             @Override
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new RubyNameErrorMessage(runtime);
@@ -91,13 +91,12 @@ public class RubyNameError extends RubyException {
 
         @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
-            Ruby runtime = context.runtime;
+            final Ruby runtime = context.runtime;
 
             if (message == null) {
                 return context.nil;
             } else {
                 String description = null;
-                IRubyObject[] args = new IRubyObject[2];
                 boolean singleton = false;
 
                 if (object.isNil()) {
@@ -121,10 +120,9 @@ public class RubyNameError extends RubyException {
                 }
 
                 if (!singleton) {
-                    description = description + ":" + object.getMetaClass().getRealClass().getName();
+                    description = description + ':' + object.getMetaClass().getRealClass().getName();
                 }
-                args[0] = name;
-                args[1] = runtime.newString(description);
+                //IRubyObject[] args = new IRubyObject[] { name, runtime.newString(description) };
 
                 RubyArray arr = runtime.newArray(name, runtime.newString(description));
                 ByteList msgBytes = new ByteList(this.message.length() + description.length() + name.toString().length());
@@ -135,21 +133,21 @@ public class RubyNameError extends RubyException {
         }
     }
 
-    private static ObjectAllocator NAMEERROR_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator NAMEERROR_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNameError(runtime, klass);
         }
     };
 
-    public static RubyClass createNameErrorClass(Ruby runtime, RubyClass standardErrorClass) {
+    static RubyClass createNameErrorClass(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass, NAMEERROR_ALLOCATOR);
         nameErrorClass.defineAnnotatedMethods(RubyNameError.class);
         return nameErrorClass;
     }
 
-    public static RubyClass createNameErrorMessageClass(Ruby runtime, RubyClass nameErrorClass) {
-        RubyClass messageClass = nameErrorClass.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage.NAMEERRORMESSAGE_ALLOCATOR);
+    static RubyClass createNameErrorMessageClass(Ruby runtime, RubyClass nameErrorClass) {
+        RubyClass messageClass = nameErrorClass.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage.ALLOCATOR);
         messageClass.defineAnnotatedMethods(RubyNameErrorMessage.class);
         return messageClass;
     }
@@ -166,25 +164,38 @@ public class RubyNameError extends RubyException {
         super(runtime, exceptionClass, message);
         this.name = name == null ? runtime.getNil() : runtime.newString(name);
     }
-    
+
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, IRubyObject name) {
         super(runtime, exceptionClass, message);
         this.name = name;
     }
 
     @JRubyMethod(name = "exception", meta = true)
+    public static IRubyObject exception(ThreadContext context, IRubyObject recv) {
+        return newNameError(recv, NULL_ARRAY);
+    }
+
+    @JRubyMethod(name = "exception", meta = true)
     public static RubyException exception(ThreadContext context, IRubyObject recv, IRubyObject message) {
-        return newRubyNameError(recv, message, context.nil);
+        return newNameError(recv, new IRubyObject[] { message });
     }
 
     @JRubyMethod(name = "exception", meta = true)
     public static RubyException exception(ThreadContext context, IRubyObject recv, IRubyObject message, IRubyObject name) {
-        return newRubyNameError(recv, message, name);
+        return newNameError(recv, message, name);
     }
 
-    public static RubyException newRubyNameError(IRubyObject recv, IRubyObject message, IRubyObject name) {
-        RubyClass klass = (RubyClass)recv;
+    private static RubyException newNameError(IRubyObject recv, IRubyObject[] args) {
+        final RubyClass klass = (RubyClass) recv;
+        RubyException newError = (RubyException) klass.allocate();
 
+        newError.callInit(args, Block.NULL_BLOCK);
+
+        return newError;
+    }
+
+    static RubyException newNameError(IRubyObject recv, IRubyObject message, IRubyObject name) {
+        final RubyClass klass = (RubyClass) recv;
         RubyException newError = (RubyException) klass.allocate();
 
         newError.callInit(message, name, Block.NULL_BLOCK);
@@ -192,31 +203,24 @@ public class RubyNameError extends RubyException {
         return newError;
     }
 
-    @JRubyMethod(required = 1, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 2, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length > 1) {
-            name = args[args.length - 1];
-            int newLength = args.length > 2 ? args.length - 2 : args.length - 1;
-
-            IRubyObject []tmpArgs = new IRubyObject[newLength];
-            System.arraycopy(args, 0, tmpArgs, 0, newLength);
-            args = tmpArgs;
-        } else {
-            name = getRuntime().getNil();
-        }
-
-        super.initialize(args, block);
+        if ( args.length > 0 ) this.message = args[0];
+        if ( args.length > 1 ) this.name = args[1];
+        else this.name = getRuntime().getNil();
+        super.initialize(NULL_ARRAY, block); // message already set
         return this;
     }
 
     @JRubyMethod
     @Override
-    public IRubyObject to_s() {
-        if (message.isNil()) return getRuntime().newString(message.getMetaClass().getName());
+    public IRubyObject to_s(ThreadContext context) {
+        if (message.isNil()) {
+            return context.runtime.newString(getMetaClass().getRealClass().getName());
+        }
         RubyString str = message.convertToString();
         if (str != message) message = str;
-        if (isTaint()) message.setTaint(true);
         return message;
     }
 
@@ -228,7 +232,7 @@ public class RubyNameError extends RubyException {
     @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
         if (message instanceof RubyNameErrorMessage) {
-            return ((RubyNameErrorMessage)message).object;
+            return ((RubyNameErrorMessage) message).object;
         }
 
         throw context.runtime.newArgumentError("no receiver is available");

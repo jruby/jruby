@@ -35,6 +35,10 @@ public abstract class RubyGuards {
         return value instanceof Double;
     }
 
+    public static boolean isJavaCharSequence(Object value) {
+        return value instanceof CharSequence;
+    }
+
     // Ruby types
 
     public static boolean isRubyBasicObject(Object object) {
@@ -221,6 +225,10 @@ public abstract class RubyGuards {
 
     public static boolean isThreadLocal(Object value) {
         return value instanceof ThreadLocalObject;
+    }
+
+    public static boolean isTruffleObject(Object object) {
+        return object instanceof TruffleObject;
     }
 
     public static boolean isForeignObject(Object object) {

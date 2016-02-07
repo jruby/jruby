@@ -26,7 +26,7 @@ import java.math.BigInteger;
 public abstract class FixnumPrimitiveNodes {
 
     @RubiniusPrimitive(name = "fixnum_coerce")
-    public static abstract class FixnumCoercePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class FixnumCoercePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public FixnumCoercePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

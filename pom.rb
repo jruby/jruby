@@ -63,26 +63,25 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'polyglot.dump.readonly' => 'true',
               'jruby.plugins.version' => '1.0.10',
 
-              'json.version' => '1.8.0',
-              'krypt.version' => '0.0.2.rc1',
+              'json.version' => '1.8.3',
               'rspec.version' => '3.3.0',
               'rspec-core.version' => '3.3.2',
               'rspec-expectations.version' => '3.3.1',
               'rspec-mocks.version' => '3.3.2',
               'minitest.version' => '5.4.1',
-              'test-unit.version' => '3.0.3',
+              'test-unit.version' => '3.1.1',
               'power_assert.version' => '0.2.3',
               'diff-lcs.version' => '1.1.3',
               'racc.version' => '1.4.13',
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
-              'rdoc.version' => '4.1.2',
-              'rake.version' => '10.1.0',
+              'rdoc.version' => '4.2.0',
+              'rake.version' => '10.4.2',
               'jar-dependencies.version' => '0.2.3',
 
               'jruby-launcher.version' => '1.1.1',
               'ant.version' => '1.9.2',
-              'asm.version' => '5.0.3',
+              'asm.version' => '5.0.4',
               'jffi.version' => '1.2.10',
               'bouncy-castle.version' => '1.47',
               'joda.time.version' => '2.8.2' )

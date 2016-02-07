@@ -99,7 +99,7 @@ public abstract class ToStringNode extends PackNode {
             setTainted(frame);
         }
 
-        return StringOperations.getByteList(string);
+        return StringOperations.getByteListReadOnly(string);
     }
 
     @Specialization(guards = "isRubyArray(array)")
@@ -116,7 +116,7 @@ public abstract class ToStringNode extends PackNode {
                 setTainted(frame);
             }
 
-            return StringOperations.getByteList((DynamicObject) value);
+            return StringOperations.getByteListReadOnly((DynamicObject) value);
         }
 
         CompilerDirectives.transferToInterpreter();
@@ -142,7 +142,7 @@ public abstract class ToStringNode extends PackNode {
                 setTainted(frame);
             }
 
-            return StringOperations.getByteList((DynamicObject) value);
+            return StringOperations.getByteListReadOnly((DynamicObject) value);
         }
 
         if (inspectOnConversionFailure) {
@@ -152,7 +152,7 @@ public abstract class ToStringNode extends PackNode {
                         getEncapsulatingSourceSection(), new RubyNode[]{null}));
             }
 
-            return StringOperations.getByteList(inspectNode.toS(frame, object));
+            return StringOperations.getByteListReadOnly(inspectNode.toS(frame, object));
         }
 
         CompilerDirectives.transferToInterpreter();

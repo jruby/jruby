@@ -33,10 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import org.jruby.util.FileResource;
-import org.jruby.util.collections.StringArraySet;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -58,18 +55,24 @@ import java.util.zip.ZipException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyContinuation;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -207,7 +210,7 @@ public class LoadService {
      *
      * @param prependDirectories
      */
-    public void init(List prependDirectories) {
+    public void init(List<String> prependDirectories) {
         loadPath = RubyArray.newArray(runtime);
 
         String jrubyHome = runtime.getJRubyHome();
@@ -305,7 +308,7 @@ public class LoadService {
     protected void addPath(String path) {
         // Empty paths do not need to be added
         if (path == null || path.length() == 0) return;
-
+        final RubyArray loadPath = this.loadPath;
         synchronized(loadPath) {
             loadPath.append(runtime.newString(path.replace('\\', '/')));
         }
@@ -335,7 +338,7 @@ public class LoadService {
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
-                if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+                debugLoadException(runtime, e);
                 throw newLoadErrorFromThrowable(runtime, file, e);
             }
         } finally {
@@ -361,7 +364,7 @@ public class LoadService {
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
-                if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+                debugLoadException(runtime, e);
                 throw newLoadErrorFromThrowable(runtime, file, e);
             }
         } finally {
@@ -426,7 +429,7 @@ public class LoadService {
         return smartLoadInternal(file, circularRequireWarning);
     }
 
-    protected final RequireLocks requireLocks = new RequireLocks();
+    private final RequireLocks requireLocks = new RequireLocks();
 
     private static final class RequireLocks {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
@@ -610,9 +613,13 @@ public class LoadService {
         } catch (RaiseException re) {
             throw re;
         } catch (Throwable e) {
-            if (runtime.getDebug().isTrue()) e.printStackTrace();
+            debugLoadException(runtime, e);
             throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e, libraryName);
         }
+    }
+
+    private static void debugLoadException(final Ruby runtime, final Throwable ex) {
+        if (runtime.isDebug()) ex.printStackTrace(runtime.getErr());
     }
 
     public IRubyObject getLoadPath() {
@@ -895,19 +902,30 @@ public class LoadService {
         try {
             state.library.load(runtime, false);
             return true;
-        } catch (MainExitException mee) {
+        }
+        catch (MainExitException ex) {
             // allow MainExitException to propagate out for exec and friends
-            throw mee;
-        } catch (Throwable e) {
-            if(isJarfileLibrary(state, state.searchFile)) {
-                return true;
-            }
-            reraiseRaiseExceptions(e);
+            throw ex;
+        }
+        catch (RaiseException ex) {
+            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
+            if ( isJarfileLibrary(state, state.searchFile) ) return true;
+            throw ex;
+        }
+        catch (JumpException ex) {
+            throw ex;
+        }
+        catch (RubyContinuation.Continuation ex) {
+            throw ex;
+        }
+        catch (Throwable ex) {
+            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
+            if ( isJarfileLibrary(state, state.searchFile) ) return true;
 
-            if(runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+            debugLoadException(runtime, ex);
 
-            RaiseException re = newLoadErrorFromThrowable(runtime, state.searchFile, e);
-            re.initCause(e);
+            RaiseException re = newLoadErrorFromThrowable(runtime, state.searchFile, ex);
+            re.initCause(ex);
             throw re;
         }
     }
@@ -933,15 +951,16 @@ public class LoadService {
     protected String buildClassName(String className) {
         // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
         className = className.replaceFirst("^\\.\\/", "");
-        if (className.lastIndexOf(".") != -1) {
-            className = className.substring(0, className.lastIndexOf("."));
+        final int lastDot = className.lastIndexOf('.');
+        if (lastDot != -1) {
+            className = className.substring(0, lastDot);
         }
         className = className.replace("-", "_minus_").replace('.', '_');
         return className;
     }
 
     protected void checkEmptyLoad(String file) throws RaiseException {
-        if (file.equals("")) {
+        if (file.isEmpty()) {
             throw runtime.newLoadError("no such file to load -- " + file, file);
         }
     }
@@ -1355,7 +1374,7 @@ public class LoadService {
             // Fall back to using the original string
         }
 
-        int idx = unescaped.indexOf("!");
+        int idx = unescaped.indexOf('!');
         if (idx == -1) {
             return new String[]{unescaped, ""};
         }
@@ -1363,11 +1382,11 @@ public class LoadService {
         String filename = unescaped.substring(0, idx);
         String entry = idx + 2 < unescaped.length() ? unescaped.substring(idx + 2) : "";
 
-        if(filename.startsWith("jar:")) {
+        if (filename.startsWith("jar:")) {
             filename = filename.substring(4);
         }
 
-        if(filename.startsWith("file:")) {
+        if (filename.startsWith("file:")) {
             filename = filename.substring(5);
         }
 

@@ -22,6 +22,7 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -42,6 +43,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import java.io.ByteArrayOutputStream;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -130,12 +132,18 @@ public class JVMVisitor extends IRVisitor {
         emitScriptBody(script);
     }
 
-    public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity) {
+    public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity, boolean print) {
         BasicBlock[] bbs = scope.prepareForCompilation();
+
+        if (print && Options.IR_PRINT.load()) {
+            ByteArrayOutputStream baos = IRDumper.printIR(scope, true);
+
+            LOG.info("Printing JIT IR for " + scope.getName(), "\n" + new String(baos.toByteArray()));
+        }
 
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
-        emitClosures(scope);
+        emitClosures(scope, print);
 
         jvm.pushmethod(name, scope, signature, specificArity);
 
@@ -237,7 +245,7 @@ public class JVMVisitor extends IRVisitor {
         String clsName = jvm.scriptToClass(script.getFileName());
         jvm.pushscript(clsName, script.getFileName());
 
-        emitScope(script, name, signatureFor(script, false), false);
+        emitScope(script, name, signatureFor(script, false), false, true);
 
         jvm.cls().visitEnd();
         jvm.popclass();
@@ -265,7 +273,7 @@ public class JVMVisitor extends IRVisitor {
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
         jvm.pushscript(clsName, closure.getFileName());
 
-        emitScope(closure, name, CLOSURE_SIGNATURE, false);
+        emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
 
         context.setJittedName(name);
 
@@ -277,12 +285,12 @@ public class JVMVisitor extends IRVisitor {
         context.setJittedName(name);
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false);
+        emitScope(method, name, signature, false, true);
         context.addNativeSignature(-1, signature.type());
 
         Signature specificSig = signatureFor(method, true);
         if (specificSig != null) {
-            emitScope(method, name, specificSig, true);
+            emitScope(method, name, specificSig, true, false);
             context.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
         }
     }
@@ -294,7 +302,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.pushscript(clsName, method.getFileName());
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false);
+        emitScope(method, name, signature, false, true);
 
         Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
 
@@ -304,18 +312,18 @@ public class JVMVisitor extends IRVisitor {
         return handle;
     }
 
-    private void emitClosures(IRScope s) {
+    private void emitClosures(IRScope s, boolean print) {
         // Emit code for all nested closures
         for (IRClosure c: s.getClosures()) {
-            c.setHandle(emitClosure(c));
+            c.setHandle(emitClosure(c, print));
         }
     }
 
-    public Handle emitClosure(IRClosure closure) {
+    public Handle emitClosure(IRClosure closure, boolean print) {
         /* Compile the closure like a method */
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
 
-        emitScope(closure, name, CLOSURE_SIGNATURE, false);
+        emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()));
     }
@@ -324,7 +332,7 @@ public class JVMVisitor extends IRVisitor {
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false);
+        emitScope(method, name, signature, false, true);
 
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
     }
@@ -455,13 +463,19 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BFalseInstr(BFalseInstr bFalseInstr) {
         Operand arg1 = bFalseInstr.getArg1();
-        visit(arg1);
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
-        if (!(arg1 instanceof TemporaryBooleanVariable) && !(arg1 instanceof UnboxedBoolean)) {
+        if (arg1 instanceof TemporaryBooleanVariable || arg1 instanceof UnboxedBoolean) {
+            // no need to unbox
+            visit(arg1);
+            jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
+        } else if (arg1 instanceof UnboxedFixnum || arg1 instanceof UnboxedFloat) {
+            // always true, don't branch
+        } else {
             // unbox
+            visit(arg1);
             jvmAdapter().invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+            jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
         }
-        jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
     }
 
     @Override
@@ -713,12 +727,20 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BTrueInstr(BTrueInstr btrueinstr) {
         Operand arg1 = btrueinstr.getArg1();
-        visit(arg1);
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
-        if (!(arg1 instanceof TemporaryBooleanVariable) && !(arg1 instanceof UnboxedBoolean)) {
-            jvmMethod().isTrue();
+        if (arg1 instanceof TemporaryBooleanVariable || arg1 instanceof UnboxedBoolean) {
+            // no need to unbox, just branch
+            visit(arg1);
+            jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
+        } else if (arg1 instanceof UnboxedFixnum || arg1 instanceof UnboxedFloat) {
+            // always true, always branch
+            jvmMethod().goTo(getJVMLabel(btrueinstr.getJumpTarget()));
+        } else {
+            // unbox and branch
+            visit(arg1);
+            jvmAdapter().invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+            jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
         }
-        jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
     }
 
     @Override

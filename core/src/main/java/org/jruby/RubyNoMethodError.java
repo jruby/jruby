@@ -38,18 +38,16 @@ import org.jruby.runtime.Visibility;
 public class RubyNoMethodError extends RubyNameError {
     private IRubyObject args;
 
-    private static final ObjectAllocator NOMETHODERROR_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNoMethodError(runtime, klass);
         }
     };
 
-    public static RubyClass createNoMethodErrorClass(Ruby runtime, RubyClass nameErrorClass) {
-        RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, NOMETHODERROR_ALLOCATOR);
-        
+    static RubyClass createNoMethodErrorClass(Ruby runtime, RubyClass nameErrorClass) {
+        RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, ALLOCATOR);
         noMethodErrorClass.defineAnnotatedMethods(RubyNoMethodError.class);
-
         return noMethodErrorClass;
     }
 

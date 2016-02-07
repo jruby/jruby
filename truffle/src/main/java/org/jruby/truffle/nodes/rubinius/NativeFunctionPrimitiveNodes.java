@@ -17,7 +17,7 @@ import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 public abstract class NativeFunctionPrimitiveNodes {
 
     @RubiniusPrimitive(name = "nativefunction_type_size", needsSelf = false)
-    public static abstract class NativeFunctionTypeSizePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class NativeFunctionTypeSizePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public NativeFunctionTypeSizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

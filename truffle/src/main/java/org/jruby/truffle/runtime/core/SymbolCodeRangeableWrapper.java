@@ -32,19 +32,17 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        return Layouts.SYMBOL.getCodeRange(symbol);
+        return Layouts.SYMBOL.getRope(symbol).getCodeRange();
     }
 
     @CompilerDirectives.TruffleBoundary
     @Override
     public int scanForCodeRange() {
-        final ByteList byteList = Layouts.SYMBOL.getByteList(symbol);
-
-        int cr = Layouts.SYMBOL.getCodeRange(symbol);
+        int cr = Layouts.SYMBOL.getRope(symbol).getCodeRange();
 
         if (cr == StringSupport.CR_UNKNOWN) {
-            cr = StringSupport.codeRangeScan(byteList.getEncoding(), byteList);
-            Layouts.SYMBOL.setCodeRange(symbol, cr);
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException("The code range should never be unknown");
         }
 
         return cr;
@@ -52,24 +50,22 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public boolean isCodeRangeValid() {
-        return Layouts.SYMBOL.getCodeRange(symbol) == StringSupport.CR_VALID;
+        return Layouts.SYMBOL.getRope(symbol).getCodeRange() == StringSupport.CR_VALID;
     }
 
     @Override
     public void setCodeRange(int codeRange) {
-        Layouts.SYMBOL.setCodeRange(symbol, codeRange);
+        throw new UnsupportedOperationException("Can't set code range on a Symbol");
     }
 
     @Override
     public void clearCodeRange() {
-        Layouts.SYMBOL.setCodeRange(symbol, StringSupport.CR_UNKNOWN);
+        throw new UnsupportedOperationException("Can't clear code range on a Symbol");
     }
 
     @Override
     public void keepCodeRange() {
-        if (Layouts.SYMBOL.getCodeRange(symbol) == StringSupport.CR_BROKEN) {
-            Layouts.SYMBOL.setCodeRange(symbol, StringSupport.CR_UNKNOWN);
-        }
+        throw new UnsupportedOperationException("Can't keep code range on a Symbol");
     }
 
     @Override
@@ -90,12 +86,12 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
     @Override
     public Encoding checkEncoding(CodeRangeable other) {
         // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
-        return Layouts.SYMBOL.getByteList(symbol).getEncoding();
+        return Layouts.SYMBOL.getRope(symbol).getEncoding();
     }
 
     @Override
     public ByteList getByteList() {
-        return Layouts.SYMBOL.getByteList(symbol);
+        return Layouts.SYMBOL.getRope(symbol).getUnsafeByteList();
     }
 
 }

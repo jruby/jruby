@@ -70,7 +70,7 @@ public abstract class ObjSpaceNodes {
 
         @Specialization(guards = "isRubyString(object)")
         public int memsizeOfString(DynamicObject object) {
-            return 1 + object.getShape().getPropertyListInternal(false).size() + StringOperations.getByteList(object).getRealSize();
+            return 1 + object.getShape().getPropertyListInternal(false).size() + StringOperations.rope(object).byteLength();
         }
 
         @Specialization(guards = "isRubyMatchData(object)")

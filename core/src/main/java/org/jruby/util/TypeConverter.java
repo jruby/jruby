@@ -48,12 +48,7 @@ import org.jruby.RubyNil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Arrays;
-import java.util.List;
-
 public class TypeConverter {
-    private static final List<String> IMPLICIT_CONVERSIONS =
-        Arrays.asList("to_int", "to_ary", "to_str", "to_sym", "to_hash", "to_proc", "to_io");
 
     /**
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
@@ -65,12 +60,17 @@ public class TypeConverter {
      * @return the converted value
      */
     public static IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
-        if (!obj.respondsTo(convertMethod)) {
-            if (IMPLICIT_CONVERSIONS.contains(convertMethod)) {
-                return handleImplicitlyUncoercibleObject(raise, obj, target);
-            } else {
-                return handleUncoercibleObject(raise, obj, target);
+        if ( ! obj.respondsTo(convertMethod) ) {
+            switch (convertMethod) {
+                case "to_int"  : return handleImplicitlyUncoercibleObject(raise, obj, target);
+                case "to_ary"  : return handleImplicitlyUncoercibleObject(raise, obj, target);
+                case "to_str"  : return handleImplicitlyUncoercibleObject(raise, obj, target);
+                case "to_sym"  : return handleImplicitlyUncoercibleObject(raise, obj, target);
+                case "to_hash" : return handleImplicitlyUncoercibleObject(raise, obj, target);
+                case "to_proc" : return handleImplicitlyUncoercibleObject(raise, obj, target);
+                case "to_io"   : return handleImplicitlyUncoercibleObject(raise, obj, target);
             }
+            return handleUncoercibleObject(raise, obj, target);
         }
 
         return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
@@ -233,6 +233,7 @@ public class TypeConverter {
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
+    @Deprecated // no longer used
     public static IRubyObject convertToTypeOrRaise(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, true);
@@ -366,7 +367,7 @@ public class TypeConverter {
 
     // MRI: rb_Array
     public static RubyArray rb_Array(ThreadContext context, IRubyObject val) {
-        IRubyObject tmp = checkArrayType(val);
+        IRubyObject tmp = checkArrayType(val); // to_ary
 
         if (tmp.isNil()) {
             tmp = convertToTypeWithCheck19(val, context.runtime.getArray(), "to_a");

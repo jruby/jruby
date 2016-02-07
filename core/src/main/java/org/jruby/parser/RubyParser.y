@@ -31,7 +31,7 @@ package org.jruby.parser;
 import java.io.IOException;
 
 import org.jruby.ast.ArgsNode;
- import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BackRefNode;
@@ -265,6 +265,7 @@ public class RubyParser {
 
 %type <String> rparen rbracket reswords f_bad_arg
 %type <Node> top_compstmt top_stmts top_stmt
+%type <ArgumentNode> f_norm_arg_int
 %token <String> tSYMBOLS_BEG
 %token <String> tQSYMBOLS_BEG
 %token <String> tDSTAR
@@ -478,8 +479,8 @@ stmt            : kALIAS fitem {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    support.yyerror("can't make alias for the number variables");
-                    $$ = null;
+                    ISourcePosition pos = $1.getPosition();
+                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $2), $4, $5);
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
@@ -1054,10 +1055,12 @@ arg             : lhs '=' arg {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
-                    support.yyerror("constant re-assignment");
+                    ISourcePosition pos = support.getPosition($1);
+                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), $4, $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg {
-                    support.yyerror("constant re-assignment");
+                    ISourcePosition pos = lexer.getPosition();
+                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, $1), $3, $4);
                 }
                 | backref tOP_ASGN arg {
                     support.backrefAssignError($1);
@@ -1554,7 +1557,7 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                     $$ = support.assignableLabelOrIdentifier($1, NilImplicitNode.NIL);
+                     $$ = support.assignableInCurr($1, NilImplicitNode.NIL);
                 }
                 | tLPAREN f_margs rparen {
                     $$ = $2;
@@ -1572,10 +1575,10 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgnNode($1.getPosition(), $1, null, null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg {
-                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableInCurr($4, null), null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), $6);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableInCurr($4, null), $6);
                 }
                 | f_marg_list ',' tSTAR {
                     $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
@@ -1584,10 +1587,10 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), null);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableInCurr($2, null), null);
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), $4);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableInCurr($2, null), $4);
                 }
                 | tSTAR {
                     $$ = new MultipleAsgnNode(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
@@ -1890,11 +1893,16 @@ string          : tCHAR {
                 }
 
 string1         : tSTRING_BEG string_contents tSTRING_END {
+                    lexer.heredoc_dedent($2);
+		    lexer.setHeredocIndent(0);
                     $$ = $2;
                 }
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     ISourcePosition position = support.getPosition($2);
+
+                    lexer.heredoc_dedent($2);
+		    lexer.setHeredocIndent(0);
 
                     if ($2 == null) {
                         $$ = new XStrNode(position, null, StringSupport.CR_7BIT);
@@ -2025,14 +2033,19 @@ string_content  : tSTRING_CONTENT {
                 } {
                    $$ = lexer.getBraceNest();
                    lexer.setBraceNest(0);
+                } {
+                   $$ = lexer.getHeredocIndent();
+                   lexer.setHeredocIndent(0);
                 } compstmt tSTRING_DEND {
                    lexer.getConditionState().restart();
                    lexer.setStrTerm($<StrTerm>2);
                    lexer.getCmdArgumentState().reset($<Long>3.longValue());
                    lexer.setState($<LexState>4);
                    lexer.setBraceNest($<Integer>5);
+                   lexer.setHeredocIndent($<Integer>6);
+                   lexer.setHeredocLineIndent(-1);
 
-                   $$ = support.newEvStrNode(support.getPosition($6), $6);
+                   $$ = support.newEvStrNode(support.getPosition($7), $7);
                 }
 
 string_dvar     : tGVAR {
@@ -2188,16 +2201,13 @@ backref         : tNTH_REF {
                     $$ = $1;
                 }
 
-superclass      : term {
-                    $$ = null;
-                }
-                | tLT {
+superclass      : tLT {
                    lexer.setState(LexState.EXPR_BEG);
                    lexer.commandStart = true;
                 } expr_value term {
                     $$ = $3;
                 }
-                | error term {
+                | /* none */ {
                    $$ = null;
                 }
 
@@ -2385,8 +2395,12 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = support.internalId();
                 }
 
-f_opt           : f_arg_asgn '=' arg_value {
+f_opt           : f_norm_arg_int '=' arg_value {
                     $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName(), $3));
+                }
+
+f_norm_arg_int  : f_norm_arg {
+                    $$ = support.arg_var($1);
                 }
 
 f_block_opt     : f_arg_asgn '=' primary_value {
@@ -2512,7 +2526,7 @@ call_op 	: tDOT {
 
 call_op2        : call_op
                 | tCOLON2 {
-                    $$ = tCOLON2;
+                    $$ = "::";
                 }
   
 opt_terms       : /* none */ | terms

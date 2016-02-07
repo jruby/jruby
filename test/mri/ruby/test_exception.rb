@@ -698,6 +698,17 @@ end.join
     }
     assert_equal(:foo, e.name)
     assert_same(obj, e.receiver)
+  end
+
+  def test_name_error_local_variables
+    obj = BasicObject.new
+    def obj.test(a, b=nil, *c, &d)
+      e = a
+      1.times {|f| g = foo}
+    end
+    e = assert_raise(NameError) {
+      obj.test(3)
+    }
     assert_equal(%i[a b c d e f g], e.local_variables.sort)
   end
 

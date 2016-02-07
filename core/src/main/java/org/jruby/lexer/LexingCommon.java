@@ -15,7 +15,74 @@ import org.jruby.util.ByteList;
 /**
  * Code and constants common to both ripper and main parser.
  */
-public class LexingCommon {
+public abstract class LexingCommon {
+    protected int heredoc_indent = 0;
+    protected int heredoc_line_indent = 0;
+
+    public int getHeredocIndent() {
+        return heredoc_indent;
+    }
+
+    protected int dedent_string(ByteList string, int width) {
+        long len = string.realSize();
+        int i, col = 0;
+        byte[] str = string.unsafeBytes();
+        int begin = string.begin();
+
+        for (i = 0; i < len && col < width; i++) {
+            if (str[begin + i] == ' ') {
+                col++;
+            } else if (str[begin + i] == '\t') {
+                int n = TAB_WIDTH * (col / TAB_WIDTH + 1);
+                if (n > width) break;
+                col = n;
+            } else {
+                break;
+            }
+        }
+
+        string.setBegin(begin + i);
+        string.setRealSize((int) len - i);
+        return i;
+    }
+
+    public void reset() {
+        heredoc_indent = 0;
+        heredoc_line_indent = 0;
+    }
+
+    public void setHeredocLineIndent(int heredoc_line_indent) {
+        this.heredoc_line_indent = heredoc_line_indent;
+    }
+
+    public void setHeredocIndent(int heredoc_indent) {
+        this.heredoc_indent = heredoc_indent;
+    }
+
+    public boolean update_heredoc_indent(int c) {
+        if (heredoc_line_indent == -1) {
+            if (c == '\n') heredoc_line_indent = 0;
+        } else if (c == ' ') {
+            heredoc_line_indent++;
+            return true;
+        } else if (c == '\t') {
+            int w = (heredoc_line_indent / TAB_WIDTH) + 1;
+            heredoc_line_indent = w * TAB_WIDTH;
+            return true;
+        } else if (c != '\n') {
+            if (heredoc_indent > heredoc_line_indent) heredoc_indent = heredoc_line_indent;
+            heredoc_line_indent = -1;
+        }
+
+        return false;
+    }
+
+    protected abstract void magicCommentEncoding(ByteList encoding);
+    protected abstract void setCompileOptionFlag(String name, ByteList value);
+    protected abstract void setTokenInfo(String name, ByteList value);
+
+    public static final int TAB_WIDTH = 8;
+
     // ruby constants for strings (should this be moved somewhere else?)
     public static final int STR_FUNC_ESCAPE=0x01;
     public static final int STR_FUNC_EXPAND=0x02;
@@ -96,35 +163,46 @@ public class LexingCommon {
         return -1;
     }
 
-    public static final String magicString = "([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*";
+    public static final String magicString = "^[^\\S]*([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*[^\\S]*$";
     public static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
 
+
     // MRI: parser_magic_comment
-    public static ByteList parseMagicComment(Ruby runtime, ByteList magicLine) throws IOException {
+    public boolean parseMagicComment(Ruby runtime, ByteList magicLine) throws IOException {
         int length = magicLine.length();
 
-        if (length <= 7) return null;
+        if (length <= 7) return false;
         int beg = magicCommentMarker(magicLine, 0);
-        if (beg < 0) return null;
-        int end = magicCommentMarker(magicLine, beg);
-        if (end < 0) return null;
+        if (beg >= 0) {
+            int end = magicCommentMarker(magicLine, beg);
+            if (end < 0) return false;
+            length = end - beg - 3; // -3 is to backup over end just found
+        } else {
+            beg = 0;
+        }
 
-        // We only use a regex if -*- ... -*- is found.
-        length = end - beg - 3; // -3 is to skip past beg
-        int realSize = magicLine.getRealSize();
-        int begin = magicLine.getBegin();
-        Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + realSize);
-        int result = RubyRegexp.matcherSearch(runtime, matcher, begin, begin + realSize, Option.NONE);
+        int begin = magicLine.getBegin() + beg;
+        Matcher matcher = magicRegexp.matcher(magicLine.unsafeBytes(), begin, begin + length);
+        int result = RubyRegexp.matcherSearch(runtime, matcher, begin, begin + length, Option.NONE);
 
-        if (result < 0) return null;
+        if (result < 0) return false;
 
-        // Regexp is guarateed to have three matches
+        // Regexp is guaranteed to have three matches
         int begs[] = matcher.getRegion().beg;
         int ends[] = matcher.getRegion().end;
-        String name = magicLine.subSequence(begs[1], ends[1]).toString();
-        if (!name.contains("ccoding")) return null;
+        String name = magicLine.subSequence(beg + begs[1], beg + ends[1]).toString().replace('-', '_');
+        ByteList value = magicLine.makeShared(beg + begs[2], ends[2] - begs[2]);
 
-        return magicLine.makeShared(begs[2], ends[2] - begs[2]);
+        if ("coding".equals(name) || "encoding".equals(name)) {
+            magicCommentEncoding(value);
+        } else if ("frozen_string_literal".equals(name)) {
+            setCompileOptionFlag(name, value);
+        } else if ("warn_indent".equals(name)) {
+            setTokenInfo(name, value);
+        } else {
+            return false;
+        }
+
+        return true;
     }
-
 }

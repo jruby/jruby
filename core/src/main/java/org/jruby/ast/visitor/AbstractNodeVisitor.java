@@ -414,6 +414,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitOpAsgnOrNode(OpAsgnOrNode node) {
         return defaultVisit(node);
     }

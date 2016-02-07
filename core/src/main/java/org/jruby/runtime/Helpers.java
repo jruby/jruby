@@ -971,8 +971,8 @@ public class Helpers {
             // modules are included with a shim class; we must find that shim to handle super() appropriately
             return clazz.findImplementer(implementationClass);
         } else {
-            // classes are directly in the hierarchy, so no special logic is necessary for implementer
-            return implementationClass;
+            // method is directly in a class, so just ensure we don't use any prepends
+            return implementationClass.getMethodLocation();
         }
     }
 
@@ -1409,11 +1409,13 @@ public class Helpers {
     }
 
     public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
+        RubyModule objectClass = context.runtime.getObject();
         if (wrap) {
-            staticScope.setModule(RubyModule.newModule(context.runtime));
-        } else {
-            staticScope.setModule(context.runtime.getObject());
+            objectClass = RubyModule.newModule(context.runtime);
         }
+
+        staticScope.setModule(objectClass);
+
         DynamicScope scope = DynamicScope.newDynamicScope(staticScope);
 
         // Each root node has a top-level scope that we need to push

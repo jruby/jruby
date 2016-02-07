@@ -7,11 +7,14 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRBlockBody");
@@ -65,6 +68,12 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         }
 
         if (interpreterContext == null) {
+            if (Options.IR_PRINT.load()) {
+                ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
+
+                LOG.info("Printing simple IR for " + closure.getName(), "\n" + new String(baos.toByteArray()));
+            }
+
             interpreterContext = closure.getInterpreterContext();
             fullInterpreterContext = interpreterContext;
         }

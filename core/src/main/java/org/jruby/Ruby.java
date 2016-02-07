@@ -1619,6 +1619,9 @@ public final class Ruby implements Constantizable {
         interrupt = defineClassIfAllowed("Interrupt", signalException);
         typeError = defineClassIfAllowed("TypeError", standardError);
         argumentError = defineClassIfAllowed("ArgumentError", standardError);
+        if (profile.allowClass("UncaughtThrowError")) {
+            uncaughtThrowError = RubyUncaughtThrowError.createUncaughtThrowErrorClass(this, argumentError);
+        }
         indexError = defineClassIfAllowed("IndexError", standardError);
         if (profile.allowClass("StopIteration")) {
             stopIteration = RubyStopIteration.createStopIterationClass(this, indexError);
@@ -2451,6 +2454,10 @@ public final class Ruby implements Constantizable {
         return argumentError;
     }
 
+    public RubyClass getUncaughtThrowError() {
+        return uncaughtThrowError;
+    }
+
     public RubyClass getIndexError() {
         return indexError;
     }
@@ -2857,31 +2864,30 @@ public final class Ruby implements Constantizable {
         return new PrintStream(new IOOutputStream(getGlobalVariables().get("$stdout")));
     }
 
-    public RubyModule getClassFromPath(String path) {
-        RubyModule c = getObject();
+    public RubyModule getClassFromPath(final String path) {
         if (path.length() == 0 || path.charAt(0) == '#') {
             throw newTypeError("can't retrieve anonymous class " + path);
         }
-        int pbeg = 0, p = 0;
-        for(int l=path.length(); p<l; ) {
-            while(p<l && path.charAt(p) != ':') {
-                p++;
-            }
-            String str = path.substring(pbeg, p);
 
-            if(p<l && path.charAt(p) == ':') {
-                if(p+1 < l && path.charAt(p+1) != ':') {
-                    throw newTypeError("undefined class/module " + path.substring(pbeg,p));
+        RubyModule c = getObject();
+        int pbeg = 0, p = 0;
+        for ( final int l = path.length(); p < l; ) {
+            while ( p < l && path.charAt(p) != ':' ) p++;
+
+            final String str = path.substring(pbeg, p);
+
+            if ( p < l && path.charAt(p) == ':' ) {
+                if ( ++p < l && path.charAt(p) != ':' ) {
+                    throw newTypeError("undefined class/module " + str);
                 }
-                p += 2;
-                pbeg = p;
+                pbeg = ++p;
             }
 
             IRubyObject cc = c.getConstant(str);
-            if(!(cc instanceof RubyModule)) {
+            if ( ! ( cc instanceof RubyModule ) ) {
                 throw newTypeError(path + " does not refer to class/module");
             }
-            c = (RubyModule)cc;
+            c = (RubyModule) cc;
         }
         return c;
     }
@@ -2906,7 +2912,7 @@ public final class Ruby implements Constantizable {
     }
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
         ThreadContext context = getCurrentContext();
         String file = context.getFile();
 
@@ -2917,7 +2923,9 @@ public final class Ruby implements Constantizable {
 
             if (wrap) {
                 // toss an anonymous module into the search path
-                ((RootNode) parseResult).getStaticScope().setModule(RubyModule.newModule(this));
+                RubyModule wrapper = RubyModule.newModule(this);
+                ((RubyBasicObject)self).extend(new IRubyObject[] {wrapper});
+                ((RootNode) parseResult).getStaticScope().setModule(wrapper);
             }
 
             runInterpreter(context, parseResult, self);
@@ -3878,12 +3886,14 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getNotImplementedError(), message);
     }
 
+    @Deprecated
     public RaiseException newInvalidEncoding(String message) {
-        return newRaiseException(fastGetClass("Iconv").getClass("InvalidEncoding"), message);
+        return newRaiseException(getClass("Iconv").getClass("InvalidEncoding"), message);
     }
 
+    @Deprecated
     public RaiseException newIllegalSequence(String message) {
-        return newRaiseException(fastGetClass("Iconv").getClass("IllegalSequence"), message);
+        return newRaiseException(getClass("Iconv").getClass("IllegalSequence"), message);
     }
 
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
@@ -3894,7 +3904,7 @@ public final class Ruby implements Constantizable {
         return newNameError(message, name, null);
     }
 
-    // This name sucks and should be replaced by newNameErrorfor 9k.
+    @Deprecated
     public RaiseException newNameErrorObject(String message, IRubyObject name) {
         RubyException error = new RubyNameError(this, getNameError(), message, name);
 
@@ -3907,7 +3917,7 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newNameError(String message, IRubyObject recv, IRubyObject name) {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
-        RubyException err = RubyNameError.newRubyNameError(getNameError(), msg, name);
+        RubyException err = RubyNameError.newNameError(getNameError(), msg, name);
 
         return new RaiseException(err);
     }
@@ -3934,8 +3944,7 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        return new RaiseException(new RubyNameError(
-                this, getNameError(), message, name), false);
+        return new RaiseException(new RubyNameError(this, getNameError(), message, name), false);
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
@@ -4949,7 +4958,7 @@ public final class Ruby implements Constantizable {
             groupStruct, procStatusClass, exceptionClass, runtimeError, ioError,
             scriptError, nameError, nameErrorMessage, noMethodError, signalException,
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
-            systemCallError, fatal, interrupt, typeError, argumentError, indexError, stopIteration,
+            systemCallError, fatal, interrupt, typeError, argumentError, uncaughtThrowError, indexError, stopIteration,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,

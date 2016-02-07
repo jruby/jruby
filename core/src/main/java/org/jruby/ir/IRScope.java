@@ -584,17 +584,7 @@ public abstract class IRScope implements ParseResult {
 
         BasicBlock[] bbs = fullInterpreterContext.linearizeBasicBlocks();
 
-        if (Options.IR_PRINT.load()) printIR();
-
         return bbs;
-    }
-
-    public void printIR() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream(baos);
-        IRDumper dumper = new IRDumper(ps, Options.IR_PRINT_COLOR.load());
-        dumper.visit(this, false);
-        LOG.info("Printing final IR for " + getName(), "\n" + new String(baos.toByteArray()));
     }
 
     // FIXME: For inlining, culmulative or extra passes run based on profiled execution we need to re-init data or even
@@ -880,7 +870,7 @@ public abstract class IRScope implements ParseResult {
             varType = TemporaryVariableType.FLOAT;
         } else if (type == Fixnum.class) {
             varType = TemporaryVariableType.FIXNUM;
-        } else if (type == Boolean.class) {
+        } else if (type == java.lang.Boolean.class) {
             varType = TemporaryVariableType.BOOLEAN;
         } else {
             varType = TemporaryVariableType.LOCAL;
