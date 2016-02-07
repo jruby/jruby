@@ -24,15 +24,6 @@ public abstract class MethodHandleUtils {
         }
     }
 
-    public static MethodHandle getPrivateSetter(final Class<?> klass, final String fieldName) {
-        final Field field = getPrivateField(klass, fieldName);
-        try {
-            return MethodHandles.lookup().unreflectSetter(field);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static Field getPrivateField(final Class<?> klass, final String fieldName) {
         try {
             final Field field = klass.getDeclaredField(fieldName);
