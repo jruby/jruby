@@ -28,8 +28,9 @@ describe "The undef keyword" do
   end
 
   it "raises a NameError when passed a missing name" do
-    lambda { class ::UndefSpecClass; undef not_exist; end }.should raise_error(NameError)
-    # a NameError and not a NoMethodError
-    lambda { class ::UndefSpecClass; undef not_exist; end }.should_not raise_error(NoMethodError)
+    lambda { class ::UndefSpecClass; undef not_exist; end }.should raise_error(NameError) { |e|
+      # a NameError and not a NoMethodError
+      e.class.should == NameError
+    }
   end
 end

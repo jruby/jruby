@@ -216,7 +216,7 @@ describe :process_spawn, shared: true do
 
   it "does not unset environment variables included in the environment hash" do
     lambda do
-      Process.wait @object.spawn({"FOO" => "BAR"}, ruby_cmd('print ENV["FOO"]'), unsetenv_others: true)
+      Process.wait @object.spawn({"FOO" => "BAR"}, ruby_cmd('print ENV["FOO"]', options: '--disable-gems'), unsetenv_others: true)
     end.should output_to_fd("BAR")
   end
 

@@ -36,6 +36,7 @@ import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
+import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
@@ -225,9 +226,10 @@ public class JVMVisitor extends IRVisitor {
                     !argScope.getSignature().hasKwargs()) {
                 // we have only required arguments...emit a signature appropriate to that arity
                 String[] args = new String[argScope.getSignature().required()];
-                Class[] types = Helpers.arrayOf(Class.class, args.length, IRubyObject.class);
+                Class[] types = new Class[args.length]; // Class...
                 for (int i = 0; i < args.length; i++) {
                     args[i] = "arg" + i;
+                    types[i] = IRubyObject.class;
                 }
                 return METHOD_SIGNATURE_BASE.insertArgs(3, args, types);
             }
@@ -252,14 +254,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void emitMethod(IRMethod method, JVMVisitorMethodContext context) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
 
         emitWithSignatures(method, context, name);
     }
 
     public void emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(method.getFileName());
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
         jvm.pushscript(clsName, method.getFileName());
 
         emitWithSignatures(method, context, name);
@@ -270,7 +272,7 @@ public class JVMVisitor extends IRVisitor {
 
     public void emitBlockJIT(IRClosure closure, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(closure.getFileName());
-        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
         jvm.pushscript(clsName, closure.getFileName());
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
@@ -1009,14 +1011,13 @@ public class JVMVisitor extends IRVisitor {
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         emitMethod(method, context);
 
-        Map<Integer, MethodType> signatures = context.getNativeSignatures();
-
-        MethodType signature = signatures.get(-1);
+        MethodType variable = context.getNativeSignature(-1); // always a variable arity handle
+        assert(variable != null);
 
         String defSignature = pushHandlesForDef(
                 context.getJittedName(),
-                signatures,
-                signature,
+                context.getNativeSignaturesExceptVariable(),
+                variable,
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, IRubyObject.class));
 
@@ -1039,13 +1040,13 @@ public class JVMVisitor extends IRVisitor {
         m.loadContext();
 
         emitMethod(method, context);
-        Map<Integer, MethodType> signatures = context.getNativeSignatures();
 
-        MethodType variable = signatures.get(-1); // always a variable arity handle
+        MethodType variable = context.getNativeSignature(-1); // always a variable arity handle
+        assert(variable != null);
 
         String defSignature = pushHandlesForDef(
                 context.getJittedName(),
-                signatures,
+                context.getNativeSignaturesExceptVariable(),
                 variable,
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, DynamicScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, DynamicScope.class, IRubyObject.class));
@@ -1058,22 +1059,20 @@ public class JVMVisitor extends IRVisitor {
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod", defSignature);
     }
 
-    public String pushHandlesForDef(String name, Map<Integer, MethodType> signatures, MethodType variable, String variableOnly, String variableAndSpecific) {
+    private String pushHandlesForDef(String name, IntHashMap<MethodType> signaturesExceptVariable, MethodType variable, String variableOnly, String variableAndSpecific) {
         String defSignature;
 
         jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(variable.returnType(), variable.parameterArray())));
 
-        if (signatures.size() == 1) {
+        if (signaturesExceptVariable.size() == 0) {
             defSignature = variableOnly;
         } else {
             defSignature = variableAndSpecific;
 
-            // FIXME: only supports one arity
-            for (Map.Entry<Integer, MethodType> entry : signatures.entrySet()) {
-                if (entry.getKey() == -1) continue; // variable arity signature pushed above
+            for (IntHashMap.Entry<MethodType> entry : signaturesExceptVariable.entrySet()) {
                 jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(entry.getValue().returnType(), entry.getValue().parameterArray())));
                 jvmAdapter().pushInt(entry.getKey());
-                break;
+                break; // FIXME: only supports one arity
             }
         }
         return defSignature;
@@ -2018,8 +2017,17 @@ public class JVMVisitor extends IRVisitor {
         if (yieldinstr.getYieldArg() == UndefinedValue.UNDEFINED) {
             jvmMethod().yieldSpecific();
         } else {
-            visit(yieldinstr.getYieldArg());
-            jvmMethod().yield(yieldinstr.isUnwrapArray());
+            Operand yieldOp = yieldinstr.getYieldArg();
+            if (yieldinstr.isUnwrapArray() && yieldOp instanceof Array && ((Array) yieldOp).size() > 1) {
+                Array yieldValues = (Array) yieldOp;
+                for (Operand yieldValue : yieldValues) {
+                    visit(yieldValue);
+                }
+                jvmMethod().yieldValues(yieldValues.size());
+            } else {
+                visit(yieldinstr.getYieldArg());
+                jvmMethod().yield(yieldinstr.isUnwrapArray());
+            }
         }
 
         jvmStoreLocal(yieldinstr.getResult());

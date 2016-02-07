@@ -160,7 +160,7 @@ public class Options {
     public static final Option<Boolean> NATIVE_EXEC = bool(MISCELLANEOUS, "native.exec", true, "Do a true process-obliterating native exec for Kernel#exec.");
     public static final Option<Boolean> ENUMERATOR_LIGHTWEIGHT = bool(MISCELLANEOUS, "enumerator.lightweight", true, "Use lightweight Enumerator#next logic when possible.");
     public static final Option<Boolean> CONSISTENT_HASHING = bool(MISCELLANEOUS, "consistent.hashing", false, "Generate consistent object hashes across JVMs");
-    public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", false, "Attempt to expand instance vars into Java fields");
+    public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", true, "Attempt to expand instance vars into Java fields");
     public static final Option<Boolean> PREFER_IPV4 = bool(MISCELLANEOUS, "net.preferIPv4", true, "Prefer IPv4 network stack");
     public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
     public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", true, "Always ensure volatile semantics for instance variables.");
@@ -239,8 +239,8 @@ public class Options {
     public static final Option<Integer> TRUFFLE_METHOD_TO_PROC_CACHE = integer(TRUFFLE, "truffle.to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Method#to_proc cache size");
     public static final Option<Integer> TRUFFLE_IS_A_CACHE = integer(TRUFFLE, "truffle.is_a.cache", TRUFFLE_DEFAULT_CACHE.load(), "Kernel#is_a? and #kind_of? cache size");
     public static final Option<Integer> TRUFFLE_BIND_CACHE = integer(TRUFFLE, "truffle.bind.cache", TRUFFLE_DEFAULT_CACHE.load(), "Test for being able to bind a method to a module cache size");
-    public static final Option<Integer> TRUFFLE_CONSTANT_LOOKUP_CACHE = integer(TRUFFLE, "truffle.constant_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Constant lookup cache size");
-    public static final Option<Integer> TRUFFLE_FIELD_LOOKUP_CACHE = integer(TRUFFLE, "truffle.field_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Object field lookup cache size");
+    public static final Option<Integer> TRUFFLE_CONSTANT_CACHE = integer(TRUFFLE, "truffle.constant.cache", TRUFFLE_DEFAULT_CACHE.load(), "Constant cache size");
+    public static final Option<Integer> TRUFFLE_INSTANCE_VARIABLE_CACHE = integer(TRUFFLE, "truffle.instance_variable.cache", TRUFFLE_DEFAULT_CACHE.load(), "Instance variable cache size");
     public static final Option<Integer> TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE = integer(TRUFFLE, "truffle.binding_local_variable.cache", TRUFFLE_DEFAULT_CACHE.load(), "Binding#local_variable_get/set cache size");
     public static final Option<Integer> TRUFFLE_SYMBOL_TO_PROC_CACHE = integer(TRUFFLE, "truffle.symbol_to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Symbol#to_proc cache size");
     public static final Option<Integer> TRUFFLE_ALLOCATE_CLASS_CACHE = integer(TRUFFLE, "truffle.allocate_class.cache", TRUFFLE_DEFAULT_CACHE.load(), "Allocation size class cache size");
@@ -265,6 +265,8 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_uncaught_java", false, "Print uncaught Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_BACKTRACES_HIDE_CORE_FILES = bool(TRUFFLE, "truffle.backtraces.hide_core_files", true, "Hide core source files in backtraces, like MRI does.");
+    public static final Option<Integer> TRUFFLE_BACKTRACES_LIMIT = integer(TRUFFLE, "truffle.backtraces.limit", 9999, "Limit the size of Ruby backtraces.");
+    public static final Option<Boolean> TRUFFLE_BACKTRACES_OMIT_UNUSED = bool(TRUFFLE, "truffle.backtraces.omit_unused", true, "Omit backtraces that should be unused as they have pure rescue expressions.");
     public static final Option<Boolean> TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = bool(TRUFFLE, "truffle.set_trace_func.include_core_file_callers", false, "Include internal core library calls in set_trace_func output.");
 
     public static final Option<Boolean> TRUFFLE_METRICS_TIME = bool(TRUFFLE, "truffle.metrics.time", false, "Print the time at various stages of VM operation.");

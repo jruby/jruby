@@ -1497,40 +1497,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @Override
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
-        return initialize19(context);
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        return initialize19(context, new IRubyObject[] { arg0 });
+        return this;
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    @Override
-    public IRubyObject initialize19(ThreadContext context) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
+        replace19(arg0);
         return this;
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE, optional = 2)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args) {
-        if ( args.length == 0 ) return this;
-
-        IRubyObject arg = args[ args.length - 1 ];
-
-        final IRubyObject string; final IRubyObject encoding;
-        if ( arg instanceof RubyHash ) { // new encoding: ...
-            final RubySymbol enc = context.runtime.newSymbol("encoding");
-            encoding = ( (RubyHash) arg ).fastARef(enc);
-            string = args.length > 1 ? args[0] : null;
-        }
-        else {
-            string = arg; encoding = null;
-        }
-
-        if ( string != null ) replace19(string);
-        if ( encoding != null ) force_encoding(context, encoding);
-
-        return this;
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0) {
+        return initialize(context, arg0);
     }
 
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {

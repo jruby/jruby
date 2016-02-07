@@ -88,6 +88,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         super(runtime, type);
     }
 
+    @Override
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
         Ruby runtime = context.runtime;

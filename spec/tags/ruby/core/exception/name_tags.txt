@@ -1,0 +1,3 @@
+fails:NameError#name returns a class variable name as a symbol
+fails:NameError#name always returns a symbol when a NameError is raised from #instance_variable_get
+fails:NameError#name always returns a symbol when a NameError is raised from #class_variable_get

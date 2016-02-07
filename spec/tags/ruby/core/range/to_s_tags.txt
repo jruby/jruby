@@ -1,0 +1,2 @@
+fails:Range#to_s returns a tainted string if either end is tainted
+fails:Range#to_s returns a untrusted string if either end is untrusted

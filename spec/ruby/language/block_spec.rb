@@ -639,22 +639,20 @@ describe "A block" do
     end
 
     it "accepts unnamed arguments" do
-      lambda { eval "lambda { |_,_| }" }.should_not raise_error(SyntaxError)
-      lambda { eval "->(_,_) {}" }.should_not raise_error(SyntaxError)
-      lambda { eval "Proc.new { |_,_| }" }.should_not raise_error(SyntaxError)
+      eval("lambda { |_,_| }").should be_an_instance_of(Proc)
+      eval("->(_,_) {}").should be_an_instance_of(Proc)
+      eval("Proc.new { |_,_| }").should be_an_instance_of(Proc)
     end
   end
 end
 
 describe "Block-local variables" do
-  # Examples phrased so the concatenation of the describe and it blocks make
-  # grammatical sense.
   it "are introduced with a semi-colon in the parameter list" do
-    lambda { [1].each {|one; bl| } }.should_not raise_error(SyntaxError)
+    [1].map {|one; bl| bl }.should == [nil]
   end
 
   it "can be specified in a comma-separated list after the semi-colon" do
-    lambda { [1].each {|one; bl, bl2| } }.should_not raise_error(SyntaxError)
+    [1].map {|one; bl, bl2| [bl, bl2] }.should == [[nil, nil]]
   end
 
   it "can not have the same name as one of the standard parameters" do
@@ -684,8 +682,8 @@ describe "Block-local variables" do
   end
 
   it "need not be preceeded by standard parameters" do
-    lambda { [1].each {|; foo| } }.should_not raise_error(SyntaxError)
-    lambda { [1].each {|; glark, bar| } }.should_not raise_error(SyntaxError)
+    [1].map {|; foo| foo }.should == [nil]
+    [1].map {|; glark, bar| [glark, bar] }.should == [[nil, nil]]
   end
 
   it "only allow a single semi-colon in the parameter list" do

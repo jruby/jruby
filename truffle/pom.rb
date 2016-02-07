@@ -15,7 +15,7 @@ project 'JRuby Truffle' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  truffle_version = '0.10'
+  truffle_version = '0.11'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
   jar 'com.oracle.truffle:truffle-debug:' + truffle_version
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'

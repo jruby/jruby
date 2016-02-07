@@ -818,13 +818,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     @Override
     public void yield(boolean unwrap) {
-        adapter.ldc(unwrap);
-        invokeIRHelper("yield", sig(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, boolean.class));
+        adapter.invokedynamic("yield", sig(JVM.OBJECT, params(ThreadContext.class, Block.class, JVM.OBJECT)), YieldSite.BOOTSTRAP, unwrap ? 1 : 0);
     }
 
     @Override
     public void yieldSpecific() {
-        invokeIRHelper("yieldSpecific", sig(IRubyObject.class, ThreadContext.class, Block.class));
+        adapter.invokedynamic("yieldSpecific", sig(JVM.OBJECT, params(ThreadContext.class, Block.class)), YieldSite.BOOTSTRAP, 0);
+    }
+
+    @Override
+    public void yieldValues(int arity) {
+        adapter.invokedynamic("yieldValues", sig(JVM.OBJECT, params(ThreadContext.class, Block.class, JVM.OBJECT, arity)), YieldSite.BOOTSTRAP, 0);
     }
 
     @Override

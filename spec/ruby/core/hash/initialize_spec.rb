@@ -3,11 +3,11 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Hash#initialize" do
   it "is private" do
-    hash_class.should have_private_instance_method("initialize")
+    Hash.should have_private_instance_method("initialize")
   end
 
   it "can be used to reset default_proc" do
-    h = new_hash("foo" => 1, "bar" => 2)
+    h = { "foo" => 1, "bar" => 2 }
     h.default_proc.should == nil
     h.instance_eval { initialize { |h, k| k * 2 } }
     h.default_proc.should_not == nil
@@ -20,7 +20,7 @@ describe "Hash#initialize" do
   end
 
   it "returns self" do
-    h = hash_class.new
+    h = Hash.new
     h.send(:initialize).should equal(h)
   end
 

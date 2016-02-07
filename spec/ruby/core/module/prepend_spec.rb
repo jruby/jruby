@@ -325,7 +325,7 @@ describe "Module#prepend" do
       end
     end
 
-    child_class.prepend(prep_mod)
+    child_class.send(:prepend, prep_mod)
 
     ary = []
     child_class.new.foo(ary)

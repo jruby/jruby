@@ -1,26 +1,26 @@
 describe :hash_each, shared: true do
   it "yields a [[key, value]] Array for each pair to a block expecting |*args|" do
     all_args = []
-    new_hash(1 => 2, 3 => 4).send(@method) { |*args| all_args << args }
+    { 1 => 2, 3 => 4 }.send(@method) { |*args| all_args << args }
     all_args.sort.should == [[[1, 2]], [[3, 4]]]
   end
 
   it "yields the key and value of each pair to a block expecting |key, value|" do
-    r = new_hash
-    h = new_hash(a: 1, b: 2, c: 3, d: 5)
+    r = {}
+    h = { a: 1, b: 2, c: 3, d: 5 }
     h.send(@method) { |k,v| r[k.to_s] = v.to_s }.should equal(h)
-    r.should == new_hash("a" => "1", "b" => "2", "c" => "3", "d" => "5")
+    r.should == { "a" => "1", "b" => "2", "c" => "3", "d" => "5" }
   end
 
   it "yields the key only to a block expecting |key,|" do
     ary = []
-    h = new_hash("a" => 1, "b" => 2, "c" => 3)
+    h = { "a" => 1, "b" => 2, "c" => 3 }
     h.send(@method) { |k,| ary << k }
     ary.sort.should == ["a", "b", "c"]
   end
 
   it "uses the same order as keys() and values()" do
-    h = new_hash(a: 1, b: 2, c: 3, d: 5)
+    h = { a: 1, b: 2, c: 3, d: 5 }
     keys = []
     values = []
 

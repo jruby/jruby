@@ -12,7 +12,6 @@ example "eval('14 + 2')", 16
 
 example "eval('[1, 2, 3]')[1]", 2
 
-# TODO (nirvdrum 27-Jan-16): This started timing out after moving some things to ropes. It's probably a matter of caching that generally needs to be fixed.
-tagged_example "eval([1, 2, 3].inspect)[1]", 2
+example "eval([1, 2, 3].inspect)[1]", 2
 
 counter_example "eval(rand.to_s)"

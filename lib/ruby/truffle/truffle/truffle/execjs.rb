@@ -65,9 +65,7 @@ module ExecJS
     end
 
     def available?
-      defined?(Truffle::Interop) && Truffle::Interop.eval(JS_MIME_TYPE, 'true')
-    rescue RubyTruffleError
-      false
+      Truffle::Interop.mime_type_supported?('application/javascript')
     end
 
   end

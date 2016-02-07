@@ -11,7 +11,6 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import org.jruby.truffle.runtime.RubyLanguage;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

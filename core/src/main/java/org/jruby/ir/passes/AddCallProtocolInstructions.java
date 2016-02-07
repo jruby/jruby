@@ -1,7 +1,6 @@
 package org.jruby.ir.passes;
 
 import org.jruby.ir.*;
-import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.runtime.Signature;
 import org.jruby.ir.operands.ImmutableLiteral;

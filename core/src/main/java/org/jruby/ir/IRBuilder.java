@@ -379,7 +379,7 @@ public class IRBuilder {
             case ANDNODE: return buildAnd((AndNode) node);
             case ARGSCATNODE: return buildArgsCat((ArgsCatNode) node);
             case ARGSPUSHNODE: return buildArgsPush((ArgsPushNode) node);
-            case ARRAYNODE: return buildArray((ArrayNode) node);
+            case ARRAYNODE: return buildArray((ArrayNode) node, false);
             case ATTRASSIGNNODE: return buildAttrAssign((AttrAssignNode) node);
             case BACKREFNODE: return buildBackref((BackRefNode) node);
             case BEGINNODE: return buildBegin((BeginNode) node);
@@ -815,7 +815,7 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildArray(ArrayNode node) {
+    public Operand buildArray(ArrayNode node, boolean operandOnly) {
         Node[] nodes = node.children();
         Operand[] elts = new Operand[nodes.length];
         boolean containsAssignments = node.containsVariableAssignment();
@@ -823,7 +823,8 @@ public class IRBuilder {
             elts[i] = buildWithOrder(nodes[i], containsAssignments);
         }
 
-        return copyAndReturnValue(new Array(elts));
+        Operand array = new Array(elts);
+        return operandOnly ? array : copyAndReturnValue(array);
     }
 
     public Operand buildArgsCat(final ArgsCatNode argsCatNode) {
@@ -3602,7 +3603,11 @@ public class IRBuilder {
         }
 
         Variable ret = createTemporaryVariable();
-        addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), build(argNode), unwrap));
+        if (argNode instanceof ArrayNode && unwrap) {
+            addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), buildArray((ArrayNode)argNode, true), unwrap));
+        } else {
+            addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), build(argNode), unwrap));
+        }
         return ret;
     }
 

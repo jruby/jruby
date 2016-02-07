@@ -113,6 +113,8 @@ public class RubyClass extends RubyModule {
         classClass.undefineMethod("extend_object");
 
         classClass.defineAnnotatedMethods(RubyClass.class);
+
+        runtime.setBaseNewMethod(classClass.searchMethod("new"));
     }
 
     public static final ObjectAllocator CLASS_ALLOCATOR = new ObjectAllocator() {
