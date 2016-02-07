@@ -1515,6 +1515,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // nativeThread can be null if the thread has terminated and GC has claimed it
         if (nativeThread == null) return context.nil;
 
+        // nativeThread may have finished
+        if (!nativeThread.isAlive()) return context.nil;
+
         Ruby runtime = context.runtime;
         Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
         Integer level = ll[0], length = ll[1];
@@ -1527,6 +1530,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         ThreadContext myContext = getContext();
 
         if (myContext == null) return context.nil;
+
+        Thread nativeThread = getNativeThread();
+
+        // nativeThread can be null if the thread has terminated and GC has claimed it
+        if (nativeThread == null) return context.nil;
+
+        // nativeThread may have finished
+        if (!nativeThread.isAlive()) return context.nil;
 
         Ruby runtime = context.runtime;
         Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
