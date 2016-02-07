@@ -20,12 +20,13 @@ import org.jruby.truffle.core.format.runtime.PackFrameDescriptor;
 import org.jruby.truffle.core.format.runtime.PackResult;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.language.InternalRootNode;
 import org.jruby.util.StringSupport;
 
 /**
  * The node at the root of a pack expression.
  */
-public class PackRootNode extends RootNode {
+public class PackRootNode extends RootNode implements InternalRootNode {
 
     private final String description;
     private final PackEncoding encoding;

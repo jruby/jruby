@@ -24,7 +24,6 @@ import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
-import org.jruby.truffle.util.MethodHandleUtils;
 
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.ArrayBlockingQueue;

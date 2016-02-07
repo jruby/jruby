@@ -41,7 +41,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.util.ArgumentDescriptorUtils;
+import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {

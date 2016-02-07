@@ -33,7 +33,7 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
-import org.jruby.truffle.language.SafepointAction;
+import org.jruby.util.func.Function2;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -181,11 +181,12 @@ public abstract class ThreadNodes {
 
             final DynamicObject[] result = new DynamicObject[1];
 
-            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new SafepointAction() {
+            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new Function2<Void, DynamicObject, Node>() {
                 @Override
-                public void run(DynamicObject thread, Node currentNode) {
+                public Void apply(DynamicObject thread, Node currentNode) {
                     final Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), currentNode);
                     result[0] = ExceptionNodes.backtraceAsRubyStringArray(getContext(), null, backtrace);
+                    return null;
                 }
             });
 
@@ -224,10 +225,11 @@ public abstract class ThreadNodes {
                 return rubyThread;
             }
 
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new Function2<Void, DynamicObject, Node>() {
                 @Override
-                public void run(DynamicObject currentThread, Node currentNode) {
+                public Void apply(DynamicObject currentThread, Node currentNode) {
                     shutdown(getContext(), currentThread, currentNode);
+                    return null;
                 }
             });
 

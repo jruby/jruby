@@ -3,6 +3,7 @@ package org.jruby.runtime;
 import com.headius.invokebinder.Binder;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.invoke.MethodHandle;
@@ -13,7 +14,8 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected volatile MethodHandle normalYieldSpecificHandle;
     protected volatile MethodHandle normalYieldHandle;
     protected volatile MethodHandle normalYieldUnwrapHandle;
-    protected volatile MethodHandle testBlockBody;
+    protected volatile MethodHandle yieldTwoValuesHandle;
+    protected volatile MethodHandle yieldThreeValuesHandle;
 
     public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
         super(closure, Signature.decode(encodedSignature));
@@ -21,12 +23,6 @@ public class CompiledIRBlockBody extends IRBlockBody {
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
         closure.getStaticScope().determineModule();
-    }
-
-    private static final MethodHandle TEST_BLOCK_BODY = Binder.from(boolean.class, Block.class, IRBlockBody.class).invokeStaticQuiet(MethodHandles.lookup(), CompiledIRBlockBody.class, "testBlockBody");
-
-    public static boolean testBlockBody(Block block, IRBlockBody body) {
-        return block.getBody() == body;
     }
 
     private static final MethodHandle FOLD_METHOD1 = Binder.from(String.class, ThreadContext.class, Block.class).invokeStaticQuiet(MethodHandles.lookup(), CompiledIRBlockBody.class, "foldMethod");
@@ -78,10 +74,8 @@ public class CompiledIRBlockBody extends IRBlockBody {
                 .foldVoid(SET_NORMAL)
                 .fold(FOLD_METHOD1)
                 .fold(FOLD_TYPE1)
-                .append(getStaticScope())
-                .append(IRubyObject.class, null)
-                .append(IRubyObject[].class, null)
-                .append(Block.class, Block.NULL_BLOCK)
+                .append(new Class[] {StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class},
+                        getStaticScope(), null, null, Block.NULL_BLOCK)
                 .permute(2, 3, 4, 5, 6, 7, 1, 0)
                 .invoke(handle);
     }
@@ -94,8 +88,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
                 .fold(FOLD_METHOD2)
                 .fold(FOLD_TYPE2)
                 .filter(4, WRAP_VALUE)
-                .insert(4, getStaticScope())
-                .insert(5, IRubyObject.class, null)
+                .insert(4, new Class[]{StaticScope.class, IRubyObject.class}, getStaticScope(), null)
                 .append(Block.class, Block.NULL_BLOCK)
                 .permute(2, 3, 4, 5, 6, 7, 1, 0)
                 .invoke(handle);
@@ -109,17 +102,40 @@ public class CompiledIRBlockBody extends IRBlockBody {
                 .fold(FOLD_METHOD2)
                 .fold(FOLD_TYPE2)
                 .filter(4, VALUE_TO_ARRAY)
-                .insert(4, getStaticScope())
-                .insert(5, IRubyObject.class, null)
+                .insert(4, new Class[] {StaticScope.class, IRubyObject.class}, getStaticScope(), null)
                 .append(Block.class, Block.NULL_BLOCK)
                 .permute(2, 3, 4, 5, 6, 7, 1, 0)
                 .invoke(handle);
     }
 
-    public MethodHandle getTestBlockBody() {
-        if (testBlockBody != null) return testBlockBody;
+    public MethodHandle getYieldTwoValuesHandle() {
+        if (yieldTwoValuesHandle != null) return yieldTwoValuesHandle;
 
-        return testBlockBody = Binder.from(boolean.class, ThreadContext.class, Block.class).drop(0).append(this).invoke(TEST_BLOCK_BODY);
+        return yieldTwoValuesHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, IRubyObject.class)
+                .foldVoid(SET_NORMAL)
+                .fold(FOLD_METHOD1)
+                .fold(FOLD_TYPE1)
+                .collect(5, IRubyObject[].class)
+                .insert(5, new Class[] {StaticScope.class, IRubyObject.class},
+                        getStaticScope(), null)
+                .append(new Class[] {Block.class}, Block.NULL_BLOCK)
+                .permute(2, 3, 4, 5, 6, 7, 1, 0)
+                .invoke(handle);
+    }
+
+    public MethodHandle getYieldThreeValuesHandle() {
+        if (yieldThreeValuesHandle != null) return yieldThreeValuesHandle;
+
+        return yieldThreeValuesHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)
+                .foldVoid(SET_NORMAL)
+                .fold(FOLD_METHOD1)
+                .fold(FOLD_TYPE1)
+                .collect(5, IRubyObject[].class)
+                .insert(5, new Class[] {StaticScope.class, IRubyObject.class},
+                        getStaticScope(), null)
+                .append(new Class[] {Block.class}, Block.NULL_BLOCK)
+                .permute(2, 3, 4, 5, 6, 7, 1, 0)
+                .invoke(handle);
     }
 
     @Override

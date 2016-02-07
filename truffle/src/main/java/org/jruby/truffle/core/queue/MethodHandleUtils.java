@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.util;
+package org.jruby.truffle.core.queue;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -19,15 +19,6 @@ public abstract class MethodHandleUtils {
         final Field field = getPrivateField(klass, fieldName);
         try {
             return MethodHandles.lookup().unreflectGetter(field);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static MethodHandle getPrivateSetter(final Class<?> klass, final String fieldName) {
-        final Field field = getPrivateField(klass, fieldName);
-        try {
-            return MethodHandles.lookup().unreflectSetter(field);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }

@@ -9,7 +9,7 @@
  *
  * Contains code modified from JRuby's org.jruby.runtime.Helpers and org.jruby.runtime.ArgumentType.
  */
-package org.jruby.truffle.util;
+package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.ArgumentDescriptor;

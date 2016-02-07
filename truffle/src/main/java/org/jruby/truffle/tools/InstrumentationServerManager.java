@@ -18,10 +18,10 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.util.func.Function2;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -62,10 +62,10 @@ public class InstrumentationServerManager {
                 try {
                     final StringBuilder builder = new StringBuilder();
 
-                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
+                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new Function2<Void, DynamicObject, Node>() {
 
                         @Override
-                        public void run(DynamicObject thread, Node currentNode) {
+                        public Void apply(DynamicObject thread, Node currentNode) {
                             try {
                                 Backtrace backtrace = RubyCallStack.getBacktrace(context, null);
 
@@ -84,6 +84,8 @@ public class InstrumentationServerManager {
                             } catch (Throwable e) {
                                 e.printStackTrace();
                             }
+
+                            return null;
                         }
 
                     });
@@ -112,11 +114,12 @@ public class InstrumentationServerManager {
             public void handle(HttpExchange httpExchange) {
                 try {
                     Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
-                    context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
+                    context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new Function2<Void, DynamicObject, Node>() {
                         @Override
-                        public void run(DynamicObject thread, final Node currentNode) {
+                        public Void apply(DynamicObject thread, final Node currentNode) {
                             new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
                                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
+                            return null;
                         }
                     });
 
