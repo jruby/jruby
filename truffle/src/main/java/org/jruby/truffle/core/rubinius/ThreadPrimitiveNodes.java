@@ -19,7 +19,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.SafepointAction;
+import org.jruby.util.func.Function2;
 
 import static org.jruby.RubyThread.*;
 
@@ -45,7 +45,7 @@ public class ThreadPrimitiveNodes {
         public static void raiseInThread(final RubyContext context, DynamicObject rubyThread, final DynamicObject exception, Node currentNode) {
             final Thread javaThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber()));
 
-            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new SafepointAction() {
+            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new Function2<Void, DynamicObject, Node>() {
                 @Override
                 public Void apply(DynamicObject currentThread, Node currentNode) {
                     if (Layouts.EXCEPTION.getBacktrace(exception) == null) {

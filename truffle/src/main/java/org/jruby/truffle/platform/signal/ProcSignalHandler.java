@@ -15,7 +15,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.SafepointAction;
+import org.jruby.util.func.Function2;
 
 public class ProcSignalHandler implements SignalHandler {
 
@@ -32,7 +32,7 @@ public class ProcSignalHandler implements SignalHandler {
     @Override
     public void handle(Signal signal) {
         Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
-        context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
+        context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new Function2<Void, DynamicObject, Node>() {
             @Override
             public Void apply(DynamicObject thread, Node currentNode) {
                 ProcNodes.rootCall(proc);

@@ -21,7 +21,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.SafepointAction;
+import org.jruby.util.func.Function2;
 
 import java.util.*;
 
@@ -33,7 +33,7 @@ public abstract class ObjectGraph {
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new Function2<Void, DynamicObject, Node>() {
 
             @Override
             public Void apply(DynamicObject thread, Node currentNode) {
@@ -80,7 +80,7 @@ public abstract class ObjectGraph {
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new Function2<Void, DynamicObject, Node>() {
             @Override
             public Void apply(DynamicObject thread, Node currentNode) {
                 objects.add(thread);
