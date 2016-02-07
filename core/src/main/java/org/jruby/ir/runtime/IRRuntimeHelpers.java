@@ -14,8 +14,6 @@ import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -1645,8 +1643,8 @@ public class IRRuntimeHelpers {
         }
 
         boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
-        org.jruby.runtime.Signature sig = block.getBody().getSignature();
         if (block.type == Block.Type.LAMBDA) {
+            org.jruby.runtime.Signature sig = block.getBody().getSignature();
             // We don't need to check for the 1 required arg case here
             // since that goes down the prepareSingleBlockArgs route
             if (!isProcCall && sig.arityValue() != 1) {
