@@ -5,6 +5,7 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CompiledIRBlockBody;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Handle;
@@ -45,16 +46,10 @@ public class YieldSite extends MutableCallSite {
                         .invokeVirtual(lookup, name);
                 break;
             case "yieldValues":
-                if (type.parameterCount() > 5) {
-                    handle = Binder.from(type)
-                            .collect(2, IRubyObject[].class)
-                            .prepend(YieldSite.class, site)
-                            .invokeVirtual(lookup, name);
-                } else {
-                    handle = Binder.from(type)
-                            .prepend(YieldSite.class, site)
-                            .invokeVirtual(lookup, name);
-                }
+                handle = Binder.from(type)
+                        .collect(2, IRubyObject[].class)
+                        .prepend(YieldSite.class, site)
+                        .invokeVirtual(lookup, name);
                 break;
             default:
                 throw new RuntimeException("invalid yield type: " + name);
@@ -89,7 +84,7 @@ public class YieldSite extends MutableCallSite {
 //        return (IRubyObject)target.invokeExact(context, block, arg);
 
         // Fully MH-based dispatch for these still seems slower than megamorphic path
-        return block.yield(context, arg);
+        return IRRuntimeHelpers.yield(context, block, arg, unwrap);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block) throws Throwable {
@@ -116,15 +111,7 @@ public class YieldSite extends MutableCallSite {
 //        return (IRubyObject)target.invokeExact(context, block);
 
         // Fully MH-based dispatch for these still seems slower than megamorphic path
-        return block.yieldSpecific(context);
-    }
-
-    public IRubyObject yieldValues(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-        return block.yieldSpecific(context, arg0, arg1);
-    }
-
-    public IRubyObject yieldValues(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return block.yieldSpecific(context, arg0, arg1, arg2);
+        return IRRuntimeHelpers.yieldSpecific(context, block);
     }
 
     public IRubyObject yieldValues(ThreadContext context, Block block, IRubyObject[] args) {
