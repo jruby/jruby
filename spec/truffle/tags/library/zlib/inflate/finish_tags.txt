@@ -1,1 +1,2 @@
 fails:Zlib::Inflate#finish inflates chunked data
+slow:Zlib::Inflate#finish
