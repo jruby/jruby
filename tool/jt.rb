@@ -20,6 +20,7 @@ JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
+METRICS_REPS = 10
 
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
@@ -555,7 +556,7 @@ module Commands
   
   def metrics_alloc(*args)
     samples = []
-    10.times do
+    METRICS_REPS.times do
       print '.' if STDOUT.tty?
       r, w = IO.pipe
       run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w}, :no_print_cmd
