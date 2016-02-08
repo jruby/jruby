@@ -51,7 +51,6 @@ public abstract class Rope {
 
     public final ByteList getUnsafeByteList() {
         if (unsafeByteList == null) {
-            CompilerDirectives.transferToInterpreter();
             unsafeByteList = new ByteList(getBytes(), getEncoding(), false);
         }
 
