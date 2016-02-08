@@ -32,7 +32,8 @@ import org.jruby.RubyArray;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ext.ripper.RipperLexer.LexState;
+import org.jruby.lexer.LexingCommon.LexState;
+import static org.jruby.lexer.LexingCommon.LexState.*;
 
 public class RipperParser extends RipperParserBase {
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
@@ -209,7 +210,7 @@ public class RipperParser extends RipperParserBase {
 
 %%
 program       : {
-                  p.setState(LexState.EXPR_BEG);
+                  p.setState(EXPR_BEG);
                   p.pushLocalScope();
               } top_compstmt {
                   $$ = p.dispatch("on_program", $2);
@@ -274,7 +275,7 @@ stmt_or_begin   : stmt {
                 }
 
 stmt            : kALIAS fitem {
-                    p.setState(LexState.EXPR_FNAME);
+                    p.setState(EXPR_FNAME);
                 } fitem {
                     $$ = p.dispatch("on_alias", $2, $4);
                 }
@@ -695,11 +696,11 @@ cpath           : tCOLON3 cname {
 // Token:fname - A function name [!null]
 fname          : tIDENTIFIER | tCONSTANT | tFID 
                | op {
-                   p.setState(LexState.EXPR_ENDFN);
+                   p.setState(EXPR_ENDFN);
                    $$ = $1;
                }
                | reswords {
-                   p.setState(LexState.EXPR_ENDFN);
+                   p.setState(EXPR_ENDFN);
                    $$ = $1;
                }
 
@@ -723,7 +724,7 @@ undef_list      : fitem {
                     $$ = p.new_array($1);
                 }
                 | undef_list ',' {
-                    p.setState(LexState.EXPR_FNAME);
+                    p.setState(EXPR_FNAME);
                 } fitem {
                     $$ = $1.append($4);
                 }
@@ -1038,7 +1039,7 @@ primary         : literal
                     $$ = p.dispatch("on_begin", $3);
                 }
                 | tLPAREN_ARG {
-                    p.setState(LexState.EXPR_ENDARG);
+                    p.setState(EXPR_ENDARG);
                 } rparen {
                     $$ = p.dispatch("on_paren", null);
                 }
@@ -1046,7 +1047,7 @@ primary         : literal
                     $$ = p.getCmdArgumentState().getStack();
                     p.getCmdArgumentState().reset();
                 } expr {
-                    p.setState(LexState.EXPR_ENDARG); 
+                    p.setState(EXPR_ENDARG); 
                 } rparen {
                     p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.warning("(...) interpreted as grouped expression");
@@ -1177,11 +1178,11 @@ primary         : literal
                     p.setInDef(false);
                 }
                 | kDEF singleton dot_or_colon {
-                    p.setState(LexState.EXPR_FNAME);
+                    p.setState(EXPR_FNAME);
                 } fname {
                     p.setInSingle(p.getInSingle() + 1);
                     p.pushLocalScope();
-                    p.setState(LexState.EXPR_ENDFN); /* force for args */
+                    p.setState(EXPR_ENDFN); /* force for args */
                 } f_arglist bodystmt kEND {
                     $$ = p.dispatch("on_defs", $2, $3, $5, $7, $8);
 
@@ -1618,7 +1619,7 @@ string_content  : tSTRING_CONTENT
                 | tSTRING_DVAR {
                     $$ = p.getStrTerm();
                     p.setStrTerm(null);
-                    p.setState(LexState.EXPR_BEG);
+                    p.setState(EXPR_BEG);
                 } string_dvar {
                     p.setStrTerm($<StrTerm>2);
                     $$ = p.dispatch("on_string_dvar", $3);
@@ -1632,7 +1633,7 @@ string_content  : tSTRING_CONTENT
                    p.getCmdArgumentState().reset();
                 } {
                    $$ = p.getState();
-                   p.setState(LexState.EXPR_BEG);
+                   p.setState(EXPR_BEG);
                 } {
                    $$ = p.getBraceNest();
                    p.setBraceNest(0);
@@ -1658,7 +1659,7 @@ string_dvar     : tGVAR {
 
 // Token:symbol
 symbol          : tSYMBEG sym {
-                     p.setState(LexState.EXPR_END);
+                     p.setState(EXPR_END);
                      $$ = p.dispatch("on_symbol", $2);
                 }
 
@@ -1666,7 +1667,7 @@ symbol          : tSYMBEG sym {
 sym             : fname | tIVAR | tGVAR | tCVAR
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
-                     p.setState(LexState.EXPR_END);
+                     p.setState(EXPR_END);
                      $$ = p.dispatch("on_dyna_symbol", $2);
                 }
 
@@ -1792,7 +1793,7 @@ backref         : tNTH_REF
                 | tBACK_REF
 
 superclass      : tLT {
-                   p.setState(LexState.EXPR_BEG);
+                   p.setState(EXPR_BEG);
                 } expr_value term {
                     $$ = $3;
                 }
@@ -1803,7 +1804,7 @@ superclass      : tLT {
 // [!null]
 // ENEBO: Look at command_start stuff I am ripping out
 f_arglist       : tLPAREN2 f_args rparen {
-                    p.setState(LexState.EXPR_BEG);
+                    p.setState(EXPR_BEG);
                     $$ = p.dispatch("on_paren", $2);
                 }
                 | f_args term {
@@ -2019,7 +2020,7 @@ singleton       : var_ref {
                     $$ = $1;
                 }
                 | tLPAREN2 {
-                    p.setState(LexState.EXPR_BEG);
+                    p.setState(EXPR_BEG);
                 } expr rparen {
                     $$ = p.dispatch("on_paren", $3);
                 }

@@ -10,17 +10,62 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
+import org.jruby.lexer.yacc.StackState;
 import org.jruby.util.ByteList;
 
 /**
  * Code and constants common to both ripper and main parser.
  */
 public abstract class LexingCommon {
+    public enum LexState {
+        EXPR_BEG, EXPR_END, EXPR_ARG, EXPR_CMDARG, EXPR_ENDARG, EXPR_MID,
+        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN, EXPR_LABELARG
+    }
+
+    protected int braceNest = 0;
+    public boolean commandStart;
+    protected StackState conditionState = new StackState();
+    protected StackState cmdArgumentState = new StackState();
+    private Encoding current_enc;
+    protected boolean __end__seen = false;
+    public boolean eofp = false;
+    protected boolean has_shebang = false;
+    protected int heredoc_end = 0;
     protected int heredoc_indent = 0;
     protected int heredoc_line_indent = 0;
+    public boolean inKwarg = false;
+    protected int last_cr_line;
+    protected LexState last_state;
+    private int leftParenBegin = 0;
+    public ByteList lexb = null;
+    public ByteList lex_lastline = null;
+    protected ByteList lex_nextline = null;
+    public int lex_p = 0;                  // Where current position is in current line
+    protected int lex_pbeg = 0;
+    public int lex_pend = 0;               // Where line ends
+    protected LexState lex_state;
+    protected int line_count = 0;
+    protected int line_offset = 0;
+    protected int parenNest = 0;
+    protected int ruby_sourceline = 0;
+    protected LexerSource src;                // Stream of data that yylex() examines.
+    protected int token;                      // Last token read via yylex().
+    public int tokp = 0;                   // Where last token started
+    protected Object yaccValue;               // Value of last token which had a value associated with it.
 
-    public int getHeredocIndent() {
-        return heredoc_indent;
+    public int column() {
+        return tokp - lex_pbeg;
+    }
+
+    protected boolean comment_at_top() {
+        int p = lex_pbeg;
+        int pend = lex_p - 1;
+        if (line_count != (has_shebang ? 2 : 1)) return false;
+        while (p < pend) {
+            if (!Character.isSpaceChar(p(p))) return false;
+            p++;
+        }
+        return true;
     }
 
     protected int dedent_string(ByteList string, int width) {
@@ -46,9 +91,251 @@ public abstract class LexingCommon {
         return i;
     }
 
+    protected void flush() {
+        tokp = lex_p;
+    }
+
+    public int getBraceNest() {
+        return braceNest;
+    }
+
+    public StackState getCmdArgumentState() {
+        return cmdArgumentState;
+    }
+
+    public StackState getConditionState() {
+        return conditionState;
+    }
+
+    public String getCurrentLine() {
+        return lex_lastline.toString();
+    }
+
+    public Encoding getEncoding() {
+        return current_enc;
+    }
+
+    public String getFile() {
+        return src.getFilename();
+    }
+
+    public int getLeftParenBegin() {
+        return leftParenBegin;
+    }
+
+    public int getLineOffset() {
+        return line_offset;
+    }
+
+    public LexState getState() {
+        return lex_state;
+    }
+
+    public int getHeredocIndent() {
+        return heredoc_indent;
+    }
+
+    public int incrementParenNest() {
+        parenNest++;
+
+        return parenNest;
+    }
+
+    public boolean isEndSeen() {
+        return __end__seen;
+    }
+
+    // mri: parser_isascii
+    public boolean isASCII() {
+        return Encoding.isMbcAscii((byte)lexb.get(lex_p-1));
+    }
+
+    public boolean isASCII(int c) {
+        return Encoding.isMbcAscii((byte)c);
+    }
+
+    /**
+     * This is a valid character for an identifier?
+     *
+     * @param c is character to be compared
+     * @return whether c is an identifier or not
+     *
+     * mri: is_identchar
+     */
+    public boolean isIdentifierChar(int c) {
+        return Character.isLetterOrDigit(c) || c == '_' || isMultiByteChar(c);
+    }
+
+    /**
+     * Is this a multibyte character from a multibyte encoding?
+     *
+     * @param c byte to check against
+     * @return whether c is an multibyte char or not
+     */
+    protected boolean isMultiByteChar(int c) {
+        return current_enc.codeToMbcLength(c) != 1;
+    }
+
+    public void lex_goto_eol() {
+        lex_p = lex_pend;
+    }
+
+    public int lineno() {
+        return ruby_sourceline + src.getLineOffset();
+    }
+
+    protected void magicCommentEncoding(ByteList encoding) {
+        if (!comment_at_top()) return;
+
+        setEncoding(encoding);
+    }
+
+    protected int numberLiteralSuffix(int mask) throws IOException {
+        int c = nextc();
+
+        if (c == 'i') return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
+
+        if (c == 'r') {
+            int result = 0;
+            if ((mask & SUFFIX_R) != 0) result |= (mask & SUFFIX_R);
+
+            if (peek('i') && (mask & SUFFIX_I) != 0) {
+                c = nextc();
+                result |= (mask & SUFFIX_I);
+            }
+
+            return result;
+        }
+        pushback(c);
+
+        return 0;
+    }
+
+    public void parser_prepare() {
+        int c = nextc();
+
+        switch(c) {
+            case '#':
+                if (peek('!')) has_shebang = true;
+                break;
+            case 0xef:
+                if (lex_pend - lex_p >= 2 && p(lex_p) == 0xbb && p(lex_p + 1) == 0xbf) {
+                    setEncoding(UTF8_ENCODING);
+                    lex_p += 2;
+                    lex_pbeg = lex_p;
+                    return;
+                }
+                break;
+            case EOF:
+                return;
+        }
+        pushback(c);
+
+        current_enc = lex_lastline.getEncoding();
+    }
+
+    public int p(int offset) {
+        return lexb.get(offset) & 0xff;
+    }
+
+    public boolean peek(int c) {
+        return peek(c, 0);
+    }
+
+    protected boolean peek(int c, int n) {
+        return lex_p+n < lex_pend && p(lex_p+n) == c;
+    }
+
+    public int precise_mbclen() {
+        byte[] data = lexb.getUnsafeBytes();
+        int begin = lexb.begin();
+
+        // we subtract one since we have read past first byte by time we are calling this.
+        return current_enc.length(data, begin+lex_p-1, begin+lex_pend);
+    }
+
+    public void printState() {
+        if (lex_state == null) {
+            System.out.println("NULL");
+        } else {
+            System.out.println(lex_state);
+        }
+    }
+
+    public void pushback(int c) {
+        if (c == -1) return;
+
+        lex_p--;
+
+        if (lex_p > lex_pbeg && p(lex_p) == '\n' && p(lex_p-1) == '\r') {
+            lex_p--;
+        }
+    }
+
     public void reset() {
         heredoc_indent = 0;
         heredoc_line_indent = 0;
+        token = 0;
+        yaccValue = null;
+    }
+
+    public void resetStacks() {
+        conditionState.reset();
+        cmdArgumentState.reset();
+    }
+
+    // FIXME: This is icky.  Ripper is setting encoding immediately but in Parsers lexer we are not.
+    public void setCurrentEncoding(Encoding encoding) {
+        current_enc = encoding;
+    }
+    // FIXME: This is mucked up...current line knows it's own encoding so that must be changed.  but we also have two
+    // other sources.  I am thinking current_enc should be removed in favor of src since it needs to know encoding to
+    // provide next line.
+    public void setEncoding(Encoding encoding) {
+        setCurrentEncoding(encoding);
+        src.setEncoding(encoding);
+        lexb.setEncoding(encoding);
+    }
+
+    protected void set_file_encoding(int str, int send) {
+        boolean sep = false;
+        for (;;) {
+            if (send - str <= 6) return;
+
+            switch(p(str+6)) {
+                case 'C': case 'c': str += 6; continue;
+                case 'O': case 'o': str += 5; continue;
+                case 'D': case 'd': str += 4; continue;
+                case 'I': case 'i': str += 3; continue;
+                case 'N': case 'n': str += 2; continue;
+                case 'G': case 'g': str += 1; continue;
+                case '=': case ':':
+                    sep = true;
+                    str += 6;
+                    break;
+                default:
+                    str += 6;
+                    if (Character.isSpaceChar(p(str))) break;
+                    continue;
+            }
+            if (lexb.makeShared(str - 6, 6).caseInsensitiveCmp(CODING) == 0) break;
+        }
+
+        for(;;) {
+            do {
+                str++;
+                if (str >= send) return;
+            } while(Character.isSpaceChar(p(str)));
+            if (sep) break;
+
+            if (p(str) != '=' && p(str) != ':') return;
+            sep = true;
+            str++;
+        }
+
+        int beg = str;
+        while ((p(str) == '-' || p(str) == '_' || Character.isLetterOrDigit(p(str))) && ++str < send) {}
+        setEncoding(lexb.makeShared(beg, str - beg));
     }
 
     public void setHeredocLineIndent(int heredoc_line_indent) {
@@ -57,6 +344,46 @@ public abstract class LexingCommon {
 
     public void setHeredocIndent(int heredoc_indent) {
         this.heredoc_indent = heredoc_indent;
+    }
+
+    public void setBraceNest(int nest) {
+        braceNest = nest;
+    }
+
+    public void setLeftParenBegin(int value) {
+        leftParenBegin = value;
+    }
+
+    /**
+     * Allow the parser to set the source for its lexer.
+     *
+     * @param source where the lexer gets raw data
+     */
+    public void setSource(LexerSource source) {
+        this.src = source;
+    }
+
+    public void setState(LexState state) {
+        this.lex_state = state;
+    }
+
+    public void setValue(Object yaccValue) {
+        this.yaccValue = yaccValue;
+    }
+
+    protected boolean strncmp(ByteList one, ByteList two, int length) {
+        if (one.length() < length || two.length() < length) return false;
+
+        return one.makeShared(0, length).equal(two.makeShared(0, length));
+    }
+
+    /**
+     * Last token read from the lexer at the end of a call to yylex()
+     *
+     * @return last token read
+     */
+    public int token() {
+        return token;
     }
 
     public boolean update_heredoc_indent(int c) {
@@ -77,8 +404,53 @@ public abstract class LexingCommon {
         return false;
     }
 
-    protected abstract void magicCommentEncoding(ByteList encoding);
+    /**
+     * Value of last token (if it is a token which has a value).
+     *
+     * @return value of last value-laden token
+     */
+    public Object value() {
+        return yaccValue;
+    }
+
+    protected void warn_balanced(int c, boolean spaceSeen, String op, String syn) {
+        if (false && last_state != LexState.EXPR_CLASS && last_state != LexState.EXPR_DOT &&
+                last_state != LexState.EXPR_FNAME && last_state != LexState.EXPR_ENDFN &&
+                last_state != LexState.EXPR_ENDARG && spaceSeen && !Character.isWhitespace(c)) {
+            ambiguousOperator(op, syn);
+        }
+    }
+
+    public boolean was_bol() {
+        return lex_p == lex_pbeg + 1;
+    }
+
+    public boolean whole_match_p(ByteList eos, boolean indent) {
+        int len = eos.length();
+        int p = lex_pbeg;
+
+        if (indent) {
+            for (int i = 0; i < lex_pend; i++) {
+                if (!Character.isWhitespace(p(i+p))) {
+                    p += i;
+                    break;
+                }
+            }
+        }
+        int n = lex_pend - (p + len);
+        if (n < 0) return false;
+        if (n > 0 && p(p+len) != '\n') {
+            if (p(p+len) != '\r') return false;
+            if (n == 1 || p(p+len+1) != '\n') return false;
+        }
+
+        return strncmp(eos, lexb.makeShared(p, len), len);
+    }
+
+    public abstract int nextc();
+    protected abstract void ambiguousOperator(String op, String syn);
     protected abstract void setCompileOptionFlag(String name, ByteList value);
+    protected abstract void setEncoding(ByteList name);
     protected abstract void setTokenInfo(String name, ByteList value);
 
     public static final int TAB_WIDTH = 8;
@@ -114,6 +486,18 @@ public abstract class LexingCommon {
     public static final int SUFFIX_I = 1<<1;
     public static final int SUFFIX_ALL = 3;
 
+
+    protected void determineExpressionState() {
+        switch (lex_state) {
+            case EXPR_FNAME: case EXPR_DOT:
+                setState(LexState.EXPR_ARG);
+                break;
+            default:
+                setState(LexState.EXPR_BEG);
+                break;
+        }
+    }
+
     /**
      * @param c the character to test
      * @return true if character is a hex value (0-9a-f)
@@ -122,12 +506,49 @@ public abstract class LexingCommon {
         return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
     }
 
+    protected boolean isARG() {
+        return lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG;
+    }
+
+    protected boolean isBEG() {
+        return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
+                lex_state == LexState.EXPR_CLASS || lex_state == LexState.EXPR_VALUE ||
+                lex_state == LexState.EXPR_LABELARG;
+    }
+
+    protected boolean isEND() {
+        return lex_state == LexState.EXPR_END || lex_state == LexState.EXPR_ENDARG ||
+                (lex_state == LexState.EXPR_ENDFN);
+    }
+    protected boolean isLabelPossible(boolean commandState) {
+        return ((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !commandState) || isARG();
+    }
+
+    protected boolean isLabelSuffix() {
+        return peek(':') && !peek(':', 1);
+    }
+
+    protected boolean isAfterOperator() {
+        return lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT;
+    }
+
+    protected boolean isNext_identchar() throws IOException {
+        int c = nextc();
+        pushback(c);
+
+        return c != EOF && (Character.isLetterOrDigit(c) || c == '_');
+    }
+
     /**
      * @param c the character to test
      * @return true if character is an octal value (0-7)
      */
     public static boolean isOctChar(int c) {
         return '0' <= c && c <= '7';
+    }
+
+    protected boolean isSpaceArg(int c, boolean spaceSeen) {
+        return isARG() && spaceSeen && !Character.isWhitespace(c);
     }
 
     /* MRI: magic_comment_marker */

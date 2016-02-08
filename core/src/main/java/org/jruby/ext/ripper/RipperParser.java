@@ -35,13 +35,14 @@ import org.jruby.RubyArray;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ext.ripper.RipperLexer.LexState;
+import org.jruby.lexer.LexingCommon.LexState;
+import static org.jruby.lexer.LexingCommon.LexState.*;
 
 public class RipperParser extends RipperParserBase {
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 45 "-"
+					// line 46 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -1604,7 +1605,7 @@ static RipperParserState[] states = new RipperParserState[642];
 static {
 states[1] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                  p.setState(LexState.EXPR_BEG);
+                  p.setState(EXPR_BEG);
                   p.pushLocalScope();
     return yyVal;
   }
@@ -1716,7 +1717,7 @@ states[19] = new RipperParserState() {
 };
 states[20] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.setState(LexState.EXPR_FNAME);
+                    p.setState(EXPR_FNAME);
     return yyVal;
   }
 };
@@ -2399,14 +2400,14 @@ states[133] = new RipperParserState() {
 };
 states[137] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                   p.setState(LexState.EXPR_ENDFN);
+                   p.setState(EXPR_ENDFN);
                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
     return yyVal;
   }
 };
 states[138] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                   p.setState(LexState.EXPR_ENDFN);
+                   p.setState(EXPR_ENDFN);
                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
     return yyVal;
   }
@@ -2443,7 +2444,7 @@ states[143] = new RipperParserState() {
 };
 states[144] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.setState(LexState.EXPR_FNAME);
+                    p.setState(EXPR_FNAME);
     return yyVal;
   }
 };
@@ -2956,7 +2957,7 @@ states[307] = new RipperParserState() {
 };
 states[308] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.setState(LexState.EXPR_ENDARG);
+                    p.setState(EXPR_ENDARG);
     return yyVal;
   }
 };
@@ -2975,7 +2976,7 @@ states[310] = new RipperParserState() {
 };
 states[311] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.setState(LexState.EXPR_ENDARG); 
+                    p.setState(EXPR_ENDARG); 
     return yyVal;
   }
 };
@@ -3234,7 +3235,7 @@ states[350] = new RipperParserState() {
 };
 states[351] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.setState(LexState.EXPR_FNAME);
+                    p.setState(EXPR_FNAME);
     return yyVal;
   }
 };
@@ -3242,7 +3243,7 @@ states[352] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.setInSingle(p.getInSingle() + 1);
                     p.pushLocalScope();
-                    p.setState(LexState.EXPR_ENDFN); /* force for args */
+                    p.setState(EXPR_ENDFN); /* force for args */
     return yyVal;
   }
 };
@@ -3962,7 +3963,7 @@ states[487] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.getStrTerm();
                     p.setStrTerm(null);
-                    p.setState(LexState.EXPR_BEG);
+                    p.setState(EXPR_BEG);
     return yyVal;
   }
 };
@@ -3991,7 +3992,7 @@ states[490] = new RipperParserState() {
 states[491] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = p.getState();
-                   p.setState(LexState.EXPR_BEG);
+                   p.setState(EXPR_BEG);
     return yyVal;
   }
 };
@@ -4033,14 +4034,14 @@ states[496] = new RipperParserState() {
 };
 states[498] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                     p.setState(LexState.EXPR_END);
+                     p.setState(EXPR_END);
                      yyVal = p.dispatch("on_symbol", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[503] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                     p.setState(LexState.EXPR_END);
+                     p.setState(EXPR_END);
                      yyVal = p.dispatch("on_dyna_symbol", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
@@ -4247,7 +4248,7 @@ states[533] = new RipperParserState() {
 };
 states[536] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                   p.setState(LexState.EXPR_BEG);
+                   p.setState(EXPR_BEG);
     return yyVal;
   }
 };
@@ -4265,7 +4266,7 @@ states[538] = new RipperParserState() {
 };
 states[539] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.setState(LexState.EXPR_BEG);
+                    p.setState(EXPR_BEG);
                     yyVal = p.dispatch("on_paren", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
@@ -4619,7 +4620,7 @@ states[600] = new RipperParserState() {
 };
 states[601] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.setState(LexState.EXPR_BEG);
+                    p.setState(EXPR_BEG);
     return yyVal;
   }
 };
@@ -4732,6 +4733,6 @@ states[641] = new RipperParserState() {
   }
 };
 }
-					// line 2106 "RipperParser.y"
+					// line 2107 "RipperParser.y"
 }
-					// line 9491 "-"
+					// line 9492 "-"

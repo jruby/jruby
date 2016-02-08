@@ -115,7 +115,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.RubyLexer;
-import org.jruby.lexer.yacc.RubyLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
@@ -123,6 +122,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
+import org.jruby.lexer.LexingCommon.LexState;
+import static org.jruby.lexer.LexingCommon.LexState.*;
  
 public class RubyParser {
     protected ParserSupport support;
@@ -317,7 +318,7 @@ public class RubyParser {
 
 %%
 program       : {
-                  lexer.setState(LexState.EXPR_BEG);
+                  lexer.setState(EXPR_BEG);
                   support.initTopLocalVariables();
               } top_compstmt {
   // ENEBO: Removed !compile_for_eval which probably is to reduce warnings
@@ -407,7 +408,7 @@ stmt_or_begin   : stmt {
                 }
 
 stmt            : kALIAS fitem {
-                    lexer.setState(LexState.EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME);
                 } fitem {
                     $$ = support.newAlias($1, $2, $4);
                 }
@@ -839,11 +840,11 @@ cpath           : tCOLON3 cname {
 // String:fname - A function name [!null]
 fname          : tIDENTIFIER | tCONSTANT | tFID 
                | op {
-                   lexer.setState(LexState.EXPR_ENDFN);
+                   lexer.setState(EXPR_ENDFN);
                    $$ = $1;
                }
                | reswords {
-                   lexer.setState(LexState.EXPR_ENDFN);
+                   lexer.setState(EXPR_ENDFN);
                    $$ = $1;
                }
 
@@ -867,7 +868,7 @@ undef_list      : fitem {
                     $$ = support.newUndef($1.getPosition(), $1);
                 }
                 | undef_list ',' {
-                    lexer.setState(LexState.EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME);
                 } fitem {
                     $$ = support.appendToBlock($1, support.newUndef($1.getPosition(), $4));
                 }
@@ -1348,7 +1349,7 @@ primary         : literal
                     $$ = new BeginNode($1, $3 == null ? NilImplicitNode.NIL : $3);
                 }
                 | tLPAREN_ARG {
-                    lexer.setState(LexState.EXPR_ENDARG);
+                    lexer.setState(EXPR_ENDARG);
                 } rparen {
                     $$ = null; //FIXME: Should be implicit nil?
                 }
@@ -1356,7 +1357,7 @@ primary         : literal
                     $$ = lexer.getCmdArgumentState().getStack();
                     lexer.getCmdArgumentState().reset();
                 } expr {
-                    lexer.setState(LexState.EXPR_ENDARG); 
+                    lexer.setState(EXPR_ENDARG); 
                 } rparen {
                     lexer.getCmdArgumentState().reset($<Long>2.longValue());
                     $$ = $3;
@@ -1509,11 +1510,11 @@ primary         : literal
                     support.setInDef(false);
                 }
                 | kDEF singleton dot_or_colon {
-                    lexer.setState(LexState.EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME);
                 } fname {
                     support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
-                    lexer.setState(LexState.EXPR_ENDFN); /* force for args */
+                    lexer.setState(EXPR_ENDFN); /* force for args */
                 } f_arglist bodystmt kEND {
                     Node body = $8;
                     if (body == null) body = NilImplicitNode.NIL;
@@ -2021,7 +2022,7 @@ string_content  : tSTRING_CONTENT {
                 | tSTRING_DVAR {
                     $$ = lexer.getStrTerm();
                     lexer.setStrTerm(null);
-                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.setState(EXPR_BEG);
                 } string_dvar {
                     lexer.setStrTerm($<StrTerm>2);
                     $$ = new EvStrNode(support.getPosition($3), $3);
@@ -2035,7 +2036,7 @@ string_content  : tSTRING_CONTENT {
                    lexer.getCmdArgumentState().reset();
                 } {
                    $$ = lexer.getState();
-                   lexer.setState(LexState.EXPR_BEG);
+                   lexer.setState(EXPR_BEG);
                 } {
                    $$ = lexer.getBraceNest();
                    lexer.setBraceNest(0);
@@ -2067,7 +2068,7 @@ string_dvar     : tGVAR {
 
 // String:symbol
 symbol          : tSYMBEG sym {
-                     lexer.setState(LexState.EXPR_END);
+                     lexer.setState(EXPR_END);
                      $$ = $2;
                 }
 
@@ -2075,7 +2076,7 @@ symbol          : tSYMBEG sym {
 sym             : fname | tIVAR | tGVAR | tCVAR
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
-                     lexer.setState(LexState.EXPR_END);
+                     lexer.setState(EXPR_END);
 
                      // DStrNode: :"some text #{some expression}"
                      // StrNode: :"some text"
@@ -2208,7 +2209,7 @@ backref         : tNTH_REF {
                 }
 
 superclass      : tLT {
-                   lexer.setState(LexState.EXPR_BEG);
+                   lexer.setState(EXPR_BEG);
                    lexer.commandStart = true;
                 } expr_value term {
                     $$ = $3;
@@ -2221,7 +2222,7 @@ superclass      : tLT {
 // ENEBO: Look at command_start stuff I am ripping out
 f_arglist       : tLPAREN2 f_args rparen {
                     $$ = $2;
-                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.setState(EXPR_BEG);
                     lexer.commandStart = true;
                 }
                 | {
@@ -2230,7 +2231,7 @@ f_arglist       : tLPAREN2 f_args rparen {
                 } f_args term {
                    lexer.inKwarg = $<Boolean>1;
                     $$ = $2;
-                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.setState(EXPR_BEG);
                     lexer.commandStart = true;
                 }
 
@@ -2467,7 +2468,7 @@ singleton       : var_ref {
                     $$ = $1;
                 }
                 | tLPAREN2 {
-                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.setState(EXPR_BEG);
                 } expr rparen {
                     if ($3 == null) {
                         support.yyerror("can't define single method for ().");
