@@ -245,8 +245,6 @@ module Commands
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
-    puts 'jt findbugs                                    run findbugs'
-    puts 'jt findbugs report                             run findbugs and generate an HTML report'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
@@ -539,18 +537,6 @@ module Commands
       raise ArgumentError, command
     end
     raw_sh env_vars, "ruby", *bench_args, *args
-  end
-
-  def findbugs(report=nil)
-    case report
-    when 'report'
-      sh 'tool/truffle-findbugs.sh', '--report'
-      sh 'open', 'truffle-findbugs-report.html'
-    when nil
-      sh 'tool/truffle-findbugs.sh'
-    else
-      raise ArgumentError, report
-    end
   end
 
   def check_ambiguous_arguments
