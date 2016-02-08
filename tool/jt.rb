@@ -142,7 +142,11 @@ module ShellUtils
   private
 
   def raw_sh(*args)
-    puts "$ #{printable_cmd(args)}"
+    if args.last == :no_print_cmd
+      args.pop
+    else
+      puts "$ #{printable_cmd(args)}"
+    end
     result = system(*args)
     unless result
       $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
