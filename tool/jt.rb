@@ -564,12 +564,11 @@ module Commands
       r.close
     end
     puts if STDOUT.tty?
-    puts "#{samples.inject(:+)/samples.size} B, range #{samples.max-samples.min} B"
+    puts "#{human_size(samples.inject(:+)/samples.size)}, range #{human_size(samples.max-samples.min)}"
   end
   
   def memory_allocated(trace)
     allocated = 0
-    
     trace.lines do |line|
       case line
       when /(\d+)K->(\d+)K/
@@ -581,8 +580,17 @@ module Commands
         allocated += $1.to_i
       end
     end
-    
     allocated
+  end
+  
+  def human_size(bytes)
+    if bytes < 1024
+      "#{bytes} B"
+    elsif bytes < 1024**2
+      "#{(bytes/1024.0).round(2)} KB"
+    else
+      "#{(bytes/1024.0**2).round(2)} MB"
+    end
   end
 
   def check_ambiguous_arguments
