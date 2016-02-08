@@ -565,7 +565,7 @@ module Commands
       r.close
     end
     puts if STDOUT.tty?
-    puts "#{human_size(samples.inject(:+)/samples.size)}, range #{human_size(samples.max-samples.min)}"
+    puts "#{human_size(samples.inject(:+)/samples.size)}, max #{human_size(samples.max)}"
   end
   
   def memory_allocated(trace)
