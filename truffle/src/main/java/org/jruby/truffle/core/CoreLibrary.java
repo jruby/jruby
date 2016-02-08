@@ -582,7 +582,6 @@ public class CoreLibrary {
         // Bring in core method nodes
         CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(context, node.getSingletonClassNode());
 
-        Main.printTruffleTimeMetric("before-load-truffle-nodes");
         coreMethodNodeManager.addCoreMethodNodes(ArrayNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BasicObjectNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
@@ -630,7 +629,6 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
-        Main.printTruffleTimeMetric("after-load-truffle-nodes");
 
         coreMethodNodeManager.allMethodInstalled();
 

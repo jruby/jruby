@@ -24,7 +24,7 @@ import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
+import org.jruby.*;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
@@ -201,7 +201,12 @@ public class RubyContext extends ExecutionContext {
 
         coreLibrary = new CoreLibrary(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+
+        org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
         coreLibrary.initialize();
+        rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
+        rubiniusPrimitiveManager.addAnnotatedPrimitives();
+        org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
         featureLoader = new FeatureLoader(this);
         traceManager = new TraceManager(this);
@@ -209,9 +214,6 @@ public class RubyContext extends ExecutionContext {
 
         threadManager = new ThreadManager(this);
         threadManager.initialize();
-
-        rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
-        rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
         if (options.INSTRUMENTATION_SERVER_PORT != 0) {
             instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
