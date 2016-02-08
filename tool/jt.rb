@@ -249,6 +249,7 @@ module Commands
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
+    puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby)'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
@@ -541,6 +542,47 @@ module Commands
       raise ArgumentError, command
     end
     raw_sh env_vars, "ruby", *bench_args, *args
+  end
+  
+  def metrics(command, *args)
+    case command
+    when 'alloc'
+      metrics_alloc *args
+    else
+      raise ArgumentError, command
+    end
+  end
+  
+  def metrics_alloc(*args)
+    samples = []
+    10.times do
+      print '.' if STDOUT.tty?
+      r, w = IO.pipe
+      run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w}, :no_print_cmd
+      w.close
+      samples.push memory_allocated(r.read)
+      r.close
+    end
+    puts if STDOUT.tty?
+    puts "#{samples.inject(:+)/samples.size} B, range #{samples.max-samples.min} B"
+  end
+  
+  def memory_allocated(trace)
+    allocated = 0
+    
+    trace.lines do |line|
+      case line
+      when /(\d+)K->(\d+)K/
+        before = $1.to_i * 1024
+        after = $2.to_i * 1024
+        collected = before - after
+        allocated += collected
+      when /^allocated (\d+)$/
+        allocated += $1.to_i
+      end
+    end
+    
+    allocated
   end
 
   def check_ambiguous_arguments
