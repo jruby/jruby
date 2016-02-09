@@ -250,7 +250,7 @@ module Commands
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
-    puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby)'
+    puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
     puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
