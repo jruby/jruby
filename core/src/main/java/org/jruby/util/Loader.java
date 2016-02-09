@@ -7,7 +7,8 @@ import java.util.Enumeration;
 /**
  * Created by cmeier on 7/30/15.
  */
-public interface GetResources {
+public interface Loader
+{
 
     URL getResource(String path);// throws IOException;
 

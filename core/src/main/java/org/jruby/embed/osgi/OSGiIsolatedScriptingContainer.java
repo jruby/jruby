@@ -9,7 +9,7 @@ import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 
 import org.jruby.embed.osgi.internal.BundleWiringOSGiClassLoaderAdapter;
-import org.jruby.util.GetResources;
+import org.jruby.util.Loader;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
@@ -134,7 +134,8 @@ public class OSGiIsolatedScriptingContainer extends IsolatedScriptingContainer {
         addBundleToGemPath(toBundle(symbolicName));
     }
 
-    static class BundleGetResources implements GetResources {
+    static class BundleGetResources implements Loader
+    {
 
         private final Bundle bundle;
 

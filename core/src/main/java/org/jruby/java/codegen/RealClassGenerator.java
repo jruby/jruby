@@ -56,7 +56,7 @@ import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
 import static org.jruby.util.CodegenUtils.*;
 
-import org.jruby.util.GetResources;
+import org.jruby.util.Loader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -478,7 +478,7 @@ public abstract class RealClassGenerator {
 
         // first try to find the class
         Class newClass = null;
-        for(GetResources loader : runtime.getInstanceConfig().getExtraLoaders()) {
+        for(Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
             try {
                 newClass = loader.loadClass(name);
                 break;
@@ -506,7 +506,7 @@ public abstract class RealClassGenerator {
         if (newClass == null) {
             final byte[] bytecode = cw.toByteArray();
             MultiClassLoader multiClassLoader = new MultiClassLoader(superClass.getClassLoader());
-            for(GetResources cLoader : runtime.getInstanceConfig().getExtraLoaders()) {
+            for(Loader cLoader : runtime.getInstanceConfig().getExtraLoaders()) {
                 multiClassLoader.addClassLoader(cLoader.getClassLoader());
             }
             try {
