@@ -224,8 +224,7 @@ public abstract class RegexpNodes {
                     throw new UnsupportedOperationException();
             }
 
-            // TODO (nirvdrum 25-Jan-16): We probably just want a way to create a Rope from a java.lang.String.
-            bytes = StringOperations.ropeFromByteList(ByteList.create(bytesString));
+            bytes = StringOperations.createRope(bytesString, ASCIIEncoding.INSTANCE);
         }
 
         return bytes;
