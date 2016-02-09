@@ -931,6 +931,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "thread_variable_set", required = 2)
     public synchronized IRubyObject thread_variable_set(ThreadContext context, IRubyObject key, IRubyObject value) {
+        checkFrozen();
+
         key = getSymbolKey(key);
 
         getThreadLocals(context).put(key, value);
