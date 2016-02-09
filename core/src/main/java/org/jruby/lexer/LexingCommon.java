@@ -1,6 +1,8 @@
 package org.jruby.lexer;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -9,9 +11,13 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.Ruby;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
+import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Code and constants common to both ripper and main parser.
@@ -20,6 +26,10 @@ public abstract class LexingCommon {
     public enum LexState {
         EXPR_BEG, EXPR_END, EXPR_ARG, EXPR_CMDARG, EXPR_ENDARG, EXPR_MID,
         EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN, EXPR_LABELARG
+    }
+
+    public LexingCommon(LexerSource src) {
+        this.src = src;
     }
 
     protected int braceNest = 0;
@@ -50,6 +60,8 @@ public abstract class LexingCommon {
     protected int ruby_sourceline = 0;
     protected LexerSource src;                // Stream of data that yylex() examines.
     protected int token;                      // Last token read via yylex().
+    private int tokenCR;
+    public ISourcePosition tokline;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
 
@@ -66,6 +78,31 @@ public abstract class LexingCommon {
             p++;
         }
         return true;
+    }
+
+    public ByteList createTokenByteList() {
+        return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), false);
+    }
+
+    public String createTokenString() {
+        byte[] bytes = lexb.getUnsafeBytes();
+        int begin = lexb.begin();
+        Charset charset;
+
+        // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
+        try {
+            charset = getEncoding().getCharset();
+            if (charset != null) {
+                if (charset == RubyEncoding.UTF8) {
+                    return RubyEncoding.decodeUTF8(bytes, begin + tokp, lex_p - tokp);
+                } else {
+                    return new String(bytes, begin + tokp, lex_p - tokp, charset);
+                }
+            }
+        } catch (UnsupportedCharsetException e) {}
+
+
+        return new String(bytes, begin + tokp, lex_p - tokp);
     }
 
     protected int dedent_string(ByteList string, int width) {
@@ -119,8 +156,17 @@ public abstract class LexingCommon {
         return src.getFilename();
     }
 
+    public int getHeredocIndent() {
+        return heredoc_indent;
+    }
+
     public int getLeftParenBegin() {
         return leftParenBegin;
+    }
+
+    public ISourcePosition getPosition() {
+        if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
+        return new SimpleSourcePosition(getFile(), ruby_sourceline);
     }
 
     public int getLineOffset() {
@@ -131,8 +177,8 @@ public abstract class LexingCommon {
         return lex_state;
     }
 
-    public int getHeredocIndent() {
-        return heredoc_indent;
+    public int getTokenCR() {
+        return tokenCR;
     }
 
     public int incrementParenNest() {
@@ -152,6 +198,19 @@ public abstract class LexingCommon {
 
     public boolean isASCII(int c) {
         return Encoding.isMbcAscii((byte)c);
+    }
+
+    // FIXME: I added number gvars here and they did not.
+    public boolean isGlobalCharPunct(int c) {
+        switch (c) {
+            case '_': case '~': case '*': case '$': case '?': case '!': case '@':
+            case '/': case '\\': case ';': case ',': case '.': case '=': case ':':
+            case '<': case '>': case '\"': case '-': case '&': case '`': case '\'':
+            case '+': case '1': case '2': case '3': case '4': case '5': case '6':
+            case '7': case '8': case '9': case '0':
+                return true;
+        }
+        return isIdentifierChar(c);
     }
 
     /**
@@ -188,6 +247,18 @@ public abstract class LexingCommon {
         if (!comment_at_top()) return;
 
         setEncoding(encoding);
+    }
+
+    // FIXME: We significantly different from MRI in that we are just mucking
+    // with lex_p pointers and not alloc'ing our own buffer (or using bytelist).
+    // In most cases this does not matter much but for ripper or a place where
+    // we remove actual source characters (like extra '"') then this acts differently.
+    public void newtok(boolean unreadOnce) {
+        tokline = getPosition();
+        // We assume all idents are 7BIT until they aren't.
+        tokenCR = StringSupport.CR_7BIT;
+
+        tokp = lex_p - (unreadOnce ? 1 : 0); // We use tokp of ripper to mark beginning of tokens.
     }
 
     protected int numberLiteralSuffix(int mask) throws IOException {
@@ -251,7 +322,7 @@ public abstract class LexingCommon {
         int begin = lexb.begin();
 
         // we subtract one since we have read past first byte by time we are calling this.
-        return current_enc.length(data, begin+lex_p-1, begin+lex_pend);
+        return current_enc.length(data, begin + lex_p - 1, begin + lex_pend);
     }
 
     public void printState() {
@@ -273,10 +344,19 @@ public abstract class LexingCommon {
     }
 
     public void reset() {
+        braceNest = 0;
+        commandStart = true;
         heredoc_indent = 0;
         heredoc_line_indent = 0;
+        last_cr_line = -1;
+        parenNest = 0;
+        ruby_sourceline = 0;
         token = 0;
+        tokp = 0;
         yaccValue = null;
+
+        setState(null);
+        resetStacks();
     }
 
     public void resetStacks() {
@@ -377,6 +457,76 @@ public abstract class LexingCommon {
         return one.makeShared(0, length).equal(two.makeShared(0, length));
     }
 
+    public void tokAdd(int first_byte, ByteList buffer) {
+        buffer.append((byte) first_byte);
+    }
+
+    public void tokCopy(int length, ByteList buffer) {
+        buffer.append(lexb, lex_p - length, length);
+    }
+
+    public boolean tokadd_ident(int c) {
+        do {
+            if (!tokadd_mbchar(c)) return false;
+            c = nextc();
+        } while (isIdentifierChar(c));
+        pushback(c);
+
+        return true;
+    }
+
+    // mri: parser_tokadd_mbchar
+    /**
+     * This differs from MRI in a few ways.  This version does not apply value to a separate token buffer.
+     * It is for use when we know we will not be omitting or including ant non-syntactical characters.  Use
+     * tokadd_mbchar(int, ByteList) if the string differs from actual source.  Secondly, this returns a boolean
+     * instead of the first byte passed.  MRI only used the return value as a success/failure code to return
+     * EOF.
+     *
+     * Because this version does not use a separate token buffer we only just increment lex_p.  When we reach
+     * end of the token it will just get the bytes directly from source directly.
+     */
+    public boolean tokadd_mbchar(int first_byte) {
+        int length = precise_mbclen();
+
+
+        if (length <= 0) {
+            compile_error("invalid multibyte char (" + getEncoding() + ")");
+        } else if (length > 1) {
+            tokenCR = StringSupport.CR_VALID;
+        }
+
+        lex_p += length - 1;  // we already read first byte so advance pointer for remainder
+
+        return true;
+    }
+
+    // mri: parser_tokadd_mbchar
+    public boolean tokadd_mbchar(int first_byte, ByteList buffer) {
+        int length = precise_mbclen();
+
+        if (length <= 0) compile_error("invalid multibyte char (" + getEncoding() + ")");
+
+        tokAdd(first_byte, buffer);                  // add first byte since we have it.
+        lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
+        if (length > 1) tokCopy(length - 1, buffer); // copy next n bytes over.
+
+        return true;
+    }
+
+    /**
+     *  This looks deceptively like tokadd_mbchar(int, ByteList) but it differs in that it uses
+     *  the bytelists encoding and the first parameter is a full codepoint and not the first byte
+     *  of a mbc sequence.
+     */
+    public void tokaddmbc(int codepoint, ByteList buffer) {
+        Encoding encoding = buffer.getEncoding();
+        int length = encoding.codeToMbcLength(codepoint);
+        buffer.ensure(buffer.getRealSize() + length);
+        encoding.codeToMbc(codepoint, buffer.getUnsafeBytes(), buffer.begin() + buffer.getRealSize());
+        buffer.setRealSize(buffer.getRealSize() + length);
+    }
+
     /**
      * Last token read from the lexer at the end of a call to yylex()
      *
@@ -447,11 +597,13 @@ public abstract class LexingCommon {
         return strncmp(eos, lexb.makeShared(p, len), len);
     }
 
-    public abstract int nextc();
     protected abstract void ambiguousOperator(String op, String syn);
+    public abstract void compile_error(String message);
+    public abstract int nextc();
     protected abstract void setCompileOptionFlag(String name, ByteList value);
     protected abstract void setEncoding(ByteList name);
     protected abstract void setTokenInfo(String name, ByteList value);
+    public abstract int tokenize_ident(int result);
 
     public static final int TAB_WIDTH = 8;
 
@@ -488,13 +640,11 @@ public abstract class LexingCommon {
 
 
     protected void determineExpressionState() {
-        switch (lex_state) {
-            case EXPR_FNAME: case EXPR_DOT:
-                setState(LexState.EXPR_ARG);
-                break;
-            default:
-                setState(LexState.EXPR_BEG);
-                break;
+        if (isAfterOperator()) {
+            setState(LexState.EXPR_ARG);
+        } else {
+            if (lex_state == LexState.EXPR_CLASS) commandStart = true;
+            setState(LexState.EXPR_BEG);
         }
     }
 

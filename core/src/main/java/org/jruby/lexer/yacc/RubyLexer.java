@@ -213,56 +213,7 @@ public class RubyLexer extends LexingCommon {
 
     // Additional context surrounding tokens that both the lexer and
     // grammar use.
-    public ISourcePosition tokline;
-    private int tokenCR;
     private boolean tokenSeen;
-
-    public int getTokenCR() {
-        return tokenCR;
-    }
-
-    public void newtok(boolean unreadOnce) {
-        tokline = getPosition();
-        // We assume all idents are 7BIT until they aren't.
-        tokenCR = StringSupport.CR_7BIT;
-
-        tokp = lex_p - (unreadOnce ? 1 : 0); // We use tokp of ripper to mark beginning of tokens.
-    }
-
-    public boolean tokadd_ident(int c) {
-        do {
-            if (!tokadd_mbchar(c)) return false;
-            c = nextc();
-        } while (isIdentifierChar(c));
-        pushback(c);
-
-        return true;
-    }
-
-    public ByteList createTokenByteList() {
-        return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), false);
-    }
-
-    public String createTokenString() {
-        byte[] bytes = lexb.getUnsafeBytes();
-        int begin = lexb.begin();
-        Charset charset;
-
-        // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
-        try {
-            charset = getEncoding().getCharset();
-            if (charset != null) {
-                if (charset == RubyEncoding.UTF8) {
-                    return RubyEncoding.decodeUTF8(bytes, begin + tokp, lex_p - tokp);
-                } else {
-                    return new String(bytes, begin + tokp, lex_p - tokp, charset);
-                }
-            }
-        } catch (UnsupportedCharsetException e) {}
-
-
-        return new String(bytes, begin + tokp, lex_p - tokp);
-    }
 
     public int tokenize_ident(int result) {
         // FIXME: Get token from newtok index to lex_p?
@@ -280,33 +231,25 @@ public class RubyLexer extends LexingCommon {
     private StrTerm lex_strterm;
 
     public RubyLexer(ParserSupport support, LexerSource source, IRubyWarnings warnings) {
+        super(source);
         this.parserSupport = support;
-        this.src = source;
         this.warnings = warnings;
         reset();
     }
 
     @Deprecated
     public RubyLexer(ParserSupport support, LexerSource source) {
+        super(source);
         this.parserSupport = support;
-        this.src = source;
         reset();
     }
     
     public void reset() {
         super.reset();
-        token = 0;
-        yaccValue = null;
-        setState(null);
-        resetStacks();
         lex_strterm = null;
-        commandStart = true;
-        parenNest = 0;
-        braceNest = 0;
-        tokp = 0;
-        ruby_sourceline = src.getLineOffset() - 1;
-        last_cr_line = -1;
         tokenSeen = false;
+        // FIXME: ripper offsets correctly but we need to subtract one?
+        ruby_sourceline = src.getLineOffset() - 1;
 
         parser_prepare();
     }
@@ -390,20 +333,6 @@ public class RubyLexer extends LexingCommon {
         throw new SyntaxException(pid, getFile(), ruby_sourceline, getCurrentLine(), message);
     }
 
-    // FIXME: This is our main lexer code mangled into here...
-    // Super slow codepoint reader when we detect non-asci chars
-    public int readCodepoint(int first, Encoding encoding) throws IOException {
-        int length = encoding.length(lexb.getUnsafeBytes(), lex_p - 1, lex_pend);
-        if (length < 0) {
-            return -2;
-        }
-        int codepoint = encoding.mbcToCode(lexb.getUnsafeBytes(), lex_p - 1, length);
-
-        lex_p += length - 1;
-
-        return codepoint;
-    }
-
     public void heredoc_restore(HeredocTerm here) {
         ByteList line = here.lastLine;
         lex_lastline = line;
@@ -419,11 +348,6 @@ public class RubyLexer extends LexingCommon {
     public int nextToken() throws IOException {
         token = yylex();
         return token == EOF ? 0 : token;
-    }
-
-    public ISourcePosition getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
-        return new SimpleSourcePosition(getFile(), ruby_sourceline);
     }
 
     public ISourcePosition getPosition(ISourcePosition startPosition) {
@@ -745,25 +669,6 @@ public class RubyLexer extends LexingCommon {
         if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load() && !ParserSupport.skipTruffleRubiniusWarnings(this)) {
             warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
         }
-    }
-
-    // TODO: Make hand-rolled version of this
-    private static final String encodingString = "[cC][oO][dD][iI][nN][gG]\\s*[=:]\\s*([a-zA-Z0-9\\-_]+)";
-    private static final Regex encodingRegexp = new Regex(encodingString.getBytes(), 0,
-            encodingString.length(), 0, Encoding.load("ASCII"));
-
-    protected void handleFileEncodingComment(ByteList encodingLine) throws IOException {
-        int realSize = encodingLine.getRealSize();
-        int begin = encodingLine.getBegin();
-        Matcher matcher = encodingRegexp.matcher(encodingLine.getUnsafeBytes(), begin, begin + realSize);
-        int result = RubyRegexp.matcherSearch(parserSupport.getConfiguration().getRuntime(), matcher, begin, begin + realSize, Option.IGNORECASE);
-
-        if (result < 0) return;
-
-        int begs[] = matcher.getRegion().beg;
-        int ends[] = matcher.getRegion().end;
-
-        setEncoding(encodingLine.makeShared(begs[1], ends[1] - begs[1]));
     }
 
     /*
@@ -1219,7 +1124,7 @@ public class RubyLexer extends LexingCommon {
         yaccValue = "&";
         return c;
     }
-    
+
     private int at() throws IOException {
         newtok(true);
         int c = nextc();
@@ -1228,7 +1133,7 @@ public class RubyLexer extends LexingCommon {
             c = nextc();
             result = Tokens.tCVAR;
         } else {
-            result = Tokens.tIVAR;                    
+            result = Tokens.tIVAR;
         }
 
         if (c == EOF || Character.isSpaceChar(c)) {
@@ -1252,7 +1157,7 @@ public class RubyLexer extends LexingCommon {
 
         return tokenize_ident(result);
     }
-    
+
     private int backtick(boolean commandState) throws IOException {
         yaccValue = "`";
 
@@ -1490,19 +1395,6 @@ public class RubyLexer extends LexingCommon {
 
             return identifierToken(Tokens.tGVAR, createTokenString().intern());  // $blah
         }
-    }
-
-    // FIXME: I added number gvars here and they did not.
-    public boolean isGlobalCharPunct(int c) {
-        switch (c) {
-            case '_': case '~': case '*': case '$': case '?': case '!': case '@':
-            case '/': case '\\': case ';': case ',': case '.': case '=': case ':':
-            case '<': case '>': case '\"': case '-': case '&': case '`': case '\'':
-            case '+': case '1': case '2': case '3': case '4': case '5': case '6':
-            case '7': case '8': case '9': case '0':
-                return true;
-        }
-        return isIdentifierChar(c);
     }
 
     private int dot() throws IOException {
@@ -1755,13 +1647,8 @@ public class RubyLexer extends LexingCommon {
             if (tok != 0) return tok;
         }
 
-        if (isAfterOperator()) {
-            setState(EXPR_ARG);
-        } else {
-            if (lex_state == EXPR_CLASS) commandStart = true;
-            setState(EXPR_BEG);
-        }
-        
+        determineExpressionState();
+
         switch (c) {
         case '=':
             if ((c = nextc()) == '>') {
@@ -1895,7 +1782,7 @@ public class RubyLexer extends LexingCommon {
             return Tokens.tOP_ASGN;
         }
         
-        if (isBEG() || isSpaceArg(c, spaceSeen)) { //FIXME: arg_ambiguous missing
+        if (isBEG() || isSpaceArg(c, spaceSeen)) {
             if (isARG()) arg_ambiguous();
             setState(EXPR_BEG);
             pushback(c);
@@ -2046,8 +1933,8 @@ public class RubyLexer extends LexingCommon {
         int c = nextc();
         
         if (c == '=') {
-            yaccValue = "/";
             setState(EXPR_BEG);
+            yaccValue = "/";
             return Tokens.tOP_ASGN;
         }
         pushback(c);
@@ -2374,78 +2261,6 @@ public class RubyLexer extends LexingCommon {
         }
     }
 
-    // mri: parser_tokadd_mbchar
-    /**
-     * This differs from MRI in a few ways.  This version does not apply value to a separate token buffer.
-     * It is for use when we know we will not be omitting or including ant non-syntactical characters.  Use
-     * tokadd_mbchar(int, ByteList) if the string differs from actual source.  Secondly, this returns a boolean
-     * instead of the first byte passed.  MRI only used the return value as a success/failure code to return
-     * EOF.
-     *
-     * Because this version does not use a separate token buffer we only just increment lex_p.  When we reach
-     * end of the token it will just get the bytes directly from source directly.
-     */
-    public boolean tokadd_mbchar(int first_byte) {
-        int length = precise_mbclen();
-
-
-        if (length <= 0) {
-            compile_error("invalid multibyte char (" + getEncoding() + ")");
-        } else if (length > 1) {
-            tokenCR = StringSupport.CR_VALID;
-        }
-
-        lex_p += length - 1;  // we already read first byte so advance pointer for remainder
-
-        return true;
-    }
-
-    // mri: parser_tokadd_mbchar
-    /**
-     * @see RubyLexer::tokadd_mbchar(int)
-     */
-    public boolean tokadd_mbchar(int first_byte, ByteList buffer) {
-        int length = precise_mbclen();
-
-        if (length <= 0) compile_error("invalid multibyte char (" + getEncoding() + ")");
-
-        tokAdd(first_byte, buffer);                  // add first byte since we have it.
-        lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
-        if (length > 1) tokCopy(length - 1, buffer); // copy next n bytes over.
-
-        return true;
-    }
-
-    /**
-     *  This looks deceptively like tokadd_mbchar(int, ByteList) but it differs in that it uses
-     *  the bytelists encoding and the first parameter is a full codepoint and not the first byte
-     *  of a mbc sequence.
-     */
-    public void tokaddmbc(int codepoint, ByteList buffer) {
-        Encoding encoding = buffer.getEncoding();
-        int length = encoding.codeToMbcLength(codepoint);
-        buffer.ensure(buffer.getRealSize() + length);
-        encoding.codeToMbc(codepoint, buffer.getUnsafeBytes(), buffer.begin() + buffer.getRealSize());
-        buffer.setRealSize(buffer.getRealSize() + length);
-    }
-
-    public void tokAdd(int first_byte, ByteList buffer) {
-        buffer.append((byte) first_byte);
-    }
-
-    public void tokCopy(int length, ByteList buffer) {
-        buffer.append(lexb, lex_p - length, length);
-    }
-
-    public void tokenAddMBCFromSrc(int c, ByteList buffer) throws IOException {
-        // read bytes for length of character
-        int length = buffer.getEncoding().length((byte)c);
-        buffer.append((byte)c);
-        for (int off = 0; off < length - 1; off++) {
-            buffer.append((byte)nextc());
-        }
-    }
-
     // MRI: parser_tokadd_utf8 sans regexp literal parsing
     public int readUTFEscape(ByteList buffer, boolean stringLiteral, boolean symbolLiteral) throws IOException {
         int codepoint;
@@ -2564,7 +2379,7 @@ public class RubyLexer extends LexingCommon {
             buffer.append(h1);
 
             hexValue <<= 4;
-            hexValue |= Integer.parseInt("" + (char) h1, 16) & 15;
+            hexValue |= Integer.parseInt(String.valueOf((char) h1), 16) & 15;
         }
 
         // No hex value after the 'x'.
