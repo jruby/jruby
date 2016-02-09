@@ -5,7 +5,6 @@ describe "Kernel#system when called during a Dir.chdir" do
     def sh(*cmd)
       res = system(*cmd)
       status = $?
-      p [res, status]
     end
 
     ENV['GH3653'] = 'someval'
