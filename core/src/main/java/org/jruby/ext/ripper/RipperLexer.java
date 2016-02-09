@@ -122,8 +122,7 @@ public class RipperLexer extends LexingCommon {
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
-        ByteList buf = new ByteList(number.getBytes());
-        yaccValue = new Token(buf);
+
         return considerComplex(Tokens.tFLOAT, suffix);
     }
 
@@ -513,7 +512,6 @@ public class RipperLexer extends LexingCommon {
         }
         pushback(w);
         
-        yaccValue = new Token(value);
         switch (c) {
         case 'Q':
             lex_strterm = new StringTerm(str_dquote, begin ,end);
@@ -1268,7 +1266,6 @@ public class RipperLexer extends LexingCommon {
             setState(EXPR_END);
         }
 
-        yaccValue = new Token(value);
         identValue = value;
         return result;
     }
@@ -1521,7 +1518,6 @@ public class RipperLexer extends LexingCommon {
         case '>':       /* $>: default output handle */
         case '\"':      /* $": already loaded files */
             identValue = "$" + (char) c;
-            yaccValue = new Token(identValue, Tokens.tGVAR);
             return Tokens.tGVAR;
 
         case '-':
@@ -1535,7 +1531,6 @@ public class RipperLexer extends LexingCommon {
                 pushback(c);
             }
             identValue = tokenBuffer.toString();
-            yaccValue = new Token(identValue, Tokens.tGVAR);
             /* xxx shouldn't check if valid option variable */
             return Tokens.tGVAR;
 
@@ -1545,7 +1540,6 @@ public class RipperLexer extends LexingCommon {
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
             identValue = "$" + (char) c;
-            yaccValue = new Token(identValue);
             if (last_state == EXPR_FNAME) return Tokens.tGVAR;
 
             return Tokens.tBACK_REF;
@@ -1560,12 +1554,10 @@ public class RipperLexer extends LexingCommon {
             pushback(c);
             if (last_state == EXPR_FNAME) {
                 identValue = tokenBuffer.toString();
-                yaccValue = new Token(identValue, Tokens.tGVAR);
                 return Tokens.tGVAR;
             }
 
             identValue = tokenBuffer.toString();
-            yaccValue = new Token(identValue);
             return Tokens.tNTH_REF;
         case '0':
             setState(EXPR_END);
@@ -1702,7 +1694,6 @@ public class RipperLexer extends LexingCommon {
                 setState(EXPR_LABELARG);
                 nextc();
                 identValue = tempVal + ':';
-                yaccValue = new Token(identValue);
                 return Tokens.tLABEL;
             }
         }
@@ -1716,10 +1707,7 @@ public class RipperLexer extends LexingCommon {
 
                 if (state == EXPR_FNAME) {
                     identValue = keyword.name;
-                    yaccValue = new Token(identValue);
                     return keyword.id0;
-                } else {
-                    yaccValue = new Token(tempVal);
                 }
 
                 if (keyword.id0 == Tokens.kDO) return doKeyword(state);
@@ -2017,7 +2005,6 @@ public class RipperLexer extends LexingCommon {
             if (!tokenAddMBC(c, buffer)) return EOF;
 
             setState(EXPR_END);
-            yaccValue = new Token(buffer);
             return Tokens.tCHAR;
         } else if (isIdentifierChar(c) && !peek('\n') && isNext_identchar()) {
             pushback(c);
@@ -2037,8 +2024,7 @@ public class RipperLexer extends LexingCommon {
                 }
                 
                 setState(EXPR_END);
-                yaccValue = new Token(oneCharBL);
-                
+
                 return org.jruby.parser.Tokens.tINTEGER; // FIXME: This should be something else like a tCHAR in 1.9/2.0
             } else {
                 c = readEscape();
@@ -2049,7 +2035,6 @@ public class RipperLexer extends LexingCommon {
         // TODO: this isn't handling multibyte yet
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.append(c);
-        yaccValue = new Token(oneCharBL);
         return Tokens.tCHAR;
     }
 
