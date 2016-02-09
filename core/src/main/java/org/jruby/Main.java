@@ -258,10 +258,10 @@ public class Main {
     private Status internalRun() {
         doShowVersion();
         doShowCopyright();
+        doPrintProperties();
 
-        if (!config.getShouldRunInterpreter() ) {
+        if (!config.getShouldRunInterpreter()) {
             doPrintUsage(false);
-            doPrintProperties();
             return new Status();
         }
 
