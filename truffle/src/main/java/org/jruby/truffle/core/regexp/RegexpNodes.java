@@ -172,7 +172,6 @@ public abstract class RegexpNodes {
         }
     }
 
-    @TruffleBoundary
     private static DynamicObject createSubstring(RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject source, int start, int length) {
         assert RubyGuards.isRubyString(source);
 
