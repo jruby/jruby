@@ -148,10 +148,21 @@ module ShellUtils
     else
       puts "$ #{printable_cmd(args)}"
     end
+    continue_on_failure = false
+    if args.last == :continue_on_failure
+      args.pop
+      continue_on_failure = true
+    end
     result = system(*args)
-    unless result
-      $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
-      exit $?.exitstatus
+    if result
+      true
+    else
+      if continue_on_failure
+        false
+      else
+        $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
+        exit $?.exitstatus
+      end
     end
   end
 
@@ -251,6 +262,7 @@ module Commands
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
     puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
+    puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
     puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
@@ -550,6 +562,8 @@ module Commands
     case command
     when 'alloc'
       metrics_alloc *args
+    when 'minheap'
+        metrics_minheap *args
     when 'time'
         metrics_time *args
     else
@@ -585,6 +599,30 @@ module Commands
       end
     end
     allocated
+  end
+  
+  def metrics_minheap(*args)
+    # Why aren't you doing a binary search? The results seem pretty noisy so
+    # unless you do reps at each level I'm not sure how to make it work
+    # reliably.
+    heap = 1
+    successful = 0
+    loop do
+      if successful > 0
+        print '?' if STDOUT.tty?
+      else
+        print '+' if STDOUT.tty?
+      end
+      if run("-J-Xmx#{heap}M", *args, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
+        successful += 1
+        break if successful == METRICS_REPS
+      else
+        heap += 1
+        successful = 0
+      end
+    end
+    puts if STDOUT.tty?
+    puts "#{heap} MB"
   end
   
   def metrics_time(*args)
