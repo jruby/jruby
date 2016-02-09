@@ -675,10 +675,14 @@ module Commands
   def human_size(bytes)
     if bytes < 1024
       "#{bytes} B"
-    elsif bytes < 1024**2
+    elsif bytes < 1000**2
       "#{(bytes/1024.0).round(2)} KB"
-    else
+    elsif bytes < 1000**3
       "#{(bytes/1024.0**2).round(2)} MB"
+    elsif bytes < 1000**4
+      "#{(bytes/1024.0**3).round(2)} GB"
+    else
+      "#{(bytes/1024.0**4).round(2)} TB"
     end
   end
 
