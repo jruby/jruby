@@ -14,11 +14,11 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.runtime.exceptions.RangeException;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.string.StringOperations;
 
 /**
  * Write a Unicode character out as UTF-8 bytes.

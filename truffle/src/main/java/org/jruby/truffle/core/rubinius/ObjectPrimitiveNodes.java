@@ -14,19 +14,11 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
-import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.objects.ObjectIDOperations;
+import org.jruby.truffle.language.objects.*;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Object} class.

@@ -11,8 +11,8 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 
 /**
  * Represents an explicit return. The return ID indicates where we should be returning to - this can

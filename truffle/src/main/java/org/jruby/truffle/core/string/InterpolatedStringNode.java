@@ -12,20 +12,20 @@ package org.jruby.truffle.core.string;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.cast.ToSNode;
+import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
+import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
-import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
-import org.jruby.truffle.RubyContext;
 
 /**
  * A list of expressions to build up into a string.

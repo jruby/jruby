@@ -13,9 +13,9 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
-import org.jruby.truffle.language.control.RaiseException;
 
 public class RaiseIfFrozenNode extends RubyNode {
 

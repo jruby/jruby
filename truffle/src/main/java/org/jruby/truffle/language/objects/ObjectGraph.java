@@ -17,10 +17,10 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
-import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.hash.Entry;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.util.func.Function2;
 
 import java.util.*;

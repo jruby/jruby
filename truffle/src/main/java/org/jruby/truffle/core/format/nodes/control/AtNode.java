@@ -10,8 +10,8 @@
 package org.jruby.truffle.core.format.nodes.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.format.nodes.PackNode;
 
 /**
  * Moves the output position to a particular location - similar to seek

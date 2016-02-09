@@ -10,9 +10,9 @@
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.core.numeric.FixnumLiteralNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.numeric.FixnumLiteralNode;
+import org.jruby.truffle.language.RubyNode;
 
 public abstract class PrimitiveArrayNodeFactory {
 

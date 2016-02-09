@@ -17,8 +17,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.language.ShapeCachingGuards;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.ShapeCachingGuards;
 
 @ImportStatic(ShapeCachingGuards.class)
 public abstract class ReadHeadObjectFieldNode extends Node {

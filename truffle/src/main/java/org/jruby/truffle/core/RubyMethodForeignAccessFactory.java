@@ -16,11 +16,11 @@ import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.InternalRootNode;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.interop.InteropNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.interop.InteropNode;
+import org.jruby.truffle.language.InternalRootNode;
+import org.jruby.truffle.language.RubyNode;
 
 public class RubyMethodForeignAccessFactory implements ForeignAccess.Factory10 {
     private final RubyContext context;

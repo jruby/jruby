@@ -15,13 +15,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.SafepointManager;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.SafepointManager;
 import org.jruby.util.func.Function2;
 
 import java.util.Collections;

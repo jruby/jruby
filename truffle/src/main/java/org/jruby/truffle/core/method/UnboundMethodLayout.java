@@ -12,8 +12,8 @@ package org.jruby.truffle.core.method;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.om.dsl.api.Layout;
 
 @Layout
 public interface UnboundMethodLayout extends BasicObjectLayout {

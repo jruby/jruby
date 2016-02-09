@@ -38,9 +38,9 @@
 package org.jruby.truffle.platform;
 
 import org.jruby.ext.ffi.Platform;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.platform.darwin.DarwinRubiniusConfiguration;
 import org.jruby.truffle.platform.linux.LinuxRubiniusConfiguration;
-import org.jruby.truffle.RubyContext;
 
 import java.util.ArrayList;
 import java.util.Collection;

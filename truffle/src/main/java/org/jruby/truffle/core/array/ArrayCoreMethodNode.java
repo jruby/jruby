@@ -11,8 +11,8 @@ package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayCoreMethodNode extends CoreMethodArrayArgumentsNode {

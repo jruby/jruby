@@ -28,12 +28,12 @@ import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.LineToProbesMap;
-import org.jruby.truffle.core.binding.BindingNodes;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.proc.ProcNodes;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.binding.BindingNodes;
+import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.language.RubyGuards;
 
 import java.util.HashMap;
 import java.util.List;

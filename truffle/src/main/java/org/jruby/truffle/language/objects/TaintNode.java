@@ -14,10 +14,10 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class TaintNode extends RubyNode {

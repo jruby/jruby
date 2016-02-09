@@ -25,12 +25,12 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.extra.AttachmentsManager;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 

@@ -44,9 +44,9 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
 
 import java.io.File;
 

@@ -12,9 +12,9 @@ package org.jruby.truffle.core.numeric;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.language.RubyNode;
 
 /**
  * Passes through {@code int} values unmodified, but will convert a {@code long} value to an {@code int}, if it fits

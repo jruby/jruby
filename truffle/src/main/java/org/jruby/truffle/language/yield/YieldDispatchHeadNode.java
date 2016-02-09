@@ -12,10 +12,10 @@ package org.jruby.truffle.language.yield;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.methods.DeclarationContext;
 
 public class YieldDispatchHeadNode extends Node {
 

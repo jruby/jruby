@@ -14,8 +14,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.core.array.ArrayReflector;
-import org.jruby.truffle.core.array.ArrayUtils;
 
 import java.util.Arrays;
 

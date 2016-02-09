@@ -17,17 +17,17 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.*;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.ObjectGraph;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
+import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
 
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {

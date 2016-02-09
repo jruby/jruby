@@ -12,8 +12,8 @@ package org.jruby.truffle.core.format.nodes.type;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.format.nodes.PackNode;
 
 /**
  * Re-interpret a value as a {@code long}. In other words, get the raw bytes

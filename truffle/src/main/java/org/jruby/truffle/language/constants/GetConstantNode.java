@@ -16,17 +16,17 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyNode;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.kernel.KernelNodes.RequireNode;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.language.RubyConstant;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.RubyConstant;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.util.IdUtil;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant") })

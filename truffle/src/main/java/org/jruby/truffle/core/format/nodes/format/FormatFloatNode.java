@@ -13,9 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.parser.PrintfTreeBuilder;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 

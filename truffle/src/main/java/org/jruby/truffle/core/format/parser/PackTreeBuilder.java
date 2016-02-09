@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.format.parser;
 
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.nodes.SourceNode;
 import org.jruby.truffle.core.format.nodes.control.*;
@@ -22,7 +23,6 @@ import org.jruby.truffle.core.format.nodes.type.ReinterpretLongNodeGen;
 import org.jruby.truffle.core.format.nodes.type.ToLongNodeGen;
 import org.jruby.truffle.core.format.nodes.write.*;
 import org.jruby.truffle.core.format.runtime.PackEncoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.nio.ByteOrder;

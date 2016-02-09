@@ -17,15 +17,15 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNode;
-import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNodeGen;
-import org.jruby.truffle.language.ModuleOperations;
-import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.ModuleOperations;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNode;
+import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNodeGen;
 
 /**
  * Caches {@link ModuleOperations#lookupSuperMethod}

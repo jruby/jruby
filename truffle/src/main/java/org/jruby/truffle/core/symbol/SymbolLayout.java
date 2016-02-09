@@ -12,8 +12,8 @@ package org.jruby.truffle.core.symbol;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.om.dsl.api.Nullable;
 
 @org.jruby.truffle.om.dsl.api.Layout
 public interface SymbolLayout extends BasicObjectLayout {

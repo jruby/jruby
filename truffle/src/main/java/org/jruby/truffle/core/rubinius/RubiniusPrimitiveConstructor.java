@@ -10,9 +10,9 @@
 package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.ReturnID;
-import org.jruby.truffle.RubyContext;
 
 public interface RubiniusPrimitiveConstructor {
     public int getPrimitiveArity();

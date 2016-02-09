@@ -15,13 +15,12 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.*;
-import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.RubyContext;
 
 import java.math.BigInteger;
 

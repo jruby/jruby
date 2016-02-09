@@ -16,6 +16,8 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.nodes.PackGuards;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.runtime.exceptions.CantConvertException;
@@ -24,8 +26,6 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.DispatchNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 
 /**
  * Convert a value to a {@code long}.

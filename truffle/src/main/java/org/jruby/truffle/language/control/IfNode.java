@@ -10,12 +10,12 @@
 package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyNode;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 
 /**
  * Represents a Ruby {@code if} expression. Note that in this representation we always have an

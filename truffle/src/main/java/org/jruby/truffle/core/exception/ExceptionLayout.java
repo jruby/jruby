@@ -12,9 +12,9 @@ package org.jruby.truffle.core.exception;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
+import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.truffle.language.backtrace.Backtrace;
 
 @Layout
 public interface ExceptionLayout extends BasicObjectLayout {

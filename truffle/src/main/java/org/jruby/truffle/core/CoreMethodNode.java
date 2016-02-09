@@ -11,8 +11,8 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 
 @GenerateNodeFactory
 public abstract class CoreMethodNode extends RubyNode {

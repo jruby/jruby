@@ -11,15 +11,15 @@ package org.jruby.truffle.core.hash;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.core.basicobject.BasicObjectNodes;
-import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.basicobject.BasicObjectNodes;
+import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 public class LookupEntryNode extends RubyNode {
 

@@ -11,8 +11,8 @@ package org.jruby.truffle.core.format.nodes.control;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.format.nodes.PackNode;
 
 /**
  * Keep applying a child node as long as there is still source to read.

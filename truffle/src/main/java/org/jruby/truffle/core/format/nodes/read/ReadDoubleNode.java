@@ -14,11 +14,11 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.nodes.SourceNode;
 import org.jruby.truffle.core.format.nodes.type.ToDoubleNode;
 import org.jruby.truffle.core.format.nodes.type.ToDoubleNodeGen;
-import org.jruby.truffle.RubyContext;
 
 /**
  * Read a {@code double} value from the source.

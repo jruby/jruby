@@ -13,9 +13,9 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.language.objects.SingletonClassNode;
-import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.objects.SingletonClassNode;
 
 /**
  * Declaration context for methods:

@@ -24,10 +24,10 @@ import org.jcodings.util.Hash;
 import org.jruby.Ruby;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.RubyContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
