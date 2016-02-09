@@ -23,7 +23,6 @@ public interface HandleLayout extends BasicObjectLayout {
     DynamicObject createHandle(DynamicObjectFactory factory,
                                Object object);
 
-    boolean isHandle(Object object);
     boolean isHandle(DynamicObject object);
 
     Object getObject(DynamicObject object);
