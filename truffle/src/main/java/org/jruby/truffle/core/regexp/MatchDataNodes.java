@@ -373,7 +373,6 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object preMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPre(matchData));
@@ -391,7 +390,6 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object postMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPost(matchData));
@@ -420,7 +418,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
             final Rope rope = StringOperations.rope(Layouts.MATCH_DATA.getGlobal(matchData));
@@ -435,7 +432,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject regexp(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getRegexp(matchData);
@@ -466,7 +462,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject rubiniusSource(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getSource(matchData);
