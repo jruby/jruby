@@ -582,7 +582,6 @@ public class CoreLibrary {
         // Bring in core method nodes
         CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(context, node.getSingletonClassNode());
 
-        Main.printTruffleTimeMetric("before-load-truffle-nodes");
         coreMethodNodeManager.addCoreMethodNodes(ArrayNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BasicObjectNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
@@ -630,7 +629,6 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
-        Main.printTruffleTimeMetric("after-load-truffle-nodes");
 
         coreMethodNodeManager.allMethodInstalled();
 
@@ -760,7 +758,7 @@ public class CoreLibrary {
         // Load Ruby core
 
         try {
-            Main.printTruffleTimeMetric("before-load-truffle-core");
+            Main.printTruffleTimeMetric("before-load-core");
 
             state = State.LOADING_RUBY_CORE;
             try {
@@ -769,7 +767,7 @@ public class CoreLibrary {
                 throw new RuntimeException(e);
             }
 
-            Main.printTruffleTimeMetric("after-load-truffle-core");
+            Main.printTruffleTimeMetric("after-load-core");
         } catch (RaiseException e) {
             final Object rubyException = e.getRubyException();
             BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace(context, (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));

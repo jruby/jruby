@@ -20,6 +20,7 @@ JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
+METRICS_REPS = 10
 
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
@@ -142,11 +143,26 @@ module ShellUtils
   private
 
   def raw_sh(*args)
-    puts "$ #{printable_cmd(args)}"
+    if args.last == :no_print_cmd
+      args.pop
+    else
+      puts "$ #{printable_cmd(args)}"
+    end
+    continue_on_failure = false
+    if args.last == :continue_on_failure
+      args.pop
+      continue_on_failure = true
+    end
     result = system(*args)
-    unless result
-      $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
-      exit $?.exitstatus
+    if result
+      true
+    else
+      if continue_on_failure
+        false
+      else
+        $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
+        exit $?.exitstatus
+      end
     end
   end
 
@@ -245,8 +261,9 @@ module Commands
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
-    puts 'jt findbugs                                    run findbugs'
-    puts 'jt findbugs report                             run findbugs and generate an HTML report'
+    puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
+    puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
+    puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
@@ -293,7 +310,11 @@ module Commands
 
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
-    jruby_args = ['-X+T', "-Xtruffle.core.load_path=#{JRUBY_DIR}/truffle/src/main/ruby"]
+    jruby_args = [
+      '-X+T',
+      "-Xtruffle.core.load_path=#{JRUBY_DIR}/truffle/src/main/ruby",
+      '-Xtruffle.graal.warn_unless=false'
+    ]
 
     { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
@@ -536,16 +557,132 @@ module Commands
     end
     raw_sh env_vars, "ruby", *bench_args, *args
   end
-
-  def findbugs(report=nil)
-    case report
-    when 'report'
-      sh 'tool/truffle-findbugs.sh', '--report'
-      sh 'open', 'truffle-findbugs-report.html'
-    when nil
-      sh 'tool/truffle-findbugs.sh'
+  
+  def metrics(command, *args)
+    case command
+    when 'alloc'
+      metrics_alloc *args
+    when 'minheap'
+        metrics_minheap *args
+    when 'time'
+        metrics_time *args
     else
-      raise ArgumentError, report
+      raise ArgumentError, command
+    end
+  end
+  
+  def metrics_alloc(*args)
+    samples = []
+    METRICS_REPS.times do
+      print '.' if STDOUT.tty?
+      r, w = IO.pipe
+      run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w}, :no_print_cmd
+      w.close
+      samples.push memory_allocated(r.read)
+      r.close
+    end
+    puts if STDOUT.tty?
+    puts "#{human_size(samples.inject(:+)/samples.size)}, max #{human_size(samples.max)}"
+  end
+  
+  def memory_allocated(trace)
+    allocated = 0
+    trace.lines do |line|
+      case line
+      when /(\d+)K->(\d+)K/
+        before = $1.to_i * 1024
+        after = $2.to_i * 1024
+        collected = before - after
+        allocated += collected
+      when /^allocated (\d+)$/
+        allocated += $1.to_i
+      end
+    end
+    allocated
+  end
+  
+  def metrics_minheap(*args)
+    # Why aren't you doing a binary search? The results seem pretty noisy so
+    # unless you do reps at each level I'm not sure how to make it work
+    # reliably.
+    heap = 1
+    successful = 0
+    loop do
+      if successful > 0
+        print '?' if STDOUT.tty?
+      else
+        print '+' if STDOUT.tty?
+      end
+      if run("-J-Xmx#{heap}M", *args, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
+        successful += 1
+        break if successful == METRICS_REPS
+      else
+        heap += 1
+        successful = 0
+      end
+    end
+    puts if STDOUT.tty?
+    puts "#{heap} MB"
+  end
+  
+  def metrics_time(*args)
+    samples = []
+    METRICS_REPS.times do
+      print '.' if STDOUT.tty?
+      r, w = IO.pipe
+      start = Time.now
+      run '-Xtruffle.metrics.time=true', *args, {err: w, out: w}, :no_print_cmd
+      finish = Time.now
+      w.close
+      samples.push get_times(r.read, finish - start)
+      r.close
+    end
+    puts if STDOUT.tty?
+    samples[0].each_key do |region|
+      region_samples = samples.map { |s| s[region] }
+      puts "#{region} #{(region_samples.inject(:+)/samples.size).round(2)} s"
+    end
+  end
+  
+  def get_times(trace, total)
+    start_times = {}
+    times = {}
+    depth = 1
+    accounted_for = 0
+    trace.lines do |line|
+      if line =~ /^([a-z\-]+) (\d+\.\d+)$/
+        region = $1
+        time = $2.to_f
+        if region.start_with? 'before-'
+          depth += 1
+          region = (' ' * depth + region['before-'.size..-1])
+          start_times[region] = time
+        elsif region.start_with? 'after-'
+          region = (' ' * depth + region['after-'.size..-1])
+          depth -= 1
+          elapsed = time - start_times[region]
+          times[region] = elapsed
+          accounted_for += elapsed if depth == 2
+        end
+      end
+    end
+    times[' jvm'] = total - times['  main']
+    times['total'] = total
+    times['unaccounted'] = total - accounted_for
+    times
+  end
+  
+  def human_size(bytes)
+    if bytes < 1024
+      "#{bytes} B"
+    elsif bytes < 1000**2
+      "#{(bytes/1024.0).round(2)} KB"
+    elsif bytes < 1000**3
+      "#{(bytes/1024.0**2).round(2)} MB"
+    elsif bytes < 1000**4
+      "#{(bytes/1024.0**3).round(2)} GB"
+    else
+      "#{(bytes/1024.0**4).round(2)} TB"
     end
   end
 

@@ -176,6 +176,7 @@ public abstract class StringOperations {
         final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
         if (encoding == null) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().encodingCompatibilityErrorIncompatible(
                     rope(string).getEncoding().toString(),
                     rope(other).getEncoding().toString(),
@@ -213,10 +214,6 @@ public abstract class StringOperations {
     @TruffleBoundary
     public static Rope createRope(String s, Encoding encoding) {
         return RopeOperations.create(ByteList.encode(s, "ISO-8859-1"), encoding, CodeRange.CR_UNKNOWN);
-    }
-
-    public static ByteList getByteList(DynamicObject object) {
-        throw new RuntimeException("Replace with read-only call or rope update for String.");
     }
 
     public static ByteList getByteListReadOnly(DynamicObject object) {

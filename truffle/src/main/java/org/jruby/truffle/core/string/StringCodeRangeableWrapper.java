@@ -76,7 +76,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public ByteList getByteList() {
-        return StringOperations.getByteList(string);
+        throw new RuntimeException("Replace with read-only call or rope update for String.");
     }
 
 

@@ -215,8 +215,8 @@ public abstract class MatchDataNodes {
         @Specialization(guards = "isRubyString(index)")
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
-                ByteList value = StringOperations.getByteListReadOnly(index);
-                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
+                final Rope value = StringOperations.rope(index);
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             }
@@ -373,7 +373,6 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object preMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPre(matchData));
@@ -391,7 +390,6 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object postMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPost(matchData));
@@ -420,11 +418,10 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
-            return createString(bytes);
+            final Rope rope = StringOperations.rope(Layouts.MATCH_DATA.getGlobal(matchData));
+            return createString(rope);
         }
     }
 
@@ -435,7 +432,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject regexp(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getRegexp(matchData);
@@ -466,7 +462,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject rubiniusSource(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getSource(matchData);

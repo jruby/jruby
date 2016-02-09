@@ -24,7 +24,7 @@ import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
+import org.jruby.*;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
@@ -144,8 +144,7 @@ public class RubyContext extends ExecutionContext {
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
         if (!onGraal() && options.GRAAL_WARNING_UNLESS) {
-            System.err.println("WARNING: JRuby+Truffle is designed to be used with a JVM that has the Graal compiler. " +
-                    "Without the Graal compiler, performance will be drastically reduced. " +
+            System.err.println("WARNING: This JVM does not have the Graal compiler. JRuby+Truffle's performance without it will be limited. " +
                     "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
@@ -202,7 +201,12 @@ public class RubyContext extends ExecutionContext {
 
         coreLibrary = new CoreLibrary(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+
+        org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
         coreLibrary.initialize();
+        rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
+        rubiniusPrimitiveManager.addAnnotatedPrimitives();
+        org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
         featureLoader = new FeatureLoader(this);
         traceManager = new TraceManager(this);
@@ -210,9 +214,6 @@ public class RubyContext extends ExecutionContext {
 
         threadManager = new ThreadManager(this);
         threadManager.initialize();
-
-        rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
-        rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
         if (options.INSTRUMENTATION_SERVER_PORT != 0) {
             instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);

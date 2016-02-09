@@ -172,7 +172,6 @@ public abstract class RegexpNodes {
         }
     }
 
-    @TruffleBoundary
     private static DynamicObject createSubstring(RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject source, int start, int length) {
         assert RubyGuards.isRubyString(source);
 
@@ -224,8 +223,7 @@ public abstract class RegexpNodes {
                     throw new UnsupportedOperationException();
             }
 
-            // TODO (nirvdrum 25-Jan-16): We probably just want a way to create a Rope from a java.lang.String.
-            bytes = StringOperations.ropeFromByteList(ByteList.create(bytesString));
+            bytes = StringOperations.createRope(bytesString, ASCIIEncoding.INSTANCE);
         }
 
         return bytes;
@@ -418,21 +416,6 @@ public abstract class RegexpNodes {
             }
 
             return match(regexp, toStrNode.executeToStr(frame, other));
-        }
-
-    }
-
-    @CoreMethod(names = "escape", onSingleton = true, required = 1)
-    public abstract static class EscapeNode extends CoreMethodArrayArgumentsNode {
-
-        public EscapeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(pattern)")
-        public DynamicObject escape(DynamicObject pattern) {
-            return createString(StringOperations.encodeRope(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteListReadOnly(pattern)), true).toString(), UTF8Encoding.INSTANCE));
         }
 
     }

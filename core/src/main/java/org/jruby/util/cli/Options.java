@@ -273,7 +273,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_CALL_GRAPH = bool(TRUFFLE, "truffle.callgraph", false, "Maintain a call graph.");
     public static final Option<String> TRUFFLE_CALL_GRAPH_WRITE = string(TRUFFLE, "truffle.callgraph.write", "File to write the call garph to on exit.");
 
-    public static final Option<Boolean> TRUFFLE_GRAAL_WARNING_UNLESS = bool(TRUFFLE, "truffle.graal.warn_unless", false, "Warn unless the JVM has the Graal compiler.");
+    public static final Option<Boolean> TRUFFLE_GRAAL_WARNING_UNLESS = bool(TRUFFLE, "truffle.graal.warn_unless", true, "Warn unless the JVM has the Graal compiler.");
 
     public static String dump() {
         return "# JRuby configuration options with current values\n" +
