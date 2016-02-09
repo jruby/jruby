@@ -421,21 +421,6 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "escape", onSingleton = true, required = 1)
-    public abstract static class EscapeNode extends CoreMethodArrayArgumentsNode {
-
-        public EscapeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(pattern)")
-        public DynamicObject escape(DynamicObject pattern) {
-            return createString(StringOperations.encodeRope(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteListReadOnly(pattern)), true).toString(), UTF8Encoding.INSTANCE));
-        }
-
-    }
-
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
