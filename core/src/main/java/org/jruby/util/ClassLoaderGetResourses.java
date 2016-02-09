@@ -21,4 +21,14 @@ public class ClassLoaderGetResourses implements GetResources {
     public Enumeration<URL> getResources(String path) throws IOException {
         return loader.getResources(path);
     }
+
+    @Override
+    public Class<?> loadClass(final String name) throws ClassNotFoundException {
+        return this.loader.loadClass(name);
+    }
+
+    @Override
+    public ClassLoader getClassLoader() {
+        return this.loader;
+    }
 }

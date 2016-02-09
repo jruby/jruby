@@ -12,4 +12,8 @@ public interface GetResources {
     URL getResource(String path);// throws IOException;
 
     Enumeration<URL> getResources(String path) throws IOException;
+
+    Class<?> loadClass(String name) throws ClassNotFoundException;
+
+    ClassLoader getClassLoader();
 }

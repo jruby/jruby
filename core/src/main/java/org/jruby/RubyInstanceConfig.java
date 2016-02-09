@@ -700,6 +700,11 @@ public class RubyInstanceConfig {
         return extraGemPaths;
     }
 
+    private final List<GetResources> extraLoaders = new LinkedList<>();
+    public List<GetResources> getExtraLoaders() {
+        return extraLoaders;
+    }
+
     /**
      * adds a given ClassLoader to jruby. i.e. adds the root of
      * the classloader to the LOAD_PATH so embedded ruby scripts
@@ -734,6 +739,7 @@ public class RubyInstanceConfig {
         if (uri != null) extraLoadPaths.add(uri);
         uri = helper.getUriLikeGemPath();
         if (uri != null) extraGemPaths.add(uri);
+        extraLoaders.add(bundle);
     }
 
     public String[] getArgv() {
