@@ -251,6 +251,7 @@ module Commands
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
     puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby)'
+    puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
@@ -549,6 +550,8 @@ module Commands
     case command
     when 'alloc'
       metrics_alloc *args
+    when 'time'
+        metrics_time *args
     else
       raise ArgumentError, command
     end
@@ -582,6 +585,53 @@ module Commands
       end
     end
     allocated
+  end
+  
+  def metrics_time(*args)
+    samples = []
+    METRICS_REPS.times do
+      print '.' if STDOUT.tty?
+      r, w = IO.pipe
+      start = Time.now
+      run '-Xtruffle.metrics.time=true', *args, {err: w, out: w}, :no_print_cmd
+      finish = Time.now
+      w.close
+      samples.push get_times(r.read, finish - start)
+      r.close
+    end
+    puts if STDOUT.tty?
+    samples[0].each_key do |region|
+      region_samples = samples.map { |s| s[region] }
+      puts "#{region} #{(region_samples.inject(:+)/samples.size).round(2)} s"
+    end
+  end
+  
+  def get_times(trace, total)
+    start_times = {}
+    times = {}
+    depth = 1
+    accounted_for = 0
+    trace.lines do |line|
+      if line =~ /^([a-z\-]+) (\d+\.\d+)$/
+        region = $1
+        time = $2.to_f
+        if region.start_with? 'before-'
+          depth += 1
+          region = (' ' * depth + region['before-'.size..-1])
+          start_times[region] = time
+        elsif region.start_with? 'after-'
+          region = (' ' * depth + region['after-'.size..-1])
+          depth -= 1
+          elapsed = time - start_times[region]
+          times[region] = elapsed
+          accounted_for += elapsed if depth == 2
+        end
+      end
+    end
+    times[' jvm'] = total - times['  main']
+    times['total'] = total
+    times['unaccounted'] = total - accounted_for
+    times
   end
   
   def human_size(bytes)
