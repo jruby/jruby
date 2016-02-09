@@ -52,13 +52,13 @@ module Utilities
       File.executable?(location)
     end
   end
-  
+
   def self.find_graal_js
     jar = ENV['GRAAL_JS_JAR']
     return jar if jar
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
   end
-  
+
   def self.find_jruby
     if USE_JRUBY_ECLIPSE
       "#{JRUBY_DIR}/tool/jruby_eclipse"
@@ -68,7 +68,7 @@ module Utilities
       "#{JRUBY_DIR}/bin/jruby"
     end
   end
-  
+
   def self.find_jruby_dir
     File.dirname(find_jruby)
   end
@@ -430,7 +430,14 @@ module Commands
     no_gems = args.delete('--no-gems')
     env_vars = {}
     env_vars["PATH"] = "#{Utilities.find_jruby_dir}:#{ENV["PATH"]}"
-    Dir["#{JRUBY_DIR}/test/truffle/integration/*.sh"].each do |test_script|
+
+    test_names = if args.empty?
+                   '*'
+                 else
+                   '{' + args.join(',') + '}'
+                 end
+
+    Dir["#{JRUBY_DIR}/test/truffle/integration/#{test_names}.sh"].each do |test_script|
       next if no_gems && File.read(test_script).include?('gem install')
       sh env_vars, test_script
     end
@@ -558,7 +565,7 @@ module Commands
     end
     raw_sh env_vars, "ruby", *bench_args, *args
   end
-  
+
   def metrics(command, *args)
     case command
     when 'alloc'
@@ -571,7 +578,7 @@ module Commands
       raise ArgumentError, command
     end
   end
-  
+
   def metrics_alloc(*args)
     samples = []
     METRICS_REPS.times do
@@ -585,7 +592,7 @@ module Commands
     puts if STDOUT.tty?
     puts "#{human_size(samples.inject(:+)/samples.size)}, max #{human_size(samples.max)}"
   end
-  
+
   def memory_allocated(trace)
     allocated = 0
     trace.lines do |line|
@@ -601,7 +608,7 @@ module Commands
     end
     allocated
   end
-  
+
   def metrics_minheap(*args)
     # Why aren't you doing a binary search? The results seem pretty noisy so
     # unless you do reps at each level I'm not sure how to make it work
@@ -625,7 +632,7 @@ module Commands
     puts if STDOUT.tty?
     puts "#{heap} MB"
   end
-  
+
   def metrics_time(*args)
     samples = []
     METRICS_REPS.times do
@@ -644,7 +651,7 @@ module Commands
       puts "#{region} #{(region_samples.inject(:+)/samples.size).round(2)} s"
     end
   end
-  
+
   def get_times(trace, total)
     start_times = {}
     times = {}
@@ -672,7 +679,7 @@ module Commands
     times['unaccounted'] = total - accounted_for
     times
   end
-  
+
   def human_size(bytes)
     if bytes < 1024
       "#{bytes} B"
