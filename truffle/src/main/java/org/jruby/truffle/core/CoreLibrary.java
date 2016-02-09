@@ -1530,24 +1530,8 @@ public class CoreLibrary {
         return numericClass;
     }
 
-    public DynamicObject getIntegerClass() {
-        return integerClass;
-    }
-
-    public DynamicObject getEncodingConverterClass() {
-        return encodingConverterClass;
-    }
-
-    public DynamicObject getUnboundMethodClass() {
-        return unboundMethodClass;
-    }
-
     public DynamicObjectFactory getUnboundMethodFactory() {
         return unboundMethodFactory;
-    }
-
-    public DynamicObject getMethodClass() {
-        return methodClass;
     }
 
     public DynamicObjectFactory getMethodFactory() {
@@ -1558,20 +1542,12 @@ public class CoreLibrary {
         return complexClass;
     }
 
-    public DynamicObject getByteArrayClass() {
-        return byteArrayClass;
-    }
-
     public DynamicObjectFactory getByteArrayFactory() {
         return byteArrayFactory;
     }
 
     public DynamicObject getLookupTableClass() {
         return lookupTableClass;
-    }
-
-    public DynamicObject getStringDataClass() {
-        return stringDataClass;
     }
 
     public DynamicObject getTranscodingClass() {
@@ -1588,10 +1564,6 @@ public class CoreLibrary {
 
     public DynamicObject getRubiniusFFIPointerClass() {
         return rubiniusFFIPointerClass;
-    }
-
-    public DynamicObject getRubiniusMirrorClass() {
-        return rubiniusMirrorClass;
     }
 
     public DynamicObject getRubiniusUndefined() {
