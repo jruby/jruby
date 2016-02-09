@@ -1,4 +1,4 @@
-10_000.times do |n|
+5_000.times do |n|
   eval %{
     def foo#{n}(a, b, c)
       if a == b
