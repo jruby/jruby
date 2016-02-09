@@ -758,7 +758,7 @@ public class CoreLibrary {
         // Load Ruby core
 
         try {
-            Main.printTruffleTimeMetric("before-load-truffle-core");
+            Main.printTruffleTimeMetric("before-load-core");
 
             state = State.LOADING_RUBY_CORE;
             try {
@@ -767,7 +767,7 @@ public class CoreLibrary {
                 throw new RuntimeException(e);
             }
 
-            Main.printTruffleTimeMetric("after-load-truffle-core");
+            Main.printTruffleTimeMetric("after-load-core");
         } catch (RaiseException e) {
             final Object rubyException = e.getRubyException();
             BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace(context, (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
