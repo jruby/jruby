@@ -177,6 +177,7 @@ module ShellUtils
   end
 
   def shellescape(str)
+    return str unless str.is_a?(String)
     if str.include?(' ')
       if str.include?("'")
         require 'shellwords'
