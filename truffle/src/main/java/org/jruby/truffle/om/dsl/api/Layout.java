@@ -207,7 +207,7 @@ import java.lang.annotation.Target;
  * {@link Layout} annotations are processed by {@link OMProcessor}.
  */
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.SOURCE)
 public @interface Layout {
 
     String objectTypeSuperclass() default "ObjectType";
