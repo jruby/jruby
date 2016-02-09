@@ -216,10 +216,6 @@ public abstract class StringOperations {
         return RopeOperations.create(ByteList.encode(s, "ISO-8859-1"), encoding, CodeRange.CR_UNKNOWN);
     }
 
-    public static ByteList getByteList(DynamicObject object) {
-        throw new RuntimeException("Replace with read-only call or rope update for String.");
-    }
-
     public static ByteList getByteListReadOnly(DynamicObject object) {
         return Layouts.STRING.getRope(object).getUnsafeByteList();
     }
