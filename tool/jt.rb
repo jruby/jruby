@@ -630,7 +630,7 @@ module Commands
       log '>', "Trying #{heap} MB"
       heap += 10
     end
-    heap -= 10
+    heap -= 9
     heap = 1 if heap == 0
     successful = 0
     loop do
