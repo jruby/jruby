@@ -255,7 +255,7 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt bench debug [options] [vm-args] benchmark    run a single benchmark with options for compiler debugging'
+    puts 'jt bench debug [options] [vm-args] benchmark   run a single benchmark with options for compiler debugging'
     puts '    --igv                                      make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts '        --full                                 show all phases, not just up to the Truffle partial escape'
     puts '    --ruby-backtrace                           print a Ruby backtrace on any compilation failures'
