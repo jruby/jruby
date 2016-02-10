@@ -622,7 +622,7 @@ module Commands
       else
         print '+' if STDOUT.tty?
       end
-      if run("-J-Xmx#{heap}M", *args, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
+      if can_run_in_heap(heap, *args)
         successful += 1
         break if successful == METRICS_REPS
       else
@@ -633,7 +633,11 @@ module Commands
     puts if STDOUT.tty?
     puts "#{heap} MB"
   end
-
+  
+  def can_run_in_heap(heap, *command)
+    run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
+  end
+  
   def metrics_time(*args)
     samples = []
     METRICS_REPS.times do
