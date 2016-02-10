@@ -70,7 +70,7 @@ import org.jruby.truffle.language.objects.ClassNodeGen;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.platform.signal.ProcSignalHandler;
+import org.jruby.truffle.core.proc.ProcSignalHandler;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalOperations;
