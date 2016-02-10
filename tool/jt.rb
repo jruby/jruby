@@ -584,14 +584,14 @@ module Commands
   def metrics_alloc(*args)
     samples = []
     METRICS_REPS.times do
-      print '.' if STDOUT.tty?
+      log '.', 'sampling'
       r, w = IO.pipe
       run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w}, :no_print_cmd
       w.close
       samples.push memory_allocated(r.read)
       r.close
     end
-    puts if STDOUT.tty?
+    log "\n", nil
     puts "#{human_size(samples.inject(:+)/samples.size)}, max #{human_size(samples.max)}"
   end
 
@@ -617,20 +617,20 @@ module Commands
     # reliably. To slightly improve on a basic linear search, we check to see
     # if it looks like we can run in 40 MB, and if we can't then we start
     # testing there.
-    print '~' if STDOUT.tty?
+    log '~', "Trying #{HIGHER_HEAP} MB"
     if can_run_in_heap(HIGHER_HEAP, *args)
-      print '<' if STDOUT.tty?
+      log '<', "Passed, so starting at 1 MB"
       heap = 1
     else
-      print '>' if STDOUT.tty?
+      log '>', "Failed, so starting at #{HIGHER_HEAP} MB"
       heap = HIGHER_HEAP
     end
     successful = 0
     loop do
       if successful > 0
-        print '?' if STDOUT.tty?
+        log '?', "Verifying #{heap} MB"
       else
-        print '+' if STDOUT.tty?
+        log '+', "Trying #{heap} MB"
       end
       if can_run_in_heap(heap, *args)
         successful += 1
@@ -640,7 +640,7 @@ module Commands
         successful = 0
       end
     end
-    puts if STDOUT.tty?
+    log "\n", nil
     puts "#{heap} MB"
   end
   
@@ -651,7 +651,7 @@ module Commands
   def metrics_time(*args)
     samples = []
     METRICS_REPS.times do
-      print '.' if STDOUT.tty?
+      log '.', 'sampling'
       r, w = IO.pipe
       start = Time.now
       run '-Xtruffle.metrics.time=true', *args, {err: w, out: w}, :no_print_cmd
@@ -660,7 +660,7 @@ module Commands
       samples.push get_times(r.read, finish - start)
       r.close
     end
-    puts if STDOUT.tty?
+    log "\n", nil
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
       puts "#{region} #{(region_samples.inject(:+)/samples.size).round(2)} s"
@@ -706,6 +706,14 @@ module Commands
       "#{(bytes/1024.0**3).round(2)} GB"
     else
       "#{(bytes/1024.0**4).round(2)} TB"
+    end
+  end
+  
+  def log(tty_message, full_message)
+    if STDOUT.tty?
+      print(tty_message) unless tty_message.nil?
+    else
+      puts full_message unless full_message.nil?
     end
   end
 
