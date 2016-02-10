@@ -263,9 +263,10 @@ module Commands
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
-    puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
-    puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
-    puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
+    puts 'jt metrics [--score name] alloc ...            how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
+    puts '    --score name                               report results as scores'
+    puts 'jt metrics ... minheap ...                     what is the smallest heap you can use to run an application'
+    puts 'jt metrics ... time ...                        how long does it take to run a command, broken down into different phases'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
@@ -569,19 +570,26 @@ module Commands
 
   def metrics(command, *args)
     trap(:INT) { puts; exit }
+    args = args.dup
+    if args.first == '--score'
+      args.shift
+      score_name = args.shift
+    else
+      score_name = nil
+    end
     case command
     when 'alloc'
-      metrics_alloc *args
+      metrics_alloc score_name, *args
     when 'minheap'
-        metrics_minheap *args
+        metrics_minheap score_name, *args
     when 'time'
-        metrics_time *args
+        metrics_time score_name, *args
     else
       raise ArgumentError, command
     end
   end
-
-  def metrics_alloc(*args)
+  
+  def metrics_alloc(score_name, *args)
     samples = []
     METRICS_REPS.times do
       log '.', 'sampling'
@@ -592,7 +600,12 @@ module Commands
       r.close
     end
     log "\n", nil
-    puts "#{human_size(samples.inject(:+)/samples.size)}, max #{human_size(samples.max)}"
+    mean = samples.inject(:+) / samples.size
+    if score_name
+      puts "alloc-#{score_name} #{mean}"
+    else
+      puts "#{human_size(mean)}, max #{human_size(samples.max)}"
+    end
   end
 
   def memory_allocated(trace)
@@ -610,8 +623,8 @@ module Commands
     end
     allocated
   end
-
-  def metrics_minheap(*args)
+  
+  def metrics_minheap(score_name, *args)
     # Why aren't you doing a binary search? The results seem pretty noisy so
     # unless you do reps at each level I'm not sure how to make it work
     # reliably. To slightly improve on a basic linear search, we check to see
@@ -641,14 +654,18 @@ module Commands
       end
     end
     log "\n", nil
-    puts "#{heap} MB"
+    if score_name
+      puts "minheap-#{score_name} #{heap*1024*1024}"
+    else
+      puts "#{heap} MB"
+    end
   end
   
   def can_run_in_heap(heap, *command)
     run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
   end
   
-  def metrics_time(*args)
+  def metrics_time(score_name, *args)
     samples = []
     METRICS_REPS.times do
       log '.', 'sampling'
@@ -663,7 +680,12 @@ module Commands
     log "\n", nil
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
-      puts "#{region} #{(region_samples.inject(:+)/samples.size).round(2)} s"
+      mean = region_samples.inject(:+) / samples.size
+      if score_name
+        puts "time-#{region.strip}-#{score_name} #{(mean*1000).round}"
+      else
+        puts "#{region} #{mean.round(2)} s"
+      end
     end
   end
 
