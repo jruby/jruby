@@ -13,6 +13,8 @@ import org.jruby.RubySignal;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class SignalManager {
 
@@ -24,17 +26,38 @@ public class SignalManager {
             // Just ignore the signal.
         }
     };
+    private static final ConcurrentMap<sun.misc.Signal, sun.misc.SignalHandler> DEFAULT_HANDLERS = new ConcurrentHashMap<sun.misc.Signal, sun.misc.SignalHandler>();
 
     public static void watchSignal(Signal signal, SignalHandler newHandler) throws IllegalArgumentException {
-        Signal.handle(signal, newHandler);
+        handle(signal, newHandler);
     }
 
     public static void watchDefaultForSignal(Signal signal) throws IllegalArgumentException {
-        Signal.handleDefault(signal);
+        handleDefault(signal);
+    }
+
+    public static void handle(final Signal signal, final SignalHandler newHandler) throws IllegalArgumentException {
+        final sun.misc.SignalHandler oldSunHandler = sun.misc.Signal.handle(signal.getSunMiscSignal(), wrapHandler(signal, newHandler));
+        DEFAULT_HANDLERS.putIfAbsent(signal.getSunMiscSignal(), oldSunHandler);
+    }
+
+    public static void handleDefault(final Signal signal) throws IllegalArgumentException {
+        final sun.misc.SignalHandler defaultHandler = DEFAULT_HANDLERS.get(signal.getSunMiscSignal());
+        if (defaultHandler != null) { // otherwise it is already the default signal
+            sun.misc.Signal.handle(signal.getSunMiscSignal(), defaultHandler);
+        }
+    }
+
+    private static sun.misc.SignalHandler wrapHandler(final Signal signal, final SignalHandler newHandler) {
+        return new sun.misc.SignalHandler() {
+            @Override
+            public void handle(sun.misc.Signal wrappedSignal) {
+                newHandler.handle(signal);
+            }
+        };
     }
 
     public static void raise(Signal signal) throws IllegalArgumentException {
-        Signal.raise(signal);
+        sun.misc.Signal.raise(signal.getSunMiscSignal());
     }
-
 }
