@@ -21,6 +21,7 @@ JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},s
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 METRICS_REPS = 10
+HIGHER_HEAP = 40
 
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
@@ -613,8 +614,17 @@ module Commands
   def metrics_minheap(*args)
     # Why aren't you doing a binary search? The results seem pretty noisy so
     # unless you do reps at each level I'm not sure how to make it work
-    # reliably.
-    heap = 1
+    # reliably. To slightly improve on a basic linear search, we check to see
+    # if it looks like we can run in 40 MB, and if we can't then we start
+    # testing there.
+    print '~' if STDOUT.tty?
+    if can_run_in_heap(HIGHER_HEAP, *args)
+      print '<' if STDOUT.tty?
+      heap = 1
+    else
+      print '>' if STDOUT.tty?
+      heap = HIGHER_HEAP
+    end
     successful = 0
     loop do
       if successful > 0
