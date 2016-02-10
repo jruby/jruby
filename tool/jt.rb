@@ -602,7 +602,7 @@ module Commands
     log "\n", nil
     mean = samples.inject(:+) / samples.size
     if score_name
-      puts "alloc-#{score_name} #{mean}"
+      puts "alloc-#{score_name}: #{mean}"
     else
       puts "#{human_size(mean)}, max #{human_size(samples.max)}"
     end
@@ -655,7 +655,7 @@ module Commands
     end
     log "\n", nil
     if score_name
-      puts "minheap-#{score_name} #{heap*1024*1024}"
+      puts "minheap-#{score_name}: #{heap*1024*1024}"
     else
       puts "#{heap} MB"
     end
@@ -682,7 +682,7 @@ module Commands
       region_samples = samples.map { |s| s[region] }
       mean = region_samples.inject(:+) / samples.size
       if score_name
-        puts "time-#{region.strip}-#{score_name} #{(mean*1000).round}"
+        puts "time-#{region.strip}-#{score_name}: #{(mean*1000).round}"
       else
         puts "#{region} #{mean.round(2)} s"
       end
