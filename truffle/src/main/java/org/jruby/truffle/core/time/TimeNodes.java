@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.rubinius.TimePrimitiveNodes;
@@ -131,7 +132,7 @@ public abstract class TimeNodes {
 
     }
 
-    @CoreMethod(names = "add_internal!", required = 2)
+    @CoreMethod(names = "add_internal!", required = 2, visibility = Visibility.PROTECTED)
     public abstract static class AddInternalNode extends CoreMethodArrayArgumentsNode {
 
         public AddInternalNode(RubyContext context, SourceSection sourceSection) {
@@ -148,7 +149,7 @@ public abstract class TimeNodes {
         }
     }
 
-    @CoreMethod(names = "dup_internal", required = 1)
+    @CoreMethod(names = "dup_internal", required = 1, visibility = Visibility.PROTECTED)
     public static abstract class DupInternalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
