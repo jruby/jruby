@@ -29,44 +29,46 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.LoadRequiredLibrariesNode;
+import org.jruby.truffle.core.SetTopLevelBindingNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.binding.BindingNodes;
+import org.jruby.truffle.core.ffi.LibCClockGetTime;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeTable;
+import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
+import org.jruby.truffle.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.language.*;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.platform.TrufflePOSIXHandler;
-import org.jruby.truffle.platform.posix.TruffleJavaPOSIX;
-import org.jruby.truffle.tools.InstrumentationServerManager;
-import org.jruby.truffle.tools.callgraph.CallGraph;
-import org.jruby.truffle.tools.callgraph.SimpleWriter;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
-import org.jruby.truffle.instrument.RubyDefaultASTProber;
-import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.ffi.LibCClockGetTime;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.loader.FeatureLoader;
 import org.jruby.truffle.language.loader.SourceCache;
 import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
-import org.jruby.truffle.platform.darwin.CrtExterns;
-import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.platform.RubiniusConfiguration;
-import org.jruby.truffle.stdlib.sockets.NativeSockets;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
+import org.jruby.truffle.platform.RubiniusConfiguration;
+import org.jruby.truffle.platform.TrufflePOSIXHandler;
+import org.jruby.truffle.platform.darwin.CrtExterns;
+import org.jruby.truffle.platform.posix.TruffleJavaPOSIX;
+import org.jruby.truffle.stdlib.sockets.NativeSockets;
+import org.jruby.truffle.tools.InstrumentationServerManager;
+import org.jruby.truffle.tools.callgraph.CallGraph;
+import org.jruby.truffle.tools.callgraph.SimpleWriter;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
@@ -144,8 +146,7 @@ public class RubyContext extends ExecutionContext {
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
         if (!onGraal() && options.GRAAL_WARNING_UNLESS) {
-            System.err.println("WARNING: JRuby+Truffle is designed to be used with a JVM that has the Graal compiler. " +
-                    "Without the Graal compiler, performance will be drastically reduced. " +
+            System.err.println("WARNING: This JVM does not have the Graal compiler. JRuby+Truffle's performance without it will be limited. " +
                     "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
@@ -202,7 +203,12 @@ public class RubyContext extends ExecutionContext {
 
         coreLibrary = new CoreLibrary(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+
+        org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
         coreLibrary.initialize();
+        rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
+        rubiniusPrimitiveManager.addAnnotatedPrimitives();
+        org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
         featureLoader = new FeatureLoader(this);
         traceManager = new TraceManager(this);
@@ -210,9 +216,6 @@ public class RubyContext extends ExecutionContext {
 
         threadManager = new ThreadManager(this);
         threadManager.initialize();
-
-        rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
-        rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
         if (options.INSTRUMENTATION_SERVER_PORT != 0) {
             instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);

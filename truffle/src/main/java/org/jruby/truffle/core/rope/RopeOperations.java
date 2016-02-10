@@ -28,6 +28,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.jruby.truffle.core.rope.CodeRange.*;
 
@@ -36,6 +37,8 @@ public class RopeOperations {
     public static final LeafRope EMPTY_ASCII_8BIT_ROPE = create(new byte[] {}, ASCIIEncoding.INSTANCE, CR_7BIT);
     public static final LeafRope EMPTY_US_ASCII_ROPE = create(new byte [] {}, USASCIIEncoding.INSTANCE, CR_7BIT);
     public static final LeafRope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, CR_7BIT);
+
+    private static final ConcurrentHashMap<Encoding, Charset> encodingToCharsetMap = new ConcurrentHashMap<>();
 
     public static LeafRope create(byte[] bytes, Encoding encoding, CodeRange codeRange) {
         int characterLength = -1;
@@ -89,7 +92,12 @@ public class RopeOperations {
                 return RubyEncoding.decodeUTF8(value.getBytes(), begin, length);
             }
 
-            Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
+            Charset charset = encodingToCharsetMap.get(encoding);
+
+            if (charset == null) {
+                charset = runtime.getEncodingService().charsetForEncoding(encoding);
+                encodingToCharsetMap.put(encoding, charset);
+            }
 
             if (charset == null) {
                 try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,12 +14,12 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.util.Function;
 import org.jruby.util.IdUtil;
+import org.jruby.util.func.Function1;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -328,7 +328,7 @@ public abstract class ModuleOperations {
 
         final Map<String, Object> classVariables = new HashMap<>();
 
-        classVariableLookup(module, new Function<DynamicObject, Object>() {
+        classVariableLookup(module, new Function1<Object, DynamicObject>() {
             @Override
             public Object apply(DynamicObject module) {
                 classVariables.putAll(Layouts.MODULE.getFields(module).getClassVariables());
@@ -343,7 +343,7 @@ public abstract class ModuleOperations {
     public static Object lookupClassVariable(DynamicObject module, final String name) {
         assert RubyGuards.isRubyModule(module);
 
-        return classVariableLookup(module, new Function<DynamicObject, Object>() {
+        return classVariableLookup(module, new Function1<Object, DynamicObject>() {
             @Override
             public Object apply(DynamicObject module) {
                 return Layouts.MODULE.getFields(module).getClassVariables().get(name);
@@ -355,7 +355,7 @@ public abstract class ModuleOperations {
     public static void setClassVariable(final RubyContext context, DynamicObject module, final String name, final Object value, final Node currentNode) {
         assert RubyGuards.isRubyModule(module);
 
-        DynamicObject found = classVariableLookup(module, new Function<DynamicObject, DynamicObject>() {
+        DynamicObject found = classVariableLookup(module, new Function1<DynamicObject, DynamicObject>() {
             @Override
             public DynamicObject apply(DynamicObject module) {
                 if (Layouts.MODULE.getFields(module).getClassVariables().containsKey(name)) {
@@ -373,7 +373,7 @@ public abstract class ModuleOperations {
         }
     }
 
-    private static <R> R classVariableLookup(DynamicObject module, Function<DynamicObject, R> action) {
+    private static <R> R classVariableLookup(DynamicObject module, Function1<R, DynamicObject> action) {
         CompilerAsserts.neverPartOfCompilation();
 
         // Look in the current module

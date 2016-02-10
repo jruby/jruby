@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,8 +14,8 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
@@ -23,29 +23,28 @@ import org.jruby.RubyRational;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
+import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.UnreachableCodeBranch;
 import org.jruby.truffle.language.constants.ReadConstantNode;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.BigDecimalCastNodeGen;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.BigDecimalCoerceNodeGen;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
-import org.jruby.truffle.language.UnreachableCodeBranch;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.Layouts;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

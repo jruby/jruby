@@ -1,4 +1,13 @@
 /*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
+/*
  * Copyright (c) 2013, 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
@@ -30,15 +39,15 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.encoding.EncodingNodes;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 
@@ -176,6 +185,7 @@ public abstract class StringOperations {
         final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
         if (encoding == null) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().encodingCompatibilityErrorIncompatible(
                     rope(string).getEncoding().toString(),
                     rope(other).getEncoding().toString(),
@@ -213,10 +223,6 @@ public abstract class StringOperations {
     @TruffleBoundary
     public static Rope createRope(String s, Encoding encoding) {
         return RopeOperations.create(ByteList.encode(s, "ISO-8859-1"), encoding, CodeRange.CR_UNKNOWN);
-    }
-
-    public static ByteList getByteList(DynamicObject object) {
-        throw new RuntimeException("Replace with read-only call or rope update for String.");
     }
 
     public static ByteList getByteListReadOnly(DynamicObject object) {

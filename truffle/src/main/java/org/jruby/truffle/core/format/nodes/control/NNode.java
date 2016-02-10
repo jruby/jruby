@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,8 +12,8 @@ package org.jruby.truffle.core.format.nodes.control;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
-import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.format.nodes.PackNode;
 
 /**
  * Repeats a child node N times.

@@ -1510,8 +1510,9 @@ public class RubyKernel {
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+        boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
-        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+        if (!needChdir && runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             // MRI: rb_f_system
             long pid;
             int[] status = new int[1];

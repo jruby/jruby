@@ -13,13 +13,13 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
+import org.jruby.truffle.language.control.RaiseException;
 
 import java.util.Locale;
 

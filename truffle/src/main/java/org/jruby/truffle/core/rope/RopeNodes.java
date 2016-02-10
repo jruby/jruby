@@ -27,22 +27,11 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
-import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.ConcatRope;
-import org.jruby.truffle.core.rope.InvalidLeafRope;
-import org.jruby.truffle.core.rope.LeafRope;
-import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.rope.SubstringRope;
-import org.jruby.truffle.core.rope.ValidLeafRope;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.util.StringSupport;
 
-import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
-import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
-import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
+import static org.jruby.truffle.core.rope.CodeRange.*;
 
 public abstract class RopeNodes {
 
@@ -288,12 +277,12 @@ public abstract class RopeNodes {
         }
 
         private int depth(Rope left, Rope right) {
-            final int x = left.depth();
-            final int y = right.depth();
+            return max(left.depth(), right.depth()) + 1;
+        }
 
-            int maxChildDepth = x - ((x - y) & ((x - y) >> (Integer.SIZE - 1)));
-
-            return maxChildDepth + 1;
+        private int max(int x, int y) {
+            // This approach is adapted from http://graphics.stanford.edu/~seander/bithacks.html?1=1#IntegerMinOrMax
+            return x - ((x - y) & ((x - y) >> (Integer.SIZE - 1)));
         }
 
         protected static boolean isShortLeafRope(Rope rope) {

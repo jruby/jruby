@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,14 +15,14 @@ import com.oracle.truffle.api.object.DynamicObject;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.SafepointManager;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.SafepointAction;
-import org.jruby.truffle.language.SafepointManager;
+import org.jruby.util.func.Function2;
 
 import java.util.Collections;
 import java.util.Set;
@@ -236,12 +236,13 @@ public class ThreadManager {
     private void killOtherThreads() {
         while (true) {
             try {
-                context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
+                context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new Function2<Void, DynamicObject, Node>() {
                     @Override
-                    public synchronized void run(DynamicObject thread, Node currentNode) {
+                    public synchronized Void apply(DynamicObject thread, Node currentNode) {
                         if (thread != rootThread && Thread.currentThread() == Layouts.THREAD.getThread(thread)) {
                             ThreadNodes.shutdown(context, thread, currentNode);
                         }
+                        return null;
                     }
                 });
                 break; // Successfully executed the safepoint and sent the exceptions.

@@ -15,15 +15,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
-import org.jruby.truffle.language.LexicalScope;
-import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
 
 /**
  * Open a module and execute a method in it - probably to define new methods.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,21 +18,22 @@ import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.platform.Platform;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.rope.RopeNodes;
-import org.jruby.truffle.core.rope.RopeNodesFactory;
-import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
-import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
+import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 import java.nio.charset.StandardCharsets;
+
+import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {

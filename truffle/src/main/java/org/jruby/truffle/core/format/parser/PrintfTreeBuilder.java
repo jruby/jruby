@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,6 +11,7 @@ package org.jruby.truffle.core.format.parser;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.antlr.v4.runtime.Token;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.nodes.SourceNode;
 import org.jruby.truffle.core.format.nodes.control.SequenceNode;
@@ -23,7 +24,6 @@ import org.jruby.truffle.core.format.nodes.type.ToStringNodeGen;
 import org.jruby.truffle.core.format.nodes.write.WriteByteNode;
 import org.jruby.truffle.core.format.nodes.write.WriteBytesNodeGen;
 import org.jruby.truffle.core.format.nodes.write.WritePaddedBytesNodeGen;
-import org.jruby.truffle.RubyContext;
 import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
