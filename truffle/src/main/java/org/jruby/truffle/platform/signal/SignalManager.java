@@ -14,7 +14,7 @@ import org.jruby.RubySignal;
 import java.util.Collections;
 import java.util.Map;
 
-public class SignalOperations {
+public class SignalManager {
 
     public static final Map<String, Integer> SIGNALS_LIST = Collections.unmodifiableMap(RubySignal.list());
 

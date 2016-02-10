@@ -25,7 +25,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.signal.Signal;
-import org.jruby.truffle.platform.signal.SignalOperations;
+import org.jruby.truffle.platform.signal.SignalManager;
 
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {
@@ -145,7 +145,7 @@ public abstract class ProcessNodes {
         private int raise(String signalName) {
             Signal signal = new Signal(signalName);
             try {
-                SignalOperations.raise(signal);
+                SignalManager.raise(signal);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
