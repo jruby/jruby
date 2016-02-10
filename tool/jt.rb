@@ -567,6 +567,7 @@ module Commands
   end
 
   def metrics(command, *args)
+    trap(:INT) { puts; exit }
     case command
     when 'alloc'
       metrics_alloc *args
