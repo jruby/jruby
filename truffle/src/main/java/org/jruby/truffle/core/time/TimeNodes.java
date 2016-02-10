@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.time;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -128,6 +129,46 @@ public abstract class TimeNodes {
             return DateTimeZone.forOffsetMillis(offset * 1000);
         }
 
+    }
+
+    @CoreMethod(names = "add_internal!", required = 2)
+    public abstract static class AddInternalNode extends CoreMethodArrayArgumentsNode {
+
+        public AddInternalNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject addInternal(DynamicObject time, long seconds, long nanoSeconds) {
+            final DateTime dateTime = Layouts.TIME.getDateTime(time);
+            final long addMilis = ExactMath.addExact(ExactMath.multiplyExact(seconds, 1000L), (nanoSeconds / 1_000_000));
+            Layouts.TIME.setDateTime(time, dateTime.plus(addMilis));
+            Layouts.TIME.setNSec(time, (1_000_000 + Layouts.TIME.getNSec(time) + nanoSeconds % 1_000_000) % 1_000_000);
+            return time;
+        }
+    }
+
+    @CoreMethod(names = "dup_internal", required = 1)
+    public static abstract class DupInternalNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private AllocateObjectNode allocateObjectNode;
+
+        public DupInternalNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+        }
+
+        @Specialization
+        public DynamicObject dup(DynamicObject time, DynamicObject klass) {
+            return allocateObjectNode.allocate(
+                    klass,
+                    Layouts.TIME.getDateTime(time),
+                    Layouts.TIME.getNSec(time),
+                    Layouts.TIME.getZone(time),
+                    Layouts.TIME.getOffset(time),
+                    Layouts.TIME.getRelativeOffset(time),
+                    Layouts.TIME.getIsUtc(time));
+        }
     }
 
     @CoreMethod(names = "gmtime")
