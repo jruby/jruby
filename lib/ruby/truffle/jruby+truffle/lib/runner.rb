@@ -241,7 +241,7 @@ class JRubyTruffleRunner
 
     if candidates.size == 1
       gem_name, _ = candidates.first.split('.')
-      yaml_path   = File.dirname(__FILE__) + "/gem_configurations/#{gem_name}.yaml"
+      yaml_path   = File.dirname(__FILE__) + "/../gem_configurations/#{gem_name}.yaml"
     end
 
     apply_yaml_to_configuration(yaml_path)
@@ -440,7 +440,7 @@ class JRubyTruffleRunner
   end
 
   def subcommand_readme(rest)
-    readme_path = File.join File.dirname(__FILE__), 'README.md'
+    readme_path = File.join File.dirname(__FILE__), '../README.md'
     puts File.read(readme_path)
   end
 
