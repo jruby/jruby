@@ -18,7 +18,6 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 

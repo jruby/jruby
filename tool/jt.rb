@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
-# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
+# This code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
 # Eclipse Public License version 1.0
@@ -21,6 +21,7 @@ JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},s
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 METRICS_REPS = 10
+HIGHER_HEAP = 45
 
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
@@ -52,13 +53,13 @@ module Utilities
       File.executable?(location)
     end
   end
-  
+
   def self.find_graal_js
     jar = ENV['GRAAL_JS_JAR']
     return jar if jar
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
   end
-  
+
   def self.find_jruby
     if USE_JRUBY_ECLIPSE
       "#{JRUBY_DIR}/tool/jruby_eclipse"
@@ -68,7 +69,7 @@ module Utilities
       "#{JRUBY_DIR}/bin/jruby"
     end
   end
-  
+
   def self.find_jruby_dir
     File.dirname(find_jruby)
   end
@@ -177,6 +178,7 @@ module ShellUtils
   end
 
   def shellescape(str)
+    return str unless str.is_a?(String)
     if str.include?(' ')
       if str.include?("'")
         require 'shellwords'
@@ -253,7 +255,7 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt bench debug [options] [vm-args] benchmark    run a single benchmark with options for compiler debugging'
+    puts 'jt bench debug [options] [vm-args] benchmark   run a single benchmark with options for compiler debugging'
     puts '    --igv                                      make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts '        --full                                 show all phases, not just up to the Truffle partial escape'
     puts '    --ruby-backtrace                           print a Ruby backtrace on any compilation failures'
@@ -261,9 +263,10 @@ module Commands
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
-    puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
-    puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
-    puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
+    puts 'jt metrics [--score name] alloc ...            how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
+    puts '    --score name                               report results as scores'
+    puts 'jt metrics ... minheap ...                     what is the smallest heap you can use to run an application'
+    puts 'jt metrics ... time ...                        how long does it take to run a command, broken down into different phases'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
@@ -429,7 +432,14 @@ module Commands
     no_gems = args.delete('--no-gems')
     env_vars = {}
     env_vars["PATH"] = "#{Utilities.find_jruby_dir}:#{ENV["PATH"]}"
-    Dir["#{JRUBY_DIR}/test/truffle/integration/*.sh"].each do |test_script|
+
+    test_names = if args.empty?
+                   '*'
+                 else
+                   '{' + args.join(',') + '}'
+                 end
+
+    Dir["#{JRUBY_DIR}/test/truffle/integration/#{test_names}.sh"].each do |test_script|
       next if no_gems && File.read(test_script).include?('gem install')
       sh env_vars, test_script
     end
@@ -557,34 +567,47 @@ module Commands
     end
     raw_sh env_vars, "ruby", *bench_args, *args
   end
-  
+
   def metrics(command, *args)
+    trap(:INT) { puts; exit }
+    args = args.dup
+    if args.first == '--score'
+      args.shift
+      score_name = args.shift
+    else
+      score_name = nil
+    end
     case command
     when 'alloc'
-      metrics_alloc *args
+      metrics_alloc score_name, *args
     when 'minheap'
-        metrics_minheap *args
+        metrics_minheap score_name, *args
     when 'time'
-        metrics_time *args
+        metrics_time score_name, *args
     else
       raise ArgumentError, command
     end
   end
   
-  def metrics_alloc(*args)
+  def metrics_alloc(score_name, *args)
     samples = []
     METRICS_REPS.times do
-      print '.' if STDOUT.tty?
+      log '.', 'sampling'
       r, w = IO.pipe
       run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w}, :no_print_cmd
       w.close
       samples.push memory_allocated(r.read)
       r.close
     end
-    puts if STDOUT.tty?
-    puts "#{human_size(samples.inject(:+)/samples.size)}, max #{human_size(samples.max)}"
+    log "\n", nil
+    mean = samples.inject(:+) / samples.size
+    if score_name
+      puts "alloc-#{score_name}: #{mean}"
+    else
+      puts "#{human_size(mean)}, max #{human_size(samples.max)}"
+    end
   end
-  
+
   def memory_allocated(trace)
     allocated = 0
     trace.lines do |line|
@@ -601,19 +624,28 @@ module Commands
     allocated
   end
   
-  def metrics_minheap(*args)
+  def metrics_minheap(score_name, *args)
     # Why aren't you doing a binary search? The results seem pretty noisy so
     # unless you do reps at each level I'm not sure how to make it work
-    # reliably.
-    heap = 1
+    # reliably. To slightly improve on a basic linear search, we check to see
+    # if it looks like we can run in 40 MB, and if we can't then we start
+    # testing there.
+    log '~', "Trying #{HIGHER_HEAP} MB"
+    if can_run_in_heap(HIGHER_HEAP, *args)
+      log '<', "Passed, so starting at 1 MB"
+      heap = 1
+    else
+      log '>', "Failed, so starting at #{HIGHER_HEAP} MB"
+      heap = HIGHER_HEAP
+    end
     successful = 0
     loop do
       if successful > 0
-        print '?' if STDOUT.tty?
+        log '?', "Verifying #{heap} MB"
       else
-        print '+' if STDOUT.tty?
+        log '+', "Trying #{heap} MB"
       end
-      if run("-J-Xmx#{heap}M", *args, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
+      if can_run_in_heap(heap, *args)
         successful += 1
         break if successful == METRICS_REPS
       else
@@ -621,14 +653,22 @@ module Commands
         successful = 0
       end
     end
-    puts if STDOUT.tty?
-    puts "#{heap} MB"
+    log "\n", nil
+    if score_name
+      puts "minheap-#{score_name}: #{heap*1024*1024}"
+    else
+      puts "#{heap} MB"
+    end
   end
   
-  def metrics_time(*args)
+  def can_run_in_heap(heap, *command)
+    run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
+  end
+  
+  def metrics_time(score_name, *args)
     samples = []
     METRICS_REPS.times do
-      print '.' if STDOUT.tty?
+      log '.', 'sampling'
       r, w = IO.pipe
       start = Time.now
       run '-Xtruffle.metrics.time=true', *args, {err: w, out: w}, :no_print_cmd
@@ -637,13 +677,18 @@ module Commands
       samples.push get_times(r.read, finish - start)
       r.close
     end
-    puts if STDOUT.tty?
+    log "\n", nil
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
-      puts "#{region} #{(region_samples.inject(:+)/samples.size).round(2)} s"
+      mean = region_samples.inject(:+) / samples.size
+      if score_name
+        puts "time-#{region.strip}-#{score_name}: #{(mean*1000).round}"
+      else
+        puts "#{region} #{mean.round(2)} s"
+      end
     end
   end
-  
+
   def get_times(trace, total)
     start_times = {}
     times = {}
@@ -671,7 +716,7 @@ module Commands
     times['unaccounted'] = total - accounted_for
     times
   end
-  
+
   def human_size(bytes)
     if bytes < 1024
       "#{bytes} B"
@@ -683,6 +728,14 @@ module Commands
       "#{(bytes/1024.0**3).round(2)} GB"
     else
       "#{(bytes/1024.0**4).round(2)} TB"
+    end
+  end
+  
+  def log(tty_message, full_message)
+    if STDOUT.tty?
+      print(tty_message) unless tty_message.nil?
+    else
+      puts full_message unless full_message.nil?
     end
   end
 

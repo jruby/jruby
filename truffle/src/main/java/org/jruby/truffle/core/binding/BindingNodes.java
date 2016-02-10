@@ -9,9 +9,6 @@
  */
 package org.jruby.truffle.core.binding;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -23,20 +20,22 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.*;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.ThreadLocalObject;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.language.locals.WriteFrameSlotNode;
 import org.jruby.truffle.language.locals.WriteFrameSlotNodeGen;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.ThreadLocalObject;
-import org.jruby.truffle.language.control.RaiseException;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {

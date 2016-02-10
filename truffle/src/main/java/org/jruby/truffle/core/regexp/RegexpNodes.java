@@ -1,4 +1,13 @@
 /*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
+/*
  * Copyright (c) 2013, 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
@@ -27,21 +36,23 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.*;
-import org.jruby.truffle.core.rope.*;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
+import org.jruby.truffle.core.rope.*;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyCallStack;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
-import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.RubyCallStack;
-import org.jruby.truffle.RubyContext;
-import org.jruby.util.*;
+import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
+import org.jruby.util.RegexpSupport;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;

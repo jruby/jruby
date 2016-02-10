@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,21 +16,20 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.runtime.Helpers;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.time.ReadTimeZoneNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.core.time.ReadTimeZoneNode;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.util.RubyDateFormatter;
 
 import java.util.Locale;
@@ -69,30 +68,6 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_dup", needsSelf = false)
-    public static abstract class TimeSDupPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public TimeSDupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-        }
-
-        @Specialization
-        public DynamicObject timeSDup(DynamicObject other) {
-            return allocateObjectNode.allocate(
-                    Layouts.BASIC_OBJECT.getLogicalClass(other),
-                    Layouts.TIME.getDateTime(other),
-                    Layouts.TIME.getNSec(other),
-                    Layouts.TIME.getZone(other),
-                    Layouts.TIME.getOffset(other),
-                    Layouts.TIME.getRelativeOffset(other),
-                    Layouts.TIME.getIsUtc(other));
-        }
-
-    }
-
     @RubiniusPrimitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 1 })
     public static abstract class TimeSSpecificPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -106,7 +81,7 @@ public abstract class TimePrimitiveNodes {
         @Specialization(guards = { "isUTC" })
         public DynamicObject timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), time(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
+            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
@@ -120,7 +95,7 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, long offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
             return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(),
-                    localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), nanoseconds % 1_000_000, nil(), offset, false, isUTC);
+                    offsetTime(milliseconds, offset), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
         private long getMillis(long seconds, int nanoseconds) {
@@ -134,8 +109,14 @@ public abstract class TimePrimitiveNodes {
         }
 
         @TruffleBoundary
-        private DateTime time(long milliseconds) {
+        private DateTime utcTime(long milliseconds) {
             return new DateTime(milliseconds, DateTimeZone.UTC);
+        }
+
+        @TruffleBoundary
+        private DateTime offsetTime(long milliseconds, long offset) {
+
+            return new DateTime(milliseconds, DateTimeZone.forOffsetMillis((int) offset * 1000));
         }
 
         @TruffleBoundary

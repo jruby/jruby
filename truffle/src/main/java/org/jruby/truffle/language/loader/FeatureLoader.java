@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,18 +12,15 @@ package org.jruby.truffle.language.loader;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
-
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.array.ArrayUtils;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.RubyConstant;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.array.ArrayMirror;
-import org.jruby.truffle.core.array.ArrayReflector;
-import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.Layouts;
 
 import java.io.File;
 import java.io.IOException;

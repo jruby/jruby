@@ -13,9 +13,9 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.nodes.UnpackRootNode;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.RubyContext;
 
 public class UnpackCompiler {
 

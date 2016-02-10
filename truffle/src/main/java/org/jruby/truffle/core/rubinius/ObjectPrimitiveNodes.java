@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,19 +14,11 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
-import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.objects.ObjectIDOperations;
+import org.jruby.truffle.language.objects.*;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Object} class.

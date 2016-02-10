@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,10 +11,10 @@ package org.jruby.truffle.platform.signal;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.util.func.Function2;
 
 public class ProcSignalHandler implements SignalHandler {

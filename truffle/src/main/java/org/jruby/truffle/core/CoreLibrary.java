@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -30,6 +30,9 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.array.ArrayNodes;
+import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodesFactory;
 import org.jruby.truffle.core.bool.FalseClassNodesFactory;
@@ -41,6 +44,7 @@ import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.exception.ExceptionNodes;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
 import org.jruby.truffle.core.fiber.FiberNodesFactory;
+import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.klass.ClassNodesFactory;
@@ -60,6 +64,10 @@ import org.jruby.truffle.core.queue.SizedQueueNodesFactory;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
+import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
+import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
+import org.jruby.truffle.core.rubinius.PosixNodesFactory;
+import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolNodesFactory;
@@ -69,35 +77,23 @@ import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.extra.TrufflePrimitiveNodesFactory;
 import org.jruby.truffle.interop.TruffleInteropNodesFactory;
+import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.core.array.ArrayNodes;
-import org.jruby.truffle.core.array.ArrayNodesFactory;
-import org.jruby.truffle.core.hash.HashNodesFactory;
-import org.jruby.truffle.stdlib.BigDecimalNodesFactory;
-import org.jruby.truffle.stdlib.DigestNodesFactory;
-import org.jruby.truffle.stdlib.EtcNodesFactory;
-import org.jruby.truffle.stdlib.ObjSpaceNodesFactory;
-import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
-import org.jruby.truffle.stdlib.psych.PsychParserNodes;
-import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
+import org.jruby.truffle.language.backtrace.BacktraceFormatter;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.control.TruffleFatalException;
+import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
-import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
-import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
-import org.jruby.truffle.core.rubinius.PosixNodesFactory;
-import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
-import org.jruby.truffle.language.RubyCallStack;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.backtrace.BacktraceFormatter;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.TruffleFatalException;
-import org.jruby.truffle.stdlib.DigestLayoutImpl;
-import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalOperations;
+import org.jruby.truffle.stdlib.*;
+import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
+import org.jruby.truffle.stdlib.psych.PsychParserNodes;
+import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
@@ -1534,24 +1530,8 @@ public class CoreLibrary {
         return numericClass;
     }
 
-    public DynamicObject getIntegerClass() {
-        return integerClass;
-    }
-
-    public DynamicObject getEncodingConverterClass() {
-        return encodingConverterClass;
-    }
-
-    public DynamicObject getUnboundMethodClass() {
-        return unboundMethodClass;
-    }
-
     public DynamicObjectFactory getUnboundMethodFactory() {
         return unboundMethodFactory;
-    }
-
-    public DynamicObject getMethodClass() {
-        return methodClass;
     }
 
     public DynamicObjectFactory getMethodFactory() {
@@ -1562,20 +1542,12 @@ public class CoreLibrary {
         return complexClass;
     }
 
-    public DynamicObject getByteArrayClass() {
-        return byteArrayClass;
-    }
-
     public DynamicObjectFactory getByteArrayFactory() {
         return byteArrayFactory;
     }
 
     public DynamicObject getLookupTableClass() {
         return lookupTableClass;
-    }
-
-    public DynamicObject getStringDataClass() {
-        return stringDataClass;
     }
 
     public DynamicObject getTranscodingClass() {
@@ -1592,10 +1564,6 @@ public class CoreLibrary {
 
     public DynamicObject getRubiniusFFIPointerClass() {
         return rubiniusFFIPointerClass;
-    }
-
-    public DynamicObject getRubiniusMirrorClass() {
-        return rubiniusMirrorClass;
     }
 
     public DynamicObject getRubiniusUndefined() {

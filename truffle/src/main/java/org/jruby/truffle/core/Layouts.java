@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -49,6 +49,7 @@ import org.jruby.truffle.core.regexp.MatchDataLayout;
 import org.jruby.truffle.core.regexp.MatchDataLayoutImpl;
 import org.jruby.truffle.core.regexp.RegexpLayout;
 import org.jruby.truffle.core.regexp.RegexpLayoutImpl;
+import org.jruby.truffle.core.rubinius.*;
 import org.jruby.truffle.core.string.StringLayout;
 import org.jruby.truffle.core.string.StringLayoutImpl;
 import org.jruby.truffle.core.symbol.SymbolLayout;
@@ -63,7 +64,6 @@ import org.jruby.truffle.stdlib.psych.EmitterLayout;
 import org.jruby.truffle.stdlib.psych.EmitterLayoutImpl;
 import org.jruby.truffle.stdlib.psych.ParserLayout;
 import org.jruby.truffle.stdlib.psych.ParserLayoutImpl;
-import org.jruby.truffle.core.rubinius.*;
 
 public abstract class Layouts {
 
