@@ -48,6 +48,7 @@ env:
     - JT='test specs :truffle'
     - JT='test mri'
     - JT='test integration'
+    - JTR='ci --batch ../lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
 
 matrix:
   include:

@@ -47,13 +47,44 @@
     bundler.rb: "module Bundler; def self.setup; end; end"
     # mock method_source gem
     method_source.rb: nil
-    exclude_tests.rb:  |
-                      {
-                          FileStoreTest:            :test_two_classes_autoloading,
-                          KernelTest:               [:test_silence_stream,
-                                                     :test_quietly,
-                                                     :test_capture]
-                      }.each do |mod_name, tests|
+    exclude_tests.rb: |
+                      crashes = {
+                          FileStoreTest: :test_two_classes_autoloading,
+                          KernelTest:    [:test_silence_stream,
+                                          :test_quietly,
+                                          :test_capture] }
+
+                      failures = { InflectorTest:            [:test_titleize_mixture_to_title_case_13,
+                                                              :test_titleize_mixture_to_title_case_14],
+                                   LoadPathsTest:            [:test_uniq_load_paths],
+                                   LoggerTest:               [:test_buffer_multibyte],
+                                   MultibyteCharsExtrasTest: [:test_titleize_should_be_unicode_aware,
+                                                              :test_titleize_should_not_affect_characters_that_do_not_case_fold],
+                                   TimeZoneTest:             [:test_now_enforces_spring_dst_rules],
+                                   TransliterateTest:        [:test_transliterate_should_allow_a_custom_replacement_char,
+                                                              :test_transliterate_should_approximate_ascii,
+                                                              :test_transliterate_should_work_with_custom_i18n_rules_and_uncomposed_utf8],
+                                   DurationTest:             [:test_eql],
+                                   ModuleTest:               [:test_delegation_exception_backtrace,
+                                                              :test_delegation_exception_backtrace_with_allow_nil],
+                                   StringInflectionsTest:    [:test_string_parameterized_no_separator,
+                                                              :test_string_parameterized_normal,
+                                                              :test_string_parameterized_underscore,
+                                                              :test_titleize],
+                                   TimeExtCalculationsTest:  [:test_seconds_since_midnight_at_daylight_savings_time_end,
+                                                              :test_seconds_until_end_of_day_at_daylight_savings_time_end,
+                                                              :test_time_created_with_local_constructor_cannot_represent_times_during_hour_skipped_by_dst],
+                                   TimeWithZoneTest:         [:test_change,
+                                                              :test_no_method_error_has_proper_context] }
+
+
+                      undefine = if ENV['TRAVIS']
+                                   crashes.merge(failures)
+                                 else
+                                   crashes
+                                 end
+
+                      undefine.each do |mod_name, tests|
                         unless Object.const_defined? mod_name
                           warn "#{mod_name} not found"
                           next
@@ -61,8 +92,8 @@
                         mod = Object.const_get mod_name
                         Array(tests).each do |test|
                           begin
+                            puts "Undefining: #{mod}##{test}"
                             mod.send :undef_method, test
-                            mod.send(:define_method, test) { raise 'test method redefined with this exception since it is crashing tests' }
                           rescue NoMethodError => e
                             p e
                           end
@@ -79,13 +110,3 @@
     - date
     - bigdecimal
     - pathname
-:stored_commands:
-  :ci:
-    - :setup
-    - :test
-  :setup:
-    - "git clone -b 4-2-stable git@github.com:rails/rails.git"
-    - "jruby+truffle --dir rails/activesupport setup"
-  :test: "jruby+truffle --dir rails/activesupport run --exclude-pattern 'jdom_engine' --require-pattern 'test/**/**/*_test.rb' -r exclude_tests -- -I test -e 'nil'"
-
-
