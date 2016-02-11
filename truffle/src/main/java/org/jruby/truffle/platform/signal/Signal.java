@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,16 +9,5 @@
  */
 package org.jruby.truffle.platform.signal;
 
-public class Signal {
-
-    private final sun.misc.Signal sunMiscSignal;
-
-    public Signal(String name) {
-        sunMiscSignal = new sun.misc.Signal(name);
-    }
-
-    public sun.misc.Signal getSunMiscSignal() {
-        return sunMiscSignal;
-    }
-
+public interface Signal {
 }
