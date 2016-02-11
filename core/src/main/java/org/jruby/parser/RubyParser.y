@@ -1203,10 +1203,10 @@ aref_args       : none
                     $$ = $1;
                 }
                 | args ',' assocs trailer {
-                    $$ = support.arg_append($1, $3);
+                    $$ = support.arg_append($1, support.remove_duplicate_keys($3));
                 }
                 | assocs trailer {
-                    $$ = support.newArrayNode($1.getPosition(), $1);
+                    $$ = support.newArrayNode($1.getPosition(), support.remove_duplicate_keys($1));
                 }
 
 paren_args      : tLPAREN2 opt_call_args rparen {
@@ -1222,10 +1222,10 @@ opt_call_args   : none
                     $$ = $1;
                 }
                 | args ',' assocs ',' {
-                    $$ = support.arg_append($1, $3);
+                    $$ = support.arg_append($1, support.remove_duplicate_keys($3));
                 }
                 | assocs ',' {
-                    $$ = support.newArrayNode($1.getPosition(), $1);
+                    $$ = support.newArrayNode($1.getPosition(), support.remove_duplicate_keys($1));
                 }
    
 
@@ -1237,11 +1237,11 @@ call_args       : command {
                     $$ = support.arg_blk_pass($1, $2);
                 }
                 | assocs opt_block_arg {
-                    $$ = support.newArrayNode($1.getPosition(), $1);
+                    $$ = support.newArrayNode($1.getPosition(), support.remove_duplicate_keys($1));
                     $$ = support.arg_blk_pass((Node)$$, $2);
                 }
                 | args ',' assocs opt_block_arg {
-                    $$ = support.arg_append($1, $3);
+                    $$ = support.arg_append($1, support.remove_duplicate_keys($3));
                     $$ = support.arg_blk_pass((Node)$$, $4);
                 }
                 | block_arg {
@@ -2484,7 +2484,7 @@ assoc_list      : none {
                     $$ = new HashNode(lexer.getPosition());
                 }
                 | assocs trailer {
-                    $$ = $1;
+                    $$ = support.remove_duplicate_keys($1);
                 }
 
 // [!null]

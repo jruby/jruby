@@ -36,8 +36,6 @@
 package org.jruby.parser;
 
 import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
@@ -1083,6 +1081,24 @@ public class ParserSupport {
         KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, restKwargsName, slot);
         
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
+    }
+
+    public Node remove_duplicate_keys(HashNode hash) {
+        List<Node> encounteredKeys = new ArrayList();
+
+        for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
+            Node key = pair.getKey();
+            if (key == null) continue;
+            int index = encounteredKeys.indexOf(key);
+            if (index >= 0) {
+                warn(ID.AMBIGUOUS_ARGUMENT, hash.getPosition(), "key " + key +
+                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1));
+            } else {
+                encounteredKeys.add(key);
+            }
+        }
+
+        return hash;
     }
 
     public Node newAlias(ISourcePosition position, Node newNode, Node oldNode) {

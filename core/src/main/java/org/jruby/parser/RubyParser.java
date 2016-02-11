@@ -3190,13 +3190,13 @@ states[266] = new ParserState() {
 };
 states[267] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), ((HashNode)yyVals[-1+yyTop]));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
 states[268] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop]).getPosition(), ((HashNode)yyVals[-1+yyTop]));
+                    yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop]).getPosition(), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -3215,13 +3215,13 @@ states[274] = new ParserState() {
 };
 states[275] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), ((HashNode)yyVals[-1+yyTop]));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
 states[276] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop]).getPosition(), ((HashNode)yyVals[-1+yyTop]));
+                    yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop]).getPosition(), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -3239,14 +3239,14 @@ states[278] = new ParserState() {
 };
 states[279] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop]).getPosition(), ((HashNode)yyVals[-1+yyTop]));
+                    yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop]).getPosition(), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[280] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), ((HashNode)yyVals[-1+yyTop]));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
   }
@@ -5254,7 +5254,7 @@ states[608] = new ParserState() {
 };
 states[609] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = ((HashNode)yyVals[-1+yyTop]);
+                    yyVal = support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
