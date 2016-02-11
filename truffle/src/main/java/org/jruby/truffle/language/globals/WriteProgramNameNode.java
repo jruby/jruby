@@ -30,7 +30,7 @@ public abstract class WriteProgramNameNode extends RubyNode {
     @TruffleBoundary
     @Specialization(guards = "isRubyString(name)")
     protected Object writeProgramName(DynamicObject name) {
-        if (getContext().getProcessName() != null) {
+        if (getContext().getProcessName().canSet()) {
             getContext().getProcessName().set(name.toString());
         }
 

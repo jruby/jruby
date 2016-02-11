@@ -24,6 +24,11 @@ public class DarwinProcessName implements ProcessName {
     }
 
     @Override
+    public boolean canSet() {
+        return true;
+    }
+
+    @Override
     public void set(String name) {
         final Pointer programNameAddress = crtExterns._NSGetArgv().getPointer(0).getPointer(0);
         programNameAddress.putString(0, name, MAX_PROGRAM_NAME_LENGTH, StandardCharsets.UTF_8);

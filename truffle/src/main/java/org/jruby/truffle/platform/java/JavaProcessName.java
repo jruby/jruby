@@ -7,12 +7,20 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.platform;
+package org.jruby.truffle.platform.java;
 
-public interface ProcessName {
+import org.jruby.truffle.platform.ProcessName;
 
-    boolean canSet();
+public class JavaProcessName implements ProcessName {
 
-    void set(String name);
+    @Override
+    public boolean canSet() {
+        return false;
+    }
+
+    @Override
+    public void set(String name) {
+        throw new UnsupportedOperationException();
+    }
 
 }

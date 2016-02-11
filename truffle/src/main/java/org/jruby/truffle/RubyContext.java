@@ -66,6 +66,7 @@ import org.jruby.truffle.platform.RubiniusConfiguration;
 import org.jruby.truffle.platform.TrufflePOSIXHandler;
 import org.jruby.truffle.platform.darwin.CrtExterns;
 import org.jruby.truffle.platform.darwin.DarwinProcessName;
+import org.jruby.truffle.platform.java.JavaProcessName;
 import org.jruby.truffle.platform.java.TruffleJavaPOSIX;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
@@ -192,7 +193,7 @@ public class RubyContext extends ExecutionContext {
         if (Platform.getPlatform().getOS() == OS_TYPE.DARWIN) {
             processName = new DarwinProcessName();
         } else {
-            processName = null;
+            processName = new JavaProcessName();
         }
 
         if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
