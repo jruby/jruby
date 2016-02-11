@@ -476,7 +476,7 @@ public abstract class PsychEmitterNodes {
 
         Encoding encoding = PsychParserNodes.YAMLEncoding.values()[_encoding].encoding;
         // TODO CS 24-Sep-15 uses JRuby's encoding service
-        Charset charset = context.getRuntime().getEncodingService().charsetForEncoding(encoding);
+        Charset charset = context.getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
 
         Layouts.PSYCH_EMITTER.setEmitter(emitter, new Emitter(new OutputStreamWriter(
                 new OutputStreamAdapter(context, (DynamicObject) Layouts.PSYCH_EMITTER.getIo(emitter), encoding), charset),

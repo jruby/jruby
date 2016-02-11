@@ -54,10 +54,10 @@ public class FeatureLoader {
         final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, context.getCoreLibrary().getObjectClass(), "DATA");
 
         if (feature.startsWith("./")) {
-            final String cwd = context.getRuntime().getCurrentDirectory();
+            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
             feature = cwd + "/" + feature.substring(2);
         } else if (feature.startsWith("../")) {
-            final String cwd = context.getRuntime().getCurrentDirectory();
+            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
             feature = cwd.substring(0, cwd.lastIndexOf('/')) + "/" + feature.substring(3);
         }
 
@@ -183,7 +183,7 @@ public class FeatureLoader {
     }
 
     public static String expandPath(RubyContext context, String fileName) {
-        String dir = new File(fileName).isAbsolute() ? null : context.getRuntime().getCurrentDirectory();
+        String dir = new File(fileName).isAbsolute() ? null : context.getJRubyRuntime().getCurrentDirectory();
         return expandPath(fileName, dir);
     }
 

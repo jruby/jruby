@@ -220,7 +220,7 @@ public abstract class PsychParserNodes {
 
             // if not unicode, transcode to UTF8
             if (!(enc instanceof UnicodeEncoding)) {
-                byteList = EncodingUtils.strConvEnc(getContext().getRuntime().getCurrentContext(), byteList, enc, UTF8Encoding.INSTANCE);
+                byteList = EncodingUtils.strConvEnc(getContext().getJRubyRuntime().getCurrentContext(), byteList, enc, UTF8Encoding.INSTANCE);
                 enc = UTF8Encoding.INSTANCE;
             }
 
@@ -347,7 +347,7 @@ public abstract class PsychParserNodes {
 
         private Object stringFor(String value, boolean tainted) {
             // TODO CS 23-Sep-15 this is JRuby's internal encoding, not ours
-            Encoding encoding = getContext().getRuntime().getDefaultInternalEncoding();
+            Encoding encoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
 
             if (encoding == null) {
                 encoding = UTF8Encoding.INSTANCE;

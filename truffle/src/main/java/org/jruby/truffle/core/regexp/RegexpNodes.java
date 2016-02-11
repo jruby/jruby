@@ -69,7 +69,7 @@ public abstract class RegexpNodes {
 
         final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
         final Encoding enc = checkEncoding(regexp, sourceRope, true);
-        final ByteList preprocessed = RegexpSupport.preprocess(context.getRuntime(), regexpSourceRope.getUnsafeByteList(), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
+        final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), regexpSourceRope.getUnsafeByteList(), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
         final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
         final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), sourceRope.begin() + sourceRope.realSize());
@@ -263,11 +263,11 @@ public abstract class RegexpNodes {
             final ByteList byteList = bytes.getUnsafeByteList();
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
-            ByteList unescaped = RegexpSupport.preprocess(context.getRuntime(), byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            ByteList unescaped = RegexpSupport.preprocess(context.getJRubyRuntime(), byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             if (fixedEnc[0] != null) {
                 if ((fixedEnc[0] != enc && options.isFixed()) ||
                         (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
-                    RegexpSupport.raiseRegexpError19(context.getRuntime(), byteList, enc, options, "incompatible character encoding");
+                    RegexpSupport.raiseRegexpError19(context.getJRubyRuntime(), byteList, enc, options, "incompatible character encoding");
                 }
                 if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
                     options.setFixed(true);
@@ -531,7 +531,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), Layouts.REGEXP.getSource(regexp).getUnsafeByteList(), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
+            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getJRubyRuntime(), Layouts.REGEXP.getSource(regexp).getUnsafeByteList(), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
         }
 
     }

@@ -59,7 +59,7 @@ public class TrufflePOSIXHandler implements POSIXHandler {
 
     @Override
     public File getCurrentWorkingDirectory() {
-        return new File(context.getRuntime().getCurrentDirectory());
+        return new File(context.getJRubyRuntime().getCurrentDirectory());
     }
 
     @Override

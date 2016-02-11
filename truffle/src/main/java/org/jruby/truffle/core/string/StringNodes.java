@@ -774,7 +774,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         private int choppedLength(DynamicObject string) {
             assert RubyGuards.isRubyString(string);
-            return StringSupport.choppedLength19(StringOperations.getCodeRangeableReadOnly(string), getContext().getRuntime());
+            return StringSupport.choppedLength19(StringOperations.getCodeRangeableReadOnly(string), getContext().getJRubyRuntime());
         }
     }
 
@@ -818,17 +818,17 @@ public abstract class StringNodes {
             Encoding enc = StringOperations.encoding(otherStr);
 
             final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getRuntime(), table, null, true, enc);
+            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getJRubyRuntime(), table, null, true, enc);
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
 
                 assert RubyGuards.isRubyString(otherStr);
 
                 enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
-                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getRuntime(), table, tables, false, enc);
+                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getJRubyRuntime(), table, tables, false, enc);
             }
 
-            return StringSupport.countCommon19(StringOperations.getByteListReadOnly(string), getContext().getRuntime(), table, tables, enc);
+            return StringSupport.countCommon19(StringOperations.getByteListReadOnly(string), getContext().getJRubyRuntime(), table, tables, enc);
         }
     }
 
@@ -857,7 +857,7 @@ public abstract class StringNodes {
             final Rope value = StringOperations.rope(string);
             final Rope other = StringOperations.rope(salt);
 
-            final Encoding ascii8bit = getContext().getRuntime().getEncodingService().getAscii8bitEncoding();
+            final Encoding ascii8bit = getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding();
             if (other.byteLength() < 2) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
@@ -961,18 +961,18 @@ public abstract class StringNodes {
 
             boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherString),
-                    getContext().getRuntime(),
+                    getContext().getJRubyRuntime(),
                     squeeze, null, true, enc);
 
             for (int i = 1; i < otherStrings.length; i++) {
                 assert RubyGuards.isRubyString(otherStrings[i]);
 
                 enc = StringOperations.checkEncoding(getContext(), string, otherStrings[i], this);
-                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStrings[i]), getContext().getRuntime(), squeeze, tables, false, enc);
+                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStrings[i]), getContext().getJRubyRuntime(), squeeze, tables, false, enc);
             }
 
             final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(string);
-            if (StringSupport.delete_bangCommon19(buffer, getContext().getRuntime(), squeeze, tables, enc) == null) {
+            if (StringSupport.delete_bangCommon19(buffer, getContext().getJRubyRuntime(), squeeze, tables, enc) == null) {
                 return nil();
             }
 
@@ -1515,7 +1515,7 @@ public abstract class StringNodes {
             int p = s;
 
             while (p < end) {
-                int c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, p, end);
+                int c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, p, end);
                 if (!ASCIIEncoding.INSTANCE.isSpace(c)) break;
                 p += StringSupport.codeLength(enc, c);
             }
@@ -1693,7 +1693,7 @@ public abstract class StringNodes {
             int endp = end;
             int prev;
             while ((prev = prevCharHead(enc, bytes, start, endp, end)) != -1) {
-                int point = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, prev, end);
+                int point = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, prev, end);
                 if (point != 0 && !ASCIIEncoding.INSTANCE.isSpace(point)) break;
                 endp = prev;
             }
@@ -1755,7 +1755,7 @@ public abstract class StringNodes {
                     return string;
                 }
             } else {
-                if (StringSupport.multiByteSwapcase(getContext().getRuntime(), enc, bytes, s, end)) {
+                if (StringSupport.multiByteSwapcase(getContext().getJRubyRuntime(), enc, bytes, s, end)) {
                     StringOperations.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange()));
 
                     return string;
@@ -1816,7 +1816,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         private ByteList dumpCommon(DynamicObject string) {
             assert RubyGuards.isRubyString(string);
-            return StringSupport.dumpCommon(getContext().getRuntime(), StringOperations.getByteListReadOnly(string));
+            return StringSupport.dumpCommon(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly(string));
         }
     }
 
@@ -1961,7 +1961,7 @@ public abstract class StringNodes {
             Rope otherRope = StringOperations.rope(otherStr);
             Encoding enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getRuntime(), squeeze, null, true, enc);
+            StringSupport.TrTables tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getJRubyRuntime(), squeeze, null, true, enc);
 
             boolean singlebyte = rope.isSingleByteOptimizable() && otherRope.isSingleByteOptimizable();
 
@@ -1970,7 +1970,7 @@ public abstract class StringNodes {
                 otherRope = StringOperations.rope(otherStr);
                 enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
                 singlebyte = singlebyte && otherRope.isSingleByteOptimizable();
-                tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getRuntime(), squeeze, tables, false, enc);
+                tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getJRubyRuntime(), squeeze, tables, false, enc);
             }
 
             if (singleByteOptimizableProfile.profile(singlebyte)) {
@@ -1980,7 +1980,7 @@ public abstract class StringNodes {
                     StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             } else {
-                if (! StringSupport.multiByteSqueeze(getContext().getRuntime(), buffer, squeeze, tables, enc, true)) {
+                if (! StringSupport.multiByteSqueeze(getContext().getJRubyRuntime(), buffer, squeeze, tables, enc, true)) {
                     return nil();
                 } else {
                     StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
@@ -1992,7 +1992,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         private boolean squeezeCommonMultiByte(ByteList value, boolean squeeze[], StringSupport.TrTables tables, Encoding enc, boolean isArg) {
-            return StringSupport.multiByteSqueeze(getContext().getRuntime(), value, squeeze, tables, enc, isArg);
+            return StringSupport.multiByteSqueeze(getContext().getJRubyRuntime(), value, squeeze, tables, enc, isArg);
         }
 
         public static boolean zeroArgs(Object[] args) {
@@ -2018,7 +2018,7 @@ public abstract class StringNodes {
             if (rope.isEmpty()) {
                 return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.withEncoding(EMPTY_UTF8_ROPE, rope.getEncoding()), null);
             } else {
-                final ByteList succByteList = StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteListReadOnly(string));
+                final ByteList succByteList = StringSupport.succCommon(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly(string));
 
                 return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()), null);
             }
@@ -2038,7 +2038,7 @@ public abstract class StringNodes {
             final Rope rope = StringOperations.rope(string);
 
             if (! rope.isEmpty()) {
-                final ByteList succByteList = StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteListReadOnly(string));
+                final ByteList succByteList = StringSupport.succCommon(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly(string));
 
                 StringOperations.setRope(string, StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()));
             }
@@ -2625,7 +2625,7 @@ public abstract class StringNodes {
             byte[] bytes = rope.getBytesCopy();
             boolean modify = false;
 
-            int c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, s, end);
+            int c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, s, end);
             if (enc.isLower(c)) {
                 enc.codeToMbc(StringSupport.toUpper(enc, c), bytes, s);
                 modify = true;
@@ -2633,7 +2633,7 @@ public abstract class StringNodes {
 
             s += StringSupport.codeLength(enc, c);
             while (s < end) {
-                c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, s, end);
+                c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, s, end);
                 if (enc.isUpper(c)) {
                     enc.codeToMbc(StringSupport.toLower(enc, c), bytes, s);
                     modify = true;
@@ -2745,7 +2745,7 @@ public abstract class StringNodes {
             assert RubyGuards.isRubyString(toStr);
 
             final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(self);
-            final CodeRangeable ret = StringSupport.trTransHelper(context.getRuntime(), buffer, StringOperations.getCodeRangeableReadOnly(fromStr), StringOperations.getCodeRangeableReadOnly(toStr), sFlag);
+            final CodeRangeable ret = StringSupport.trTransHelper(context.getJRubyRuntime(), buffer, StringOperations.getCodeRangeableReadOnly(fromStr), StringOperations.getCodeRangeableReadOnly(toStr), sFlag);
 
             if (ret == null) {
                 return context.getCoreLibrary().getNilObject();

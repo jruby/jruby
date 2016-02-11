@@ -19,13 +19,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.CoverageTracker;
-import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
-import org.jruby.ext.ffi.Platform;
-import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.core.CoreLibrary;
@@ -57,7 +54,6 @@ import org.jruby.truffle.language.loader.SourceCache;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.truffle.platform.*;
@@ -77,7 +73,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The global state of a running Ruby system.
@@ -86,7 +81,7 @@ public class RubyContext extends ExecutionContext {
 
     private static volatile RubyContext latestInstance;
 
-    private final Ruby runtime;
+    private final Ruby jrubyRuntime;
 
     private final Options options;
 
@@ -118,7 +113,7 @@ public class RubyContext extends ExecutionContext {
 
     private org.jruby.ast.RootNode initialJRubyRootNode;
 
-    public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
+    public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
         options = new Options();
 
         if (options.CALL_GRAPH) {
@@ -129,7 +124,7 @@ public class RubyContext extends ExecutionContext {
 
         latestInstance = this;
 
-        assert runtime != null;
+        assert jrubyRuntime != null;
         this.env = env;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
@@ -163,7 +158,7 @@ public class RubyContext extends ExecutionContext {
 
         safepointManager = new SafepointManager(this);
 
-        this.runtime = runtime;
+        this.jrubyRuntime = jrubyRuntime;
 
         warnings = new Warnings(this);
 
@@ -198,7 +193,7 @@ public class RubyContext extends ExecutionContext {
         attachmentsManager = new AttachmentsManager(this);
         sourceCache = new SourceCache(new SourceLoader(this));
 
-        final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
+        final PrintStream configStandardOut = jrubyRuntime.getInstanceConfig().getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
         initialize();
@@ -266,7 +261,7 @@ public class RubyContext extends ExecutionContext {
 
         // Set program arguments
 
-        for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
+        for (IRubyObject arg : ((org.jruby.RubyArray) jrubyRuntime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
             ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeRope(arg.toString(), UTF8Encoding.INSTANCE)));
@@ -277,7 +272,7 @@ public class RubyContext extends ExecutionContext {
         DynamicObject receiver = coreLibrary.getGlobalVariablesObject();
         final DynamicObject loadPath = (DynamicObject) receiver.get("$:", coreLibrary.getNilObject());
 
-        for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
+        for (IRubyObject path : ((org.jruby.RubyArray) jrubyRuntime.getLoadService().getLoadPath()).toJavaArray()) {
             String pathString = path.toString();
 
             if (!(pathString.endsWith("lib/ruby/2.2/site_ruby")
@@ -294,7 +289,7 @@ public class RubyContext extends ExecutionContext {
 
         // Load our own stdlib path
 
-        String home = runtime.getInstanceConfig().getJRubyHome();
+        String home = jrubyRuntime.getInstanceConfig().getJRubyHome();
 
         if (home.startsWith("uri:classloader:")) {
             home = home.substring("uri:classloader:".length());
@@ -434,13 +429,13 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     public IRubyObject toJRuby(Object object) {
         if (object == getCoreLibrary().getNilObject()) {
-            return runtime.getNil();
+            return jrubyRuntime.getNil();
         } else if (object instanceof Boolean) {
-            return runtime.newBoolean((boolean) object);
+            return jrubyRuntime.newBoolean((boolean) object);
         } else if (RubyGuards.isRubyString(object)) {
             return toJRubyString((DynamicObject) object);
         } else if (RubyGuards.isRubyEncoding(object)) {
-            return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(Layouts.ENCODING.getName((DynamicObject) object)));
+            return jrubyRuntime.getEncodingService().rubyEncodingFromObject(jrubyRuntime.newString(Layouts.ENCODING.getName((DynamicObject) object)));
         } else {
             throw new UnsupportedOperationException();
         }
@@ -449,7 +444,7 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     public org.jruby.RubyString toJRubyString(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return runtime.newString(StringOperations.rope(string).toByteListCopy());
+        return jrubyRuntime.newString(StringOperations.rope(string).toByteListCopy());
     }
 
     @TruffleBoundary
@@ -486,8 +481,8 @@ public class RubyContext extends ExecutionContext {
         throw new UnsupportedOperationException();
     }
 
-    public Ruby getRuntime() {
-        return runtime;
+    public Ruby getJRubyRuntime() {
+        return jrubyRuntime;
     }
 
     public CoreLibrary getCoreLibrary() {
@@ -571,7 +566,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public Object execute(final org.jruby.ast.RootNode rootNode) {
-        coreLibrary.getGlobalVariablesObject().define("$0", toTruffle(runtime.getGlobalVariables().get("$0")), 0);
+        coreLibrary.getGlobalVariablesObject().define("$0", toTruffle(jrubyRuntime.getGlobalVariables().get("$0")), 0);
 
         String inputFile = rootNode.getPosition().getFile();
         final Source source;

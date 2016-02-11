@@ -32,7 +32,7 @@ public class Warnings {
         CompilerDirectives.transferToInterpreter();
 
         final SourceSection sourceSection = RubyCallStack.getTopMostUserCallNode().getEncapsulatingSourceSection();
-        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourceSection.getSource().getName(), sourceSection.getStartLine(), message);
+        context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourceSection.getSource().getName(), sourceSection.getStartLine(), message);
     }
 
 }

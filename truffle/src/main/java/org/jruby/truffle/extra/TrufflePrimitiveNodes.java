@@ -515,7 +515,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return createString(StringOperations.encodeRope(getContext().getRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(getContext().getJRubyRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
         }
 
     }

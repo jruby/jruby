@@ -215,7 +215,7 @@ public abstract class StringPrimitiveNodes {
                     c = bytes[p++] & 0xff;
                 } else {
                     try {
-                        c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, p, end);
+                        c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, p, end);
                     } catch (org.jruby.exceptions.RaiseException ex) {
                         throw new RaiseException(getContext().toTruffle(ex.getException(), this));
                     }
@@ -1395,7 +1395,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization
         public Object stringToInum(DynamicObject string, int fixBase, boolean strict) {
             try {
-                final org.jruby.RubyInteger result = ConvertBytes.byteListToInum19(getContext().getRuntime(),
+                final org.jruby.RubyInteger result = ConvertBytes.byteListToInum19(getContext().getJRubyRuntime(),
                         StringOperations.getByteListReadOnly(string),
                         fixBase,
                         strict);

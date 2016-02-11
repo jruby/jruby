@@ -52,9 +52,9 @@ public class TranslatorDriver {
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
-        final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
+        final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getJRubyRuntime());
 
-        final StaticScope staticScope = context.getRuntime().getStaticScopeFactory().newLocalScope(null);
+        final StaticScope staticScope = context.getJRubyRuntime().getStaticScopeFactory().newLocalScope(null);
 
         /*
          * Note that jruby-parser will be mistaken about how deep the existing variables are,
@@ -88,7 +88,7 @@ public class TranslatorDriver {
 
         boolean isInlineSource = parserContext == ParserContext.SHELL;
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.INLINE || parserContext == ParserContext.MODULE;
-        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getRuntime(), 0, isInlineSource, !isEvalParse, false);
+        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getJRubyRuntime(), 0, isInlineSource, !isEvalParse, false);
         parserConfiguration.setDefaultEncoding(defaultEncoding);
 
         // Parse to the JRuby AST

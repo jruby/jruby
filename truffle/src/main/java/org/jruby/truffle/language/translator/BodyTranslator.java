@@ -2033,7 +2033,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhsTranslated;
 
         if (rhs == null) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
+            context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
             rhsTranslated = nilNode(sourceSection);
         } else {
             rhsTranslated = rhs.accept(this);
@@ -2333,7 +2333,7 @@ public class BodyTranslator extends Translator {
 
             result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
         } else {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
+            context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
             result = nilNode(sourceSection);
         }
 
@@ -3002,7 +3002,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode unimplemented(org.jruby.ast.Node node) {
-        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " does nothing - translating as nil");
+        context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " does nothing - translating as nil");
         SourceSection sourceSection = translate(node.getPosition());
         return nilNode(sourceSection);
     }

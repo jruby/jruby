@@ -51,7 +51,7 @@ public abstract class EncodingConverterNodes {
         public DynamicObject initialize(DynamicObject self, Object source, Object destination, Object unusedOptions) {
             // Adapted from RubyConverter - see attribution there
 
-            Ruby runtime = getContext().getRuntime();
+            Ruby runtime = getContext().getJRubyRuntime();
             Encoding[] encs = {null, null};
             byte[][] encNames = {null, null};
             int[] ecflags = {0};

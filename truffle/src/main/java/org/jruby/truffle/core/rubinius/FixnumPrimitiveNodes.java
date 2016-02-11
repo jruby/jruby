@@ -152,7 +152,7 @@ public abstract class FixnumPrimitiveNodes {
                 return null; // Primitive failure
             }
 
-            getContext().getRuntime().getWarnings().warn("in a**b, b may be too big");
+            getContext().getJRubyRuntime().getWarnings().warn("in a**b, b may be too big");
             // b >= 2**63 && (a > 1 || a < -1) => larger than largest double
             // MRI behavior/bug: always positive Infinity even if a negative and b odd (likely due to libc pow(a, +inf)).
             return Double.POSITIVE_INFINITY;
