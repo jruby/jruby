@@ -7,9 +7,12 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.platform.signal;
+package org.jruby.truffle.platform.sunmisc;
 
 import org.jruby.RubySignal;
+import org.jruby.truffle.platform.signal.Signal;
+import org.jruby.truffle.platform.signal.SignalHandler;
+import org.jruby.truffle.platform.signal.SignalManager;
 
 import java.util.Collections;
 import java.util.Map;

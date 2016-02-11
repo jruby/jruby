@@ -66,7 +66,7 @@ import org.jruby.truffle.platform.TrufflePOSIXHandler;
 import org.jruby.truffle.platform.darwin.CrtExterns;
 import org.jruby.truffle.platform.posix.TruffleJavaPOSIX;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.platform.signal.SunMiscSignalManager;
+import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 import org.jruby.truffle.stdlib.sockets.NativeSockets;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
