@@ -196,7 +196,70 @@ public class RubyContext extends ExecutionContext {
         final PrintStream configStandardOut = jrubyRuntime.getInstanceConfig().getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
-        initialize();
+        // Give the core library manager a chance to tweak some of those methods
+
+        coreLibrary.initializeAfterMethodsAdded();
+
+        // Set program arguments
+
+        for (IRubyObject arg : ((org.jruby.RubyArray) this.jrubyRuntime.getObject().getConstant("ARGV")).toJavaArray()) {
+            assert arg != null;
+
+            ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeRope(arg.toString(), UTF8Encoding.INSTANCE)));
+        }
+
+        // Set the load path
+
+        DynamicObject receiver = coreLibrary.getGlobalVariablesObject();
+        final DynamicObject loadPath = (DynamicObject) receiver.get("$:", coreLibrary.getNilObject());
+
+        for (IRubyObject path : ((org.jruby.RubyArray) this.jrubyRuntime.getLoadService().getLoadPath()).toJavaArray()) {
+            String pathString = path.toString();
+
+            if (!(pathString.endsWith("lib/ruby/2.2/site_ruby")
+                    || pathString.endsWith("lib/ruby/shared")
+                    || pathString.endsWith("lib/ruby/stdlib"))) {
+
+                if (pathString.startsWith("uri:classloader:")) {
+                    pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
+                }
+
+                ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(pathString, UTF8Encoding.INSTANCE)));
+            }
+        }
+
+        // Load our own stdlib path
+
+        String home = this.jrubyRuntime.getInstanceConfig().getJRubyHome();
+
+        if (home.startsWith("uri:classloader:")) {
+            home = home.substring("uri:classloader:".length());
+
+            while (home.startsWith("/")) {
+                home = home.substring(1);
+            }
+
+            home = SourceLoader.JRUBY_SCHEME + "/" + home;
+        }
+
+        home = home + "/";
+
+        // Libraries copied unmodified from MRI
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE)));
+
+        // Our own implementations
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE)));
+
+        // Libraries from RubySL
+        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
+                "rubysl-complex", "rubysl-date", "rubysl-pathname",
+                "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
+                "rubysl-timeout", "rubysl-webrick")) {
+            ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE)));
+        }
+
+        // Shims
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
     }
 
     public boolean onGraal() {
@@ -252,73 +315,6 @@ public class RubyContext extends ExecutionContext {
         }
 
         return evalFrame;
-    }
-
-    private void initialize() {
-        // Give the core library manager a chance to tweak some of those methods
-
-        coreLibrary.initializeAfterMethodsAdded();
-
-        // Set program arguments
-
-        for (IRubyObject arg : ((org.jruby.RubyArray) jrubyRuntime.getObject().getConstant("ARGV")).toJavaArray()) {
-            assert arg != null;
-
-            ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeRope(arg.toString(), UTF8Encoding.INSTANCE)));
-        }
-
-        // Set the load path
-
-        DynamicObject receiver = coreLibrary.getGlobalVariablesObject();
-        final DynamicObject loadPath = (DynamicObject) receiver.get("$:", coreLibrary.getNilObject());
-
-        for (IRubyObject path : ((org.jruby.RubyArray) jrubyRuntime.getLoadService().getLoadPath()).toJavaArray()) {
-            String pathString = path.toString();
-
-            if (!(pathString.endsWith("lib/ruby/2.2/site_ruby")
-                    || pathString.endsWith("lib/ruby/shared")
-                    || pathString.endsWith("lib/ruby/stdlib"))) {
-
-                if (pathString.startsWith("uri:classloader:")) {
-                    pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
-                }
-
-                ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(pathString, UTF8Encoding.INSTANCE)));
-            }
-        }
-
-        // Load our own stdlib path
-
-        String home = jrubyRuntime.getInstanceConfig().getJRubyHome();
-
-        if (home.startsWith("uri:classloader:")) {
-            home = home.substring("uri:classloader:".length());
-
-            while (home.startsWith("/")) {
-                home = home.substring(1);
-            }
-
-            home = SourceLoader.JRUBY_SCHEME + "/" + home;
-        }
-
-        home = home + "/";
-
-        // Libraries copied unmodified from MRI
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE)));
-
-        // Our own implementations
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE)));
-
-        // Libraries from RubySL
-        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
-                "rubysl-complex", "rubysl-date", "rubysl-pathname",
-                "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
-                "rubysl-timeout", "rubysl-webrick")) {
-            ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE)));
-        }
-
-        // Shims
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
     }
 
     // TODO (eregon, 10/10/2015): this check could be done when a Symbol is created to be much cheaper
