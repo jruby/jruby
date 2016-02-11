@@ -324,6 +324,10 @@ public enum Operation {
     }
 
     public static Operation fromOrdinal(int value) {
-        return value < 0 || value >= values().length ? null : values()[value];
+        if (value < 0 || value >= values().length) {
+            throw new RuntimeException("invalid ordinal: " + value);
+        } else {
+            return values()[value];
+        }
     }
 }
