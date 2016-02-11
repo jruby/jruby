@@ -467,7 +467,7 @@ public abstract class PosixNodes {
             final int result = posix().chdir(pathString);
 
             if (result == 0) {
-                getContext().getRuntime().setCurrentDirectory(pathString);
+                getContext().getJRubyRuntime().setCurrentDirectory(pathString);
             }
 
             return result;
@@ -712,7 +712,7 @@ public abstract class PosixNodes {
         public DynamicObject getcwd(DynamicObject resultPath, int maxSize) {
             // We just ignore maxSize - I think this is ok
 
-            final String path = getContext().getRuntime().getCurrentDirectory();
+            final String path = getContext().getJRubyRuntime().getCurrentDirectory();
             StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), CodeRange.CR_UNKNOWN));
             return resultPath;
         }

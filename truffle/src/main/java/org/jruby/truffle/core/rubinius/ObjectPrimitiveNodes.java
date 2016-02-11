@@ -81,7 +81,7 @@ public abstract class ObjectPrimitiveNodes {
             final long id = (long) readObjectIdNode.execute(object);
 
             if (id == 0) {
-                final long newId = getContext().getNextObjectID();
+                final long newId = getContext().getObjectSpaceManager().getNextObjectID();
                 writeObjectIdNode.execute(object, newId);
                 return newId;
             }

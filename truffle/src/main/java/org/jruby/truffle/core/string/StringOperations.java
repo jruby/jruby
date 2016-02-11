@@ -72,7 +72,7 @@ public abstract class StringOperations {
     // Since ByteList.toString does not decode properly
     @CompilerDirectives.TruffleBoundary
     public static String getString(RubyContext context, DynamicObject string) {
-        return RopeOperations.decodeRope(context.getRuntime(), StringOperations.rope(string));
+        return RopeOperations.decodeRope(context.getJRubyRuntime(), StringOperations.rope(string));
     }
 
     public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
@@ -156,7 +156,7 @@ public abstract class StringOperations {
         // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
         if (encoding == null) {
             CompilerDirectives.transferToInterpreter();
-            throw Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime().newEncodingCompatibilityError(
+            throw Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getJRubyRuntime().newEncodingCompatibilityError(
                     String.format("incompatible character encodings: %s and %s",
                             Layouts.STRING.getRope(string).getEncoding().toString(),
                             other.getByteList().getEncoding().toString()));

@@ -45,10 +45,10 @@ public class InterpolatedRegexpNode extends RubyNode {
 
         for (int n = 0; n < children.length; n++) {
             final Object child = children[n].execute(frame);
-            strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), StringOperations.getByteListReadOnly((DynamicObject) toS.call(frame, child, "to_s", null)));
+            strings[n] = org.jruby.RubyString.newString(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly((DynamicObject) toS.call(frame, child, "to_s", null)));
         }
 
-        final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);
+        final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getJRubyRuntime(), strings, options);
 
         final DynamicObject regexp = RegexpNodes.createRubyRegexp(getContext(), this, getContext().getCoreLibrary().getRegexpClass(), StringOperations.ropeFromByteList(preprocessed.getByteList()), options);
 
@@ -56,9 +56,9 @@ public class InterpolatedRegexpNode extends RubyNode {
             final Rope source = Layouts.REGEXP.getSource(regexp);
 
             if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
-                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncoding(source, getContext().getRuntime().getEncodingService().getAscii8bitEncoding()));
+                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncoding(source, getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding()));
             } else {
-                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncoding(source, getContext().getRuntime().getEncodingService().getUSAsciiEncoding()));
+                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncoding(source, getContext().getJRubyRuntime().getEncodingService().getUSAsciiEncoding()));
             }
         }
 

@@ -40,7 +40,7 @@ public class SourceLoader {
     }
 
     private Source loadInlineScript() {
-        return Source.fromText(new String(context.getRuntime().getInstanceConfig().inlineScript(),
+        return Source.fromText(new String(context.getJRubyRuntime().getInstanceConfig().inlineScript(),
                 StandardCharsets.UTF_8), "-e");
     }
 

@@ -10,6 +10,8 @@
 package org.jruby.truffle.platform;
 
 import jnr.posix.POSIX;
+import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
+import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.signal.SignalManager;
 
 public interface NativePlatform {
@@ -25,5 +27,9 @@ public interface NativePlatform {
     ClockGetTime getClockGetTime();
 
     RubiniusConfiguration getRubiniusConfiguration();
+
+    <T> ArrayBlockingQueueLocksConditions<T> createArrayBlockingQueueLocksConditions(int capacity);
+
+    <T> LinkedBlockingQueueLocksConditions<T> createLinkedBlockingQueueLocksConditions();
 
 }

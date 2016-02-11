@@ -641,11 +641,11 @@ public class CoreLibrary {
         globals.define("$\"", globals.get("$LOADED_FEATURES", nilObject), 0);
         globals.define("$,", nilObject, 0);
         globals.define("$*", argv, 0);
-        globals.define("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)), 0);
+        globals.define("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)), 0);
 
-        globals.define("$DEBUG", context.getRuntime().isDebug(), 0);
+        globals.define("$DEBUG", context.getJRubyRuntime().isDebug(), 0);
 
-        Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
+        Object value = context.getJRubyRuntime().warningsEnabled() ? context.getJRubyRuntime().isVerbose() : nilObject;
         globals.define("$VERBOSE", value, 0);
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
@@ -797,7 +797,7 @@ public class CoreLibrary {
     }
 
     public void initializeEncodingConstants() {
-        getContext().getRuntime().getEncodingService().defineEncodings(new EncodingService.EncodingDefinitionVisitor() {
+        getContext().getJRubyRuntime().getEncodingService().defineEncodings(new EncodingService.EncodingDefinitionVisitor() {
             @Override
             public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
                 DynamicObject re = EncodingNodes.newEncoding(encodingClass, null, name, p, end, encodingEntry.isDummy());
@@ -810,7 +810,7 @@ public class CoreLibrary {
             }
         });
 
-        getContext().getRuntime().getEncodingService().defineAliases(new EncodingService.EncodingAliasVisitor() {
+        getContext().getJRubyRuntime().getEncodingService().defineAliases(new EncodingService.EncodingAliasVisitor() {
             @Override
             public void defineAlias(int encodingListIndex, String constName) {
                 DynamicObject re = EncodingNodes.getEncoding(encodingListIndex);

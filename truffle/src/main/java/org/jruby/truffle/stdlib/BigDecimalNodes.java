@@ -2128,11 +2128,11 @@ public abstract class BigDecimalNodes {
                 final IRubyObject numeratorValue;
 
                 if (numerator instanceof Integer) {
-                    numeratorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (int) numerator);
+                    numeratorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (int) numerator);
                 } else if (numerator instanceof Long) {
-                    numeratorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (long) numerator);
+                    numeratorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (long) numerator);
                 } else if (RubyGuards.isRubyBignum(numerator)) {
-                    numeratorValue = RubyBignum.newBignum(getContext().getRuntime(), Layouts.BIGNUM.getValue((DynamicObject) numerator));
+                    numeratorValue = RubyBignum.newBignum(getContext().getJRubyRuntime(), Layouts.BIGNUM.getValue((DynamicObject) numerator));
                 } else {
                     throw new UnsupportedOperationException(numerator.toString());
                 }
@@ -2145,21 +2145,21 @@ public abstract class BigDecimalNodes {
                 final IRubyObject denominatorValue;
 
                 if (denominator instanceof Integer) {
-                    denominatorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (int) denominator);
+                    denominatorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (int) denominator);
                 } else if (denominator instanceof Long) {
-                    denominatorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (long) denominator);
+                    denominatorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (long) denominator);
                 } else if (RubyGuards.isRubyBignum(denominator)) {
-                    denominatorValue = RubyBignum.newBignum(getContext().getRuntime(), Layouts.BIGNUM.getValue((DynamicObject) denominator));
+                    denominatorValue = RubyBignum.newBignum(getContext().getJRubyRuntime(), Layouts.BIGNUM.getValue((DynamicObject) denominator));
                 } else {
                     throw new UnsupportedOperationException(denominator.toString());
                 }
 
-                final RubyRational rubyRationalValue = RubyRational.newRationalRaw(getContext().getRuntime(), numeratorValue, denominatorValue);
+                final RubyRational rubyRationalValue = RubyRational.newRationalRaw(getContext().getJRubyRuntime(), numeratorValue, denominatorValue);
 
                 final RubyBigDecimal rubyBigDecimalValue;
 
                 try {
-                    rubyBigDecimalValue = RubyBigDecimal.getVpRubyObjectWithPrec19Inner(getContext().getRuntime().getCurrentContext(), rubyRationalValue, (RoundingMode) roundingMode);
+                    rubyBigDecimalValue = RubyBigDecimal.getVpRubyObjectWithPrec19Inner(getContext().getJRubyRuntime().getCurrentContext(), rubyRationalValue, (RoundingMode) roundingMode);
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw e;

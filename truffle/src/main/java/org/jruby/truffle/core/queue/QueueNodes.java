@@ -27,11 +27,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-import java.lang.invoke.MethodHandle;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Queue")
@@ -49,7 +46,7 @@ public abstract class QueueNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateNode.allocate(rubyClass, new LinkedBlockingQueue<Object>());
+            return allocateNode.allocate(rubyClass, getContext().getNativePlatform().createLinkedBlockingQueueLocksConditions());
         }
 
     }
@@ -248,27 +245,15 @@ public abstract class QueueNodes {
     @CoreMethod(names = "num_waiting")
     public abstract static class NumWaitingNode extends CoreMethodArrayArgumentsNode {
 
-        private static final MethodHandle TAKE_LOCK_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "takeLock");
-        private static final MethodHandle NOT_EMPTY_CONDITION_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "notEmpty");
-
         public NumWaitingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
         public int num_waiting(DynamicObject self) {
-            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
+            final LinkedBlockingQueueLocksConditions<Object> queue = Layouts.QUEUE.getQueue(self);
 
-            final LinkedBlockingQueue<Object> linkedBlockingQueue = (LinkedBlockingQueue<Object>) queue;
-
-            final ReentrantLock lock;
-            final Condition notEmptyCondition;
-            try {
-                lock = (ReentrantLock) TAKE_LOCK_FIELD_GETTER.invokeExact(linkedBlockingQueue);
-                notEmptyCondition = (Condition) NOT_EMPTY_CONDITION_FIELD_GETTER.invokeExact(linkedBlockingQueue);
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
-            }
+            final ReentrantLock lock = queue.getLock();
 
             getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
                 @Override
@@ -278,7 +263,7 @@ public abstract class QueueNodes {
                 }
             });
             try {
-                return lock.getWaitQueueLength(notEmptyCondition);
+                return lock.getWaitQueueLength(queue.getNotEmptyCondition());
             } finally {
                 lock.unlock();
             }

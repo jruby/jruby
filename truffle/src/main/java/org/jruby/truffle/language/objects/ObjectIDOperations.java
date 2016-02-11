@@ -118,7 +118,7 @@ public abstract class ObjectIDOperations {
             return (long) property.get(object, false);
         }
 
-        final long objectID = context.getNextObjectID();
+        final long objectID = context.getObjectSpaceManager().getNextObjectID();
         object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
         return objectID;
     }

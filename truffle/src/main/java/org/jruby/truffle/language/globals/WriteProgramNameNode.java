@@ -14,11 +14,8 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import jnr.ffi.Pointer;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-
-import java.nio.charset.StandardCharsets;
 
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class WriteProgramNameNode extends RubyNode {
@@ -30,8 +27,8 @@ public abstract class WriteProgramNameNode extends RubyNode {
     @TruffleBoundary
     @Specialization(guards = "isRubyString(name)")
     protected Object writeProgramName(DynamicObject name) {
-        if (getContext().getProcessName().canSet()) {
-            getContext().getProcessName().set(name.toString());
+        if (getContext().getNativePlatform().getProcessName().canSet()) {
+            getContext().getNativePlatform().getProcessName().set(name.toString());
         }
 
         return name;
