@@ -19,13 +19,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.DefaultValueNodeGen;
-import org.jruby.truffle.core.ffi.LibCClockGetTime;
+import org.jruby.truffle.platform.ClockGetTime;
 import org.jruby.truffle.core.ffi.TimeSpec;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.signal.Signal;
-import org.jruby.truffle.platform.signal.SignalManager;
 
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {
@@ -82,7 +81,7 @@ public abstract class ProcessNodes {
 
         @TruffleBoundary
         private Object clock_gettime_clock_id(int clock_id, DynamicObject unit) {
-            final LibCClockGetTime libCClockGetTime = getContext().getLibCClockGetTime();
+            final ClockGetTime libCClockGetTime = getContext().getLibCClockGetTime();
             TimeSpec timeSpec = new TimeSpec(jnr.ffi.Runtime.getRuntime(libCClockGetTime));
             int r = libCClockGetTime.clock_gettime(clock_id, timeSpec);
             if (r != 0) {

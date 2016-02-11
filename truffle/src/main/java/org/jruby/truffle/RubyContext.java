@@ -34,7 +34,7 @@ import org.jruby.truffle.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.core.SetTopLevelBindingNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.binding.BindingNodes;
-import org.jruby.truffle.core.ffi.LibCClockGetTime;
+import org.jruby.truffle.platform.ClockGetTime;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
@@ -91,7 +91,6 @@ public class RubyContext extends ExecutionContext {
     private final Options options;
 
     private final NativePlatform nativePlatform;
-    private final LibCClockGetTime libCClockGetTime;
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -172,13 +171,6 @@ public class RubyContext extends ExecutionContext {
         this.runtime = runtime;
 
         nativePlatform = NativePlatformFactory.createPlatform(this);
-
-        if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
-            libCClockGetTime = LibraryLoader.create(LibCClockGetTime.class).library("c").load();
-        } else {
-            libCClockGetTime = null;
-        }
-
 
         warnings = new Warnings(this);
 
@@ -598,8 +590,8 @@ public class RubyContext extends ExecutionContext {
         return getNativePlatform().getSockets();
     }
 
-    public LibCClockGetTime getLibCClockGetTime() {
-        return libCClockGetTime;
+    public ClockGetTime getLibCClockGetTime() {
+        return getNativePlatform().getClockGetTime();
     }
 
     public Object execute(final org.jruby.ast.RootNode rootNode) {

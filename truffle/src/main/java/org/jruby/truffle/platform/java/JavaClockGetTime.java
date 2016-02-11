@@ -7,21 +7,16 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.platform;
+package org.jruby.truffle.platform.java;
 
-import jnr.posix.POSIX;
-import org.jruby.truffle.platform.signal.SignalManager;
+import org.jruby.truffle.core.ffi.TimeSpec;
+import org.jruby.truffle.platform.ClockGetTime;
 
-public interface NativePlatform {
+public class JavaClockGetTime implements ClockGetTime {
 
-    POSIX getPosix();
-
-    SignalManager getSignalManager();
-
-    ProcessName getProcessName();
-
-    Sockets getSockets();
-
-    ClockGetTime getClockGetTime();
+    @Override
+    public int clock_gettime(int clock_id, TimeSpec timeSpec) {
+        throw new UnsupportedOperationException();
+    }
 
 }
