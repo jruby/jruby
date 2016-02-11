@@ -111,8 +111,6 @@ public class RubyContext extends ExecutionContext {
     private final SourceCache sourceCache;
     private final CallGraph callGraph;
 
-    private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
-
     private final boolean runningOnWindows;
 
     private final PrintStream debugStandardOut;
@@ -435,18 +433,6 @@ public class RubyContext extends ExecutionContext {
                 declaringModule, Visibility.PUBLIC, callTarget);
 
         return callTarget.call(RubyArguments.pack(parentFrame, null, method, declarationContext, null, self, null, new Object[]{}));
-    }
-
-    public long getNextObjectID() {
-        final long id = nextObjectID.getAndAdd(2);
-
-        if (id < 0) {
-            CompilerDirectives.transferToInterpreter();
-            nextObjectID.set(Long.MIN_VALUE);
-            throw new RuntimeException("Object IDs exhausted");
-        }
-
-        return id;
     }
 
     public Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
