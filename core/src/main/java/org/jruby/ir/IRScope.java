@@ -19,8 +19,10 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jruby.runtime.Helpers;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -509,6 +511,19 @@ public abstract class IRScope implements ParseResult {
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
         interpreterContext = new InterpreterContext(this, instructions);
+
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
+
+        return interpreterContext;
+    }
+
+    /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
+    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+        try {
+            interpreterContext = new InterpreterContext(this, instructions);
+        } catch (Exception e) {
+            Helpers.throwException(e);
+        }
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 

@@ -33,7 +33,7 @@ public class FullInterpreterContext extends InterpreterContext {
 
     // FIXME: Perhaps abstract IC into interface of base class so we do not have a null instructions field here
     public FullInterpreterContext(IRScope scope, Instr[] instructions) {
-        super(scope, null);
+        super(scope, (List<Instr>)null);
 
         cfg = buildCFG(instructions);
     }
