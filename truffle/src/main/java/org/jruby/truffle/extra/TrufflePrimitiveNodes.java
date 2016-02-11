@@ -759,7 +759,7 @@ public abstract class TrufflePrimitiveNodes {
 
             if (pid == -1) {
                 // TODO (pitr 07-Sep-2015): needs compatibility improvements
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getNativePlatform().getPosix().errno(), this));
             }
 
             return pid;
@@ -781,7 +781,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         private long call(String command, String[] arguments, String[] environmentVariables) {
             // TODO (pitr 04-Sep-2015): only simple implementation, does not support file actions or other options
-            return getContext().getPosix().posix_spawnp(
+            return getContext().getNativePlatform().getPosix().posix_spawnp(
                     command,
                     Collections.<SpawnFileAction>emptyList(),
                     Arrays.asList(arguments),

@@ -338,10 +338,6 @@ public class RubyContext extends ExecutionContext {
     }
 
     public void loadFile(String fileName, Node currentNode) throws IOException {
-        loadFileAbsolute(fileName, currentNode);
-    }
-
-    private void loadFileAbsolute(String fileName, Node currentNode) throws IOException {
         final Source source = sourceCache.getSource(fileName);
         load(source, currentNode);
     }
@@ -513,10 +509,6 @@ public class RubyContext extends ExecutionContext {
         return safepointManager;
     }
 
-    public ThreadLocalRandom getRandom() {
-        return ThreadLocalRandom.current();
-    }
-
     public LexicalScope getRootLexicalScope() {
         return rootLexicalScope;
     }
@@ -543,22 +535,6 @@ public class RubyContext extends ExecutionContext {
 
     public SourceCache getSourceCache() {
         return sourceCache;
-    }
-
-    public RubiniusConfiguration getRubiniusConfiguration() {
-        return getNativePlatform().getRubiniusConfiguration();
-    }
-
-    public POSIX getPosix() {
-        return getNativePlatform().getPosix();
-    }
-
-    public Sockets getNativeSockets() {
-        return getNativePlatform().getSockets();
-    }
-
-    public ClockGetTime getLibCClockGetTime() {
-        return getNativePlatform().getClockGetTime();
     }
 
     public Object execute(final org.jruby.ast.RootNode rootNode) {
@@ -595,10 +571,6 @@ public class RubyContext extends ExecutionContext {
         }
 
         return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, coreLibrary.getMainObject());
-    }
-
-    public DynamicObject runAtExitHooks() {
-        return atExitManager.runAtExitHooks();
     }
 
     public void shutdown() {
@@ -669,10 +641,6 @@ public class RubyContext extends ExecutionContext {
         return nativePlatform;
     }
 
-    public ProcessName getProcessName() {
-        return getNativePlatform().getProcessName();
-    }
-
     public static void appendToFile(String fileName, String message) {
         try (PrintStream stream = new PrintStream(new FileOutputStream(fileName, true), true, StandardCharsets.UTF_8.name())) {
             stream.println(message);
@@ -683,10 +651,6 @@ public class RubyContext extends ExecutionContext {
 
     public CallGraph getCallGraph() {
         return callGraph;
-    }
-
-    public SignalManager getSignalManager() {
-        return getNativePlatform().getSignalManager();
     }
 
 }

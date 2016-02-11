@@ -461,9 +461,9 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handleDefault(DynamicObject signalName) {
-            Signal signal = getContext().getSignalManager().createSignal(signalName.toString());
+            Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName.toString());
             try {
-                getContext().getSignalManager().watchDefaultForSignal(signal);
+                getContext().getNativePlatform().getSignalManager().watchDefaultForSignal(signal);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
@@ -472,9 +472,9 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handle(DynamicObject signalName, SignalHandler newHandler) {
-            Signal signal = getContext().getSignalManager().createSignal(signalName.toString());
+            Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName.toString());
             try {
-                getContext().getSignalManager().watchSignal(signal, newHandler);
+                getContext().getNativePlatform().getSignalManager().watchSignal(signal, newHandler);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
@@ -493,7 +493,7 @@ public abstract class VMPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(key)")
         public Object get(DynamicObject key) {
-            final Object value = getContext().getRubiniusConfiguration().get(key.toString());
+            final Object value = getContext().getNativePlatform().getRubiniusConfiguration().get(key.toString());
 
             if (value == null) {
                 return nil();
@@ -516,8 +516,8 @@ public abstract class VMPrimitiveNodes {
         public DynamicObject getSection(DynamicObject section) {
             final List<DynamicObject> sectionKeyValues = new ArrayList<>();
 
-            for (String key : getContext().getRubiniusConfiguration().getSection(section.toString())) {
-                Object value = getContext().getRubiniusConfiguration().get(key);
+            for (String key : getContext().getNativePlatform().getRubiniusConfiguration().getSection(section.toString())) {
+                Object value = getContext().getNativePlatform().getRubiniusConfiguration().get(key);
                 final String stringValue;
                 if (RubyGuards.isRubyBignum(value)) {
                     stringValue = Layouts.BIGNUM.getValue((DynamicObject) value).toString();

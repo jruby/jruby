@@ -81,7 +81,7 @@ public abstract class ProcessNodes {
 
         @TruffleBoundary
         private Object clock_gettime_clock_id(int clock_id, DynamicObject unit) {
-            final ClockGetTime libCClockGetTime = getContext().getLibCClockGetTime();
+            final ClockGetTime libCClockGetTime = getContext().getNativePlatform().getClockGetTime();
             TimeSpec timeSpec = new TimeSpec(jnr.ffi.Runtime.getRuntime(libCClockGetTime));
             int r = libCClockGetTime.clock_gettime(clock_id, timeSpec);
             if (r != 0) {
@@ -142,9 +142,9 @@ public abstract class ProcessNodes {
 
         @TruffleBoundary
         private int raise(String signalName) {
-            Signal signal = getContext().getSignalManager().createSignal(signalName);
+            Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName);
             try {
-                getContext().getSignalManager().raise(signal);
+                getContext().getNativePlatform().getSignalManager().raise(signal);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }

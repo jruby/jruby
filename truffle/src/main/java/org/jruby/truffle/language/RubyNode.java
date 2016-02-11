@@ -176,11 +176,11 @@ public abstract class RubyNode extends Node {
     }
 
     protected POSIX posix() {
-        return getContext().getPosix();
+        return getContext().getNativePlatform().getPosix();
     }
 
     protected Sockets nativeSockets() {
-        return getContext().getNativeSockets();
+        return getContext().getNativePlatform().getSockets();
     }
 
     // Helper methods for caching

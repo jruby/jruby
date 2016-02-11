@@ -85,6 +85,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -1470,27 +1471,27 @@ public abstract class KernelNodes {
 
         @Specialization
         public double rand(NotProvided max) {
-            return getContext().getRandom().nextDouble();
+            return ThreadLocalRandom.current().nextDouble();
         }
 
         @Specialization(guards = "max == 0")
         public double randZero(int max) {
-            return getContext().getRandom().nextDouble();
+            return ThreadLocalRandom.current().nextDouble();
         }
 
         @Specialization(guards = "max != 0")
         public int randNonZero(int max) {
-            return getContext().getRandom().nextInt(max);
+            return ThreadLocalRandom.current().nextInt(max);
         }
 
         @Specialization(guards = "max == 0")
         public double randZero(long max) {
-            return getContext().getRandom().nextDouble();
+            return ThreadLocalRandom.current().nextDouble();
         }
 
         @Specialization(guards = "max != 0")
         public long randNonZero(long max) {
-            return getContext().getRandom().nextLong(max);
+            return ThreadLocalRandom.current().nextLong(max);
         }
 
     }
