@@ -61,9 +61,11 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
+import org.jruby.truffle.platform.ProcessName;
 import org.jruby.truffle.platform.RubiniusConfiguration;
 import org.jruby.truffle.platform.TrufflePOSIXHandler;
 import org.jruby.truffle.platform.darwin.CrtExterns;
+import org.jruby.truffle.platform.darwin.DarwinProcessName;
 import org.jruby.truffle.platform.java.TruffleJavaPOSIX;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
@@ -98,8 +100,8 @@ public class RubyContext extends ExecutionContext {
     private final POSIX posix;
     private final NativeSockets nativeSockets;
     private final LibCClockGetTime libCClockGetTime;
-    private CrtExterns crtExterns;
     private final SignalManager signalManager;
+    private final ProcessName processName;
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -187,10 +189,10 @@ public class RubyContext extends ExecutionContext {
 
         nativeSockets = LibraryLoader.create(NativeSockets.class).library("c").load();
 
-        try {
-            crtExterns = LibraryLoader.create(CrtExterns.class).failImmediately().library("libSystem.B.dylib").load();
-        } catch (UnsatisfiedLinkError e) {
-            crtExterns = null;
+        if (Platform.getPlatform().getOS() == OS_TYPE.DARWIN) {
+            processName = new DarwinProcessName();
+        } else {
+            processName = null;
         }
 
         if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
@@ -727,8 +729,8 @@ public class RubyContext extends ExecutionContext {
         return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
     }
 
-    public CrtExterns getCrtExterns() {
-        return crtExterns;
+    public ProcessName getProcessName() {
+        return processName;
     }
 
     public static void appendToFile(String fileName, String message) {
