@@ -14,6 +14,7 @@ import jnr.posix.POSIXFactory;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.platform.ProcessName;
 import org.jruby.truffle.platform.NativePlatform;
+import org.jruby.truffle.platform.Sockets;
 import org.jruby.truffle.platform.TrufflePOSIXHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
@@ -23,11 +24,13 @@ public class JavaPlatform implements NativePlatform {
     private final POSIX posix;
     private final SignalManager signalManager;
     private final ProcessName processName;
+    private final Sockets sockets;
 
     public JavaPlatform(RubyContext context) {
         posix = new TruffleJavaPOSIX(context, POSIXFactory.getJavaPOSIX(new TrufflePOSIXHandler(context)));
         signalManager = new SunMiscSignalManager();
         processName = new JavaProcessName();
+        sockets = new JavaSockets();
     }
 
     @Override
@@ -43,6 +46,11 @@ public class JavaPlatform implements NativePlatform {
     @Override
     public ProcessName getProcessName() {
         return processName;
+    }
+
+    @Override
+    public Sockets getSockets() {
+        return sockets;
     }
 
 }

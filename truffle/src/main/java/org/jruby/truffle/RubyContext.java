@@ -62,7 +62,7 @@ import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.truffle.platform.*;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.stdlib.sockets.NativeSockets;
+import org.jruby.truffle.platform.Sockets;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -91,7 +91,6 @@ public class RubyContext extends ExecutionContext {
     private final Options options;
 
     private final NativePlatform nativePlatform;
-    private final NativeSockets nativeSockets;
     private final LibCClockGetTime libCClockGetTime;
 
     private final CoreLibrary coreLibrary;
@@ -173,8 +172,6 @@ public class RubyContext extends ExecutionContext {
         this.runtime = runtime;
 
         nativePlatform = NativePlatformFactory.createPlatform(this);
-
-        nativeSockets = LibraryLoader.create(NativeSockets.class).library("c").load();
 
         if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
             libCClockGetTime = LibraryLoader.create(LibCClockGetTime.class).library("c").load();
@@ -597,8 +594,8 @@ public class RubyContext extends ExecutionContext {
         return getNativePlatform().getPosix();
     }
 
-    public NativeSockets getNativeSockets() {
-        return nativeSockets;
+    public Sockets getNativeSockets() {
+        return getNativePlatform().getSockets();
     }
 
     public LibCClockGetTime getLibCClockGetTime() {

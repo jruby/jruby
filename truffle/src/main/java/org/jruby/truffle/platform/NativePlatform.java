@@ -20,4 +20,6 @@ public interface NativePlatform {
 
     ProcessName getProcessName();
 
+    Sockets getSockets();
+
 }

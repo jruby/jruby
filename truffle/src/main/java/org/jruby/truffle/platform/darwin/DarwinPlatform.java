@@ -9,11 +9,13 @@
  */
 package org.jruby.truffle.platform.darwin;
 
+import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.platform.ProcessName;
 import org.jruby.truffle.platform.NativePlatform;
+import org.jruby.truffle.platform.Sockets;
 import org.jruby.truffle.platform.TrufflePOSIXHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
@@ -23,11 +25,13 @@ public class DarwinPlatform implements NativePlatform {
     private final POSIX posix;
     private final SignalManager signalManager;
     private final ProcessName processName;
+    private final Sockets sockets;
 
     public DarwinPlatform(RubyContext context) {
         posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(context));
         signalManager = new SunMiscSignalManager();
         processName = new DarwinProcessName();
+        sockets = LibraryLoader.create(Sockets.class).library("c").load();
     }
 
     @Override
@@ -43,6 +47,11 @@ public class DarwinPlatform implements NativePlatform {
     @Override
     public ProcessName getProcessName() {
         return processName;
+    }
+
+    @Override
+    public Sockets getSockets() {
+        return sockets;
     }
 
 }

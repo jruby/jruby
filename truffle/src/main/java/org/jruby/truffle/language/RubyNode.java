@@ -26,7 +26,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.stdlib.sockets.NativeSockets;
+import org.jruby.truffle.platform.Sockets;
 import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)
@@ -179,7 +179,7 @@ public abstract class RubyNode extends Node {
         return getContext().getPosix();
     }
 
-    protected NativeSockets nativeSockets() {
+    protected Sockets nativeSockets() {
         return getContext().getNativeSockets();
     }
 
