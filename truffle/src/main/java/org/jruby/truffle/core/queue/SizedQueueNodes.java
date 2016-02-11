@@ -25,10 +25,7 @@ import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-import java.lang.invoke.MethodHandle;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -66,7 +63,7 @@ public abstract class SizedQueueNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("queue size must be positive", this));
             }
 
-            final ArrayBlockingQueueLocksConditions<Object> blockingQueue = new ArrayBlockingQueueLocksConditions<Object>(capacity);
+            final ArrayBlockingQueueLocksConditions<Object> blockingQueue = getContext().getNativePlatform().createArrayBlockingQueueLocksConditions(capacity);
             Layouts.SIZED_QUEUE.setQueue(self, blockingQueue);
             return self;
         }
@@ -89,7 +86,7 @@ public abstract class SizedQueueNodes {
             }
 
             final ArrayBlockingQueueLocksConditions<Object> oldQueue = Layouts.SIZED_QUEUE.getQueue(self);
-            final ArrayBlockingQueueLocksConditions<Object> newQueue = new ArrayBlockingQueueLocksConditions<Object>(newCapacity);
+            final ArrayBlockingQueueLocksConditions<Object> newQueue = getContext().getNativePlatform().createArrayBlockingQueueLocksConditions(newCapacity);
 
             // TODO (eregon, 12 July 2015): racy and what to do if the new capacity is lower?
             Object element;

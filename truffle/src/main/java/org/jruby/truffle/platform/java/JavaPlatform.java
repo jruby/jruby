@@ -12,9 +12,13 @@ package org.jruby.truffle.platform.java;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
+import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.*;
 import org.jruby.truffle.platform.darwin.DarwinRubiniusConfiguration;
 import org.jruby.truffle.platform.linux.LinuxRubiniusConfiguration;
+import org.jruby.truffle.platform.openjdk.OpenJDKArrayBlockingQueueLocksConditions;
+import org.jruby.truffle.platform.openjdk.OpenJDKLinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 
@@ -66,6 +70,16 @@ public class JavaPlatform implements NativePlatform {
     @Override
     public RubiniusConfiguration getRubiniusConfiguration() {
         return rubiniusConfiguration;
+    }
+
+    @Override
+    public <T> ArrayBlockingQueueLocksConditions<T> createArrayBlockingQueueLocksConditions(int capacity) {
+        return new OpenJDKArrayBlockingQueueLocksConditions<>(capacity);
+    }
+
+    @Override
+    public <T> LinkedBlockingQueueLocksConditions<T> createLinkedBlockingQueueLocksConditions() {
+        return new OpenJDKLinkedBlockingQueueLocksConditions<>();
     }
 
 }

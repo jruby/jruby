@@ -9,38 +9,14 @@
  */
 package org.jruby.truffle.core.queue;
 
-import java.lang.invoke.MethodHandle;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class LinkedBlockingQueueLocksConditions<T> extends DelegatingBlockingQueue<T> {
+public interface LinkedBlockingQueueLocksConditions<T> extends BlockingQueue<T> {
 
-    private static final MethodHandle TAKE_LOCK_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "takeLock");
-    private static final MethodHandle NOT_EMPTY_CONDITION_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "notEmpty");
+    ReentrantLock getLock();
 
-    private final ReentrantLock lock;
-    private final Condition notEmptyCondition;
-
-    public LinkedBlockingQueueLocksConditions() {
-        super(new LinkedBlockingQueue<T>());
-
-        final LinkedBlockingQueue<T> queue = (LinkedBlockingQueue<T>) getQueue();
-
-        try {
-            lock = (ReentrantLock) TAKE_LOCK_FIELD_GETTER.invokeExact(queue);
-            notEmptyCondition = (Condition) NOT_EMPTY_CONDITION_FIELD_GETTER.invokeExact(queue);
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-    }
-
-    public ReentrantLock getLock() {
-        return lock;
-    }
-
-    public Condition getNotEmptyCondition() {
-        return notEmptyCondition;
-    }
+    Condition getNotEmptyCondition();
 
 }

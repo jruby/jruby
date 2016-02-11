@@ -27,11 +27,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-import java.lang.invoke.MethodHandle;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Queue")
@@ -49,7 +46,7 @@ public abstract class QueueNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateNode.allocate(rubyClass, new LinkedBlockingQueueLocksConditions<Object>());
+            return allocateNode.allocate(rubyClass, getContext().getNativePlatform().createLinkedBlockingQueueLocksConditions());
         }
 
     }
