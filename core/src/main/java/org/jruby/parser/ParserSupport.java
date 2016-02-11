@@ -1179,7 +1179,7 @@ public class ParserSupport {
     }
 
     public String formal_argument(String identifier) {
-        if (!is_local_id(identifier)) yyerror("formal argument must be local variable");
+        if (!is_local_id(identifier) || Character.isUpperCase(identifier.charAt(0))) yyerror("formal argument must be local variable");
 
         return shadowing_lvar(identifier);
     }
