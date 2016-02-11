@@ -21,7 +21,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.CoverageTracker;
 import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
-import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
@@ -61,15 +60,8 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
-import org.jruby.truffle.platform.ProcessName;
-import org.jruby.truffle.platform.RubiniusConfiguration;
-import org.jruby.truffle.platform.TrufflePOSIXHandler;
-import org.jruby.truffle.platform.darwin.CrtExterns;
-import org.jruby.truffle.platform.darwin.DarwinProcessName;
-import org.jruby.truffle.platform.java.JavaProcessName;
-import org.jruby.truffle.platform.java.TruffleJavaPOSIX;
+import org.jruby.truffle.platform.*;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 import org.jruby.truffle.stdlib.sockets.NativeSockets;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
@@ -98,11 +90,9 @@ public class RubyContext extends ExecutionContext {
 
     private final Options options;
 
-    private final POSIX posix;
+    private final NativePlatform nativePlatform;
     private final NativeSockets nativeSockets;
     private final LibCClockGetTime libCClockGetTime;
-    private final SignalManager signalManager;
-    private final ProcessName processName;
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -182,19 +172,9 @@ public class RubyContext extends ExecutionContext {
 
         this.runtime = runtime;
 
-        if (options.POSIX_USE_JAVA) {
-            posix = new TruffleJavaPOSIX(this, POSIXFactory.getJavaPOSIX(new TrufflePOSIXHandler(this)));
-        } else {
-            posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
-        }
+        nativePlatform = NativePlatformFactory.createPlatform(this);
 
         nativeSockets = LibraryLoader.create(NativeSockets.class).library("c").load();
-
-        if (Platform.getPlatform().getOS() == OS_TYPE.DARWIN) {
-            processName = new DarwinProcessName();
-        } else {
-            processName = new JavaProcessName();
-        }
 
         if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
             libCClockGetTime = LibraryLoader.create(LibCClockGetTime.class).library("c").load();
@@ -202,7 +182,6 @@ public class RubyContext extends ExecutionContext {
             libCClockGetTime = null;
         }
 
-        signalManager = new SunMiscSignalManager();
 
         warnings = new Warnings(this);
 
@@ -615,7 +594,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public POSIX getPosix() {
-        return posix;
+        return getNativePlatform().getPosix();
     }
 
     public NativeSockets getNativeSockets() {
@@ -730,8 +709,12 @@ public class RubyContext extends ExecutionContext {
         return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
     }
 
+    public NativePlatform getNativePlatform() {
+        return nativePlatform;
+    }
+
     public ProcessName getProcessName() {
-        return processName;
+        return getNativePlatform().getProcessName();
     }
 
     public static void appendToFile(String fileName, String message) {
@@ -747,7 +730,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public SignalManager getSignalManager() {
-        return signalManager;
+        return getNativePlatform().getSignalManager();
     }
 
 }
