@@ -11,11 +11,8 @@ package org.jruby.truffle.core.queue;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 public class DelegatingBlockingQueue<T> implements BlockingQueue<T> {
 
@@ -110,21 +107,6 @@ public class DelegatingBlockingQueue<T> implements BlockingQueue<T> {
     }
 
     @Override
-    public Stream<T> parallelStream() {
-        return queue.parallelStream();
-    }
-
-    @Override
-    public Stream<T> stream() {
-        return queue.stream();
-    }
-
-    @Override
-    public Spliterator<T> spliterator() {
-        return queue.spliterator();
-    }
-
-    @Override
     public int hashCode() {
         return queue.hashCode();
     }
@@ -142,11 +124,6 @@ public class DelegatingBlockingQueue<T> implements BlockingQueue<T> {
     @Override
     public boolean retainAll(Collection<?> c) {
         return queue.retainAll(c);
-    }
-
-    @Override
-    public boolean removeIf(Predicate<? super T> filter) {
-        return queue.removeIf(filter);
     }
 
     @Override
