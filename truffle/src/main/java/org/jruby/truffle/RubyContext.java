@@ -65,6 +65,8 @@ import org.jruby.truffle.platform.RubiniusConfiguration;
 import org.jruby.truffle.platform.TrufflePOSIXHandler;
 import org.jruby.truffle.platform.darwin.CrtExterns;
 import org.jruby.truffle.platform.posix.TruffleJavaPOSIX;
+import org.jruby.truffle.platform.signal.SignalManager;
+import org.jruby.truffle.platform.signal.SunMiscSignalManager;
 import org.jruby.truffle.stdlib.sockets.NativeSockets;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
@@ -97,6 +99,7 @@ public class RubyContext extends ExecutionContext {
     private final NativeSockets nativeSockets;
     private final LibCClockGetTime libCClockGetTime;
     private CrtExterns crtExterns;
+    private final SignalManager signalManager;
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -195,6 +198,8 @@ public class RubyContext extends ExecutionContext {
         } else {
             libCClockGetTime = null;
         }
+
+        signalManager = new SunMiscSignalManager();
 
         warnings = new Warnings(this);
 
@@ -737,4 +742,9 @@ public class RubyContext extends ExecutionContext {
     public CallGraph getCallGraph() {
         return callGraph;
     }
+
+    public SignalManager getSignalManager() {
+        return signalManager;
+    }
+
 }

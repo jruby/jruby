@@ -461,9 +461,9 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handleDefault(DynamicObject signalName) {
-            Signal signal = SignalManager.createSignal(signalName.toString());
+            Signal signal = getContext().getSignalManager().createSignal(signalName.toString());
             try {
-                SignalManager.watchDefaultForSignal(signal);
+                getContext().getSignalManager().watchDefaultForSignal(signal);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
@@ -472,9 +472,9 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handle(DynamicObject signalName, SignalHandler newHandler) {
-            Signal signal = SignalManager.createSignal(signalName.toString());
+            Signal signal = getContext().getSignalManager().createSignal(signalName.toString());
             try {
-                SignalManager.watchSignal(signal, newHandler);
+                getContext().getSignalManager().watchSignal(signal, newHandler);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }

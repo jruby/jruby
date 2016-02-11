@@ -143,9 +143,9 @@ public abstract class ProcessNodes {
 
         @TruffleBoundary
         private int raise(String signalName) {
-            Signal signal = SignalManager.createSignal(signalName);
+            Signal signal = getContext().getSignalManager().createSignal(signalName);
             try {
-                SignalManager.raise(signal);
+                getContext().getSignalManager().raise(signal);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
