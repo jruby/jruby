@@ -64,7 +64,7 @@ import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.truffle.platform.RubiniusConfiguration;
 import org.jruby.truffle.platform.TrufflePOSIXHandler;
 import org.jruby.truffle.platform.darwin.CrtExterns;
-import org.jruby.truffle.platform.posix.TruffleJavaPOSIX;
+import org.jruby.truffle.platform.java.TruffleJavaPOSIX;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 import org.jruby.truffle.stdlib.sockets.NativeSockets;
