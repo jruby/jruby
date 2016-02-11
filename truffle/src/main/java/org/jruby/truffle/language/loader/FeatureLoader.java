@@ -183,19 +183,8 @@ public class FeatureLoader {
     }
 
     public static String expandPath(RubyContext context, String fileName) {
-        // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
-        if (context.isRunningOnWindows()) {
-            final org.jruby.RubyString path = context.toJRubyString(StringOperations.createString(context, StringOperations.encodeRope(fileName, UTF8Encoding.INSTANCE)));
-            final org.jruby.RubyString expanded = (org.jruby.RubyString) org.jruby.RubyFile.expand_path19(
-                    context.getRuntime().getCurrentContext(),
-                    null,
-                    new org.jruby.runtime.builtin.IRubyObject[]{ path });
-
-            return expanded.asJavaString();
-        } else {
-            String dir = new File(fileName).isAbsolute() ? null : context.getRuntime().getCurrentDirectory();
-            return expandPath(fileName, dir);
-        }
+        String dir = new File(fileName).isAbsolute() ? null : context.getRuntime().getCurrentDirectory();
+        return expandPath(fileName, dir);
     }
 
     private static String expandPath(String fileName, String dir) {

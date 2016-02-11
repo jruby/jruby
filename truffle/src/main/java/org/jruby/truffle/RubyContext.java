@@ -111,8 +111,6 @@ public class RubyContext extends ExecutionContext {
     private final SourceCache sourceCache;
     private final CallGraph callGraph;
 
-    private final boolean runningOnWindows;
-
     private final PrintStream debugStandardOut;
 
     private final Map<String, TruffleObject> exported = new HashMap<>();
@@ -196,8 +194,6 @@ public class RubyContext extends ExecutionContext {
         } else {
             instrumentationServerManager = null;
         }
-
-        runningOnWindows = Platform.getPlatform().getOS() == OS_TYPE.WINDOWS;
 
         attachmentsManager = new AttachmentsManager(this);
         sourceCache = new SourceCache(new SourceLoader(this));
@@ -348,10 +344,6 @@ public class RubyContext extends ExecutionContext {
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
         return name;
-    }
-
-    public boolean isRunningOnWindows() {
-        return runningOnWindows;
     }
 
     public void loadFile(String fileName, Node currentNode) throws IOException {
