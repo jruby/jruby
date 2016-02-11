@@ -13,6 +13,8 @@ import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.platform.*;
+import org.jruby.truffle.platform.darwin.DarwinRubiniusConfiguration;
+import org.jruby.truffle.platform.linux.LinuxRubiniusConfiguration;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 
@@ -23,6 +25,7 @@ public class JavaPlatform implements NativePlatform {
     private final ProcessName processName;
     private final Sockets sockets;
     private final ClockGetTime clockGetTime;
+    private final RubiniusConfiguration rubiniusConfiguration;
 
     public JavaPlatform(RubyContext context) {
         posix = new TruffleJavaPOSIX(context, POSIXFactory.getJavaPOSIX(new TrufflePOSIXHandler(context)));
@@ -30,6 +33,9 @@ public class JavaPlatform implements NativePlatform {
         processName = new JavaProcessName();
         sockets = new JavaSockets();
         clockGetTime = new JavaClockGetTime();
+        rubiniusConfiguration = new RubiniusConfiguration();
+        DefaultRubiniusConfiguration.load(rubiniusConfiguration, context);
+        LinuxRubiniusConfiguration.load(rubiniusConfiguration, context); // Just load the Linux one - let errors happen later
     }
 
     @Override
@@ -55,6 +61,11 @@ public class JavaPlatform implements NativePlatform {
     @Override
     public ClockGetTime getClockGetTime() {
         return clockGetTime;
+    }
+
+    @Override
+    public RubiniusConfiguration getRubiniusConfiguration() {
+        return rubiniusConfiguration;
     }
 
 }

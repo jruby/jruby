@@ -25,6 +25,7 @@ public class DarwinPlatform implements NativePlatform {
     private final ProcessName processName;
     private final Sockets sockets;
     private final ClockGetTime clockGetTime;
+    private final RubiniusConfiguration rubiniusConfiguration;
 
     public DarwinPlatform(RubyContext context) {
         posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(context));
@@ -32,6 +33,9 @@ public class DarwinPlatform implements NativePlatform {
         processName = new DarwinProcessName();
         sockets = LibraryLoader.create(Sockets.class).library("c").load();
         clockGetTime = new JavaClockGetTime();
+        rubiniusConfiguration = new RubiniusConfiguration();
+        DefaultRubiniusConfiguration.load(rubiniusConfiguration, context);
+        DarwinRubiniusConfiguration.load(rubiniusConfiguration, context);
     }
 
     @Override
@@ -57,6 +61,11 @@ public class DarwinPlatform implements NativePlatform {
     @Override
     public ClockGetTime getClockGetTime() {
         return clockGetTime;
+    }
+
+    @Override
+    public RubiniusConfiguration getRubiniusConfiguration() {
+        return rubiniusConfiguration;
     }
 
 }

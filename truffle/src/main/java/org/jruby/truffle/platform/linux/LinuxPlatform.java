@@ -25,6 +25,7 @@ public class LinuxPlatform implements NativePlatform {
     private final ProcessName processName;
     private final Sockets sockets;
     private final ClockGetTime clockGetTime;
+    private final RubiniusConfiguration rubiniusConfiguration;
 
     public LinuxPlatform(RubyContext context) {
         posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(context));
@@ -32,6 +33,9 @@ public class LinuxPlatform implements NativePlatform {
         processName = new JavaProcessName();
         sockets = LibraryLoader.create(Sockets.class).library("c").load();
         clockGetTime = LibraryLoader.create(ClockGetTime.class).library("c").load();
+        rubiniusConfiguration = new RubiniusConfiguration();
+        DefaultRubiniusConfiguration.load(rubiniusConfiguration, context);
+        LinuxRubiniusConfiguration.load(rubiniusConfiguration, context);
     }
 
     @Override
@@ -57,6 +61,11 @@ public class LinuxPlatform implements NativePlatform {
     @Override
     public ClockGetTime getClockGetTime() {
         return clockGetTime;
+    }
+
+    @Override
+    public RubiniusConfiguration getRubiniusConfiguration() {
+        return rubiniusConfiguration;
     }
 
 }

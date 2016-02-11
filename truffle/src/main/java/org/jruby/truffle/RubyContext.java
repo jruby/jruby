@@ -109,7 +109,6 @@ public class RubyContext extends ExecutionContext {
     private final InstrumentationServerManager instrumentationServerManager;
     private final AttachmentsManager attachmentsManager;
     private final SourceCache sourceCache;
-    private final RubiniusConfiguration rubiniusConfiguration;
     private final CallGraph callGraph;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
@@ -170,14 +169,14 @@ public class RubyContext extends ExecutionContext {
 
         this.runtime = runtime;
 
-        nativePlatform = NativePlatformFactory.createPlatform(this);
-
         warnings = new Warnings(this);
 
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
 
         coreLibrary = new CoreLibrary(this);
+
+        nativePlatform = NativePlatformFactory.createPlatform(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
@@ -204,7 +203,6 @@ public class RubyContext extends ExecutionContext {
 
         attachmentsManager = new AttachmentsManager(this);
         sourceCache = new SourceCache(new SourceLoader(this));
-        rubiniusConfiguration = RubiniusConfiguration.create(this);
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
@@ -579,7 +577,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public RubiniusConfiguration getRubiniusConfiguration() {
-        return rubiniusConfiguration;
+        return getNativePlatform().getRubiniusConfiguration();
     }
 
     public POSIX getPosix() {

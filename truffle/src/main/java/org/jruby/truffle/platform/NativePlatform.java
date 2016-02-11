@@ -24,4 +24,6 @@ public interface NativePlatform {
 
     ClockGetTime getClockGetTime();
 
+    RubiniusConfiguration getRubiniusConfiguration();
+
 }
