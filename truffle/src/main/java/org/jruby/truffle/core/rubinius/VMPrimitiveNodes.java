@@ -70,10 +70,10 @@ import org.jruby.truffle.language.objects.ClassNodeGen;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.platform.signal.ProcSignalHandler;
+import org.jruby.truffle.core.proc.ProcSignalHandler;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
-import org.jruby.truffle.platform.signal.SignalOperations;
+import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.util.io.PosixShim;
 
 import java.lang.management.ManagementFactory;
@@ -451,7 +451,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization(guards = { "isRubyString(signalName)", "isNil(nil)" })
         public boolean watchSignal(DynamicObject signalName, Object nil) {
-            return handle(signalName, SignalOperations.IGNORE_HANDLER);
+            return handle(signalName, SignalManager.IGNORE_HANDLER);
         }
 
         @Specialization(guards = { "isRubyString(signalName)", "isRubyProc(proc)" })
@@ -461,9 +461,9 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handleDefault(DynamicObject signalName) {
-            Signal signal = new Signal(signalName.toString());
+            Signal signal = getContext().getSignalManager().createSignal(signalName.toString());
             try {
-                SignalOperations.watchDefaultForSignal(signal);
+                getContext().getSignalManager().watchDefaultForSignal(signal);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
@@ -472,9 +472,9 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handle(DynamicObject signalName, SignalHandler newHandler) {
-            final Signal signal = new Signal(signalName.toString());
+            Signal signal = getContext().getSignalManager().createSignal(signalName.toString());
             try {
-                SignalOperations.watchSignal(signal, newHandler);
+                getContext().getSignalManager().watchSignal(signal, newHandler);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }

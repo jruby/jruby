@@ -89,7 +89,7 @@ import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.platform.RubiniusTypes;
-import org.jruby.truffle.platform.signal.SignalOperations;
+import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.stdlib.*;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodes;
@@ -712,10 +712,10 @@ public class CoreLibrary {
     }
 
     private void initializeSignalConstants() {
-        Object[] signals = new Object[SignalOperations.SIGNALS_LIST.size()];
+        Object[] signals = new Object[SignalManager.SIGNALS_LIST.size()];
 
         int i = 0;
-        for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
+        for (Map.Entry<String, Integer> signal : SignalManager.SIGNALS_LIST.entrySet()) {
             DynamicObject signalName = StringOperations.createString(context, StringOperations.encodeRope(signal.getKey(), UTF8Encoding.INSTANCE));
             Object[] objects = new Object[]{signalName, signal.getValue()};
             signals[i++] = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), objects, objects.length);

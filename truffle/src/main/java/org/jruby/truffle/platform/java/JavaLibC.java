@@ -7,7 +7,19 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.platform.signal;
+package org.jruby.truffle.platform.java;
 
-public interface Signal {
+import jnr.posix.LibC;
+
+public class JavaLibC extends BaseLibC implements LibC {
+
+    public static final JavaLibC INSTANCE = new JavaLibC();
+
+    private JavaLibC() {
+    }
+
+    @Override
+    public int isatty(int fd) {
+        return System.console() != null ? 1 : 0;
+    }
 }

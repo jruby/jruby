@@ -7,7 +7,20 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.platform.signal;
+package org.jruby.truffle.platform.java;
 
-public interface Signal {
+import org.jruby.truffle.platform.ProcessName;
+
+public class JavaProcessName implements ProcessName {
+
+    @Override
+    public boolean canSet() {
+        return false;
+    }
+
+    @Override
+    public void set(String name) {
+        throw new UnsupportedOperationException();
+    }
+
 }

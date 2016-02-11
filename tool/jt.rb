@@ -627,10 +627,10 @@ module Commands
     heap = 10
     log '>', "Trying #{heap} MB"
     until can_run_in_heap(heap, *args)
-      log '>', "Trying #{heap} MB"
       heap += 10
+      log '>', "Trying #{heap} MB"
     end
-    heap -= 10
+    heap -= 9
     heap = 1 if heap == 0
     successful = 0
     loop do

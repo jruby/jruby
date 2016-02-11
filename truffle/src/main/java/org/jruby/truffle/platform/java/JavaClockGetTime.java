@@ -7,19 +7,16 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.platform.posix;
+package org.jruby.truffle.platform.java;
 
-import jnr.posix.LibC;
+import org.jruby.truffle.core.ffi.TimeSpec;
+import org.jruby.truffle.platform.ClockGetTime;
 
-public class JavaLibC extends BaseLibC implements LibC {
-
-    public static final JavaLibC INSTANCE = new JavaLibC();
-
-    private JavaLibC() {
-    }
+public class JavaClockGetTime implements ClockGetTime {
 
     @Override
-    public int isatty(int fd) {
-        return System.console() != null ? 1 : 0;
+    public int clock_gettime(int clock_id, TimeSpec timeSpec) {
+        throw new UnsupportedOperationException();
     }
+
 }

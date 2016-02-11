@@ -21,7 +21,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.CoverageTracker;
 import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
-import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
@@ -35,7 +34,7 @@ import org.jruby.truffle.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.core.SetTopLevelBindingNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.binding.BindingNodes;
-import org.jruby.truffle.core.ffi.LibCClockGetTime;
+import org.jruby.truffle.platform.ClockGetTime;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
@@ -61,11 +60,9 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
-import org.jruby.truffle.platform.RubiniusConfiguration;
-import org.jruby.truffle.platform.TrufflePOSIXHandler;
-import org.jruby.truffle.platform.darwin.CrtExterns;
-import org.jruby.truffle.platform.posix.TruffleJavaPOSIX;
-import org.jruby.truffle.stdlib.sockets.NativeSockets;
+import org.jruby.truffle.platform.*;
+import org.jruby.truffle.platform.signal.SignalManager;
+import org.jruby.truffle.platform.Sockets;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -93,10 +90,7 @@ public class RubyContext extends ExecutionContext {
 
     private final Options options;
 
-    private final POSIX posix;
-    private final NativeSockets nativeSockets;
-    private final LibCClockGetTime libCClockGetTime;
-    private CrtExterns crtExterns;
+    private final NativePlatform nativePlatform;
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -115,7 +109,6 @@ public class RubyContext extends ExecutionContext {
     private final InstrumentationServerManager instrumentationServerManager;
     private final AttachmentsManager attachmentsManager;
     private final SourceCache sourceCache;
-    private final RubiniusConfiguration rubiniusConfiguration;
     private final CallGraph callGraph;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
@@ -176,32 +169,14 @@ public class RubyContext extends ExecutionContext {
 
         this.runtime = runtime;
 
-        if (options.POSIX_USE_JAVA) {
-            posix = new TruffleJavaPOSIX(this, POSIXFactory.getJavaPOSIX(new TrufflePOSIXHandler(this)));
-        } else {
-            posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
-        }
-
-        nativeSockets = LibraryLoader.create(NativeSockets.class).library("c").load();
-
-        try {
-            crtExterns = LibraryLoader.create(CrtExterns.class).failImmediately().library("libSystem.B.dylib").load();
-        } catch (UnsatisfiedLinkError e) {
-            crtExterns = null;
-        }
-
-        if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
-            libCClockGetTime = LibraryLoader.create(LibCClockGetTime.class).library("c").load();
-        } else {
-            libCClockGetTime = null;
-        }
-
         warnings = new Warnings(this);
 
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
 
         coreLibrary = new CoreLibrary(this);
+
+        nativePlatform = NativePlatformFactory.createPlatform(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
@@ -228,7 +203,6 @@ public class RubyContext extends ExecutionContext {
 
         attachmentsManager = new AttachmentsManager(this);
         sourceCache = new SourceCache(new SourceLoader(this));
-        rubiniusConfiguration = RubiniusConfiguration.create(this);
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
@@ -603,19 +577,19 @@ public class RubyContext extends ExecutionContext {
     }
 
     public RubiniusConfiguration getRubiniusConfiguration() {
-        return rubiniusConfiguration;
+        return getNativePlatform().getRubiniusConfiguration();
     }
 
     public POSIX getPosix() {
-        return posix;
+        return getNativePlatform().getPosix();
     }
 
-    public NativeSockets getNativeSockets() {
-        return nativeSockets;
+    public Sockets getNativeSockets() {
+        return getNativePlatform().getSockets();
     }
 
-    public LibCClockGetTime getLibCClockGetTime() {
-        return libCClockGetTime;
+    public ClockGetTime getLibCClockGetTime() {
+        return getNativePlatform().getClockGetTime();
     }
 
     public Object execute(final org.jruby.ast.RootNode rootNode) {
@@ -722,8 +696,12 @@ public class RubyContext extends ExecutionContext {
         return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
     }
 
-    public CrtExterns getCrtExterns() {
-        return crtExterns;
+    public NativePlatform getNativePlatform() {
+        return nativePlatform;
+    }
+
+    public ProcessName getProcessName() {
+        return getNativePlatform().getProcessName();
     }
 
     public static void appendToFile(String fileName, String message) {
@@ -737,4 +715,9 @@ public class RubyContext extends ExecutionContext {
     public CallGraph getCallGraph() {
         return callGraph;
     }
+
+    public SignalManager getSignalManager() {
+        return getNativePlatform().getSignalManager();
+    }
+
 }

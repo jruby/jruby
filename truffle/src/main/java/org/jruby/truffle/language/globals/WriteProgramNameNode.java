@@ -23,29 +23,18 @@ import java.nio.charset.StandardCharsets;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class WriteProgramNameNode extends RubyNode {
 
-    /*
-     * When we call _NSGetArgv we seem to always get a string that looks like what we'd expect from running ps, but
-     * with a null character inserted early. I don't know where this comes from, but it means I don't know how to get
-     * the length of space available for writing in the new program name. We therefore about 40 characters, which is
-     * a number without any foundation, but it at leaast allows the specs to pass, the functionality to be useful,
-     * and probably avoid crashing anyone's programs. I can't pretend this is great engineering.
-     */
-    private static final int MAX_PROGRAM_NAME_LENGTH = 40;
-
     public WriteProgramNameNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     @TruffleBoundary
-    @Specialization(guards = "isRubyString(value)")
-    protected Object writeProgramName(DynamicObject value) {
-        if (getContext().getCrtExterns() != null) {
-            final String valueString = value.toString();
-            final Pointer programNameAddress = getContext().getCrtExterns()._NSGetArgv().getPointer(0).getPointer(0);
-            programNameAddress.putString(0, valueString, MAX_PROGRAM_NAME_LENGTH, StandardCharsets.UTF_8);
+    @Specialization(guards = "isRubyString(name)")
+    protected Object writeProgramName(DynamicObject name) {
+        if (getContext().getProcessName().canSet()) {
+            getContext().getProcessName().set(name.toString());
         }
 
-        return value;
+        return name;
     }
 
 }
