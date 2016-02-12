@@ -1186,7 +1186,7 @@ public class ParserSupport {
     }
 
     public String formal_argument(String identifier) {
-        if (!is_local_id(identifier) || Character.isUpperCase(identifier.charAt(0))) yyerror("formal argument must be local variable");
+        lexer.validateFormalIdentifier(identifier);
 
         return shadowing_lvar(identifier);
     }

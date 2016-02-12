@@ -606,6 +606,35 @@ public abstract class LexingCommon {
         return false;
     }
 
+    public void validateFormalIdentifier(String identifier) {
+        char first = identifier.charAt(0);
+
+        if (Character.isUpperCase(first)) {
+            compile_error("formal argument cannot be a constant");
+        }
+
+        switch(first) {
+            case '@':
+                if (identifier.charAt(1) == '@') {
+                    compile_error("formal argument cannot be a class variable");
+                } else {
+                    compile_error("formal argument cannot be an instance variable");
+                }
+                break;
+            case '$':
+                compile_error("formal argument cannot be a global variable");
+                break;
+            default:
+                // This mechanism feels a tad dicey but at this point we are dealing with a valid
+                // method name at least so we should not need to check the entire string...
+                char last = identifier.charAt(identifier.length() - 1);
+
+                if (last == '=' || last == '?' || last == '!') {
+                    compile_error("formal argument must be local variable");
+                }
+        }
+    }
+
     /**
      * Value of last token (if it is a token which has a value).
      *
