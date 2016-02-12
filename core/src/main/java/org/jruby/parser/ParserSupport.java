@@ -134,7 +134,11 @@ public class ParserSupport {
         switch (node.getNodeType()) {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
-            return currentScope.declare(node.getPosition(), ((INameNode) node).getName());
+            String name = ((INameNode) node).getName();
+            if (name.equals(lexer.getCurrentArg())) {
+                warn(ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
+            }
+            return currentScope.declare(node.getPosition(), name);
         case CONSTDECLNODE: // CONSTANT
             return new ConstNode(node.getPosition(), ((INameNode) node).getName());
         case INSTASGNNODE: // INSTANCE VARIABLE
@@ -151,6 +155,9 @@ public class ParserSupport {
     }
 
     public Node declareIdentifier(String name) {
+        if (name.equals(lexer.getCurrentArg())) {
+            warn(ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
+        }
         return currentScope.declare(lexer.tokline, name);
     }
 

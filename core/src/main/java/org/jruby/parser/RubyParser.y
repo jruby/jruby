@@ -279,7 +279,6 @@ public class RubyParser {
 
 %type <String> rparen rbracket reswords f_bad_arg
 %type <Node> top_compstmt top_stmts top_stmt
-%type <ArgumentNode> f_norm_arg_int
 %token <String> tSYMBOLS_BEG
 %token <String> tQSYMBOLS_BEG
 %token <String> tDSTAR
@@ -1501,6 +1500,8 @@ primary         : literal
                 | kDEF fname {
                     support.setInDef(true);
                     support.pushLocalScope();
+                    $$ = lexer.getCurrentArg();
+                    lexer.setCurrentArg(null);
                 } f_arglist bodystmt kEND {
                     Node body = $5;
                     if (body == null) body = NilImplicitNode.NIL;
@@ -1508,6 +1509,7 @@ primary         : literal
                     $$ = new DefnNode($1, $2, (ArgsNode) $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
+                    lexer.setCurrentArg($<String>3);
                 }
                 | kDEF singleton dot_or_colon {
                     lexer.setState(EXPR_FNAME);
@@ -1515,6 +1517,8 @@ primary         : literal
                     support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
                     lexer.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
+                    $$ = lexer.getCurrentArg();
+                    lexer.setCurrentArg(null);
                 } f_arglist bodystmt kEND {
                     Node body = $8;
                     if (body == null) body = NilImplicitNode.NIL;
@@ -1522,6 +1526,7 @@ primary         : literal
                     $$ = new DefsNode($1, $2, $5, (ArgsNode) $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
+                    lexer.setCurrentArg($<String>6);
                 }
                 | kBREAK {
                     $$ = new BreakNode($1, NilImplicitNode.NIL);
@@ -1684,12 +1689,14 @@ opt_block_param : none {
                 }
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
+                    lexer.setCurrentArg(null);
                     $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | tOROP {
                     $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
+                    lexer.setCurrentArg(null);
                     $$ = $2;
                 }
 
@@ -2323,10 +2330,12 @@ f_norm_arg      : f_bad_arg
                 }
 
 f_arg_asgn      : f_norm_arg {
+                    lexer.setCurrentArg($1);
                     $$ = support.arg_var($1);
                 }
 
 f_arg_item      : f_arg_asgn {
+                    lexer.setCurrentArg(null);
                     $$ = $1;
                 }
                 | tLPAREN f_margs rparen {
@@ -2355,13 +2364,16 @@ f_arg           : f_arg_item {
 
 f_label 	: tLABEL {
                     support.arg_var(support.formal_argument($1));
+                    lexer.setCurrentArg($1);
                     $$ = $1;
                 }
 
 f_kw            : f_label arg_value {
+                    lexer.setCurrentArg(null);
                     $$ = support.keyword_arg($2.getPosition(), support.assignableLabelOrIdentifier($1, $2));
                 }
                 | f_label {
+                    lexer.setCurrentArg(null);
                     $$ = support.keyword_arg(lexer.getPosition(), support.assignableLabelOrIdentifier($1, new RequiredKeywordArgumentValueNode()));
                 }
 
@@ -2402,15 +2414,13 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = support.internalId();
                 }
 
-f_opt           : f_norm_arg_int '=' arg_value {
+f_opt           : f_arg_asgn '=' arg_value {
+                    lexer.setCurrentArg(null);
                     $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName(), $3));
                 }
 
-f_norm_arg_int  : f_norm_arg {
-                    $$ = support.arg_var($1);
-                }
-
 f_block_opt     : f_arg_asgn '=' primary_value {
+                    lexer.setCurrentArg(null);
                     $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName(), $3));
                 }
 
