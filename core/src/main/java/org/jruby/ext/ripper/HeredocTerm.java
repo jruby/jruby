@@ -70,6 +70,10 @@ public class HeredocTerm extends StrTerm {
         this.line = line;
         this.lastLine = lastLine;
     }
+
+    public int getFlags() {
+        return flags;
+    }
     
     protected int error(RipperLexer lexer, int len, ByteList str, ByteList eos) {
         lexer.compile_error("can't find string \"" + eos.toString() + "\" anywhere before EOF");

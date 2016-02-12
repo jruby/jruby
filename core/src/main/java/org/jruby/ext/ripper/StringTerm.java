@@ -54,6 +54,10 @@ public class StringTerm extends StrTerm {
         this.nest  = 0;
     }
 
+    public int getFlags() {
+        return flags;
+    }
+
     protected ByteList createByteList(RipperLexer lexer) {
         return new ByteList(new byte[]{}, lexer.getEncoding());
     }

@@ -58,6 +58,10 @@ public class StringTerm extends StrTerm {
         this.nest  = 0;
     }
 
+    public int getFlags() {
+        return flags;
+    }
+
     protected ByteList createByteList(RubyLexer lexer) {
         ByteList bytelist = new ByteList(15);
         bytelist.setEncoding(lexer.getEncoding());
