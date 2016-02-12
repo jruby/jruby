@@ -206,11 +206,11 @@ public abstract class LexingCommon {
 
     // mri: parser_isascii
     public boolean isASCII() {
-        return Encoding.isMbcAscii((byte)lexb.get(lex_p-1));
+        return Encoding.isMbcAscii((byte) lexb.get(lex_p - 1));
     }
 
     public boolean isASCII(int c) {
-        return Encoding.isMbcAscii((byte)c);
+        return Encoding.isMbcAscii((byte) c);
     }
 
     // FIXME: I added number gvars here and they did not.
@@ -289,6 +289,17 @@ public abstract class LexingCommon {
             }
 
             return result;
+        }
+        if (c == '.') {
+            int c2 = nextc();
+            if (Character.isDigit(c2)) {
+                compile_error("unexpected fraction part after numeric literal");
+                do { // Ripper does not stop so we follow MRI here and read over next word...
+                    c2 = nextc();
+                } while (isIdentifierChar(c2));
+            } else {
+                pushback(c2);
+            }
         }
         pushback(c);
 
