@@ -139,6 +139,7 @@ public abstract class TimeNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject addInternal(DynamicObject time, long seconds, long nanoSeconds) {
             final DateTime dateTime = Layouts.TIME.getDateTime(time);
