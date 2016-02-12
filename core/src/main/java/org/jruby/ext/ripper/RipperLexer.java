@@ -1070,11 +1070,11 @@ public class RipperLexer extends LexingCommon {
                         case '\13': /* '\v' */
                             spaceSeen = true;
                             continue;
+                        case '&':
                         case '.': {
                             dispatchDelayedToken(Tokens.tIGNORED_NL);
-                            if ((c = nextc()) != '.') {
+                            if (peek('.') == (c == '&')) {
                                 pushback(c);
-                                pushback('.');
 
                                 dispatchScanEvent(Tokens.tSP);
                                 continue loop;

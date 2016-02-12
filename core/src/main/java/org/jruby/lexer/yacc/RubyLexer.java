@@ -887,10 +887,10 @@ public class RubyLexer extends LexingCommon {
                     case ' ': case '\t': case '\f': case '\r': case '\13': /* '\v' */
                         spaceSeen = true;
                         continue;
+                    case '&':
                     case '.': {
-                        if ((c = nextc()) != '.') {
+                        if (peek('.') == (c == '&')) {
                             pushback(c);
-                            pushback('.');
 
                             continue loop;
                         }
@@ -905,15 +905,6 @@ public class RubyLexer extends LexingCommon {
 
                 pushback(c);
                 getPosition();
-
-                // FIXME: IS THIS NEEDED?
-                switch (lex_state) {
-                    case EXPR_BEG:
-                    case EXPR_FNAME:
-                    case EXPR_DOT:
-                    case EXPR_CLASS:
-                        continue loop;
-                }
 
                 commandStart = true;
                 setState(EXPR_BEG);
