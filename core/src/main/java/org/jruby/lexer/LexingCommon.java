@@ -23,10 +23,22 @@ import org.jruby.util.StringSupport;
  * Code and constants common to both ripper and main parser.
  */
 public abstract class LexingCommon {
-    public enum LexState {
-        EXPR_BEG, EXPR_END, EXPR_ARG, EXPR_CMDARG, EXPR_ENDARG, EXPR_MID,
-        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN, EXPR_LABELARG
-    }
+    public static final int EXPR_BEG     = 1;
+    public static final int EXPR_END     = 1<<1;
+    public static final int EXPR_ENDARG  = 1<<2;
+    public static final int EXPR_ENDFN   = 1<<3;
+    public static final int EXPR_ARG     = 1<<4;
+    public static final int EXPR_CMDARG  = 1<<5;
+    public static final int EXPR_MID     = 1<<6;
+    public static final int EXPR_FNAME   = 1<<7;
+    public static final int EXPR_DOT     = 1<<8;
+    public static final int EXPR_CLASS   = 1<<9;
+    public static final int EXPR_LABEL   = 1<<10;
+    public static final int EXPR_LABELED = 1<<11;
+    public static final int EXPR_VALUE = EXPR_BEG;
+    public static final int EXPR_BEG_ANY = EXPR_BEG | EXPR_MID | EXPR_CLASS;
+    public static final int EXPR_ARG_ANY = EXPR_ARG | EXPR_CMDARG;
+    public static final int EXPR_END_ANY = EXPR_END | EXPR_ENDARG | EXPR_ENDFN;
 
     public LexingCommon(LexerSource src) {
         this.src = src;
@@ -45,7 +57,7 @@ public abstract class LexingCommon {
     protected int heredoc_line_indent = 0;
     public boolean inKwarg = false;
     protected int last_cr_line;
-    protected LexState last_state;
+    protected int last_state;
     private int leftParenBegin = 0;
     public ByteList lexb = null;
     public ByteList lex_lastline = null;
@@ -53,7 +65,7 @@ public abstract class LexingCommon {
     public int lex_p = 0;                  // Where current position is in current line
     protected int lex_pbeg = 0;
     public int lex_pend = 0;               // Where line ends
-    protected LexState lex_state;
+    protected int lex_state;
     protected int line_count = 0;
     protected int line_offset = 0;
     protected int parenNest = 0;
@@ -61,6 +73,7 @@ public abstract class LexingCommon {
     protected LexerSource src;                // Stream of data that yylex() examines.
     protected int token;                      // Last token read via yylex().
     private int tokenCR;
+    protected boolean tokenSeen = false;
     public ISourcePosition tokline;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
@@ -173,7 +186,7 @@ public abstract class LexingCommon {
         return line_offset;
     }
 
-    public LexState getState() {
+    public int getState() {
         return lex_state;
     }
 
@@ -326,7 +339,7 @@ public abstract class LexingCommon {
     }
 
     public void printState() {
-        if (lex_state == null) {
+        if (lex_state == 0) {
             System.out.println("NULL");
         } else {
             System.out.println(lex_state);
@@ -352,16 +365,35 @@ public abstract class LexingCommon {
         parenNest = 0;
         ruby_sourceline = 0;
         token = 0;
+        tokenSeen = false;
         tokp = 0;
         yaccValue = null;
 
-        setState(null);
+        setState(0);
         resetStacks();
     }
 
     public void resetStacks() {
         conditionState.reset();
         cmdArgumentState.reset();
+    }
+
+    protected char scanOct(int count) throws IOException {
+        char value = '\0';
+
+        for (int i = 0; i < count; i++) {
+            int c = nextc();
+
+            if (!isOctChar(c)) {
+                pushback(c);
+                break;
+            }
+
+            value <<= 3;
+            value |= Integer.parseInt(String.valueOf((char) c), 8);
+        }
+
+        return value;
     }
 
     // FIXME: This is icky.  Ripper is setting encoding immediately but in Parsers lexer we are not.
@@ -443,7 +475,7 @@ public abstract class LexingCommon {
         this.src = source;
     }
 
-    public void setState(LexState state) {
+    public void setState(int state) {
         this.lex_state = state;
     }
 
@@ -564,9 +596,7 @@ public abstract class LexingCommon {
     }
 
     protected void warn_balanced(int c, boolean spaceSeen, String op, String syn) {
-        if (false && last_state != LexState.EXPR_CLASS && last_state != LexState.EXPR_DOT &&
-                last_state != LexState.EXPR_FNAME && last_state != LexState.EXPR_ENDFN &&
-                last_state != LexState.EXPR_ENDARG && spaceSeen && !Character.isWhitespace(c)) {
+        if (!isLexState(last_state, EXPR_CLASS|EXPR_DOT|EXPR_FNAME|EXPR_ENDFN|EXPR_ENDARG) && spaceSeen && !Character.isWhitespace(c)) {
             ambiguousOperator(op, syn);
         }
     }
@@ -615,7 +645,9 @@ public abstract class LexingCommon {
     public static final int STR_FUNC_SYMBOL=0x10;
     // When the heredoc identifier specifies <<-EOF that indents before ident. are ok (the '-').
     public static final int STR_FUNC_INDENT=0x20;
+    public static final int STR_FUNC_LABEL=0x40;
 
+    public static final int str_label = STR_FUNC_LABEL;
     public static final int str_squote = 0;
     public static final int str_dquote = STR_FUNC_EXPAND;
     public static final int str_xquote = STR_FUNC_EXPAND;
@@ -638,16 +670,6 @@ public abstract class LexingCommon {
     public static final int SUFFIX_I = 1<<1;
     public static final int SUFFIX_ALL = 3;
 
-
-    protected void determineExpressionState() {
-        if (isAfterOperator()) {
-            setState(LexState.EXPR_ARG);
-        } else {
-            if (lex_state == LexState.EXPR_CLASS) commandStart = true;
-            setState(LexState.EXPR_BEG);
-        }
-    }
-
     /**
      * @param c the character to test
      * @return true if character is a hex value (0-9a-f)
@@ -656,22 +678,28 @@ public abstract class LexingCommon {
         return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
     }
 
+    public static boolean isLexState(int state, int mask) {
+        return (mask & state) != 0;
+    }
+
+    protected boolean isLexStateAll(int state, int mask) {
+        return (mask & state) == mask;
+    }
+
     protected boolean isARG() {
-        return lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG;
+        return isLexState(lex_state, EXPR_ARG_ANY);
     }
 
     protected boolean isBEG() {
-        return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
-                lex_state == LexState.EXPR_CLASS || lex_state == LexState.EXPR_VALUE ||
-                lex_state == LexState.EXPR_LABELARG;
+        return isLexState(lex_state, EXPR_BEG_ANY) || isLexStateAll(lex_state, EXPR_ARG|EXPR_LABELED);
     }
 
     protected boolean isEND() {
-        return lex_state == LexState.EXPR_END || lex_state == LexState.EXPR_ENDARG ||
-                (lex_state == LexState.EXPR_ENDFN);
+        return isLexState(lex_state, EXPR_END_ANY);
     }
+
     protected boolean isLabelPossible(boolean commandState) {
-        return ((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !commandState) || isARG();
+        return (isLexState(lex_state, EXPR_LABEL|EXPR_ENDFN) && !commandState) || isARG();
     }
 
     protected boolean isLabelSuffix() {
@@ -679,7 +707,7 @@ public abstract class LexingCommon {
     }
 
     protected boolean isAfterOperator() {
-        return lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT;
+        return isLexState(lex_state, EXPR_FNAME|EXPR_DOT);
     }
 
     protected boolean isNext_identchar() throws IOException {

@@ -125,8 +125,12 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
-import org.jruby.lexer.LexingCommon.LexState;
-import static org.jruby.lexer.LexingCommon.LexState.*;
+import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
+import static org.jruby.lexer.LexingCommon.EXPR_END;
+import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
  
 public class RubyParser {
     protected ParserSupport support;
@@ -155,7 +159,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 159 "-"
+					// line 163 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -3706,7 +3710,7 @@ states[353] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
-                    lexer.setState(EXPR_ENDFN); /* force for args */
+                    lexer.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
     return yyVal;
   }
 };
@@ -4561,7 +4565,7 @@ states[495] = new ParserState() {
                    lexer.getConditionState().restart();
                    lexer.setStrTerm(((StrTerm)yyVals[-6+yyTop]));
                    lexer.getCmdArgumentState().reset(((Long)yyVals[-5+yyTop]).longValue());
-                   lexer.setState(((LexState)yyVals[-4+yyTop]));
+                   lexer.setState(((Integer)yyVals[-4+yyTop]));
                    lexer.setBraceNest(((Integer)yyVals[-3+yyTop]));
                    lexer.setHeredocIndent(((Integer)yyVals[-2+yyTop]));
                    lexer.setHeredocLineIndent(-1);
@@ -4849,6 +4853,7 @@ states[542] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = lexer.inKwarg;
                    lexer.inKwarg = true;
+                   lexer.setState(lexer.getState() | EXPR_LABEL);
     return yyVal;
   }
 };
@@ -5347,7 +5352,7 @@ states[646] = new ParserState() {
   }
 };
 }
-					// line 2564 "RubyParser.y"
+					// line 2568 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5362,4 +5367,4 @@ states[646] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10127 "-"
+					// line 10132 "-"

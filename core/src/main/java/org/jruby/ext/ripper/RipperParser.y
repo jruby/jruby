@@ -32,8 +32,12 @@ import org.jruby.RubyArray;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.lexer.LexingCommon.LexState;
-import static org.jruby.lexer.LexingCommon.LexState.*;
+import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
+import static org.jruby.lexer.LexingCommon.EXPR_END;
+import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 
 public class RipperParser extends RipperParserBase {
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
@@ -1182,7 +1186,7 @@ primary         : literal
                 } fname {
                     p.setInSingle(p.getInSingle() + 1);
                     p.pushLocalScope();
-                    p.setState(EXPR_ENDFN); /* force for args */
+                    p.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
                 } f_arglist bodystmt kEND {
                     $$ = p.dispatch("on_defs", $2, $3, $5, $7, $8);
 
@@ -1641,7 +1645,7 @@ string_content  : tSTRING_CONTENT
                    p.getConditionState().restart();
                    p.setStrTerm($<StrTerm>2);
                    p.getCmdArgumentState().reset($<Long>3.longValue());
-                   p.setState($<LexState>4);
+                   p.setState($<Integer>4);
                    p.setBraceNest($<Integer>5);
                    $$ = p.dispatch("on_string_embexpr", $6);
                 }

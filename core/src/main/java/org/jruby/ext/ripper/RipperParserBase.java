@@ -41,7 +41,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-import org.jruby.lexer.LexingCommon.LexState;
 /**
  *
  */
@@ -359,7 +358,7 @@ public class RipperParserBase {
         return lexer.getBraceNest();
     }
 
-    public LexState getState() {
+    public int getState() {
         return lexer.getState();
     }
 
@@ -367,7 +366,7 @@ public class RipperParserBase {
         lexer.setBraceNest(braceNest);
     }
 
-    public void setState(LexState lexState) {
+    public void setState(int lexState) {
         lexer.setState(lexState);
     }
 

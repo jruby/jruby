@@ -35,14 +35,18 @@ import org.jruby.RubyArray;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.lexer.LexingCommon.LexState;
-import static org.jruby.lexer.LexingCommon.LexState.*;
+import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
+import static org.jruby.lexer.LexingCommon.EXPR_END;
+import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 
 public class RipperParser extends RipperParserBase {
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 46 "-"
+					// line 50 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -3243,7 +3247,7 @@ states[352] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.setInSingle(p.getInSingle() + 1);
                     p.pushLocalScope();
-                    p.setState(EXPR_ENDFN); /* force for args */
+                    p.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
     return yyVal;
   }
 };
@@ -4008,7 +4012,7 @@ states[493] = new RipperParserState() {
                    p.getConditionState().restart();
                    p.setStrTerm(((StrTerm)yyVals[-5+yyTop]));
                    p.getCmdArgumentState().reset(((Long)yyVals[-4+yyTop]).longValue());
-                   p.setState(((LexState)yyVals[-3+yyTop]));
+                   p.setState(((Integer)yyVals[-3+yyTop]));
                    p.setBraceNest(((Integer)yyVals[-2+yyTop]));
                    yyVal = p.dispatch("on_string_embexpr", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
@@ -4733,6 +4737,6 @@ states[641] = new RipperParserState() {
   }
 };
 }
-					// line 2107 "RipperParser.y"
+					// line 2111 "RipperParser.y"
 }
-					// line 9492 "-"
+					// line 9496 "-"

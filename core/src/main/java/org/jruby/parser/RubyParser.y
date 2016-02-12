@@ -122,8 +122,12 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
-import org.jruby.lexer.LexingCommon.LexState;
-import static org.jruby.lexer.LexingCommon.LexState.*;
+import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
+import static org.jruby.lexer.LexingCommon.EXPR_END;
+import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
  
 public class RubyParser {
     protected ParserSupport support;
@@ -1514,7 +1518,7 @@ primary         : literal
                 } fname {
                     support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
-                    lexer.setState(EXPR_ENDFN); /* force for args */
+                    lexer.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
                 } f_arglist bodystmt kEND {
                     Node body = $8;
                     if (body == null) body = NilImplicitNode.NIL;
@@ -2047,7 +2051,7 @@ string_content  : tSTRING_CONTENT {
                    lexer.getConditionState().restart();
                    lexer.setStrTerm($<StrTerm>2);
                    lexer.getCmdArgumentState().reset($<Long>3.longValue());
-                   lexer.setState($<LexState>4);
+                   lexer.setState($<Integer>4);
                    lexer.setBraceNest($<Integer>5);
                    lexer.setHeredocIndent($<Integer>6);
                    lexer.setHeredocLineIndent(-1);
@@ -2219,7 +2223,6 @@ superclass      : tLT {
                 }
 
 // [!null]
-// ENEBO: Look at command_start stuff I am ripping out
 f_arglist       : tLPAREN2 f_args rparen {
                     $$ = $2;
                     lexer.setState(EXPR_BEG);
@@ -2228,6 +2231,7 @@ f_arglist       : tLPAREN2 f_args rparen {
                 | {
                    $$ = lexer.inKwarg;
                    lexer.inKwarg = true;
+                   lexer.setState(lexer.getState() | EXPR_LABEL);
                 } f_args term {
                    lexer.inKwarg = $<Boolean>1;
                     $$ = $2;

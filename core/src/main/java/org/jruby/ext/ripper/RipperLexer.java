@@ -41,8 +41,6 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.lexer.LexingCommon.LexState.*;
-
 /**
  *
  * @author enebo
@@ -198,9 +196,9 @@ public class RipperLexer extends LexingCommon {
         public final String name;
         public final int id0;
         public final int id1;
-        public final LexState state;
+        public final int state;
 
-        Keyword(String name, int id0, int id1, LexState state) {
+        Keyword(String name, int id0, int id1, int state) {
             this.name = name;
             this.id0 = id0;
             this.id1 = id1;
@@ -229,7 +227,7 @@ public class RipperLexer extends LexingCommon {
     public RipperLexer(RipperParserBase parser, LexerSource src) {
         super(src);
         this.parser = parser;
-        setState(null);
+        setState(0);
         lex_strterm = null;
         // FIXME: Do we need to parser_prepare like normal lexer?
         setCurrentEncoding(src.getEncoding());
@@ -239,7 +237,6 @@ public class RipperLexer extends LexingCommon {
     protected ByteList delayed = null;
     private int delayed_line = 0;
     private int delayed_col = 0;
-    private boolean tokenSeen = false;
 
     /**
      * Has lexing started yet?
@@ -337,8 +334,7 @@ public class RipperLexer extends LexingCommon {
     public int tokenize_ident(int result) {
         String value = createTokenString();
 
-        if ((last_state != EXPR_DOT || last_state != EXPR_FNAME) &&
-                parser.getCurrentScope().isDefined(value) >= 0) {
+        if (!isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parser.getCurrentScope().isDefined(value) >= 0) {
             setState(EXPR_END);
         }
 
@@ -986,11 +982,11 @@ public class RipperLexer extends LexingCommon {
             int tok = lex_strterm.parseString(this, src);
 
             if (tok == Tokens.tSTRING_END && (peek('"', -1) || peek('\'', -1))) {
-                if (((lex_state == EXPR_BEG || lex_state == EXPR_ENDFN) && !conditionState.isInState() ||
+                if ((isLexState(lex_state, EXPR_BEG|EXPR_ENDFN) && !conditionState.isInState() ||
                         isARG()) && isLabelSuffix()) {
                     nextc();
                     tok = Tokens.tLABEL_END;
-                    setState(EXPR_LABELARG);
+                    setState(EXPR_BEG|EXPR_LABEL);
                     lex_strterm = null;
                 }
             }
@@ -1051,26 +1047,18 @@ public class RipperLexer extends LexingCommon {
                 fallthru = true;
             }
             /* fall through */
-            case '\n':
+            case '\n': {
                 this.tokenSeen = tokenSeen;
-                switch (lex_state) {
-                    case EXPR_BEG:
-                    case EXPR_FNAME:
-                    case EXPR_DOT:
-                    case EXPR_CLASS:
-                    case EXPR_VALUE:
-                        if (!fallthru) dispatchScanEvent(Tokens.tIGNORED_NL);
-
-                        continue loop;
-                    case EXPR_LABELARG:
-                        if (inKwarg) {
-                            commandStart = true;
-                            setState(EXPR_BEG);
-                            return '\n';
-                        }
-                        if (!fallthru) dispatchScanEvent(Tokens.tIGNORED_NL);
-
-                        continue loop;
+                boolean normalArg = isLexState(lex_state, EXPR_BEG | EXPR_CLASS | EXPR_FNAME | EXPR_DOT) &&
+                        !isLexState(lex_state, EXPR_LABELED);
+                if (normalArg || isLexStateAll(lex_state, EXPR_ARG | EXPR_LABELED)) {
+                    if (!fallthru) dispatchScanEvent(Tokens.tIGNORED_NL);
+                    if (!normalArg && inKwarg) {
+                        commandStart = true;
+                        setState(EXPR_BEG);
+                        return '\n';
+                    }
+                    continue loop;
                 }
 
                 boolean done = false;
@@ -1095,7 +1083,7 @@ public class RipperLexer extends LexingCommon {
                         default:
                             ruby_sourceline--;
                             lex_nextline = lex_lastline;
-                        case -1:		// EOF (ENEBO: After default?
+                        case -1:        // EOF (ENEBO: After default?
                             lex_goto_eol();
                             if (c != -1) tokp = lex_p;
                             done = true;
@@ -1105,6 +1093,7 @@ public class RipperLexer extends LexingCommon {
                 commandStart = true;
                 setState(EXPR_BEG);
                 return '\n';
+            }
             case '*':
                 return star(spaceSeen);
             case '!':
@@ -1147,7 +1136,7 @@ public class RipperLexer extends LexingCommon {
                 }
 
 
-                determineExpressionState();
+                setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
                 c = nextc();
                 if (c == '=') {
@@ -1172,11 +1161,11 @@ public class RipperLexer extends LexingCommon {
             case '>':
                 return greaterThan();
             case '"':
-                return doubleQuote();
+                return doubleQuote(commandState);
             case '`':
                 return backtick(commandState);
             case '\'':
-                return singleQuote();
+                return singleQuote(commandState);
             case '?':
                 return questionMark();
             case '&':
@@ -1248,9 +1237,9 @@ public class RipperLexer extends LexingCommon {
         }
     }
 
-    private int identifierToken(LexState last_state, int result, String value) {
+    private int identifierToken(int last_state, int result, String value) {
 
-        if (result == Tokens.tIDENTIFIER && last_state != EXPR_DOT &&
+        if (result == Tokens.tIDENTIFIER && !isLexState(last_state, EXPR_DOT) &&
                 parser.getCurrentScope().isDefined(value) >= 0) {
             setState(EXPR_END);
         }
@@ -1288,7 +1277,7 @@ public class RipperLexer extends LexingCommon {
             c = Tokens.tAMPER2;
         }
 
-        determineExpressionState();
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         
         return c;
     }
@@ -1327,26 +1316,24 @@ public class RipperLexer extends LexingCommon {
     }
     
     private int backtick(boolean commandState) throws IOException {
-        switch (lex_state) {
-        case EXPR_FNAME:
+        if (isLexState(lex_state, EXPR_FNAME)) {
             setState(EXPR_ENDFN);
-            
             return Tokens.tBACK_REF2;
-        case EXPR_DOT:
-            setState(commandState ? EXPR_CMDARG : EXPR_ARG);
-            
-            return Tokens.tBACK_REF2;
-        default:
-            lex_strterm = new StringTerm(str_xquote, '\0', '`');
-            
-            return Tokens.tXSTRING_BEG;
         }
+        if (isLexState(lex_state, EXPR_DOT)) {
+            setState(commandState ? EXPR_CMDARG : EXPR_ARG);
+
+            return Tokens.tBACK_REF2;
+        }
+
+        lex_strterm = new StringTerm(str_xquote, '\0', '`');
+        return Tokens.tXSTRING_BEG;
     }
     
     private int bang() throws IOException {
         int c = nextc();
 
-        if (lex_state == EXPR_FNAME || lex_state == EXPR_DOT) {
+        if (isAfterOperator()) {
             setState(EXPR_ARG);
             if (c == '@') return Tokens.tBANG;
         } else {
@@ -1372,8 +1359,8 @@ public class RipperLexer extends LexingCommon {
             
             return Tokens.tOP_ASGN;
         }
-        
-        determineExpressionState();
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         
         pushback(c);
         
@@ -1384,7 +1371,7 @@ public class RipperLexer extends LexingCommon {
         int c = nextc();
         
         if (c == ':') {
-            if (isBEG() || lex_state == EXPR_CLASS || (isARG() && spaceSeen)) {
+            if (isBEG() || isLexState(lex_state, EXPR_CLASS) || (isARG() && spaceSeen)) {
                 setState(EXPR_BEG);
                 return Tokens.tCOLON3;
             }
@@ -1392,7 +1379,7 @@ public class RipperLexer extends LexingCommon {
             return Tokens.tCOLON2;
         }
 
-        if (isEND() || Character.isWhitespace(c)) {
+        if (isEND() || Character.isWhitespace(c) || c == '#') {
             pushback(c);
             setState(EXPR_BEG);
             return ':';
@@ -1415,25 +1402,24 @@ public class RipperLexer extends LexingCommon {
     }
 
     private int comma(int c) throws IOException {
-        setState(EXPR_BEG);
+        setState(EXPR_BEG|EXPR_LABEL);
         return c;
     }
 
-    private int doKeyword(LexState state) {
+    private int doKeyword(int state) {
         int leftParenBegin = getLeftParenBegin();
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
             setLeftParenBegin(0);
             parenNest--;
-
             return Tokens.kDO_LAMBDA;
         }
 
         if (conditionState.isInState()) return Tokens.kDO_COND;
 
-        if (state != EXPR_CMDARG && cmdArgumentState.isInState()) {
+        if (cmdArgumentState.isInState() && !isLexState(state, EXPR_CMDARG)) {
             return Tokens.kDO_BLOCK;
         }
-        if (state == EXPR_ENDARG || state == EXPR_BEG) {
+        if (isLexState(state,  EXPR_BEG|EXPR_ENDARG)) {
             return Tokens.kDO_BLOCK;
         }
         return Tokens.kDO;
@@ -1569,14 +1555,15 @@ public class RipperLexer extends LexingCommon {
         return Tokens.tDOT;
     }
     
-    private int doubleQuote() throws IOException {
-        lex_strterm = new StringTerm(str_dquote, '\0', '"');
+    private int doubleQuote(boolean commandState) throws IOException {
+        int label = isLabelPossible(commandState) ? str_label : 0;
+        lex_strterm = new StringTerm(str_dquote|label, '\0', '"');
 
         return Tokens.tSTRING_BEG;
     }
     
     private int greaterThan() throws IOException {
-        determineExpressionState();
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
         int c = nextc();
 
@@ -1630,7 +1617,7 @@ public class RipperLexer extends LexingCommon {
         if (lastBangOrPredicate) {
             result = Tokens.tFID;
         } else {
-            if (lex_state == EXPR_FNAME) {
+            if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
                     int c2 = nextc();
 
@@ -1657,9 +1644,9 @@ public class RipperLexer extends LexingCommon {
 
         if (isLabelPossible(commandState)) {
             if (isLabelSuffix()) {
-                setState(EXPR_LABELARG);
+                setState(EXPR_ARG|EXPR_LABELED);
                 nextc();
-                identValue = tempVal.intern();
+                yaccValue = tempVal.intern();
                 return Tokens.tLABEL;
             }
         }
@@ -1668,28 +1655,28 @@ public class RipperLexer extends LexingCommon {
             Keyword keyword = getKeyword(tempVal); // Is it is a keyword?
 
             if (keyword != null) {
-                LexState state = lex_state; // Save state at time keyword is encountered
+                int state = lex_state; // Save state at time keyword is encountered
                 setState(keyword.state);
 
-                if (state == EXPR_FNAME) {
-                    identValue = keyword.name;
+                if (isLexState(state, EXPR_FNAME)) {
+                    yaccValue = keyword.name;
                     return keyword.id0;
                 }
 
-                if (lex_state == EXPR_BEG) commandStart = true;
+                if (isLexState(lex_state, EXPR_BEG)) commandStart = true;
 
                 if (keyword.id0 == Tokens.kDO) return doKeyword(state);
 
-                if (state == EXPR_BEG || state == EXPR_VALUE || state == EXPR_LABELARG) {
+                if (isLexState(state, EXPR_BEG|EXPR_LABELED)) {
                     return keyword.id0;
                 } else {
-                    if (keyword.id0 != keyword.id1) lex_state = EXPR_BEG;
+                    if (keyword.id0 != keyword.id1) setState(EXPR_BEG|EXPR_LABEL);
                     return keyword.id1;
                 }
             }
         }
 
-        if (isBEG() || lex_state == EXPR_DOT || isARG()) {
+        if (isLexState(lex_state, EXPR_BEG_ANY|EXPR_ARG_ANY|EXPR_DOT)) {
             setState(commandState ? EXPR_CMDARG : EXPR_ARG);
         } else if (lex_state == EXPR_FNAME) {
             setState(EXPR_ENDFN);
@@ -1703,7 +1690,7 @@ public class RipperLexer extends LexingCommon {
     private int leftBracket(boolean spaceSeen) throws IOException {
         parenNest++;
         int c = '[';
-        if (lex_state == EXPR_FNAME || lex_state == EXPR_DOT) {
+        if (isAfterOperator()) {
             setState(EXPR_ARG);
 
             if ((c = nextc()) == ']') {
@@ -1714,12 +1701,13 @@ public class RipperLexer extends LexingCommon {
                 return Tokens.tAREF;
             }
             pushback(c);
+            setState(getState() | EXPR_LABEL);
             return '[';
-        } else if (isBEG() || (isARG() && spaceSeen)) {
+        } else if (isBEG() || (isARG() && (spaceSeen || isLexState(lex_state, EXPR_LABELED)))) {
             c = Tokens.tLBRACK;
         }
 
-        setState(EXPR_BEG);
+        setState(EXPR_BEG|EXPR_LABEL);
         conditionState.stop();
         cmdArgumentState.stop();
         yaccValue = "[";
@@ -1739,9 +1727,11 @@ public class RipperLexer extends LexingCommon {
         }
 
         char c;
-        if (isARG() || lex_state == EXPR_END || lex_state == EXPR_ENDFN) { // block (primary)
+        if (isLexState(lex_state, EXPR_LABELED)) {
+            c = Tokens.tLBRACE;
+        } else if (isLexState(lex_state, EXPR_ARG_ANY|EXPR_END|EXPR_ENDFN)) { // block (primary)
             c = Tokens.tLCURLY;
-        } else if (lex_state == EXPR_ENDARG) { // block (expr)
+        } else if (isLexState(lex_state, EXPR_ENDARG)) { // block (expr)
             c = Tokens.tLBRACE_ARG;
         } else { // hash
             c = Tokens.tLBRACE;
@@ -1750,8 +1740,9 @@ public class RipperLexer extends LexingCommon {
         conditionState.stop();
         cmdArgumentState.stop();
         setState(EXPR_BEG);
-
+        if (c != Tokens.tLBRACE_ARG) setState(getState() | EXPR_LABEL);
         if (c != Tokens.tLBRACE) commandStart = true;
+
         return c;
     }
 
@@ -1769,7 +1760,7 @@ public class RipperLexer extends LexingCommon {
         parenNest++;
         conditionState.stop();
         cmdArgumentState.stop();
-        setState(EXPR_BEG);
+        setState(EXPR_BEG|EXPR_LABEL);
 
         return result;
     }
@@ -1777,14 +1768,14 @@ public class RipperLexer extends LexingCommon {
     private int lessThan(boolean spaceSeen) throws IOException {
         last_state = lex_state;
         int c = nextc();
-        if (c == '<' && lex_state != EXPR_DOT && lex_state != EXPR_CLASS &&
-                !isEND() && (!isARG() || spaceSeen)) {
+        if (c == '<' && !isLexState(lex_state, EXPR_DOT|EXPR_CLASS) &&
+                !isEND() && (!isARG() || isLexState(lex_state, EXPR_LABELED) || spaceSeen)) {
             int tok = hereDocumentIdentifier();
             
             if (tok != 0) return tok;
         }
 
-        determineExpressionState();
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         
         switch (c) {
         case '=':
@@ -1810,7 +1801,7 @@ public class RipperLexer extends LexingCommon {
     private int minus(boolean spaceSeen) throws IOException {
         int c = nextc();
         
-        if (lex_state == EXPR_FNAME || lex_state == EXPR_DOT) {
+        if (isAfterOperator()) {
             setState(EXPR_ARG);
             if (c == '@') {
                 return Tokens.tUMINUS;
@@ -1853,8 +1844,8 @@ public class RipperLexer extends LexingCommon {
         }
         
         if (isSpaceArg(c, spaceSeen)) return parseQuote(c);
-        
-        determineExpressionState();
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
         pushback(c);
         warn_balanced(c, spaceSeen, "%%", "string literal");
@@ -1877,9 +1868,9 @@ public class RipperLexer extends LexingCommon {
             setState(EXPR_BEG);
             
             return Tokens.tOP_ASGN;
-        default:
-            determineExpressionState();
-            
+            default:
+                setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG|EXPR_LABEL);
+
             pushback(c);
             
             return Tokens.tPIPE;
@@ -2036,8 +2027,9 @@ public class RipperLexer extends LexingCommon {
         return Tokens.tRPAREN;
     }
     
-    private int singleQuote() throws IOException {
-        lex_strterm = new StringTerm(str_squote, '\0', '\'');
+    private int singleQuote(boolean commandState) throws IOException {
+        int label = isLabelPossible(commandState) ? str_label : 0;
+        lex_strterm = new StringTerm(str_squote|label, '\0', '\'');
         return Tokens.tSTRING_BEG;
     }
     
@@ -2062,8 +2054,8 @@ public class RipperLexer extends LexingCommon {
             
             return Tokens.tREGEXP_BEG;
         }
-        
-        determineExpressionState();
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
 
         warn_balanced(c, spaceSeen, "/", "regexp literal");
@@ -2111,15 +2103,15 @@ public class RipperLexer extends LexingCommon {
             }
 
         }
-        
-        determineExpressionState();
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         return c;
     }
 
     private int tilde() throws IOException {
         int c;
         
-        if (lex_state == EXPR_FNAME || lex_state == EXPR_DOT) {
+        if (isAfterOperator()) {
             if ((c = nextc()) != '@') pushback(c);
             setState(EXPR_ARG);
         } else {
@@ -2558,22 +2550,4 @@ public class RipperLexer extends LexingCommon {
 
         return hexValue;
     }
-
-    private char scanOct(int count) throws IOException {
-        char value = '\0';
-
-        for (int i = 0; i < count; i++) {
-            int c = nextc();
-
-            if (!isOctChar(c)) {
-                pushback(c);
-                break;
-            }
-
-            value <<= 3;
-            value |= Integer.parseInt(String.valueOf((char) c), 8);
-        }
-
-        return value;
-    } 
 }
