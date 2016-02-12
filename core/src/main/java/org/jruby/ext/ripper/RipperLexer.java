@@ -96,7 +96,8 @@ public class RipperLexer extends LexingCommon {
     public boolean ignoreNextScanEvent = false;
 
     protected void ambiguousOperator(String op, String syn) {
-        warn("`" + op + "' after local variable is interpreted as binary operator\nevent though it seems like \"" + syn + "\"");
+        warn("`" + op + "' after local variable or literal is interpreted as binary operator");
+        warn("even though it seems like " + syn);
     }
 
     private int getFloatToken(String number, int suffix) {
@@ -1848,7 +1849,7 @@ public class RipperLexer extends LexingCommon {
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
         pushback(c);
-        warn_balanced(c, spaceSeen, "%%", "string literal");
+        warn_balanced(c, spaceSeen, "%", "string literal");
         return Tokens.tPERCENT;
     }
 
@@ -2082,7 +2083,7 @@ public class RipperLexer extends LexingCommon {
             } else if (isBEG()) {
                 c = Tokens.tDSTAR;
             } else {
-                warn_balanced(c, spaceSeen, "*", "argument prefix");
+                warn_balanced(c, spaceSeen, "**", "argument prefix");
                 c = Tokens.tPOW;
             }
             break;

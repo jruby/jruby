@@ -134,7 +134,8 @@ public class RubyLexer extends LexingCommon {
     }
     
     protected void ambiguousOperator(String op, String syn) {
-        warnings.warn(ID.AMBIGUOUS_ARGUMENT, "`" + op + "' after local variable is interpreted as binary operator\nevent though it seems like \"" + syn + "\"");
+        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getPosition(), "`" + op + "' after local variable or literal is interpreted as binary operator");
+        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getPosition(), "even though it seems like " + syn);
     }
    
     public enum Keyword {
@@ -1714,7 +1715,7 @@ public class RubyLexer extends LexingCommon {
         
         pushback(c);
         yaccValue = "%";
-        warn_balanced(c, spaceSeen, "%%", "string literal");
+        warn_balanced(c, spaceSeen, "%", "string literal");
         return Tokens.tPERCENT;
     }
 
@@ -1956,7 +1957,7 @@ public class RubyLexer extends LexingCommon {
             } else if (isBEG()) {
                 c = Tokens.tDSTAR;
             } else {
-                warn_balanced(c, spaceSeen, "*", "argument prefix");
+                warn_balanced(c, spaceSeen, "**", "argument prefix");
                 c = Tokens.tPOW;
             }
             break;
