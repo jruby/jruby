@@ -171,11 +171,8 @@ public class Parser {
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
         if (!configuration.isEvalParse() && scriptLines != null) {
             if (scriptLines instanceof RubyHash) {
-                RubyString filename = runtime.newString(file);
-                ThreadContext context = runtime.getCurrentContext();
-                IRubyObject object = ((RubyHash) scriptLines).op_aref(context, filename);
-                list = (RubyArray) (object instanceof RubyArray ? object : runtime.newArray());
-                ((RubyHash) scriptLines).op_aset(context, filename, list);
+                list = runtime.newArray();
+                ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
             }
         }
         return list;
