@@ -894,12 +894,8 @@ arg             : lhs '=' arg {
                 | kDEFINED opt_nl arg {
                     $$ = p.dispatch("on_defined", $3);
                 }
-                | arg '?' {
-                    p.getConditionState().begin();
-                } arg opt_nl ':' {
-                    p.getConditionState().end();
-                } arg {
-                    $$ = p.dispatch("on_ifop", $1, $4, $8);
+                | arg '?' arg opt_nl ':' arg {
+                    $$ = p.dispatch("on_ifop", $1, $3, $6);
                 }
                 | primary {
                     $$ = $1;
