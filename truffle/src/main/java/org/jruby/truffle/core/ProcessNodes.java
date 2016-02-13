@@ -45,8 +45,8 @@ public abstract class ProcessNodes {
         public static final int CLOCK_THREAD_CPUTIME_ID = 3; // Linux only
         public static final int CLOCK_MONOTONIC_RAW_ID = 4; // Linux only
 
-        private final DynamicObject floatSecondSymbol = getContext().getSymbol("float_second");
-        private final DynamicObject nanosecondSymbol = getContext().getSymbol("nanosecond");
+        private final DynamicObject floatSecondSymbol = getContext().getSymbolTable().getSymbol("float_second");
+        private final DynamicObject nanosecondSymbol = getContext().getSymbolTable().getSymbol("nanosecond");
 
         public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

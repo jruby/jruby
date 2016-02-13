@@ -56,7 +56,8 @@ public abstract class SplatCastNode extends RubyNode {
         respondToToA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         respondToCast = BooleanCastNodeGen.create(context, sourceSection, null);
         toA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
-        conversionMethod = context.getSymbol(useToAry ? "to_ary" : "to_a");
+        String name = useToAry ? "to_ary" : "to_a";
+        conversionMethod = context.getSymbolTable().getSymbol(name);
     }
 
     public abstract RubyNode getChild();

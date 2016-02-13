@@ -652,18 +652,6 @@ public class RubyContext extends ExecutionContext {
         return symbolTable;
     }
 
-    public DynamicObject getSymbol(String name) {
-        return symbolTable.getSymbol(name);
-    }
-
-    public DynamicObject getSymbol(ByteList name) {
-        return symbolTable.getSymbol(name);
-    }
-
-    public DynamicObject getSymbol(Rope name) {
-        return symbolTable.getSymbol(name);
-    }
-
     public CallGraph getCallGraph() {
         return callGraph;
     }

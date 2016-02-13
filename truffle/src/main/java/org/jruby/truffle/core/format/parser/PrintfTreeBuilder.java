@@ -58,7 +58,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.core.format.parser.Prin
     @Override
     public void exitString(org.jruby.truffle.core.format.parser.PrintfParser.StringContext ctx) {
         final ByteList keyBytes = tokenAsBytes(ctx.CURLY_KEY().getSymbol(), 1);
-        final DynamicObject key = context.getSymbol(keyBytes);
+        final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
 
         sequence.add(
                 WriteBytesNodeGen.create(context,
@@ -117,7 +117,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.core.format.parser.Prin
             valueNode = ReadValueNodeGen.create(context, new SourceNode());
         } else {
             final ByteList keyBytes = tokenAsBytes(ctx.ANGLE_KEY().getSymbol(), 1);
-            final DynamicObject key = context.getSymbol(keyBytes);
+            final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
             valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
         }
 

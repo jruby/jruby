@@ -303,7 +303,7 @@ public abstract class BindingNodes {
             while (frame != null) {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
                     if (slot.getIdentifier() instanceof String && !((String) slot.getIdentifier()).startsWith("rubytruffle_temp_frame_on_stack_marker")) {
-                        names.add(context.getSymbol((String) slot.getIdentifier()));
+                        names.add(context.getSymbolTable().getSymbol((String) slot.getIdentifier()));
                     }
                 }
 

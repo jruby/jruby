@@ -248,9 +248,9 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE)
     public abstract static class HandleInterruptNode extends YieldingCoreMethodNode {
 
-        private final DynamicObject immediateSymbol = getContext().getSymbol("immediate");
-        private final DynamicObject onBlockingSymbol = getContext().getSymbol("on_blocking");
-        private final DynamicObject neverSymbol = getContext().getSymbol("never");
+        private final DynamicObject immediateSymbol = getContext().getSymbolTable().getSymbol("immediate");
+        private final DynamicObject onBlockingSymbol = getContext().getSymbolTable().getSymbol("on_blocking");
+        private final DynamicObject neverSymbol = getContext().getSymbolTable().getSymbol("never");
 
         public HandleInterruptNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

@@ -115,7 +115,7 @@ public class LoadArgumentsTranslator extends Translator {
             if (node.hasKeyRest()) {
                 final String name = node.getKeyRest().getName();
                 methodBodyTranslator.getEnvironment().declareVar(name);
-                keyRestNameOrNil = context.getSymbol(name);
+                keyRestNameOrNil = context.getSymbolTable().getSymbol(name);
             } else {
                 keyRestNameOrNil = context.getCoreLibrary().getNilObject();
             }

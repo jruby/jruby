@@ -225,7 +225,7 @@ public class BodyTranslator extends Translator {
     }
 
     private DynamicObject translateNameNodeToSymbol(org.jruby.ast.Node node) {
-        return context.getSymbol(((org.jruby.ast.LiteralNode) node).getName());
+        return context.getSymbolTable().getSymbol(((org.jruby.ast.LiteralNode) node).getName());
     }
 
     @Override
@@ -2912,7 +2912,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitSymbolNode(org.jruby.ast.SymbolNode node) {
         final Rope rope = StringOperations.createRope(node.getName(), node.getEncoding());
-        final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), context.getSymbol(rope));
+        final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), context.getSymbolTable().getSymbol(rope));
         return addNewlineIfNeeded(node, ret);
     }
 

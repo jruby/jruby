@@ -216,7 +216,7 @@ public class RubyCallNode extends RubyNode {
             CompilerDirectives.transferToInterpreter();
             respondToMissing = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
         }
-        final DynamicObject method = getContext().getSymbol(methodName);
+        final DynamicObject method = getContext().getSymbolTable().getSymbol(methodName);
         return respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, method, false);
     }
 
