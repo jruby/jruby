@@ -1304,6 +1304,14 @@ public class RubyProcess {
         return RubyKernel.exit(recv, args);
     }
 
+    @JRubyMethod(name = "setproctitle", module = true, visibility = PRIVATE)
+    public static IRubyObject setproctitle(IRubyObject recv, IRubyObject name) {
+        // Not possible for us to implement on most platforms, so we just noop.
+        name.convertToString();
+
+        return name;
+    }
+
     // This isn't quite right, and should probably work with a new Process + pid aggregate object
     public static void syswait(Ruby runtime, int pid) {
         int[] status = {0};
