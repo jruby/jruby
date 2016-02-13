@@ -410,10 +410,6 @@ public class RubyContext extends ExecutionContext {
         return callTarget.call(RubyArguments.pack(parentFrame, null, method, declarationContext, null, self, null, new Object[]{}));
     }
 
-    public Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
-        return newTupleNode.call(frame, getCoreLibrary().getTupleClass(), "create", null, values);
-    }
-
     public Object execute(final org.jruby.ast.RootNode rootNode) {
         coreLibrary.getGlobalVariablesObject().define("$0", getJRubyInterop().toTruffle(jrubyRuntime.getGlobalVariables().get("$0")), 0);
 

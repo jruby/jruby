@@ -375,7 +375,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
         public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
-            return Layouts.HANDLE.createHandle(getContext().coreLibrary.getHandleFactory(), getContext().getAttachmentsManager().attach(file.toString(), line, block));
+            return Layouts.HANDLE.createHandle(getContext().getCoreLibrary().getHandleFactory(), getContext().getAttachmentsManager().attach(file.toString(), line, block));
         }
 
     }
