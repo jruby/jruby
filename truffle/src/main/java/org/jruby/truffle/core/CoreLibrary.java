@@ -762,7 +762,7 @@ public class CoreLibrary {
 
             state = State.LOADING_RUBY_CORE;
             try {
-                context.load(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), node);
+                context.getCodeLoader().load(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), node);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

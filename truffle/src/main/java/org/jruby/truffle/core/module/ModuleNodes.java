@@ -675,7 +675,7 @@ public abstract class ModuleNodes {
             final String space = new String(new char[line-1]).replace("\0", "\n");
             Source source = Source.fromText(space + code.toString(), file);
 
-            return getContext().parseAndExecute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this);
+            return getContext().getCodeLoader().parseAndExecute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this);
         }
 
         @Specialization

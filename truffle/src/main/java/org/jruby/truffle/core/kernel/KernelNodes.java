@@ -674,7 +674,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private Object doEval(DynamicObject source, DynamicObject binding, String filename, boolean ownScopeForAssignments) {
-            final Object result = getContext().eval(ParserContext.EVAL, StringOperations.getByteListReadOnly(source), binding, ownScopeForAssignments, filename, this);
+            final Object result = getContext().getCodeLoader().eval(ParserContext.EVAL, StringOperations.getByteListReadOnly(source), binding, ownScopeForAssignments, filename, this);
             assert result != null;
             return result;
         }

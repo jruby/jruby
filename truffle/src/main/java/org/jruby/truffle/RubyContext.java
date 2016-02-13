@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle;
 
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -22,22 +21,16 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.CoverageTracker;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.core.CoreLibrary;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.LoadRequiredLibrariesNode;
-import org.jruby.truffle.core.SetTopLevelBindingNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.kernel.AtExitManager;
@@ -55,34 +48,23 @@ import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.SafepointManager;
 import org.jruby.truffle.language.Warnings;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.SequenceNode;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
+import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.FeatureLoader;
 import org.jruby.truffle.language.loader.SourceCache;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
-import org.jruby.util.ByteList;
-import org.jruby.util.IdUtil;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -119,6 +101,7 @@ public class RubyContext extends ExecutionContext {
     private final CoverageTracker coverageTracker;
     private final InstrumentationServerManager instrumentationServerManager;
     private final AttachmentsManager attachmentsManager;
+    private final CodeLoader codeLoader;
     private final SourceCache sourceCache;
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
@@ -193,6 +176,7 @@ public class RubyContext extends ExecutionContext {
         rubiniusPrimitiveManager.addAnnotatedPrimitives();
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
+        codeLoader = new CodeLoader(this);
         featureLoader = new FeatureLoader(this);
         traceManager = new TraceManager(this);
         atExitManager = new AtExitManager(this);
@@ -314,7 +298,7 @@ public class RubyContext extends ExecutionContext {
     public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
         final DynamicObject binding = BindingNodes.createBinding(this, evalFrame);
-        return eval(ParserContext.INLINE, StringOperations.createByteList(expression), binding, true, "inline-ruby", currentNode);
+        return getCodeLoader().eval(ParserContext.INLINE, StringOperations.createByteList(expression), binding, true, "inline-ruby", currentNode);
     }
 
     private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
@@ -332,98 +316,6 @@ public class RubyContext extends ExecutionContext {
         }
 
         return evalFrame;
-    }
-
-    public void loadFile(String fileName, Node currentNode) throws IOException {
-        load(sourceCache.getSource(fileName), currentNode);
-    }
-
-    public void load(Source source, Node currentNode) {
-        parseAndExecute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode);
-    }
-
-    @TruffleBoundary
-    public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
-        final Source source = Source.fromText(code, filename);
-        return parseAndExecute(source, code.getEncoding(), ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode);
-    }
-
-    @TruffleBoundary
-    public Object eval(ParserContext parserContext, ByteList code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
-        assert RubyGuards.isRubyBinding(binding);
-        final Source source = Source.fromText(code, filename);
-        final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
-        final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame.getArguments());
-        return parseAndExecute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, declarationContext, currentNode);
-    }
-
-    @TruffleBoundary
-    public Object parseAndExecute(Source source, Encoding defaultEncoding, ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments,
-                                  DeclarationContext declarationContext, Node currentNode) {
-        final RubyRootNode rootNode = parse(source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode);
-        return execute(parserContext, declarationContext, rootNode, parentFrame, self);
-    }
-
-    @TruffleBoundary
-    private RubyRootNode parse(Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
-        final TranslatorDriver translator = new TranslatorDriver(this);
-        return translator.parse(this, source, defaultEncoding, parserContext, null, parentFrame, ownScopeForAssignments, currentNode);
-    }
-
-    @TruffleBoundary
-    private Object execute(ParserContext parserContext, DeclarationContext declarationContext, RubyRootNode rootNode, MaterializedFrame parentFrame, Object self) {
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-
-        final DynamicObject declaringModule;
-        if (parserContext == ParserContext.EVAL && parentFrame != null) {
-            declaringModule = RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule();
-        } else if (parserContext == ParserContext.MODULE) {
-            assert RubyGuards.isRubyModule(self);
-            declaringModule = (DynamicObject) self;
-        } else {
-            declaringModule = getCoreLibrary().getObjectClass();
-        }
-
-        final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                declaringModule, Visibility.PUBLIC, callTarget);
-
-        return callTarget.call(RubyArguments.pack(parentFrame, null, method, declarationContext, null, self, null, new Object[]{}));
-    }
-
-    public Object execute(final org.jruby.ast.RootNode rootNode) {
-        coreLibrary.getGlobalVariablesObject().define("$0", getJRubyInterop().toTruffle(jrubyRuntime.getGlobalVariables().get("$0")), 0);
-
-        String inputFile = rootNode.getPosition().getFile();
-        final Source source;
-        try {
-            if (!inputFile.equals("-e")) {
-                inputFile = new File(inputFile).getCanonicalPath();
-            }
-            source = sourceCache.getSource(inputFile);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        featureLoader.setMainScriptSource(source);
-
-        final RubyRootNode originalRootNode = parse(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null);
-
-        final SourceSection sourceSection = originalRootNode.getSourceSection();
-        final RubyNode wrappedBody =
-                new TopLevelRaiseHandler(this, sourceSection,
-                        SequenceNode.sequence(this, sourceSection,
-                                new SetTopLevelBindingNode(this, sourceSection),
-                                new LoadRequiredLibrariesNode(this, sourceSection),
-                                originalRootNode.getBody()));
-
-        final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
-
-        if (rootNode.hasEndPosition()) {
-            final Object data = inlineRubyHelper(null, "Truffle::Primitive.get_data(file, offset)", "file", StringOperations.createString(this, ByteList.create(inputFile)), "offset", rootNode.getEndPosition());
-            Layouts.MODULE.getFields(coreLibrary.getObjectClass()).setConstant(this, null, "DATA", data);
-        }
-
-        return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, coreLibrary.getMainObject());
     }
 
     public void shutdown() {
@@ -570,4 +462,7 @@ public class RubyContext extends ExecutionContext {
         return callGraph;
     }
 
+    public CodeLoader getCodeLoader() {
+        return codeLoader;
+    }
 }

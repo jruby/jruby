@@ -834,7 +834,7 @@ public abstract class TrufflePrimitiveNodes {
             }
 
             try {
-                getContext().loadFile(StringOperations.getString(getContext(), file), this);
+                getContext().getCodeLoader().loadFile(StringOperations.getString(getContext(), file), this);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
@@ -858,7 +858,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public Object runJRubyRootNode() {
-            return getContext().execute(getContext().getInitialJRubyRootNode());
+            return getContext().getCodeLoader().execute(getContext().getInitialJRubyRootNode());
         }
     }
 

@@ -140,7 +140,7 @@ public class FeatureLoader {
         final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
         ArrayOperations.append(loadedFeatures, pathString);
         try {
-            context.loadFile(expandedPath, currentNode);
+            context.getCodeLoader().loadFile(expandedPath, currentNode);
         } catch (RaiseException e) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
             final int length = Layouts.ARRAY.getSize(loadedFeatures);
