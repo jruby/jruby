@@ -365,7 +365,7 @@ public class EncodingUtils {
         }
 
         if (internal == null ||
-                ((fmode & OpenFile.SETENC_BY_BOM) == 0) && internal == external) {
+                ((fmode & OpenFile.SETENC_BY_BOM) == 0 && internal == external)) {
             encodable.setEnc((defaultExternal && internal != external) ? null : external);
             encodable.setEnc2(null);
         } else {
@@ -1330,7 +1330,7 @@ public class EncodingUtils {
     // io_set_encoding_by_bom
     public static void ioSetEncodingByBOM(ThreadContext context, RubyIO io) {
         Ruby runtime = context.runtime;
-        Encoding bomEncoding = ioStripBOM(io);
+        Encoding bomEncoding = ioStripBOM(context, io);
 
         if (bomEncoding != null) {
             // FIXME: Wonky that we acquire RubyEncoding to pass these encodings through
@@ -1338,6 +1338,8 @@ public class EncodingUtils {
             IRubyObject theInternal = io.internal_encoding(context);
 
             io.setEncoding(runtime.getCurrentContext(), theBom, theInternal, context.nil);
+        } else {
+            io.setEnc2(null);
         }
     }
 
