@@ -16,7 +16,14 @@ import jnr.ffi.annotations.Direct;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 import jnr.ffi.annotations.Transient;
-import jnr.posix.*;
+import jnr.posix.FileStat;
+import jnr.posix.LibC;
+import jnr.posix.MsgHdr;
+import jnr.posix.NativeGroup;
+import jnr.posix.NativePasswd;
+import jnr.posix.NativeTimes;
+import jnr.posix.RLimit;
+import jnr.posix.Timeval;
 
 import java.nio.ByteBuffer;
 

@@ -15,8 +15,6 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.om.dsl.api.Layout;
 
-import java.util.concurrent.LinkedBlockingQueue;
-
 @Layout
 public interface QueueLayout extends BasicObjectLayout {
 

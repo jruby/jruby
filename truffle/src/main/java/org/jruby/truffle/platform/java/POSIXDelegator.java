@@ -13,7 +13,17 @@ import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.Signal;
 import jnr.constants.platform.Sysconf;
 import jnr.ffi.Pointer;
-import jnr.posix.*;
+import jnr.posix.FileStat;
+import jnr.posix.Group;
+import jnr.posix.LibC;
+import jnr.posix.MsgHdr;
+import jnr.posix.POSIX;
+import jnr.posix.Passwd;
+import jnr.posix.RLimit;
+import jnr.posix.SignalHandler;
+import jnr.posix.SpawnAttribute;
+import jnr.posix.SpawnFileAction;
+import jnr.posix.Times;
 import jnr.posix.util.ProcessMaker;
 
 import java.io.FileDescriptor;

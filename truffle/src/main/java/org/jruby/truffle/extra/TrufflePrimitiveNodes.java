@@ -31,11 +31,22 @@ import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.cext.CExtManager;
 import org.jruby.truffle.cext.CExtSubsystem;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.hash.BucketsStrategy;
-import org.jruby.truffle.core.rope.*;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyCallStack;
@@ -50,7 +61,12 @@ import org.jruby.util.Memo;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {

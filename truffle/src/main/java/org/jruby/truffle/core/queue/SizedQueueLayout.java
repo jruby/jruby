@@ -15,8 +15,6 @@ import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 
-import java.util.concurrent.BlockingQueue;
-
 @Layout
 public interface SizedQueueLayout extends BasicObjectLayout {
 

@@ -31,7 +31,12 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
-import org.jruby.truffle.language.methods.*;
+import org.jruby.truffle.language.methods.Arity;
+import org.jruby.truffle.language.methods.CatchNextNode;
+import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
+import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
+import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
