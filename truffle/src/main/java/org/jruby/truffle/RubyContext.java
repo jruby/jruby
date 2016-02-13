@@ -334,14 +334,6 @@ public class RubyContext extends ExecutionContext {
         return evalFrame;
     }
 
-    public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
-        if (!IdUtil.isValidClassVariableName(name)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
-        }
-        return name;
-    }
-
     public void loadFile(String fileName, Node currentNode) throws IOException {
         load(sourceCache.getSource(fileName), currentNode);
     }

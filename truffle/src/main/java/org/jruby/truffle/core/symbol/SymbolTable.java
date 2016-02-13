@@ -164,4 +164,12 @@ public class SymbolTable {
         return name;
     }
 
+    public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
+        if (!IdUtil.isValidClassVariableName(name)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+        }
+        return name;
+    }
+
 }

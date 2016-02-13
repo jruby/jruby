@@ -58,6 +58,7 @@ import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.string.StringNodes;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -740,7 +741,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         @Specialization
         public boolean isClassVariableDefinedString(DynamicObject module, String name) {
-            RubyContext.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
 
@@ -768,7 +769,7 @@ public abstract class ModuleNodes {
         @Specialization
         @TruffleBoundary
         public Object getClassVariable(DynamicObject module, String name) {
-            RubyContext.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
 
@@ -802,7 +803,7 @@ public abstract class ModuleNodes {
         @Specialization
         @TruffleBoundary
         public Object setClassVariable(DynamicObject module, String name, Object value) {
-            RubyContext.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, this);
 
             ModuleOperations.setClassVariable(getContext(), module, name, value, this);
 
@@ -1835,7 +1836,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {
-            RubyContext.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, this);
             return Layouts.MODULE.getFields(module).removeClassVariable(getContext(), this, name);
         }
 
