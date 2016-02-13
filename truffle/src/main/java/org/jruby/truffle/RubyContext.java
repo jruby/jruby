@@ -43,7 +43,6 @@ import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
-import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeTable;
 import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.core.string.StringOperations;
@@ -51,6 +50,7 @@ import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.instrument.RubyDefaultASTProber;
+import org.jruby.truffle.interop.JRubyInterop;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.Options;
@@ -85,7 +85,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -123,6 +122,7 @@ public class RubyContext extends ExecutionContext {
     private final SourceCache sourceCache;
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
+    private final JRubyInterop jrubyInterop;
 
     private org.jruby.ast.RootNode initialJRubyRootNode;
 
@@ -136,6 +136,8 @@ public class RubyContext extends ExecutionContext {
         } else {
             callGraph = null;
         }
+        
+        jrubyInterop = new JRubyInterop(this);
 
         latestInstance = this;
 
@@ -353,8 +355,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public void loadFile(String fileName, Node currentNode) throws IOException {
-        final Source source = sourceCache.getSource(fileName);
-        load(source, currentNode);
+        load(sourceCache.getSource(fileName), currentNode);
     }
 
     public void load(Source source, Node currentNode) {
@@ -413,63 +414,8 @@ public class RubyContext extends ExecutionContext {
         return newTupleNode.call(frame, getCoreLibrary().getTupleClass(), "create", null, values);
     }
 
-    @TruffleBoundary
-    public IRubyObject toJRuby(Object object) {
-        if (object == getCoreLibrary().getNilObject()) {
-            return jrubyRuntime.getNil();
-        } else if (object instanceof Boolean) {
-            return jrubyRuntime.newBoolean((boolean) object);
-        } else if (RubyGuards.isRubyString(object)) {
-            return toJRubyString((DynamicObject) object);
-        } else if (RubyGuards.isRubyEncoding(object)) {
-            return jrubyRuntime.getEncodingService().rubyEncodingFromObject(jrubyRuntime.newString(Layouts.ENCODING.getName((DynamicObject) object)));
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    @TruffleBoundary
-    public org.jruby.RubyString toJRubyString(DynamicObject string) {
-        assert RubyGuards.isRubyString(string);
-        return jrubyRuntime.newString(StringOperations.rope(string).toByteListCopy());
-    }
-
-    @TruffleBoundary
-    public Object toTruffle(IRubyObject object) {
-        if (object instanceof org.jruby.RubyFixnum) {
-            final long value = ((org.jruby.RubyFixnum) object).getLongValue();
-
-            if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
-                return value;
-            }
-
-            return (int) value;
-        } else if (object instanceof org.jruby.RubyBignum) {
-            final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
-            return Layouts.BIGNUM.createBignum(coreLibrary.getBignumFactory(), value);
-        } else if (object instanceof org.jruby.RubyString) {
-            return StringOperations.createString(this, ((org.jruby.RubyString) object).getByteList().dup());
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    @TruffleBoundary
-    public DynamicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
-        switch (jrubyException.getMetaClass().getName()) {
-            case "ArgumentError":
-                return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
-            case "Encoding::CompatibilityError":
-                return getCoreLibrary().encodingCompatibilityError(jrubyException.getMessage().toString(), currentNode);
-            case "RegexpError":
-                return getCoreLibrary().regexpError(jrubyException.getMessage().toString(), currentNode);
-        }
-
-        throw new UnsupportedOperationException();
-    }
-
     public Object execute(final org.jruby.ast.RootNode rootNode) {
-        coreLibrary.getGlobalVariablesObject().define("$0", toTruffle(jrubyRuntime.getGlobalVariables().get("$0")), 0);
+        coreLibrary.getGlobalVariablesObject().define("$0", getJRubyInterop().toTruffle(jrubyRuntime.getGlobalVariables().get("$0")), 0);
 
         String inputFile = rootNode.getPosition().getFile();
         final Source source;
@@ -574,6 +520,10 @@ public class RubyContext extends ExecutionContext {
 
     public NativePlatform getNativePlatform() {
         return nativePlatform;
+    }
+
+    public JRubyInterop getJRubyInterop() {
+        return jrubyInterop;
     }
 
     public Ruby getJRubyRuntime() {

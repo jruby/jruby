@@ -222,7 +222,7 @@ public abstract class StringPrimitiveNodes {
                     try {
                         c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, p, end);
                     } catch (org.jruby.exceptions.RaiseException ex) {
-                        throw new RaiseException(getContext().toTruffle(ex.getException(), this));
+                        throw new RaiseException(getContext().getJRubyInterop().toTruffle(ex.getException(), this));
                     }
 
                     p += StringSupport.length(enc, bytes, p, end);
@@ -1405,9 +1405,9 @@ public abstract class StringPrimitiveNodes {
                         fixBase,
                         strict);
 
-                return getContext().toTruffle(result);
+                return getContext().getJRubyInterop().toTruffle(result);
             } catch (org.jruby.exceptions.RaiseException e) {
-                throw new RaiseException(getContext().toTruffle(e.getException(), this));
+                throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
             }
         }
 
