@@ -82,6 +82,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.NotProvided;
@@ -992,7 +993,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public boolean isInstanceVariableDefined(DynamicObject object, String name) {
-            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, this);
             return object.getShape().hasProperty(ivar);
         }
 
@@ -1044,7 +1045,7 @@ public abstract class KernelNodes {
         }
 
         protected String checkName(String name) {
-            return RubyContext.checkInstanceVariableName(getContext(), name, this);
+            return SymbolTable.checkInstanceVariableName(getContext(), name, this);
         }
 
         protected ReadHeadObjectFieldNode createReadFieldNode(String name) {
@@ -1106,7 +1107,7 @@ public abstract class KernelNodes {
         }
 
         protected String checkName(String name) {
-            return RubyContext.checkInstanceVariableName(getContext(), name, this);
+            return SymbolTable.checkInstanceVariableName(getContext(), name, this);
         }
 
         protected WriteHeadObjectFieldNode createWriteFieldNode(String name) {
@@ -1138,7 +1139,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object removeInstanceVariable(DynamicObject object, String name) {
-            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, this);
             final Object value = object.get(ivar, nil());
             if (!object.delete(name)) {
                 CompilerDirectives.transferToInterpreter();
