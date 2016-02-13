@@ -99,12 +99,11 @@ public class RubyContext extends ExecutionContext {
 
     private static volatile RubyContext latestInstance;
 
+    private final TruffleLanguage.Env env;
+
     private final Ruby jrubyRuntime;
-
     private final Options options;
-
     private final NativePlatform nativePlatform;
-
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
     private final TraceManager traceManager;
@@ -123,13 +122,11 @@ public class RubyContext extends ExecutionContext {
     private final AttachmentsManager attachmentsManager;
     private final SourceCache sourceCache;
     private final CallGraph callGraph;
-
     private final PrintStream debugStandardOut;
 
-    private final Map<String, TruffleObject> exported = new HashMap<>();
-    private final TruffleLanguage.Env env;
-
     private org.jruby.ast.RootNode initialJRubyRootNode;
+
+    private final Map<String, TruffleObject> exported = new HashMap<>();
 
     public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
         options = new Options();
@@ -364,26 +361,6 @@ public class RubyContext extends ExecutionContext {
         parseAndExecute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode);
     }
 
-    public RopeTable getRopeTable() {
-        return ropeTable;
-    }
-
-    public SymbolTable getSymbolTable() {
-        return symbolTable;
-    }
-
-    public DynamicObject getSymbol(String name) {
-        return symbolTable.getSymbol(name);
-    }
-
-    public DynamicObject getSymbol(ByteList name) {
-        return symbolTable.getSymbol(name);
-    }
-
-    public DynamicObject getSymbol(Rope name) {
-        return symbolTable.getSymbol(name);
-    }
-
     @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
@@ -491,70 +468,6 @@ public class RubyContext extends ExecutionContext {
         throw new UnsupportedOperationException();
     }
 
-    public Ruby getJRubyRuntime() {
-        return jrubyRuntime;
-    }
-
-    public CoreLibrary getCoreLibrary() {
-        return coreLibrary;
-    }
-
-    public FeatureLoader getFeatureLoader() {
-        return featureLoader;
-    }
-
-    public ObjectSpaceManager getObjectSpaceManager() {
-        return objectSpaceManager;
-    }
-
-    public ThreadManager getThreadManager() {
-        return threadManager;
-    }
-
-    public AtExitManager getAtExitManager() {
-        return atExitManager;
-    }
-
-    public TraceManager getTraceManager() {
-        return traceManager;
-    }
-
-    public Warnings getWarnings() {
-        return warnings;
-    }
-
-    public SafepointManager getSafepointManager() {
-        return safepointManager;
-    }
-
-    public LexicalScope getRootLexicalScope() {
-        return rootLexicalScope;
-    }
-
-    public CompilerOptions getCompilerOptions() {
-        return compilerOptions;
-    }
-
-    public RubiniusPrimitiveManager getRubiniusPrimitiveManager() {
-        return rubiniusPrimitiveManager;
-    }
-
-    public CoverageTracker getCoverageTracker() {
-        return coverageTracker;
-    }
-
-    public static RubyContext getLatestInstance() {
-        return latestInstance;
-    }
-
-    public AttachmentsManager getAttachmentsManager() {
-        return attachmentsManager;
-    }
-
-    public SourceCache getSourceCache() {
-        return sourceCache;
-    }
-
     public Object execute(final org.jruby.ast.RootNode rootNode) {
         coreLibrary.getGlobalVariablesObject().define("$0", toTruffle(jrubyRuntime.getGlobalVariables().get("$0")), 0);
 
@@ -617,10 +530,6 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
-    public PrintStream getDebugStandardOut() {
-        return debugStandardOut;
-    }
-
     public void exportObject(DynamicObject name, TruffleObject object) {
         assert RubyGuards.isRubyString(name);
         exported.put(name.toString(), object);
@@ -635,28 +544,12 @@ public class RubyContext extends ExecutionContext {
         return env.importSymbol(name.toString());
     }
 
-    public Options getOptions() {
-        return options;
-    }
-
-    public TruffleLanguage.Env getEnv() {
-        return env;
-    }
-
     public void setInitialJRubyRootNode(org.jruby.ast.RootNode initialJRubyRootNode) {
         this.initialJRubyRootNode = initialJRubyRootNode;
     }
 
-    public org.jruby.ast.RootNode getInitialJRubyRootNode() {
-        return initialJRubyRootNode;
-    }
-
     public DynamicObject createHandle(Object object) {
         return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
-    }
-
-    public NativePlatform getNativePlatform() {
-        return nativePlatform;
     }
 
     public static void appendToFile(String fileName, String message) {
@@ -665,6 +558,110 @@ public class RubyContext extends ExecutionContext {
         } catch (FileNotFoundException | UnsupportedEncodingException e) {
             e.printStackTrace();
         }
+    }
+
+    public org.jruby.ast.RootNode getInitialJRubyRootNode() {
+        return initialJRubyRootNode;
+    }
+
+    public Options getOptions() {
+        return options;
+    }
+
+    public TruffleLanguage.Env getEnv() {
+        return env;
+    }
+
+    public NativePlatform getNativePlatform() {
+        return nativePlatform;
+    }
+
+    public Ruby getJRubyRuntime() {
+        return jrubyRuntime;
+    }
+
+    public CoreLibrary getCoreLibrary() {
+        return coreLibrary;
+    }
+
+    public PrintStream getDebugStandardOut() {
+        return debugStandardOut;
+    }
+
+    public FeatureLoader getFeatureLoader() {
+        return featureLoader;
+    }
+
+    public ObjectSpaceManager getObjectSpaceManager() {
+        return objectSpaceManager;
+    }
+
+    public ThreadManager getThreadManager() {
+        return threadManager;
+    }
+
+    public AtExitManager getAtExitManager() {
+        return atExitManager;
+    }
+
+    public TraceManager getTraceManager() {
+        return traceManager;
+    }
+
+    public Warnings getWarnings() {
+        return warnings;
+    }
+
+    public SafepointManager getSafepointManager() {
+        return safepointManager;
+    }
+
+    public LexicalScope getRootLexicalScope() {
+        return rootLexicalScope;
+    }
+
+    public CompilerOptions getCompilerOptions() {
+        return compilerOptions;
+    }
+
+    public RubiniusPrimitiveManager getRubiniusPrimitiveManager() {
+        return rubiniusPrimitiveManager;
+    }
+
+    public CoverageTracker getCoverageTracker() {
+        return coverageTracker;
+    }
+
+    public static RubyContext getLatestInstance() {
+        return latestInstance;
+    }
+
+    public AttachmentsManager getAttachmentsManager() {
+        return attachmentsManager;
+    }
+
+    public SourceCache getSourceCache() {
+        return sourceCache;
+    }
+
+    public RopeTable getRopeTable() {
+        return ropeTable;
+    }
+
+    public SymbolTable getSymbolTable() {
+        return symbolTable;
+    }
+
+    public DynamicObject getSymbol(String name) {
+        return symbolTable.getSymbol(name);
+    }
+
+    public DynamicObject getSymbol(ByteList name) {
+        return symbolTable.getSymbol(name);
+    }
+
+    public DynamicObject getSymbol(Rope name) {
+        return symbolTable.getSymbol(name);
     }
 
     public CallGraph getCallGraph() {
