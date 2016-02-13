@@ -494,10 +494,6 @@ public class RubyContext extends ExecutionContext {
         this.initialJRubyRootNode = initialJRubyRootNode;
     }
 
-    public DynamicObject createHandle(Object object) {
-        return Layouts.HANDLE.createHandle(coreLibrary.getHandleFactory(), object);
-    }
-
     public static void appendToFile(String fileName, String message) {
         try (PrintStream stream = new PrintStream(new FileOutputStream(fileName, true), true, StandardCharsets.UTF_8.name())) {
             stream.println(message);
