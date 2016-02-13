@@ -494,14 +494,6 @@ public class RubyContext extends ExecutionContext {
         this.initialJRubyRootNode = initialJRubyRootNode;
     }
 
-    public static void appendToFile(String fileName, String message) {
-        try (PrintStream stream = new PrintStream(new FileOutputStream(fileName, true), true, StandardCharsets.UTF_8.name())) {
-            stream.println(message);
-        } catch (FileNotFoundException | UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-    }
-
     public org.jruby.ast.RootNode getInitialJRubyRootNode() {
         return initialJRubyRootNode;
     }
