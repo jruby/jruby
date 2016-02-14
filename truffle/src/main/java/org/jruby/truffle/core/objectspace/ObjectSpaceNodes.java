@@ -23,7 +23,7 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
-import org.jruby.truffle.language.ModuleOperations;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;

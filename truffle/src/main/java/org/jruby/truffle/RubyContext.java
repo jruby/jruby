@@ -30,7 +30,7 @@ import org.jruby.truffle.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.interop.InteropManager;
 import org.jruby.truffle.interop.JRubyInterop;
 import org.jruby.truffle.language.LexicalScope;
-import org.jruby.truffle.language.ModuleOperations;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SafepointManager;

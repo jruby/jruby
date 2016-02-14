@@ -21,8 +21,6 @@ import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.method.MethodFilter;
-import org.jruby.truffle.language.ModuleChain;
-import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;

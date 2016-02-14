@@ -24,7 +24,7 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
-import org.jruby.truffle.language.ModuleOperations;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;

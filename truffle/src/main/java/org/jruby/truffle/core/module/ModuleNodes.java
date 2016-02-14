@@ -60,7 +60,6 @@ import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.language.LexicalScope;
-import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyConstant;
