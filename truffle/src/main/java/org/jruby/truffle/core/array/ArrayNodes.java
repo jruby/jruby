@@ -2242,12 +2242,10 @@ public abstract class ArrayNodes {
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
-                    context, sourceSection, null, sharedMethodInfo,
-                    ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                            new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
-                            new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
-                    })));
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
+                                        new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
+                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                                }), false));
         }
 
         public FrameDescriptor getFrameDescriptor() {
@@ -2362,12 +2360,10 @@ public abstract class ArrayNodes {
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
-                    context, sourceSection, null, sharedMethodInfo,
-                    ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                            new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
-                            new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
-                    })));
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
+                                        new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
+                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                                }), false));
         }
 
         public FrameDescriptor getFrameDescriptor() {

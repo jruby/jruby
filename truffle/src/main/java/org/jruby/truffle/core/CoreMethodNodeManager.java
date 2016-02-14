@@ -247,7 +247,7 @@ public class CoreMethodNodeManager {
 
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, method.unsupportedOperationBehavior());
 
-        return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
+        return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode, false);
     }
 
     public void allMethodInstalled() {
