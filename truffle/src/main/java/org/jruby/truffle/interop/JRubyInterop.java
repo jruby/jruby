@@ -77,7 +77,7 @@ public class JRubyInterop {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
                 return context.getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
-            case "Encodcontext.ing::CompatibilityError":
+            case "Encoding::CompatibilityError":
                 return context.getCoreLibrary().encodingCompatibilityError(jrubyException.getMessage().toString(), currentNode);
             case "RegexpError":
                 return context.getCoreLibrary().regexpError(jrubyException.getMessage().toString(), currentNode);
