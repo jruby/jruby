@@ -79,6 +79,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 
+import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BLOCK;
 import static org.jruby.anno.FrameField.FILENAME;
@@ -842,7 +843,9 @@ public class RubyKernel {
             printExceptionSummary(context, runtime, raise.getException());
         }
 
-        if ( argc > 0 && cause != raise.getException() ) raise.getException().setCause(cause);
+        if (argc > 0 && raise.getException().getCause() == UNDEF) {
+            raise.getException().setCause(cause);
+        }
 
         throw raise;
     }

@@ -70,7 +70,7 @@ public class RubyException extends RubyObject {
         super(runtime, rubyClass);
 
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
-        this.cause = runtime.getNil();
+        this.cause = RubyBasicObject.UNDEF;
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
@@ -196,11 +196,18 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "cause")
     public IRubyObject cause(ThreadContext context) {
         assert cause != null;
+
+        if (cause == RubyBasicObject.UNDEF) return context.nil;
+
         return cause;
     }
 
     public void setCause(IRubyObject cause) {
         this.cause = cause;
+    }
+
+    public IRubyObject getCause() {
+        return cause;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {
