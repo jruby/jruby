@@ -72,7 +72,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.debug.AssertConstantNodeGen;
 import org.jruby.truffle.debug.AssertNotCompiledNodeGen;
-import org.jruby.truffle.language.ConstantReplacer;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
