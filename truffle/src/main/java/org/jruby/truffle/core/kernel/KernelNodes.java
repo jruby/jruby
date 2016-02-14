@@ -38,6 +38,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
@@ -781,10 +782,11 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object fork(Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-            getContext().getWarnings().warn("Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
+            final SourceSection sourceSection = RubyCallStack.getTopMostUserCallNode().getEncapsulatingSourceSection();
+            getContext().getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourceSection.getSource().getName(), sourceSection.getStartLine(), "Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
             return nil();
         }
 

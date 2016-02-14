@@ -34,7 +34,6 @@ import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SafepointManager;
-import org.jruby.truffle.language.Warnings;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.FeatureLoader;
@@ -66,7 +65,6 @@ public class RubyContext extends ExecutionContext {
     private final JRubyInterop jrubyInterop = new JRubyInterop(this);
     private final SafepointManager safepointManager = new SafepointManager(this);
     private final SymbolTable symbolTable = new SymbolTable(this);
-    private final Warnings warnings = new Warnings(this);
     private final InteropManager interopManager = new InteropManager(this);
     private final CodeLoader codeLoader = new CodeLoader(this);
     private final FeatureLoader featureLoader = new FeatureLoader(this);
@@ -259,10 +257,6 @@ public class RubyContext extends ExecutionContext {
 
     public TraceManager getTraceManager() {
         return traceManager;
-    }
-
-    public Warnings getWarnings() {
-        return warnings;
     }
 
     public SafepointManager getSafepointManager() {
