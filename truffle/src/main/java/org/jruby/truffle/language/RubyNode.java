@@ -179,7 +179,7 @@ public abstract class RubyNode extends Node {
     }
 
     protected MemoryManager memoryManager() {
-        return jnr.ffi.Runtime.getSystemRuntime().getMemoryManager();
+        return getContext().getNativePlatform().getMemoryManager();
     }
 
     protected Object ruby(String expression, Object... arguments) {

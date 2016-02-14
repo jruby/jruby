@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.platform.java;
 
+import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jruby.truffle.RubyContext;
@@ -30,6 +31,7 @@ import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 public class JavaPlatform implements NativePlatform {
 
     private final POSIX posix;
+    private final MemoryManager memoryManager;
     private final SignalManager signalManager;
     private final ProcessName processName;
     private final Sockets sockets;
@@ -38,6 +40,7 @@ public class JavaPlatform implements NativePlatform {
 
     public JavaPlatform(RubyContext context) {
         posix = new TruffleJavaPOSIX(context, POSIXFactory.getJavaPOSIX(new TrufflePOSIXHandler(context)));
+        memoryManager = new JavaMemoryManager();
         signalManager = new SunMiscSignalManager();
         processName = new JavaProcessName();
         sockets = new JavaSockets();
@@ -50,6 +53,11 @@ public class JavaPlatform implements NativePlatform {
     @Override
     public POSIX getPosix() {
         return posix;
+    }
+
+    @Override
+    public MemoryManager getMemoryManager() {
+        return memoryManager;
     }
 
     @Override
