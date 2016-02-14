@@ -42,7 +42,7 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public RubyContext createContext(Env env) {
-        final JRubyContextWrapper runtimeWrapper = (JRubyContextWrapper) env.importSymbol("org.jruby.truffle.runtime");
+        final JRubyContextWrapper runtimeWrapper = (JRubyContextWrapper) env.importSymbol(JRubyTruffleImpl.RUNTIME_SYMBOL);
 
         final Ruby runtime;
 
