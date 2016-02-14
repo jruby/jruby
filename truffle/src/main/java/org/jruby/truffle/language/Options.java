@@ -75,8 +75,4 @@ public class Options {
     public final boolean CALL_GRAPH = org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH.load();
     public final String CALL_GRAPH_WRITE = org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH_WRITE.load();
 
-    // Graal
-
-    public final boolean GRAAL_WARNING_UNLESS = org.jruby.util.cli.Options.TRUFFLE_GRAAL_WARNING_UNLESS.load();
-
 }

@@ -114,11 +114,6 @@ public class RubyContext extends ExecutionContext {
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
-        if (!Graal.isGraal() && options.GRAAL_WARNING_UNLESS) {
-            System.err.println("WARNING: This JVM does not have the Graal compiler. JRuby+Truffle's performance without it will be limited. " +
-                    "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
-        }
-
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
             compilerOptions.setOption("MinTimeThreshold", 100000000);
         }

@@ -13,6 +13,8 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
+import org.jruby.truffle.platform.Graal;
+import org.jruby.util.cli.Options;
 
 import java.io.IOException;
 
@@ -34,6 +36,11 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
     @Override
     public Object execute(org.jruby.ast.RootNode rootNode) {
+        if (!Graal.isGraal() && Options.TRUFFLE_GRAAL_WARNING_UNLESS.load()) {
+            System.err.println("WARNING: This JVM does not have the Graal compiler. JRuby+Truffle's performance without it will be limited. " +
+                    "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
+        }
+
         context.setInitialJRubyRootNode(rootNode);
 
         try {
