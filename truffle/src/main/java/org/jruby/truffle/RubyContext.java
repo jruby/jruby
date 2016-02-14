@@ -53,9 +53,6 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
-/**
- * The global state of a running Ruby system.
- */
 public class RubyContext extends ExecutionContext {
 
     private static volatile RubyContext latestInstance;
