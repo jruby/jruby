@@ -32,17 +32,6 @@ public class JRubyInterop {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public IRubyObject toJRuby(Object object) {
-        if (RubyGuards.isRubyString(object)) {
-            return context.getJRubyRuntime().newString(StringOperations.rope((DynamicObject) object).toByteListCopy());
-        } else if (RubyGuards.isRubyEncoding(object)) {
-            return context.getJRubyRuntime().getEncodingService().rubyEncodingFromObject(context.getJRubyRuntime().newString(Layouts.ENCODING.getName((DynamicObject) object)));
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    @CompilerDirectives.TruffleBoundary
     public Object toTruffle(IRubyObject object) {
         if (object instanceof org.jruby.RubyFixnum) {
             final long value = ((org.jruby.RubyFixnum) object).getLongValue();
