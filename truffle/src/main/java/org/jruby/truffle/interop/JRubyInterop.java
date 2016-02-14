@@ -110,4 +110,12 @@ public class JRubyInterop {
         return loadPath.toArray(new String[loadPath.size()]);
     }
 
+    public void setVerbose(boolean verbose) {
+        context.getJRubyRuntime().setVerbose(context.getJRubyRuntime().newBoolean(verbose));
+    }
+
+    public void setVerboseNil() {
+        context.getJRubyRuntime().setVerbose(context.getJRubyRuntime().getNil());
+    }
+
 }
