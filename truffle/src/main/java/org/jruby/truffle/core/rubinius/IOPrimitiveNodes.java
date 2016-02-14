@@ -509,7 +509,7 @@ public abstract class IOPrimitiveNodes {
             final int newFd;
 
             try {
-                newFd = nativeSockets().accept(fd, getMemoryManager().newPointer(address), addressLength);
+                newFd = nativeSockets().accept(fd, memoryManager().newPointer(address), addressLength);
             } finally {
                 UnsafeHolder.U.freeMemory(address);
             }
