@@ -22,16 +22,4 @@ public abstract class ShapeCachingGuards {
         return object.updateShape();
     }
 
-    public static boolean isArrayShape(Shape shape) {
-        return Layouts.ARRAY.isArray(shape.getObjectType());
-    }
-
-    public static boolean isQueueShape(Shape shape) {
-        return Layouts.QUEUE.isQueue(shape.getObjectType());
-    }
-
-    public static boolean isBasicObjectShape(Shape shape) {
-        return shape.getObjectType().getClass().getName().endsWith(".BasicObjectType"); // FIXME
-    }
-
 }
