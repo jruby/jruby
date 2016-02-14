@@ -27,10 +27,13 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     // Created by reflection from Ruby#loadTruffle
 
     public JRubyTruffleImpl(Ruby runtime) {
-        engine = PolyglotEngine.newBuilder().globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new JRubyContextWrapper(runtime)).build();
+        engine = PolyglotEngine.newBuilder()
+                .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new JRubyContextWrapper(runtime))
+                .build();
 
         try {
-            context = (RubyContext) engine.eval(Source.fromText("Truffle::Primitive.context", "context").withMimeType(RubyLanguage.MIME_TYPE)).get();
+            context = (RubyContext) engine.eval(Source.fromText("Truffle::Primitive.context", "context")
+                    .withMimeType(RubyLanguage.MIME_TYPE)).get();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
