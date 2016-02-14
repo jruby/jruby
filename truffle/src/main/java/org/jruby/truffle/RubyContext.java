@@ -56,7 +56,9 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * The global state of a running Ruby system.
@@ -171,18 +173,19 @@ public class RubyContext extends ExecutionContext {
 
         attachmentsManager = new AttachmentsManager(this);
 
-        // Set program arguments
+        // Arguments and load path
 
         for (IRubyObject arg : ((org.jruby.RubyArray) this.jrubyRuntime.getObject().getConstant("ARGV")).toJavaArray()) {
-            assert arg != null;
-
             ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeRope(arg.toString(), UTF8Encoding.INSTANCE)));
         }
 
-        // Set the load path
+        buildLoadPath();
+    }
 
-        DynamicObject receiver = coreLibrary.getGlobalVariablesObject();
-        final DynamicObject loadPath = (DynamicObject) receiver.get("$:", coreLibrary.getNilObject());
+    private void buildLoadPath() {
+        final List<String> loadPath = new ArrayList<>();
+
+        // From JRuby
 
         for (IRubyObject path : ((org.jruby.RubyArray) this.jrubyRuntime.getLoadService().getLoadPath()).toJavaArray()) {
             String pathString = path.toString();
@@ -195,11 +198,11 @@ public class RubyContext extends ExecutionContext {
                     pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
                 }
 
-                ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(pathString, UTF8Encoding.INSTANCE)));
+                loadPath.add(pathString);
             }
         }
 
-        // Load our own stdlib path
+        // Our stdlib
 
         String home = this.jrubyRuntime.getInstanceConfig().getJRubyHome();
 
@@ -215,22 +218,25 @@ public class RubyContext extends ExecutionContext {
 
         home = home + "/";
 
-        // Libraries copied unmodified from MRI
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE)));
+        loadPath.add(home + "lib/ruby/truffle/mri");
+        loadPath.add(home + "lib/ruby/truffle/truffle");
 
-        // Our own implementations
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE)));
-
-        // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE)));
+            loadPath.add(home + "lib/ruby/truffle/rubysl/" + lib + "/lib");
         }
 
-        // Shims
-        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
+        loadPath.add(home + "lib/ruby/truffle/shims");
+
+        // Put that into the variable
+
+        final DynamicObject loadPathObject = (DynamicObject) coreLibrary.getGlobalVariablesObject().get("$:", coreLibrary.getNilObject());
+
+        for (String path : loadPath) {
+            ArrayOperations.append(loadPathObject, StringOperations.createString(this, StringOperations.encodeRope(path, UTF8Encoding.INSTANCE)));
+        }
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
