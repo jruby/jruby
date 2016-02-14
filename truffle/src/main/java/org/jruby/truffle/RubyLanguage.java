@@ -86,7 +86,7 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     protected Object findExportedSymbol(RubyContext context, String s, boolean b) {
-        return context.findExportedObject(s);
+        return context.getInteropManager().findExportedObject(s);
     }
 
     @Override

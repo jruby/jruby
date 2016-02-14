@@ -416,7 +416,7 @@ public abstract class TruffleInteropNodes {
 
         @Specialization(guards = "isRubyString(name)")
         public Object export(VirtualFrame frame, DynamicObject name, TruffleObject object) {
-            getContext().exportObject(name, object);
+            getContext().getInteropManager().exportObject(name, object);
             return object;
         }
 
@@ -435,7 +435,7 @@ public abstract class TruffleInteropNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public Object importObject(DynamicObject name) {
-            return getContext().importObject(name);
+            return getContext().getInteropManager().importObject(name);
         }
 
     }

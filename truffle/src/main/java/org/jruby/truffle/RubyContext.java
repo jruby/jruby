@@ -14,10 +14,6 @@ import com.oracle.truffle.api.CompilerOptions;
 import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
-import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.tools.CoverageTracker;
 import org.jcodings.specific.UTF8Encoding;
@@ -35,6 +31,7 @@ import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.instrument.RubyDefaultASTProber;
+import org.jruby.truffle.interop.InteropManager;
 import org.jruby.truffle.interop.JRubyInterop;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.ModuleOperations;
@@ -49,6 +46,7 @@ import org.jruby.truffle.language.loader.SourceCache;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.tools.InstrumentationServerManager;
@@ -60,9 +58,6 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * The global state of a running Ruby system.
@@ -96,11 +91,10 @@ public class RubyContext extends ExecutionContext {
     private final SourceCache sourceCache;
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
+    private final InteropManager interopManager;
     private final JRubyInterop jrubyInterop;
 
     private org.jruby.ast.RootNode initialJRubyRootNode;
-
-    private final Map<String, TruffleObject> exported = new HashMap<>();
 
     public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
         options = new Options();
@@ -252,10 +246,8 @@ public class RubyContext extends ExecutionContext {
 
         // Shims
         ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
-    }
 
-    public boolean onGraal() {
-        return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
+        interopManager = new InteropManager(this);
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -297,20 +289,6 @@ public class RubyContext extends ExecutionContext {
                 }
             }
         }
-    }
-
-    public void exportObject(DynamicObject name, TruffleObject object) {
-        assert RubyGuards.isRubyString(name);
-        exported.put(name.toString(), object);
-    }
-
-    public Object findExportedObject(String name) {
-        return exported.get(name);
-    }
-
-    public Object importObject(DynamicObject name) {
-        assert RubyGuards.isRubyString(name);
-        return env.importSymbol(name.toString());
     }
 
     public void setInitialJRubyRootNode(org.jruby.ast.RootNode initialJRubyRootNode) {
@@ -419,5 +397,9 @@ public class RubyContext extends ExecutionContext {
 
     public CodeLoader getCodeLoader() {
         return codeLoader;
+    }
+
+    public InteropManager getInteropManager() {
+        return interopManager;
     }
 }
