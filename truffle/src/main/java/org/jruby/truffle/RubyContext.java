@@ -172,65 +172,6 @@ public class RubyContext extends ExecutionContext {
         }
 
         attachmentsManager = new AttachmentsManager(this);
-
-        buildLoadPath();
-    }
-
-    private void buildLoadPath() {
-        final List<String> loadPath = new ArrayList<>();
-
-        // From JRuby
-
-        for (IRubyObject path : ((org.jruby.RubyArray) this.jrubyRuntime.getLoadService().getLoadPath()).toJavaArray()) {
-            String pathString = path.toString();
-
-            if (!(pathString.endsWith("lib/ruby/2.2/site_ruby")
-                    || pathString.endsWith("lib/ruby/shared")
-                    || pathString.endsWith("lib/ruby/stdlib"))) {
-
-                if (pathString.startsWith("uri:classloader:")) {
-                    pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
-                }
-
-                loadPath.add(pathString);
-            }
-        }
-
-        // Our stdlib
-
-        String home = this.jrubyRuntime.getInstanceConfig().getJRubyHome();
-
-        if (home.startsWith("uri:classloader:")) {
-            home = home.substring("uri:classloader:".length());
-
-            while (home.startsWith("/")) {
-                home = home.substring(1);
-            }
-
-            home = SourceLoader.JRUBY_SCHEME + "/" + home;
-        }
-
-        home = home + "/";
-
-        loadPath.add(home + "lib/ruby/truffle/mri");
-        loadPath.add(home + "lib/ruby/truffle/truffle");
-
-        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
-                "rubysl-complex", "rubysl-date", "rubysl-pathname",
-                "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
-                "rubysl-timeout", "rubysl-webrick")) {
-            loadPath.add(home + "lib/ruby/truffle/rubysl/" + lib + "/lib");
-        }
-
-        loadPath.add(home + "lib/ruby/truffle/shims");
-
-        // Put that into the variable
-
-        final DynamicObject loadPathObject = (DynamicObject) coreLibrary.getGlobalVariablesObject().get("$:", coreLibrary.getNilObject());
-
-        for (String path : loadPath) {
-            ArrayOperations.append(loadPathObject, StringOperations.createString(this, StringOperations.encodeRope(path, UTF8Encoding.INSTANCE)));
-        }
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {

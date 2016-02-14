@@ -54,6 +54,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.backtrace.BacktraceInterleaver;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.tools.SimpleShell;
@@ -537,6 +538,33 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "jruby_home_directory_protocol", onSingleton = true)
+    public abstract static class JRubyHomeDirectoryProtocolNode extends CoreMethodNode {
+
+        public JRubyHomeDirectoryProtocolNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject jrubyHomeDirectoryProtocol() {
+            String home = getContext().getJRubyRuntime().getJRubyHome();
+
+            if (home.startsWith("uri:classloader:")) {
+                home = home.substring("uri:classloader:".length());
+
+                while (home.startsWith("/")) {
+                    home = home.substring(1);
+                }
+
+                home = SourceLoader.JRUBY_SCHEME + "/" + home;
+            }
+
+            return createString(StringOperations.encodeRope(home, UTF8Encoding.INSTANCE));
+        }
+
+    }
+
     @CoreMethod(names = "host_os", onSingleton = true)
     public abstract static class HostOSNode extends CoreMethodNode {
 
@@ -910,6 +938,28 @@ public abstract class TrufflePrimitiveNodes {
 
             for (int n = 0; n < array.length; n++) {
                 array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(argv[n], UTF8Encoding.INSTANCE));
+            }
+
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, array.length);
+        }
+
+    }
+
+    @CoreMethod(names = "original_load_path", onSingleton = true)
+    public abstract static class OriginalLoadPathNode extends CoreMethodNode {
+
+        public OriginalLoadPathNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject originalLoadPath() {
+            final String[] path = getContext().getJRubyInterop().getOriginalLoadPath();
+            final Object[] array = new Object[path.length];
+
+            for (int n = 0; n < array.length; n++) {
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(path[n], UTF8Encoding.INSTANCE));
             }
 
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, array.length);

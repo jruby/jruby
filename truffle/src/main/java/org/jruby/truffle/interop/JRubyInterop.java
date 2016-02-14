@@ -17,8 +17,11 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.loader.SourceLoader;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JRubyInterop {
 
@@ -92,6 +95,27 @@ public class JRubyInterop {
         }
 
         return strings;
+    }
+
+    public String[] getOriginalLoadPath() {
+        final List<String> loadPath = new ArrayList<>();
+
+        for (IRubyObject path : ((org.jruby.RubyArray) context.getJRubyRuntime().getLoadService().getLoadPath()).toJavaArray()) {
+            String pathString = path.toString();
+
+            if (!(pathString.endsWith("lib/ruby/2.2/site_ruby")
+                    || pathString.endsWith("lib/ruby/shared")
+                    || pathString.endsWith("lib/ruby/stdlib"))) {
+
+                if (pathString.startsWith("uri:classloader:")) {
+                    pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
+                }
+
+                loadPath.add(pathString);
+            }
+        }
+
+        return loadPath.toArray(new String[loadPath.size()]);
     }
 
 }
