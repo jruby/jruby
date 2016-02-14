@@ -46,7 +46,6 @@ import org.jruby.truffle.language.loader.SourceCache;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.tools.InstrumentationServerManager;
@@ -67,52 +66,50 @@ public class RubyContext extends ExecutionContext {
     private static volatile RubyContext latestInstance;
 
     private final TruffleLanguage.Env env;
-
     private final Ruby jrubyRuntime;
-    private final Options options;
+
+    private final Options options = new Options();
+    private final RopeTable ropeTable = new RopeTable();
+    private final RubiniusPrimitiveManager rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
+    private final JRubyInterop jrubyInterop = new JRubyInterop(this);
+    private final SafepointManager safepointManager = new SafepointManager(this);
+    private final SymbolTable symbolTable = new SymbolTable(this);
+    private final Warnings warnings = new Warnings(this);
+    private final InteropManager interopManager = new InteropManager(this);
+    private final CodeLoader codeLoader = new CodeLoader(this);
+    private final FeatureLoader featureLoader = new FeatureLoader(this);
+    private final TraceManager traceManager = new TraceManager(this);
+    private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
+    private final AtExitManager atExitManager = new AtExitManager(this);
+    private final SourceCache sourceCache = new SourceCache(new SourceLoader(this));
+
+    private final CompilerOptions compilerOptions = Truffle.getRuntime().createCompilerOptions();
+
     private final NativePlatform nativePlatform;
     private final CoreLibrary coreLibrary;
-    private final FeatureLoader featureLoader;
-    private final TraceManager traceManager;
-    private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
-    private final AtExitManager atExitManager;
-    private final RopeTable ropeTable = new RopeTable();
-    private final SymbolTable symbolTable = new SymbolTable(this);
-    private final Warnings warnings;
-    private final SafepointManager safepointManager;
     private final LexicalScope rootLexicalScope;
-    private final CompilerOptions compilerOptions;
-    private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
     private final CoverageTracker coverageTracker;
     private final InstrumentationServerManager instrumentationServerManager;
     private final AttachmentsManager attachmentsManager;
-    private final CodeLoader codeLoader;
-    private final SourceCache sourceCache;
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
-    private final InteropManager interopManager;
-    private final JRubyInterop jrubyInterop;
 
     private org.jruby.ast.RootNode initialJRubyRootNode;
 
     public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
-        options = new Options();
+        latestInstance = this;
+
+        this.jrubyRuntime = jrubyRuntime;
+        this.env = env;
 
         if (options.CALL_GRAPH) {
             callGraph = new CallGraph();
         } else {
             callGraph = null;
         }
-        
-        jrubyInterop = new JRubyInterop(this);
 
-        latestInstance = this;
-
-        assert jrubyRuntime != null;
-        this.env = env;
-
-        compilerOptions = Truffle.getRuntime().createCompilerOptions();
+        // Stuff that needs to be loaded before we load any code
 
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
             compilerOptions.setOption("MinTimeThreshold", 100000000);
@@ -136,33 +133,34 @@ public class RubyContext extends ExecutionContext {
             coverageTracker = null;
         }
 
-        safepointManager = new SafepointManager(this);
-
-        this.jrubyRuntime = jrubyRuntime;
-
-        warnings = new Warnings(this);
-
-        // Object space manager needs to come early before we create any objects
-        objectSpaceManager = new ObjectSpaceManager(this);
+        // Load the core library classes
 
         coreLibrary = new CoreLibrary(this);
+        coreLibrary.initialize();
+
+        // Create objects that need core classes
 
         nativePlatform = NativePlatformFactory.createPlatform(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
+        threadManager = new ThreadManager(this);
+        threadManager.initialize();
+
+        // Load the nodes
+
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
-        coreLibrary.initialize();
-        rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
+        coreLibrary.addCoreMethods();
         rubiniusPrimitiveManager.addAnnotatedPrimitives();
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
-        codeLoader = new CodeLoader(this);
-        featureLoader = new FeatureLoader(this);
-        traceManager = new TraceManager(this);
-        atExitManager = new AtExitManager(this);
+        // Load the reset of the core library
 
-        threadManager = new ThreadManager(this);
-        threadManager.initialize();
+        coreLibrary.initializeAfterBasicMethodsAdded();
+
+        // Load other subsystems
+
+        final PrintStream configStandardOut = jrubyRuntime.getInstanceConfig().getOutput();
+        debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
         if (options.INSTRUMENTATION_SERVER_PORT != 0) {
             instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
@@ -172,14 +170,6 @@ public class RubyContext extends ExecutionContext {
         }
 
         attachmentsManager = new AttachmentsManager(this);
-        sourceCache = new SourceCache(new SourceLoader(this));
-
-        final PrintStream configStandardOut = jrubyRuntime.getInstanceConfig().getOutput();
-        debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
-
-        // Give the core library manager a chance to tweak some of those methods
-
-        coreLibrary.initializeAfterMethodsAdded();
 
         // Set program arguments
 
@@ -241,8 +231,6 @@ public class RubyContext extends ExecutionContext {
 
         // Shims
         ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeRope(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
-
-        interopManager = new InteropManager(this);
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {

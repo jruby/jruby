@@ -564,18 +564,14 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(rangeClass).include(context, node, enumerableModule);
     }
 
-    /**
-     * Initializations which may access {@link RubyContext#getCoreLibrary()}.
-     */
     public void initialize() {
-        addCoreMethods();
         initializeGlobalVariables();
         initializeConstants();
         initializeEncodingConstants();
         initializeSignalConstants();
     }
 
-    private void addCoreMethods() {
+    public void addCoreMethods() {
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
@@ -752,7 +748,7 @@ public class CoreLibrary {
         return ModuleNodes.createRubyModule(context, moduleClass, lexicalParent, name, node);
     }
 
-    public void initializeAfterMethodsAdded() {
+    public void initializeAfterBasicMethodsAdded() {
         initializeRubiniusFFI();
 
         // Load Ruby core
