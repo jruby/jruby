@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-ruby -X+T -Xtruffle.posix.use_java=true -e 'puts 14'
+ruby -X+T -Xtruffle.platform.use_java=true -e 'puts 14'

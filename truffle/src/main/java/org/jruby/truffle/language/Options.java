@@ -19,7 +19,7 @@ public class Options {
     // Resources
 
     public final String CORE_LOAD_PATH = org.jruby.util.cli.Options.TRUFFLE_CORE_LOAD_PATH.load();
-    public final boolean POSIX_USE_JAVA = org.jruby.util.cli.Options.TRUFFLE_POSIX_USE_JAVA.load();
+    public final boolean PLATFORM_USE_JAVA = org.jruby.util.cli.Options.TRUFFLE_PLATFORM_USE_JAVA.load();
 
     // Data structures
 
