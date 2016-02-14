@@ -197,10 +197,6 @@ public abstract class RubyNode extends Node {
         return atNewline;
     }
 
-    public RubyNode getNonProxyNode() {
-        return this;
-    }
-
     // Accessors
 
     public RubyContext getContext() {
