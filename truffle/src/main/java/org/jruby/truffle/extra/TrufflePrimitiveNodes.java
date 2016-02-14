@@ -895,4 +895,26 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "original_argv", onSingleton = true)
+    public abstract static class OriginalArgvNode extends CoreMethodNode {
+
+        public OriginalArgvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject originalArgv() {
+            final String[] argv = getContext().getJRubyInterop().getArgv();
+            final Object[] array = new Object[argv.length];
+
+            for (int n = 0; n < array.length; n++) {
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(argv[n], UTF8Encoding.INSTANCE));
+            }
+
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, array.length);
+        }
+
+    }
+
 }

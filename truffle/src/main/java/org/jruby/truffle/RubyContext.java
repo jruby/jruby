@@ -173,12 +173,6 @@ public class RubyContext extends ExecutionContext {
 
         attachmentsManager = new AttachmentsManager(this);
 
-        // Arguments and load path
-
-        for (IRubyObject arg : ((org.jruby.RubyArray) this.jrubyRuntime.getObject().getConstant("ARGV")).toJavaArray()) {
-            ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeRope(arg.toString(), UTF8Encoding.INSTANCE)));
-        }
-
         buildLoadPath();
     }
 

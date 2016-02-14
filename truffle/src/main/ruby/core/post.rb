@@ -6,6 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+ARGV.push *Truffle::Primitive.original_argv
+
 # We defined Psych at the top level becuase several things depend on its name.
 # Here we fix that up and put it back into Truffle.
 
