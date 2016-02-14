@@ -23,6 +23,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.truffle.instrument.RubyWrapperNode;
+import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -31,24 +32,6 @@ import java.io.IOException;
 
 @TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = RubyLanguage.MIME_TYPE)
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
-
-    public static class JRubyContextWrapper implements TruffleObject {
-
-        private final Ruby ruby;
-
-        public JRubyContextWrapper(Ruby ruby) {
-            this.ruby = ruby;
-        }
-
-        public Ruby getRuby() {
-            return ruby;
-        }
-
-        @Override
-        public ForeignAccess getForeignAccess() {
-            throw new UnsupportedOperationException();
-        }
-    }
 
     public static final String MIME_TYPE = "application/x-ruby";
 
