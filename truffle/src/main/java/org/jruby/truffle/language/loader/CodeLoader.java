@@ -109,7 +109,7 @@ public class CodeLoader {
     }
 
     public Object execute(final org.jruby.ast.RootNode rootNode) {
-        context.getCoreLibrary().getGlobalVariablesObject().define("$0", context.getJRubyInterop().toTruffle(context.getJRubyRuntime().getGlobalVariables().get("$0")), 0);
+        context.getCoreLibrary().getGlobalVariablesObject().define("$0", StringOperations.createString(context, ByteList.create(context.getJRubyInterop().getArg0())), 0);
 
         String inputFile = rootNode.getPosition().getFile();
         final Source source;

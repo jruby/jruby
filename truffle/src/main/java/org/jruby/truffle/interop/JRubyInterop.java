@@ -63,6 +63,10 @@ public class JRubyInterop {
         throw new UnsupportedOperationException();
     }
 
+    public String getArg0() {
+        return context.getJRubyRuntime().getGlobalVariables().get("$0").toString();
+    }
+
     public String[] getArgv() {
         final IRubyObject[] jrubyStrings = ((org.jruby.RubyArray) context.getJRubyRuntime().getObject().getConstant("ARGV")).toJavaArray();
         final String[] strings = new String[jrubyStrings.length];
