@@ -32,26 +32,6 @@ public class JRubyInterop {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public Object toTruffle(IRubyObject object) {
-        if (object instanceof org.jruby.RubyFixnum) {
-            final long value = ((org.jruby.RubyFixnum) object).getLongValue();
-
-            if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
-                return value;
-            }
-
-            return (int) value;
-        } else if (object instanceof org.jruby.RubyBignum) {
-            final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
-            return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), value);
-        } else if (object instanceof org.jruby.RubyString) {
-            return StringOperations.createString(context, ((org.jruby.RubyString) object).getByteList().dup());
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    @CompilerDirectives.TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
