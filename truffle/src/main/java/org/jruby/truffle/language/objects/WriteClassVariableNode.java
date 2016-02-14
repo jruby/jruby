@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
-import org.jruby.truffle.language.ModuleOperations;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
 
 public class WriteClassVariableNode extends RubyNode {

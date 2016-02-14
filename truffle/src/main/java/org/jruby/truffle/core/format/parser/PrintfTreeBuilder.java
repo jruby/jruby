@@ -17,7 +17,12 @@ import org.jruby.truffle.core.format.nodes.SourceNode;
 import org.jruby.truffle.core.format.nodes.control.SequenceNode;
 import org.jruby.truffle.core.format.nodes.format.FormatFloatNodeGen;
 import org.jruby.truffle.core.format.nodes.format.FormatIntegerNodeGen;
-import org.jruby.truffle.core.format.nodes.read.*;
+import org.jruby.truffle.core.format.nodes.read.LiteralBytesNode;
+import org.jruby.truffle.core.format.nodes.read.LiteralIntegerNode;
+import org.jruby.truffle.core.format.nodes.read.ReadHashValueNodeGen;
+import org.jruby.truffle.core.format.nodes.read.ReadIntegerNodeGen;
+import org.jruby.truffle.core.format.nodes.read.ReadStringNodeGen;
+import org.jruby.truffle.core.format.nodes.read.ReadValueNodeGen;
 import org.jruby.truffle.core.format.nodes.type.ToDoubleWithCoercionNodeGen;
 import org.jruby.truffle.core.format.nodes.type.ToIntegerNodeGen;
 import org.jruby.truffle.core.format.nodes.type.ToStringNodeGen;
@@ -53,7 +58,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.core.format.parser.Prin
     @Override
     public void exitString(org.jruby.truffle.core.format.parser.PrintfParser.StringContext ctx) {
         final ByteList keyBytes = tokenAsBytes(ctx.CURLY_KEY().getSymbol(), 1);
-        final DynamicObject key = context.getSymbol(keyBytes);
+        final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
 
         sequence.add(
                 WriteBytesNodeGen.create(context,
@@ -112,7 +117,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.core.format.parser.Prin
             valueNode = ReadValueNodeGen.create(context, new SourceNode());
         } else {
             final ByteList keyBytes = tokenAsBytes(ctx.ANGLE_KEY().getSymbol(), 1);
-            final DynamicObject key = context.getSymbol(keyBytes);
+            final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
             valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
         }
 

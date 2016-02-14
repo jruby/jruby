@@ -19,11 +19,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.DefaultValueNodeGen;
-import org.jruby.truffle.platform.ClockGetTime;
 import org.jruby.truffle.core.ffi.TimeSpec;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.platform.ClockGetTime;
 import org.jruby.truffle.platform.signal.Signal;
 
 @CoreClass(name = "Process")
@@ -45,8 +45,8 @@ public abstract class ProcessNodes {
         public static final int CLOCK_THREAD_CPUTIME_ID = 3; // Linux only
         public static final int CLOCK_MONOTONIC_RAW_ID = 4; // Linux only
 
-        private final DynamicObject floatSecondSymbol = getContext().getSymbol("float_second");
-        private final DynamicObject nanosecondSymbol = getContext().getSymbol("nanosecond");
+        private final DynamicObject floatSecondSymbol = getContext().getSymbolTable().getSymbol("float_second");
+        private final DynamicObject nanosecondSymbol = getContext().getSymbolTable().getSymbol("nanosecond");
 
         public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

@@ -70,15 +70,7 @@ public class SimpleShell {
 
                 default:
                     try {
-                        final Object result = context.parseAndExecute(
-                                Source.fromText(shellLine, "shell"),
-                                UTF8Encoding.INSTANCE,
-                                ParserContext.EVAL,
-                                RubyArguments.getSelf(currentFrame.getArguments()),
-                                currentFrame,
-                                false,
-                                RubyArguments.getDeclarationContext(currentFrame.getArguments()),
-                                currentNode);
+                        final Object result = context.getCodeLoader().parseAndExecute(Source.fromText(shellLine, "shell"), UTF8Encoding.INSTANCE, ParserContext.EVAL, RubyArguments.getSelf(currentFrame.getArguments()), currentFrame, false, RubyArguments.getDeclarationContext(currentFrame.getArguments()), currentNode);
 
                         String inspected;
 

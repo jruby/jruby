@@ -72,7 +72,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             throw new RaiseException(translate(exception));
         } catch (org.jruby.exceptions.RaiseException e) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().toTruffle(e.getException(), this));
+            throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
         } catch (Throwable exception) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));

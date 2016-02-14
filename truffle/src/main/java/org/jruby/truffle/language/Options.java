@@ -19,7 +19,7 @@ public class Options {
     // Resources
 
     public final String CORE_LOAD_PATH = org.jruby.util.cli.Options.TRUFFLE_CORE_LOAD_PATH.load();
-    public final boolean POSIX_USE_JAVA = org.jruby.util.cli.Options.TRUFFLE_POSIX_USE_JAVA.load();
+    public final boolean PLATFORM_USE_JAVA = org.jruby.util.cli.Options.TRUFFLE_PLATFORM_USE_JAVA.load();
 
     // Data structures
 
@@ -74,9 +74,5 @@ public class Options {
 
     public final boolean CALL_GRAPH = org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH.load();
     public final String CALL_GRAPH_WRITE = org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH_WRITE.load();
-
-    // Graal
-
-    public final boolean GRAAL_WARNING_UNLESS = org.jruby.util.cli.Options.TRUFFLE_GRAAL_WARNING_UNLESS.load();
 
 }

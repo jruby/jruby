@@ -44,6 +44,8 @@ public class RubyObjectType extends ObjectType {
 
     @Override
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
+        CompilerAsserts.neverPartOfCompilation();
+
         if (Layouts.METHOD.isMethod(object)) {
             return RubyMethodForeignAccessFactory.create(getContext());
         } else if (Layouts.PROC.isProc(object)) {

@@ -30,7 +30,7 @@ public class UpdateVerbosityNode extends RubyNode {
 
         final Object childValue = child.execute(frame);
 
-        final IRubyObject jrubyValue = getContext().toJRuby(childValue);
+        final IRubyObject jrubyValue = getContext().getJRubyInterop().toJRuby(childValue);
 
         getContext().getJRubyRuntime().setVerbose(jrubyValue);
 

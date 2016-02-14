@@ -151,15 +151,15 @@ public abstract class RubyNode extends Node {
     }
 
     public DynamicObject getSymbol(String name) {
-        return getContext().getSymbol(name);
+        return getContext().getSymbolTable().getSymbol(name);
     }
 
     public DynamicObject getSymbol(ByteList name) {
-        return getContext().getSymbol(name);
+        return getContext().getSymbolTable().getSymbol(name);
     }
 
     public DynamicObject getSymbol(Rope name) {
-        return getContext().getSymbol(name);
+        return getContext().getSymbolTable().getSymbol(name);
     }
 
     /** Creates a String from the ByteList, with unknown CR */
@@ -214,11 +214,11 @@ public abstract class RubyNode extends Node {
     // ruby() helper
 
     protected Object ruby(String expression, Object... arguments) {
-        return getContext().inlineRubyHelper(this, expression, arguments);
+        return getContext().getCodeLoader().inlineRubyHelper(this, expression, arguments);
     }
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        return getContext().inlineRubyHelper(this, frame, expression, arguments);
+        return getContext().getCodeLoader().inlineRubyHelper(this, frame, expression, arguments);
     }
 
 }

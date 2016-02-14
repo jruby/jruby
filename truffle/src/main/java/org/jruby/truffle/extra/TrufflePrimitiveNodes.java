@@ -31,11 +31,22 @@ import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.cext.CExtManager;
 import org.jruby.truffle.cext.CExtSubsystem;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.hash.BucketsStrategy;
-import org.jruby.truffle.core.rope.*;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyCallStack;
@@ -43,14 +54,21 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.backtrace.BacktraceInterleaver;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.tools.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {
@@ -236,7 +254,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public boolean graal() {
-            return getContext().onGraal();
+            return Graal.isGraal();
         }
 
     }
@@ -359,7 +377,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
         public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
-            return getContext().createHandle(getContext().getAttachmentsManager().attach(file.toString(), line, block));
+            return Layouts.HANDLE.createHandle(getContext().getCoreLibrary().getHandleFactory(), getContext().getAttachmentsManager().attach(file.toString(), line, block));
         }
 
     }
@@ -516,6 +534,33 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
             return createString(StringOperations.encodeRope(getContext().getJRubyRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
+        }
+
+    }
+
+    @CoreMethod(names = "jruby_home_directory_protocol", onSingleton = true)
+    public abstract static class JRubyHomeDirectoryProtocolNode extends CoreMethodNode {
+
+        public JRubyHomeDirectoryProtocolNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject jrubyHomeDirectoryProtocol() {
+            String home = getContext().getJRubyRuntime().getJRubyHome();
+
+            if (home.startsWith("uri:classloader:")) {
+                home = home.substring("uri:classloader:".length());
+
+                while (home.startsWith("/")) {
+                    home = home.substring(1);
+                }
+
+                home = SourceLoader.JRUBY_SCHEME + "/" + home;
+            }
+
+            return createString(StringOperations.encodeRope(home, UTF8Encoding.INSTANCE));
         }
 
     }
@@ -818,7 +863,7 @@ public abstract class TrufflePrimitiveNodes {
             }
 
             try {
-                getContext().loadFile(StringOperations.getString(getContext(), file), this);
+                getContext().getCodeLoader().loadFile(StringOperations.getString(getContext(), file), this);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
@@ -842,7 +887,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public Object runJRubyRootNode() {
-            return getContext().execute(getContext().getInitialJRubyRootNode());
+            return getContext().getCodeLoader().execute(getContext().getInitialJRubyRootNode());
         }
     }
 
@@ -874,6 +919,50 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public int logicalProcessors() {
             return Runtime.getRuntime().availableProcessors();
+        }
+
+    }
+
+    @CoreMethod(names = "original_argv", onSingleton = true)
+    public abstract static class OriginalArgvNode extends CoreMethodNode {
+
+        public OriginalArgvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject originalArgv() {
+            final String[] argv = getContext().getJRubyInterop().getArgv();
+            final Object[] array = new Object[argv.length];
+
+            for (int n = 0; n < array.length; n++) {
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(argv[n], UTF8Encoding.INSTANCE));
+            }
+
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, array.length);
+        }
+
+    }
+
+    @CoreMethod(names = "original_load_path", onSingleton = true)
+    public abstract static class OriginalLoadPathNode extends CoreMethodNode {
+
+        public OriginalLoadPathNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject originalLoadPath() {
+            final String[] path = getContext().getJRubyInterop().getOriginalLoadPath();
+            final Object[] array = new Object[path.length];
+
+            for (int n = 0; n < array.length; n++) {
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(path[n], UTF8Encoding.INSTANCE));
+            }
+
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, array.length);
         }
 
     }

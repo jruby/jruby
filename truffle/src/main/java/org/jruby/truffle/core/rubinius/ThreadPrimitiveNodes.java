@@ -21,7 +21,10 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.func.Function2;
 
-import static org.jruby.RubyThread.*;
+import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
+import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
+import static org.jruby.RubyThread.javaPriorityToRubyPriority;
+import static org.jruby.RubyThread.rubyPriorityToJavaPriority;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Thread} class.

@@ -21,7 +21,11 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.ThreadLocalObject;
@@ -299,7 +303,7 @@ public abstract class BindingNodes {
             while (frame != null) {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
                     if (slot.getIdentifier() instanceof String && !((String) slot.getIdentifier()).startsWith("rubytruffle_temp_frame_on_stack_marker")) {
-                        names.add(context.getSymbol((String) slot.getIdentifier()));
+                        names.add(context.getSymbolTable().getSymbol((String) slot.getIdentifier()));
                     }
                 }
 

@@ -18,7 +18,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.ModuleOperations;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -140,7 +140,7 @@ public class FeatureLoader {
         final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
         ArrayOperations.append(loadedFeatures, pathString);
         try {
-            context.loadFile(expandedPath, currentNode);
+            context.getCodeLoader().loadFile(expandedPath, currentNode);
         } catch (RaiseException e) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
             final int length = Layouts.ARRAY.getSize(loadedFeatures);

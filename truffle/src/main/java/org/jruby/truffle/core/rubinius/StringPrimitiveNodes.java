@@ -55,7 +55,12 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -217,7 +222,7 @@ public abstract class StringPrimitiveNodes {
                     try {
                         c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, p, end);
                     } catch (org.jruby.exceptions.RaiseException ex) {
-                        throw new RaiseException(getContext().toTruffle(ex.getException(), this));
+                        throw new RaiseException(getContext().getJRubyInterop().toTruffle(ex.getException(), this));
                     }
 
                     p += StringSupport.length(enc, bytes, p, end);
@@ -1400,9 +1405,9 @@ public abstract class StringPrimitiveNodes {
                         fixBase,
                         strict);
 
-                return getContext().toTruffle(result);
+                return getContext().getJRubyInterop().toTruffle(result);
             } catch (org.jruby.exceptions.RaiseException e) {
-                throw new RaiseException(getContext().toTruffle(e.getException(), this));
+                throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
             }
         }
 

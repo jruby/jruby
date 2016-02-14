@@ -28,9 +28,6 @@ public class RubiniusPrimitiveManager {
 
     private final ConcurrentMap<String, RubiniusPrimitiveConstructor> primitives = new ConcurrentHashMap<String, RubiniusPrimitiveConstructor>();
 
-    public RubiniusPrimitiveManager() {
-    }
-
     public RubiniusPrimitiveConstructor getPrimitive(String name) {
         final RubiniusPrimitiveConstructor constructor = primitives.get(name);
 

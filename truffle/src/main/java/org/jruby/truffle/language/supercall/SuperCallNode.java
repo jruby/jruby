@@ -63,7 +63,7 @@ public class SuperCallNode extends RubyNode {
         if (superMethod == null) {
             CompilerDirectives.transferToInterpreter();
             final String name = RubyArguments.getMethod(frame.getArguments()).getSharedMethodInfo().getName(); // use the original name
-            final Object[] methodMissingArguments = ArrayUtils.unshift(superArguments, getContext().getSymbol(name));
+            final Object[] methodMissingArguments = ArrayUtils.unshift(superArguments, getContext().getSymbolTable().getSymbol(name));
             return callMethodMissing(frame, self, blockObject, methodMissingArguments);
         }
 

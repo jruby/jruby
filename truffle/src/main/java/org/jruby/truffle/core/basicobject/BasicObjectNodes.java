@@ -20,11 +20,16 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.BinaryCoreMethodNode;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.ModuleOperations;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -152,7 +157,7 @@ public abstract class BasicObjectNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
-            return getContext().instanceEval(StringOperations.getByteListReadOnly(string), receiver, "(eval)", this);
+            return getContext().getCodeLoader().instanceEval(StringOperations.getByteListReadOnly(string), receiver, "(eval)", this);
         }
 
         @Specialization

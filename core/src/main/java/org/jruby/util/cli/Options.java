@@ -224,7 +224,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_COVERAGE_GLOBAL = bool(TRUFFLE, "truffle.coverage.global", false, "Run coverage for all code and print results on exit.");
 
     public static final Option<String> TRUFFLE_CORE_LOAD_PATH = string(TRUFFLE, "truffle.core.load_path", "truffle:/jruby-truffle", "Location to load the Truffle core library from.");
-    public static final Option<Boolean> TRUFFLE_POSIX_USE_JAVA = bool(TRUFFLE, "truffle.posix.use_java", false, "Use a Java emulation of POSIX.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_USE_JAVA = bool(TRUFFLE, "truffle.platform.use_java", false, "Use a pure-Java platform, so no native POSIX.");
 
     public static final Option<Integer> TRUFFLE_ARRAY_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.array.uninitialized_size", 32, "How large an Array to allocate when we have no other information to go on.");
     public static final Option<Integer> TRUFFLE_ARRAY_SMALL = integer(TRUFFLE, "truffle.array.small", 3, "Maximum size of an Array to consider small for optimisations.");

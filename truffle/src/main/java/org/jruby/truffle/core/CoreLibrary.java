@@ -90,7 +90,11 @@ import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.stdlib.*;
+import org.jruby.truffle.stdlib.BigDecimalNodesFactory;
+import org.jruby.truffle.stdlib.DigestLayoutImpl;
+import org.jruby.truffle.stdlib.DigestNodesFactory;
+import org.jruby.truffle.stdlib.EtcNodesFactory;
+import org.jruby.truffle.stdlib.ObjSpaceNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodes;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
@@ -560,18 +564,14 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(rangeClass).include(context, node, enumerableModule);
     }
 
-    /**
-     * Initializations which may access {@link RubyContext#getCoreLibrary()}.
-     */
     public void initialize() {
-        addCoreMethods();
         initializeGlobalVariables();
         initializeConstants();
         initializeEncodingConstants();
         initializeSignalConstants();
     }
 
-    private void addCoreMethods() {
+    public void addCoreMethods() {
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
@@ -748,7 +748,7 @@ public class CoreLibrary {
         return ModuleNodes.createRubyModule(context, moduleClass, lexicalParent, name, node);
     }
 
-    public void initializeAfterMethodsAdded() {
+    public void initializeAfterBasicMethodsAdded() {
         initializeRubiniusFFI();
 
         // Load Ruby core
@@ -758,7 +758,7 @@ public class CoreLibrary {
 
             state = State.LOADING_RUBY_CORE;
             try {
-                context.load(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), node);
+                context.getCodeLoader().load(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), node);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

@@ -25,14 +25,29 @@ import org.jruby.truffle.core.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.core.cast.SplatCastNode;
 import org.jruby.truffle.core.cast.SplatCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.arguments.*;
+import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
+import org.jruby.truffle.language.arguments.IsNilNode;
+import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.MissingKeywordArgumentNode;
+import org.jruby.truffle.language.arguments.ReadBlockNode;
+import org.jruby.truffle.language.arguments.ReadKeywordArgumentNode;
+import org.jruby.truffle.language.arguments.ReadKeywordRestArgumentNode;
+import org.jruby.truffle.language.arguments.ReadOptionalArgumentNode;
+import org.jruby.truffle.language.arguments.ReadPostArgumentNode;
+import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.ReadRestArgumentNode;
+import org.jruby.truffle.language.arguments.RunBlockKWArgsHelperNode;
 import org.jruby.truffle.language.control.IfNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.literal.NilNode;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.List;
 
 public class LoadArgumentsTranslator extends Translator {
 
@@ -100,7 +115,7 @@ public class LoadArgumentsTranslator extends Translator {
             if (node.hasKeyRest()) {
                 final String name = node.getKeyRest().getName();
                 methodBodyTranslator.getEnvironment().declareVar(name);
-                keyRestNameOrNil = context.getSymbol(name);
+                keyRestNameOrNil = context.getSymbolTable().getSymbol(name);
             } else {
                 keyRestNameOrNil = context.getCoreLibrary().getNilObject();
             }
