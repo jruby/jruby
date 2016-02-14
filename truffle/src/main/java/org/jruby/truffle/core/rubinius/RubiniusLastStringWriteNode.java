@@ -21,7 +21,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.ThreadLocalObject;
+import org.jruby.truffle.language.objects.ThreadLocalObject;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 @NodeChild(value = "value", type = RubyNode.class)

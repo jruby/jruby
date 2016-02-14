@@ -92,7 +92,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.StringCachingGuards;
-import org.jruby.truffle.language.ThreadLocalObject;
+import org.jruby.truffle.language.objects.ThreadLocalObject;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.Backtrace;

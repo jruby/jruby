@@ -20,7 +20,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.ThreadLocalObject;
+import org.jruby.truffle.language.objects.ThreadLocalObject;
 
 public class RubiniusLastStringReadNode extends RubyNode {
 
