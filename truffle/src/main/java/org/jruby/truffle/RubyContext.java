@@ -10,29 +10,21 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.CompilerOptions;
 import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
-import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.tools.CoverageTracker;
-import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
@@ -57,7 +49,6 @@ import org.jruby.truffle.language.loader.SourceCache;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.tools.InstrumentationServerManager;
@@ -280,42 +271,6 @@ public class RubyContext extends ExecutionContext {
 
         return method.getCallTarget().call(
                 RubyArguments.pack(null, null, method, DeclarationContext.METHOD, null, object, block, arguments));
-    }
-
-    /* For debugging in Java. */
-    public static Object debugEval(String code) {
-        CompilerAsserts.neverPartOfCompilation();
-        final FrameInstance currentFrameInstance = Truffle.getRuntime().getCurrentFrame();
-        final Frame currentFrame = currentFrameInstance.getFrame(FrameAccess.MATERIALIZE, true);
-        return getLatestInstance().inlineRubyHelper(null, currentFrame, code);
-    }
-
-    @TruffleBoundary
-    public Object inlineRubyHelper(Node currentNode, String expression, Object... arguments) {
-        return inlineRubyHelper(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.MATERIALIZE, true), expression, arguments);
-    }
-
-    public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
-        final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
-        final DynamicObject binding = BindingNodes.createBinding(this, evalFrame);
-        return getCodeLoader().eval(ParserContext.INLINE, StringOperations.createByteList(expression), binding, true, "inline-ruby", currentNode);
-    }
-
-    private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
-        CompilerDirectives.transferToInterpreter();
-        final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(null, null, RubyArguments.getMethod(frame.getArguments()), DeclarationContext.INSTANCE_EVAL, null, RubyArguments.getSelf(frame.getArguments()), null, new Object[]{}),
-                new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
-
-        if (arguments.length % 2 == 1) {
-            throw new UnsupportedOperationException("odd number of name-value pairs for arguments");
-        }
-
-        for (int n = 0; n < arguments.length; n += 2) {
-            evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
-        }
-
-        return evalFrame;
     }
 
     public void shutdown() {

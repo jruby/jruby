@@ -214,11 +214,11 @@ public abstract class RubyNode extends Node {
     // ruby() helper
 
     protected Object ruby(String expression, Object... arguments) {
-        return getContext().inlineRubyHelper(this, expression, arguments);
+        return getContext().getCodeLoader().inlineRubyHelper(this, expression, arguments);
     }
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        return getContext().inlineRubyHelper(this, frame, expression, arguments);
+        return getContext().getCodeLoader().inlineRubyHelper(this, frame, expression, arguments);
     }
 
 }

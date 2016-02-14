@@ -10,8 +10,12 @@
 package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -24,6 +28,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.core.SetTopLevelBindingNode;
+import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -132,11 +137,47 @@ public class CodeLoader {
         final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
 
         if (rootNode.hasEndPosition()) {
-            final Object data = context.inlineRubyHelper(null, "Truffle::Primitive.get_data(file, offset)", "file", StringOperations.createString(context, ByteList.create(inputFile)), "offset", rootNode.getEndPosition());
+            final Object data = context.getCodeLoader().inlineRubyHelper(null, "Truffle::Primitive.get_data(file, offset)", "file", StringOperations.createString(context, ByteList.create(inputFile)), "offset", rootNode.getEndPosition());
             Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, null, "DATA", data);
         }
 
         return execute(TranslatorDriver.ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, context.getCoreLibrary().getMainObject());
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public Object inlineRubyHelper(Node currentNode, String expression, Object... arguments) {
+        return inlineRubyHelper(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true), expression, arguments);
+    }
+
+    public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
+        final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
+        final DynamicObject binding = BindingNodes.createBinding(context, evalFrame);
+        return context.getCodeLoader().eval(TranslatorDriver.ParserContext.INLINE, StringOperations.createByteList(expression), binding, true, "inline-ruby", currentNode);
+    }
+
+    private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
+        CompilerDirectives.transferToInterpreter();
+        final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
+                RubyArguments.pack(null, null, RubyArguments.getMethod(frame.getArguments()), DeclarationContext.INSTANCE_EVAL, null, RubyArguments.getSelf(frame.getArguments()), null, new Object[]{}),
+                new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
+
+        if (arguments.length % 2 == 1) {
+            throw new UnsupportedOperationException("odd number of name-value pairs for arguments");
+        }
+
+        for (int n = 0; n < arguments.length; n += 2) {
+            evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
+        }
+
+        return evalFrame;
+    }
+
+    /* For debugging in Java. */
+    public static Object debugEval(String code) {
+        CompilerAsserts.neverPartOfCompilation();
+        final FrameInstance currentFrameInstance = Truffle.getRuntime().getCurrentFrame();
+        final Frame currentFrame = currentFrameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true);
+        return RubyContext.getLatestInstance().getCodeLoader().inlineRubyHelper(null, currentFrame, code);
     }
 
 }
