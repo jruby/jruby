@@ -33,11 +33,7 @@ public class JRubyInterop {
 
     @CompilerDirectives.TruffleBoundary
     public IRubyObject toJRuby(Object object) {
-        if (object == context.getCoreLibrary().getNilObject()) {
-            return context.getJRubyRuntime().getNil();
-        } else if (object instanceof Boolean) {
-            return context.getJRubyRuntime().newBoolean((boolean) object);
-        } else if (RubyGuards.isRubyString(object)) {
+        if (RubyGuards.isRubyString(object)) {
             return context.getJRubyRuntime().newString(StringOperations.rope((DynamicObject) object).toByteListCopy());
         } else if (RubyGuards.isRubyEncoding(object)) {
             return context.getJRubyRuntime().getEncodingService().rubyEncodingFromObject(context.getJRubyRuntime().newString(Layouts.ENCODING.getName((DynamicObject) object)));
