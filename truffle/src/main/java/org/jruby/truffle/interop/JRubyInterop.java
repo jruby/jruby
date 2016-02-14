@@ -38,18 +38,12 @@ public class JRubyInterop {
         } else if (object instanceof Boolean) {
             return context.getJRubyRuntime().newBoolean((boolean) object);
         } else if (RubyGuards.isRubyString(object)) {
-            return toJRubyString((DynamicObject) object);
+            return context.getJRubyRuntime().newString(StringOperations.rope((DynamicObject) object).toByteListCopy());
         } else if (RubyGuards.isRubyEncoding(object)) {
             return context.getJRubyRuntime().getEncodingService().rubyEncodingFromObject(context.getJRubyRuntime().newString(Layouts.ENCODING.getName((DynamicObject) object)));
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public org.jruby.RubyString toJRubyString(DynamicObject string) {
-        assert RubyGuards.isRubyString(string);
-        return context.getJRubyRuntime().newString(StringOperations.rope(string).toByteListCopy());
     }
 
     @CompilerDirectives.TruffleBoundary
