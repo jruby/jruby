@@ -49,7 +49,7 @@ public class Options {
     // Cloning and inlining
 
     public final boolean CORE_ALWAYS_CLONE = org.jruby.util.cli.Options.TRUFFLE_CORE_ALWAYS_CLONE.load();
-    public final boolean TRUFFLE_INLINE_NEEDS_CALLER_FRAME = org.jruby.util.cli.Options.TRUFFLE_INLINE_NEEDS_CALLER_FRAME.load();
+    public final boolean INLINE_NEEDS_CALLER_FRAME = org.jruby.util.cli.Options.TRUFFLE_INLINE_NEEDS_CALLER_FRAME.load();
     public final boolean YIELD_ALWAYS_CLONE = org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_CLONE.load();
     public final boolean YIELD_ALWAYS_INLINE = org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_INLINE.load();
     public final boolean METHODMISSING_ALWAYS_CLONE = org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_CLONE.load();
