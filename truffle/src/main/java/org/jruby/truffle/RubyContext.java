@@ -16,17 +16,13 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.tools.CoverageTracker;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.core.CoreLibrary;
-import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
 import org.jruby.truffle.core.rope.RopeTable;
 import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
@@ -56,9 +52,6 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * The global state of a running Ruby system.
