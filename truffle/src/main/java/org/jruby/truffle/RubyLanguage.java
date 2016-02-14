@@ -30,7 +30,10 @@ import org.jruby.truffle.language.RubyNode;
 
 import java.io.IOException;
 
-@TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = RubyLanguage.MIME_TYPE)
+@TruffleLanguage.Registration(
+        name = "Ruby",
+        version = Constants.RUBY_VERSION,
+        mimeType = RubyLanguage.MIME_TYPE)
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     public static final String MIME_TYPE = "application/x-ruby";
