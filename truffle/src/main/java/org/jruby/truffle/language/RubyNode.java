@@ -12,6 +12,7 @@ package org.jruby.truffle.language;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -31,6 +32,7 @@ import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
+@Instrumentable(factory = RubyNodeWrapper.class)
 public abstract class RubyNode extends Node {
 
     private final RubyContext context;
@@ -40,6 +42,10 @@ public abstract class RubyNode extends Node {
         super(sourceSection);
         assert context != null;
         this.context = context;
+    }
+
+    public RubyNode(RubyNode node) {
+        this(node.getContext(), node.getSourceSection());
     }
 
     // Fundamental execute methods

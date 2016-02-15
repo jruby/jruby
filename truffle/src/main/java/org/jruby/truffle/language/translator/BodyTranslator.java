@@ -438,8 +438,17 @@ public class BodyTranslator extends Translator {
         if (translatedChildren.size() == 1) {
             ret = translatedChildren.get(0);
         } else {
-            RubyNode[] sequence = translatedChildren.toArray(new RubyNode[translatedChildren.size()]);
-            ret = sequence(context, sourceSection, Arrays.asList(sequence));
+            final int startIndex = sourceSection.getSource().getLineStartOffset(node.getPosition().getLine() + 1);
+
+            int length = 0;
+
+            for (int n = firstLine; n <= lastLine; n++) {
+                length += sourceSection.getSource().getLineLength(n);
+            }
+
+            length = Math.min(length + startIndex, sourceSection.getSource().getLength()) - startIndex;
+
+            ret = sequence(context, sourceSection.getSource().createSection(sourceSection.getIdentifier(), startIndex, length), translatedChildren);
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -3142,6 +3151,9 @@ public class BodyTranslator extends Translator {
     private RubyNode addNewlineIfNeeded(org.jruby.ast.Node jrubyNode, RubyNode node) {
         if (jrubyNode.isNewline()) {
             node.setAtNewline();
+            final SourceSection current = node.getEncapsulatingSourceSection();
+            node.clearSourceSection();
+            node.assignSourceSection(current.withTags("statement"));
         }
 
         return node;
