@@ -12,7 +12,6 @@ package org.jruby.truffle.core.string;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 
 public abstract class StringCachingGuards {

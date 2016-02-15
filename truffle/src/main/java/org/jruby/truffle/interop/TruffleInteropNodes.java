@@ -39,8 +39,8 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringCachingGuards;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
