@@ -3743,13 +3743,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     private static class Ruby19POpen {
-        public final RubyString cmd;
-        public final IRubyObject[] cmdPlusArgs;
-        public final RubyHash env;
+        final RubyString cmd;
+        final IRubyObject[] cmdPlusArgs;
+        final RubyHash env;
 
-        public Ruby19POpen(Ruby runtime, IRubyObject[] args) {
-            IRubyObject[] _cmdPlusArgs = null;
-            IRubyObject _env = null;
+        Ruby19POpen(Ruby runtime, IRubyObject[] args) {
+            IRubyObject[] _cmdPlusArgs;
+            IRubyObject _env;
             IRubyObject _cmd;
 
             int firstArg = 0;
