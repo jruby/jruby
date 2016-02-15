@@ -91,7 +91,7 @@ import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.StringCachingGuards;
+import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.language.objects.ThreadLocalObject;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;

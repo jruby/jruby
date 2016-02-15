@@ -68,7 +68,7 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.StringCachingGuards;
+import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
