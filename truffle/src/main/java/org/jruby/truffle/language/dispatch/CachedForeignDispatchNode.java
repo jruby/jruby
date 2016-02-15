@@ -11,9 +11,12 @@ package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.UnsupportedMessageException;
+import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -98,27 +101,33 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
             CompilerDirectives.transferToInterpreter();
             throw new IllegalStateException();
         }
-        if (directArray != null) {
-            Object[] args = prepareArguments.convertArguments(frame, arguments, 0);
-            return ForeignAccess.execute(directArray, frame, receiverObject, args);
-        } else if (directField != null) {
-            Object[] args = prepareArguments.convertArguments(frame, arguments, 1);
-            args[0] = nameForMessage;
-            return ForeignAccess.execute(directField, frame, receiverObject, args);
-        } else if (directCall != null) {
-            Object[] args;
-            args = prepareArguments.convertArguments(frame, arguments, 0);
-            return ForeignAccess.execute(directCall, frame, receiverObject, args);
-        } else if (nullCheck != null) {
-            Object[] args = prepareArguments.convertArguments(frame, arguments, 0);
-            return ForeignAccess.execute(nullCheck, frame, receiverObject, args);
-        } else if (access != null) {
-            Object[] args = prepareArguments.convertArguments(frame, arguments, 1);
-            args[0] = name;
-            return ForeignAccess.execute(access, frame, receiverObject, args);
-        } else {
+
+        try {
+            if (directArray != null) {
+                Object[] args = prepareArguments.convertArguments(frame, arguments, 0);
+                return ForeignAccess.sendExecute(directArray, frame, receiverObject, args);
+            } else if (directField != null) {
+                Object[] args = prepareArguments.convertArguments(frame, arguments, 1);
+                args[0] = nameForMessage;
+                return ForeignAccess.sendExecute(directField, frame, receiverObject, args);
+            } else if (directCall != null) {
+                Object[] args;
+                args = prepareArguments.convertArguments(frame, arguments, 0);
+                return ForeignAccess.sendExecute(directCall, frame, receiverObject, args);
+            } else if (nullCheck != null) {
+                Object[] args = prepareArguments.convertArguments(frame, arguments, 0);
+                return ForeignAccess.sendExecute(nullCheck, frame, receiverObject, args);
+            } else if (access != null) {
+                Object[] args = prepareArguments.convertArguments(frame, arguments, 1);
+                args[0] = name;
+                return ForeignAccess.sendExecute(access, frame, receiverObject, args);
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new IllegalStateException();
+            }
+        } catch (ArityException | UnsupportedMessageException | UnsupportedTypeException e) {
             CompilerDirectives.transferToInterpreter();
-            throw new IllegalStateException();
+            throw new RuntimeException(e);
         }
     }
 
