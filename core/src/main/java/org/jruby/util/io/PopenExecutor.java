@@ -1895,8 +1895,7 @@ public class PopenExecutor {
 
         if (!eargp.use_shell && eargp.argv_buf == null) {
             int i;
-            List<byte[]> argv_buf;
-            argv_buf = new ArrayList();
+            ArrayList<byte[]> argv_buf = new ArrayList<>(argc);
             for (i = 0; i < argc; i++) {
                 IRubyObject arg = argv[i];
                 RubyString argStr = StringSupport.checkEmbeddedNulls(runtime, arg);
