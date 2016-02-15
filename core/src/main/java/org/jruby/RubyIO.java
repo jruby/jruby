@@ -3865,18 +3865,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 process = ShellLauncher.popen(runtime, r19Popen.cmdPlusArgs, r19Popen.env, modes);
             }
 
-            // Yes, this is gross. java.lang.Process does not appear to be guaranteed
-            // "ready" when we get it back from Runtime#exec, so we try to give it a
-            // chance by waiting for 10ms before we proceed. Only doing this on 1.5
-            // since Hotspot 1.6+ does not seem to exhibit the problem.
-            if (System.getProperty("java.specification.version", "").equals("1.5")) {
-                synchronized (process) {
-                    try {
-                        process.wait(100);
-                    } catch (InterruptedException ie) {}
-                }
-            }
-
             checkPopenOptions(options);
 
             io.setupPopen(modes, process);
