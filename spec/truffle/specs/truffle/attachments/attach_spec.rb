@@ -35,6 +35,17 @@ describe "Truffle::Attachments.attach" do
     fixture.should == 14
     scratch[0].should be_true
   end
+
+  it "only runs the block once each time the line is executed" do
+    scratch = []
+    
+    @attachments << Truffle::Attachments.attach(__FILE__, 14) do
+      scratch << :run
+    end
+
+    fixture.should == 14
+    scratch.size.should == 1
+  end
   
   it "allows multiple blocks to be installed on the same line and runs both of them" do
     scratch = []
