@@ -42,18 +42,15 @@ public class NativeException extends RubyException {
 
     private final Throwable cause;
     public static final String CLASS_NAME = "NativeException";
-    private final Ruby runtime;
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
         super(runtime, rubyClass);
-        this.runtime = runtime;
         this.cause = cause;
         this.message = runtime.newString(cause.getClass().getName() + ": " + searchStackMessage(cause));
     }
     
     private NativeException(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
-        this.runtime = runtime;
         this.cause   = new Throwable();
         this.message = runtime.newString();
     }
@@ -84,6 +81,7 @@ public class NativeException extends RubyException {
         if (rubyTrace.isNil()) {
             return rubyTrace;
         }
+        final Ruby runtime = getRuntime();
         RubyArray array = (RubyArray) rubyTrace.dup();
         StackTraceElement[] stackTrace = cause.getStackTrace();
         for (int i = stackTrace.length - 1; i >= 0; i--) {
@@ -97,8 +95,7 @@ public class NativeException extends RubyException {
                 final String packageName = index == -1 ? "" : className.substring(0, index) + '/';
                 line = packageName.replace('.', '/') + element.getFileName() + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
             }
-            RubyString string = runtime.newString(line);
-            array.unshift(string);
+            array.unshift(runtime.newString(line));
         }
         return array;
     }
