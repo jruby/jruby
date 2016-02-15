@@ -1553,7 +1553,7 @@ public class RubyKernel {
             if (pid < 0) {
                 return runtime.getNil();
             }
-            status[0] = (int)((RubyProcess.RubyStatus)context.getLastExitStatus()).getStatus();
+            status[0] = (int)((RubyProcess.RubyStatus) context.getLastExitStatus()).getStatus();
             if (status[0] == 0) return runtime.getTrue();
             return runtime.getFalse();
         }
@@ -1582,11 +1582,7 @@ public class RubyKernel {
         long[] tuple;
 
         try {
-            IRubyObject lastArg = args[args.length - 1];
-            if (lastArg instanceof RubyHash) {
-                runtime.getWarnings().warn(ID.UNSUPPORTED_SUBPROCESS_OPTION, "system does not support options in JRuby yet: " + lastArg.inspect());
-                args = Arrays.copyOf(args, args.length - 1);
-            }
+            args = dropLastArgIfOptions(runtime, args);
             if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
                 // looks like we need to send process to the background
                 ShellLauncher.runWithoutWait(runtime, args);
@@ -1599,7 +1595,18 @@ public class RubyKernel {
 
         // RubyStatus uses real native status now, so we unshift Java's shifted exit status
         context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0] << 8, tuple[1]));
-        return (int)tuple[0];
+        return (int) tuple[0];
+    }
+
+    private static IRubyObject[] dropLastArgIfOptions(final Ruby runtime, final IRubyObject[] args) {
+        IRubyObject lastArg = args[args.length - 1];
+        if (lastArg instanceof RubyHash) {
+            if (!((RubyHash) lastArg).isEmpty()) {
+                runtime.getWarnings().warn(ID.UNSUPPORTED_SUBPROCESS_OPTION, "system does not support options in JRuby yet: " + lastArg);
+            }
+            return Arrays.copyOf(args, args.length - 1);
+        }
+        return args;
     }
 
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
