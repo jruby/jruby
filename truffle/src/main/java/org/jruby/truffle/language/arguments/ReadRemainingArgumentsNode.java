@@ -10,8 +10,8 @@
 package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
