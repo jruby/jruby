@@ -162,7 +162,7 @@ public class MethodTranslator extends BodyTranslator {
         final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
 
 
-        FrameSlot frameOnStackMarkerSlot;
+        Object frameOnStackMarkerSlot;
 
         if (frameOnStackMarkerSlotStack.isEmpty()) {
             frameOnStackMarkerSlot = null;
@@ -175,7 +175,7 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         return new BlockDefinitionNode(context, newRootNodeForProcs.getEncapsulatingSourceSection(), type, environment.getSharedMethodInfo(),
-                callTargetAsProc, callTargetAsLambda, environment.getBreakID(), frameOnStackMarkerSlot);
+                callTargetAsProc, callTargetAsLambda, environment.getBreakID(), (FrameSlot) frameOnStackMarkerSlot);
     }
 
     private boolean shouldConsiderDestructuringArrayArg(Arity arity) {

@@ -635,6 +635,7 @@ public abstract class POSIXDelegator implements POSIX {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public int fcntl(int fd, Fcntl fcntlConst, int... arg) {
         return delegateTo.fcntl(fd, fcntlConst, arg);
     }

@@ -255,6 +255,7 @@ public abstract class BaseLibC implements LibC {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public int fcntl(int fd, int fnctl, int... arg) {
         throw new UnsupportedOperationException();
     }

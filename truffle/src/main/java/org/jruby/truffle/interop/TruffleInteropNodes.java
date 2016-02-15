@@ -25,9 +25,13 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.UnknownIdentifierException;
+import com.oracle.truffle.api.interop.UnsupportedMessageException;
+import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -112,7 +116,7 @@ public abstract class TruffleInteropNodes {
 
         @Specialization
         public boolean isExecutable(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) ForeignAccess.execute(node, frame, receiver, receiver);
+            return (boolean) ForeignAccess.sendIsExecutable(node, frame, receiver);
         }
 
     }
@@ -164,7 +168,7 @@ public abstract class TruffleInteropNodes {
 
         @Specialization
         public boolean isBoxedPrimitive(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) ForeignAccess.execute(node, frame, receiver);
+            return (boolean) ForeignAccess.sendIsBoxed(node, frame, receiver);
         }
 
         @Specialization(guards = {"!isTruffleObject(receiver)", "!isJavaCharSequence(receiver)"})
@@ -186,7 +190,7 @@ public abstract class TruffleInteropNodes {
 
         @Specialization
         public boolean isNull(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) ForeignAccess.execute(node, frame, receiver);
+            return (boolean) ForeignAccess.sendIsNull(node, frame, receiver);
         }
 
     }
@@ -203,7 +207,7 @@ public abstract class TruffleInteropNodes {
 
         @Specialization
         public boolean hasSizeProperty(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) ForeignAccess.execute(node, frame, receiver);
+            return (boolean) ForeignAccess.sendHasSize(node, frame, receiver);
         }
 
     }
@@ -233,7 +237,12 @@ public abstract class TruffleInteropNodes {
                                    TruffleObject receiver,
                                    Object identifier,
                                    @Cached("createReadNode()") Node readNode) {
-            return ForeignAccess.execute(readNode, frame, receiver, identifier);
+            try {
+                return ForeignAccess.sendRead(readNode, frame, receiver, identifier);
+            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
         @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
@@ -243,7 +252,12 @@ public abstract class TruffleInteropNodes {
                                    @Cached("identifier") DynamicObject cachedIdentifier,
                                    @Cached("identifier.toString()") String identifierString,
                                    @Cached("createReadNode()") Node readNode) {
-            return ForeignAccess.execute(readNode, frame, receiver, identifierString);
+            try {
+                return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
+            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
         @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
@@ -253,7 +267,12 @@ public abstract class TruffleInteropNodes {
                                    @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
                                    @Cached("identifier.toString()") String identifierString,
                                    @Cached("createReadNode()") Node readNode) {
-            return ForeignAccess.execute(readNode, frame, receiver, identifierString);
+            try {
+                return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
+            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
         protected static Node createReadNode() {
@@ -280,7 +299,12 @@ public abstract class TruffleInteropNodes {
                                     Object identifier,
                                     Object value,
                                     @Cached("createWriteNode()") Node writeNode) {
-            return ForeignAccess.execute(writeNode, frame, receiver, identifier, value);
+            try {
+                return ForeignAccess.sendWrite(writeNode, frame, receiver, identifier, value);
+            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
         @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
@@ -291,7 +315,12 @@ public abstract class TruffleInteropNodes {
                                     @Cached("identifier") DynamicObject cachedIdentifier,
                                     @Cached("identifier.toString()") String identifierString,
                                     @Cached("createWriteNode()") Node writeNode) {
-            return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
+            try {
+                return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
+            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
         @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
@@ -302,7 +331,12 @@ public abstract class TruffleInteropNodes {
                                     @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
                                     @Cached("identifier.toString()") String identifierString,
                                     @Cached("createWriteNode()") Node writeNode) {
-            return ForeignAccess.execute(writeNode, frame, receiver, identifierString, value);
+            try {
+                return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
+            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
         protected static Node createWriteNode() {
@@ -360,7 +394,12 @@ public abstract class TruffleInteropNodes {
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
-            return ForeignAccess.execute(node, frame, receiver);
+            try {
+                return ForeignAccess.sendUnbox(node, frame, receiver);
+            } catch (UnsupportedMessageException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
     }
@@ -380,7 +419,12 @@ public abstract class TruffleInteropNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 this.node = Message.createExecute(args.length).createNode();
             }
-            return ForeignAccess.execute(node, frame, receiver, args);
+            try {
+                return ForeignAccess.sendExecute(node, frame, receiver, args);
+            } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
     }
@@ -402,7 +446,12 @@ public abstract class TruffleInteropNodes {
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
-            return ForeignAccess.execute(node, frame, receiver);
+            try {
+                return ForeignAccess.sendGetSize(node, frame, receiver);
+            } catch (UnsupportedMessageException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
     }
@@ -493,6 +542,7 @@ public abstract class TruffleInteropNodes {
             try {
                 return getContext().getEnv().parse(sourceObject);
             } catch (IOException e) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RuntimeException(e);
             }
         }

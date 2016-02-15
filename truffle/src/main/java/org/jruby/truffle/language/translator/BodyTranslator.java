@@ -715,9 +715,9 @@ public class BodyTranslator extends Translator {
         }
     }
 
-    public static final FrameSlot BAD_FRAME_SLOT = new FrameSlot(null, null, null, 0, null);
+    public static final Object BAD_FRAME_SLOT = new Object();
 
-    public Deque<FrameSlot> frameOnStackMarkerSlotStack = new ArrayDeque<>();
+    public Deque<Object> frameOnStackMarkerSlotStack = new ArrayDeque<>();
 
     protected ArgumentsAndBlockTranslation translateArgumentsAndBlock(SourceSection sourceSection, org.jruby.ast.Node iterNode, org.jruby.ast.Node argsNode, String nameToSetWhenTranslatingBlock) {
         assert !(argsNode instanceof org.jruby.ast.IterNode);
