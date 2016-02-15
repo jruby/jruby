@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language;
 
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -20,41 +19,26 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 
-/**
- * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
- * {@link #execute}, which Truffle knows about and can create a {@link CallTarget} from.
- */
 public class RubyRootNode extends RootNode {
 
     private final RubyContext context;
     private final SharedMethodInfo sharedMethodInfo;
-    @Child private RubyNode body;
     private final boolean needsDeclarationFrame;
 
-    public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {
-        this(context, sourceSection, frameDescriptor, sharedMethodInfo, body, false);
-    }
+    @Child private RubyNode body;
 
-    public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body, boolean needsDeclarationFrame) {
+    public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor,
+                        SharedMethodInfo sharedMethodInfo, RubyNode body, boolean needsDeclarationFrame) {
         super(RubyLanguage.class, sourceSection, frameDescriptor);
         assert body != null;
         this.context = context;
-        this.body = body;
         this.sharedMethodInfo = sharedMethodInfo;
         this.needsDeclarationFrame = needsDeclarationFrame;
+        this.body = body;
 
         if (context.getCallGraph() != null) {
             context.getCallGraph().registerRootNode(this);
         }
-    }
-
-    public RubyRootNode withBody(RubyNode body) {
-        return new RubyRootNode(context, getSourceSection(), getFrameDescriptor(), sharedMethodInfo, body, needsDeclarationFrame);
-    }
-
-    @Override
-    public boolean isCloningAllowed() {
-        return true;
     }
 
     @Override
@@ -64,25 +48,13 @@ public class RubyRootNode extends RootNode {
     }
 
     @Override
-    public String toString() {
-        return sharedMethodInfo.toString();
-    }
-
-    public SharedMethodInfo getSharedMethodInfo() {
-        return sharedMethodInfo;
-    }
-
-    public RubyNode getBody() {
-        return body;
-    }
-
-    @Override
     public ExecutionContext getExecutionContext() {
         return context;
     }
 
-    public boolean needsDeclarationFrame() {
-        return needsDeclarationFrame;
+    @Override
+    public boolean isCloningAllowed() {
+        return true;
     }
 
     @Override
@@ -94,6 +66,28 @@ public class RubyRootNode extends RootNode {
         }
 
         return cloned;
+    }
+
+    @Override
+    public String toString() {
+        return sharedMethodInfo.toString();
+    }
+
+    public RubyRootNode withBody(RubyNode body) {
+        return new RubyRootNode(context, getSourceSection(), getFrameDescriptor(), sharedMethodInfo, body,
+                needsDeclarationFrame);
+    }
+
+    public SharedMethodInfo getSharedMethodInfo() {
+        return sharedMethodInfo;
+    }
+
+    public RubyNode getBody() {
+        return body;
+    }
+
+    public boolean needsDeclarationFrame() {
+        return needsDeclarationFrame;
     }
 
 }

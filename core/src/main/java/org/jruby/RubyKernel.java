@@ -1519,7 +1519,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
         if (!needChdir && runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
@@ -1560,7 +1560,7 @@ public class RubyKernel {
 
         // else old JDK logic
         if (args[0] instanceof RubyHash) {
-            RubyHash env = (RubyHash) args[0].convertToHash();
+            RubyHash env = args[0].convertToHash();
             if (env != null) {
                 runtime.getENV().merge_bang(context, env, Block.NULL_BLOCK);
             }

@@ -34,12 +34,6 @@ import org.jruby.util.ByteList;
 public abstract class RubyNode extends Node {
 
     private final RubyContext context;
-
-    // This field is a hack, used to transmit the information
-    // supplied by the JRuby parser in the form of a special
-    // node in the parse tree. The right thing to do is to
-    // add a special information node when the AST is constructed,
-    // which can then be removed.
     private boolean atNewline = false;
 
     public RubyNode(RubyContext context, SourceSection sourceSection) {
@@ -52,14 +46,12 @@ public abstract class RubyNode extends Node {
 
     public abstract Object execute(VirtualFrame frame);
 
-    public Object isDefined(VirtualFrame frame) {
-        return create7BitString("expression", UTF8Encoding.INSTANCE);
-    }
-
-    // Execute without returning the result
-
     public void executeVoid(VirtualFrame frame) {
         execute(frame);
+    }
+
+    public Object isDefined(VirtualFrame frame) {
+        return create7BitString("expression", UTF8Encoding.INSTANCE);
     }
 
     // Utility methods to execute and expect a particular type
@@ -144,25 +136,28 @@ public abstract class RubyNode extends Node {
         return value == getContext().getCoreLibrary().getRubiniusUndefined();
     }
 
+    protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
+        return Layouts.CLASS.getInstanceFactory(rubyClass);
+    }
+
     // Helpers methods for terseness
 
     protected DynamicObject nil() {
         return getContext().getCoreLibrary().getNilObject();
     }
 
-    public DynamicObject getSymbol(String name) {
+    protected DynamicObject getSymbol(String name) {
         return getContext().getSymbolTable().getSymbol(name);
     }
 
-    public DynamicObject getSymbol(ByteList name) {
+    protected DynamicObject getSymbol(ByteList name) {
         return getContext().getSymbolTable().getSymbol(name);
     }
 
-    public DynamicObject getSymbol(Rope name) {
+    protected DynamicObject getSymbol(Rope name) {
         return getContext().getSymbolTable().getSymbol(name);
     }
 
-    /** Creates a String from the ByteList, with unknown CR */
     protected DynamicObject createString(ByteList bytes) {
         return StringOperations.createString(getContext(), bytes);
     }
@@ -183,22 +178,16 @@ public abstract class RubyNode extends Node {
         return getContext().getNativePlatform().getSockets();
     }
 
-    // Helper methods for caching
-
-    protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
-        return Layouts.CLASS.getInstanceFactory(rubyClass);
+    protected MemoryManager memoryManager() {
+        return getContext().getNativePlatform().getMemoryManager();
     }
 
-    public void setAtNewline() {
-        atNewline = true;
+    protected Object ruby(String expression, Object... arguments) {
+        return getContext().getCodeLoader().inlineRubyHelper(this, expression, arguments);
     }
 
-    public boolean isAtNewline() {
-        return atNewline;
-    }
-
-    public RubyNode getNonProxyNode() {
-        return this;
+    protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
+        return getContext().getCodeLoader().inlineRubyHelper(this, frame, expression, arguments);
     }
 
     // Accessors
@@ -207,18 +196,12 @@ public abstract class RubyNode extends Node {
         return context;
     }
 
-    public MemoryManager getMemoryManager() {
-        return jnr.ffi.Runtime.getSystemRuntime().getMemoryManager();
+    public void setAtNewline() {
+        atNewline = true;
     }
 
-    // ruby() helper
-
-    protected Object ruby(String expression, Object... arguments) {
-        return getContext().getCodeLoader().inlineRubyHelper(this, expression, arguments);
-    }
-
-    protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        return getContext().getCodeLoader().inlineRubyHelper(this, frame, expression, arguments);
+    public boolean isAtNewline() {
+        return atNewline;
     }
 
 }

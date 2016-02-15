@@ -30,6 +30,8 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.util.ByteList;
@@ -61,8 +63,8 @@ public abstract class EncodingConverterNodes {
             int[] ecflags = {0};
             IRubyObject[] ecopts = {runtime.getNil()};
 
-            final IRubyObject sourceAsJRubyObj = getContext().getJRubyInterop().toJRuby(source);
-            final IRubyObject destinationAsJRubyObj = getContext().getJRubyInterop().toJRuby(destination);
+            final IRubyObject sourceAsJRubyObj = toJRuby(source);
+            final IRubyObject destinationAsJRubyObj = toJRuby(destination);
 
             EncodingUtils.econvArgs(runtime.getCurrentContext(), new IRubyObject[]{sourceAsJRubyObj, destinationAsJRubyObj}, encNames, encs, ecflags, ecopts);
 
@@ -110,6 +112,16 @@ public abstract class EncodingConverterNodes {
             }
 
             return flags;
+        }
+
+        private IRubyObject toJRuby(Object object) {
+            if (RubyGuards.isRubyString(object)) {
+                return getContext().getJRubyRuntime().newString(StringOperations.rope((DynamicObject) object).toByteListCopy());
+            } else if (RubyGuards.isRubyEncoding(object)) {
+                return getContext().getJRubyRuntime().getEncodingService().rubyEncodingFromObject(getContext().getJRubyRuntime().newString(Layouts.ENCODING.getName((DynamicObject) object)));
+            } else {
+                throw new UnsupportedOperationException();
+            }
         }
 
     }

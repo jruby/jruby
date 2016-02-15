@@ -75,7 +75,7 @@ import org.jruby.truffle.debug.AssertNotCompiledNodeGen;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.ThreadLocalObjectNode;
+import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.language.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;

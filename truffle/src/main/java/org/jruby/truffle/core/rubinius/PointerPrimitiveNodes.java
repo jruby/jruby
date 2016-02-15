@@ -73,7 +73,7 @@ public abstract class PointerPrimitiveNodes {
         @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject malloc(DynamicObject pointerClass, long size) {
-            return allocateObjectNode.allocate(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
+            return allocateObjectNode.allocate(pointerClass, memoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
         }
 
     }
@@ -108,7 +108,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public long setAddress(DynamicObject pointer, long address) {
-            Layouts.POINTER.setPointer(pointer, getMemoryManager().newPointer(address));
+            Layouts.POINTER.setPointer(pointer, memoryManager().newPointer(address));
             return address;
         }
 
@@ -131,7 +131,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject add(DynamicObject a, long b) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(a), getMemoryManager().newPointer(Layouts.POINTER.getPointer(a).address() + b));
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(a), memoryManager().newPointer(Layouts.POINTER.getPointer(a).address() + b));
         }
 
     }

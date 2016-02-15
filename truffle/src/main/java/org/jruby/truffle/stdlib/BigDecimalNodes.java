@@ -46,7 +46,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.UnreachableCodeBranch;
 import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -98,7 +97,7 @@ public abstract class BigDecimalNodes {
             case 7:
                 return RoundingMode.HALF_EVEN;
             default:
-                throw new UnreachableCodeBranch();
+                throw new UnsupportedOperationException();
         }
     }
 
@@ -729,7 +728,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return value;
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -797,7 +796,7 @@ public abstract class BigDecimalNodes {
                             return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                     }
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -824,7 +823,7 @@ public abstract class BigDecimalNodes {
                 return bType == Type.POSITIVE_INFINITY ? a : createBigDecimal(frame, (Type.POSITIVE_INFINITY));
             }
 
-            throw new UnreachableCodeBranch();
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -921,7 +920,7 @@ public abstract class BigDecimalNodes {
                     case -1:
                         return Type.NEGATIVE_INFINITY;
                     default:
-                        throw new UnreachableCodeBranch();
+                        throw new UnsupportedOperationException();
                 }
             } else {
                 return divBigDecimal(aBigDecimal, bBigDecimal, mathContext);
@@ -967,7 +966,7 @@ public abstract class BigDecimalNodes {
                             return createBigDecimal(frame, BigDecimal.ZERO);
                     }
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1001,7 +1000,7 @@ public abstract class BigDecimalNodes {
                             return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                     }
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1405,7 +1404,7 @@ public abstract class BigDecimalNodes {
                 return createBigDecimal(frame, a);
             }
 
-            throw new UnreachableCodeBranch();
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -1483,7 +1482,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, Integer.signum(exponent) == 1 ? BigDecimal.ZERO : Type.NAN);
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
     }
@@ -1544,7 +1543,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, sqrt(BigDecimal.ZERO, new MathContext(precision, getRoundMode(frame))));
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
     }
@@ -1749,7 +1748,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NaN");
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1833,7 +1832,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return createBigDecimal(frame, type);
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1906,7 +1905,7 @@ public abstract class BigDecimalNodes {
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError("Computation results to 'NaN'(Not a Number)", this));
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
 
             }
         }
@@ -2017,7 +2016,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return Double.NaN;
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -2081,7 +2080,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return 0;
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
     }

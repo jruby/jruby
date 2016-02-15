@@ -69,6 +69,7 @@ import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.cast.ArrayAttributeCastNodeGen;
@@ -91,6 +92,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1405,9 +1407,26 @@ public abstract class StringPrimitiveNodes {
                         fixBase,
                         strict);
 
-                return getContext().getJRubyInterop().toTruffle(result);
+                return toTruffle(result);
             } catch (org.jruby.exceptions.RaiseException e) {
                 throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
+            }
+        }
+
+        private Object toTruffle(IRubyObject object) {
+            if (object instanceof org.jruby.RubyFixnum) {
+                final long value = ((org.jruby.RubyFixnum) object).getLongValue();
+
+                if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+                    return value;
+                }
+
+                return (int) value;
+            } else if (object instanceof org.jruby.RubyBignum) {
+                final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
+                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
+            } else {
+                throw new UnsupportedOperationException();
             }
         }
 

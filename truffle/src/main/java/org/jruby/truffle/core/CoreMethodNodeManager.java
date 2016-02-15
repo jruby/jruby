@@ -158,7 +158,7 @@ public class CoreMethodNodeManager {
         final int required = method.required();
         final int optional = method.optional();
         final boolean needsCallerFrame = method.needsCallerFrame();
-        final boolean alwaysInline = needsCallerFrame && context.getOptions().TRUFFLE_INLINE_NEEDS_CALLER_FRAME;
+        final boolean alwaysInline = needsCallerFrame && context.getOptions().INLINE_NEEDS_CALLER_FRAME;
 
         final Arity arity = new Arity(required, optional, method.rest());
 
@@ -247,7 +247,7 @@ public class CoreMethodNodeManager {
 
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, method.unsupportedOperationBehavior());
 
-        return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
+        return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode, false);
     }
 
     public void allMethodInstalled() {
