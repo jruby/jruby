@@ -206,7 +206,8 @@ public class RubyException extends RubyObject {
         this.cause = cause;
     }
 
-    public IRubyObject getCause() {
+    // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
+    public Object getCause() {
         return cause;
     }
 
@@ -393,7 +394,7 @@ public class RubyException extends RubyObject {
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
     public IRubyObject message;
-    private IRubyObject cause;
+    IRubyObject cause;
 
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;
