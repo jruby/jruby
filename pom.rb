@@ -131,7 +131,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       execute_goal :enforce, :rules => rules
     end
 
-    plugin :compiler, '3.1'
+    plugin :compiler, '3.3'
     plugin :shade, '2.4.3'
     plugin :surefire, '2.15'
     plugin :plugin, '3.2'

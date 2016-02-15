@@ -288,7 +288,7 @@ DO NOT MODIFIY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.1</version>
+          <version>3.3</version>
         </plugin>
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
