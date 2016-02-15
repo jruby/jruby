@@ -100,6 +100,7 @@ public class NativeException extends RubyException {
         return array;
     }
 
+    @Deprecated // not used
     public void trimStackTrace(Member target) {
         Throwable t = new Throwable();
         StackTraceElement[] origStackTrace = cause.getStackTrace();
@@ -150,9 +151,8 @@ public class NativeException extends RubyException {
         return cause;
     }
 
-    private String searchStackMessage(Throwable cause) {
-        String message = null;
-
+    private static String searchStackMessage(Throwable cause) {
+        String message;
         do {
             message = cause.getMessage();
             cause = cause.getCause();
