@@ -10,7 +10,6 @@
 package org.jruby.truffle.platform.java;
 
 import jnr.ffi.Pointer;
-import jnr.ffi.provider.InAccessibleMemoryIO;
 import jnr.ffi.provider.MemoryManager;
 import jnr.ffi.provider.NullMemoryIO;
 

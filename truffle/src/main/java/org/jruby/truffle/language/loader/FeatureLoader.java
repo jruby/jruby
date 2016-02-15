@@ -17,8 +17,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.module.ModuleOperations;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.control.RaiseException;
 
