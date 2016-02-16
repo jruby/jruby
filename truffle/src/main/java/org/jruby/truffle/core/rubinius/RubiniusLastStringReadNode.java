@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.ThreadLocalObject;
 
@@ -34,7 +33,7 @@ public class RubiniusLastStringReadNode extends RubyNode {
 
         // Rubinius expects $_ to be thread-local, rather than frame-local.  If we see it in a method call, we need
         // to look to the caller's frame to get the correct value, otherwise it will be nil.
-        final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true).materialize();
+        final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, true).materialize();
 
         // TODO CS 4-Jan-16 - but it could be in higher frames!
         final FrameSlot slot = callerFrame.getFrameDescriptor().findFrameSlot("$_");

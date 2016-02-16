@@ -32,7 +32,6 @@ import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -190,7 +189,7 @@ public abstract class ThreadNodes {
             getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new Function2<Void, DynamicObject, Node>() {
                 @Override
                 public Void apply(DynamicObject thread, Node currentNode) {
-                    final Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), currentNode);
+                    final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
                     result[0] = ExceptionNodes.backtraceAsRubyStringArray(getContext(), null, backtrace);
                     return null;
                 }

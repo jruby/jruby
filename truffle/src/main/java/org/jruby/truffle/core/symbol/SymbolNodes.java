@@ -29,7 +29,6 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.proc.ProcNodes;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -141,7 +140,7 @@ public abstract class SymbolNodes {
 
         protected DynamicObject createProc(VirtualFrame frame, DynamicObject symbol) {
             CompilerDirectives.transferToInterpreter();
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame(getContext())
+            final SourceSection sourceSection = getContext().getCallStack().getCallerFrame()
                     .getCallNode().getEncapsulatingSourceSection();
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(

@@ -16,7 +16,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.func.Function2;
@@ -52,7 +51,7 @@ public class ThreadPrimitiveNodes {
                 @Override
                 public Void apply(DynamicObject currentThread, Node currentNode) {
                     if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
-                        Backtrace backtrace = RubyCallStack.getBacktrace(context, currentNode);
+                        Backtrace backtrace = context.getCallStack().getBacktrace(currentNode);
                         Layouts.EXCEPTION.setBacktrace(exception, backtrace);
                     }
                     throw new RaiseException(exception);

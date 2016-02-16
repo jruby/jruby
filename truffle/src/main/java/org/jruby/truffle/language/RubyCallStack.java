@@ -29,11 +29,17 @@ import org.jruby.truffle.language.methods.InternalMethod;
 
 import java.util.ArrayList;
 
-public abstract class RubyCallStack {
+public class RubyCallStack {
+
+    private final RubyContext context;
+
+    public RubyCallStack(RubyContext context) {
+        this.context = context;
+    }
 
     /** Ignores Kernel#send and aliases */
     @TruffleBoundary
-    public static FrameInstance getCallerFrame(final RubyContext context) {
+    public FrameInstance getCallerFrame() {
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
             @Override
             public FrameInstance visitFrame(FrameInstance frameInstance) {
@@ -49,28 +55,28 @@ public abstract class RubyCallStack {
         });
     }
 
-    public static InternalMethod getCallingMethod(final RubyContext context) {
-        return getMethod(getCallerFrame(context));
+    public InternalMethod getCallingMethod() {
+        return getMethod(getCallerFrame());
     }
 
-    private static InternalMethod getMethod(FrameInstance frame) {
+    private InternalMethod getMethod(FrameInstance frame) {
         CompilerAsserts.neverPartOfCompilation();
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode) {
-        return getBacktrace(context, currentNode, 0);
+    public Backtrace getBacktrace(Node currentNode) {
+        return getBacktrace(currentNode, 0);
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode, int omit) {
-        return getBacktrace(context, currentNode, omit, null);
+    public Backtrace getBacktrace(Node currentNode, int omit) {
+        return getBacktrace(currentNode, omit, null);
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode, int omit, DynamicObject exception) {
-        return getBacktrace(context, currentNode, omit, false, exception);
+    public Backtrace getBacktrace(Node currentNode, int omit, DynamicObject exception) {
+        return getBacktrace(currentNode, omit, false, exception);
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode, final int omit, final boolean filterNullSourceSection, DynamicObject exception) {
+    public Backtrace getBacktrace(Node currentNode, final int omit, final boolean filterNullSourceSection, DynamicObject exception) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (exception != null
@@ -121,7 +127,7 @@ public abstract class RubyCallStack {
         return new Backtrace(activations.toArray(new Activation[activations.size()]));
     }
 
-    private static boolean ignoreFrame(FrameInstance frameInstance) {
+    private boolean ignoreFrame(FrameInstance frameInstance) {
         final Node callNode = frameInstance.getCallNode();
 
         // Nodes with no call node are top-level - we may have multiple of them due to require
@@ -151,7 +157,7 @@ public abstract class RubyCallStack {
         return false;
     }
 
-    public static Node getTopMostUserCallNode() {
+    public Node getTopMostUserCallNode() {
         CompilerAsserts.neverPartOfCompilation();
 
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {

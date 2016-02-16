@@ -88,7 +88,6 @@ import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -317,7 +316,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
-            final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
+            final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrame()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
             return BindingNodes.createBinding(getContext(), callerFrame);
@@ -356,7 +355,7 @@ public abstract class KernelNodes {
         public DynamicObject calleeName() {
             CompilerDirectives.transferToInterpreter();
             // the "called name" of a method.
-            return getSymbol(RubyCallStack.getCallingMethod(getContext()).getName());
+            return getSymbol(getContext().getCallStack().getCallingMethod().getName());
         }
     }
 
@@ -382,7 +381,7 @@ public abstract class KernelNodes {
         public DynamicObject callerLocations(int omit, int length) {
             final DynamicObject threadBacktraceLocationClass = getContext().getCoreLibrary().getThreadBacktraceLocationClass();
 
-            final Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), this, 1 + omit, true, null);
+            final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, 1 + omit, true, null);
 
             int locationsCount = backtrace.getActivations().size();
 
@@ -785,7 +784,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object fork(Object[] args) {
-            final SourceSection sourceSection = RubyCallStack.getTopMostUserCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = getContext().getCallStack().getTopMostUserCallNode().getEncapsulatingSourceSection();
             getContext().getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourceSection.getSource().getName(), sourceSection.getStartLine(), "Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
             return nil();
         }
@@ -859,7 +858,7 @@ public abstract class KernelNodes {
 
             // Set the local variable $_ in the caller
 
-            final Frame caller = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            final Frame caller = getContext().getCallStack().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
 
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
@@ -1202,7 +1201,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject lambda(NotProvided block) {
-            final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
+            final Frame parentFrame = getContext().getCallStack().getCallerFrame().getFrame(FrameAccess.READ_ONLY, true);
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {
@@ -1237,7 +1236,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject localVariables() {
-            final Frame frame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+            final Frame frame = getContext().getCallStack().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
             return BindingNodes.LocalVariablesNode.listLocalVariables(getContext(), frame);
         }
 
@@ -1254,7 +1253,7 @@ public abstract class KernelNodes {
         public DynamicObject methodName() {
             CompilerDirectives.transferToInterpreter();
             // the "original/definition name" of the method.
-            return getSymbol(RubyCallStack.getCallingMethod(getContext()).getSharedMethodInfo().getName());
+            return getSymbol(getContext().getCallStack().getCallingMethod().getSharedMethodInfo().getName());
         }
 
     }
@@ -1593,7 +1592,7 @@ public abstract class KernelNodes {
         }
 
         private boolean callerIs(String caller) {
-            return RubyCallStack.getCallerFrame(getContext()).getCallNode()
+            return getContext().getCallStack().getCallerFrame().getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith(caller);
         }
     }
@@ -1616,7 +1615,7 @@ public abstract class KernelNodes {
             if (featureLoader.isAbsolutePath(featureString)) {
                 featurePath = featureString;
             } else {
-                final Source source = RubyCallStack.getCallerFrame(getContext()).getCallNode().getEncapsulatingSourceSection().getSource();
+                final Source source = getContext().getCallStack().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource();
                 final String sourcePath = featureLoader.getSourcePath(source);
 
                 if (sourcePath == null) {

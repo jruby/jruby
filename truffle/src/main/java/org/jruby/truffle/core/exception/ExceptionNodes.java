@@ -22,7 +22,6 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RubiniusOnly;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -123,7 +122,7 @@ public abstract class ExceptionNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
-            Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), this, offset, exception);
+            Backtrace backtrace = getContext().getCallStack().getBacktrace(this, offset, exception);
             Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
