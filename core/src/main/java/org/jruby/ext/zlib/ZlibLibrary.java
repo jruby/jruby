@@ -27,13 +27,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.zlib;
 
-import java.io.IOException;
-
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
 public class ZlibLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) throws IOException {
+    public void load(final Ruby runtime, boolean wrap) {
         RubyZlib.createZlibModule(runtime);
     }
 }
