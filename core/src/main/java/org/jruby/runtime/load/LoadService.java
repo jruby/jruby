@@ -554,22 +554,25 @@ public class LoadService {
         public void endLoad(String file, long startTime) {}
     }
 
-    private static class TracingLoadTimer extends LoadTimer {
+    private static final class TracingLoadTimer extends LoadTimer {
         private final AtomicInteger indent = new AtomicInteger(0);
-        private String getIndentString() {
-            StringBuilder buf = new StringBuilder();
-            int i = indent.get();
+
+        private StringBuilder getIndentString() {
+            final int i = indent.get();
+            StringBuilder buf = new StringBuilder(i * 2);
             for (int j = 0; j < i; j++) {
-                buf.append("  ");
+                buf.append(' ').append(' ');
             }
-            return buf.toString();
+            return buf;
         }
+
         @Override
         public long startLoad(String file) {
             indent.incrementAndGet();
             LOG.info(getIndentString() + "-> " + file);
             return System.currentTimeMillis();
         }
+
         @Override
         public void endLoad(String file, long startTime) {
             LOG.info(getIndentString() + "<- " + file + " - "
