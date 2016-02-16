@@ -153,6 +153,31 @@ describe "A Java class with inner classes" do
     end
   end
 
+  it "delegates const_missing" do # crucial for ActiveSupport::Dependencies
+    const_missing = Module.instance_method(:const_missing)
+    begin
+      Module.module_eval do
+        remove_method(:const_missing)
+        def const_missing(name)
+          @_const_missing_names ||= []
+          @_const_missing_names << name
+        end
+      end
+
+      InnerClasses::MissingInner
+      InnerClasses::AnotherMissingInner
+      InnerClasses::MissingInner
+
+      missing_names = InnerClasses.instance_variable_get(:@_const_missing_names)
+      expect( missing_names ).to eql [ :MissingInner, :AnotherMissingInner, :MissingInner ]
+
+    ensure
+      Module.module_eval do
+        define_method :const_missing, const_missing
+      end
+    end
+  end
+
   it "raises error importing lower-case names" do
     expect do
       java_import InnerClasses::lowerInnerClass
