@@ -29,11 +29,11 @@ import org.jruby.truffle.language.methods.InternalMethod;
 
 import java.util.ArrayList;
 
-public class RubyCallStack {
+public class CallStackManager {
 
     private final RubyContext context;
 
-    public RubyCallStack(RubyContext context) {
+    public CallStackManager(RubyContext context) {
         this.context = context;
     }
 
