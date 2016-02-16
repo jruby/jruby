@@ -134,7 +134,8 @@ public class SafepointManager {
     }
 
     @TruffleBoundary
-    public void pauseAllThreadsAndExecute(Node currentNode, boolean deferred, Function2<Void,DynamicObject,Node> action) {
+    public void pauseAllThreadsAndExecute(Node currentNode, boolean deferred,
+                                          Function2<Void,DynamicObject,Node> action) {
         if (lock.isHeldByCurrentThread()) {
             throw new IllegalStateException("Re-entered SafepointManager");
         }
@@ -157,7 +158,8 @@ public class SafepointManager {
     }
 
     @TruffleBoundary
-    public void pauseAllThreadsAndExecuteFromNonRubyThread(boolean deferred, Function2<Void,DynamicObject,Node> action) {
+    public void pauseAllThreadsAndExecuteFromNonRubyThread(boolean deferred,
+                                                           Function2<Void,DynamicObject,Node> action) {
         if (lock.isHeldByCurrentThread()) {
             throw new IllegalStateException("Re-entered SafepointManager");
         }
@@ -183,7 +185,8 @@ public class SafepointManager {
     // Variants for a single thread
 
     @TruffleBoundary
-    public void pauseThreadAndExecute(final Thread thread, Node currentNode, final Function2<Void,DynamicObject,Node> action) {
+    public void pauseThreadAndExecute(final Thread thread, Node currentNode,
+                                      final Function2<Void,DynamicObject,Node> action) {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread
             final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
@@ -202,7 +205,8 @@ public class SafepointManager {
     }
 
     @TruffleBoundary
-    public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode, final Function2<Void,DynamicObject,Node> action) {
+    public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode,
+                                           final Function2<Void,DynamicObject,Node> action) {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread
             final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
@@ -221,7 +225,8 @@ public class SafepointManager {
     }
 
     @TruffleBoundary
-    public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final Function2<Void,DynamicObject,Node> action) {
+    public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread,
+                                                            final Function2<Void,DynamicObject,Node> action) {
         pauseAllThreadsAndExecuteFromNonRubyThread(true, new Function2<Void, DynamicObject, Node>() {
             @Override
             public Void apply(DynamicObject rubyThread, Node currentNode) {
@@ -233,7 +238,8 @@ public class SafepointManager {
         });
     }
 
-    private void pauseAllThreadsAndExecute(Node currentNode, Function2<Void, DynamicObject, Node> action, boolean deferred) {
+    private void pauseAllThreadsAndExecute(Node currentNode, Function2<Void, DynamicObject, Node> action,
+                                           boolean deferred) {
         this.action = action;
         this.deferred = deferred;
 
