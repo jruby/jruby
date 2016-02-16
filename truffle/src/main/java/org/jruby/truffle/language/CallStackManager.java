@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -54,12 +55,30 @@ public class CallStackManager {
         });
     }
 
+    @TruffleBoundary
     public InternalMethod getCallingMethodIgnoringSend() {
         return getMethod(getCallerFrameIgnoringSend());
     }
 
+    @TruffleBoundary
+    public Node getTopMostUserCallNode() {
+        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {
+
+            @Override
+            public Node visitFrame(FrameInstance frameInstance) {
+                final SourceSection sourceSection = frameInstance.getCallNode().getEncapsulatingSourceSection();
+
+                if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
+                    return null;
+                } else {
+                    return frameInstance.getCallNode();
+                }
+            }
+
+        });
+    }
+
     private InternalMethod getMethod(FrameInstance frame) {
-        CompilerAsserts.neverPartOfCompilation();
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }
 
@@ -75,13 +94,15 @@ public class CallStackManager {
         return getBacktrace(currentNode, omit, false, exception);
     }
 
-    public Backtrace getBacktrace(Node currentNode, final int omit, final boolean filterNullSourceSection, DynamicObject exception) {
+    public Backtrace getBacktrace(Node currentNode, final int omit,
+                                  final boolean filterNullSourceSection, DynamicObject exception) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (exception != null
                 && context.getOptions().BACKTRACES_OMIT_UNUSED
                 && DisablingBacktracesNode.areBacktracesDisabled()
-                && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(exception), context.getCoreLibrary().getStandardErrorClass())) {
+                && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(exception),
+                    context.getCoreLibrary().getStandardErrorClass())) {
             return new Backtrace(new Activation[]{Activation.OMITTED_UNUSED});
         }
 
@@ -96,7 +117,10 @@ public class CallStackManager {
              */
 
         if (omit == 0 && currentNode != null && Truffle.getRuntime().getCurrentFrame() != null) {
-            activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+            final MaterializedFrame currentFrame = Truffle.getRuntime().getCurrentFrame()
+                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
+
+            activations.add(new Activation(currentNode, currentFrame));
         }
 
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
@@ -110,7 +134,9 @@ public class CallStackManager {
                 }
 
                 if (!ignoreFrame(frameInstance) && depth >= omit) {
-                    if (!filterNullSourceSection || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
+                    if (!filterNullSourceSection
+                            || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null
+                            || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
                         activations.add(new Activation(frameInstance.getCallNode(),
                                 frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
                     }
@@ -141,7 +167,8 @@ public class CallStackManager {
 
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
-        if (sourceSection != null && sourceSection.getSource() != null && sourceSection.getSource().getName().equals("run_jruby_root")) {
+        if (sourceSection != null && sourceSection.getSource() != null
+                && sourceSection.getSource().getName().equals("run_jruby_root")) {
             return true;
         }
 
@@ -154,23 +181,6 @@ public class CallStackManager {
         }
 
         return false;
-    }
-
-    public Node getTopMostUserCallNode() {
-        CompilerAsserts.neverPartOfCompilation();
-
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {
-
-            @Override
-            public Node visitFrame(FrameInstance frameInstance) {
-                if (CoreSourceSection.isCoreSourceSection(frameInstance.getCallNode().getEncapsulatingSourceSection())) {
-                    return null;
-                } else {
-                    return frameInstance.getCallNode();
-                }
-            }
-
-        });
     }
 
 }
