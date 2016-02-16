@@ -398,7 +398,7 @@ public class LoadService {
 
     private enum RequireState {
         LOADED, ALREADY_LOADED, CIRCULAR
-    };
+    }
 
     private RequireState requireCommon(String file, boolean circularRequireWarning) {
         checkEmptyLoad(file);
@@ -797,9 +797,9 @@ public class LoadService {
             int lastSlashIndex = className.lastIndexOf('/');
             if (lastSlashIndex > -1 && lastSlashIndex < className.length() - 1 && !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
                 if (lastSlashIndex == -1) {
-                    className = "_" + className;
+                    className = '_' + className;
                 } else {
-                    className = className.substring(0, lastSlashIndex + 1) + "_" + className.substring(lastSlashIndex + 1);
+                    className = className.substring(0, lastSlashIndex + 1) + '_' + className.substring(lastSlashIndex + 1);
                 }
             }
             className = className.replace('/', '.');
@@ -922,18 +922,7 @@ public class LoadService {
         return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()), file);
     }
 
-    // Using the BailoutSearch twice, once only for source files and once for state suffixes,
-    // in order to adhere to Rubyspec
-    protected final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
-    {
-        searchers.add(new SourceBailoutSearcher());
-        searchers.add(new NormalSearcher());
-        searchers.add(new ClassLoaderSearcher());
-        searchers.add(new BailoutSearcher());
-        searchers.add(new ExtensionSearcher());
-        searchers.add(new ScriptClassSearcher());
-    }
-
+    @Deprecated // no longer used
     protected String buildClassName(String className) {
         // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
         className = className.replaceFirst("^\\.\\/", "");
