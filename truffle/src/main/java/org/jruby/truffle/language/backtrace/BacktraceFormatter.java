@@ -16,7 +16,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -54,7 +53,7 @@ public class BacktraceFormatter {
 
     // for debugging
     public static List<String> rubyBacktrace(RubyContext context) {
-        return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, RubyCallStack.getBacktrace(context, null));
+        return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, context.getCallStack().getBacktrace(null));
     }
 
     // for debugging
@@ -86,7 +85,7 @@ public class BacktraceFormatter {
 
     public List<String> formatBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
         if (backtrace == null) {
-            backtrace = RubyCallStack.getBacktrace(context, null);
+            backtrace = context.getCallStack().getBacktrace(null);
         }
         final List<Activation> activations = backtrace.getActivations();
         final ArrayList<String> lines = new ArrayList<>();

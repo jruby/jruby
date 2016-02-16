@@ -20,13 +20,18 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.InterruptMode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.exception.ExceptionNodes;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -184,7 +189,7 @@ public abstract class ThreadNodes {
             getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new Function2<Void, DynamicObject, Node>() {
                 @Override
                 public Void apply(DynamicObject thread, Node currentNode) {
-                    final Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), currentNode);
+                    final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
                     result[0] = ExceptionNodes.backtraceAsRubyStringArray(getContext(), null, backtrace);
                     return null;
                 }
@@ -242,9 +247,9 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE)
     public abstract static class HandleInterruptNode extends YieldingCoreMethodNode {
 
-        private final DynamicObject immediateSymbol = getContext().getSymbol("immediate");
-        private final DynamicObject onBlockingSymbol = getContext().getSymbol("on_blocking");
-        private final DynamicObject neverSymbol = getContext().getSymbol("never");
+        private final DynamicObject immediateSymbol = getContext().getSymbolTable().getSymbol("immediate");
+        private final DynamicObject onBlockingSymbol = getContext().getSymbolTable().getSymbol("on_blocking");
+        private final DynamicObject neverSymbol = getContext().getSymbolTable().getSymbol("never");
 
         public HandleInterruptNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

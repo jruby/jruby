@@ -1512,7 +1512,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
         if (!needChdir && runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
@@ -1546,14 +1546,14 @@ public class RubyKernel {
             if (pid < 0) {
                 return runtime.getNil();
             }
-            status[0] = (int)((RubyProcess.RubyStatus)context.getLastExitStatus()).getStatus();
+            status[0] = (int)((RubyProcess.RubyStatus) context.getLastExitStatus()).getStatus();
             if (status[0] == 0) return runtime.getTrue();
             return runtime.getFalse();
         }
 
         // else old JDK logic
         if (args[0] instanceof RubyHash) {
-            RubyHash env = (RubyHash) args[0].convertToHash();
+            RubyHash env = args[0].convertToHash();
             if (env != null) {
                 runtime.getENV().merge_bang(context, env, Block.NULL_BLOCK);
             }
@@ -1575,11 +1575,7 @@ public class RubyKernel {
         long[] tuple;
 
         try {
-            IRubyObject lastArg = args[args.length - 1];
-            if (lastArg instanceof RubyHash) {
-                runtime.getWarnings().warn(ID.UNSUPPORTED_SUBPROCESS_OPTION, "system does not support options in JRuby yet: " + lastArg.inspect());
-                args = Arrays.copyOf(args, args.length - 1);
-            }
+            args = dropLastArgIfOptions(runtime, args);
             if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
                 // looks like we need to send process to the background
                 ShellLauncher.runWithoutWait(runtime, args);
@@ -1592,7 +1588,18 @@ public class RubyKernel {
 
         // RubyStatus uses real native status now, so we unshift Java's shifted exit status
         context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0] << 8, tuple[1]));
-        return (int)tuple[0];
+        return (int) tuple[0];
+    }
+
+    private static IRubyObject[] dropLastArgIfOptions(final Ruby runtime, final IRubyObject[] args) {
+        IRubyObject lastArg = args[args.length - 1];
+        if (lastArg instanceof RubyHash) {
+            if (!((RubyHash) lastArg).isEmpty()) {
+                runtime.getWarnings().warn(ID.UNSUPPORTED_SUBPROCESS_OPTION, "system does not support options in JRuby yet: " + lastArg);
+            }
+            return Arrays.copyOf(args, args.length - 1);
+        }
+        return args;
     }
 
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {

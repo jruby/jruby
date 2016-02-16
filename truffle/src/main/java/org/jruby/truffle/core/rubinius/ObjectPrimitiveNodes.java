@@ -14,11 +14,19 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.objects.*;
+import org.jruby.truffle.language.objects.IsTaintedNode;
+import org.jruby.truffle.language.objects.IsTaintedNodeGen;
+import org.jruby.truffle.language.objects.ObjectIDOperations;
+import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.objects.TaintNodeGen;
+import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Object} class.
@@ -81,7 +89,7 @@ public abstract class ObjectPrimitiveNodes {
             final long id = (long) readObjectIdNode.execute(object);
 
             if (id == 0) {
-                final long newId = getContext().getNextObjectID();
+                final long newId = getContext().getObjectSpaceManager().getNextObjectID();
                 writeObjectIdNode.execute(object, newId);
                 return newId;
             }

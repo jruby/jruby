@@ -45,7 +45,7 @@ public class LoadRequiredLibrariesNode extends RubyNode {
 
     @TruffleBoundary
     private Collection<String> getRequiredLibraries() {
-        return getContext().getRuntime().getInstanceConfig().getRequiredLibraries();
+        return getContext().getJRubyRuntime().getInstanceConfig().getRequiredLibraries();
     }
 
 }

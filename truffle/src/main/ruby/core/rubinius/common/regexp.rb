@@ -401,20 +401,18 @@ class Regexp
 
     # TODO: audit specs for this method when specs are running
     def create_parts
-      return unless @index < @source.size
-      char =  @source[@index].chr
-      case char
-      when '('
-        idx = @index + 1
-        if idx < @source.size and @source[idx].chr == '?'
-          process_group
+      while @index < @source.size
+        if @source[@index].chr == '('
+          idx = @index + 1
+          if idx < @source.size and @source[idx].chr == '?'
+            process_group
+          else
+            push_current_character!
+          end
         else
           push_current_character!
         end
-      else
-        push_current_character!
       end
-      create_parts
     end
 
     def process_group

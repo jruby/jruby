@@ -12,8 +12,8 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -91,9 +91,7 @@ public class ReadRestArgumentNode extends RubyNode {
                 kwargsHash = nil();
             }
 
-            getContext().inlineRubyHelper(this, "Truffle::Primitive.add_rejected_kwargs_to_rest(rest, kwargs)",
-                    "rest", rest,
-                    "kwargs", kwargsHash);
+            getContext().getCodeLoader().inlineRubyHelper(this, "Truffle::Primitive.add_rejected_kwargs_to_rest(rest, kwargs)", "rest", rest, "kwargs", kwargsHash);
         }
 
         return rest;

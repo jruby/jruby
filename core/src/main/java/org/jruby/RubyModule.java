@@ -3713,21 +3713,21 @@ public class RubyModule extends RubyObject {
      */
     private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn) {
         IRubyObject oldValue = fetchConstant(name);
+
+        setParentForModule(name, value);
+
         if (oldValue != null) {
-            if (oldValue == UNDEF) {
-                setAutoloadConstant(name, value);
-            } else {
-                if (warn) {
+            boolean notAutoload = oldValue != UNDEF;
+            if (notAutoload || !setAutoloadConstant(name, value)) {
+                if (warn && notAutoload) {
                     getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
-                setParentForModule(name, value);
                 // might just call storeConstant(name, value, hidden) but to maintain
                 // backwards compatibility with calling #storeConstant overrides
                 if (hidden) storeConstant(name, value, true);
                 else storeConstant(name, value);
             }
         } else {
-            setParentForModule(name, value);
             if (hidden) storeConstant(name, value, true);
             else storeConstant(name, value);
         }
@@ -4248,6 +4248,7 @@ public class RubyModule extends RubyObject {
             storeConstant(name, value);
         }
         removeAutoload(name);
+        invalidateConstantCache(name);
         return value;
     }
 
@@ -4270,17 +4271,14 @@ public class RubyModule extends RubyObject {
     /**
      * Set an Object as a defined constant in autoloading.
      */
-    private void setAutoloadConstant(String name, IRubyObject value) {
+    private boolean setAutoloadConstant(String name, IRubyObject value) {
         final Autoload autoload = getAutoloadMap().get(name);
         if ( autoload != null ) {
-            if ( ! autoload.setConstant(getRuntime().getCurrentContext(), value) ) {
-                storeConstant(name, value);
-                removeAutoload(name);
-            }
+            boolean set = autoload.setConstant(getRuntime().getCurrentContext(), value);
+            if ( ! set ) removeAutoload(name);
+            return set;
         }
-        else {
-            storeConstant(name, value);
-        }
+        return false;
     }
 
     /**

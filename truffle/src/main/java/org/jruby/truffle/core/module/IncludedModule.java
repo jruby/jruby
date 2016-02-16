@@ -11,7 +11,6 @@ package org.jruby.truffle.core.module;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.language.ModuleChain;
 import org.jruby.truffle.language.RubyGuards;
 
 /**

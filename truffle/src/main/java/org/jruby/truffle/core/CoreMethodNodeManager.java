@@ -20,9 +20,20 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
-import org.jruby.truffle.language.*;
-import org.jruby.truffle.language.arguments.*;
+import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyConstant;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.arguments.CheckArityNode;
+import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.ReadBlockNode;
+import org.jruby.truffle.language.arguments.ReadCallerFrameNode;
+import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.ReadRemainingArgumentsNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
@@ -147,7 +158,7 @@ public class CoreMethodNodeManager {
         final int required = method.required();
         final int optional = method.optional();
         final boolean needsCallerFrame = method.needsCallerFrame();
-        final boolean alwaysInline = needsCallerFrame && context.getOptions().TRUFFLE_INLINE_NEEDS_CALLER_FRAME;
+        final boolean alwaysInline = needsCallerFrame && context.getOptions().INLINE_NEEDS_CALLER_FRAME;
 
         final Arity arity = new Arity(required, optional, method.rest());
 
@@ -236,7 +247,7 @@ public class CoreMethodNodeManager {
 
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, method.unsupportedOperationBehavior());
 
-        return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
+        return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode, false);
     }
 
     public void allMethodInstalled() {

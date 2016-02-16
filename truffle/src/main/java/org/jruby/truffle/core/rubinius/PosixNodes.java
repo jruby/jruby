@@ -467,7 +467,7 @@ public abstract class PosixNodes {
             final int result = posix().chdir(pathString);
 
             if (result == 0) {
-                getContext().getRuntime().setCurrentDirectory(pathString);
+                getContext().getJRubyRuntime().setCurrentDirectory(pathString);
             }
 
             return result;
@@ -712,7 +712,7 @@ public abstract class PosixNodes {
         public DynamicObject getcwd(DynamicObject resultPath, int maxSize) {
             // We just ignore maxSize - I think this is ok
 
-            final String path = getContext().getRuntime().getCurrentDirectory();
+            final String path = getContext().getJRubyRuntime().getCurrentDirectory();
             StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), CodeRange.CR_UNKNOWN));
             return resultPath;
         }
@@ -1099,8 +1099,8 @@ public abstract class PosixNodes {
         // This should probably done at a higher-level, but rubysl/socket does not handle it.
         @Specialization(guards = { "isRubySymbol(level)", "isRubySymbol(optname)", "isRubyPointer(optval)", "isRubyPointer(optlen)" })
         public int getSockOptionsSymbols(VirtualFrame frame, int sockfd, DynamicObject level, DynamicObject optname, DynamicObject optval, DynamicObject optlen) {
-            int levelInt = (int) ruby(frame, "Socket::SOL_" + Layouts.SYMBOL.getString(level));
-            int optnameInt = (int) ruby(frame, "Socket::SO_" + Layouts.SYMBOL.getString(optname));
+            int levelInt = (int) ruby("Socket::SOL_" + Layouts.SYMBOL.getString(level));
+            int optnameInt = (int) ruby("Socket::SO_" + Layouts.SYMBOL.getString(optname));
             return getSockOptions(sockfd, levelInt, optnameInt, optval, optlen);
         }
 

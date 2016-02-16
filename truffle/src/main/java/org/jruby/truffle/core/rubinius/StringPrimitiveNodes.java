@@ -55,15 +55,21 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.cast.ArrayAttributeCastNodeGen;
@@ -86,6 +92,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -215,9 +222,9 @@ public abstract class StringPrimitiveNodes {
                     c = bytes[p++] & 0xff;
                 } else {
                     try {
-                        c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, p, end);
+                        c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, p, end);
                     } catch (org.jruby.exceptions.RaiseException ex) {
-                        throw new RaiseException(getContext().toTruffle(ex.getException(), this));
+                        throw new RaiseException(getContext().getJRubyInterop().toTruffle(ex.getException(), this));
                     }
 
                     p += StringSupport.length(enc, bytes, p, end);
@@ -1395,14 +1402,31 @@ public abstract class StringPrimitiveNodes {
         @Specialization
         public Object stringToInum(DynamicObject string, int fixBase, boolean strict) {
             try {
-                final org.jruby.RubyInteger result = ConvertBytes.byteListToInum19(getContext().getRuntime(),
+                final org.jruby.RubyInteger result = ConvertBytes.byteListToInum19(getContext().getJRubyRuntime(),
                         StringOperations.getByteListReadOnly(string),
                         fixBase,
                         strict);
 
-                return getContext().toTruffle(result);
+                return toTruffle(result);
             } catch (org.jruby.exceptions.RaiseException e) {
-                throw new RaiseException(getContext().toTruffle(e.getException(), this));
+                throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
+            }
+        }
+
+        private Object toTruffle(IRubyObject object) {
+            if (object instanceof org.jruby.RubyFixnum) {
+                final long value = ((org.jruby.RubyFixnum) object).getLongValue();
+
+                if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+                    return value;
+                }
+
+                return (int) value;
+            } else if (object instanceof org.jruby.RubyBignum) {
+                final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
+                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
+            } else {
+                throw new UnsupportedOperationException();
             }
         }
 

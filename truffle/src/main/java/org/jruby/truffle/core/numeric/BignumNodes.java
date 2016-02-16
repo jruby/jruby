@@ -14,11 +14,15 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.NotProvided;
@@ -137,7 +141,7 @@ public abstract class BignumNodes {
 
         @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isDouble(b)", "!isRubyBignum(b)"})
         public Object mul(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "redo_coerced :*, other", "other", b);
+            return ruby("redo_coerced :*, other", "other", b);
         }
 
     }
@@ -200,7 +204,7 @@ public abstract class BignumNodes {
 
         @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)"})
         public Object mod(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "redo_coerced :%, other", "other", b);
+            return ruby("redo_coerced :%, other", "other", b);
         }
 
     }
@@ -233,7 +237,7 @@ public abstract class BignumNodes {
                 "!isLong(b)",
                 "!isDouble(b)"})
         public Object lessCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
 
     }
@@ -266,7 +270,7 @@ public abstract class BignumNodes {
                 "!isLong(b)",
                 "!isDouble(b)"})
         public Object lessEqualCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -346,7 +350,7 @@ public abstract class BignumNodes {
                 "!isLong(b)",
                 "!isDouble(b)"})
         public Object greaterEqualCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
     }
 
@@ -378,7 +382,7 @@ public abstract class BignumNodes {
                 "!isLong(b)",
                 "!isDouble(b)"})
         public Object greaterCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a > b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a > b", "other", b);
         }
     }
 

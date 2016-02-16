@@ -23,7 +23,11 @@ import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.util.func.Function2;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class ObjectGraph {
 

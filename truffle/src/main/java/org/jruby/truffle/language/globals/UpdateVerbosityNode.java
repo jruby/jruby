@@ -9,10 +9,9 @@
  */
 package org.jruby.truffle.language.globals;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -26,15 +25,20 @@ public class UpdateVerbosityNode extends RubyNode {
     }
 
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
         final Object childValue = child.execute(frame);
-
-        final IRubyObject jrubyValue = getContext().toJRuby(childValue);
-
-        getContext().getRuntime().setVerbose(jrubyValue);
-
+        setVerbose(childValue);
         return childValue;
+    }
+
+    @TruffleBoundary
+    private void setVerbose(Object childValue) {
+        if (childValue instanceof Boolean) {
+            getContext().getJRubyInterop().setVerbose((boolean) childValue);
+        } else if (childValue == nil()) {
+            getContext().getJRubyInterop().setVerboseNil();
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
 }

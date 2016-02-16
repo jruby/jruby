@@ -24,7 +24,7 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
-import org.jruby.truffle.language.ModuleOperations;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -216,7 +216,7 @@ public class RubyCallNode extends RubyNode {
             CompilerDirectives.transferToInterpreter();
             respondToMissing = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
         }
-        final DynamicObject method = getContext().getSymbol(methodName);
+        final DynamicObject method = getContext().getSymbolTable().getSymbol(methodName);
         return respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, method, false);
     }
 

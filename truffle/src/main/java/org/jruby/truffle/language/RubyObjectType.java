@@ -30,7 +30,7 @@ public class RubyObjectType extends ObjectType {
         CompilerAsserts.neverPartOfCompilation();
 
         if (RubyGuards.isRubyString(object)) {
-            return RopeOperations.decodeRope(getContext().getRuntime(), StringOperations.rope(object));
+            return RopeOperations.decodeRope(getContext().getJRubyRuntime(), StringOperations.rope(object));
         } else if (RubyGuards.isRubySymbol(object)) {
             return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
@@ -38,12 +38,15 @@ public class RubyObjectType extends ObjectType {
         } else if (RubyGuards.isRubyModule(object)) {
             return Layouts.MODULE.getFields(object).toString();
         } else {
-            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName());
+            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object),
+                    Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName());
         }
     }
 
     @Override
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
+        CompilerAsserts.neverPartOfCompilation();
+
         if (Layouts.METHOD.isMethod(object)) {
             return RubyMethodForeignAccessFactory.create(getContext());
         } else if (Layouts.PROC.isProc(object)) {

@@ -14,7 +14,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
@@ -44,9 +44,9 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (RubyGuards.isRubySymbol(cachedName)) {
             cachedNameAsSymbol = (DynamicObject) cachedName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            cachedNameAsSymbol = context.getSymbol(StringOperations.rope((DynamicObject) cachedName));
+            cachedNameAsSymbol = context.getSymbolTable().getSymbol(StringOperations.rope((DynamicObject) cachedName));
         } else if (cachedName instanceof String) {
-            cachedNameAsSymbol = context.getSymbol((String) cachedName);
+            cachedNameAsSymbol = context.getSymbolTable().getSymbol((String) cachedName);
         } else {
             throw new UnsupportedOperationException();
         }

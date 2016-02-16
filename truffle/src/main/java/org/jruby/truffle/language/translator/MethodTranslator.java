@@ -16,7 +16,12 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ast.*;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.AssignableNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.KeywordArgNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
@@ -24,7 +29,12 @@ import org.jruby.truffle.core.proc.ProcNodes.Type;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.arguments.*;
+import org.jruby.truffle.language.arguments.CheckArityNode;
+import org.jruby.truffle.language.arguments.IsNilNode;
+import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.ReadBlockNode;
+import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.ShouldDestructureNode;
 import org.jruby.truffle.language.control.AndNode;
 import org.jruby.truffle.language.control.IfNode;
 import org.jruby.truffle.language.control.NotNode;
@@ -33,7 +43,14 @@ import org.jruby.truffle.language.dispatch.RespondToNode;
 import org.jruby.truffle.language.locals.FlipFlopStateNode;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
-import org.jruby.truffle.language.methods.*;
+import org.jruby.truffle.language.methods.Arity;
+import org.jruby.truffle.language.methods.BlockDefinitionNode;
+import org.jruby.truffle.language.methods.CatchForLambdaNode;
+import org.jruby.truffle.language.methods.CatchForMethodNode;
+import org.jruby.truffle.language.methods.CatchForProcNode;
+import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
+import org.jruby.truffle.language.methods.MethodDefinitionNode;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.supercall.ReadSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.SuperCallNode;
@@ -145,7 +162,7 @@ public class MethodTranslator extends BodyTranslator {
         final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
 
 
-        FrameSlot frameOnStackMarkerSlot;
+        Object frameOnStackMarkerSlot;
 
         if (frameOnStackMarkerSlotStack.isEmpty()) {
             frameOnStackMarkerSlot = null;
@@ -158,7 +175,7 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         return new BlockDefinitionNode(context, newRootNodeForProcs.getEncapsulatingSourceSection(), type, environment.getSharedMethodInfo(),
-                callTargetAsProc, callTargetAsLambda, environment.getBreakID(), frameOnStackMarkerSlot);
+                callTargetAsProc, callTargetAsLambda, environment.getBreakID(), (FrameSlot) frameOnStackMarkerSlot);
     }
 
     private boolean shouldConsiderDestructuringArrayArg(Arity arity) {

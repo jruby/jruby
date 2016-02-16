@@ -40,9 +40,9 @@ public class ArgumentDescriptorUtils {
         final Object[] store;
 
         if (argType.anonymous || name == null) {
-            store = new Object[] { context.getSymbol(argType.symbolicName) };
+            store = new Object[] {context.getSymbolTable().getSymbol(argType.symbolicName)};
         } else {
-            store = new Object[] { context.getSymbol(argType.symbolicName), context.getSymbol(name) };
+            store = new Object[] {context.getSymbolTable().getSymbol(argType.symbolicName), context.getSymbolTable().getSymbol(name)};
         }
 
         return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), store, store.length);

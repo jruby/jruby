@@ -19,16 +19,17 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-import java.lang.invoke.MethodHandle;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -66,7 +67,7 @@ public abstract class SizedQueueNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("queue size must be positive", this));
             }
 
-            final BlockingQueue<Object> blockingQueue = new ArrayBlockingQueue<Object>(capacity);
+            final ArrayBlockingQueueLocksConditions<Object> blockingQueue = getContext().getNativePlatform().createArrayBlockingQueueLocksConditions(capacity);
             Layouts.SIZED_QUEUE.setQueue(self, blockingQueue);
             return self;
         }
@@ -88,8 +89,8 @@ public abstract class SizedQueueNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("queue size must be positive", this));
             }
 
-            final BlockingQueue<Object> oldQueue = Layouts.SIZED_QUEUE.getQueue(self);
-            final BlockingQueue<Object> newQueue = new ArrayBlockingQueue<Object>(newCapacity);
+            final ArrayBlockingQueueLocksConditions<Object> oldQueue = Layouts.SIZED_QUEUE.getQueue(self);
+            final ArrayBlockingQueueLocksConditions<Object> newQueue = getContext().getNativePlatform().createArrayBlockingQueueLocksConditions(newCapacity);
 
             // TODO (eregon, 12 July 2015): racy and what to do if the new capacity is lower?
             Object element;
@@ -282,30 +283,15 @@ public abstract class SizedQueueNodes {
     @CoreMethod(names = "num_waiting")
     public abstract static class NumWaitingNode extends CoreMethodArrayArgumentsNode {
 
-        private static final MethodHandle LOCK_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(ArrayBlockingQueue.class, "lock");
-        private static final MethodHandle NOT_EMPTY_CONDITION_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(ArrayBlockingQueue.class, "notEmpty");
-        private static final MethodHandle NOT_FULL_CONDITION_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(ArrayBlockingQueue.class, "notFull");
-
         public NumWaitingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
         public int num_waiting(DynamicObject self) {
-            final BlockingQueue<Object> queue = Layouts.SIZED_QUEUE.getQueue(self);
+            final ArrayBlockingQueueLocksConditions<Object> queue = Layouts.SIZED_QUEUE.getQueue(self);
 
-            final ArrayBlockingQueue<Object> arrayBlockingQueue = (ArrayBlockingQueue<Object>) queue;
-
-            final ReentrantLock lock;
-            final Condition notEmptyCondition;
-            final Condition notFullCondition;
-            try {
-                lock = (ReentrantLock) LOCK_FIELD_GETTER.invokeExact(arrayBlockingQueue);
-                notEmptyCondition = (Condition) NOT_EMPTY_CONDITION_FIELD_GETTER.invokeExact(arrayBlockingQueue);
-                notFullCondition = (Condition) NOT_FULL_CONDITION_FIELD_GETTER.invokeExact(arrayBlockingQueue);
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
-            }
+            final ReentrantLock lock = queue.getLock();
 
             getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
                 @Override
@@ -315,7 +301,7 @@ public abstract class SizedQueueNodes {
                 }
             });
             try {
-                return lock.getWaitQueueLength(notEmptyCondition) + lock.getWaitQueueLength(notFullCondition);
+                return lock.getWaitQueueLength(queue.getNotEmptyCondition()) + lock.getWaitQueueLength(queue.getNotFullCondition());
             } finally {
                 lock.unlock();
             }

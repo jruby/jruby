@@ -42,7 +42,7 @@ public class TopLevelRaiseHandler extends RubyNode {
         } catch (RaiseException e) {
             lastException = AtExitManager.handleAtExitException(getContext(), e);
         } finally {
-            final DynamicObject atExitException = getContext().runAtExitHooks();
+            final DynamicObject atExitException = getContext().getAtExitManager().runAtExitHooks();
             if (atExitException != null) {
                 lastException = atExitException;
             }

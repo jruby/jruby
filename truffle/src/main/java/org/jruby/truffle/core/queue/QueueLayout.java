@@ -15,8 +15,6 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.om.dsl.api.Layout;
 
-import java.util.concurrent.LinkedBlockingQueue;
-
 @Layout
 public interface QueueLayout extends BasicObjectLayout {
 
@@ -24,11 +22,11 @@ public interface QueueLayout extends BasicObjectLayout {
                                           DynamicObject metaClass);
 
     DynamicObject createQueue(DynamicObjectFactory factory,
-                              LinkedBlockingQueue<Object> queue);
+                              LinkedBlockingQueueLocksConditions<Object> queue);
 
     boolean isQueue(ObjectType objectType);
     boolean isQueue(DynamicObject object);
 
-    LinkedBlockingQueue<Object> getQueue(DynamicObject object);
+    LinkedBlockingQueueLocksConditions<Object> getQueue(DynamicObject object);
 
 }

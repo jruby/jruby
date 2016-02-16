@@ -99,8 +99,8 @@ public abstract class IOPrimitiveNodes {
 
         public IOConnectPipeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            RDONLY = (int) context.getRubiniusConfiguration().get("rbx.platform.file.O_RDONLY");
-            WRONLY = (int) context.getRubiniusConfiguration().get("rbx.platform.file.O_WRONLY");
+            RDONLY = (int) context.getNativePlatform().getRubiniusConfiguration().get("rbx.platform.file.O_RDONLY");
+            WRONLY = (int) context.getNativePlatform().getRubiniusConfiguration().get("rbx.platform.file.O_WRONLY");
         }
 
         @Specialization
@@ -509,7 +509,7 @@ public abstract class IOPrimitiveNodes {
             final int newFd;
 
             try {
-                newFd = nativeSockets().accept(fd, getMemoryManager().newPointer(address), addressLength);
+                newFd = nativeSockets().accept(fd, memoryManager().newPointer(address), addressLength);
             } finally {
                 UnsafeHolder.U.freeMemory(address);
             }

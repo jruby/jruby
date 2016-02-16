@@ -14,19 +14,24 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.*;
+import com.oracle.truffle.api.instrument.Instrument;
+import com.oracle.truffle.api.instrument.Probe;
+import com.oracle.truffle.api.instrument.ProbeInstrument;
+import com.oracle.truffle.api.instrument.ProbeListener;
+import com.oracle.truffle.api.instrument.StandardInstrumentListener;
+import com.oracle.truffle.api.instrument.SyntaxTag;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.instrument.RubySyntaxTag;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubySyntaxTag;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.loader.SourceLoader;
 
@@ -165,14 +170,7 @@ public class TraceManager {
 
             isInTraceFunc = true;
             try {
-               context.inlineRubyHelper(node, frame, "traceFunc.call(event, file, line, id, binding, classname)",
-                     "traceFunc", traceFunc,
-                     "event", event,
-                     "file", file,
-                     "line", line,
-                     "id", id,
-                     "binding", binding,
-                     "classname", classname);
+                context.getCodeLoader().inlineRubyHelper(node, frame, "traceFunc.call(event, file, line, id, binding, classname)", "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
             } finally {
                isInTraceFunc = false;
             }
@@ -243,20 +241,13 @@ public class TraceManager {
 
             final Object self = RubyArguments.getSelf(frame.getArguments());
             final Object classname = context.getCoreLibrary().getLogicalClass(self);
-            final Object id = context.getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
+            final Object id = context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
 
             final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize());
 
             isInTraceFunc = true;
             try {
-                context.inlineRubyHelper(node, frame, callTraceFuncCode,
-                        "traceFunc", traceFunc,
-                        "event", event,
-                        "file", file,
-                        "line", line,
-                        "id", id,
-                        "binding", binding,
-                        "classname", classname);
+                context.getCodeLoader().inlineRubyHelper(node, frame, callTraceFuncCode, "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
             } finally {
                 isInTraceFunc = false;
             }

@@ -13,24 +13,40 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
@@ -38,12 +54,23 @@ import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.NumericToFloatNode;
 import org.jruby.truffle.core.cast.NumericToFloatNodeGen;
-import org.jruby.truffle.core.coerce.*;
+import org.jruby.truffle.core.coerce.NameToJavaStringNode;
+import org.jruby.truffle.core.coerce.NameToJavaStringNodeGen;
+import org.jruby.truffle.core.coerce.NameToSymbolOrStringNodeGen;
+import org.jruby.truffle.core.coerce.ToPathNodeGen;
+import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.parser.PrintfCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
-import org.jruby.truffle.core.format.runtime.exceptions.*;
+import org.jruby.truffle.core.format.runtime.exceptions.CantCompressNegativeException;
+import org.jruby.truffle.core.format.runtime.exceptions.CantConvertException;
+import org.jruby.truffle.core.format.runtime.exceptions.FormatException;
+import org.jruby.truffle.core.format.runtime.exceptions.NoImplicitConversionException;
+import org.jruby.truffle.core.format.runtime.exceptions.OutsideOfStringException;
+import org.jruby.truffle.core.format.runtime.exceptions.PackException;
+import org.jruby.truffle.core.format.runtime.exceptions.RangeException;
+import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
@@ -55,10 +82,15 @@ import org.jruby.truffle.core.proc.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodesFactory;
+import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
-import org.jruby.truffle.language.*;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -72,7 +104,27 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.LookupMethodNode;
 import org.jruby.truffle.language.methods.LookupMethodNodeGen;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.language.objects.*;
+import org.jruby.truffle.language.objects.ClassNode;
+import org.jruby.truffle.language.objects.ClassNodeGen;
+import org.jruby.truffle.language.objects.FreezeNode;
+import org.jruby.truffle.language.objects.FreezeNodeGen;
+import org.jruby.truffle.language.objects.IsANode;
+import org.jruby.truffle.language.objects.IsANodeGen;
+import org.jruby.truffle.language.objects.IsFrozenNode;
+import org.jruby.truffle.language.objects.IsFrozenNodeGen;
+import org.jruby.truffle.language.objects.IsTaintedNode;
+import org.jruby.truffle.language.objects.IsTaintedNodeGen;
+import org.jruby.truffle.language.objects.MetaClassNode;
+import org.jruby.truffle.language.objects.MetaClassNodeGen;
+import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.language.objects.SingletonClassNodeGen;
+import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.objects.TaintNodeGen;
+import org.jruby.truffle.language.objects.ThreadLocalObject;
+import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
@@ -85,6 +137,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -263,7 +316,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
-            final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
+            final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
             return BindingNodes.createBinding(getContext(), callerFrame);
@@ -302,7 +355,7 @@ public abstract class KernelNodes {
         public DynamicObject calleeName() {
             CompilerDirectives.transferToInterpreter();
             // the "called name" of a method.
-            return getSymbol(RubyCallStack.getCallingMethod(getContext()).getName());
+            return getSymbol(getContext().getCallStack().getCallingMethodIgnoringSend().getName());
         }
     }
 
@@ -328,7 +381,7 @@ public abstract class KernelNodes {
         public DynamicObject callerLocations(int omit, int length) {
             final DynamicObject threadBacktraceLocationClass = getContext().getCoreLibrary().getThreadBacktraceLocationClass();
 
-            final Backtrace backtrace = RubyCallStack.getBacktrace(getContext(), this, 1 + omit, true, null);
+            final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, 1 + omit, true, null);
 
             int locationsCount = backtrace.getActivations().size();
 
@@ -621,7 +674,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private Object doEval(DynamicObject source, DynamicObject binding, String filename, boolean ownScopeForAssignments) {
-            final Object result = getContext().eval(ParserContext.EVAL, StringOperations.getByteListReadOnly(source), binding, ownScopeForAssignments, filename, this);
+            final Object result = getContext().getCodeLoader().eval(ParserContext.EVAL, StringOperations.getByteListReadOnly(source), binding, ownScopeForAssignments, filename, this);
             assert result != null;
             return result;
         }
@@ -728,10 +781,11 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object fork(Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-            getContext().getWarnings().warn("Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
+            final SourceSection sourceSection = getContext().getCallStack().getTopMostUserCallNode().getEncapsulatingSourceSection();
+            getContext().getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourceSection.getSource().getName(), sourceSection.getStartLine(), "Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
             return nil();
         }
 
@@ -787,9 +841,9 @@ public abstract class KernelNodes {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
-            final InputStream in = getContext().getRuntime().getInstanceConfig().getInput();
+            final InputStream in = getContext().getJRubyRuntime().getInstanceConfig().getInput();
 
-            Encoding encoding = getContext().getRuntime().getDefaultExternalEncoding();
+            Encoding encoding = getContext().getJRubyRuntime().getDefaultExternalEncoding();
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in, encoding.getCharset()));
 
@@ -804,7 +858,7 @@ public abstract class KernelNodes {
 
             // Set the local variable $_ in the caller
 
-            final Frame caller = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            final Frame caller = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
 
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
@@ -940,7 +994,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public boolean isInstanceVariableDefined(DynamicObject object, String name) {
-            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, this);
             return object.getShape().hasProperty(ivar);
         }
 
@@ -992,7 +1046,7 @@ public abstract class KernelNodes {
         }
 
         protected String checkName(String name) {
-            return RubyContext.checkInstanceVariableName(getContext(), name, this);
+            return SymbolTable.checkInstanceVariableName(getContext(), name, this);
         }
 
         protected ReadHeadObjectFieldNode createReadFieldNode(String name) {
@@ -1054,7 +1108,7 @@ public abstract class KernelNodes {
         }
 
         protected String checkName(String name) {
-            return RubyContext.checkInstanceVariableName(getContext(), name, this);
+            return SymbolTable.checkInstanceVariableName(getContext(), name, this);
         }
 
         protected WriteHeadObjectFieldNode createWriteFieldNode(String name) {
@@ -1086,7 +1140,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object removeInstanceVariable(DynamicObject object, String name) {
-            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, this);
             final Object value = object.get(ivar, nil());
             if (!object.delete(name)) {
                 CompilerDirectives.transferToInterpreter();
@@ -1147,7 +1201,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject lambda(NotProvided block) {
-            final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
+            final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {
@@ -1182,7 +1236,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject localVariables() {
-            final Frame frame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+            final Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
             return BindingNodes.LocalVariablesNode.listLocalVariables(getContext(), frame);
         }
 
@@ -1199,7 +1253,7 @@ public abstract class KernelNodes {
         public DynamicObject methodName() {
             CompilerDirectives.transferToInterpreter();
             // the "original/definition name" of the method.
-            return getSymbol(RubyCallStack.getCallingMethod(getContext()).getSharedMethodInfo().getName());
+            return getSymbol(getContext().getCallStack().getCallingMethodIgnoringSend().getSharedMethodInfo().getName());
         }
 
     }
@@ -1240,7 +1294,7 @@ public abstract class KernelNodes {
                     final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
                     final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
-                    final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody);
+                    final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody, false);
                     final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
                     final DynamicObject module = getContext().getCoreLibrary().getMetaClass(self);
@@ -1470,27 +1524,27 @@ public abstract class KernelNodes {
 
         @Specialization
         public double rand(NotProvided max) {
-            return getContext().getRandom().nextDouble();
+            return ThreadLocalRandom.current().nextDouble();
         }
 
         @Specialization(guards = "max == 0")
         public double randZero(int max) {
-            return getContext().getRandom().nextDouble();
+            return ThreadLocalRandom.current().nextDouble();
         }
 
         @Specialization(guards = "max != 0")
         public int randNonZero(int max) {
-            return getContext().getRandom().nextInt(max);
+            return ThreadLocalRandom.current().nextInt(max);
         }
 
         @Specialization(guards = "max == 0")
         public double randZero(long max) {
-            return getContext().getRandom().nextDouble();
+            return ThreadLocalRandom.current().nextDouble();
         }
 
         @Specialization(guards = "max != 0")
         public long randNonZero(long max) {
-            return getContext().getRandom().nextLong(max);
+            return ThreadLocalRandom.current().nextLong(max);
         }
 
     }
@@ -1538,7 +1592,7 @@ public abstract class KernelNodes {
         }
 
         private boolean callerIs(String caller) {
-            return RubyCallStack.getCallerFrame(getContext()).getCallNode()
+            return getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith(caller);
         }
     }
@@ -1561,7 +1615,7 @@ public abstract class KernelNodes {
             if (featureLoader.isAbsolutePath(featureString)) {
                 featurePath = featureString;
             } else {
-                final Source source = RubyCallStack.getCallerFrame(getContext()).getCallNode().getEncapsulatingSourceSection().getSource();
+                final Source source = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode().getEncapsulatingSourceSection().getSource();
                 final String sourcePath = featureLoader.getSourcePath(source);
 
                 if (sourcePath == null) {

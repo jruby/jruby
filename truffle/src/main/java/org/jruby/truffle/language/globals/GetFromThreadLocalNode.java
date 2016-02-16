@@ -15,7 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.ThreadLocalObject;
+import org.jruby.truffle.language.objects.ThreadLocalObject;
 
 /**
  * If a child node produces a {@link ThreadLocal}, get the value from it. If the value is not a {@code ThreadLocal},

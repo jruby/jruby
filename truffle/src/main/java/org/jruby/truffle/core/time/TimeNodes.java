@@ -21,7 +21,11 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rubinius.TimePrimitiveNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -139,6 +143,7 @@ public abstract class TimeNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject addInternal(DynamicObject time, long seconds, long nanoSeconds) {
             final DateTime dateTime = Layouts.TIME.getDateTime(time);

@@ -69,7 +69,13 @@ import org.jruby.util.io.EncodingUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
-import org.yaml.snakeyaml.events.*;
+import org.yaml.snakeyaml.events.AliasEvent;
+import org.yaml.snakeyaml.events.DocumentEndEvent;
+import org.yaml.snakeyaml.events.DocumentStartEvent;
+import org.yaml.snakeyaml.events.Event;
+import org.yaml.snakeyaml.events.MappingStartEvent;
+import org.yaml.snakeyaml.events.ScalarEvent;
+import org.yaml.snakeyaml.events.SequenceStartEvent;
 import org.yaml.snakeyaml.parser.Parser;
 import org.yaml.snakeyaml.parser.ParserException;
 import org.yaml.snakeyaml.parser.ParserImpl;
@@ -220,7 +226,7 @@ public abstract class PsychParserNodes {
 
             // if not unicode, transcode to UTF8
             if (!(enc instanceof UnicodeEncoding)) {
-                byteList = EncodingUtils.strConvEnc(getContext().getRuntime().getCurrentContext(), byteList, enc, UTF8Encoding.INSTANCE);
+                byteList = EncodingUtils.strConvEnc(getContext().getJRubyRuntime().getCurrentContext(), byteList, enc, UTF8Encoding.INSTANCE);
                 enc = UTF8Encoding.INSTANCE;
             }
 
@@ -347,7 +353,7 @@ public abstract class PsychParserNodes {
 
         private Object stringFor(String value, boolean tainted) {
             // TODO CS 23-Sep-15 this is JRuby's internal encoding, not ours
-            Encoding encoding = getContext().getRuntime().getDefaultInternalEncoding();
+            Encoding encoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
 
             if (encoding == null) {
                 encoding = UTF8Encoding.INSTANCE;

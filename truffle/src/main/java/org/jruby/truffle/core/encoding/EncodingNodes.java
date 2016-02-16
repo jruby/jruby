@@ -23,7 +23,12 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
@@ -315,7 +320,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
+            getContext().getJRubyRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
@@ -325,7 +330,7 @@ public abstract class EncodingNodes {
             CompilerDirectives.transferToInterpreter();
 
             final DynamicObject rubyEncoding = getEncoding(encodingString.toString());
-            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
+            getContext().getJRubyRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
 
             return rubyEncoding;
         }
@@ -361,7 +366,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultInternal(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
+            getContext().getJRubyRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
@@ -370,7 +375,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultInternal(Object encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultInternalEncoding(null);
+            getContext().getJRubyRuntime().setDefaultInternalEncoding(null);
 
             return nil();
         }
@@ -385,7 +390,7 @@ public abstract class EncodingNodes {
             }
 
             final DynamicObject encodingName = toStrNode.executeToStr(frame, encoding);
-            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getEncoding(encodingName.toString())));
+            getContext().getJRubyRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getEncoding(encodingName.toString())));
 
             return encodingName;
         }
@@ -420,7 +425,7 @@ public abstract class EncodingNodes {
         @Specialization
         public DynamicObject localeCharacterMap() {
             CompilerDirectives.transferToInterpreter();
-            final ByteList name = new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName());
+            final ByteList name = new ByteList(getContext().getJRubyRuntime().getEncodingService().getLocaleEncoding().getName());
             return createString(name);
         }
     }
@@ -485,28 +490,32 @@ public abstract class EncodingNodes {
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
 
-            final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
-            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, create7BitString("internal", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultInternalEncoding));
+            final Encoding defaultInternalEncoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
+            final Object internalTuple = makeTuple(frame, newTupleNode, create7BitString("internal", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultInternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
 
-            final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
-            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, create7BitString("external", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultExternalEncoding));
+            final Encoding defaultExternalEncoding = getContext().getJRubyRuntime().getDefaultExternalEncoding();
+            final Object externalTuple = makeTuple(frame, newTupleNode, create7BitString("external", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultExternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getLocaleEncoding();
-            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, create7BitString("locale", UTF8Encoding.INSTANCE), indexLookup(encodings, localeEncoding));
+            final Object localeTuple = makeTuple(frame, newTupleNode, create7BitString("locale", UTF8Encoding.INSTANCE), indexLookup(encodings, localeEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getLocaleEncoding();
-            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, create7BitString("filesystem", UTF8Encoding.INSTANCE), indexLookup(encodings, filesystemEncoding));
+            final Object filesystemTuple = makeTuple(frame, newTupleNode, create7BitString("filesystem", UTF8Encoding.INSTANCE), indexLookup(encodings, filesystemEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
         }
 
+        private Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
+            return newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, values);
+        }
+
         @TruffleBoundary
         private Encoding getLocaleEncoding() {
-            return getContext().getRuntime().getEncodingService().getLocaleEncoding();
+            return getContext().getJRubyRuntime().getEncodingService().getLocaleEncoding();
         }
 
         @TruffleBoundary

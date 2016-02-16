@@ -279,6 +279,21 @@ module FFI
       raise PrimitiveFailure, "FFI::Pointer#primitive_write_pointer primitive failed"
     end
 
+    ##
+    # If +val+ is true, this Pointer object will call
+    # free() on it's address when it is garbage collected.
+    def autorelease=(val)
+      Rubinius.primitive :pointer_set_autorelease
+      raise PrimitiveFailure, "FFI::Pointer#autorelease= primitive failed"
+    end
+
+    ##
+    # Returns true if autorelease is enabled, otherwise false.
+    def autorelease?
+      Rubinius.primitive :pointer_autorelease_p
+      raise PrimitiveFailure, "FFI::Pointer#pointer_autorelease_p primitive failed"
+    end
+
     NULL = Pointer.new(0x0)
   end
 
@@ -396,22 +411,6 @@ module FFI
       Rubinius.primitive :pointer_free
       raise PrimitiveFailure, "FFI::MemoryPointer#free primitive failed"
     end
-
-    ##
-    # If +val+ is true, this MemoryPointer object will call
-    # free() on it's address when it is garbage collected.
-    def autorelease=(val)
-      Rubinius.primitive :pointer_set_autorelease
-      raise PrimitiveFailure, "FFI::MemoryPointer#autorelease= primitive failed"
-    end
-
-    ##
-    # Returns true if autorelease is enabled, otherwise false.
-    def autorelease?
-      Rubinius.primitive :pointer_autorelease_p
-      raise PrimitiveFailure, "FFI::MemoryPointer#pointer_autorelease_p primitive failed"
-    end
-
   end
 
   class DynamicLibrary::Symbol < Pointer

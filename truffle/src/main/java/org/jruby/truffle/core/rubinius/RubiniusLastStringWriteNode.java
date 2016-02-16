@@ -19,10 +19,9 @@ import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.ThreadLocalObject;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.objects.ThreadLocalObject;
 
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class RubiniusLastStringWriteNode extends RubyNode {
@@ -37,7 +36,7 @@ public abstract class RubiniusLastStringWriteNode extends RubyNode {
 
         // Rubinius expects $_ to be thread-local, rather than frame-local.  If we see it in a method call, we need
         // to look to the caller's frame to get the correct value, otherwise it will be nil.
-        MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true).materialize();
+        MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_ONLY, true).materialize();
 
         FrameSlot slot = callerFrame.getFrameDescriptor().findFrameSlot("$_");
 

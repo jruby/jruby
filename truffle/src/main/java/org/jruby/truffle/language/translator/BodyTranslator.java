@@ -31,9 +31,21 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
-import org.jruby.truffle.core.array.*;
+import org.jruby.truffle.core.array.ArrayConcatNode;
+import org.jruby.truffle.core.array.ArrayDropTailNode;
+import org.jruby.truffle.core.array.ArrayDropTailNodeGen;
+import org.jruby.truffle.core.array.ArrayGetTailNodeGen;
+import org.jruby.truffle.core.array.ArrayLiteralNode;
 import org.jruby.truffle.core.array.ArrayNodes.PushOneNode;
-import org.jruby.truffle.core.cast.*;
+import org.jruby.truffle.core.array.ArrayNodesFactory;
+import org.jruby.truffle.core.array.PrimitiveArrayNodeFactory;
+import org.jruby.truffle.core.cast.HashCastNodeGen;
+import org.jruby.truffle.core.cast.IntegerCastNodeGen;
+import org.jruby.truffle.core.cast.SplatCastNode;
+import org.jruby.truffle.core.cast.SplatCastNodeGen;
+import org.jruby.truffle.core.cast.StringToSymbolNodeGen;
+import org.jruby.truffle.core.cast.ToSNode;
+import org.jruby.truffle.core.cast.ToSNodeGen;
 import org.jruby.truffle.core.coerce.ToProcNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
@@ -60,29 +72,110 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.debug.AssertConstantNodeGen;
 import org.jruby.truffle.debug.AssertNotCompiledNodeGen;
-import org.jruby.truffle.language.*;
+import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.language.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.language.constants.WriteConstantNode;
-import org.jruby.truffle.language.control.*;
+import org.jruby.truffle.language.control.AndNode;
+import org.jruby.truffle.language.control.BreakID;
+import org.jruby.truffle.language.control.BreakNode;
+import org.jruby.truffle.language.control.ElidableResultNode;
+import org.jruby.truffle.language.control.FrameOnStackNode;
+import org.jruby.truffle.language.control.IfNode;
+import org.jruby.truffle.language.control.NextNode;
+import org.jruby.truffle.language.control.NotNode;
+import org.jruby.truffle.language.control.OnceNode;
+import org.jruby.truffle.language.control.OrNode;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.control.RedoNode;
+import org.jruby.truffle.language.control.RetryNode;
+import org.jruby.truffle.language.control.ReturnID;
+import org.jruby.truffle.language.control.ReturnNode;
+import org.jruby.truffle.language.control.SequenceNode;
+import org.jruby.truffle.language.control.WhenSplatNode;
+import org.jruby.truffle.language.control.WhileNode;
 import org.jruby.truffle.language.defined.DefinedNode;
 import org.jruby.truffle.language.defined.DefinedWrapperNode;
 import org.jruby.truffle.language.dispatch.RubyCallNode;
-import org.jruby.truffle.language.exceptions.*;
-import org.jruby.truffle.language.globals.*;
-import org.jruby.truffle.language.literal.*;
-import org.jruby.truffle.language.locals.*;
-import org.jruby.truffle.language.methods.*;
-import org.jruby.truffle.language.objects.*;
+import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
+import org.jruby.truffle.language.exceptions.EnsureNode;
+import org.jruby.truffle.language.exceptions.RescueAnyNode;
+import org.jruby.truffle.language.exceptions.RescueClassesNode;
+import org.jruby.truffle.language.exceptions.RescueNode;
+import org.jruby.truffle.language.exceptions.RescueSplatNode;
+import org.jruby.truffle.language.exceptions.TryNode;
+import org.jruby.truffle.language.globals.CheckMatchVariableTypeNode;
+import org.jruby.truffle.language.globals.CheckOutputSeparatorVariableTypeNode;
+import org.jruby.truffle.language.globals.CheckProgramNameVariableTypeNode;
+import org.jruby.truffle.language.globals.CheckRecordSeparatorVariableTypeNode;
+import org.jruby.truffle.language.globals.CheckStdoutVariableTypeNode;
+import org.jruby.truffle.language.globals.GetFromThreadLocalNodeGen;
+import org.jruby.truffle.language.globals.ReadGlobalVariableNode;
+import org.jruby.truffle.language.globals.ReadLastBacktraceNode;
+import org.jruby.truffle.language.globals.ReadMatchReferenceNode;
+import org.jruby.truffle.language.globals.ReadThreadLocalGlobalVariableNode;
+import org.jruby.truffle.language.globals.UpdateLastBacktraceNode;
+import org.jruby.truffle.language.globals.UpdateVerbosityNode;
+import org.jruby.truffle.language.globals.WrapInThreadLocalNodeGen;
+import org.jruby.truffle.language.globals.WriteGlobalVariableNode;
+import org.jruby.truffle.language.globals.WriteProgramNameNodeGen;
+import org.jruby.truffle.language.globals.WriteReadOnlyGlobalNode;
+import org.jruby.truffle.language.literal.BooleanLiteralNode;
+import org.jruby.truffle.language.literal.FloatLiteralNode;
+import org.jruby.truffle.language.literal.LiteralNode;
+import org.jruby.truffle.language.literal.NilNode;
+import org.jruby.truffle.language.literal.StringLiteralNode;
+import org.jruby.truffle.language.locals.DeclarationFlipFlopStateNode;
+import org.jruby.truffle.language.locals.FlipFlopNode;
+import org.jruby.truffle.language.locals.FlipFlopStateNode;
+import org.jruby.truffle.language.locals.InitFlipFlopSlotNode;
+import org.jruby.truffle.language.locals.LocalFlipFlopStateNode;
+import org.jruby.truffle.language.locals.ReadLocalNode;
+import org.jruby.truffle.language.locals.ReadLocalVariableNode;
+import org.jruby.truffle.language.locals.WriteLocalVariableNode;
+import org.jruby.truffle.language.methods.AddMethodNodeGen;
+import org.jruby.truffle.language.methods.Arity;
+import org.jruby.truffle.language.methods.BlockDefinitionNode;
+import org.jruby.truffle.language.methods.CatchBreakNode;
+import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
+import org.jruby.truffle.language.methods.GetCurrentVisibilityNode;
+import org.jruby.truffle.language.methods.GetDefaultDefineeNode;
+import org.jruby.truffle.language.methods.MethodDefinitionNode;
+import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.objects.DefineOrGetClassNode;
+import org.jruby.truffle.language.objects.DefineOrGetModuleNode;
+import org.jruby.truffle.language.objects.LexicalScopeNode;
+import org.jruby.truffle.language.objects.OpenModuleNode;
+import org.jruby.truffle.language.objects.ReadClassVariableNode;
+import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
+import org.jruby.truffle.language.objects.SelfNode;
+import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.language.objects.SingletonClassNodeGen;
+import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
+import org.jruby.truffle.language.objects.WriteClassVariableNode;
+import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A JRuby parser node visitor which translates JRuby AST nodes into truffle Nodes. Therefore there is some namespace
@@ -131,7 +224,7 @@ public class BodyTranslator extends Translator {
     }
 
     private DynamicObject translateNameNodeToSymbol(org.jruby.ast.Node node) {
-        return context.getSymbol(((org.jruby.ast.LiteralNode) node).getName());
+        return context.getSymbolTable().getSymbol(((org.jruby.ast.LiteralNode) node).getName());
     }
 
     @Override
@@ -622,9 +715,9 @@ public class BodyTranslator extends Translator {
         }
     }
 
-    public static final FrameSlot BAD_FRAME_SLOT = new FrameSlot(null, null, null, 0, null);
+    public static final Object BAD_FRAME_SLOT = new Object();
 
-    public Deque<FrameSlot> frameOnStackMarkerSlotStack = new ArrayDeque<>();
+    public Deque<Object> frameOnStackMarkerSlotStack = new ArrayDeque<>();
 
     protected ArgumentsAndBlockTranslation translateArgumentsAndBlock(SourceSection sourceSection, org.jruby.ast.Node iterNode, org.jruby.ast.Node argsNode, String nameToSetWhenTranslatingBlock) {
         assert !(argsNode instanceof org.jruby.ast.IterNode);
@@ -2033,7 +2126,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhsTranslated;
 
         if (rhs == null) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
+            context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
             rhsTranslated = nilNode(sourceSection);
         } else {
             rhsTranslated = rhs.accept(this);
@@ -2333,7 +2426,7 @@ public class BodyTranslator extends Translator {
 
             result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
         } else {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
+            context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
             result = nilNode(sourceSection);
         }
 
@@ -2818,7 +2911,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitSymbolNode(org.jruby.ast.SymbolNode node) {
         final Rope rope = StringOperations.createRope(node.getName(), node.getEncoding());
-        final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), context.getSymbol(rope));
+        final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), context.getSymbolTable().getSymbol(rope));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -3002,7 +3095,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode unimplemented(org.jruby.ast.Node node) {
-        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " does nothing - translating as nil");
+        context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " does nothing - translating as nil");
         SourceSection sourceSection = translate(node.getPosition());
         return nilNode(sourceSection);
     }

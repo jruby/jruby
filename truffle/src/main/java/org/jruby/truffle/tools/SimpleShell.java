@@ -16,7 +16,6 @@ import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
@@ -65,20 +64,12 @@ public class SimpleShell {
 
                 case "frame":
                     currentFrameIndex = Integer.parseInt(tokenizer.nextToken());
-                    currentFrame = RubyCallStack.getBacktrace(context, currentNode).getActivations().get(currentFrameIndex).getMaterializedFrame();
+                    currentFrame = context.getCallStack().getBacktrace(currentNode).getActivations().get(currentFrameIndex).getMaterializedFrame();
                     break;
 
                 default:
                     try {
-                        final Object result = context.parseAndExecute(
-                                Source.fromText(shellLine, "shell"),
-                                UTF8Encoding.INSTANCE,
-                                ParserContext.EVAL,
-                                RubyArguments.getSelf(currentFrame.getArguments()),
-                                currentFrame,
-                                false,
-                                RubyArguments.getDeclarationContext(currentFrame.getArguments()),
-                                currentNode);
+                        final Object result = context.getCodeLoader().parseAndExecute(Source.fromText(shellLine, "shell"), UTF8Encoding.INSTANCE, ParserContext.EVAL, RubyArguments.getSelf(currentFrame.getArguments()), currentFrame, false, RubyArguments.getDeclarationContext(currentFrame.getArguments()), currentNode);
 
                         String inspected;
 
@@ -101,7 +92,7 @@ public class SimpleShell {
     private void backtrace(Node currentNode) {
         int n = 0;
 
-        for (Activation activation : RubyCallStack.getBacktrace(context, currentNode).getActivations()) {
+        for (Activation activation : context.getCallStack().getBacktrace(currentNode).getActivations()) {
             if (n == currentFrameIndex) {
                 System.console().writer().print("  ▶");
             } else {

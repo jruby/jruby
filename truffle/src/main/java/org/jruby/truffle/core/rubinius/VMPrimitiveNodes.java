@@ -57,6 +57,7 @@ import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.core.proc.ProcSignalHandler;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
@@ -70,10 +71,9 @@ import org.jruby.truffle.language.objects.ClassNodeGen;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.platform.signal.ProcSignalHandler;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
-import org.jruby.truffle.platform.signal.SignalOperations;
+import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.util.io.PosixShim;
 
 import java.lang.management.ManagementFactory;
@@ -451,7 +451,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization(guards = { "isRubyString(signalName)", "isNil(nil)" })
         public boolean watchSignal(DynamicObject signalName, Object nil) {
-            return handle(signalName, SignalOperations.IGNORE_HANDLER);
+            return handle(signalName, SignalManager.IGNORE_HANDLER);
         }
 
         @Specialization(guards = { "isRubyString(signalName)", "isRubyProc(proc)" })
@@ -461,9 +461,9 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handleDefault(DynamicObject signalName) {
-            Signal signal = new Signal(signalName.toString());
+            Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName.toString());
             try {
-                SignalOperations.watchDefaultForSignal(signal);
+                getContext().getNativePlatform().getSignalManager().watchDefaultForSignal(signal);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
@@ -472,9 +472,9 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handle(DynamicObject signalName, SignalHandler newHandler) {
-            final Signal signal = new Signal(signalName.toString());
+            Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName.toString());
             try {
-                SignalOperations.watchSignal(signal, newHandler);
+                getContext().getNativePlatform().getSignalManager().watchSignal(signal, newHandler);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
@@ -493,7 +493,7 @@ public abstract class VMPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(key)")
         public Object get(DynamicObject key) {
-            final Object value = getContext().getRubiniusConfiguration().get(key.toString());
+            final Object value = getContext().getNativePlatform().getRubiniusConfiguration().get(key.toString());
 
             if (value == null) {
                 return nil();
@@ -516,8 +516,8 @@ public abstract class VMPrimitiveNodes {
         public DynamicObject getSection(DynamicObject section) {
             final List<DynamicObject> sectionKeyValues = new ArrayList<>();
 
-            for (String key : getContext().getRubiniusConfiguration().getSection(section.toString())) {
-                Object value = getContext().getRubiniusConfiguration().get(key);
+            for (String key : getContext().getNativePlatform().getRubiniusConfiguration().getSection(section.toString())) {
+                Object value = getContext().getNativePlatform().getRubiniusConfiguration().get(key);
                 final String stringValue;
                 if (RubyGuards.isRubyBignum(value)) {
                     stringValue = Layouts.BIGNUM.getValue((DynamicObject) value).toString();

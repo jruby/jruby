@@ -9,7 +9,21 @@
  */
 package org.jruby.truffle.language.translator;
 
-import org.jruby.ast.*;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.BlockArgNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.ClassVarAsgnNode;
+import org.jruby.ast.ClassVarDeclNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.KeywordRestArgNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.OptArgNode;
+import org.jruby.ast.RestArgNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 
 import java.util.ArrayList;
