@@ -431,11 +431,11 @@ public class LoadService {
     private static final class RequireLocks {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
-        private final ReentrantLock globalLock;
+        //private final ReentrantLock globalLock;
 
         private RequireLocks() {
             this.pool = new ConcurrentHashMap<>(8, 0.75f, 2);
-            this.globalLock = new ReentrantLock(true);
+            //this.globalLock = new ReentrantLock(true);
         }
 
         /**
