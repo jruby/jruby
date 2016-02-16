@@ -30,8 +30,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.instrument.RubySyntaxTag;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubySyntaxTag;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.loader.SourceLoader;
 
