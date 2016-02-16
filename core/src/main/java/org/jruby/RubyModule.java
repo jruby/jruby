@@ -4144,9 +4144,11 @@ public class RubyModule extends RubyObject {
         if ( autoload == null ) return null;
         final IRubyObject value = autoload.getValue();
         if ( value != null ) {
+            setParentForModule(name, value);
             storeConstant(name, value);
         }
         removeAutoload(name);
+        invalidateConstantCache(name);
         return value;
     }
 
