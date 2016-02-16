@@ -3649,20 +3649,21 @@ public class RubyModule extends RubyObject {
      */
     private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn) {
         IRubyObject oldValue = fetchConstant(name);
+
+        setParentForModule(name, value);
+
         if (oldValue != null) {
             boolean notAutoload = oldValue != UNDEF;
             if (notAutoload || !setAutoloadConstant(name, value)) {
                 if (warn && notAutoload) {
                     getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
-                setParentForModule(name, value);
                 // might just call storeConstant(name, value, hidden) but to maintain
                 // backwards compatibility with calling #storeConstant overrides
                 if (hidden) storeConstant(name, value, true);
                 else storeConstant(name, value);
             }
         } else {
-            setParentForModule(name, value);
             if (hidden) storeConstant(name, value, true);
             else storeConstant(name, value);
         }
@@ -4144,7 +4145,6 @@ public class RubyModule extends RubyObject {
         if ( autoload == null ) return null;
         final IRubyObject value = autoload.getValue();
         if ( value != null ) {
-            setParentForModule(name, value);
             storeConstant(name, value);
         }
         removeAutoload(name);
