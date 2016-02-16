@@ -20,9 +20,9 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.interop.InteropNode;
-import org.jruby.truffle.language.InternalRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.backtrace.InternalRootNode;
 
 public class HashForeignAccessFactory implements ForeignAccess.Factory10, ForeignAccess.Factory {
 
