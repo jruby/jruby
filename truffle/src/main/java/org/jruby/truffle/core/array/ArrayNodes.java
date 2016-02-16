@@ -327,7 +327,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isRubyString(string)")
         public Object mulObject(VirtualFrame frame, DynamicObject array, DynamicObject string) {
             CompilerDirectives.transferToInterpreter();
-            return ruby(frame, "join(sep)", "sep", string);
+            return ruby("join(sep)", "sep", string);
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isRubyString(object)" })
@@ -338,7 +338,7 @@ public abstract class ArrayNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
             if (respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
-                return ruby(frame, "join(sep.to_str)", "sep", object);
+                return ruby("join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -1276,7 +1276,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object eachWithIndexObject(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            return ruby(frame, "to_enum(:each_with_index)");
+            return ruby("to_enum(:each_with_index)");
         }
 
     }
@@ -2185,7 +2185,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object max(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return ruby(frame, "array.max_internal(&block)", "array", array, "block", block);
+            return ruby("array.max_internal(&block)", "array", array, "block", block);
         }
 
     }
@@ -2303,7 +2303,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object min(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return ruby(frame, "array.min_internal(&block)", "array", array, "block", block);
+            return ruby("array.min_internal(&block)", "array", array, "block", block);
         }
 
     }
@@ -2502,27 +2502,27 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object pack(VirtualFrame frame, DynamicObject array, boolean format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization
         public Object pack(VirtualFrame frame, DynamicObject array, int format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization
         public Object pack(VirtualFrame frame, DynamicObject array, long format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization(guards = "isNil(format)")
         public Object packNil(VirtualFrame frame, DynamicObject array, Object format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
         public Object pack(VirtualFrame frame, DynamicObject array, Object format) {
-            return ruby(frame, "pack(format.to_str)", "format", format);
+            return ruby("pack(format.to_str)", "format", format);
         }
 
         @TruffleBoundary
@@ -4159,12 +4159,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "!isNullArray(array)" })
         public Object sortUsingRubinius(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", getSize(array), "block", block);
+            return ruby("sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", getSize(array), "block", block);
         }
 
         @Specialization(guards = { "!isNullArray(array)", "!isSmall(array)" })
         public Object sortUsingRubinius(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
+            return ruby("sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
         }
 
         private int castSortValue(Object value) {

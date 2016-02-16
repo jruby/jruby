@@ -476,7 +476,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isRubyString(other)")
         public Object concat(VirtualFrame frame, DynamicObject string, Object other) {
-            return ruby(frame, "string.concat_internal(other)", "string", string, "other", other);
+            return ruby("string.concat_internal(other)", "string", string, "other", other);
         }
     }
 
@@ -592,7 +592,7 @@ public abstract class StringNodes {
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasProvided(capture)"})
         public Object sliceCapture(VirtualFrame frame, DynamicObject string, DynamicObject regexp, Object capture) {
             // Extracted from Rubinius's definition of String#[].
-            return ruby(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
+            return ruby("match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
         }
 
         @Specialization(guards = {"wasNotProvided(length) || isRubiniusUndefined(length)", "isRubyString(matchStr)"})
@@ -2132,7 +2132,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isInteger(bits)", "!isLong(bits)", "wasProvided(bits)" })
         public Object sum(VirtualFrame frame, DynamicObject string, Object bits) {
-            return ruby(frame, "sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
+            return ruby("sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
         }
 
     }
@@ -2174,7 +2174,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isStringSubclass(string)")
         public Object toSOnSubclass(VirtualFrame frame, DynamicObject string) {
-            return ruby(frame, "''.replace(self)", "self", string);
+            return ruby("''.replace(self)", "self", string);
         }
 
         public boolean isStringSubclass(DynamicObject string) {
@@ -2459,27 +2459,27 @@ public abstract class StringNodes {
 
         @Specialization
         public Object unpack(VirtualFrame frame, DynamicObject array, boolean format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization
         public Object unpack(VirtualFrame frame, DynamicObject array, int format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization
         public Object unpack(VirtualFrame frame, DynamicObject array, long format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization(guards = "isNil(format)")
         public Object unpackNil(VirtualFrame frame, DynamicObject array, Object format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
         public Object unpack(VirtualFrame frame, DynamicObject array, Object format) {
-            return ruby(frame, "unpack(format.to_str)", "format", format);
+            return ruby("unpack(format.to_str)", "format", format);
         }
 
         @TruffleBoundary

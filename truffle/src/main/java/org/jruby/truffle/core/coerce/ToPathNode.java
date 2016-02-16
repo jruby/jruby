@@ -31,7 +31,7 @@ public abstract class ToPathNode extends RubyNode {
 
     @Specialization(guards = "!isRubyString(object)")
     public DynamicObject coerceObject(VirtualFrame frame, Object object) {
-        return (DynamicObject) ruby(frame, "Rubinius::Type.coerce_to_path(object)", "object", object);
+        return (DynamicObject) ruby("Rubinius::Type.coerce_to_path(object)", "object", object);
     }
 
 }

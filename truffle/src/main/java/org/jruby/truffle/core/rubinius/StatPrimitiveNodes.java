@@ -37,7 +37,7 @@ public abstract class StatPrimitiveNodes {
         @Specialization
         public Object atime(VirtualFrame frame, DynamicObject rubyStat) {
             final long time = getStat(rubyStat).atime();
-            return ruby(frame, "Time.at(time)", "time", time);
+            return ruby("Time.at(time)", "time", time);
         }
 
     }
@@ -52,7 +52,7 @@ public abstract class StatPrimitiveNodes {
         @Specialization
         public Object ctime(VirtualFrame frame, DynamicObject rubyStat) {
             final long time = getStat(rubyStat).ctime();
-            return ruby(frame, "Time.at(time)", "time", time);
+            return ruby("Time.at(time)", "time", time);
         }
 
     }
@@ -67,7 +67,7 @@ public abstract class StatPrimitiveNodes {
         @Specialization
         public Object mtime(VirtualFrame frame, DynamicObject rubyStat) {
             final long time = getStat(rubyStat).mtime();
-            return ruby(frame, "Time.at(time)", "time", time);
+            return ruby("Time.at(time)", "time", time);
         }
 
     }

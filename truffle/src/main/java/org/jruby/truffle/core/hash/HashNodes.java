@@ -128,7 +128,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isSmallArrayOfPairs(args)")
         public Object constructFallback(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
-            return ruby(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length));
+            return ruby("_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length));
         }
 
         public boolean isSmallArrayOfPairs(Object[] args) {
@@ -754,7 +754,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isRubyHash(other)")
         public Object replaceBuckets(VirtualFrame frame, DynamicObject self, Object other) {
-            return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
+            return ruby("replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
         
         private void copyOtherFields(DynamicObject self, DynamicObject from) {

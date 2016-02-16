@@ -1099,8 +1099,8 @@ public abstract class PosixNodes {
         // This should probably done at a higher-level, but rubysl/socket does not handle it.
         @Specialization(guards = { "isRubySymbol(level)", "isRubySymbol(optname)", "isRubyPointer(optval)", "isRubyPointer(optlen)" })
         public int getSockOptionsSymbols(VirtualFrame frame, int sockfd, DynamicObject level, DynamicObject optname, DynamicObject optval, DynamicObject optlen) {
-            int levelInt = (int) ruby(frame, "Socket::SOL_" + Layouts.SYMBOL.getString(level));
-            int optnameInt = (int) ruby(frame, "Socket::SO_" + Layouts.SYMBOL.getString(optname));
+            int levelInt = (int) ruby("Socket::SOL_" + Layouts.SYMBOL.getString(level));
+            int optnameInt = (int) ruby("Socket::SO_" + Layouts.SYMBOL.getString(optname));
             return getSockOptions(sockfd, levelInt, optnameInt, optval, optlen);
         }
 
