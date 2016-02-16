@@ -92,7 +92,7 @@ public abstract class AllocateObjectNode extends RubyNode {
         final Node allocatingNode;
 
         if (useCallerFrame) {
-            allocatingFrameInstance = getContext().getCallStack().getCallerFrame();
+            allocatingFrameInstance = getContext().getCallStack().getCallerFrameIgnoringSend();
             allocatingNode = getContext().getCallStack().getTopMostUserCallNode();
         } else {
             allocatingFrameInstance = Truffle.getRuntime().getCurrentFrame();

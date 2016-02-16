@@ -140,7 +140,7 @@ public abstract class SymbolNodes {
 
         protected DynamicObject createProc(VirtualFrame frame, DynamicObject symbol) {
             CompilerDirectives.transferToInterpreter();
-            final SourceSection sourceSection = getContext().getCallStack().getCallerFrame()
+            final SourceSection sourceSection = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getCallNode().getEncapsulatingSourceSection();
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(

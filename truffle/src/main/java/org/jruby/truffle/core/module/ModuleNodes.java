@@ -411,7 +411,7 @@ public abstract class ModuleNodes {
             final String name = nameToJavaStringNode.executeToJavaString(frame, nameObject);
 
             CompilerDirectives.transferToInterpreter();
-            final FrameInstance callerFrame = getContext().getCallStack().getCallerFrame();
+            final FrameInstance callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend();
             final SourceSection sourceSection = callerFrame.getCallNode().getEncapsulatingSourceSection();
             final Visibility visibility = DeclarationContext.findVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
             final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;
@@ -664,7 +664,7 @@ public abstract class ModuleNodes {
         private Object classEvalSource(DynamicObject module, DynamicObject code, String file, int line) {
             assert RubyGuards.isRubyString(code);
 
-            final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrame()
+            final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
             Encoding encoding = Layouts.STRING.getRope(code).getEncoding();
 
@@ -1172,7 +1172,7 @@ public abstract class ModuleNodes {
         private DynamicObject addMethod(DynamicObject module, String name, InternalMethod method) {
             method = method.withName(name);
 
-            final Frame frame = getContext().getCallStack().getCallerFrame().getFrame(FrameAccess.READ_ONLY, true);
+            final Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
             final Visibility visibility = GetCurrentVisibilityNode.getVisibilityFromNameAndFrame(name, frame);
             return addMethodNode.executeAddMethod(module, method, visibility);
         }
@@ -1397,7 +1397,7 @@ public abstract class ModuleNodes {
 
             final List<DynamicObject> modules = new ArrayList<>();
 
-            InternalMethod method = getContext().getCallStack().getCallingMethod();
+            InternalMethod method = getContext().getCallStack().getCallingMethodIgnoringSend();
             LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             DynamicObject object = getContext().getCoreLibrary().getObjectClass();
 
@@ -1986,7 +1986,7 @@ public abstract class ModuleNodes {
         }
 
         private void setCurrentVisibility(Visibility visibility) {
-            final Frame callerFrame = getContext().getCallStack().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
             DeclarationContext.changeVisibility(callerFrame, visibility);
         }
 

@@ -36,7 +36,7 @@ public abstract class RubiniusLastStringWriteNode extends RubyNode {
 
         // Rubinius expects $_ to be thread-local, rather than frame-local.  If we see it in a method call, we need
         // to look to the caller's frame to get the correct value, otherwise it will be nil.
-        MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, true).materialize();
+        MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_ONLY, true).materialize();
 
         FrameSlot slot = callerFrame.getFrameDescriptor().findFrameSlot("$_");
 

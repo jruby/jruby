@@ -37,9 +37,8 @@ public class CallStackManager {
         this.context = context;
     }
 
-    /** Ignores Kernel#send and aliases */
     @TruffleBoundary
-    public FrameInstance getCallerFrame() {
+    public FrameInstance getCallerFrameIgnoringSend() {
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
             @Override
             public FrameInstance visitFrame(FrameInstance frameInstance) {
@@ -55,8 +54,8 @@ public class CallStackManager {
         });
     }
 
-    public InternalMethod getCallingMethod() {
-        return getMethod(getCallerFrame());
+    public InternalMethod getCallingMethodIgnoringSend() {
+        return getMethod(getCallerFrameIgnoringSend());
     }
 
     private InternalMethod getMethod(FrameInstance frame) {

@@ -156,7 +156,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         if (ignoreVisibility) {
             callerClass = null;
         } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
-            final Frame callerFrame = getContext().getCallStack().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+            final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
             callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame.getArguments()));
         } else {
             callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
