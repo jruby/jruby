@@ -69,23 +69,27 @@ module Enumerable
     Enumerator.new do |enum|
       ary = nil
       last_after = nil
-      each_cons(2) do |before, after|
-        last_after = after
-        match = block.call before, after
+      if size == 1
+        each {|x| enum.yield [x]}
+      else
+        each_cons(2) do |before, after|
+          last_after = after
+          match = block.call before, after
 
-        ary ||= []
-        if match
-          ary << before
-          enum.yield ary
-          ary = []
-        else
-          ary << before
+          ary ||= []
+          if match
+            ary << before
+            enum.yield ary
+            ary = []
+          else
+            ary << before
+          end
         end
-      end
 
-      unless ary.nil?
-        ary << last_after
-        enum.yield ary
+        unless ary.nil?
+          ary << last_after
+          enum.yield ary
+        end
       end
     end
   end
