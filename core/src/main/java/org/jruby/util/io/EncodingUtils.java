@@ -378,7 +378,7 @@ public class EncodingUtils {
     public static void parseModeEncoding(ThreadContext context, IOEncodable ioEncodable, String option, int[] fmode_p) {
         Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
-        Encoding idx2 = null;
+        Encoding idx2;
         Encoding intEnc, extEnc;
         if (fmode_p == null) fmode_p = new int[]{0};
         String estr;
@@ -391,10 +391,15 @@ public class EncodingUtils {
             estr = option;
         }
 
-        if (estr.toLowerCase().startsWith("bom|utf-")) {
-            fmode_p[0] |= OpenFile.SETENC_BY_BOM;
-            ioEncodable.setBOM(true);
+        if (estr.toLowerCase().startsWith("bom|")) {
             estr = estr.substring(4);
+            if (estr.startsWith("utf-")) {
+                fmode_p[0] |= OpenFile.SETENC_BY_BOM;
+                ioEncodable.setBOM(true);
+            } else {
+                runtime.getWarnings().warn("BOM with non-UTF encoding " + estr + " is nonsense");
+                fmode_p[0] &= ~OpenFile.SETENC_BY_BOM;
+            }
         }
 
         EncodingDB.Entry idx = service.findEncodingOrAliasEntry(estr.getBytes());
