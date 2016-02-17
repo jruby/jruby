@@ -105,4 +105,25 @@ class TestString < Test::Unit::TestCase
     assert_equal e3,  buf.size
   end
 
+  public
+
+  def test_try_squeeze
+    ' '.squeeze
+    try ' ', :squeeze # ArrayIndexOutOfBoundsException
+  end
+
+  private
+
+  def try(obj, *a, &b) # ~ AS 4.2
+    if a.empty? && block_given?
+      if b.arity == 0
+        obj.instance_eval(&b)
+      else
+        yield obj
+      end
+    else
+      obj.public_send(*a, &b)
+    end
+  end
+
 end

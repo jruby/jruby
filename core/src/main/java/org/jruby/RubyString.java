@@ -4536,14 +4536,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return str;
     }
 
-    @JRubyMethod(name = "squeeze")
+    @JRubyMethod(name = "squeeze", required = 1)
     public IRubyObject squeeze19(ThreadContext context, IRubyObject arg) {
         RubyString str = strDup(context.runtime);
         str.squeeze_bang19(context, arg);
         return str;
     }
 
-    @JRubyMethod(name = "squeeze", rest = true)
+    @JRubyMethod(name = "squeeze", required = 2, rest = true)
     public IRubyObject squeeze19(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime);
         str.squeeze_bang19(context, args);
@@ -4552,11 +4552,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "squeeze!")
     public IRubyObject squeeze_bang19(ThreadContext context) {
-        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
-            return runtime.getNil();
+            return context.nil;
         }
+        final Ruby runtime = context.runtime;
+
         final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE];
         for (int i=0; i< StringSupport.TRANS_SIZE; i++) squeeze[i] = true;
 
@@ -4574,9 +4575,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
-    @JRubyMethod(name = "squeeze!")
+    @JRubyMethod(name = "squeeze!", required = 1)
     public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
         RubyString otherStr = arg.convertToString();
         final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
@@ -4596,29 +4597,29 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
-    @JRubyMethod(name = "squeeze!", rest = true)
+    @JRubyMethod(name = "squeeze!", rest = true, required = 2)
     public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
-            return runtime.getNil();
+            return context.nil;
         }
+        final Ruby runtime = context.runtime;
 
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
         final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
 
-        boolean singlebyte = singleByteOptimizable() && otherStr.singleByteOptimizable();
+        boolean singleByte = singleByteOptimizable() && otherStr.singleByteOptimizable();
         for (int i=1; i<args.length; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
-            singlebyte = singlebyte && otherStr.singleByteOptimizable();
+            singleByte = singleByte && otherStr.singleByteOptimizable();
             tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, false, enc);
         }
 
         modifyAndKeepCodeRange();
-        if (singlebyte) {
+        if (singleByte) {
             if (! StringSupport.singleByteSqueeze(value, squeeze)) {
                 return runtime.getNil();
             }
