@@ -16,13 +16,19 @@ import java.util.List;
 public class Backtrace {
 
     private final Activation[] activations;
+    private final Throwable javaThrowable;
 
-    public Backtrace(Activation[] activations) {
+    public Backtrace(Activation[] activations, Throwable javaThrowable) {
         this.activations = activations;
+        this.javaThrowable = javaThrowable;
     }
 
     public List<Activation> getActivations() {
         return Collections.unmodifiableList(Arrays.asList(activations));
+    }
+
+    public Throwable getJavaThrowable() {
+        return javaThrowable;
     }
 
 }
