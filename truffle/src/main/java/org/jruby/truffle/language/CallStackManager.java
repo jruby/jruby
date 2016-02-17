@@ -164,7 +164,7 @@ public class CallStackManager {
 
         });
 
-        if (context.getOptions().EXCEPTIONS_STORE_JAVA) {
+        if (context.getOptions().EXCEPTIONS_STORE_JAVA || context.getOptions().BACKTRACES_INTERLEAVE_JAVA) {
             if (javaThrowable == null) {
                 javaThrowable = new Exception();
             }

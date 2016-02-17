@@ -112,6 +112,10 @@ public class BacktraceFormatter {
             }
         }
 
+        if (backtrace.getJavaThrowable() != null && context.getOptions().BACKTRACES_INTERLEAVE_JAVA) {
+            return BacktraceInterleaver.interleave(lines, backtrace.getJavaThrowable().getStackTrace());
+        }
+
         return lines;
     }
 
