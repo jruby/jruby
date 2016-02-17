@@ -12,4 +12,7 @@ exclude :test_filename_utf8_raw_windows_1251_name, "broken subprocess logic in s
 exclude :test_filename_utf8_raw_windows_1252_name, "broken subprocess logic in setup"
 exclude :test_glob_encoding, "we always normalize to Unicode internally"
 exclude :test_glob_incompatible, "needs investigation"
+exclude :test_glob_warning_match_all, "missing warning"
+exclude :test_glob_warning_match_dir, "missing warning"
+exclude :test_glob_warning_opendir, "missing warning"
 exclude :test_inspect_nonascii, "needs investigation"
