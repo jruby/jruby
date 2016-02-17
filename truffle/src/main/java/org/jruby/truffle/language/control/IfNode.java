@@ -17,23 +17,16 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Represents a Ruby {@code if} expression. Note that in this representation we always have an
- * {@code else} part.
- */
 public class IfNode extends RubyNode {
 
     @Child private BooleanCastNode condition;
     @Child private RubyNode thenBody;
     @Child private RubyNode elseBody;
+
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
     public IfNode(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode thenBody, RubyNode elseBody) {
         super(context, sourceSection);
-
-        assert condition != null;
-        assert thenBody != null;
-        assert elseBody != null;
 
         this.condition = BooleanCastNodeGen.create(context, sourceSection, condition);
         this.thenBody = thenBody;
@@ -48,4 +41,5 @@ public class IfNode extends RubyNode {
             return elseBody.execute(frame);
         }
     }
+
 }
