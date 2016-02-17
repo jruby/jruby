@@ -56,12 +56,12 @@ public class BacktraceFormatter {
         return new BacktraceFormatter(context, flags);
     }
 
-    // for debugging
+    // For debugging
     public static List<String> rubyBacktrace(RubyContext context) {
         return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, context.getCallStack().getBacktrace(null));
     }
 
-    // for debugging
+    // For debugging
     public static String printableRubyBacktrace(RubyContext context) {
         final StringBuilder builder = new StringBuilder();
         for (String line : rubyBacktrace(context)) {
@@ -92,6 +92,7 @@ public class BacktraceFormatter {
         if (backtrace == null) {
             backtrace = context.getCallStack().getBacktrace(null);
         }
+
         final List<Activation> activations = backtrace.getActivations();
         final ArrayList<String> lines = new ArrayList<>();
 
