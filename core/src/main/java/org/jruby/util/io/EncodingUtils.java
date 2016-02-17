@@ -378,7 +378,7 @@ public class EncodingUtils {
     public static void parseModeEncoding(ThreadContext context, IOEncodable ioEncodable, String option, int[] fmode_p) {
         Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
-        Encoding idx, idx2 = null;
+        Encoding idx2 = null;
         Encoding intEnc, extEnc;
         if (fmode_p == null) fmode_p = new int[]{0};
         String estr;
@@ -387,23 +387,24 @@ public class EncodingUtils {
 
         if (encs.length == 2) {
             estr = encs[0];
-            if (estr.toLowerCase().startsWith("bom|utf-")) {
-                fmode_p[0] |= OpenFile.SETENC_BY_BOM;
-                ioEncodable.setBOM(true);
-                estr = estr.substring(4);
-            }
-            idx = service.getEncodingFromString(estr);
         } else {
             estr = option;
-            if (estr.toLowerCase().startsWith("bom|utf-")) {
-                fmode_p[0] |= OpenFile.SETENC_BY_BOM;
-                ioEncodable.setBOM(true);
-                estr = estr.substring(4);
-            }
-            idx = service.getEncodingFromString(estr);
         }
 
-        extEnc = idx;
+        if (estr.toLowerCase().startsWith("bom|utf-")) {
+            fmode_p[0] |= OpenFile.SETENC_BY_BOM;
+            ioEncodable.setBOM(true);
+            estr = estr.substring(4);
+        }
+
+        EncodingDB.Entry idx = service.findEncodingOrAliasEntry(estr.getBytes());
+
+        if (idx == null) {
+            runtime.getWarnings().warn("Unsupported encoding " + estr + " ignored");
+            extEnc = null;
+        } else {
+            extEnc = idx.getEncoding();
+        }
 
         intEnc = null;
         if (encs.length == 2) {
