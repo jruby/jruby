@@ -10,9 +10,7 @@
 package org.jruby.truffle.language;
 
 /**
- * The {@link NotProvided} instance represents an argument which was <i>not provided</i>. 
- * This is necessary as we need to differentiate based on the number of passed arguments
- * and there is not a single default value that fits for omitted arguments.
+ * Represents a value that was not provided by the user, such as optional arguments to a core library node.
  */
 public final class NotProvided {
 
