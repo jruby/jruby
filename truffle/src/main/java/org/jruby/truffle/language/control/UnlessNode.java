@@ -17,14 +17,14 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
 
-public class IfNode extends RubyNode {
+public class UnlessNode extends RubyNode {
 
     @Child private BooleanCastNode condition;
     @Child private RubyNode thenBody;
 
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
-    public IfNode(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode thenBody) {
+    public UnlessNode(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode thenBody) {
         super(context, sourceSection);
 
         this.condition = BooleanCastNodeGen.create(context, sourceSection, condition);
@@ -33,7 +33,7 @@ public class IfNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (conditionProfile.profile(condition.executeBoolean(frame))) {
+        if (conditionProfile.profile(!condition.executeBoolean(frame))) {
             return thenBody.execute(frame);
         } else {
             return nil();

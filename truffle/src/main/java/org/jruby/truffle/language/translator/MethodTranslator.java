@@ -36,7 +36,7 @@ import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ShouldDestructureNode;
 import org.jruby.truffle.language.control.AndNode;
-import org.jruby.truffle.language.control.IfNode;
+import org.jruby.truffle.language.control.IfElseNode;
 import org.jruby.truffle.language.control.NotNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.dispatch.RespondToNode;
@@ -114,7 +114,7 @@ public class MethodTranslator extends BodyTranslator {
                     shouldDestructure,
                     arrayWasNotNil);
 
-            preludeProc = new IfNode(context, sourceSection,
+            preludeProc = new IfElseNode(context, sourceSection,
                     shouldDestructureAndArrayWasNotNil,
                     newDestructureArguments,
                     loadArguments);

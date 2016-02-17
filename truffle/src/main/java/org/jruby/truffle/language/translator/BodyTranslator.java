@@ -85,6 +85,7 @@ import org.jruby.truffle.language.control.BreakID;
 import org.jruby.truffle.language.control.BreakNode;
 import org.jruby.truffle.language.control.ElidableResultNode;
 import org.jruby.truffle.language.control.FrameOnStackNode;
+import org.jruby.truffle.language.control.IfElseNode;
 import org.jruby.truffle.language.control.IfNode;
 import org.jruby.truffle.language.control.NextNode;
 import org.jruby.truffle.language.control.NotNode;
@@ -96,6 +97,7 @@ import org.jruby.truffle.language.control.RetryNode;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.control.ReturnNode;
 import org.jruby.truffle.language.control.SequenceNode;
+import org.jruby.truffle.language.control.UnlessNode;
 import org.jruby.truffle.language.control.WhenSplatNode;
 import org.jruby.truffle.language.control.WhileNode;
 import org.jruby.truffle.language.defined.DefinedNode;
@@ -864,7 +866,7 @@ public class BodyTranslator extends Translator {
 
                 final RubyNode thenNode = translateNodeOrNil(sourceSection, when.getBodyNode());
 
-                final IfNode ifNode = new IfNode(context, sourceSection, conditionNode, thenNode, elseNode);
+                final IfElseNode ifNode = new IfElseNode(context, sourceSection, conditionNode, thenNode, elseNode);
 
                 // This if becomes the else for the next if
 
@@ -909,7 +911,7 @@ public class BodyTranslator extends Translator {
 
                 final RubyNode thenNode = when.getBodyNode().accept(this);
 
-                final IfNode ifNode = new IfNode(context, sourceSection, conditionNode, thenNode, elseNode);
+                final IfElseNode ifNode = new IfElseNode(context, sourceSection, conditionNode, thenNode, elseNode);
 
                 // This if becomes the else for the next if
 
@@ -1744,24 +1746,27 @@ public class BodyTranslator extends Translator {
     public RubyNode visitIfNode(org.jruby.ast.IfNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        org.jruby.ast.Node thenBody = node.getThenBody();
-
-        if (thenBody == null || thenBody.isNil()) {
-            thenBody = new org.jruby.ast.NilNode(node.getPosition());
-        }
-
-        org.jruby.ast.Node elseBody = node.getElseBody();
-
-        if (elseBody == null || elseBody.isNil()) {
-            elseBody = new org.jruby.ast.NilNode(node.getPosition());
-        }
-
         final RubyNode condition = translateNodeOrNil(sourceSection, node.getCondition());
 
-        final RubyNode thenBodyTranslated = thenBody.accept(this);
-        final RubyNode elseBodyTranslated = elseBody.accept(this);
+        org.jruby.ast.Node thenBody = node.getThenBody();
+        org.jruby.ast.Node elseBody = node.getElseBody();
 
-        final RubyNode ret = new IfNode(context, sourceSection, condition, thenBodyTranslated, elseBodyTranslated);
+        final RubyNode ret;
+
+        if (thenBody != null && elseBody != null) {
+            final RubyNode thenBodyTranslated = thenBody.accept(this);
+            final RubyNode elseBodyTranslated = elseBody.accept(this);
+            ret = new IfElseNode(context, sourceSection, condition, thenBodyTranslated, elseBodyTranslated);
+        } else if (thenBody != null) {
+            final RubyNode thenBodyTranslated = thenBody.accept(this);
+            ret = new IfNode(context, sourceSection, condition, thenBodyTranslated);
+        } else if (elseBody != null) {
+            final RubyNode elseBodyTranslated = elseBody.accept(this);
+            ret = new UnlessNode(context, sourceSection, condition, elseBodyTranslated);
+        } else {
+            ret = SequenceNode.sequence(context, sourceSection, condition, new NilNode(context, sourceSection));
+        }
+
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2277,7 +2282,7 @@ public class BodyTranslator extends Translator {
                 final RubyNode atLeastAsLarge = SequenceNode.sequence(context, sourceSection, atLeastAsLargeSequence);
 
                 final RubyNode assignPost =
-                        new IfNode(context, sourceSection,
+                        new IfElseNode(context, sourceSection,
                                 new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + node.getPostCount()),
                                 atLeastAsLarge,
                                 smaller);
@@ -2417,7 +2422,7 @@ public class BodyTranslator extends Translator {
             final RubyNode atLeastAsLarge = SequenceNode.sequence(context, sourceSection, atLeastAsLargeSequence);
 
             final RubyNode assignPost =
-                    new IfNode(context, sourceSection,
+                    new IfElseNode(context, sourceSection,
                     new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + node.getPostCount()),
                             atLeastAsLarge,
                             smaller);
