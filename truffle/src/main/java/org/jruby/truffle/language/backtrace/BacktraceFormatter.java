@@ -35,7 +35,8 @@ public class BacktraceFormatter {
     public enum FormattingFlags {
         OMIT_EXCEPTION,
         OMIT_FROM_PREFIX,
-        INCLUDE_CORE_FILES
+        INCLUDE_CORE_FILES,
+        INTERLEAVE_JAVA
     }
 
     private final RubyContext context;
@@ -46,6 +47,10 @@ public class BacktraceFormatter {
 
         if (!context.getOptions().BACKTRACES_HIDE_CORE_FILES) {
             flags.add(FormattingFlags.INCLUDE_CORE_FILES);
+        }
+
+        if (context.getOptions().BACKTRACES_INTERLEAVE_JAVA) {
+            flags.add(FormattingFlags.INTERLEAVE_JAVA);
         }
 
         return new BacktraceFormatter(context, flags);
@@ -112,7 +117,7 @@ public class BacktraceFormatter {
             }
         }
 
-        if (backtrace.getJavaThrowable() != null && context.getOptions().BACKTRACES_INTERLEAVE_JAVA) {
+        if (backtrace.getJavaThrowable() != null && flags.contains(FormattingFlags.INTERLEAVE_JAVA)) {
             return BacktraceInterleaver.interleave(lines, backtrace.getJavaThrowable().getStackTrace());
         }
 
