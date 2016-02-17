@@ -44,6 +44,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -135,7 +136,12 @@ public class UnmarshalStream extends InputStream {
             result = unmarshalObjectDirectly(type, state, callProc);
         }
 
-        if (!(result instanceof RubyNumeric)) result.setTaint(taint);
+        if (!(
+                result instanceof RubyNumeric ||
+                result instanceof RubyEncoding
+        )) {
+            result.setTaint(taint);
+        }
 
         return result;
     }
@@ -427,12 +433,22 @@ public class UnmarshalStream extends InputStream {
         ByteList marshaled = unmarshalString();
         RubyClass classInstance = findClass(className);
         RubyString data = RubyString.newString(runtime, marshaled);
-        if (state.isIvarWaiting()) {
-            defaultVariablesUnmarshal(data);
-            state.setIvarWaiting(false);
+        IRubyObject unmarshaled;
+
+        // Special case Encoding so they are singletons
+        // See https://bugs.ruby-lang.org/issues/11760
+        if (classInstance == runtime.getEncoding()) {
+            unmarshaled = RubyEncoding.find(runtime.getCurrentContext(), classInstance, data);
+        } else {
+            if (state.isIvarWaiting()) {
+                defaultVariablesUnmarshal(data);
+                state.setIvarWaiting(false);
+            }
+            unmarshaled = classInstance.smartLoadOldUser(data);
         }
-        IRubyObject unmarshaled = classInstance.smartLoadOldUser(data);
+
         registerLinkTarget(unmarshaled);
+
         return unmarshaled;
     }
 
