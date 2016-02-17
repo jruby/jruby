@@ -675,9 +675,21 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            return call(context, self, clazz, name, args);
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+                // still delegate to different arity calls as they might get overriden e.g. for native
+                // JRuby methods that use overloading for different kind arity of received arguments !
+                case 0:
+                    return call(context, self, clazz, name);
+                case 1:
+                    return call(context, self, clazz, name, args[0]);
+                case 2:
+                    return call(context, self, clazz, name, args[0], args[1]);
+                default:
+                    return call(context, self, clazz, name, args);
+            }
         }
+
     }
 
 
