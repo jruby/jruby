@@ -1,6 +1,7 @@
 require 'test/unit'
 
 class TestHash < Test::Unit::TestCase
+
   def test_clone_copies_default_initializer
     hash = Hash.new { |h, k| h[k] = 0 }
     clone = hash.clone
@@ -88,7 +89,23 @@ class TestHash < Test::Unit::TestCase
     passed = []; ret = hash.collect { |k,v| passed << k; passed << v; passed.size < 3 }
     assert_equal [:a, 1, :b, 2, :c, 3], passed
     assert_equal [true, false, false], ret
+  end
 
+  def test_compare_by_identity
+    hash = {}.compare_by_identity
+    arr = [0]
+    hash[arr] = 42
+    arr[0] = 1
+    assert_equal 42, hash[arr]
+
+    hash = {}.compare_by_identity
+    arr1 = []; arr2 = []
+    hash[arr2] = 2
+    assert_equal nil, hash[arr1]
+    assert_equal 2, hash[arr2]
+    hash[arr1] = 1
+    assert_equal 1, hash[arr1]
+    assert_equal 2, hash[arr2]
   end
 
 end
