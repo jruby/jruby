@@ -433,7 +433,13 @@ public class RubyKernel {
 
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_string19(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return TypeConverter.convertToType19(object, context.runtime.getString(), "to_s");
+        Ruby runtime = context.runtime;
+
+        IRubyObject tmp = TypeConverter.checkStringType(runtime, object);
+        if (tmp.isNil()) {
+            tmp = TypeConverter.convertToType19(object, context.runtime.getString(), "to_s");
+        }
+        return tmp;
     }
 
     // MRI: rb_f_p_internal
