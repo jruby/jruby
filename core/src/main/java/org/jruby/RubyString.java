@@ -1504,7 +1504,42 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        replace19(arg0);
+        IRubyObject tmp = ArgsUtil.getOptionsArg(context.runtime, arg0);
+        if (tmp.isNil()) {
+            return initialize(context, arg0, null);
+        }
+
+        return initialize(context, null, (RubyHash) tmp);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject opts) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject tmp = ArgsUtil.getOptionsArg(context.runtime, opts);
+        if (tmp.isNil()) {
+            throw runtime.newArgumentError(2, 1);
+        }
+
+        return initialize(context, arg0, (RubyHash) tmp);
+    }
+
+    private IRubyObject initialize(ThreadContext context, IRubyObject arg0, RubyHash opts) {
+        Ruby runtime = context.runtime;
+
+        if (arg0 != null) {
+            replace19(arg0);
+        }
+
+        if (opts != null) {
+            IRubyObject encoding = opts.fastARef(context.runtime.newSymbol("encoding"));
+
+            if (!encoding.isNil()) {
+                modify();
+                setEncodingAndCodeRange(runtime.getEncodingService().getEncodingFromObject(encoding), CR_UNKNOWN);
+            }
+        }
+
         return this;
     }
 
