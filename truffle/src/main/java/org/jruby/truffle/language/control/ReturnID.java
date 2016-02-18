@@ -10,5 +10,5 @@
 package org.jruby.truffle.language.control;
 
 public class ReturnID {
-    
+
 }

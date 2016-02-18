@@ -469,7 +469,7 @@ public class BodyTranslator extends Translator {
             resultNode = node.getValueNode().accept(this);
         }
 
-        final RubyNode ret = new BreakNode(context, sourceSection, environment.getBreakID(), resultNode, translatingWhile);
+        final RubyNode ret = new BreakNode(context, sourceSection, environment.getBreakID(), translatingWhile, resultNode);
         return addNewlineIfNeeded(node, ret);
     }
 
