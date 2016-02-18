@@ -1275,7 +1275,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (obj instanceof RubyString) return (RubyString) obj;
         IRubyObject str = obj.callMethod(context, "to_s");
         if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
-        if (obj.isTaint()) str.setTaint(true);
+        // taint string if it is not untainted and not frozen
+        // TODO: MRI sets an fstring flag on fstrings and uses that flag here
+        if (obj.isTaint() && !str.isTaint() && !str.isFrozen()) str.setTaint(true);
         return (RubyString) str;
     }
 
