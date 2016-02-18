@@ -47,6 +47,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -155,7 +156,12 @@ public class Sprintf {
             if (name != null) {
                 if (rubyHash == null) raiseArgumentError("positional args mixed with named args");
 
-                IRubyObject object = rubyHash.fastARef(runtime.newSymbol(name));
+                RubySymbol nameSym = runtime.newSymbol(name);
+                IRubyObject object = rubyHash.fastARef(nameSym);
+
+                // if not found, try dispatching to pick up default hash value
+                if (object == null) object = rubyHash.callMethod(runtime.getCurrentContext(), "[]", nameSym);
+                
                 if (object == null) raiseKeyError("key<" + name + "> not found");
                 return object;
             } else if (rubyHash != null) {
