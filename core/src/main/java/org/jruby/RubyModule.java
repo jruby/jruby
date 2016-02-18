@@ -3760,7 +3760,7 @@ public class RubyModule extends RubyObject {
     public void defineConstant(String name, IRubyObject value) {
         assert value != null;
 
-        if (!IdUtil.isValidConstantName(name)) {
+        if (!IdUtil.isValidConstantName19(name)) {
             throw getRuntime().newNameError("bad constant name " + name, name);
         }
 

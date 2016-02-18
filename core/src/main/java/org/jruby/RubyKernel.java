@@ -164,7 +164,7 @@ public class RubyKernel {
         final Ruby runtime = context.runtime;
         final String nonInternedName = symbol.asJavaString();
 
-        if (!IdUtil.isValidConstantName(nonInternedName)) {
+        if (!IdUtil.isValidConstantName19(nonInternedName)) {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
 
