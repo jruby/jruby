@@ -334,6 +334,8 @@ public class TraceType {
 
                 if (path != null) {
                     errorStream.print(" (" + path + ")\n");
+                } else {
+                    errorStream.print('\n');
                 }
 
                 if (tail != null) {
