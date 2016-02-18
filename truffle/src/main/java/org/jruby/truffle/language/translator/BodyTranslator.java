@@ -98,7 +98,6 @@ import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.control.ReturnNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.control.UnlessNode;
-import org.jruby.truffle.language.control.WhenSplatNode;
 import org.jruby.truffle.language.control.WhileNode;
 import org.jruby.truffle.language.defined.DefinedNode;
 import org.jruby.truffle.language.defined.DefinedWrapperNode;
@@ -840,15 +839,10 @@ public class BodyTranslator extends Translator {
                 for (org.jruby.ast.Node expressionNode : expressions) {
                     final RubyNode rubyExpression = expressionNode.accept(this);
 
-                    if (expressionNode instanceof org.jruby.ast.SplatNode) {
-                        final SplatCastNode splatCastNode = (SplatCastNode) rubyExpression;
-                        comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), splatCastNode));
-                    } else if (expressionNode instanceof org.jruby.ast.ArgsCatNode) {
-                        final ArrayConcatNode arrayConcatNode = (ArrayConcatNode) rubyExpression;
-                        comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), arrayConcatNode));
-                    } else if (expressionNode instanceof org.jruby.ast.ArgsPushNode) {
-                        final PushOneNode pushOneNode = (PushOneNode) rubyExpression;
-                        comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), pushOneNode));
+                    if (expressionNode instanceof org.jruby.ast.SplatNode
+                            || expressionNode instanceof org.jruby.ast.ArgsCatNode
+                            || expressionNode instanceof org.jruby.ast.ArgsPushNode) {
+                        comparisons.add(new RubyCallNode(context, sourceSection, "when_splat", new SelfNode(context, sourceSection), null, false, true, rubyExpression, NodeUtil.cloneNode(readTemp)));
                     } else {
                         comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, true, NodeUtil.cloneNode(readTemp)));
                     }
