@@ -9,18 +9,21 @@
  */
 package org.jruby.truffle.language.control;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.AssumedValue;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
+/**
+ * Executes a child node just once, and uses the same value each subsequent time the node is exeuted.
+ */
 public class OnceNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    // TODO(CS): need to always copy this with cloned nodes
-    private final AssumedValue<Object> valueMemo = new AssumedValue<>("OnceNode", null);
+    private final AssumedValue<Object> valueMemo = new AssumedValue<>(OnceNode.class.getName(), null);
 
     public OnceNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
@@ -32,10 +35,12 @@ public class OnceNode extends RubyNode {
         Object value = valueMemo.get();
 
         if (value == null) {
+            CompilerDirectives.transferToInterpreter();
             value = child.execute(frame);
             valueMemo.set(value);
         }
 
         return value;
     }
+
 }
