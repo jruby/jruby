@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.language.control;
 
-/**
- * Ties returns to their methods
- */
 public class ReturnID {
+    
 }

@@ -14,5 +14,5 @@ public class TruffleFatalException extends RuntimeException {
     public TruffleFatalException(String message, Exception cause) {
         super(message, cause);
     }
-    
+
 }
