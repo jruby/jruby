@@ -764,7 +764,7 @@ public class CoreLibrary {
 
             Main.printTruffleTimeMetric("after-load-core");
         } catch (RaiseException e) {
-            final Object rubyException = e.getRubyException();
+            final Object rubyException = e.getException();
             BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace(context, (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
             throw new TruffleFatalException("couldn't load the core library", e);
         } finally {

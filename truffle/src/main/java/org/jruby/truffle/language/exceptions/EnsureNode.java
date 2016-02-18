@@ -73,7 +73,7 @@ public class EnsureNode extends RubyNode {
         final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
 
         final Object lastException = threadLocals.get("$!", nil());
-        threadLocals.set("$!", exception.getRubyException());
+        threadLocals.set("$!", exception.getException());
         try {
             ensurePart.executeVoid(frame);
             return exception;

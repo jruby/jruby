@@ -397,7 +397,7 @@ public abstract class StringNodes {
 
                     return compare(a, coerced);
                 } catch (RaiseException e) {
-                    if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getTypeErrorClass()) {
+                    if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == getContext().getCoreLibrary().getTypeErrorClass()) {
                         return nil();
                     } else {
                         throw e;

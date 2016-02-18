@@ -11,9 +11,6 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 
-/**
- * Controls an explicit return from a method.
- */
 public final class ReturnException extends ControlFlowException {
 
     private final ReturnID returnID;
@@ -24,20 +21,12 @@ public final class ReturnException extends ControlFlowException {
         this.value = value;
     }
 
-    /**
-     * Return the return ID of this return that identifies where it intends to return to.
-     */
     public ReturnID getReturnID() {
         return returnID;
     }
 
-    /**
-     * Get the value that has been returned.
-     */
     public Object getValue() {
         return value;
     }
-
-    private static final long serialVersionUID = -9177536212065610691L;
 
 }

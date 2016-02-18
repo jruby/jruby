@@ -117,7 +117,7 @@ public abstract class ThreadNodes {
             Layouts.THREAD.setValue(thread, context.getCoreLibrary().getNilObject());
             return;
         } catch (RaiseException e) {
-            Layouts.THREAD.setException(thread, e.getRubyException());
+            Layouts.THREAD.setException(thread, e.getException());
         } catch (ReturnException e) {
             Layouts.THREAD.setException(thread, context.getCoreLibrary().unexpectedReturn(currentNode));
         } finally {

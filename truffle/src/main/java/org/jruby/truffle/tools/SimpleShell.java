@@ -81,7 +81,7 @@ public class SimpleShell {
 
                         System.console().writer().println(inspected);
                     } catch (RaiseException e) {
-                        final Object rubyException = e.getRubyException();
+                        final Object rubyException = e.getException();
 
                         BacktraceFormatter.createDefaultFormatter(context).printBacktrace(context, (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException), System.console().writer());
                     }
