@@ -1053,6 +1053,7 @@ q.pop
   def test_thread_name
     t = Thread.start {sleep}
     assert_nil t.name
+    Thread.pass until t.stop?
     s = t.inspect
     t.name = 'foo'
     assert_equal 'foo', t.name

@@ -1,4 +1,13 @@
 /*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
+/*
  * Copyright (c) 2013, 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
@@ -24,24 +33,38 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.joni.*;
+import org.joni.Matcher;
+import org.joni.NameEntry;
+import org.joni.Option;
+import org.joni.Regex;
+import org.joni.Region;
+import org.joni.Syntax;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
-import org.jruby.truffle.core.*;
-import org.jruby.truffle.core.rope.*;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.RubiniusOnly;
 import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
-import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.RubyCallStack;
-import org.jruby.truffle.RubyContext;
-import org.jruby.util.*;
+import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
+import org.jruby.util.RegexpSupport;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
@@ -58,7 +81,7 @@ public abstract class RegexpNodes {
 
         final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
         final Encoding enc = checkEncoding(regexp, sourceRope, true);
-        final ByteList preprocessed = RegexpSupport.preprocess(context.getRuntime(), regexpSourceRope.getUnsafeByteList(), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
+        final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), regexpSourceRope.getUnsafeByteList(), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
         final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
         final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), sourceRope.begin() + sourceRope.realSize());
@@ -82,7 +105,7 @@ public abstract class RegexpNodes {
             RegexpSetLastMatchPrimitiveNode.setLastMatch(context, nil);
 
             if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
-                final Frame frame = RubyCallStack.getCallerFrame(context).getFrame(FrameAccess.READ_WRITE, true);
+                final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, true);
                 for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                     final NameEntry e = i.next();
                     final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
@@ -139,7 +162,7 @@ public abstract class RegexpNodes {
         RegexpSetLastMatchPrimitiveNode.setLastMatch(context, matchObject);
 
         if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
-            final Frame frame = RubyCallStack.getCallerFrame(context).getFrame(FrameAccess.READ_WRITE, true);
+            final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, true);
             for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
                 final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
@@ -172,7 +195,6 @@ public abstract class RegexpNodes {
         }
     }
 
-    @TruffleBoundary
     private static DynamicObject createSubstring(RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject source, int start, int length) {
         assert RubyGuards.isRubyString(source);
 
@@ -224,8 +246,7 @@ public abstract class RegexpNodes {
                     throw new UnsupportedOperationException();
             }
 
-            // TODO (nirvdrum 25-Jan-16): We probably just want a way to create a Rope from a java.lang.String.
-            bytes = StringOperations.ropeFromByteList(ByteList.create(bytesString));
+            bytes = StringOperations.createRope(bytesString, ASCIIEncoding.INSTANCE);
         }
 
         return bytes;
@@ -254,11 +275,11 @@ public abstract class RegexpNodes {
             final ByteList byteList = bytes.getUnsafeByteList();
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
-            ByteList unescaped = RegexpSupport.preprocess(context.getRuntime(), byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            ByteList unescaped = RegexpSupport.preprocess(context.getJRubyRuntime(), byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             if (fixedEnc[0] != null) {
                 if ((fixedEnc[0] != enc && options.isFixed()) ||
                         (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
-                    RegexpSupport.raiseRegexpError19(context.getRuntime(), byteList, enc, options, "incompatible character encoding");
+                    RegexpSupport.raiseRegexpError19(context.getJRubyRuntime(), byteList, enc, options, "incompatible character encoding");
                 }
                 if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
                     options.setFixed(true);
@@ -422,21 +443,6 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "escape", onSingleton = true, required = 1)
-    public abstract static class EscapeNode extends CoreMethodArrayArgumentsNode {
-
-        public EscapeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(pattern)")
-        public DynamicObject escape(DynamicObject pattern) {
-            return createString(StringOperations.encodeRope(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteListReadOnly(pattern)), true).toString(), UTF8Encoding.INSTANCE));
-        }
-
-    }
-
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
@@ -537,7 +543,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), Layouts.REGEXP.getSource(regexp).getUnsafeByteList(), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
+            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getJRubyRuntime(), Layouts.REGEXP.getSource(regexp).getUnsafeByteList(), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
         }
 
     }

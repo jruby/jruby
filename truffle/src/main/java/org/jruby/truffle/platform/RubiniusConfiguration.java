@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -37,11 +37,6 @@
  */
 package org.jruby.truffle.platform;
 
-import org.jruby.ext.ffi.Platform;
-import org.jruby.truffle.platform.darwin.DarwinRubiniusConfiguration;
-import org.jruby.truffle.platform.linux.LinuxRubiniusConfiguration;
-import org.jruby.truffle.RubyContext;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,30 +44,9 @@ import java.util.Map;
 
 public class RubiniusConfiguration {
 
-    public static RubiniusConfiguration create(RubyContext context) {
-        final RubiniusConfiguration configuration = new RubiniusConfiguration();
-
-        DefaultRubiniusConfiguration.load(configuration, context);
-
-        switch (Platform.getPlatform().getOS()) {
-            case DARWIN:
-                DarwinRubiniusConfiguration.load(configuration, context);
-                break;
-
-            case LINUX:
-                LinuxRubiniusConfiguration.load(configuration, context);
-                break;
-
-            default:
-                throw new UnsupportedOperationException();
-        }
-
-        return configuration;
-    }
-
     private final Map<String, Object> configuration = new HashMap<>(); // Only written to by create() once per RubyContext.
 
-    private RubiniusConfiguration() {
+    public RubiniusConfiguration() {
     }
 
     public void config(String key, Object value) {

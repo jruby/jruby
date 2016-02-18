@@ -13,7 +13,12 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -22,52 +27,75 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.BranchProfile;
-import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.CoreSourceSection;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.core.coerce.ToAryNodeGen;
+import org.jruby.truffle.core.coerce.ToIntNode;
+import org.jruby.truffle.core.coerce.ToIntNodeGen;
 import org.jruby.truffle.core.format.parser.PackCompiler;
 import org.jruby.truffle.core.format.runtime.PackResult;
-import org.jruby.truffle.core.format.runtime.exceptions.*;
+import org.jruby.truffle.core.format.runtime.exceptions.CantCompressNegativeException;
+import org.jruby.truffle.core.format.runtime.exceptions.CantConvertException;
+import org.jruby.truffle.core.format.runtime.exceptions.NoImplicitConversionException;
+import org.jruby.truffle.core.format.runtime.exceptions.OutsideOfStringException;
+import org.jruby.truffle.core.format.runtime.exceptions.PackException;
+import org.jruby.truffle.core.format.runtime.exceptions.RangeException;
+import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.proc.ProcNodes;
-import org.jruby.truffle.core.rope.*;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rope.ValidLeafRope;
+import org.jruby.truffle.core.string.StringCachingGuards;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.StringCachingGuards;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.core.coerce.ToAryNodeGen;
-import org.jruby.truffle.core.coerce.ToIntNode;
-import org.jruby.truffle.core.coerce.ToIntNodeGen;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.locals.ReadDeclarationVariableNode;
-import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.objects.*;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.CoreSourceSection;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.methods.Arity;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.objects.IsFrozenNode;
+import org.jruby.truffle.language.objects.IsFrozenNodeGen;
+import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.objects.TaintNodeGen;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.util.Memo;
 
 import java.util.Arrays;
-import static org.jruby.truffle.core.array.ArrayHelpers.*;
+
+import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
+import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
+import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
+import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
@@ -299,7 +327,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isRubyString(string)")
         public Object mulObject(VirtualFrame frame, DynamicObject array, DynamicObject string) {
             CompilerDirectives.transferToInterpreter();
-            return ruby(frame, "join(sep)", "sep", string);
+            return ruby("join(sep)", "sep", string);
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isRubyString(object)" })
@@ -310,7 +338,7 @@ public abstract class ArrayNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
             if (respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
-                return ruby(frame, "join(sep.to_str)", "sep", object);
+                return ruby("join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -1248,7 +1276,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object eachWithIndexObject(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            return ruby(frame, "to_enum(:each_with_index)");
+            return ruby("to_enum(:each_with_index)");
         }
 
     }
@@ -2157,7 +2185,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object max(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return ruby(frame, "array.max_internal(&block)", "array", array, "block", block);
+            return ruby("array.max_internal(&block)", "array", array, "block", block);
         }
 
     }
@@ -2214,12 +2242,10 @@ public abstract class ArrayNodes {
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
-                    context, sourceSection, null, sharedMethodInfo,
-                    ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                            new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
-                            new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
-                    })));
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
+                                        new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
+                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                                }), false));
         }
 
         public FrameDescriptor getFrameDescriptor() {
@@ -2277,7 +2303,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object min(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return ruby(frame, "array.min_internal(&block)", "array", array, "block", block);
+            return ruby("array.min_internal(&block)", "array", array, "block", block);
         }
 
     }
@@ -2334,12 +2360,10 @@ public abstract class ArrayNodes {
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
-                    context, sourceSection, null, sharedMethodInfo,
-                    ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                            new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
-                            new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
-                    })));
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
+                                        new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
+                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                                }), false));
         }
 
         public FrameDescriptor getFrameDescriptor() {
@@ -2478,27 +2502,27 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object pack(VirtualFrame frame, DynamicObject array, boolean format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization
         public Object pack(VirtualFrame frame, DynamicObject array, int format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization
         public Object pack(VirtualFrame frame, DynamicObject array, long format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization(guards = "isNil(format)")
         public Object packNil(VirtualFrame frame, DynamicObject array, Object format) {
-            return ruby(frame, "raise TypeError");
+            return ruby("raise TypeError");
         }
 
         @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
         public Object pack(VirtualFrame frame, DynamicObject array, Object format) {
-            return ruby(frame, "pack(format.to_str)", "format", format);
+            return ruby("pack(format.to_str)", "format", format);
         }
 
         @TruffleBoundary
@@ -4135,12 +4159,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "!isNullArray(array)" })
         public Object sortUsingRubinius(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", getSize(array), "block", block);
+            return ruby("sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", getSize(array), "block", block);
         }
 
         @Specialization(guards = { "!isNullArray(array)", "!isSmall(array)" })
         public Object sortUsingRubinius(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
+            return ruby("sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
         }
 
         private int castSortValue(Object value) {

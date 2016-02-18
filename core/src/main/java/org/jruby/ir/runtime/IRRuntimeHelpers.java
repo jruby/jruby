@@ -674,10 +674,17 @@ public class IRRuntimeHelpers {
     public static IRubyObject isDefinedMethod(ThreadContext context, IRubyObject receiver, String name, boolean checkIfPublic) {
         DynamicMethod method = receiver.getMetaClass().searchMethod(name);
 
-        // If we find the method we optionally check if it is public before returning "method".
-        if (!method.isUndefined() &&  (!checkIfPublic || method.getVisibility() == Visibility.PUBLIC)) {
-            return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
+        boolean defined = !method.isUndefined();
+
+        if (defined) {
+            // If we find the method we optionally check if it is public before returning "method".
+            defined = !checkIfPublic || method.getVisibility() == Visibility.PUBLIC;
+        } else {
+            // If we did not find the method, check respond_to_missing?
+            defined = receiver.respondsToMissing(name, checkIfPublic);
         }
+
+        if (defined) return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
 
         return context.nil;
     }

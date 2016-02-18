@@ -356,11 +356,11 @@ public class RubyRipper extends RubyObject {
         
         return filename.convertToString();
     }
-    
+
     private int lineAsInt(ThreadContext context, IRubyObject line) {
         if (line == null || line.isNil()) return 0;
-        
-        return RubyNumeric.fix2int(line.convertToInteger());
+
+        return RubyNumeric.fix2int(line.convertToInteger()) - 1;
     }
     
     private RipperParserBase parser = null;

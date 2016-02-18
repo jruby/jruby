@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,20 +20,21 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
-import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.encoding.EncodingConverterNodes;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.util.ByteList;
+
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
 /**

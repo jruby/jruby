@@ -1807,11 +1807,15 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
+        Visibility visibility = context.getCurrentVisibility();
+        return defineMethodFromBlock(context, arg0, block, visibility);
+    }
+
+    public IRubyObject defineMethodFromBlock(ThreadContext context, IRubyObject arg0, Block block, Visibility visibility) {
         final Ruby runtime = context.runtime;
         RubySymbol nameSym = TypeConverter.checkID(arg0);
         String name = nameSym.toString();
         DynamicMethod newMethod;
-        Visibility visibility = PUBLIC;
 
         if (!block.isGiven()) {
             throw runtime.newArgumentError("tried to create Proc object without a block");
@@ -1848,11 +1852,15 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        Visibility visibility = context.getCurrentVisibility();
+        return defineMethodFromCallable(context, arg0, arg1, visibility);
+    }
+
+    public IRubyObject defineMethodFromCallable(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Visibility visibility) {
         final Ruby runtime = context.runtime;
         RubySymbol nameSym = TypeConverter.checkID(arg0);
         String name = nameSym.toString();
         DynamicMethod newMethod;
-        Visibility visibility = PUBLIC;
 
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
@@ -1873,6 +1881,7 @@ public class RubyModule extends RubyObject {
 
         return nameSym;
     }
+
     @Deprecated
     public IRubyObject define_method(ThreadContext context, IRubyObject[] args, Block block) {
         switch (args.length) {
@@ -3704,21 +3713,21 @@ public class RubyModule extends RubyObject {
      */
     private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn) {
         IRubyObject oldValue = fetchConstant(name);
+
+        setParentForModule(name, value);
+
         if (oldValue != null) {
-            if (oldValue == UNDEF) {
-                setAutoloadConstant(name, value);
-            } else {
-                if (warn) {
+            boolean notAutoload = oldValue != UNDEF;
+            if (notAutoload || !setAutoloadConstant(name, value)) {
+                if (warn && notAutoload) {
                     getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
-                setParentForModule(name, value);
                 // might just call storeConstant(name, value, hidden) but to maintain
                 // backwards compatibility with calling #storeConstant overrides
                 if (hidden) storeConstant(name, value, true);
                 else storeConstant(name, value);
             }
         } else {
-            setParentForModule(name, value);
             if (hidden) storeConstant(name, value, true);
             else storeConstant(name, value);
         }
@@ -3751,7 +3760,7 @@ public class RubyModule extends RubyObject {
     public void defineConstant(String name, IRubyObject value) {
         assert value != null;
 
-        if (!IdUtil.isValidConstantName(name)) {
+        if (!IdUtil.isValidConstantName19(name)) {
             throw getRuntime().newNameError("bad constant name " + name, name);
         }
 
@@ -4239,6 +4248,7 @@ public class RubyModule extends RubyObject {
             storeConstant(name, value);
         }
         removeAutoload(name);
+        invalidateConstantCache(name);
         return value;
     }
 
@@ -4261,17 +4271,14 @@ public class RubyModule extends RubyObject {
     /**
      * Set an Object as a defined constant in autoloading.
      */
-    private void setAutoloadConstant(String name, IRubyObject value) {
+    private boolean setAutoloadConstant(String name, IRubyObject value) {
         final Autoload autoload = getAutoloadMap().get(name);
         if ( autoload != null ) {
-            if ( ! autoload.setConstant(getRuntime().getCurrentContext(), value) ) {
-                storeConstant(name, value);
-                removeAutoload(name);
-            }
+            boolean set = autoload.setConstant(getRuntime().getCurrentContext(), value);
+            if ( ! set ) removeAutoload(name);
+            return set;
         }
-        else {
-            storeConstant(name, value);
-        }
+        return false;
     }
 
     /**

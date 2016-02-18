@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,6 +13,9 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
+import org.jruby.truffle.interop.JRubyContextWrapper;
+import org.jruby.truffle.platform.Graal;
+import org.jruby.util.cli.Options;
 
 import java.io.IOException;
 
@@ -21,12 +24,16 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     private final PolyglotEngine engine;
     private final RubyContext context;
 
-    // Run by reflection from Ruby#loadTruffle
+    // Created by reflection from Ruby#loadTruffle
+
     public JRubyTruffleImpl(Ruby runtime) {
-        engine = PolyglotEngine.newBuilder().globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new RubyLanguage.JRubyContextWrapper(runtime)).build();
+        engine = PolyglotEngine.newBuilder()
+                .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new JRubyContextWrapper(runtime))
+                .build();
 
         try {
-            context = (RubyContext) engine.eval(Source.fromText("Truffle::Primitive.context", "context").withMimeType(RubyLanguage.MIME_TYPE)).get();
+            context = (RubyContext) engine.eval(Source.fromText("Truffle::Primitive.context", "context")
+                    .withMimeType(RubyLanguage.MIME_TYPE)).get();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -34,10 +41,17 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
     @Override
     public Object execute(org.jruby.ast.RootNode rootNode) {
+        if (!Graal.isGraal() && Options.TRUFFLE_GRAAL_WARNING_UNLESS.load()) {
+            System.err.println("WARNING: This JVM does not have the Graal compiler. " +
+                    "JRuby+Truffle's performance without it will be limited. " +
+                    "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
+        }
+
         context.setInitialJRubyRootNode(rootNode);
 
         try {
-            return engine.eval(Source.fromText("Truffle::Primitive.run_jruby_root", "run_jruby_root").withMimeType(RubyLanguage.MIME_TYPE)).get();
+            return engine.eval(Source.fromText("Truffle::Primitive.run_jruby_root", "run_jruby_root")
+                    .withMimeType(RubyLanguage.MIME_TYPE)).get();
         } catch (IOException e) {
             if (e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
@@ -51,4 +65,5 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     public void dispose() {
         engine.dispose();
     }
+    
 }

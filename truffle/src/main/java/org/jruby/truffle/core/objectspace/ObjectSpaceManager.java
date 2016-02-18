@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,10 +18,16 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.core.thread.ThreadNodes;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.ObjectIDOperations;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Supports the Ruby {@code ObjectSpace} module. Object IDs are lazily allocated {@code long}
@@ -62,6 +68,8 @@ public class ObjectSpaceManager {
     @CompilerDirectives.CompilationFinal private boolean isTracing = false;
     private int tracingAssumptionActivations = 0;
     private boolean tracingPaused = false;
+
+    private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
     public ObjectSpaceManager(RubyContext context) {
         this.context = context;
@@ -181,6 +189,17 @@ public class ObjectSpaceManager {
 
     public boolean isTracing() {
         return isTracing;
+    }
+
+    public long getNextObjectID() {
+        final long id = nextObjectID.getAndAdd(2);
+
+        if (id < 0) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RuntimeException("Object IDs exhausted");
+        }
+
+        return id;
     }
 
 }

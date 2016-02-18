@@ -7,7 +7,6 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'

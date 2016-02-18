@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,19 +15,19 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
@@ -71,7 +71,7 @@ public abstract class FloatNodes {
         // TODO (pitr 14-Sep-2015): all coerces should be replaced with a CallDispatchHeadNodes to speed up things like `5 + rational`
         @Specialization(guards = "!isRubyBignum(b)")
         public Object addCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :+, b", "b", b);
+            return ruby("redo_coerced :+, b", "b", b);
         }
     }
 
@@ -99,7 +99,7 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object subCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :-, b", "b", b);
+            return ruby("redo_coerced :-, b", "b", b);
         }
 
     }
@@ -128,7 +128,7 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object mulCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :*, b", "b", b);
+            return ruby("redo_coerced :*, b", "b", b);
         }
 
     }
@@ -174,7 +174,7 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object powCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :**, b", "b", b);
+            return ruby("redo_coerced :**, b", "b", b);
         }
 
     }
@@ -256,7 +256,7 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object modCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :mod, b", "b", b);
+            return ruby("redo_coerced :mod, b", "b", b);
         }
 
     }
@@ -288,7 +288,7 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object divModCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :divmod, b", "b", b);
+            return ruby("redo_coerced :divmod, b", "b", b);
         }
 
     }
@@ -321,7 +321,7 @@ public abstract class FloatNodes {
                 "!isLong(b)",
                 "!isDouble(b)" })
         public Object lessCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
     }
 
@@ -353,7 +353,7 @@ public abstract class FloatNodes {
                 "!isLong(b)",
                 "!isDouble(b)" })
         public Object lessEqualCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -486,7 +486,7 @@ public abstract class FloatNodes {
                 "!isLong(b)",
                 "!isDouble(b)" })
         public Object greaterEqualCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
 
     }
@@ -519,7 +519,7 @@ public abstract class FloatNodes {
                 "!isLong(b)",
                 "!isDouble(b)" })
         public Object greaterCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
+            return ruby("b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
     }
 
@@ -674,7 +674,7 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "wasProvided(ndigits)")
         public Object round(VirtualFrame frame, double n, Object ndigits) {
-            return ruby(frame, "round_internal(ndigits)", "ndigits", ndigits);
+            return ruby("round_internal(ndigits)", "ndigits", ndigits);
         }
 
     }

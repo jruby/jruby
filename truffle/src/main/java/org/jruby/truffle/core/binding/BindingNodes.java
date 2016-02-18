@@ -9,9 +9,6 @@
  */
 package org.jruby.truffle.core.binding;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -23,20 +20,26 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.language.locals.WriteFrameSlotNode;
 import org.jruby.truffle.language.locals.WriteFrameSlotNodeGen;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.ThreadLocalObject;
-import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.ThreadLocalObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
@@ -300,7 +303,7 @@ public abstract class BindingNodes {
             while (frame != null) {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
                     if (slot.getIdentifier() instanceof String && !((String) slot.getIdentifier()).startsWith("rubytruffle_temp_frame_on_stack_marker")) {
-                        names.add(context.getSymbol((String) slot.getIdentifier()));
+                        names.add(context.getSymbolTable().getSymbol((String) slot.getIdentifier()));
                     }
                 }
 

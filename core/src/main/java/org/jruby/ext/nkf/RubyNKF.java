@@ -100,26 +100,17 @@ public class RubyNKF {
 
     public static void createNKF(Ruby runtime) {
         final RubyModule NKF = runtime.defineModule("NKF");
+        final String version = "2.1.2";
+        final String relDate = "2011-09-08";
 
-        if (runtime.is1_8()) {
-            final String version = "2.0.8";
-            final String relDate = "2008-11-08";
-            NKF.defineConstant("NKF_VERSION", runtime.newString(version));
-            NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
-            NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
-        }
-        else {
-            final String version = "2.1.2";
-            final String relDate = "2011-09-08";
-            NKF.defineConstant("NKF_VERSION", runtime.newString(version));
-            NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
-            NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
-        }
+        NKF.defineConstant("NKF_VERSION", runtime.newString(version));
+        NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
+        NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
 
         for ( NKFCharset charset : NKFCharset.values() ) {
             NKFCharsetMap.put(charset.value, charset.name());
 
-            if ( ! runtime.is1_8() && charset.value > 12 ) continue;
+            if (charset.value > 12 ) continue;
             NKF.defineConstant(charset.name(), charsetMappedValue(runtime, charset));
         }
 
@@ -168,8 +159,6 @@ public class RubyNKF {
     }
 
     private static IRubyObject charsetMappedValue(final Ruby runtime, final NKFCharset charset) {
-        if (runtime.is1_8()) return runtime.newFixnum(charset.value);
-
         final Encoding encoding;
         switch (charset) {
             case AUTO: case NOCONV: case UNKNOWN: return runtime.getNil();

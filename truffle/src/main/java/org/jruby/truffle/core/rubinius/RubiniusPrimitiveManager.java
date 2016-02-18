@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.Main;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -29,9 +28,6 @@ public class RubiniusPrimitiveManager {
 
     private final ConcurrentMap<String, RubiniusPrimitiveConstructor> primitives = new ConcurrentHashMap<String, RubiniusPrimitiveConstructor>();
 
-    public RubiniusPrimitiveManager() {
-    }
-
     public RubiniusPrimitiveConstructor getPrimitive(String name) {
         final RubiniusPrimitiveConstructor constructor = primitives.get(name);
 
@@ -45,7 +41,6 @@ public class RubiniusPrimitiveManager {
     public void addAnnotatedPrimitives() {
         final List<NodeFactory<? extends RubyNode>> nodeFactories = new ArrayList<>();
 
-        Main.printTruffleTimeMetric("before-load-rubinius-nodes");
         nodeFactories.addAll(VMPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ObjectPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(TimePrimitiveNodesFactory.getFactories());
@@ -68,7 +63,6 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(ExceptionPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ThreadPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(WeakRefPrimitiveNodesFactory.getFactories());
-        Main.printTruffleTimeMetric("after-load-rubinius-nodes");
 
         // This comes last as a catch-all
         nodeFactories.addAll(UndefinedPrimitiveNodesFactory.getFactories());

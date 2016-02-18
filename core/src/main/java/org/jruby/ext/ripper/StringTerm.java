@@ -73,7 +73,6 @@ public class StringTerm extends StrTerm {
             }
 
             buffer.append(end);
-            lexer.setValue(new Token(buffer));
             return Tokens.tSTRING_END;
     }
 
@@ -85,7 +84,6 @@ public class StringTerm extends StrTerm {
         // FIXME: How much more obtuse can this be?
         // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
-            lexer.setValue(new Token(String.valueOf(end)));
             lexer.ignoreNextScanEvent = true;
             return Tokens.tSTRING_END;
         }
@@ -107,7 +105,6 @@ public class StringTerm extends StrTerm {
         
         if (spaceSeen) {
             lexer.pushback(c);
-            lexer.setValue(new Token(buffer));
             return ' ';
         }        
 

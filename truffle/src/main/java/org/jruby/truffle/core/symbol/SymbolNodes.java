@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -19,22 +19,25 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.BinaryCoreMethodNode;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.CheckArityNode;
-import org.jruby.truffle.language.control.SequenceNode;
-import org.jruby.truffle.language.methods.SymbolProcNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.RubyCallStack;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.SymbolProcNode;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -137,20 +140,16 @@ public abstract class SymbolNodes {
 
         protected DynamicObject createProc(VirtualFrame frame, DynamicObject symbol) {
             CompilerDirectives.transferToInterpreter();
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame(getContext())
+            final SourceSection sourceSection = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getCallNode().getEncapsulatingSourceSection();
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                     sourceSection, null, Arity.AT_LEAST_ONE, Layouts.SYMBOL.getString(symbol),
                     true, ArgumentDescriptor.ANON_REST, false, false, false);
 
-            final RubyRootNode rootNode = new RubyRootNode(
-                    getContext(), sourceSection,
-                    new FrameDescriptor(nil()),
-                    sharedMethodInfo,
-                    SequenceNode.sequence(getContext(), sourceSection,
-                            CheckArityNode.create(getContext(), sourceSection, Arity.AT_LEAST_ONE),
-                            new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol))));
+            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, SequenceNode.sequence(getContext(), sourceSection,
+                                        CheckArityNode.create(getContext(), sourceSection, Arity.AT_LEAST_ONE),
+                                        new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol))), false);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = RubyArguments.getMethod(frame.getArguments());

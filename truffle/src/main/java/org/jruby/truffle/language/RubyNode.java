@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -22,11 +22,11 @@ import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.stdlib.sockets.NativeSockets;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.platform.Sockets;
 import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)
@@ -34,12 +34,6 @@ import org.jruby.util.ByteList;
 public abstract class RubyNode extends Node {
 
     private final RubyContext context;
-
-    // This field is a hack, used to transmit the information
-    // supplied by the JRuby parser in the form of a special
-    // node in the parse tree. The right thing to do is to
-    // add a special information node when the AST is constructed,
-    // which can then be removed.
     private boolean atNewline = false;
 
     public RubyNode(RubyContext context, SourceSection sourceSection) {
@@ -52,14 +46,12 @@ public abstract class RubyNode extends Node {
 
     public abstract Object execute(VirtualFrame frame);
 
-    public Object isDefined(VirtualFrame frame) {
-        return create7BitString("expression", UTF8Encoding.INSTANCE);
-    }
-
-    // Execute without returning the result
-
     public void executeVoid(VirtualFrame frame) {
         execute(frame);
+    }
+
+    public Object isDefined(VirtualFrame frame) {
+        return create7BitString("expression", UTF8Encoding.INSTANCE);
     }
 
     // Utility methods to execute and expect a particular type
@@ -144,25 +136,28 @@ public abstract class RubyNode extends Node {
         return value == getContext().getCoreLibrary().getRubiniusUndefined();
     }
 
+    protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
+        return Layouts.CLASS.getInstanceFactory(rubyClass);
+    }
+
     // Helpers methods for terseness
 
     protected DynamicObject nil() {
         return getContext().getCoreLibrary().getNilObject();
     }
 
-    public DynamicObject getSymbol(String name) {
-        return getContext().getSymbol(name);
+    protected DynamicObject getSymbol(String name) {
+        return getContext().getSymbolTable().getSymbol(name);
     }
 
-    public DynamicObject getSymbol(ByteList name) {
-        return getContext().getSymbol(name);
+    protected DynamicObject getSymbol(ByteList name) {
+        return getContext().getSymbolTable().getSymbol(name);
     }
 
-    public DynamicObject getSymbol(Rope name) {
-        return getContext().getSymbol(name);
+    protected DynamicObject getSymbol(Rope name) {
+        return getContext().getSymbolTable().getSymbol(name);
     }
 
-    /** Creates a String from the ByteList, with unknown CR */
     protected DynamicObject createString(ByteList bytes) {
         return StringOperations.createString(getContext(), bytes);
     }
@@ -176,29 +171,19 @@ public abstract class RubyNode extends Node {
     }
 
     protected POSIX posix() {
-        return getContext().getPosix();
+        return getContext().getNativePlatform().getPosix();
     }
 
-    protected NativeSockets nativeSockets() {
-        return getContext().getNativeSockets();
+    protected Sockets nativeSockets() {
+        return getContext().getNativePlatform().getSockets();
     }
 
-    // Helper methods for caching
-
-    protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
-        return Layouts.CLASS.getInstanceFactory(rubyClass);
+    protected MemoryManager memoryManager() {
+        return getContext().getNativePlatform().getMemoryManager();
     }
 
-    public void setAtNewline() {
-        atNewline = true;
-    }
-
-    public boolean isAtNewline() {
-        return atNewline;
-    }
-
-    public RubyNode getNonProxyNode() {
-        return this;
+    protected Object ruby(String expression, Object... arguments) {
+        return getContext().getCodeLoader().inlineRubyHelper(this, expression, arguments);
     }
 
     // Accessors
@@ -207,18 +192,12 @@ public abstract class RubyNode extends Node {
         return context;
     }
 
-    public MemoryManager getMemoryManager() {
-        return jnr.ffi.Runtime.getSystemRuntime().getMemoryManager();
+    public void setAtNewline() {
+        atNewline = true;
     }
 
-    // ruby() helper
-
-    protected Object ruby(String expression, Object... arguments) {
-        return getContext().inlineRubyHelper(this, expression, arguments);
-    }
-
-    protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        return getContext().inlineRubyHelper(this, frame, expression, arguments);
+    public boolean isAtNewline() {
+        return atNewline;
     }
 
 }

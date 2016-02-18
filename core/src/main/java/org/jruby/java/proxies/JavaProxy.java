@@ -501,7 +501,7 @@ public class JavaProxy extends RubyObject {
     public static class ClassMethods {
 
         // handling non-public inner classes retrieval ... like private constants
-        @JRubyMethod(name = "const_missing", required = 1, meta = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "const_missing", required = 1, meta = true, visibility = Visibility.PRIVATE, frame = true)
         public static IRubyObject const_missing(ThreadContext context, IRubyObject self, IRubyObject name) {
             return Java.get_inner_class(context, (RubyModule) self, name);
         }

@@ -1,11 +1,47 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ *  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2001 Chad Fowler <chadfowler@chadfowler.com>
+ * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
+ * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
  */
 package org.jruby.truffle.core.rubinius;
 
@@ -16,21 +52,20 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.runtime.Helpers;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.time.ReadTimeZoneNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.core.time.ReadTimeZoneNode;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.util.RubyDateFormatter;
 
 import java.util.Locale;
@@ -69,30 +104,6 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_dup", needsSelf = false)
-    public static abstract class TimeSDupPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public TimeSDupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-        }
-
-        @Specialization
-        public DynamicObject timeSDup(DynamicObject other) {
-            return allocateObjectNode.allocate(
-                    Layouts.BASIC_OBJECT.getLogicalClass(other),
-                    Layouts.TIME.getDateTime(other),
-                    Layouts.TIME.getNSec(other),
-                    Layouts.TIME.getZone(other),
-                    Layouts.TIME.getOffset(other),
-                    Layouts.TIME.getRelativeOffset(other),
-                    Layouts.TIME.getIsUtc(other));
-        }
-
-    }
-
     @RubiniusPrimitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 1 })
     public static abstract class TimeSSpecificPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -106,7 +117,7 @@ public abstract class TimePrimitiveNodes {
         @Specialization(guards = { "isUTC" })
         public DynamicObject timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), time(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
+            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
@@ -120,7 +131,7 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, long offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
             return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(),
-                    localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), nanoseconds % 1_000_000, nil(), offset, false, isUTC);
+                    offsetTime(milliseconds, offset), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
         private long getMillis(long seconds, int nanoseconds) {
@@ -134,8 +145,14 @@ public abstract class TimePrimitiveNodes {
         }
 
         @TruffleBoundary
-        private DateTime time(long milliseconds) {
+        private DateTime utcTime(long milliseconds) {
             return new DateTime(milliseconds, DateTimeZone.UTC);
+        }
+
+        @TruffleBoundary
+        private DateTime offsetTime(long milliseconds, long offset) {
+
+            return new DateTime(milliseconds, DateTimeZone.forOffsetMillis((int) offset * 1000));
         }
 
         @TruffleBoundary
@@ -234,7 +251,7 @@ public abstract class TimePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(format)")
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
-            final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
+            final RubyDateFormatter rdf = getContext().getJRubyRuntime().getCurrentContext().getRubyDateFormatter();
             return createString(rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteListReadOnly(format), false),
                     Layouts.TIME.getDateTime(time), Layouts.TIME.getNSec(time), null));
         }
@@ -281,6 +298,15 @@ public abstract class TimePrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorOutOfRange(this));
             }
 
+            DateTime dt = new DateTime(year, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC);
+
+            dt = dt.plusMonths(month - 1)
+                .plusDays(mday - 1)
+                .plusHours(hour)
+                .plusMinutes(min)
+                .plusSeconds(sec)
+                .plusMillis( nsec / 1_000_000 );
+
             final DateTimeZone zone;
             final boolean relativeOffset;
             DynamicObject zoneToStore;
@@ -290,7 +316,8 @@ public abstract class TimePrimitiveNodes {
                 zoneToStore = nil();
             } else if (utcoffset == nil()) {
                 zone = TimeZoneParser.parse(this, StringOperations.getString(getContext(), envZon));
-                final String zoneName = TimeZoneParser.getShortZoneName(new DateTime(year, month, mday, hour, min, sec), zone);
+                // TODO BJF 16-Feb-2016 verify which zone the following date time should be in
+                final String zoneName = TimeZoneParser.getShortZoneName( dt.withZoneRetainFields(zone), zone);
                 zoneToStore = createString(StringOperations.encodeRope(zoneName, UTF8Encoding.INSTANCE));
                 relativeOffset = false;
             } else if (utcoffset instanceof Integer) {
@@ -310,14 +337,26 @@ public abstract class TimePrimitiveNodes {
                 throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
             }
 
+            dt = dt.withZoneRetainFields(zone);
+
+            // Following if block copied over from RubyTime.java createTime method
+            // If we're at a DST boundary, we need to choose the correct side of the boundary
+            if (isdst != -1) {
+                final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
+                final DateTime afterDstBoundary = dt.withLaterOffsetAtOverlap();
+
+                final int offsetBeforeBoundary = zone.getOffset(beforeDstBoundary);
+                final int offsetAfterBoundary = zone.getOffset(afterDstBoundary);
+
+                // If the time is during DST, we need to pick the time with the highest offset
+                dt = offsetBeforeBoundary > offsetAfterBoundary ? beforeDstBoundary : afterDstBoundary;
+            }
 
             if (isdst == -1) {
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
-                return allocateObjectNode.allocate(timeClass, dateTime, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
+                return allocateObjectNode.allocate(timeClass, dt, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
             } else {
                 // TODO (pitr 26-Nov-2015): is this correct to create the DateTime without isdst application?
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
-                return allocateObjectNode.allocate(timeClass, dateTime, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
+                return allocateObjectNode.allocate(timeClass, dt, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
             }
         }
 

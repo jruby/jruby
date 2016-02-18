@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,13 +18,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.ffi.PointerGuards;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.util.ByteList;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -73,7 +73,7 @@ public abstract class PointerPrimitiveNodes {
         @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject malloc(DynamicObject pointerClass, long size) {
-            return allocateObjectNode.allocate(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
+            return allocateObjectNode.allocate(pointerClass, memoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
         }
 
     }
@@ -108,7 +108,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public long setAddress(DynamicObject pointer, long address) {
-            Layouts.POINTER.setPointer(pointer, getMemoryManager().newPointer(address));
+            Layouts.POINTER.setPointer(pointer, memoryManager().newPointer(address));
             return address;
         }
 
@@ -131,7 +131,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject add(DynamicObject a, long b) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(a), getMemoryManager().newPointer(Layouts.POINTER.getPointer(a).address() + b));
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(a), memoryManager().newPointer(Layouts.POINTER.getPointer(a).address() + b));
         }
 
     }

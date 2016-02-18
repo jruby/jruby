@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -47,20 +47,20 @@ import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.stdlib.sockets.FDSet;
 import org.jruby.truffle.stdlib.sockets.FDSetFactory;
 import org.jruby.truffle.stdlib.sockets.FDSetFactoryFactory;
-import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -99,8 +99,8 @@ public abstract class IOPrimitiveNodes {
 
         public IOConnectPipeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            RDONLY = (int) context.getRubiniusConfiguration().get("rbx.platform.file.O_RDONLY");
-            WRONLY = (int) context.getRubiniusConfiguration().get("rbx.platform.file.O_WRONLY");
+            RDONLY = (int) context.getNativePlatform().getRubiniusConfiguration().get("rbx.platform.file.O_RDONLY");
+            WRONLY = (int) context.getNativePlatform().getRubiniusConfiguration().get("rbx.platform.file.O_WRONLY");
         }
 
         @Specialization
@@ -509,7 +509,7 @@ public abstract class IOPrimitiveNodes {
             final int newFd;
 
             try {
-                newFd = nativeSockets().accept(fd, getMemoryManager().newPointer(address), addressLength);
+                newFd = nativeSockets().accept(fd, memoryManager().newPointer(address), addressLength);
             } finally {
                 UnsafeHolder.U.freeMemory(address);
             }

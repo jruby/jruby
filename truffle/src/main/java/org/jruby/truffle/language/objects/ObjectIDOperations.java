@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -118,7 +118,7 @@ public abstract class ObjectIDOperations {
             return (long) property.get(object, false);
         }
 
-        final long objectID = context.getNextObjectID();
+        final long objectID = context.getObjectSpaceManager().getNextObjectID();
         object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
         return objectID;
     }

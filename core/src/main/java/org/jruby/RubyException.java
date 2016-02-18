@@ -70,7 +70,7 @@ public class RubyException extends RubyObject {
         super(runtime, rubyClass);
 
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
-        this.cause = runtime.getNil();
+        this.cause = RubyBasicObject.UNDEF;
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
@@ -99,7 +99,7 @@ public class RubyException extends RubyObject {
         } else if (obj instanceof RubyString) {
             backtrace = RubyArray.newArray(getRuntime(), obj);
         } else {
-            throw getRuntime().newTypeError("backtrace must be Array of String or a single String");
+            throw getRuntime().newTypeError("backtrace must be Array of String");
         }
     }
 
@@ -196,11 +196,19 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "cause")
     public IRubyObject cause(ThreadContext context) {
         assert cause != null;
+
+        if (cause == RubyBasicObject.UNDEF) return context.nil;
+
         return cause;
     }
 
     public void setCause(IRubyObject cause) {
         this.cause = cause;
+    }
+
+    // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
+    public Object getCause() {
+        return cause;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {
@@ -386,7 +394,7 @@ public class RubyException extends RubyObject {
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
     public IRubyObject message;
-    private IRubyObject cause;
+    IRubyObject cause;
 
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;

@@ -841,8 +841,11 @@ public final class Ruby implements Constantizable {
             assert self == getTopSelf();
             final JRubyTruffleInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
-            truffleContext.execute((RootNode) rootNode);
-            Main.printTruffleTimeMetric("after-run");
+            try {
+              truffleContext.execute((RootNode) rootNode);
+            } finally {
+              Main.printTruffleTimeMetric("after-run");
+            }
             return getNil();
         } else {
             return interpreter.execute(this, rootNode, self);
@@ -890,7 +893,7 @@ public final class Ruby implements Constantizable {
     }
 
     private JRubyTruffleInterface loadTruffle() {
-        Main.printTruffleTimeMetric("before-load-truffle-context");
+        Main.printTruffleTimeMetric("before-load-context");
 
         final Class<?> clazz;
 
@@ -909,7 +912,7 @@ public final class Ruby implements Constantizable {
             throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
         }
 
-        Main.printTruffleTimeMetric("after-load-truffle-context");
+        Main.printTruffleTimeMetric("after-load-context");
 
         return truffleContext;
     }

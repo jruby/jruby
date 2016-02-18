@@ -28,29 +28,46 @@ import jnr.posix.SpawnFileAction;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
-import org.jruby.truffle.core.*;
-import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.binding.BindingNodes;
-import org.jruby.truffle.core.rope.*;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.backtrace.BacktraceFormatter;
-import org.jruby.truffle.language.backtrace.BacktraceInterleaver;
 import org.jruby.truffle.cext.CExtManager;
 import org.jruby.truffle.cext.CExtSubsystem;
-import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.hash.BucketsStrategy;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.backtrace.BacktraceFormatter;
+import org.jruby.truffle.language.backtrace.BacktraceInterleaver;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.tools.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {
@@ -236,7 +253,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public boolean graal() {
-            return getContext().onGraal();
+            return Graal.isGraal();
         }
 
     }
@@ -280,7 +297,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject simpleShell() {
-            new SimpleShell(getContext()).run(RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
+            new SimpleShell(getContext()).run(getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
             return nil();
         }
 
@@ -359,7 +376,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
         public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
-            return getContext().createHandle(getContext().getAttachmentsManager().attach(file.toString(), line, block));
+            return Layouts.HANDLE.createHandle(getContext().getCoreLibrary().getHandleFactory(), getContext().getAttachmentsManager().attach(file.toString(), line, block));
         }
 
     }
@@ -515,7 +532,34 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return createString(StringOperations.encodeRope(getContext().getRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(getContext().getJRubyRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
+        }
+
+    }
+
+    @CoreMethod(names = "jruby_home_directory_protocol", onSingleton = true)
+    public abstract static class JRubyHomeDirectoryProtocolNode extends CoreMethodNode {
+
+        public JRubyHomeDirectoryProtocolNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject jrubyHomeDirectoryProtocol() {
+            String home = getContext().getJRubyRuntime().getJRubyHome();
+
+            if (home.startsWith("uri:classloader:")) {
+                home = home.substring("uri:classloader:".length());
+
+                while (home.startsWith("/")) {
+                    home = home.substring(1);
+                }
+
+                home = SourceLoader.JRUBY_SCHEME + "/" + home;
+            }
+
+            return createString(StringOperations.encodeRope(home, UTF8Encoding.INSTANCE));
         }
 
     }
@@ -637,7 +681,7 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public DynamicObject printBacktrace() {
             final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
-                    .formatBacktrace(getContext(), null, RubyCallStack.getBacktrace(getContext(), this));
+                    .formatBacktrace(getContext(), null, getContext().getCallStack().getBacktrace(this));
 
             for (String line : rubyBacktrace) {
                 System.err.println(line);
@@ -659,7 +703,7 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public DynamicObject printInterleavedBacktrace() {
             final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
-                    .formatBacktrace(getContext(), null, RubyCallStack.getBacktrace(getContext(), this));
+                    .formatBacktrace(getContext(), null, getContext().getCallStack().getBacktrace(this));
 
             final StackTraceElement[] javaStacktrace = new Exception().getStackTrace();
 
@@ -759,7 +803,7 @@ public abstract class TrufflePrimitiveNodes {
 
             if (pid == -1) {
                 // TODO (pitr 07-Sep-2015): needs compatibility improvements
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getNativePlatform().getPosix().errno(), this));
             }
 
             return pid;
@@ -781,7 +825,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         private long call(String command, String[] arguments, String[] environmentVariables) {
             // TODO (pitr 04-Sep-2015): only simple implementation, does not support file actions or other options
-            return getContext().getPosix().posix_spawnp(
+            return getContext().getNativePlatform().getPosix().posix_spawnp(
                     command,
                     Collections.<SpawnFileAction>emptyList(),
                     Arrays.asList(arguments),
@@ -818,7 +862,7 @@ public abstract class TrufflePrimitiveNodes {
             }
 
             try {
-                getContext().loadFile(StringOperations.getString(getContext(), file), this);
+                getContext().getCodeLoader().loadFile(StringOperations.getString(getContext(), file), this);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
@@ -842,7 +886,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public Object runJRubyRootNode() {
-            return getContext().execute(getContext().getInitialJRubyRootNode());
+            return getContext().getCodeLoader().execute(getContext().getInitialJRubyRootNode());
         }
     }
 
@@ -874,6 +918,50 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public int logicalProcessors() {
             return Runtime.getRuntime().availableProcessors();
+        }
+
+    }
+
+    @CoreMethod(names = "original_argv", onSingleton = true)
+    public abstract static class OriginalArgvNode extends CoreMethodNode {
+
+        public OriginalArgvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject originalArgv() {
+            final String[] argv = getContext().getJRubyInterop().getArgv();
+            final Object[] array = new Object[argv.length];
+
+            for (int n = 0; n < array.length; n++) {
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(argv[n], UTF8Encoding.INSTANCE));
+            }
+
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, array.length);
+        }
+
+    }
+
+    @CoreMethod(names = "original_load_path", onSingleton = true)
+    public abstract static class OriginalLoadPathNode extends CoreMethodNode {
+
+        public OriginalLoadPathNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject originalLoadPath() {
+            final String[] path = getContext().getJRubyInterop().getOriginalLoadPath();
+            final Object[] array = new Object[path.length];
+
+            for (int n = 0; n < array.length; n++) {
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(path[n], UTF8Encoding.INSTANCE));
+            }
+
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, array.length);
         }
 
     }

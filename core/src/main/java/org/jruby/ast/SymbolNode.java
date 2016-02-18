@@ -32,22 +32,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.awt.image.ByteLookupTable;
-import java.nio.charset.Charset;
 import java.util.List;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.Ruby;
-import org.jruby.RubySymbol;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -82,6 +75,12 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
         } else {
             this.encoding = USASCIIEncoding.INSTANCE;
         }
+    }
+
+    public boolean equals(Object other) {
+        return other instanceof SymbolNode &&
+                name.equals(((SymbolNode) other).getName()) &&
+                encoding == ((SymbolNode) other).getEncoding();
     }
 
     public NodeType getNodeType() {

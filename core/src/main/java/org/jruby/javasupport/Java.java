@@ -1074,9 +1074,8 @@ public class Java implements Library {
         final String constName = name.asJavaString();
 
         final RubyModule innerClass = getProxyUnderClass(context, self, constName);
-        if ( innerClass == null ) { // NOTE: probably better to just call super
-            final String fullName = self.getName() + "::" + constName;
-            throw context.runtime.newNameError("uninitialized constant " + fullName, fullName);
+        if ( innerClass == null ) {
+            return Helpers.invokeSuper(context, self, name, Block.NULL_BLOCK);
         }
         return cacheConstant(self, constName, innerClass, true); // hidden == true (private_constant)
     }

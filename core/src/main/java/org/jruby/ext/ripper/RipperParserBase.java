@@ -32,9 +32,7 @@ import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyHash;
 import org.jruby.RubyString;
-import org.jruby.ext.ripper.RipperLexer.LexState;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.StackState;
@@ -360,7 +358,7 @@ public class RipperParserBase {
         return lexer.getBraceNest();
     }
 
-    public LexState getState() {
+    public int getState() {
         return lexer.getState();
     }
 
@@ -368,7 +366,7 @@ public class RipperParserBase {
         lexer.setBraceNest(braceNest);
     }
 
-    public void setState(LexState lexState) {
+    public void setState(int lexState) {
         lexer.setState(lexState);
     }
 

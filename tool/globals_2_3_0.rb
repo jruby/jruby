@@ -58,6 +58,7 @@ STDLIB_FILES = %w[
   sync.rb
   thwait.rb
   time.rb
+  tmpdir.rb
   tracer.rb
   tsort.rb
   un.rb

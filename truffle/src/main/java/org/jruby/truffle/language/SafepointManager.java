@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,9 +18,10 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.RubyThread.Status;
-import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.util.func.Function2;
 
 import java.util.Collections;
 import java.util.Set;
@@ -34,11 +35,12 @@ public class SafepointManager {
 
     private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
 
-    @CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption("SafepointManager");
     private final ReentrantLock lock = new ReentrantLock();
-
     private final Phaser phaser = new Phaser();
-    private volatile SafepointAction action;
+
+    @CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption("SafepointManager");
+
+    private volatile Function2<Void,DynamicObject,Node> action;
     private volatile boolean deferred;
 
     public SafepointManager(RubyContext context) {
@@ -49,6 +51,7 @@ public class SafepointManager {
         CompilerAsserts.neverPartOfCompilation();
 
         lock.lock();
+
         try {
             phaser.register();
             runningThreads.add(Thread.currentThread());
@@ -93,53 +96,150 @@ public class SafepointManager {
             return; // interrupt me later
         }
 
-        SafepointAction deferredAction = step(currentNode, false);
+        final Function2<Void,DynamicObject,Node> deferredAction = step(currentNode, false);
 
         // We're now running again normally and can run deferred actions
         if (deferredAction != null) {
-            deferredAction.run(thread, currentNode);
+            deferredAction.apply(thread, currentNode);
         }
     }
 
     @TruffleBoundary
-    private SafepointAction step(Node currentNode, boolean isDrivingThread) {
+    private Function2<Void,DynamicObject,Node> step(Node currentNode, boolean isDrivingThread) {
         final DynamicObject thread = context.getThreadManager().getCurrentThread();
 
-        // wait other threads to reach their safepoint
+        // Wait for other threads to reach their safepoint
         phaser.arriveAndAwaitAdvance();
 
         if (isDrivingThread) {
-            assumption = Truffle.getRuntime().createAssumption("SafepointManager");
+            assumption = Truffle.getRuntime().createAssumption(getClass().getCanonicalName());
         }
 
-        // wait the assumption to be renewed
+        // Wait for the assumption to be renewed
         phaser.arriveAndAwaitAdvance();
 
-        // Read these while in the safepoint.
-        SafepointAction deferredAction = deferred ? action : null;
+        // Read these while in the safepoint
+        final Function2<Void,DynamicObject,Node> deferredAction = deferred ? action : null;
 
         try {
             if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != Status.ABORTING) {
-                action.run(thread, currentNode);
+                action.apply(thread, currentNode);
             }
         } finally {
-            // wait other threads to finish their action
+            // Wait for other threads to finish their action
             phaser.arriveAndAwaitAdvance();
         }
 
         return deferredAction;
     }
 
-    private void interruptOtherThreads() {
-        Thread current = Thread.currentThread();
-        for (Thread thread : runningThreads) {
-            if (thread != current) {
-                thread.interrupt();
-            }
+    @TruffleBoundary
+    public void pauseAllThreadsAndExecute(Node currentNode, boolean deferred,
+                                          Function2<Void,DynamicObject,Node> action) {
+        if (lock.isHeldByCurrentThread()) {
+            throw new IllegalStateException("Re-entered SafepointManager");
+        }
+
+        // Need to lock interruptibly since we are in the registered threads.
+        while (!lock.tryLock()) {
+            poll(currentNode);
+        }
+
+        try {
+            pauseAllThreadsAndExecute(currentNode, action, deferred);
+        } finally {
+            lock.unlock();
+        }
+
+        // Run deferred actions after leaving the SafepointManager lock.
+        if (deferred) {
+            action.apply(context.getThreadManager().getCurrentThread(), currentNode);
         }
     }
 
-    private void pauseAllThreadsAndExecute(Node currentNode, boolean isRubyThread, SafepointAction action, boolean deferred) {
+    @TruffleBoundary
+    public void pauseAllThreadsAndExecuteFromNonRubyThread(boolean deferred,
+                                                           Function2<Void,DynamicObject,Node> action) {
+        if (lock.isHeldByCurrentThread()) {
+            throw new IllegalStateException("Re-entered SafepointManager");
+        }
+
+        assert !runningThreads.contains(Thread.currentThread());
+
+        // Just wait to grab the lock, since we are not in the registered threads.
+
+        lock.lock();
+
+        try {
+            enterThread();
+            try {
+                pauseAllThreadsAndExecute(null, action, deferred);
+            } finally {
+                leaveThread();
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // Variants for a single thread
+
+    @TruffleBoundary
+    public void pauseThreadAndExecute(final Thread thread, Node currentNode,
+                                      final Function2<Void,DynamicObject,Node> action) {
+        if (Thread.currentThread() == thread) {
+            // fast path if we are already the right thread
+            final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
+            action.apply(rubyThread, currentNode);
+        } else {
+            pauseAllThreadsAndExecute(currentNode, false, new Function2<Void, DynamicObject, Node>() {
+                @Override
+                public Void apply(DynamicObject rubyThread, Node currentNode) {
+                    if (Thread.currentThread() == thread) {
+                        action.apply(rubyThread, currentNode);
+                    }
+                    return null;
+                }
+            });
+        }
+    }
+
+    @TruffleBoundary
+    public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode,
+                                           final Function2<Void,DynamicObject,Node> action) {
+        if (Thread.currentThread() == thread) {
+            // fast path if we are already the right thread
+            final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
+            action.apply(rubyThread, currentNode);
+        } else {
+            pauseAllThreadsAndExecute(currentNode, true, new Function2<Void, DynamicObject, Node>() {
+                @Override
+                public Void apply(DynamicObject rubyThread, Node currentNode) {
+                    if (Thread.currentThread() == thread) {
+                        action.apply(rubyThread, currentNode);
+                    }
+                    return null;
+                }
+            });
+        }
+    }
+
+    @TruffleBoundary
+    public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread,
+                                                            final Function2<Void,DynamicObject,Node> action) {
+        pauseAllThreadsAndExecuteFromNonRubyThread(true, new Function2<Void, DynamicObject, Node>() {
+            @Override
+            public Void apply(DynamicObject rubyThread, Node currentNode) {
+                if (Thread.currentThread() == thread) {
+                    action.apply(rubyThread, currentNode);
+                }
+                return null;
+            }
+        });
+    }
+
+    private void pauseAllThreadsAndExecute(Node currentNode, Function2<Void, DynamicObject, Node> action,
+                                           boolean deferred) {
         this.action = action;
         this.deferred = deferred;
 
@@ -153,101 +253,13 @@ public class SafepointManager {
         step(currentNode, true);
     }
 
-    // Variants for all threads
-
-    @TruffleBoundary
-    public void pauseAllThreadsAndExecute(Node currentNode, boolean deferred, SafepointAction action) {
-        if (lock.isHeldByCurrentThread()) {
-            throw new IllegalStateException("Re-entered SafepointManager");
-        }
-
-        // Need to lock interruptibly since we are in the registered threads.
-        while (!lock.tryLock()) {
-            poll(currentNode);
-        }
-
-        try {
-            pauseAllThreadsAndExecute(currentNode, true, action, deferred);
-        } finally {
-            lock.unlock();
-        }
-
-        // Run deferred actions after leaving the SafepointManager lock.
-        if (deferred) {
-            action.run(context.getThreadManager().getCurrentThread(), currentNode);
-        }
-    }
-
-    @TruffleBoundary
-    public void pauseAllThreadsAndExecuteFromNonRubyThread(boolean deferred, SafepointAction action) {
-        if (lock.isHeldByCurrentThread()) {
-            throw new IllegalStateException("Re-entered SafepointManager");
-        }
-
-        assert !runningThreads.contains(Thread.currentThread());
-
-        // Just wait to grab the lock, since we are not in the registered threads.
-        lock.lock();
-        try {
-            enterThread();
-            try {
-                pauseAllThreadsAndExecute(null, false, action, deferred);
-            } finally {
-                leaveThread();
+    private void interruptOtherThreads() {
+        Thread current = Thread.currentThread();
+        for (Thread thread : runningThreads) {
+            if (thread != current) {
+                thread.interrupt();
             }
-        } finally {
-            lock.unlock();
         }
-    }
-
-    // Variants for a single thread
-
-    @TruffleBoundary
-    public void pauseThreadAndExecute(final Thread thread, Node currentNode, final SafepointAction action) {
-        if (Thread.currentThread() == thread) {
-            // fast path if we are already the right thread
-            DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
-            action.run(rubyThread, currentNode);
-        } else {
-            pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
-                @Override
-                public void run(DynamicObject rubyThread, Node currentNode) {
-                    if (Thread.currentThread() == thread) {
-                        action.run(rubyThread, currentNode);
-                    }
-                }
-            });
-        }
-    }
-
-    @TruffleBoundary
-    public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode, final SafepointAction action) {
-        if (Thread.currentThread() == thread) {
-            // fast path if we are already the right thread
-            DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
-            action.run(rubyThread, currentNode);
-        } else {
-            pauseAllThreadsAndExecute(currentNode, true, new SafepointAction() {
-                @Override
-                public void run(DynamicObject rubyThread, Node currentNode) {
-                    if (Thread.currentThread() == thread) {
-                        action.run(rubyThread, currentNode);
-                    }
-                }
-            });
-        }
-    }
-
-    @TruffleBoundary
-    public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
-        pauseAllThreadsAndExecuteFromNonRubyThread(true, new SafepointAction() {
-            @Override
-            public void run(DynamicObject rubyThread, Node currentNode) {
-                if (Thread.currentThread() == thread) {
-                    action.run(rubyThread, currentNode);
-                }
-            }
-        });
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,19 +11,24 @@ package org.jruby.truffle.core.format.parser;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.antlr.v4.runtime.Token;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.nodes.PackNode;
 import org.jruby.truffle.core.format.nodes.SourceNode;
 import org.jruby.truffle.core.format.nodes.control.SequenceNode;
 import org.jruby.truffle.core.format.nodes.format.FormatFloatNodeGen;
 import org.jruby.truffle.core.format.nodes.format.FormatIntegerNodeGen;
-import org.jruby.truffle.core.format.nodes.read.*;
+import org.jruby.truffle.core.format.nodes.read.LiteralBytesNode;
+import org.jruby.truffle.core.format.nodes.read.LiteralIntegerNode;
+import org.jruby.truffle.core.format.nodes.read.ReadHashValueNodeGen;
+import org.jruby.truffle.core.format.nodes.read.ReadIntegerNodeGen;
+import org.jruby.truffle.core.format.nodes.read.ReadStringNodeGen;
+import org.jruby.truffle.core.format.nodes.read.ReadValueNodeGen;
 import org.jruby.truffle.core.format.nodes.type.ToDoubleWithCoercionNodeGen;
 import org.jruby.truffle.core.format.nodes.type.ToIntegerNodeGen;
 import org.jruby.truffle.core.format.nodes.type.ToStringNodeGen;
 import org.jruby.truffle.core.format.nodes.write.WriteByteNode;
 import org.jruby.truffle.core.format.nodes.write.WriteBytesNodeGen;
 import org.jruby.truffle.core.format.nodes.write.WritePaddedBytesNodeGen;
-import org.jruby.truffle.RubyContext;
 import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
@@ -53,7 +58,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.core.format.parser.Prin
     @Override
     public void exitString(org.jruby.truffle.core.format.parser.PrintfParser.StringContext ctx) {
         final ByteList keyBytes = tokenAsBytes(ctx.CURLY_KEY().getSymbol(), 1);
-        final DynamicObject key = context.getSymbol(keyBytes);
+        final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
 
         sequence.add(
                 WriteBytesNodeGen.create(context,
@@ -112,7 +117,7 @@ public class PrintfTreeBuilder extends org.jruby.truffle.core.format.parser.Prin
             valueNode = ReadValueNodeGen.create(context, new SourceNode());
         } else {
             final ByteList keyBytes = tokenAsBytes(ctx.ANGLE_KEY().getSymbol(), 1);
-            final DynamicObject key = context.getSymbol(keyBytes);
+            final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
             valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
         }
 

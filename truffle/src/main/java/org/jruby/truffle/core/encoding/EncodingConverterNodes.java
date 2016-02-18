@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -24,10 +24,16 @@ import org.jcodings.util.Hash;
 import org.jruby.Ruby;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.RubyContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
@@ -51,14 +57,14 @@ public abstract class EncodingConverterNodes {
         public DynamicObject initialize(DynamicObject self, Object source, Object destination, Object unusedOptions) {
             // Adapted from RubyConverter - see attribution there
 
-            Ruby runtime = getContext().getRuntime();
+            Ruby runtime = getContext().getJRubyRuntime();
             Encoding[] encs = {null, null};
             byte[][] encNames = {null, null};
             int[] ecflags = {0};
             IRubyObject[] ecopts = {runtime.getNil()};
 
-            final IRubyObject sourceAsJRubyObj = getContext().toJRuby(source);
-            final IRubyObject destinationAsJRubyObj = getContext().toJRuby(destination);
+            final IRubyObject sourceAsJRubyObj = toJRuby(source);
+            final IRubyObject destinationAsJRubyObj = toJRuby(destination);
 
             EncodingUtils.econvArgs(runtime.getCurrentContext(), new IRubyObject[]{sourceAsJRubyObj, destinationAsJRubyObj}, encNames, encs, ecflags, ecopts);
 
@@ -106,6 +112,16 @@ public abstract class EncodingConverterNodes {
             }
 
             return flags;
+        }
+
+        private IRubyObject toJRuby(Object object) {
+            if (RubyGuards.isRubyString(object)) {
+                return getContext().getJRubyRuntime().newString(StringOperations.rope((DynamicObject) object).toByteListCopy());
+            } else if (RubyGuards.isRubyEncoding(object)) {
+                return getContext().getJRubyRuntime().getEncodingService().rubyEncodingFromObject(getContext().getJRubyRuntime().newString(Layouts.ENCODING.getName((DynamicObject) object)));
+            } else {
+                throw new UnsupportedOperationException();
+            }
         }
 
     }

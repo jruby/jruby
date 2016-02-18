@@ -115,7 +115,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.RubyLexer;
-import org.jruby.lexer.yacc.RubyLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
@@ -123,15 +122,30 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
+import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
+import static org.jruby.lexer.LexingCommon.EXPR_END;
+import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
  
 public class RubyParser {
     protected ParserSupport support;
     protected RubyLexer lexer;
 
+    public RubyParser(LexerSource source, IRubyWarnings warnings) {
+        this.support = new ParserSupport();
+        this.lexer = new RubyLexer(support, source, warnings);
+        support.setLexer(lexer);
+        support.setWarnings(warnings);
+    }
+
+    @Deprecated
     public RubyParser(LexerSource source) {
         this(new ParserSupport(), source);
     }
 
+    @Deprecated
     public RubyParser(ParserSupport support, LexerSource source) {
         this.support = support;
         lexer = new RubyLexer(support, source);
@@ -265,7 +279,6 @@ public class RubyParser {
 
 %type <String> rparen rbracket reswords f_bad_arg
 %type <Node> top_compstmt top_stmts top_stmt
-%type <ArgumentNode> f_norm_arg_int
 %token <String> tSYMBOLS_BEG
 %token <String> tQSYMBOLS_BEG
 %token <String> tDSTAR
@@ -308,7 +321,7 @@ public class RubyParser {
 
 %%
 program       : {
-                  lexer.setState(LexState.EXPR_BEG);
+                  lexer.setState(EXPR_BEG);
                   support.initTopLocalVariables();
               } top_compstmt {
   // ENEBO: Removed !compile_for_eval which probably is to reduce warnings
@@ -398,7 +411,7 @@ stmt_or_begin   : stmt {
                 }
 
 stmt            : kALIAS fitem {
-                    lexer.setState(LexState.EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME);
                 } fitem {
                     $$ = support.newAlias($1, $2, $4);
                 }
@@ -830,11 +843,11 @@ cpath           : tCOLON3 cname {
 // String:fname - A function name [!null]
 fname          : tIDENTIFIER | tCONSTANT | tFID 
                | op {
-                   lexer.setState(LexState.EXPR_ENDFN);
+                   lexer.setState(EXPR_ENDFN);
                    $$ = $1;
                }
                | reswords {
-                   lexer.setState(LexState.EXPR_ENDFN);
+                   lexer.setState(EXPR_ENDFN);
                    $$ = $1;
                }
 
@@ -858,7 +871,7 @@ undef_list      : fitem {
                     $$ = support.newUndef($1.getPosition(), $1);
                 }
                 | undef_list ',' {
-                    lexer.setState(LexState.EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME);
                 } fitem {
                     $$ = support.appendToBlock($1, support.newUndef($1.getPosition(), $4));
                 }
@@ -1172,12 +1185,8 @@ arg             : lhs '=' arg {
                 | kDEFINED opt_nl arg {
                     $$ = support.new_defined($1, $3);
                 }
-                | arg '?' {
-                    lexer.getConditionState().begin();
-                } arg opt_nl ':' {
-                    lexer.getConditionState().end();
-                } arg {
-                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $4, $8);
+                | arg '?' arg opt_nl ':' arg {
+                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $3, $6);
                 }
                 | primary {
                     $$ = $1;
@@ -1193,10 +1202,10 @@ aref_args       : none
                     $$ = $1;
                 }
                 | args ',' assocs trailer {
-                    $$ = support.arg_append($1, $3);
+                    $$ = support.arg_append($1, support.remove_duplicate_keys($3));
                 }
                 | assocs trailer {
-                    $$ = support.newArrayNode($1.getPosition(), $1);
+                    $$ = support.newArrayNode($1.getPosition(), support.remove_duplicate_keys($1));
                 }
 
 paren_args      : tLPAREN2 opt_call_args rparen {
@@ -1212,10 +1221,10 @@ opt_call_args   : none
                     $$ = $1;
                 }
                 | args ',' assocs ',' {
-                    $$ = support.arg_append($1, $3);
+                    $$ = support.arg_append($1, support.remove_duplicate_keys($3));
                 }
                 | assocs ',' {
-                    $$ = support.newArrayNode($1.getPosition(), $1);
+                    $$ = support.newArrayNode($1.getPosition(), support.remove_duplicate_keys($1));
                 }
    
 
@@ -1227,11 +1236,11 @@ call_args       : command {
                     $$ = support.arg_blk_pass($1, $2);
                 }
                 | assocs opt_block_arg {
-                    $$ = support.newArrayNode($1.getPosition(), $1);
+                    $$ = support.newArrayNode($1.getPosition(), support.remove_duplicate_keys($1));
                     $$ = support.arg_blk_pass((Node)$$, $2);
                 }
                 | args ',' assocs opt_block_arg {
-                    $$ = support.arg_append($1, $3);
+                    $$ = support.arg_append($1, support.remove_duplicate_keys($3));
                     $$ = support.arg_blk_pass((Node)$$, $4);
                 }
                 | block_arg {
@@ -1339,7 +1348,7 @@ primary         : literal
                     $$ = new BeginNode($1, $3 == null ? NilImplicitNode.NIL : $3);
                 }
                 | tLPAREN_ARG {
-                    lexer.setState(LexState.EXPR_ENDARG);
+                    lexer.setState(EXPR_ENDARG);
                 } rparen {
                     $$ = null; //FIXME: Should be implicit nil?
                 }
@@ -1347,12 +1356,9 @@ primary         : literal
                     $$ = lexer.getCmdArgumentState().getStack();
                     lexer.getCmdArgumentState().reset();
                 } expr {
-                    lexer.setState(LexState.EXPR_ENDARG); 
+                    lexer.setState(EXPR_ENDARG); 
                 } rparen {
                     lexer.getCmdArgumentState().reset($<Long>2.longValue());
-                    if (Options.PARSER_WARN_GROUPED_EXPRESSIONS.load()) {
-                      support.warning(ID.GROUPED_EXPRESSION, $1, "(...) interpreted as grouped expression");
-                    }
                     $$ = $3;
                 }
                 | tLPAREN compstmt tRPAREN {
@@ -1494,6 +1500,8 @@ primary         : literal
                 | kDEF fname {
                     support.setInDef(true);
                     support.pushLocalScope();
+                    $$ = lexer.getCurrentArg();
+                    lexer.setCurrentArg(null);
                 } f_arglist bodystmt kEND {
                     Node body = $5;
                     if (body == null) body = NilImplicitNode.NIL;
@@ -1501,13 +1509,16 @@ primary         : literal
                     $$ = new DefnNode($1, $2, (ArgsNode) $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
+                    lexer.setCurrentArg($<String>3);
                 }
                 | kDEF singleton dot_or_colon {
-                    lexer.setState(LexState.EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME);
                 } fname {
                     support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
-                    lexer.setState(LexState.EXPR_ENDFN); /* force for args */
+                    lexer.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
+                    $$ = lexer.getCurrentArg();
+                    lexer.setCurrentArg(null);
                 } f_arglist bodystmt kEND {
                     Node body = $8;
                     if (body == null) body = NilImplicitNode.NIL;
@@ -1515,6 +1526,7 @@ primary         : literal
                     $$ = new DefsNode($1, $2, $5, (ArgsNode) $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
+                    lexer.setCurrentArg($<String>6);
                 }
                 | kBREAK {
                     $$ = new BreakNode($1, NilImplicitNode.NIL);
@@ -1677,12 +1689,14 @@ opt_block_param : none {
                 }
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
+                    lexer.setCurrentArg(null);
                     $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | tOROP {
                     $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
+                    lexer.setCurrentArg(null);
                     $$ = $2;
                 }
 
@@ -2015,7 +2029,7 @@ string_content  : tSTRING_CONTENT {
                 | tSTRING_DVAR {
                     $$ = lexer.getStrTerm();
                     lexer.setStrTerm(null);
-                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.setState(EXPR_BEG);
                 } string_dvar {
                     lexer.setStrTerm($<StrTerm>2);
                     $$ = new EvStrNode(support.getPosition($3), $3);
@@ -2029,7 +2043,7 @@ string_content  : tSTRING_CONTENT {
                    lexer.getCmdArgumentState().reset();
                 } {
                    $$ = lexer.getState();
-                   lexer.setState(LexState.EXPR_BEG);
+                   lexer.setState(EXPR_BEG);
                 } {
                    $$ = lexer.getBraceNest();
                    lexer.setBraceNest(0);
@@ -2040,7 +2054,7 @@ string_content  : tSTRING_CONTENT {
                    lexer.getConditionState().restart();
                    lexer.setStrTerm($<StrTerm>2);
                    lexer.getCmdArgumentState().reset($<Long>3.longValue());
-                   lexer.setState($<LexState>4);
+                   lexer.setState($<Integer>4);
                    lexer.setBraceNest($<Integer>5);
                    lexer.setHeredocIndent($<Integer>6);
                    lexer.setHeredocLineIndent(-1);
@@ -2061,7 +2075,7 @@ string_dvar     : tGVAR {
 
 // String:symbol
 symbol          : tSYMBEG sym {
-                     lexer.setState(LexState.EXPR_END);
+                     lexer.setState(EXPR_END);
                      $$ = $2;
                 }
 
@@ -2069,7 +2083,7 @@ symbol          : tSYMBEG sym {
 sym             : fname | tIVAR | tGVAR | tCVAR
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
-                     lexer.setState(LexState.EXPR_END);
+                     lexer.setState(EXPR_END);
 
                      // DStrNode: :"some text #{some expression}"
                      // StrNode: :"some text"
@@ -2202,7 +2216,7 @@ backref         : tNTH_REF {
                 }
 
 superclass      : tLT {
-                   lexer.setState(LexState.EXPR_BEG);
+                   lexer.setState(EXPR_BEG);
                    lexer.commandStart = true;
                 } expr_value term {
                     $$ = $3;
@@ -2212,19 +2226,19 @@ superclass      : tLT {
                 }
 
 // [!null]
-// ENEBO: Look at command_start stuff I am ripping out
 f_arglist       : tLPAREN2 f_args rparen {
                     $$ = $2;
-                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.setState(EXPR_BEG);
                     lexer.commandStart = true;
                 }
                 | {
                    $$ = lexer.inKwarg;
                    lexer.inKwarg = true;
+                   lexer.setState(lexer.getState() | EXPR_LABEL);
                 } f_args term {
                    lexer.inKwarg = $<Boolean>1;
                     $$ = $2;
-                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.setState(EXPR_BEG);
                     lexer.commandStart = true;
                 }
 
@@ -2316,10 +2330,12 @@ f_norm_arg      : f_bad_arg
                 }
 
 f_arg_asgn      : f_norm_arg {
+                    lexer.setCurrentArg($1);
                     $$ = support.arg_var($1);
                 }
 
 f_arg_item      : f_arg_asgn {
+                    lexer.setCurrentArg(null);
                     $$ = $1;
                 }
                 | tLPAREN f_margs rparen {
@@ -2348,13 +2364,16 @@ f_arg           : f_arg_item {
 
 f_label 	: tLABEL {
                     support.arg_var(support.formal_argument($1));
+                    lexer.setCurrentArg($1);
                     $$ = $1;
                 }
 
 f_kw            : f_label arg_value {
+                    lexer.setCurrentArg(null);
                     $$ = support.keyword_arg($2.getPosition(), support.assignableLabelOrIdentifier($1, $2));
                 }
                 | f_label {
+                    lexer.setCurrentArg(null);
                     $$ = support.keyword_arg(lexer.getPosition(), support.assignableLabelOrIdentifier($1, new RequiredKeywordArgumentValueNode()));
                 }
 
@@ -2395,15 +2414,13 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = support.internalId();
                 }
 
-f_opt           : f_norm_arg_int '=' arg_value {
+f_opt           : f_arg_asgn '=' arg_value {
+                    lexer.setCurrentArg(null);
                     $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName(), $3));
                 }
 
-f_norm_arg_int  : f_norm_arg {
-                    $$ = support.arg_var($1);
-                }
-
 f_block_opt     : f_arg_asgn '=' primary_value {
+                    lexer.setCurrentArg(null);
                     $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName(), $3));
                 }
 
@@ -2461,7 +2478,7 @@ singleton       : var_ref {
                     $$ = $1;
                 }
                 | tLPAREN2 {
-                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.setState(EXPR_BEG);
                 } expr rparen {
                     if ($3 == null) {
                         support.yyerror("can't define single method for ().");
@@ -2477,7 +2494,7 @@ assoc_list      : none {
                     $$ = new HashNode(lexer.getPosition());
                 }
                 | assocs trailer {
-                    $$ = $1;
+                    $$ = support.remove_duplicate_keys($1);
                 }
 
 // [!null]

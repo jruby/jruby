@@ -21,20 +21,20 @@ import org.jcodings.Encoding;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
+import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.CatchNextNode;
 import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
-import org.jruby.truffle.language.LexicalScope;
-import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 
@@ -57,9 +57,9 @@ public class TranslatorDriver {
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
-        final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
+        final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getJRubyRuntime());
 
-        final StaticScope staticScope = context.getRuntime().getStaticScopeFactory().newLocalScope(null);
+        final StaticScope staticScope = context.getJRubyRuntime().getStaticScopeFactory().newLocalScope(null);
 
         /*
          * Note that jruby-parser will be mistaken about how deep the existing variables are,
@@ -93,7 +93,7 @@ public class TranslatorDriver {
 
         boolean isInlineSource = parserContext == ParserContext.SHELL;
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.INLINE || parserContext == ParserContext.MODULE;
-        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getRuntime(), 0, isInlineSource, !isEvalParse, false);
+        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getJRubyRuntime(), 0, isInlineSource, !isEvalParse, false);
         parserConfiguration.setDefaultEncoding(defaultEncoding);
 
         // Parse to the JRuby AST

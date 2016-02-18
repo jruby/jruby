@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,8 +16,12 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.*;
-import org.jruby.truffle.language.ShapeCachingGuards;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.FinalLocationException;
+import com.oracle.truffle.api.object.IncompatibleLocationException;
+import com.oracle.truffle.api.object.Location;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.RubyContext;
 
 @ImportStatic(ShapeCachingGuards.class)

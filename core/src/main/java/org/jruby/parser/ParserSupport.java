@@ -36,8 +36,6 @@
 package org.jruby.parser;
 
 import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
@@ -136,7 +134,11 @@ public class ParserSupport {
         switch (node.getNodeType()) {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
-            return currentScope.declare(node.getPosition(), ((INameNode) node).getName());
+            String name = ((INameNode) node).getName();
+            if (name.equals(lexer.getCurrentArg())) {
+                warn(ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
+            }
+            return currentScope.declare(node.getPosition(), name);
         case CONSTDECLNODE: // CONSTANT
             return new ConstNode(node.getPosition(), ((INameNode) node).getName());
         case INSTASGNNODE: // INSTANCE VARIABLE
@@ -153,6 +155,9 @@ public class ParserSupport {
     }
 
     public Node declareIdentifier(String name) {
+        if (name.equals(lexer.getCurrentArg())) {
+            warn(ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
+        }
         return currentScope.declare(lexer.tokline, name);
     }
 
@@ -227,7 +232,7 @@ public class ParserSupport {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "Statement not reached.");
+            warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
@@ -1085,6 +1090,24 @@ public class ParserSupport {
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
     }
 
+    public Node remove_duplicate_keys(HashNode hash) {
+        List<Node> encounteredKeys = new ArrayList();
+
+        for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
+            Node key = pair.getKey();
+            if (key == null) continue;
+            int index = encounteredKeys.indexOf(key);
+            if (index >= 0) {
+                warn(ID.AMBIGUOUS_ARGUMENT, hash.getPosition(), "key " + key +
+                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1));
+            } else {
+                encounteredKeys.add(key);
+            }
+        }
+
+        return hash;
+    }
+
     public Node newAlias(ISourcePosition position, Node newNode, Node oldNode) {
         return new AliasNode(position, newNode, oldNode);
     }
@@ -1163,7 +1186,7 @@ public class ParserSupport {
     }
 
     public String formal_argument(String identifier) {
-        if (!is_local_id(identifier)) yyerror("formal argument must be local variable");
+        if (!is_local_id(identifier) || Character.isUpperCase(identifier.charAt(0))) yyerror("formal argument must be local variable");
 
         return shadowing_lvar(identifier);
     }

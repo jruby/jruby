@@ -365,7 +365,7 @@ public class EncodingUtils {
         }
 
         if (internal == null ||
-                ((fmode & OpenFile.SETENC_BY_BOM) == 0) && internal == external) {
+                ((fmode & OpenFile.SETENC_BY_BOM) == 0 && internal == external)) {
             encodable.setEnc((defaultExternal && internal != external) ? null : external);
             encodable.setEnc2(null);
         } else {
@@ -378,7 +378,7 @@ public class EncodingUtils {
     public static void parseModeEncoding(ThreadContext context, IOEncodable ioEncodable, String option, int[] fmode_p) {
         Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
-        Encoding idx, idx2 = null;
+        Encoding idx2;
         Encoding intEnc, extEnc;
         if (fmode_p == null) fmode_p = new int[]{0};
         String estr;
@@ -387,23 +387,29 @@ public class EncodingUtils {
 
         if (encs.length == 2) {
             estr = encs[0];
-            if (estr.toLowerCase().startsWith("bom|utf-")) {
-                fmode_p[0] |= OpenFile.SETENC_BY_BOM;
-                ioEncodable.setBOM(true);
-                estr = estr.substring(4);
-            }
-            idx = service.getEncodingFromString(estr);
         } else {
             estr = option;
-            if (estr.toLowerCase().startsWith("bom|utf-")) {
-                fmode_p[0] |= OpenFile.SETENC_BY_BOM;
-                ioEncodable.setBOM(true);
-                estr = estr.substring(4);
-            }
-            idx = service.getEncodingFromString(estr);
         }
 
-        extEnc = idx;
+        if (estr.toLowerCase().startsWith("bom|")) {
+            estr = estr.substring(4);
+            if (estr.startsWith("utf-")) {
+                fmode_p[0] |= OpenFile.SETENC_BY_BOM;
+                ioEncodable.setBOM(true);
+            } else {
+                runtime.getWarnings().warn("BOM with non-UTF encoding " + estr + " is nonsense");
+                fmode_p[0] &= ~OpenFile.SETENC_BY_BOM;
+            }
+        }
+
+        EncodingDB.Entry idx = service.findEncodingOrAliasEntry(estr.getBytes());
+
+        if (idx == null) {
+            runtime.getWarnings().warn("Unsupported encoding " + estr + " ignored");
+            extEnc = null;
+        } else {
+            extEnc = idx.getEncoding();
+        }
 
         intEnc = null;
         if (encs.length == 2) {
@@ -1330,7 +1336,7 @@ public class EncodingUtils {
     // io_set_encoding_by_bom
     public static void ioSetEncodingByBOM(ThreadContext context, RubyIO io) {
         Ruby runtime = context.runtime;
-        Encoding bomEncoding = ioStripBOM(io);
+        Encoding bomEncoding = ioStripBOM(context, io);
 
         if (bomEncoding != null) {
             // FIXME: Wonky that we acquire RubyEncoding to pass these encodings through
@@ -1338,6 +1344,8 @@ public class EncodingUtils {
             IRubyObject theInternal = io.internal_encoding(context);
 
             io.setEncoding(runtime.getCurrentContext(), theBom, theInternal, context.nil);
+        } else {
+            io.setEnc2(null);
         }
     }
 

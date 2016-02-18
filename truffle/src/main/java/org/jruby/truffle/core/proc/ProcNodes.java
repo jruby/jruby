@@ -23,25 +23,28 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.control.FrameOnStackMarker;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.RubyCallStack;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.FrameOnStackMarker;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.util.ArgumentDescriptorUtils;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
@@ -112,7 +115,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public DynamicObject proc(VirtualFrame frame, DynamicObject procClass, Object[] args, NotProvided block) {
-            final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
+            final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {

@@ -14,7 +14,11 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
@@ -23,50 +27,71 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
-import com.oracle.truffle.api.utilities.ValueProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
+import com.oracle.truffle.api.profiles.ValueProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.RaiseIfFrozenNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
+import org.jruby.truffle.core.cast.BooleanCastNode;
+import org.jruby.truffle.core.cast.BooleanCastNodeGen;
+import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
+import org.jruby.truffle.core.cast.TaintResultNode;
+import org.jruby.truffle.core.coerce.NameToJavaStringNode;
+import org.jruby.truffle.core.coerce.NameToJavaStringNodeGen;
+import org.jruby.truffle.core.coerce.NameToSymbolOrStringNodeGen;
+import org.jruby.truffle.core.coerce.ToPathNodeGen;
+import org.jruby.truffle.core.coerce.ToStrNode;
+import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.string.StringNodes;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.*;
-import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.core.symbol.SymbolTable;
+import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyConstant;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.core.cast.BooleanCastNode;
-import org.jruby.truffle.core.cast.BooleanCastNodeGen;
-import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
-import org.jruby.truffle.core.cast.TaintResultNode;
-import org.jruby.truffle.core.coerce.*;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.ReadConstantNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.AddMethodNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
+import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.language.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.GetCurrentVisibilityNode;
-import org.jruby.truffle.language.objects.*;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.objects.IsANode;
+import org.jruby.truffle.language.objects.IsANodeGen;
+import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
+import org.jruby.truffle.language.objects.SelfNode;
+import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.language.objects.SingletonClassNodeGen;
+import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
@@ -386,7 +411,7 @@ public abstract class ModuleNodes {
             final String name = nameToJavaStringNode.executeToJavaString(frame, nameObject);
 
             CompilerDirectives.transferToInterpreter();
-            final FrameInstance callerFrame = RubyCallStack.getCallerFrame(getContext());
+            final FrameInstance callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend();
             final SourceSection sourceSection = callerFrame.getCallNode().getEncapsulatingSourceSection();
             final Visibility visibility = DeclarationContext.findVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
             final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;
@@ -406,7 +431,7 @@ public abstract class ModuleNodes {
                 accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);
             }
             final RubyNode sequence = SequenceNode.sequence(getContext(), sourceSection, checkArity, accessInstanceVariable);
-            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence);
+            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, callTarget);
 
@@ -639,7 +664,7 @@ public abstract class ModuleNodes {
         private Object classEvalSource(DynamicObject module, DynamicObject code, String file, int line) {
             assert RubyGuards.isRubyString(code);
 
-            final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
+            final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
             Encoding encoding = Layouts.STRING.getRope(code).getEncoding();
 
@@ -648,7 +673,7 @@ public abstract class ModuleNodes {
             final String space = new String(new char[line-1]).replace("\0", "\n");
             Source source = Source.fromText(space + code.toString(), file);
 
-            return getContext().parseAndExecute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this);
+            return getContext().getCodeLoader().parseAndExecute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this);
         }
 
         @Specialization
@@ -714,7 +739,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         @Specialization
         public boolean isClassVariableDefinedString(DynamicObject module, String name) {
-            RubyContext.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
 
@@ -742,7 +767,7 @@ public abstract class ModuleNodes {
         @Specialization
         @TruffleBoundary
         public Object getClassVariable(DynamicObject module, String name) {
-            RubyContext.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
 
@@ -776,7 +801,7 @@ public abstract class ModuleNodes {
         @Specialization
         @TruffleBoundary
         public Object setClassVariable(DynamicObject module, String name, Object value) {
-            RubyContext.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, this);
 
             ModuleOperations.setClassVariable(getContext(), module, name, value, this);
 
@@ -1117,7 +1142,7 @@ public abstract class ModuleNodes {
 
             final RubyNode body = NodeUtil.cloneNode(rootNode.getBody());
             final RubyNode newBody = new CallMethodWithProcBody(getContext(), info.getSourceSection(), Layouts.PROC.getDeclarationFrame(proc), body);
-            final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody);
+            final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody, false);
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
             final InternalMethod method = InternalMethod.fromProc(info, name, module, Visibility.PUBLIC, proc, newCallTarget);
@@ -1147,7 +1172,7 @@ public abstract class ModuleNodes {
         private DynamicObject addMethod(DynamicObject module, String name, InternalMethod method) {
             method = method.withName(name);
 
-            final Frame frame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
+            final Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
             final Visibility visibility = GetCurrentVisibilityNode.getVisibilityFromNameAndFrame(name, frame);
             return addMethodNode.executeAddMethod(module, method, visibility);
         }
@@ -1372,7 +1397,7 @@ public abstract class ModuleNodes {
 
             final List<DynamicObject> modules = new ArrayList<>();
 
-            InternalMethod method = RubyCallStack.getCallingMethod(getContext());
+            InternalMethod method = getContext().getCallStack().getCallingMethodIgnoringSend();
             LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             DynamicObject object = getContext().getCoreLibrary().getObjectClass();
 
@@ -1809,7 +1834,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {
-            RubyContext.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, this);
             return Layouts.MODULE.getFields(module).removeClassVariable(getContext(), this, name);
         }
 
@@ -1961,7 +1986,7 @@ public abstract class ModuleNodes {
         }
 
         private void setCurrentVisibility(Visibility visibility) {
-            final Frame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
             DeclarationContext.changeVisibility(callerFrame, visibility);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -44,21 +44,32 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.adapaters.OutputStreamAdapter;
 import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.emitter.Emitter;
 import org.yaml.snakeyaml.emitter.EmitterException;
 import org.yaml.snakeyaml.error.Mark;
-import org.yaml.snakeyaml.events.*;
+import org.yaml.snakeyaml.events.AliasEvent;
+import org.yaml.snakeyaml.events.DocumentEndEvent;
+import org.yaml.snakeyaml.events.DocumentStartEvent;
+import org.yaml.snakeyaml.events.Event;
+import org.yaml.snakeyaml.events.ImplicitTuple;
+import org.yaml.snakeyaml.events.MappingEndEvent;
+import org.yaml.snakeyaml.events.MappingStartEvent;
+import org.yaml.snakeyaml.events.ScalarEvent;
+import org.yaml.snakeyaml.events.SequenceEndEvent;
+import org.yaml.snakeyaml.events.SequenceStartEvent;
+import org.yaml.snakeyaml.events.StreamEndEvent;
+import org.yaml.snakeyaml.events.StreamStartEvent;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -476,7 +487,7 @@ public abstract class PsychEmitterNodes {
 
         Encoding encoding = PsychParserNodes.YAMLEncoding.values()[_encoding].encoding;
         // TODO CS 24-Sep-15 uses JRuby's encoding service
-        Charset charset = context.getRuntime().getEncodingService().charsetForEncoding(encoding);
+        Charset charset = context.getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
 
         Layouts.PSYCH_EMITTER.setEmitter(emitter, new Emitter(new OutputStreamWriter(
                 new OutputStreamAdapter(context, (DynamicObject) Layouts.PSYCH_EMITTER.getIo(emitter), encoding), charset),

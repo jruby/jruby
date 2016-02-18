@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,11 +12,11 @@ package org.jruby.truffle.language.globals;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.ModuleOperations;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.module.ModuleOperations;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 
 public class CheckStdoutVariableTypeNode extends RubyNode {
 

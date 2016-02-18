@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,10 +11,15 @@ package org.jruby.truffle.stdlib;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyBignum;
@@ -23,29 +28,32 @@ import org.jruby.RubyRational;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.RubiniusOnly;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
+import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.constants.ReadConstantNode;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.BigDecimalCastNodeGen;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.BigDecimalCoerceNodeGen;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
-import org.jruby.truffle.language.UnreachableCodeBranch;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.Layouts;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -89,7 +97,7 @@ public abstract class BigDecimalNodes {
             case 7:
                 return RoundingMode.HALF_EVEN;
             default:
-                throw new UnreachableCodeBranch();
+                throw new UnsupportedOperationException();
         }
     }
 
@@ -720,7 +728,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return value;
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -788,7 +796,7 @@ public abstract class BigDecimalNodes {
                             return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                     }
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -815,7 +823,7 @@ public abstract class BigDecimalNodes {
                 return bType == Type.POSITIVE_INFINITY ? a : createBigDecimal(frame, (Type.POSITIVE_INFINITY));
             }
 
-            throw new UnreachableCodeBranch();
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -912,7 +920,7 @@ public abstract class BigDecimalNodes {
                     case -1:
                         return Type.NEGATIVE_INFINITY;
                     default:
-                        throw new UnreachableCodeBranch();
+                        throw new UnsupportedOperationException();
                 }
             } else {
                 return divBigDecimal(aBigDecimal, bBigDecimal, mathContext);
@@ -958,7 +966,7 @@ public abstract class BigDecimalNodes {
                             return createBigDecimal(frame, BigDecimal.ZERO);
                     }
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -992,7 +1000,7 @@ public abstract class BigDecimalNodes {
                             return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                     }
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1396,7 +1404,7 @@ public abstract class BigDecimalNodes {
                 return createBigDecimal(frame, a);
             }
 
-            throw new UnreachableCodeBranch();
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -1474,7 +1482,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, Integer.signum(exponent) == 1 ? BigDecimal.ZERO : Type.NAN);
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
     }
@@ -1535,7 +1543,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, sqrt(BigDecimal.ZERO, new MathContext(precision, getRoundMode(frame))));
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
     }
@@ -1646,7 +1654,7 @@ public abstract class BigDecimalNodes {
                 "!isRubyBigDecimal(b)",
                 "!isNil(b)" })
         public Object compareCoerced(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :<=>, b", "b", b);
+            return ruby("redo_coerced :<=>, b", "b", b);
         }
 
     }
@@ -1740,7 +1748,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NaN");
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1824,7 +1832,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return createBigDecimal(frame, type);
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1897,7 +1905,7 @@ public abstract class BigDecimalNodes {
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError("Computation results to 'NaN'(Not a Number)", this));
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
 
             }
         }
@@ -2008,7 +2016,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return Double.NaN;
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -2072,7 +2080,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return 0;
                 default:
-                    throw new UnreachableCodeBranch();
+                    throw new UnsupportedOperationException();
             }
         }
     }
@@ -2116,51 +2124,42 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = { "!isRubyBignum(value)", "!isRubyBigDecimal(value)" })
         public Object doOther(VirtualFrame frame, DynamicObject value, Object roundingMode) {
-            if (roundingMode instanceof RoundingMode && (boolean) ruby(
-                    frame,
-                    "value.is_a?(Rational)",
-                    "value", value)) {
+            if (roundingMode instanceof RoundingMode && (boolean) ruby("value.is_a?(Rational)", "value", value)) {
 
-                final Object numerator = ruby(
-                        frame,
-                        "value.numerator",
-                        "value", value);
+                final Object numerator = ruby("value.numerator", "value", value);
 
                 final IRubyObject numeratorValue;
 
                 if (numerator instanceof Integer) {
-                    numeratorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (int) numerator);
+                    numeratorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (int) numerator);
                 } else if (numerator instanceof Long) {
-                    numeratorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (long) numerator);
+                    numeratorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (long) numerator);
                 } else if (RubyGuards.isRubyBignum(numerator)) {
-                    numeratorValue = RubyBignum.newBignum(getContext().getRuntime(), Layouts.BIGNUM.getValue((DynamicObject) numerator));
+                    numeratorValue = RubyBignum.newBignum(getContext().getJRubyRuntime(), Layouts.BIGNUM.getValue((DynamicObject) numerator));
                 } else {
                     throw new UnsupportedOperationException(numerator.toString());
                 }
 
-                final Object denominator = ruby(
-                        frame,
-                        "value.denominator",
-                        "value", value);
+                final Object denominator = ruby("value.denominator", "value", value);
 
                 final IRubyObject denominatorValue;
 
                 if (denominator instanceof Integer) {
-                    denominatorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (int) denominator);
+                    denominatorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (int) denominator);
                 } else if (denominator instanceof Long) {
-                    denominatorValue = RubyFixnum.newFixnum(getContext().getRuntime(), (long) denominator);
+                    denominatorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (long) denominator);
                 } else if (RubyGuards.isRubyBignum(denominator)) {
-                    denominatorValue = RubyBignum.newBignum(getContext().getRuntime(), Layouts.BIGNUM.getValue((DynamicObject) denominator));
+                    denominatorValue = RubyBignum.newBignum(getContext().getJRubyRuntime(), Layouts.BIGNUM.getValue((DynamicObject) denominator));
                 } else {
                     throw new UnsupportedOperationException(denominator.toString());
                 }
 
-                final RubyRational rubyRationalValue = RubyRational.newRationalRaw(getContext().getRuntime(), numeratorValue, denominatorValue);
+                final RubyRational rubyRationalValue = RubyRational.newRationalRaw(getContext().getJRubyRuntime(), numeratorValue, denominatorValue);
 
                 final RubyBigDecimal rubyBigDecimalValue;
 
                 try {
-                    rubyBigDecimalValue = RubyBigDecimal.getVpRubyObjectWithPrec19Inner(getContext().getRuntime().getCurrentContext(), rubyRationalValue, (RoundingMode) roundingMode);
+                    rubyBigDecimalValue = RubyBigDecimal.getVpRubyObjectWithPrec19Inner(getContext().getJRubyRuntime().getCurrentContext(), rubyRationalValue, (RoundingMode) roundingMode);
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw e;
@@ -2168,10 +2167,7 @@ public abstract class BigDecimalNodes {
 
                 return rubyBigDecimalValue.getBigDecimalValue();
             } else {
-                final Object result = ruby(
-                        frame,
-                        "value.to_f",
-                        "value", value);
+                final Object result = ruby("value.to_f", "value", value);
                 if (result != nil()) {
                     return new BigDecimal((double) result);
                 } else {

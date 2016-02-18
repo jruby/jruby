@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,7 +13,11 @@ import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
@@ -40,7 +44,7 @@ public class SourceLoader {
     }
 
     private Source loadInlineScript() {
-        return Source.fromText(new String(context.getRuntime().getInstanceConfig().inlineScript(),
+        return Source.fromText(new String(context.getJRubyRuntime().getInstanceConfig().inlineScript(),
                 StandardCharsets.UTF_8), "-e");
     }
 

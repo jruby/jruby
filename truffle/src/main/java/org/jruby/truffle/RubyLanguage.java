@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,40 +15,24 @@ import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.instrument.Visualizer;
 import com.oracle.truffle.api.instrument.WrapperNode;
-import com.oracle.truffle.api.interop.ForeignAccess;
-import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
+import org.jruby.truffle.instrument.RubyWrapperNode;
+import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.instrument.RubyWrapperNode;
 
 import java.io.IOException;
 
-@TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = RubyLanguage.MIME_TYPE)
+@TruffleLanguage.Registration(
+        name = "Ruby",
+        version = Constants.RUBY_VERSION,
+        mimeType = RubyLanguage.MIME_TYPE)
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
-
-    public static class JRubyContextWrapper implements TruffleObject {
-
-        private final Ruby ruby;
-
-        public JRubyContextWrapper(Ruby ruby) {
-            this.ruby = ruby;
-        }
-
-        public Ruby getRuby() {
-            return ruby;
-        }
-
-        @Override
-        public ForeignAccess getForeignAccess() {
-            throw new UnsupportedOperationException();
-        }
-    }
 
     public static final String MIME_TYPE = "application/x-ruby";
 
@@ -59,7 +43,7 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public RubyContext createContext(Env env) {
-        final JRubyContextWrapper runtimeWrapper = (JRubyContextWrapper) env.importSymbol("org.jruby.truffle.runtime");
+        final JRubyContextWrapper runtimeWrapper = (JRubyContextWrapper) env.importSymbol(JRubyTruffleImpl.RUNTIME_SYMBOL);
 
         final Ruby runtime;
 
@@ -86,7 +70,7 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     protected Object findExportedSymbol(RubyContext context, String s, boolean b) {
-        return context.findExportedObject(s);
+        return context.getInteropManager().findExportedObject(s);
     }
 
     @Override

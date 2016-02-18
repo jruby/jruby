@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,9 +13,9 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
-import org.jruby.truffle.core.*;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.RubyMethodForeignAccessFactory;
 import org.jruby.truffle.core.array.ArrayForeignAccessFactory;
 import org.jruby.truffle.core.basicobject.BasicForeignAccessFactory;
 import org.jruby.truffle.core.hash.HashForeignAccessFactory;
@@ -30,7 +30,7 @@ public class RubyObjectType extends ObjectType {
         CompilerAsserts.neverPartOfCompilation();
 
         if (RubyGuards.isRubyString(object)) {
-            return RopeOperations.decodeRope(getContext().getRuntime(), StringOperations.rope(object));
+            return RopeOperations.decodeRope(getContext().getJRubyRuntime(), StringOperations.rope(object));
         } else if (RubyGuards.isRubySymbol(object)) {
             return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
@@ -38,12 +38,15 @@ public class RubyObjectType extends ObjectType {
         } else if (RubyGuards.isRubyModule(object)) {
             return Layouts.MODULE.getFields(object).toString();
         } else {
-            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName());
+            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object),
+                    Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName());
         }
     }
 
     @Override
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
+        CompilerAsserts.neverPartOfCompilation();
+
         if (Layouts.METHOD.isMethod(object)) {
             return RubyMethodForeignAccessFactory.create(getContext());
         } else if (Layouts.PROC.isProc(object)) {

@@ -32,6 +32,7 @@ package org.jruby;
 import jnr.constants.platform.Signal;
 import jnr.constants.platform.Sysconf;
 import jnr.ffi.byref.IntByReference;
+import jnr.posix.RLimit;
 import jnr.posix.Times;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -956,7 +957,14 @@ public class RubyProcess {
         return getrlimit(context.runtime, arg);
     }
     public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
-        throw runtime.newNotImplementedError("Process#getrlimit not yet implemented");
+        if (!runtime.getPosix().isNative() || Platform.IS_WINDOWS) {
+            runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
+            return runtime.newFixnum(Long.MAX_VALUE);
+        }
+
+        RLimit rlimit = runtime.getPosix().getrlimit(arg.convertToInteger().getIntValue());
+
+        return runtime.newFixnum(rlimit.rlimCur());
     }
 
     @Deprecated
@@ -1302,6 +1310,14 @@ public class RubyProcess {
     @JRubyMethod(name = "exit", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.exit(recv, args);
+    }
+
+    @JRubyMethod(name = "setproctitle", module = true, visibility = PRIVATE)
+    public static IRubyObject setproctitle(IRubyObject recv, IRubyObject name) {
+        // Not possible for us to implement on most platforms, so we just noop.
+        name.convertToString();
+
+        return name;
     }
 
     // This isn't quite right, and should probably work with a new Process + pid aggregate object

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -19,22 +19,27 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.joni.Region;
 import org.joni.exception.ValueException;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.string.StringGuards;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.StringGuards;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.rope.Rope;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -215,8 +220,8 @@ public abstract class MatchDataNodes {
         @Specialization(guards = "isRubyString(index)")
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
-                ByteList value = StringOperations.getByteListReadOnly(index);
-                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
+                final Rope value = StringOperations.rope(index);
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             }
@@ -373,7 +378,6 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object preMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPre(matchData));
@@ -391,7 +395,6 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object postMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPost(matchData));
@@ -420,11 +423,10 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
-            final ByteList bytes = StringOperations.getByteListReadOnly(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
-            return createString(bytes);
+            final Rope rope = StringOperations.rope(Layouts.MATCH_DATA.getGlobal(matchData));
+            return createString(rope);
         }
     }
 
@@ -435,7 +437,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject regexp(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getRegexp(matchData);
@@ -466,7 +467,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject rubiniusSource(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getSource(matchData);

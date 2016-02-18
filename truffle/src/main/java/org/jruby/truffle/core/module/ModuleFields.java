@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,24 +16,31 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.core.*;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreSourceSection;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.method.MethodFilter;
+import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.literal.LiteralNode;
-import org.jruby.truffle.language.objects.IsFrozenNodeGen;
-import org.jruby.truffle.language.ModuleChain;
-import org.jruby.truffle.language.ModuleOperations;
-import org.jruby.truffle.language.RubyConstant;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.literal.LiteralNode;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ModuleFields implements ModuleChain, ObjectGraphNode {

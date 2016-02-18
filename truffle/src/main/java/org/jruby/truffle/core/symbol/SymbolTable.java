@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.symbol;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
@@ -17,7 +18,9 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
+import org.jruby.util.IdUtil;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -147,6 +150,26 @@ public class SymbolTable {
         }
 
         return symbols;
+    }
+
+    // TODO (eregon, 10/10/2015): this check could be done when a Symbol is created to be much cheaper
+    public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
+        // if (!IdUtil.isValidInstanceVariableName(name)) {
+
+        // check like Rubinius does for compatibility with their Struct Ruby implementation.
+        if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+        }
+        return name;
+    }
+
+    public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
+        if (!IdUtil.isValidClassVariableName(name)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+        }
+        return name;
     }
 
 }

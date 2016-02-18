@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,7 +9,21 @@
  */
 package org.jruby.truffle.language.translator;
 
-import org.jruby.ast.*;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.BlockArgNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.ClassVarAsgnNode;
+import org.jruby.ast.ClassVarDeclNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.KeywordRestArgNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.OptArgNode;
+import org.jruby.ast.RestArgNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 
 import java.util.ArrayList;

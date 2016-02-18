@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,12 +16,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringOperations;
 
 public abstract class StatPrimitiveNodes {
 
@@ -37,7 +37,7 @@ public abstract class StatPrimitiveNodes {
         @Specialization
         public Object atime(VirtualFrame frame, DynamicObject rubyStat) {
             final long time = getStat(rubyStat).atime();
-            return ruby(frame, "Time.at(time)", "time", time);
+            return ruby("Time.at(time)", "time", time);
         }
 
     }
@@ -52,7 +52,7 @@ public abstract class StatPrimitiveNodes {
         @Specialization
         public Object ctime(VirtualFrame frame, DynamicObject rubyStat) {
             final long time = getStat(rubyStat).ctime();
-            return ruby(frame, "Time.at(time)", "time", time);
+            return ruby("Time.at(time)", "time", time);
         }
 
     }
@@ -67,7 +67,7 @@ public abstract class StatPrimitiveNodes {
         @Specialization
         public Object mtime(VirtualFrame frame, DynamicObject rubyStat) {
             final long time = getStat(rubyStat).mtime();
-            return ruby(frame, "Time.at(time)", "time", time);
+            return ruby("Time.at(time)", "time", time);
         }
 
     }

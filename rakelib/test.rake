@@ -78,19 +78,19 @@ namespace :test do
   namespace :mri do
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
     task :int do
-      ruby "-X-C -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
+      ruby "-Xbacktrace.style=mri -X-C -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :fullint do
-      ruby "-Xjit.threshold=0 -Xjit.background=false -X-C -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
+      ruby "-Xjit.threshold=0 -Xjit.background=false -Xbacktrace.style=mri -X-C -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :jit do
-      ruby "-J-XX:MaxPermSize=512M -Xjit.threshold=0 -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
+      ruby "-J-XX:MaxPermSize=512M -Xjit.threshold=0 -Xjit.background=false -Xbacktrace.style=mri -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :aot do
-      ruby "-J-XX:MaxPermSize=512M -X+C -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
+      ruby "-J-XX:MaxPermSize=512M -X+C -Xjit.background=false -Xbacktrace.style=mri -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task all: %s[int jit aot]

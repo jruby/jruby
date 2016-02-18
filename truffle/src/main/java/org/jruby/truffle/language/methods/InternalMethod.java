@@ -13,8 +13,8 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 
 import java.util.HashSet;

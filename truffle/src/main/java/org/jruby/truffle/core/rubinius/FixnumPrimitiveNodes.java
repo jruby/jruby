@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,11 +12,11 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.core.numeric.BignumNodes;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.numeric.BignumNodes;
 
 import java.math.BigInteger;
 
@@ -152,7 +152,7 @@ public abstract class FixnumPrimitiveNodes {
                 return null; // Primitive failure
             }
 
-            getContext().getRuntime().getWarnings().warn("in a**b, b may be too big");
+            getContext().getJRubyRuntime().getWarnings().warn("in a**b, b may be too big");
             // b >= 2**63 && (a > 1 || a < -1) => larger than largest double
             // MRI behavior/bug: always positive Infinity even if a negative and b odd (likely due to libc pow(a, +inf)).
             return Double.POSITIVE_INFINITY;

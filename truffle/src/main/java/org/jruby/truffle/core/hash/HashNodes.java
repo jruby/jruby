@@ -12,31 +12,40 @@ package org.jruby.truffle.core.hash;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.BranchProfile;
-import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreMethod;
+import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.core.*;
-import org.jruby.truffle.core.array.ArrayBuilderNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.methods.InternalMethod;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -119,7 +128,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isSmallArrayOfPairs(args)")
         public Object constructFallback(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
-            return ruby(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length));
+            return ruby("_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length));
         }
 
         public boolean isSmallArrayOfPairs(Object[] args) {
@@ -745,7 +754,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isRubyHash(other)")
         public Object replaceBuckets(VirtualFrame frame, DynamicObject self, Object other) {
-            return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
+            return ruby("replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
         
         private void copyOtherFields(DynamicObject self, DynamicObject from) {

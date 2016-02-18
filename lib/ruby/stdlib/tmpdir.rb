@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 #
 # tmpdir - retrieve temporary directory path
 #
@@ -7,40 +8,45 @@
 require 'fileutils'
 begin
   require 'etc.so'
-rescue LoadError
+rescue LoadError # rescue LoadError for miniruby
 end
 
 class Dir
-  @@using_19 = Hash.respond_to? :try_convert
 
   @@systmpdir ||= defined?(Etc.systmpdir) ? Etc.systmpdir : '/tmp'
 
   ##
   # Returns the operating system's temporary file path.
 
-  def Dir::tmpdir
+  def self.tmpdir
     if $SAFE > 0
-      tmp = @@systmpdir
+      @@systmpdir.dup
     else
+      tmp = nil
       # Search a directory which isn't world-writable first. In JRuby,
       # FileUtils.remove_entry_secure(dir) crashes when a dir is under
       # a world-writable directory because it tries to open directory.
       # Opening directory is not allowed in Java.
-      tmp = nil
-      for dir in [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp', '.']
+      dirs = [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp', '.']
+      for dir in dirs
+        if dir and stat = File.stat(dir) and stat.directory? and stat.writable? and !stat.world_writable?
+          return File.expand_path(dir)
+        end
+      end
+     
+      # Some OS sets the environment variables to '/tmp', which we may reject.
+      warn "Unable to find a non world-writable directory for #{__method__}. Consider setting ENV['TMPDIR'], ENV['TMP'] or ENV['TEMP'] to a non world-writable directory."
+
+      [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp', '.'].each do |dir|
         next if !dir
         dir = File.expand_path(dir)
         if stat = File.stat(dir) and stat.directory? and stat.writable? and
-            (!(@@using_19 && stat.world_writable?) || stat.sticky?)
+            (!stat.world_writable? or stat.sticky?)
           tmp = dir
           break
-        end
+        end rescue nil
       end
-      
-      unless tmp
-        raise ArgumentError, "Unable to find a non world-writable directory for Dir::tmpdir. Consider setting ENV['TMPDIR'], ENV['TMP'] or ENV['TEMP'] to a non world-writable directory."
-      end
-      
+      raise ArgumentError, "could not find a temporary directory" unless tmp
       tmp
     end
   end
@@ -48,6 +54,7 @@ class Dir
   # Dir.mktmpdir creates a temporary directory.
   #
   # The directory is created with 0700 permission.
+  # Application should not change the permission to make the temporary directory accessible from other users.
   #
   # The prefix and suffix of the name of the directory is specified by
   # the optional first argument, <i>prefix_suffix</i>.
@@ -68,7 +75,7 @@ class Dir
   # If a block is given,
   # it is yielded with the path of the directory.
   # The directory and its contents are removed
-  # using FileUtils.remove_entry_secure before Dir.mktmpdir returns.
+  # using FileUtils.remove_entry before Dir.mktmpdir returns.
   # The value of the block is returned.
   #
   #  Dir.mktmpdir {|dir|
@@ -86,16 +93,20 @@ class Dir
   #    open("#{dir}/foo", "w") { ... }
   #  ensure
   #    # remove the directory.
-  #    FileUtils.remove_entry_secure dir
+  #    FileUtils.remove_entry dir
   #  end
   #
   def Dir.mktmpdir(prefix_suffix=nil, *rest)
-    path = Tmpname.create(prefix_suffix || "d", *rest) {|n, *| mkdir(n, 0700)}
+    path = Tmpname.create(prefix_suffix || "d", *rest) {|n| mkdir(n, 0700)}
     if block_given?
       begin
         yield path
       ensure
-        FileUtils.remove_entry_secure path
+        stat = File.stat(File.dirname(path))
+        if stat.world_writable? and !stat.sticky?
+          raise ArgumentError, "parent directory is world writable but not sticky"
+        end
+        FileUtils.remove_entry path
       end
     else
       path
@@ -109,32 +120,19 @@ class Dir
       Dir.tmpdir
     end
 
-    def make_tmpname(prefix_suffix, n)
-      case prefix_suffix
-      when String
-        prefix = prefix_suffix
-        suffix = ""
-      when Array
-        prefix = prefix_suffix[0]
-        suffix = prefix_suffix[1]
-      else
-        raise ArgumentError, "unexpected prefix_suffix: #{prefix_suffix.inspect}"
-      end
+    def make_tmpname((prefix, suffix), n)
+      prefix = (String.try_convert(prefix) or
+                raise ArgumentError, "unexpected prefix: #{prefix.inspect}")
+      suffix &&= (String.try_convert(suffix) or
+                  raise ArgumentError, "unexpected suffix: #{suffix.inspect}")
       t = Time.now.strftime("%Y%m%d")
-      path = "#{prefix}#{t}-#{$$}-#{rand(0x100000000).to_s(36)}"
+      path = "#{prefix}#{t}-#{$$}-#{rand(0x100000000).to_s(36)}".dup
       path << "-#{n}" if n
-      path << suffix
+      path << suffix if suffix
+      path
     end
 
-    def create(basename, *rest)
-      if Hash.respond_to?(:try_convert) && opts = Hash.try_convert(rest[-1])
-        opts = opts.dup if rest.pop.equal?(opts)
-        max_try = opts.delete(:max_try)
-        opts = [opts]
-      else
-        opts = []
-      end
-      tmpdir, = *rest
+    def create(basename, tmpdir=nil, max_try: nil, **opts)
       if $SAFE > 0 and tmpdir.tainted?
         tmpdir = '/tmp'
       else
@@ -142,8 +140,8 @@ class Dir
       end
       n = nil
       begin
-        path = File.expand_path(make_tmpname(basename, n), tmpdir)
-        yield(path, n, *opts)
+        path = File.join(tmpdir, make_tmpname(basename, n))
+        yield(path, n, opts)
       rescue Errno::EEXIST
         n ||= 0
         n += 1

@@ -3736,13 +3736,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     private static class Ruby19POpen {
-        public final RubyString cmd;
-        public final IRubyObject[] cmdPlusArgs;
-        public final RubyHash env;
+        final RubyString cmd;
+        final IRubyObject[] cmdPlusArgs;
+        final RubyHash env;
 
-        public Ruby19POpen(Ruby runtime, IRubyObject[] args) {
-            IRubyObject[] _cmdPlusArgs = null;
-            IRubyObject _env = null;
+        Ruby19POpen(Ruby runtime, IRubyObject[] args) {
+            IRubyObject[] _cmdPlusArgs;
+            IRubyObject _env;
             IRubyObject _cmd;
 
             int firstArg = 0;
@@ -3856,18 +3856,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 process = ShellLauncher.popen(runtime, r19Popen.cmd, modes);
             } else {
                 process = ShellLauncher.popen(runtime, r19Popen.cmdPlusArgs, r19Popen.env, modes);
-            }
-
-            // Yes, this is gross. java.lang.Process does not appear to be guaranteed
-            // "ready" when we get it back from Runtime#exec, so we try to give it a
-            // chance by waiting for 10ms before we proceed. Only doing this on 1.5
-            // since Hotspot 1.6+ does not seem to exhibit the problem.
-            if (System.getProperty("java.specification.version", "").equals("1.5")) {
-                synchronized (process) {
-                    try {
-                        process.wait(100);
-                    } catch (InterruptedException ie) {}
-                }
             }
 
             checkPopenOptions(options);

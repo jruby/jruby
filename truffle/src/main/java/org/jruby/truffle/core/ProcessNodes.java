@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,15 +17,14 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.cast.DefaultValueNodeGen;
+import org.jruby.truffle.core.ffi.TimeSpec;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.core.cast.DefaultValueNodeGen;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.ffi.LibCClockGetTime;
-import org.jruby.truffle.core.ffi.TimeSpec;
+import org.jruby.truffle.platform.ClockGetTime;
 import org.jruby.truffle.platform.signal.Signal;
-import org.jruby.truffle.platform.signal.SignalOperations;
 
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {
@@ -46,8 +45,8 @@ public abstract class ProcessNodes {
         public static final int CLOCK_THREAD_CPUTIME_ID = 3; // Linux only
         public static final int CLOCK_MONOTONIC_RAW_ID = 4; // Linux only
 
-        private final DynamicObject floatSecondSymbol = getContext().getSymbol("float_second");
-        private final DynamicObject nanosecondSymbol = getContext().getSymbol("nanosecond");
+        private final DynamicObject floatSecondSymbol = getContext().getSymbolTable().getSymbol("float_second");
+        private final DynamicObject nanosecondSymbol = getContext().getSymbolTable().getSymbol("nanosecond");
 
         public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -82,7 +81,7 @@ public abstract class ProcessNodes {
 
         @TruffleBoundary
         private Object clock_gettime_clock_id(int clock_id, DynamicObject unit) {
-            final LibCClockGetTime libCClockGetTime = getContext().getLibCClockGetTime();
+            final ClockGetTime libCClockGetTime = getContext().getNativePlatform().getClockGetTime();
             TimeSpec timeSpec = new TimeSpec(jnr.ffi.Runtime.getRuntime(libCClockGetTime));
             int r = libCClockGetTime.clock_gettime(clock_id, timeSpec);
             if (r != 0) {
@@ -143,9 +142,9 @@ public abstract class ProcessNodes {
 
         @TruffleBoundary
         private int raise(String signalName) {
-            Signal signal = new Signal(signalName);
+            Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName);
             try {
-                SignalOperations.raise(signal);
+                getContext().getNativePlatform().getSignalManager().raise(signal);
             } catch (IllegalArgumentException e) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }

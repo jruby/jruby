@@ -931,6 +931,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "thread_variable_set", required = 2)
     public synchronized IRubyObject thread_variable_set(ThreadContext context, IRubyObject key, IRubyObject value) {
+        checkFrozen();
+
         key = getSymbolKey(key);
 
         getThreadLocals(context).put(key, value);
@@ -1000,6 +1002,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         RubyThread currentThread = context.getThread();
 
         try {
+            currentThread.enterSleep();
+
             if (runtime.getThreadService().getCritical()) {
                 // If the target thread is sleeping or stopped, wake it
                 synchronized (this) {
@@ -1036,6 +1040,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         } catch (ExecutionException ie) {
             ie.printStackTrace();
             assert false : ie;
+        } finally {
+            currentThread.exitSleep();
         }
 
         if (exitingException != null) {
@@ -1057,7 +1063,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod
     public IRubyObject value() {
-        join(NULL_ARRAY);
+        join(getRuntime().getCurrentContext(), NULL_ARRAY);
         synchronized (this) {
             return finalResult;
         }

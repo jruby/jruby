@@ -13,13 +13,13 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.language.locals.WriteFrameSlotNode;
 import org.jruby.truffle.language.locals.WriteFrameSlotNodeGen;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 
 public class RunBlockKWArgsHelperNode extends RubyNode {
 
@@ -41,7 +41,7 @@ public class RunBlockKWArgsHelperNode extends RubyNode {
 
         final Object array = readArrayNode.executeRead(frame);
 
-        final Object remainingArray = ruby(frame, "Truffle::Primitive.load_arguments_from_array_kw_helper(array, kwrest_name, binding)", "array", array, "kwrest_name", kwrestName, "binding", Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), frame.materialize()));
+        final Object remainingArray = ruby("Truffle::Primitive.load_arguments_from_array_kw_helper(array, kwrest_name, binding)", "array", array, "kwrest_name", kwrestName, "binding", Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), frame.materialize()));
 
         writeArrayNode.executeWrite(frame, remainingArray);
 

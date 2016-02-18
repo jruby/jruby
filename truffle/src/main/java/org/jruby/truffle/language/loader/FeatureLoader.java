@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,18 +12,15 @@ package org.jruby.truffle.language.loader;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
-
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.language.ModuleOperations;
-import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.array.ArrayMirror;
-import org.jruby.truffle.core.array.ArrayReflector;
-import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.array.ArrayUtils;
+import org.jruby.truffle.core.module.ModuleOperations;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyConstant;
+import org.jruby.truffle.language.control.RaiseException;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,10 +54,10 @@ public class FeatureLoader {
         final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, context.getCoreLibrary().getObjectClass(), "DATA");
 
         if (feature.startsWith("./")) {
-            final String cwd = context.getRuntime().getCurrentDirectory();
+            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
             feature = cwd + "/" + feature.substring(2);
         } else if (feature.startsWith("../")) {
-            final String cwd = context.getRuntime().getCurrentDirectory();
+            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
             feature = cwd.substring(0, cwd.lastIndexOf('/')) + "/" + feature.substring(3);
         }
 
@@ -143,7 +140,7 @@ public class FeatureLoader {
         final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
         ArrayOperations.append(loadedFeatures, pathString);
         try {
-            context.loadFile(expandedPath, currentNode);
+            context.getCodeLoader().loadFile(expandedPath, currentNode);
         } catch (RaiseException e) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
             final int length = Layouts.ARRAY.getSize(loadedFeatures);
@@ -186,19 +183,8 @@ public class FeatureLoader {
     }
 
     public static String expandPath(RubyContext context, String fileName) {
-        // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
-        if (context.isRunningOnWindows()) {
-            final org.jruby.RubyString path = context.toJRubyString(StringOperations.createString(context, StringOperations.encodeRope(fileName, UTF8Encoding.INSTANCE)));
-            final org.jruby.RubyString expanded = (org.jruby.RubyString) org.jruby.RubyFile.expand_path19(
-                    context.getRuntime().getCurrentContext(),
-                    null,
-                    new org.jruby.runtime.builtin.IRubyObject[]{ path });
-
-            return expanded.asJavaString();
-        } else {
-            String dir = new File(fileName).isAbsolute() ? null : context.getRuntime().getCurrentDirectory();
-            return expandPath(fileName, dir);
-        }
+        String dir = new File(fileName).isAbsolute() ? null : context.getJRubyRuntime().getCurrentDirectory();
+        return expandPath(fileName, dir);
     }
 
     private static String expandPath(String fileName, String dir) {
