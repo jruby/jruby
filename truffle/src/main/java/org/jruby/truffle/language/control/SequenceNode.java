@@ -147,7 +147,7 @@ public final class SequenceNode extends RubyNode {
             final boolean lastNode = n == sequence.size() - 1;
             final RubyNode node = sequence.get(n);
 
-            if (node instanceof LiteralNode && ((LiteralNode) node).getObject() == context.getCoreLibrary().getNilObject()) {
+            if (node instanceof NilNode || (node instanceof LiteralNode && ((LiteralNode) node).getObject() == context.getCoreLibrary().getNilObject())) {
                 if (allowTrailingNil && lastNode) {
                     flattened.add(node);
                 }

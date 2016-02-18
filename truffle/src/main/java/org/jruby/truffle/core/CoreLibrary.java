@@ -931,8 +931,12 @@ public class CoreLibrary {
     }
 
     public DynamicObject argumentError(String message, Node currentNode) {
+        return argumentError(message, currentNode, null);
+    }
+
+    public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(argumentErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(argumentErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
     public DynamicObject argumentErrorOutOfRange(Node currentNode) {
@@ -1030,8 +1034,12 @@ public class CoreLibrary {
     }
 
     public DynamicObject typeError(String message, Node currentNode) {
+        return typeError(message, currentNode, null);
+    }
+
+    public DynamicObject typeError(String message, Node currentNode, Throwable javaThrowable) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(typeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(typeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
     public DynamicObject typeErrorAllocatorUndefinedFor(DynamicObject rubyClass, Node currentNode) {
@@ -1237,8 +1245,12 @@ public class CoreLibrary {
     }
 
     public DynamicObject zeroDivisionError(Node currentNode) {
+        return zeroDivisionError(currentNode, null);
+    }
+
+    public DynamicObject zeroDivisionError(Node currentNode, ArithmeticException exception) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("divided by 0", UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("divided by 0", UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, exception));
     }
 
     public DynamicObject notImplementedError(String message, Node currentNode) {
@@ -1292,8 +1304,12 @@ public class CoreLibrary {
     }
 
     public DynamicObject internalError(String message, Node currentNode) {
+        return internalError(message, currentNode);
+    }
+
+    public DynamicObject internalError(String message, Node currentNode, Throwable javaThrowable) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("internal implementation error - " + message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("internal implementation error - " + message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
     public DynamicObject regexpError(String message, Node currentNode) {

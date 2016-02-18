@@ -37,6 +37,7 @@ import org.jruby.truffle.language.arguments.ReadPostArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadRestArgumentNode;
 import org.jruby.truffle.language.arguments.RunBlockKWArgsHelperNode;
+import org.jruby.truffle.language.control.IfElseNode;
 import org.jruby.truffle.language.control.IfNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.literal.NilNode;
@@ -122,8 +123,7 @@ public class LoadArgumentsTranslator extends Translator {
 
             sequence.add(new IfNode(context, sourceSection,
                     new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
-                    new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil),
-                    new NilNode(context, sourceSection)));
+                    new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil)));
         }
 
         final int preCount = node.getPreCount();
@@ -216,7 +216,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (useArray()) {
             if (node.getPreCount() == 0 || node.hasRestArg()) {
-                sequence.add(new IfNode(context, sourceSection,
+                sequence.add(new IfElseNode(context, sourceSection,
                         new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
                         notNilAtLeastAsLarge,
                         notNilSmaller));
@@ -410,7 +410,7 @@ public class LoadArgumentsTranslator extends Translator {
 
                 if (useArray()) {
                     // TODO CS 10-Jan-16 we should really hoist this check, or see if Graal does it for us
-                    readNode = new IfNode(context, sourceSection,
+                    readNode = new IfElseNode(context, sourceSection,
                             new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), minimum),
                             PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index),
                             defaultValue);
@@ -585,10 +585,10 @@ public class LoadArgumentsTranslator extends Translator {
                 new WriteLocalVariableNode(context, sourceSection,
                         SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
                                 readArgument(sourceSection)), arraySlot),
-                new IfNode(context, sourceSection,
+                new IfElseNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
                         nil,
-                        new IfNode(context, sourceSection,
+                        new IfElseNode(context, sourceSection,
                                 new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot), node.getPreCount() + node.getPostCount()),
                                 notNilAtLeastAsLarge,
                                 notNilSmaller)));

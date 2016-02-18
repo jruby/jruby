@@ -2,9 +2,6 @@ describe 'Zlib::GzipWriter' do
 
   before(:all) { require 'zlib' }
 
-  GZIP_MAGIC_1 = 0x1F
-  GZIP_MAGIC_2 = 0X8B
-
   class IoLikeObject
     attr_reader :body
 
@@ -36,7 +33,11 @@ describe 'Zlib::GzipWriter' do
 
     gzip.close
 
+    gzip_magic_1 = 0x1F
+    gzip_magic_2 = 0X8B
+
     # extra sanity check of the gzip "magic bytes"
-    expect( io_like_object.body[0].bytes.to_a[0..1] ).to eql [GZIP_MAGIC_1, GZIP_MAGIC_2]
+    expect( io_like_object.body[0].bytes.to_a[0..1] ).to eql [gzip_magic_1, gzip_magic_2]
   end
+
 end

@@ -17,31 +17,28 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
 
-public class OrNode extends RubyNode {
+public class IfElseNode extends RubyNode {
 
-    @Child private RubyNode left;
-    @Child private RubyNode right;
-
-    @Child private BooleanCastNode leftCast;
+    @Child private BooleanCastNode condition;
+    @Child private RubyNode thenBody;
+    @Child private RubyNode elseBody;
 
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
-    public OrNode(RubyContext context, SourceSection sourceSection, RubyNode left, RubyNode right) {
+    public IfElseNode(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode thenBody, RubyNode elseBody) {
         super(context, sourceSection);
-        this.left = left;
-        this.right = right;
-        leftCast = BooleanCastNodeGen.create(context, sourceSection, null);
+
+        this.condition = BooleanCastNodeGen.create(context, sourceSection, condition);
+        this.thenBody = thenBody;
+        this.elseBody = elseBody;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object leftValue = left.execute(frame);
-        final boolean leftBoolean = leftCast.executeBoolean(frame, leftValue);
-
-        if (conditionProfile.profile(leftBoolean)) {
-            return leftValue;
+        if (conditionProfile.profile(condition.executeBoolean(frame))) {
+            return thenBody.execute(frame);
         } else {
-            return right.execute(frame);
+            return elseBody.execute(frame);
         }
     }
 

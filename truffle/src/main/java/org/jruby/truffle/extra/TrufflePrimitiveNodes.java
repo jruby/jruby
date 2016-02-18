@@ -692,30 +692,6 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "print_interleaved_backtrace", onSingleton = true)
-    public abstract static class PrintInterleavedBacktraceNode extends CoreMethodNode {
-
-        public PrintInterleavedBacktraceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject printInterleavedBacktrace() {
-            final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
-                    .formatBacktrace(getContext(), null, getContext().getCallStack().getBacktrace(this));
-
-            final StackTraceElement[] javaStacktrace = new Exception().getStackTrace();
-
-            for (String line : BacktraceInterleaver.interleave(rubyBacktrace, javaStacktrace)) {
-                System.err.println(line);
-            }
-
-            return nil();
-        }
-
-    }
-
     @CoreMethod(names = "ast", onSingleton = true, required = 1)
     public abstract static class ASTNode extends CoreMethodArrayArgumentsNode {
 
