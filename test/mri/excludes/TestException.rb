@@ -5,6 +5,7 @@ sections including external libraries, it is very neary impossible to
 recover from such situation.
 ]
 
+exclude :test_errinfo_encoding_in_debug, "parser issue with Japanese encodings (https://github.com/jruby/jruby/issues/3679)"
 exclude /test_machine_stackoverflow/, reason
 exclude :test_machine_stackoverflow_by_define_method, reason
 exclude :test_name_error_local_variables, "NameError#local_variables is internal and specific to MRI"
