@@ -1237,7 +1237,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     public static IRubyObject mkfifo(ThreadContext context, RubyString path, int mode) {
         Ruby runtime = context.runtime;
-        String decodedPath = path.toString();
+        String decodedPath = JRubyFile.createResource(runtime, path.toString()).absolutePath();
 
         if (runtime.getPosix().mkfifo(decodedPath, mode) != 0) {
             throw runtime.newErrnoFromInt(runtime.getPosix().errno(), decodedPath);
