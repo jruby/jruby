@@ -162,7 +162,7 @@ public class Sprintf {
                 // if not found, try dispatching to pick up default hash value
                 if (object == null) object = rubyHash.callMethod(runtime.getCurrentContext(), "[]", nameSym);
                 
-                if (object == null) raiseKeyError("key<" + name + "> not found");
+                if (object.isNil()) raiseKeyError("key<" + name + "> not found");
                 return object;
             } else if (rubyHash != null) {
                 raiseArgumentError("positional args mixed with named args");
