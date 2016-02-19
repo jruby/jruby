@@ -52,6 +52,13 @@ public abstract class AllocateObjectNode extends RubyNode {
         return executeAllocate(classToAllocate, values);
     }
 
+    public DynamicObject allocateArray(
+            DynamicObject classToAllocate,
+            Object store,
+            int size) {
+        return allocate(classToAllocate, store, size);
+    }
+
     public DynamicObject allocateHash(
             DynamicObject classToAllocate,
             Object store,
