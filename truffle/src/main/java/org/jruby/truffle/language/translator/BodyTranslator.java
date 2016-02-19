@@ -95,7 +95,6 @@ import org.jruby.truffle.language.control.RedoNode;
 import org.jruby.truffle.language.control.RetryNode;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.control.ReturnNode;
-import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.control.UnlessNode;
 import org.jruby.truffle.language.control.WhileNode;
 import org.jruby.truffle.language.defined.DefinedNode;
@@ -1755,7 +1754,7 @@ public class BodyTranslator extends Translator {
             final RubyNode elseBodyTranslated = elseBody.accept(this);
             ret = new UnlessNode(context, sourceSection, condition, elseBodyTranslated);
         } else {
-            ret = sequence(context, sourceSection, Arrays.asList(condition, new NilNode(context, sourceSection)));
+            ret = sequence(context, sourceSection, Arrays.asList(condition, new NilNode(context, sourceSection, true)));
         }
 
         return addNewlineIfNeeded(node, ret);

@@ -49,7 +49,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         final List<RubyNode> flattened = flatten(context, sequence, true);
 
         if (flattened.isEmpty()) {
-            return new NilNode(context, sourceSection);
+            return new NilNode(context, sourceSection, true);
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
@@ -151,7 +151,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     protected RubyNode nilNode(SourceSection sourceSection) {
-        return new NilNode(context, sourceSection);
+        return new NilNode(context, sourceSection, false);
     }
 
     protected RubyNode translateNodeOrNil(SourceSection sourceSection, org.jruby.ast.Node node) {
