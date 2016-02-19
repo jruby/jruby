@@ -126,7 +126,7 @@ import org.jruby.truffle.language.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.language.literal.BooleanLiteralNode;
 import org.jruby.truffle.language.literal.FloatLiteralNode;
 import org.jruby.truffle.language.literal.LiteralNode;
-import org.jruby.truffle.language.literal.NilNode;
+import org.jruby.truffle.language.literal.NilLiteralNode;
 import org.jruby.truffle.language.literal.StringLiteralNode;
 import org.jruby.truffle.language.locals.DeclarationFlipFlopStateNode;
 import org.jruby.truffle.language.locals.FlipFlopNode;
@@ -1754,7 +1754,7 @@ public class BodyTranslator extends Translator {
             final RubyNode elseBodyTranslated = elseBody.accept(this);
             ret = new UnlessNode(context, sourceSection, condition, elseBodyTranslated);
         } else {
-            ret = sequence(context, sourceSection, Arrays.asList(condition, new NilNode(context, sourceSection, true)));
+            ret = sequence(context, sourceSection, Arrays.asList(condition, new NilLiteralNode(context, sourceSection, true)));
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -2305,7 +2305,7 @@ public class BodyTranslator extends Translator {
             if (translatingNextExpression) {
                 nilBehavior = SplatCastNode.NilBehavior.EMPTY_ARRAY;
             } else {
-                if (rhsTranslated instanceof SplatCastNode && ((SplatCastNodeGen) rhsTranslated).getChild() instanceof NilNode) {
+                if (rhsTranslated instanceof SplatCastNode && ((SplatCastNodeGen) rhsTranslated).getChild() instanceof NilLiteralNode) {
                     rhsTranslated = ((SplatCastNodeGen) rhsTranslated).getChild();
                     nilBehavior = SplatCastNode.NilBehavior.CONVERT;
                 } else {

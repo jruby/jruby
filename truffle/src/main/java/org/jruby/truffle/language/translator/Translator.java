@@ -16,8 +16,7 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.SequenceNode;
-import org.jruby.truffle.language.literal.LiteralNode;
-import org.jruby.truffle.language.literal.NilNode;
+import org.jruby.truffle.language.literal.NilLiteralNode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -49,7 +48,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         final List<RubyNode> flattened = flatten(context, sequence, true);
 
         if (flattened.isEmpty()) {
-            return new NilNode(context, sourceSection, true);
+            return new NilLiteralNode(context, sourceSection, true);
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
@@ -116,7 +115,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             final boolean lastNode = n == sequence.size() - 1;
             final RubyNode node = sequence.get(n);
 
-            if (node instanceof NilNode && ((NilNode) node).isImplicit()) {
+            if (node instanceof NilLiteralNode && ((NilLiteralNode) node).isImplicit()) {
                 if (allowTrailingNil && lastNode) {
                     flattened.add(node);
                 }
@@ -151,7 +150,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     protected RubyNode nilNode(SourceSection sourceSection) {
-        return new NilNode(context, sourceSection, false);
+        return new NilLiteralNode(context, sourceSection, false);
     }
 
     protected RubyNode translateNodeOrNil(SourceSection sourceSection, org.jruby.ast.Node node) {

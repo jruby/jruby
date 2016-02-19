@@ -18,11 +18,11 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeInfo(cost = NodeCost.NONE)
-public class NilNode extends RubyNode {
+public class NilLiteralNode extends RubyNode {
 
     private final boolean isImplicit;
 
-    public NilNode(RubyContext context, SourceSection sourceSection, boolean isImplicit) {
+    public NilLiteralNode(RubyContext context, SourceSection sourceSection, boolean isImplicit) {
         super(context, sourceSection);
         this.isImplicit = isImplicit;
     }
