@@ -49,9 +49,8 @@ public class ExceptionTranslatingNode extends RubyNode {
         try {
             return child.execute(frame);
         } catch (StackOverflowError error) {
-            // TODO: we might want to do sth smarter here to avoid consuming frames when we are almost out of it.
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().systemStackError("stack level too deep", this));
+            throw new RaiseException(translate(error));
         } catch (TruffleFatalException | ThreadExitException exception) {
             CompilerDirectives.transferToInterpreter();
             throw exception;
@@ -77,6 +76,15 @@ public class ExceptionTranslatingNode extends RubyNode {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));
         }
+    }
+
+    private DynamicObject translate(StackOverflowError error) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
+            error.printStackTrace();
+        }
+
+        // TODO: we might want to do sth smarter here to avoid consuming frames when we are almost out of it.
+        return getContext().getCoreLibrary().systemStackError("stack level too deep", this);
     }
 
     private DynamicObject translate(ArithmeticException exception) {
