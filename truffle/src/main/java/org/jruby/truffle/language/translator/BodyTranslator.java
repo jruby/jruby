@@ -52,7 +52,6 @@ import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
-import org.jruby.truffle.core.numeric.FixnumLiteralNode;
 import org.jruby.truffle.core.proc.ProcNodes.Type;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.InterpolatedRegexpNode;
@@ -125,6 +124,8 @@ import org.jruby.truffle.language.globals.WriteProgramNameNodeGen;
 import org.jruby.truffle.language.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.language.literal.BooleanLiteralNode;
 import org.jruby.truffle.language.literal.FloatLiteralNode;
+import org.jruby.truffle.language.literal.IntegerFixnumLiteralNode;
+import org.jruby.truffle.language.literal.LongFixnumLiteralNode;
 import org.jruby.truffle.language.literal.ObjectLiteralNode;
 import org.jruby.truffle.language.literal.NilLiteralNode;
 import org.jruby.truffle.language.literal.StringLiteralNode;
@@ -395,7 +396,7 @@ public class BodyTranslator extends Translator {
         if (value.bitLength() >= 64) {
             ret = new ObjectLiteralNode(context, sourceSection, Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), node.getValue()));
         } else {
-            ret = new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, value.longValue());
+            ret = new LongFixnumLiteralNode(context, sourceSection, value.longValue());
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -1061,7 +1062,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode ret = translateRationalComplex(sourceSection, "Complex",
-                new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0),
+                new IntegerFixnumLiteralNode(context, sourceSection, 0),
                 node.getNumber().accept(this));
 
         return addNewlineIfNeeded(node, ret);
@@ -1379,9 +1380,9 @@ public class BodyTranslator extends Translator {
         final RubyNode ret;
 
         if (CoreLibrary.fitsIntoInteger(value)) {
-            ret = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
+            ret = new IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
         } else {
-            ret = new FixnumLiteralNode.LongFixnumLiteralNode(context, translate(node.getPosition()), value);
+            ret = new LongFixnumLiteralNode(context, translate(node.getPosition()), value);
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -1840,7 +1841,7 @@ public class BodyTranslator extends Translator {
                 ret = self;
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@start")) {
-                ret = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0);
+                ret = new IntegerFixnumLiteralNode(context, sourceSection, 0);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "rubinius/common/regexp.rb")) {
@@ -2663,8 +2664,8 @@ public class BodyTranslator extends Translator {
         // TODO(CS): use IntFixnumLiteralNode where possible
 
         final RubyNode ret = translateRationalComplex(sourceSection, "Rational",
-                new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator()),
-                new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getDenominator()));
+                new LongFixnumLiteralNode(context, sourceSection, node.getNumerator()),
+                new LongFixnumLiteralNode(context, sourceSection, node.getDenominator()));
 
         return addNewlineIfNeeded(node, ret);
     }

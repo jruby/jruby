@@ -34,4 +34,5 @@ public class ObjectLiteralNode extends RubyNode {
     public Object getObject() {
         return object;
     }
+
 }

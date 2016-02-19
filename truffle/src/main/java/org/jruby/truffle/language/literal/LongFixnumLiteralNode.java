@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,33 +13,27 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeInfo(cost = NodeCost.NONE)
-public class BooleanLiteralNode extends RubyNode {
+public class LongFixnumLiteralNode extends RubyNode {
 
-    private final boolean value;
+    private final long value;
 
-    public BooleanLiteralNode(RubyContext context, SourceSection sourceSection, boolean value) {
+    public LongFixnumLiteralNode(RubyContext context, SourceSection sourceSection, long value) {
         super(context, sourceSection);
         this.value = value;
     }
 
     @Override
-    public boolean executeBoolean(VirtualFrame frame) {
-        return value;
-    }
-
-    @Override
     public Object execute(VirtualFrame frame) {
-        return executeBoolean(frame);
+        return executeLong(frame);
     }
 
     @Override
-    public Object isDefined(VirtualFrame frame) {
-        return create7BitString(Boolean.toString(value), UTF8Encoding.INSTANCE);
+    public long executeLong(VirtualFrame frame) {
+        return value;
     }
 
 }
