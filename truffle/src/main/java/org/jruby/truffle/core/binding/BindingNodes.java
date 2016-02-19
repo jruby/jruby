@@ -194,8 +194,22 @@ public abstract class BindingNodes {
             final FrameDescriptor fd1 = getFrameDescriptor(binding1);
             final FrameDescriptor fd2 = getFrameDescriptor(binding2);
 
-            return ((fd1 == fd2) || (fd1.getSize() == 0 && fd2.getSize() == 0)) &&
-                    getDeclarationFrame(binding1).getFrameDescriptor() == getDeclarationFrame(binding2).getFrameDescriptor();
+            if (!((fd1 == fd2) || (fd1.getSize() == 0 && fd2.getSize() == 0))) {
+                return false;
+            }
+
+            final MaterializedFrame df1 = getDeclarationFrame(binding1);
+            final MaterializedFrame df2 = getDeclarationFrame(binding2);
+
+            if ((df1 == null) != (df2 == null)) {
+                return false;
+            }
+
+            if (df1 == null) {
+                return true;
+            }
+
+            return df1.getFrameDescriptor() == df2.getFrameDescriptor();
         }
 
         protected ReadFrameSlotNode createReadNode(FrameSlotAndDepth frameSlot) {
