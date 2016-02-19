@@ -12,19 +12,26 @@ package org.jruby.truffle.core.cast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyNodeWrapper;
 
 /**
  * Casts a value into a boolean.
  */
 @NodeChild(value = "value", type = RubyNode.class)
+@Instrumentable(factory = BooleanCastNodeWrapper.class)
 public abstract class BooleanCastNode extends RubyNode {
 
     public BooleanCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
+    }
+
+    public BooleanCastNode(BooleanCastNode node) {
+        this(node.getContext(), node.getSourceSection());
     }
 
     public abstract boolean executeBoolean(VirtualFrame frame, Object value);

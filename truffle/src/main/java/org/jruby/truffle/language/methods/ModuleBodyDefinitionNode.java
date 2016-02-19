@@ -11,16 +11,19 @@ package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 /**
  * Define a method from a module body (module/class/class << self ... end).
  */
+@Instrumentable(factory = ModuleBodyDefinitionNodeWrapper.class)
 public class ModuleBodyDefinitionNode extends RubyNode {
 
     private final String name;
@@ -30,11 +33,15 @@ public class ModuleBodyDefinitionNode extends RubyNode {
 
     public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
             CallTarget callTarget, boolean captureBlock) {
-        super(context, sourceSection);
+        super(context, sourceSection.withTags(TraceManager.CLASS_TAG));
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
         this.captureBlock = captureBlock;
+    }
+
+    public ModuleBodyDefinitionNode(ModuleBodyDefinitionNode node) {
+        this(node.getContext(), node.getSourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock);
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {

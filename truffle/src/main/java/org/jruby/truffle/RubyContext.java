@@ -70,7 +70,7 @@ public class RubyContext extends ExecutionContext {
     private final InteropManager interopManager = new InteropManager(this);
     private final CodeLoader codeLoader = new CodeLoader(this);
     private final FeatureLoader featureLoader = new FeatureLoader(this);
-    private final TraceManager traceManager = new TraceManager(this);
+    private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
     private final AtExitManager atExitManager = new AtExitManager(this);
     private final SourceCache sourceCache = new SourceCache(new SourceLoader(this));
@@ -162,7 +162,9 @@ public class RubyContext extends ExecutionContext {
             instrumentationServerManager = null;
         }
 
-        attachmentsManager = new AttachmentsManager(this, env.lookup(Instrumenter.class));
+        final Instrumenter instrumenter = env.lookup(Instrumenter.class);
+        attachmentsManager = new AttachmentsManager(this, instrumenter);
+        traceManager = new TraceManager(this, instrumenter);
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {

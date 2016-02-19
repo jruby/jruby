@@ -42,20 +42,6 @@ public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
                     probe.tagAs(RubySyntaxTag.LINE, null);
                 }
 
-                if (rubyNode instanceof OpenModuleNode) {
-                    final Probe probe = instrumenter.probe(rubyNode);
-                    probe.tagAs(RubySyntaxTag.CLASS, null);
-                }
-                // A RubyRootNode can't have a probe because it doesn't have a parent.  So, we do the next best thing and
-                // tag its immediate child.  The trace instrument will know to look at the parent (RubyRootNode) based upon
-                // the context implied by the tag.  We need to tag at the RubyRootNode because the semantics of set_trace_func
-                // are such that the receiver must be resolved, so we have to push as far into the callee as we can to have
-                // a properly constructed frame.
-                else if ((rubyNode.getParent() instanceof RubyRootNode)) {
-                    final Probe probe = instrumenter.probe(rubyNode);
-                    probe.tagAs(RubySyntaxTag.CALL, null);
-                }
-
             }
         }
 

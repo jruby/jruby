@@ -51,6 +51,7 @@ import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.core.proc.ProcNodes.Type;
 import org.jruby.truffle.core.range.RangeNodesFactory;
@@ -3154,7 +3155,7 @@ public class BodyTranslator extends Translator {
             node.setAtNewline();
             final SourceSection current = node.getEncapsulatingSourceSection();
             node.clearSourceSection();
-            node.assignSourceSection(current.withTags(AttachmentsManager.LINE_TAG));
+            node.assignSourceSection(current.withTags(AttachmentsManager.LINE_TAG, TraceManager.LINE_TAG));
         }
 
         return node;
