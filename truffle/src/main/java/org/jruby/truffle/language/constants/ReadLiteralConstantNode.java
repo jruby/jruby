@@ -18,7 +18,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.literal.LiteralNode;
+import org.jruby.truffle.language.literal.ObjectLiteralNode;
 
 public class ReadLiteralConstantNode extends RubyNode {
 
@@ -26,7 +26,7 @@ public class ReadLiteralConstantNode extends RubyNode {
 
     public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
         super(context, sourceSection);
-        RubyNode nameNode = new LiteralNode(context, sourceSection, name);
+        RubyNode nameNode = new ObjectLiteralNode(context, sourceSection, name);
         this.readConstantNode = new ReadConstantNode(context, sourceSection, false, false, moduleNode, nameNode);
     }
 

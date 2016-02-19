@@ -25,7 +25,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.literal.LiteralNode;
+import org.jruby.truffle.language.literal.ObjectLiteralNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
@@ -165,7 +165,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     // TODO CS 20-Aug-15 this needs to go
     public static boolean verySlowIsFrozen(RubyContext context, Object object) {
-        final RubyNode node = IsFrozenNodeGen.create(context, null, new LiteralNode(context, null, object));
+        final RubyNode node = IsFrozenNodeGen.create(context, null, new ObjectLiteralNode(context, null, object));
         new Node() {
             @Child RubyNode child = node;
         }.adoptChildren();

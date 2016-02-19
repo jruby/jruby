@@ -17,11 +17,11 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeInfo(cost = NodeCost.NONE)
-public class LiteralNode extends RubyNode {
+public class ObjectLiteralNode extends RubyNode {
 
     private final Object object;
 
-    public LiteralNode(RubyContext context, SourceSection sourceSection, Object object) {
+    public ObjectLiteralNode(RubyContext context, SourceSection sourceSection, Object object) {
         super(context, sourceSection);
         this.object = object;
     }
