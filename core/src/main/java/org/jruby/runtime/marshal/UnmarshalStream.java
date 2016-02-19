@@ -365,7 +365,7 @@ public class UnmarshalStream extends InputStream {
 
             IRubyObject key = unmarshalObject(false);
 
-            if (runtime.is1_9() && object instanceof EncodingCapable) {
+            if (object instanceof EncodingCapable) {
 
                 EncodingCapable strObj = (EncodingCapable)object;
 
