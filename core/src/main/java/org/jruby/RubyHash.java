@@ -233,7 +233,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private RubyHash(Ruby runtime, RubyClass klass, RubyHash other) {
         super(runtime, klass);
-        this.ifNone = runtime.getNil();
+        this.ifNone = UNDEF;
         threshold = INITIAL_THRESHOLD;
         table = other.internalCopyTable(head);
         size = other.size;
@@ -241,7 +241,7 @@ public class RubyHash extends RubyObject implements Map {
 
     public RubyHash(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
-        this.ifNone = runtime.getNil();
+        this.ifNone = UNDEF;
         allocFirst();
     }
 
@@ -702,7 +702,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             return context.nil;
         }
-        return ifNone;
+        return ifNone == UNDEF ? context.nil : ifNone;
     }
 
     @JRubyMethod(name = "default")
@@ -710,7 +710,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             return Helpers.invoke(context, ifNone, "call", this, arg);
         }
-        return ifNone;
+        return ifNone == UNDEF ? context.nil : ifNone;
     }
 
     /** rb_hash_set_default
@@ -1679,7 +1679,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             return this.callMethod(context, "default", context.nil);
         }
-        return ifNone;
+        return ifNone == UNDEF ? context.nil : ifNone;
     }
 
     public final boolean fastDelete(IRubyObject key) {
@@ -2116,7 +2116,7 @@ public class RubyHash extends RubyObject implements Map {
             throw (IOException)e.getCause();
         }
 
-        if (!hash.ifNone.isNil()) output.dumpObject(hash.ifNone);
+        if (hash.ifNone != UNDEF) output.dumpObject(hash.ifNone);
     }
 
     public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {

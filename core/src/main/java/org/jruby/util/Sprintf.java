@@ -39,6 +39,7 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -160,9 +161,15 @@ public class Sprintf {
                 IRubyObject object = rubyHash.fastARef(nameSym);
 
                 // if not found, try dispatching to pick up default hash value
-                if (object == null) object = rubyHash.callMethod(runtime.getCurrentContext(), "[]", nameSym);
-                
-                if (object.isNil()) raiseKeyError("key<" + name + "> not found");
+                // MRI: spliced together bits from rb_hash_default_value
+                if (object == null) {
+                    object = rubyHash.getIfNone();
+                    if (object == RubyBasicObject.UNDEF) {
+                        raiseKeyError("key<" + name + "> not found");
+                    } else if (rubyHash.hasDefaultProc()) {
+                        object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
+                    }
+                }
                 return object;
             } else if (rubyHash != null) {
                 raiseArgumentError("positional args mixed with named args");
