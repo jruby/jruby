@@ -21,25 +21,7 @@ public enum RubySyntaxTag implements SyntaxTag {
 
     CLASS("class", "Start a class or module definition"),
 
-    END("end", "Finish a class or module definition"),
-
-    CALL("call", "Call a Ruby method"),
-
-    RETURN("return", "Return from a Ruby method"),
-
-    C_CALL("c_call", "Call a C-language routine"),
-
-    C_RETURN("c_return", "Return from a C-language routine"),
-
-    RAISE("raise", "Raise an exception"),
-
-    B_CALL("b_call", "Event hook at block entry"),
-
-    B_RETURN("b_return", "Event hook at block ending"),
-
-    THREAD_BEGIN("thread_begin", "Event hook at thread beginning"),
-
-    THREAD_END("thread_end", "Event hook at thread ending");
+    CALL("call", "Call a Ruby method");
 
     private final String name;
     private final String description;
