@@ -1121,6 +1121,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public static IRubyObject stop(ThreadContext context, IRubyObject receiver) {
         RubyThread rubyThread = context.getThread();
 
+        if (context.runtime.getThreadService().getActiveRubyThreads().length == 1) {
+            throw context.runtime.newThreadError("stopping only thread\n\tnote: use sleep to stop forever");
+        }
+
         synchronized (rubyThread) {
             rubyThread.pollThreadEvents(context);
             try {
