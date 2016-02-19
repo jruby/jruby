@@ -953,6 +953,7 @@ public class ParserSupport {
         if (lexer.getHeredocIndent() > 0) {
             if (head instanceof StrNode) {
                 head = createDStrNode(head.getPosition()).add(head);
+                return list_append(head, tail);
             } else if (head instanceof DStrNode) {
                 return list_append(head, tail);
             }
@@ -973,7 +974,7 @@ public class ParserSupport {
             return ((ListNode) head).add(tail);
         	
         } else if (tail instanceof DStrNode) {
-            if (head instanceof StrNode){
+            if (head instanceof StrNode) { // Str + oDStr -> Dstr(Str, oDStr.contents)
                 DStrNode newDStr = new DStrNode(head.getPosition(), ((DStrNode) tail).getEncoding());
                 newDStr.add(head);
                 newDStr.addAll(tail);
