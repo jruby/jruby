@@ -1,6 +1,8 @@
 exclude :test_define_class, "an MRI inconsistency - NameError when class BasicSocket already defined!"
 exclude :test_frozen_loaded_features, "error message does not match"
 exclude :test_load2, "needs investigation"
+exclude :test_loading_fifo_threading_raise, "we do not use IO to read files and so will not show as stopped while loading"
+exclude :test_loading_fifo_threading_success, "we do not use IO to read files and so will not show as stopped while loading"
 exclude :test_race_exception, "needs investigation"
 exclude :test_require_changed_home, "needs investigation"
 exclude :test_require_nonascii, "needs investigation"
