@@ -2900,7 +2900,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitStrNode(org.jruby.ast.StrNode node) {
-        final RubyNode ret = new StringLiteralNode(context, translate(node.getPosition()), node.getValue(), node.getCodeRange());
+        final ByteList byteList = node.getValue();
+        final int codeRange = node.getCodeRange();
+        final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
+        final RubyNode ret = new StringLiteralNode(context, translate(node.getPosition()), rope);
         return addNewlineIfNeeded(node, ret);
     }
 
