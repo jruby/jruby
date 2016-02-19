@@ -25,6 +25,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.StringLiterals;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.platform.Sockets;
 import org.jruby.util.ByteList;
@@ -168,6 +169,10 @@ public abstract class RubyNode extends Node {
 
     protected DynamicObject createString(Rope rope) {
         return StringOperations.createString(getContext(), rope);
+    }
+
+    protected StringLiterals stringLiterals() {
+        return getContext().getStringLiterals();
     }
 
     protected POSIX posix() {
