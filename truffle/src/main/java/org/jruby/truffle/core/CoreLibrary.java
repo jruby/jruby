@@ -11,6 +11,7 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -1031,6 +1032,11 @@ public class CoreLibrary {
     public DynamicObject noBlockToYieldTo(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return localJumpError("no block given (yield)", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorCantCreateInstanceOfSingletonClass(Node currentNode) {
+        return typeError("can't create instance of singleton class", currentNode, null);
     }
 
     public DynamicObject typeError(String message, Node currentNode) {
