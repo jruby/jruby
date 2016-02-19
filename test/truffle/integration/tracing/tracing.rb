@@ -9,7 +9,8 @@
 $trace = []
 
 $trace_proc = proc { |*args|
-   $trace << args
+  args[4] = args[4].dup
+  $trace << args
 }
 
 def check(file)
@@ -20,8 +21,6 @@ def check(file)
   end
   
   actual = $trace
-  
-  #p actual
   
   while actual.size < expected.size
     actual.push [:missing, :missing, :missing, :missing, :missing, :missing]
@@ -53,9 +52,11 @@ def check(file)
       puts "Expected #{e[3]}, actually #{a[3]}"
       success = false
     end
+    
+    ab = Hash[a[4].local_variables.sort.map { |v| [v, a[4].local_variable_get(v)] }]
   
-    unless a[4].is_a?(Binding)
-      puts "Expected Binding, actually #{a[4].class}"
+    unless ab == e[4]
+      puts "Expected Binding, actually #{ab}"
       success = false
     end
   
