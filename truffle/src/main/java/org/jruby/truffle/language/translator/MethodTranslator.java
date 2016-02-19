@@ -57,6 +57,7 @@ import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.supercall.ZSuperOutsideMethodNode;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 
 public class MethodTranslator extends BodyTranslator {
@@ -106,9 +107,7 @@ public class MethodTranslator extends BodyTranslator {
 
             final RubyNode shouldDestructure = new ShouldDestructureNode(context, sourceSection, new RespondToNode(context, sourceSection, readArrayNode, "to_ary"));
 
-            final RubyNode arrayWasNotNil = SequenceNode.sequence(context, sourceSection,
-                    writeArrayNode,
-                    new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot))));
+            final RubyNode arrayWasNotNil = sequence(context, sourceSection, Arrays.asList(writeArrayNode, new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)))));
 
             final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(context, sourceSection,
                     shouldDestructure,
@@ -122,9 +121,7 @@ public class MethodTranslator extends BodyTranslator {
             preludeProc = loadArguments;
         }
 
-        final RubyNode preludeLambda = SequenceNode.sequence(context, sourceSection,
-                CheckArityNode.create(context, sourceSection, arityForCheck),
-                NodeUtil.cloneNode(loadArguments));
+        final RubyNode preludeLambda = sequence(context, sourceSection, Arrays.asList(CheckArityNode.create(context, sourceSection, arityForCheck), NodeUtil.cloneNode(loadArguments)));
 
         RubyNode body;
 
@@ -142,7 +139,7 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         // Procs
-        final RubyNode bodyProc = new CatchForProcNode(context, SequenceNode.enclosing(sourceSection, body.getEncapsulatingSourceSection()), composeBody(preludeProc, NodeUtil.cloneNode(body)));
+        final RubyNode bodyProc = new CatchForProcNode(context, enclosing(sourceSection, body.getEncapsulatingSourceSection()), composeBody(preludeProc, NodeUtil.cloneNode(body)));
 
         final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, considerExtendingMethodToCoverEnd(bodyProc.getEncapsulatingSourceSection()), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
@@ -194,12 +191,12 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     private RubyNode composeBody(RubyNode prelude, RubyNode body) {
-        final SourceSection sourceSection = SequenceNode.enclosing(prelude.getSourceSection(), body.getSourceSection());
+        final SourceSection sourceSection = enclosing(prelude.getSourceSection(), body.getSourceSection());
 
-        body = SequenceNode.sequence(context, sourceSection, prelude, body);
+        body = sequence(context, sourceSection, Arrays.asList(prelude, body));
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
+            body = sequence(context, sourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
 
         return body;
@@ -236,15 +233,13 @@ public class MethodTranslator extends BodyTranslator {
             // Use Rubinius.primitive seems to turn off arity checking. See Time.from_array for example.
             prelude = loadArguments;
         } else {
-            prelude = SequenceNode.sequence(context, sourceSection,
-                    CheckArityNode.create(context, sourceSection, arity),
-                    loadArguments);
+            prelude = sequence(context, sourceSection, Arrays.asList(CheckArityNode.create(context, sourceSection, arity), loadArguments));
         }
 
-        body = SequenceNode.sequence(context, body.getSourceSection(), prelude, body);
+        body = sequence(context, body.getSourceSection(), Arrays.asList(prelude, body));
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = SequenceNode.sequence(context, body.getSourceSection(), initFlipFlopStates(sourceSection), body);
+            body = sequence(context, body.getSourceSection(), Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
 
         body = new CatchForMethodNode(context, body.getSourceSection(), body, environment.getReturnID());

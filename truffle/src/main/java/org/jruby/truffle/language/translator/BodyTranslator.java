@@ -36,7 +36,6 @@ import org.jruby.truffle.core.array.ArrayDropTailNode;
 import org.jruby.truffle.core.array.ArrayDropTailNodeGen;
 import org.jruby.truffle.core.array.ArrayGetTailNodeGen;
 import org.jruby.truffle.core.array.ArrayLiteralNode;
-import org.jruby.truffle.core.array.ArrayNodes.PushOneNode;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.core.cast.HashCastNodeGen;
@@ -374,10 +373,7 @@ public class BodyTranslator extends Translator {
         boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
         final RubyNode actualCall = translateCallNode(callNode, isAccessorOnSelf, false);
 
-        final RubyNode ret = SequenceNode.sequence(context, sourceSection,
-                writeValue,
-                actualCall,
-                new ReadLocalVariableNode(context, sourceSection, frameSlot));
+        final RubyNode ret = sequence(context, sourceSection, Arrays.asList(writeValue, actualCall, new ReadLocalVariableNode(context, sourceSection, frameSlot)));
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -442,7 +438,8 @@ public class BodyTranslator extends Translator {
         if (translatedChildren.size() == 1) {
             ret = translatedChildren.get(0);
         } else {
-            ret = SequenceNode.sequence(context, sourceSection, translatedChildren.toArray(new RubyNode[translatedChildren.size()]));
+            RubyNode[] sequence = translatedChildren.toArray(new RubyNode[translatedChildren.size()]);
+            ret = sequence(context, sourceSection, Arrays.asList(sequence));
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -671,7 +668,7 @@ public class BodyTranslator extends Translator {
 
         children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
 
-        RubyNode translated = new RubyCallNode(context, SequenceNode.enclosing(sourceSection, children.toArray(new RubyNode[children.size()])),
+        RubyNode translated = new RubyCallNode(context, enclosing(sourceSection, children.toArray(new RubyNode[children.size()])),
                 node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(),
                 privately || ignoreVisibility, isVCall, argumentsAndBlock.getArguments());
 
@@ -871,7 +868,7 @@ public class BodyTranslator extends Translator {
 
             // A top-level block assigns the temp then runs the if
 
-            ret = SequenceNode.sequence(context, sourceSection, assignTemp, ifNode);
+            ret = sequence(context, sourceSection, Arrays.asList(assignTemp, ifNode));
         } else {
             for (int n = node.getCases().size() - 1; n >= 0; n--) {
                 final org.jruby.ast.WhenNode when = (org.jruby.ast.WhenNode) node.getCases().get(n);
@@ -964,7 +961,7 @@ public class BodyTranslator extends Translator {
         }
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
+            body = sequence(context, sourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
@@ -1758,7 +1755,7 @@ public class BodyTranslator extends Translator {
             final RubyNode elseBodyTranslated = elseBody.accept(this);
             ret = new UnlessNode(context, sourceSection, condition, elseBodyTranslated);
         } else {
-            ret = SequenceNode.sequence(context, sourceSection, condition, new NilNode(context, sourceSection));
+            ret = sequence(context, sourceSection, Arrays.asList(condition, new NilNode(context, sourceSection)));
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -2178,7 +2175,7 @@ public class BodyTranslator extends Translator {
                 tempValues[n] = NodeUtil.cloneNode(readTemp);
             }
 
-            final RubyNode blockNode = SequenceNode.sequence(context, sourceSection, sequence);
+            final RubyNode blockNode = sequence(context, sourceSection, Arrays.asList(sequence));
 
             final ArrayLiteralNode.UninitialisedArrayLiteralNode arrayNode = new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, tempValues);
 
@@ -2263,7 +2260,7 @@ public class BodyTranslator extends Translator {
                     smallerSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
                 }
 
-                final RubyNode smaller = SequenceNode.sequence(context, sourceSection, smallerSequence);
+                final RubyNode smaller = sequence(context, sourceSection, smallerSequence);
 
                 final List<RubyNode> atLeastAsLargeSequence = new ArrayList<>();
 
@@ -2273,7 +2270,7 @@ public class BodyTranslator extends Translator {
                     atLeastAsLargeSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
                 }
 
-                final RubyNode atLeastAsLarge = SequenceNode.sequence(context, sourceSection, atLeastAsLargeSequence);
+                final RubyNode atLeastAsLarge = sequence(context, sourceSection, atLeastAsLargeSequence);
 
                 final RubyNode assignPost =
                         new IfElseNode(context, sourceSection,
@@ -2284,7 +2281,7 @@ public class BodyTranslator extends Translator {
                 sequence.add(assignPost);
             }
 
-            result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
+            result = new ElidableResultNode(context, sourceSection, sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
         } else if (node.getPre() == null
                 && node.getPost() == null
                 && node.getRest() instanceof org.jruby.ast.StarNode) {
@@ -2339,7 +2336,7 @@ public class BodyTranslator extends Translator {
                 assignmentResult = environment.findLocalVarNode(tempRHSName, sourceSection);
             }
 
-            result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), assignmentResult);
+            result = new ElidableResultNode(context, sourceSection, sequence(context, sourceSection, sequence), assignmentResult);
         } else if (node.getPre() == null
                 && node.getPost() == null
                 && node.getRest() != null
@@ -2403,7 +2400,7 @@ public class BodyTranslator extends Translator {
                 smallerSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
             }
 
-            final RubyNode smaller = SequenceNode.sequence(context, sourceSection, smallerSequence);
+            final RubyNode smaller = sequence(context, sourceSection, smallerSequence);
 
             final List<RubyNode> atLeastAsLargeSequence = new ArrayList<>();
 
@@ -2413,7 +2410,7 @@ public class BodyTranslator extends Translator {
                 atLeastAsLargeSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
             }
 
-            final RubyNode atLeastAsLarge = SequenceNode.sequence(context, sourceSection, atLeastAsLargeSequence);
+            final RubyNode atLeastAsLarge = sequence(context, sourceSection, atLeastAsLargeSequence);
 
             final RubyNode assignPost =
                     new IfElseNode(context, sourceSection,
@@ -2423,7 +2420,7 @@ public class BodyTranslator extends Translator {
 
             sequence.add(assignPost);
 
-            result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
+            result = new ElidableResultNode(context, sourceSection, sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
         } else {
             context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
             result = nilNode(sourceSection);
@@ -2519,7 +2516,7 @@ public class BodyTranslator extends Translator {
             RubyNode rhs = writeMethod.accept(this);
 
             final RubyNode ret = new DefinedWrapperNode(context, sourceSection,
-                    SequenceNode.sequence(context, sourceSection, writeReceiverToTemp.accept(this), new OrNode(context, sourceSection, lhs, rhs)),
+                    sequence(context, sourceSection, Arrays.asList(writeReceiverToTemp.accept(this), new OrNode(context, sourceSection, lhs, rhs))),
                     "assignment");
 
             return addNewlineIfNeeded(node, ret);
@@ -3084,7 +3081,7 @@ public class BodyTranslator extends Translator {
             initNodes[n] = new InitFlipFlopSlotNode(context, sourceSection, environment.getFlipFlopStates().get(n));
         }
 
-        return SequenceNode.sequence(context, sourceSection, initNodes);
+        return sequence(context, sourceSection, Arrays.asList(initNodes));
     }
 
     @Override

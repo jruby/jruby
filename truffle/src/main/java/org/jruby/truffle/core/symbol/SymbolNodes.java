@@ -38,6 +38,9 @@ import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.SymbolProcNode;
+import org.jruby.truffle.language.translator.Translator;
+
+import java.util.Arrays;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -147,9 +150,7 @@ public abstract class SymbolNodes {
                     sourceSection, null, Arity.AT_LEAST_ONE, Layouts.SYMBOL.getString(symbol),
                     true, ArgumentDescriptor.ANON_REST, false, false, false);
 
-            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, SequenceNode.sequence(getContext(), sourceSection,
-                                        CheckArityNode.create(getContext(), sourceSection, Arity.AT_LEAST_ONE),
-                                        new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol))), false);
+            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection, Arrays.asList(CheckArityNode.create(getContext(), sourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = RubyArguments.getMethod(frame.getArguments());

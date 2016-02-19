@@ -77,7 +77,7 @@ public class ReloadArgumentsTranslator extends Translator {
             System.err.println("WARNING: kwargs in zsuper not yet implemented at " + sourceSection.getShortDescription());
         }
 
-        return SequenceNode.sequenceNoFlatten(context, sourceSection, sequence);
+        return new SequenceNode(context, sourceSection, sequence.toArray(new RubyNode[sequence.size()]));
     }
 
     @Override
