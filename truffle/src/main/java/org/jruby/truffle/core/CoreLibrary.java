@@ -1304,7 +1304,7 @@ public class CoreLibrary {
     }
 
     public DynamicObject internalError(String message, Node currentNode) {
-        return internalError(message, currentNode);
+        return internalError(message, currentNode, null);
     }
 
     public DynamicObject internalError(String message, Node currentNode, Throwable javaThrowable) {
