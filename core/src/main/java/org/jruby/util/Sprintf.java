@@ -133,7 +133,7 @@ public class Sprintf {
         // temporary hack to handle non-Ruby values
         // will come up with better solution shortly
         Args(Ruby runtime, long value) {
-            this(RubyFixnum.newFixnum(runtime,value));
+            this(RubyFixnum.newFixnum(runtime, value));
         }
 
         void raiseArgumentError(String message) {
