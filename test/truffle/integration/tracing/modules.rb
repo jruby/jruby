@@ -6,18 +6,22 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# TODO CS 3-Feb-16 Not compliant with MRI - here as a regression test
+# TODO CS 19-Feb-16 Not compliant with MRI - here as a regression test
 
-require_relative 'backtraces'
+require_relative 'tracing'
 
-def m1
-  eval 'm2'
+def add(a, b)
+  a + b
 end
 
-def m2
-  eval "raise 'message'"
+set_trace_func $trace_proc
+
+module Foo
 end
 
-check('eval.backtrace') do
-  m1
+class Bar
 end
+
+set_trace_func nil
+
+check('modules.trace')

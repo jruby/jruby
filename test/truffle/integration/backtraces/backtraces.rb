@@ -10,7 +10,7 @@ def check(file)
   expected = nil
   
   File.open('test/truffle/integration/backtraces/' + file) do |f|
-    expected = f.lines.map(&:strip)
+    expected = f.each_line.map(&:strip)
   end
   
   begin
