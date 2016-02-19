@@ -33,7 +33,7 @@ public class OpenModuleNode extends RubyNode {
     final protected LexicalScope lexicalScope;
     @Child private IndirectCallNode callModuleDefinitionNode;
 
-    final private ModuleBodyDefinitionNode definitionMethod;
+    @Child private ModuleBodyDefinitionNode definitionMethod;
 
     public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, ModuleBodyDefinitionNode definition, LexicalScope lexicalScope) {
         super(context, sourceSection);
