@@ -102,15 +102,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
      *
      * @param bl ByteList for the String to push
      */
-    public void pushFrozenString(final ByteList bl, final int cr) {
+    public void pushFrozenString(final ByteList bl, final int cr, final String file, final int line) {
         cacheValuePermanently("fstring", RubyString.class, keyFor("fstring", bl), new Runnable() {
             @Override
             public void run() {
-                loadRuntime();
+                loadContext();
                 adapter.ldc(bl.toString());
                 adapter.ldc(bl.getEncoding().toString());
                 adapter.ldc(cr);
-                invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, Ruby.class, String.class, String.class, int.class));
+                adapter.ldc(file);
+                adapter.ldc(line);
+                invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, ThreadContext.class, String.class, String.class, int.class, String.class, int.class));
             }
         });
     }

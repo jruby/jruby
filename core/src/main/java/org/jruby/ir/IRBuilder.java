@@ -1013,7 +1013,7 @@ public class IRBuilder {
         // Frozen string optimization: check for "string".freeze
         if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
             StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange());
+            return new FrozenString(asString.getValue(), asString.getCodeRange(), asString.getPosition().getFile(), asString.getPosition().getLine());
         }
 
         // Though you might be tempted to move this build into the CallInstr as:
@@ -3437,27 +3437,11 @@ public class IRBuilder {
     public Operand buildStr(StrNode strNode) {
         if (strNode instanceof FileNode) return new Filename();
 
-        Operand literal = strNode.isFrozen() && !manager.getInstanceConfig().isDebuggingFrozenStringLiteral() ?
-                new FrozenString(strNode.getValue(), strNode.getCodeRange()) :
-                new StringLiteral(strNode.getValue(), strNode.getCodeRange());
+        Operand literal = strNode.isFrozen() ?
+                new FrozenString(strNode.getValue(), strNode.getCodeRange(), strNode.getPosition().getFile(), strNode.getPosition().getLine()) :
+                new StringLiteral(strNode.getValue(), strNode.getCodeRange(), strNode.getPosition().getFile(), strNode.getPosition().getLine());
 
-        Operand result;
-
-        // This logic might be slightly different than MRI in cases.  This is defined as any frozen string literal
-        // we be able to be debugged.  In MRI, they only do this is the iseq mode is set to frozen-string-literal.
-        // So we might actually debug more instances of frozen string but this way seems more logical.
-        if (strNode.isFrozen() && manager.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            Variable stringReference = createTemporaryVariable();
-            addInstr(new CopyInstr(stringReference, literal));
-            // FIXME: I think we want to hide this and not make user accessible?  Seems like it could have utility to be user-exposed though.
-            // FIXME: Also we are manually dyn-dispatching to freeze and not calling it internally. Maybe also ok?
-            Operand[] pair = new Operand[] { new FrozenString(strNode.getPosition().getFile()), new Fixnum(strNode.getPosition().getLine()) };
-            addInstr(new PutFieldInstr(stringReference, RubyString.DEBUG_INFO_FIELD, new Array(pair)));
-            result = createTemporaryVariable();
-            addInstr(CallInstr.create(scope, (Variable) result, "freeze", stringReference, NO_ARGS, null));
-        } else {
-            result = copyAndReturnValue(literal);
-        }
+        Operand result = copyAndReturnValue(literal);
 
         return result;
     }
@@ -3590,7 +3574,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new FrozenString(node.getValue(), node.getCodeRange())}));
+        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), node.getPosition().getFile(), node.getPosition().getLine())}));
     }
 
     public Operand buildYield(YieldNode node) {

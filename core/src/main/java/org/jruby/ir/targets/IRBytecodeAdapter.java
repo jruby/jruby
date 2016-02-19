@@ -292,7 +292,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param bl ByteList for the String to push
      */
-    public abstract void pushFrozenString(ByteList bl, int cr);
+    public abstract void pushFrozenString(ByteList bl, int cr, String path, int line);
 
     /**
      * Stack required: none

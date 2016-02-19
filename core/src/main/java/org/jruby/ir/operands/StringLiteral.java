@@ -28,14 +28,14 @@ public class StringLiteral extends Operand {
 
     public final FrozenString frozenString;
 
-    public StringLiteral(ByteList val, int coderange) {
-        this.frozenString = new FrozenString(val, coderange);
+    public StringLiteral(ByteList val, int coderange, String file, int line) {
+        this.frozenString = new FrozenString(val, coderange, file, line);
     }
 
-    protected StringLiteral(String string, ByteList bytelist, int coderange) {
+    protected StringLiteral(String string, ByteList bytelist, int coderange, String file, int line) {
         super();
 
-        this.frozenString = new FrozenString(string, bytelist, coderange);
+        this.frozenString = new FrozenString(string, bytelist, coderange, file, line);
     }
 
     public StringLiteral(String s) {

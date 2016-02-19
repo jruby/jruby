@@ -1073,8 +1073,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RubyString newFrozenStringFromRaw(Ruby runtime, String str, String encoding, int cr) {
-        return runtime.freezeAndDedupString(RubyString.newString(runtime, newByteListFromRaw(runtime, str, encoding), cr));
+    public static RubyString newFrozenStringFromRaw(ThreadContext context, String str, String encoding, int cr, String file, int line) {
+        return newFrozenString(context, newByteListFromRaw(context.runtime, str, encoding), cr, file, line);
     }
 
     @JIT
@@ -1762,5 +1762,23 @@ public class IRRuntimeHelpers {
         Block block = new Block(body, context.currentBinding(self, scope));
 
         return block;
+    }
+
+    @JIT
+    public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
+        Ruby runtime = context.runtime;
+
+        RubyString string = RubyString.newString(runtime, bytelist, coderange);
+
+        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
+            // stuff location info into the string and then freeze it
+            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line)).freeze(context);
+            string.setInternalVariable(RubyString.DEBUG_INFO_FIELD, info);
+            string.setFrozen(true);
+        } else {
+            string = runtime.freezeAndDedupString(string);
+        }
+
+        return string;
     }
 }

@@ -1,15 +1,12 @@
 package org.jruby.ir.operands;
 
-import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -22,23 +19,27 @@ import java.util.List;
 public class FrozenString extends ImmutableLiteral {
     // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 
-    final public ByteList bytelist;
-    final public String   string;
-    final public int      coderange;
+    public final ByteList bytelist;
+    public final String   string;
+    public final int      coderange;
+    public final String file;
+    public final int line;
 
     /**
      * Used by persistence and by .freeze optimization
      */
-    public FrozenString(ByteList byteList, int cr) {
-        this(internedStringFromByteList(byteList), byteList, cr);
+    public FrozenString(ByteList byteList, int cr, String file, int line) {
+        this(internedStringFromByteList(byteList), byteList, cr, file, line);
     }
 
-    protected FrozenString(String string, ByteList bytelist, int coderange) {
+    protected FrozenString(String string, ByteList bytelist, int coderange, String file, int line) {
         super();
 
         this.bytelist = bytelist;
         this.coderange = coderange;
         this.string = string;
+        this.file = file;
+        this.line = line;
     }
 
     /**
@@ -54,6 +55,8 @@ public class FrozenString extends ImmutableLiteral {
         this.bytelist = byteList;
         this.string = string;
         this.coderange = StringSupport.CR_7BIT;
+        this.file = "<dummy>";
+        this.line = -1;
     }
 
     // If Encoding has an instance of a Charset can it ever raise unsupportedcharsetexception? because this
@@ -103,7 +106,7 @@ public class FrozenString extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return context.runtime.freezeAndDedupString(RubyString.newString(context.runtime, bytelist, coderange));
+        return IRRuntimeHelpers.newFrozenString(context, bytelist, coderange, file, line);
     }
 
     @Override
@@ -119,15 +122,25 @@ public class FrozenString extends ImmutableLiteral {
         return string;
     }
 
+    public String getFile() {
+        return file;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(bytelist);
         e.encode(coderange);
+        e.encode(file);
+        e.encode(line);
     }
 
     public static FrozenString decode(IRReaderDecoder d) {
-        return new FrozenString(d.decodeByteList(), d.decodeInt());
+        return new FrozenString(d.decodeByteList(), d.decodeInt(), d.decodeString(), d.decodeInt());
     }
 
     public int getCodeRange() { return coderange; }
