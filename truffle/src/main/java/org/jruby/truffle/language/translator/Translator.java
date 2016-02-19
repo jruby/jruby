@@ -116,7 +116,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             final boolean lastNode = n == sequence.size() - 1;
             final RubyNode node = sequence.get(n);
 
-            if (node instanceof NilNode || (node instanceof LiteralNode && ((LiteralNode) node).getObject() == context.getCoreLibrary().getNilObject())) {
+            if (node instanceof NilNode && ((NilNode) node).isImplicit()) {
                 if (allowTrailingNil && lastNode) {
                     flattened.add(node);
                 }
