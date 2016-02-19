@@ -30,6 +30,8 @@ import org.jruby.truffle.language.RubyGuards;
 
 public class AttachmentsManager {
 
+    public static final String LINE_TAG = "org.jruby.truffle.attachments.line";
+
     private final RubyContext context;
     private final Instrumenter instrumenter;
 
@@ -42,7 +44,7 @@ public class AttachmentsManager {
         assert RubyGuards.isRubyProc(block);
 
         final Source source = context.getSourceCache().getBestSourceFuzzily(file);
-        SourceSectionFilter filter = SourceSectionFilter.newBuilder().sourceIs(source).lineIs(line).tagIs("statement").build();
+        SourceSectionFilter filter = SourceSectionFilter.newBuilder().sourceIs(source).lineIs(line).tagIs(LINE_TAG).build();
         return instrumenter.attachFactory(filter, new ExecutionEventNodeFactory() {
             public ExecutionEventNode create(EventContext eventContext) {
                 return new AttachmentEventNode(context, block);

@@ -70,6 +70,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.debug.AssertConstantNodeGen;
 import org.jruby.truffle.debug.AssertNotCompiledNodeGen;
+import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -3153,7 +3154,7 @@ public class BodyTranslator extends Translator {
             node.setAtNewline();
             final SourceSection current = node.getEncapsulatingSourceSection();
             node.clearSourceSection();
-            node.assignSourceSection(current.withTags("statement"));
+            node.assignSourceSection(current.withTags(AttachmentsManager.LINE_TAG));
         }
 
         return node;
