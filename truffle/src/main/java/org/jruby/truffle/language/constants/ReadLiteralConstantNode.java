@@ -18,7 +18,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.literal.LiteralNode;
+import org.jruby.truffle.language.literal.ObjectLiteralNode;
 
 public class ReadLiteralConstantNode extends RubyNode {
 
@@ -26,7 +26,7 @@ public class ReadLiteralConstantNode extends RubyNode {
 
     public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
         super(context, sourceSection);
-        RubyNode nameNode = new LiteralNode(context, sourceSection, name);
+        RubyNode nameNode = new ObjectLiteralNode(context, sourceSection, name);
         this.readConstantNode = new ReadConstantNode(context, sourceSection, false, false, moduleNode, nameNode);
     }
 
@@ -49,7 +49,7 @@ public class ReadLiteralConstantNode extends RubyNode {
              *
              * We should maybe try to see if receiver.isDefined() but we also need its value if it is,
              * and we do not want to execute receiver twice. */
-            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == context.getCoreLibrary().getNameErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == context.getCoreLibrary().getNameErrorClass()) {
                 return nil();
             }
             throw e;
@@ -63,7 +63,7 @@ public class ReadLiteralConstantNode extends RubyNode {
         try {
             constant = readConstantNode.lookupConstantNode.executeLookupConstant(frame, module, name);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == context.getCoreLibrary().getNameErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == context.getCoreLibrary().getNameErrorClass()) {
                 // private constant
                 return nil();
             }

@@ -10,4 +10,5 @@
 package org.jruby.truffle.language.control;
 
 public class BreakID {
+
 }

@@ -30,6 +30,7 @@ import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.interop.InteropManager;
 import org.jruby.truffle.interop.JRubyInterop;
+import org.jruby.truffle.language.CallStackManager;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyGuards;
@@ -72,6 +73,7 @@ public class RubyContext extends ExecutionContext {
     private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
     private final AtExitManager atExitManager = new AtExitManager(this);
     private final SourceCache sourceCache = new SourceCache(new SourceLoader(this));
+    private final CallStackManager callStack = new CallStackManager(this);
 
     private final CompilerOptions compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -309,5 +311,9 @@ public class RubyContext extends ExecutionContext {
 
     public InteropManager getInteropManager() {
         return interopManager;
+    }
+
+    public CallStackManager getCallStack() {
+        return callStack;
     }
 }

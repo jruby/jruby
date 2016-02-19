@@ -141,7 +141,7 @@ public abstract class BignumNodes {
 
         @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isDouble(b)", "!isRubyBignum(b)"})
         public Object mul(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "redo_coerced :*, other", "other", b);
+            return ruby("redo_coerced :*, other", "other", b);
         }
 
     }
@@ -204,7 +204,7 @@ public abstract class BignumNodes {
 
         @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)"})
         public Object mod(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "redo_coerced :%, other", "other", b);
+            return ruby("redo_coerced :%, other", "other", b);
         }
 
     }
@@ -237,7 +237,7 @@ public abstract class BignumNodes {
                 "!isLong(b)",
                 "!isDouble(b)"})
         public Object lessCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
 
     }
@@ -270,7 +270,7 @@ public abstract class BignumNodes {
                 "!isLong(b)",
                 "!isDouble(b)"})
         public Object lessEqualCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -350,7 +350,7 @@ public abstract class BignumNodes {
                 "!isLong(b)",
                 "!isDouble(b)"})
         public Object greaterEqualCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
     }
 
@@ -382,7 +382,7 @@ public abstract class BignumNodes {
                 "!isLong(b)",
                 "!isDouble(b)"})
         public Object greaterCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a > b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a > b", "other", b);
         }
     }
 

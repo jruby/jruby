@@ -49,10 +49,8 @@ import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
-import org.jruby.truffle.language.backtrace.BacktraceInterleaver;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -298,7 +296,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject simpleShell() {
-            new SimpleShell(getContext()).run(RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
+            new SimpleShell(getContext()).run(getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
             return nil();
         }
 
@@ -682,33 +680,9 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public DynamicObject printBacktrace() {
             final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
-                    .formatBacktrace(getContext(), null, RubyCallStack.getBacktrace(getContext(), this));
+                    .formatBacktrace(getContext(), null, getContext().getCallStack().getBacktrace(this));
 
             for (String line : rubyBacktrace) {
-                System.err.println(line);
-            }
-
-            return nil();
-        }
-
-    }
-
-    @CoreMethod(names = "print_interleaved_backtrace", onSingleton = true)
-    public abstract static class PrintInterleavedBacktraceNode extends CoreMethodNode {
-
-        public PrintInterleavedBacktraceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject printInterleavedBacktrace() {
-            final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
-                    .formatBacktrace(getContext(), null, RubyCallStack.getBacktrace(getContext(), this));
-
-            final StackTraceElement[] javaStacktrace = new Exception().getStackTrace();
-
-            for (String line : BacktraceInterleaver.interleave(rubyBacktrace, javaStacktrace)) {
                 System.err.println(line);
             }
 

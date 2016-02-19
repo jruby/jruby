@@ -77,7 +77,7 @@ public class TryNode extends RubyNode {
     @ExplodeLoop
     private Object handleException(VirtualFrame frame, RaiseException exception) {
         for (RescueNode rescue : rescueParts) {
-            if (rescue.canHandle(frame, exception.getRubyException())) {
+            if (rescue.canHandle(frame, exception.getException())) {
                 return setLastExceptionAndRunRescue(frame, exception, rescue);
             }
         }
@@ -90,7 +90,7 @@ public class TryNode extends RubyNode {
         final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
 
         final Object lastException = threadLocals.get("$!", nil());
-        threadLocals.set("$!", exception.getRubyException());
+        threadLocals.set("$!", exception.getException());
         try {
             return rescue.execute(frame);
         } finally {

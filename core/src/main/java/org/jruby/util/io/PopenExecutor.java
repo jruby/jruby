@@ -17,6 +17,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -364,9 +365,23 @@ public class PopenExecutor {
 
             if (execargAddopt(context, runtime, eargp, key, val) != ST_CONTINUE) {
                 if (raise) {
-                    if (key instanceof RubySymbol)
-                        throw runtime.newArgumentError("wrong exec option symbol: " + key);
-                    throw runtime.newArgumentError("wrong exec option");
+                    if (key instanceof RubySymbol) {
+                        switch (key.toString()) {
+                            case "gid" :
+                                //runtime.getWarnings().warn(IRubyWarnings.ID.UNSUPPORTED_SUBPROCESS_OPTION, "popen does not support :gid option in JRuby");
+                                //break;
+                                throw runtime.newNotImplementedError("popen does not support :gid option in JRuby");
+                            case "uid" :
+                                //runtime.getWarnings().warn(IRubyWarnings.ID.UNSUPPORTED_SUBPROCESS_OPTION, "popen does not support :uid option in JRuby");
+                                //break;
+                                throw runtime.newNotImplementedError("popen does not support :uid option in JRuby");
+                            default :
+                                throw runtime.newArgumentError("wrong exec option symbol: " + key);
+                        }
+                    }
+                    else {
+                        throw runtime.newArgumentError("wrong exec option");
+                    }
                 }
 
                 if (nonopts == null) nonopts = RubyHash.newHash(runtime);
@@ -1880,8 +1895,7 @@ public class PopenExecutor {
 
         if (!eargp.use_shell && eargp.argv_buf == null) {
             int i;
-            List<byte[]> argv_buf;
-            argv_buf = new ArrayList();
+            ArrayList<byte[]> argv_buf = new ArrayList<>(argc);
             for (i = 0; i < argc; i++) {
                 IRubyObject arg = argv[i];
                 RubyString argStr = StringSupport.checkEmbeddedNulls(runtime, arg);

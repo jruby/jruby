@@ -12,34 +12,16 @@ package org.jruby.truffle.language.control;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 
-/**
- * Ruby exceptions are just Ruby objects, so they cannot also be exceptions unless we made all Ruby
- * objects exceptions. A simpler approach is to wrap Ruby exceptions in Java exceptions when we want
- * to throw them. The error messages match MRI. Note that throwing is different to raising in Ruby,
- * which is the reason we have both {@link ThrowException} and {@link RaiseException}.
- */
 public class RaiseException extends ControlFlowException {
 
-    private final DynamicObject rubyException;
+    private final DynamicObject exception;
 
-    public RaiseException(DynamicObject rubyException) {
-        this.rubyException = rubyException;
+    public RaiseException(DynamicObject exception) {
+        this.exception = exception;
     }
 
-    @Override
-    public String toString() {
-        return rubyException.toString();
+    public DynamicObject getException() {
+        return exception;
     }
-
-    @Override
-    public String getMessage() {
-        return rubyException.toString();
-    }
-
-    public DynamicObject getRubyException() {
-        return rubyException;
-    }
-
-    private static final long serialVersionUID = 7501185855599094740L;
 
 }

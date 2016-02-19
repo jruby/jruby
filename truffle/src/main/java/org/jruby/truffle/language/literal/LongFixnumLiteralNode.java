@@ -17,21 +17,23 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeInfo(cost = NodeCost.NONE)
-public class LiteralNode extends RubyNode {
+public class LongFixnumLiteralNode extends RubyNode {
 
-    private final Object object;
+    private final long value;
 
-    public LiteralNode(RubyContext context, SourceSection sourceSection, Object object) {
+    public LongFixnumLiteralNode(RubyContext context, SourceSection sourceSection, long value) {
         super(context, sourceSection);
-        this.object = object;
+        this.value = value;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return object;
+        return executeLong(frame);
     }
 
-    public Object getObject() {
-        return object;
+    @Override
+    public long executeLong(VirtualFrame frame) {
+        return value;
     }
+
 }

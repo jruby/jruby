@@ -1349,7 +1349,7 @@ public class ParserSupport {
     private ByteList createMaster(RegexpOptions options) {
         Encoding encoding = options.setup(configuration.getRuntime());
 
-        return new ByteList(new byte[] {}, encoding);
+        return new ByteList(ByteList.NULL_ARRAY, encoding);
     }
     
     // FIXME:  This logic is used by many methods in MRI, but we are only using it in lexer

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.object.DynamicObject;
 
 public class LexicalScope {
+
     public static final LexicalScope NONE = null;
 
     private final LexicalScope parent;
@@ -36,7 +37,7 @@ public class LexicalScope {
         return liveModule;
     }
 
-    public void setLiveModule(DynamicObject liveModule) {
+    public void unsafeSetLiveModule(DynamicObject liveModule) {
         this.liveModule = liveModule;
     }
 
@@ -44,4 +45,5 @@ public class LexicalScope {
     public String toString() {
         return " :: " + liveModule + (parent == null ? "" : parent.toString());
     }
+
 }

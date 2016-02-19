@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.language.control;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
@@ -19,15 +19,17 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 public class BreakNode extends RubyNode {
 
     private final BreakID breakID;
-
-    @Child private RubyNode child;
     private final boolean ignoreMarker;
 
-    public BreakNode(RubyContext context, SourceSection sourceSection, BreakID breakID, RubyNode child, boolean ignoreMarker) {
+    @Child private RubyNode child;
+
+    private final BranchProfile breakFromProcClosureProfile = BranchProfile.create();
+
+    public BreakNode(RubyContext context, SourceSection sourceSection, BreakID breakID, boolean ignoreMarker, RubyNode child) {
         super(context, sourceSection);
         this.breakID = breakID;
-        this.child = child;
         this.ignoreMarker = ignoreMarker;
+        this.child = child;
     }
 
     @Override
@@ -36,7 +38,7 @@ public class BreakNode extends RubyNode {
             final FrameOnStackMarker marker = RubyArguments.getFrameOnStackMarker(frame.getArguments());
 
             if (marker != null && !marker.isOnStack()) {
-                CompilerDirectives.transferToInterpreter();
+                breakFromProcClosureProfile.enter();
                 throw new RaiseException(getContext().getCoreLibrary().localJumpError("break from proc-closure", this));
             }
         }

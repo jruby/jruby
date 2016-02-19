@@ -41,8 +41,8 @@ public class ReadUserKeywordsHashNode extends RubyNode {
 
         CompilerDirectives.transferToInterpreter();
 
-        if ((boolean) ruby(frame, "last_arg.respond_to?(:to_hash)", "last_arg", lastArgument)) {
-            final Object converted = ruby(frame, "last_arg.to_hash", "last_arg", lastArgument);
+        if ((boolean) ruby("last_arg.respond_to?(:to_hash)", "last_arg", lastArgument)) {
+            final Object converted = ruby("last_arg.to_hash", "last_arg", lastArgument);
 
             if (RubyGuards.isRubyHash(converted)) {
                 RubyArguments.setArgument(frame.getArguments(), argumentCount - 1, converted);

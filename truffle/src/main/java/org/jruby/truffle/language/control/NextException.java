@@ -11,9 +11,6 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 
-/**
- * Controls moving to the next iteration in a control structure or method.
- */
 public final class NextException extends ControlFlowException {
 
     private final Object result;
@@ -25,7 +22,5 @@ public final class NextException extends ControlFlowException {
     public Object getResult() {
         return result;
     }
-
-    private static final long serialVersionUID = -302759969186731457L;
 
 }

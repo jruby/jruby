@@ -80,7 +80,7 @@ public class AtExitManager {
     }
 
     public static DynamicObject handleAtExitException(RubyContext context, RaiseException raiseException) {
-        final DynamicObject rubyException = raiseException.getRubyException();
+        final DynamicObject rubyException = raiseException.getException();
         if (Layouts.BASIC_OBJECT.getLogicalClass(rubyException) == context.getCoreLibrary().getSystemExitClass()) {
             // Do not show SystemExit errors, just track them for the exit status
         } else {

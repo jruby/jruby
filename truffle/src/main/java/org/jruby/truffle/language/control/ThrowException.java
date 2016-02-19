@@ -11,10 +11,6 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 
-/**
- * Controls throwing a value. Note that throwing is different to raising in Ruby, which is the
- * reason we have both {@link ThrowException} and {@link RaiseException}.
- */
 public class ThrowException extends ControlFlowException {
 
     private final Object tag;
@@ -32,7 +28,5 @@ public class ThrowException extends ControlFlowException {
     public Object getValue() {
         return value;
     }
-
-    private static final long serialVersionUID = 8693305627979840677L;
 
 }

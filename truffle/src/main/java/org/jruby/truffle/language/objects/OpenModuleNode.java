@@ -50,7 +50,7 @@ public class OpenModuleNode extends RubyNode {
         // TODO(CS): cast
         final DynamicObject module = (DynamicObject) definingModule.execute(frame);
 
-        lexicalScope.setLiveModule(module);
+        lexicalScope.unsafeSetLiveModule(module);
         Layouts.MODULE.getFields(lexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
 
         final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);

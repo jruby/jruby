@@ -32,7 +32,6 @@ import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -116,7 +115,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public DynamicObject proc(VirtualFrame frame, DynamicObject procClass, Object[] args, NotProvided block) {
-            final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
+            final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {

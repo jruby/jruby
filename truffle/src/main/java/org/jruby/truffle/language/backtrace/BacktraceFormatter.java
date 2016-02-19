@@ -16,7 +16,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -36,7 +35,8 @@ public class BacktraceFormatter {
     public enum FormattingFlags {
         OMIT_EXCEPTION,
         OMIT_FROM_PREFIX,
-        INCLUDE_CORE_FILES
+        INCLUDE_CORE_FILES,
+        INTERLEAVE_JAVA
     }
 
     private final RubyContext context;
@@ -49,15 +49,19 @@ public class BacktraceFormatter {
             flags.add(FormattingFlags.INCLUDE_CORE_FILES);
         }
 
+        if (context.getOptions().BACKTRACES_INTERLEAVE_JAVA) {
+            flags.add(FormattingFlags.INTERLEAVE_JAVA);
+        }
+
         return new BacktraceFormatter(context, flags);
     }
 
-    // for debugging
+    // For debugging
     public static List<String> rubyBacktrace(RubyContext context) {
-        return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, RubyCallStack.getBacktrace(context, null));
+        return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, context.getCallStack().getBacktrace(null));
     }
 
-    // for debugging
+    // For debugging
     public static String printableRubyBacktrace(RubyContext context) {
         final StringBuilder builder = new StringBuilder();
         for (String line : rubyBacktrace(context)) {
@@ -86,8 +90,9 @@ public class BacktraceFormatter {
 
     public List<String> formatBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
         if (backtrace == null) {
-            backtrace = RubyCallStack.getBacktrace(context, null);
+            backtrace = context.getCallStack().getBacktrace(null);
         }
+
         final List<Activation> activations = backtrace.getActivations();
         final ArrayList<String> lines = new ArrayList<>();
 
@@ -111,6 +116,10 @@ public class BacktraceFormatter {
 
                 lines.add(String.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
             }
+        }
+
+        if (backtrace.getJavaThrowable() != null && flags.contains(FormattingFlags.INTERLEAVE_JAVA)) {
+            return BacktraceInterleaver.interleave(lines, backtrace.getJavaThrowable().getStackTrace());
         }
 
         return lines;

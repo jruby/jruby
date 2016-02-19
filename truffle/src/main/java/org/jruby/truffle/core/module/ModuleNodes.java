@@ -61,7 +61,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -91,11 +90,13 @@ import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
+import org.jruby.truffle.language.translator.Translator;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -412,7 +413,7 @@ public abstract class ModuleNodes {
             final String name = nameToJavaStringNode.executeToJavaString(frame, nameObject);
 
             CompilerDirectives.transferToInterpreter();
-            final FrameInstance callerFrame = RubyCallStack.getCallerFrame(getContext());
+            final FrameInstance callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend();
             final SourceSection sourceSection = callerFrame.getCallNode().getEncapsulatingSourceSection();
             final Visibility visibility = DeclarationContext.findVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
             final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;
@@ -431,7 +432,7 @@ public abstract class ModuleNodes {
                 ReadPreArgumentNode readArgument = new ReadPreArgumentNode(getContext(), sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
                 accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);
             }
-            final RubyNode sequence = SequenceNode.sequence(getContext(), sourceSection, checkArity, accessInstanceVariable);
+            final RubyNode sequence = Translator.sequence(getContext(), sourceSection, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, callTarget);
@@ -665,7 +666,7 @@ public abstract class ModuleNodes {
         private Object classEvalSource(DynamicObject module, DynamicObject code, String file, int line) {
             assert RubyGuards.isRubyString(code);
 
-            final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
+            final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
             Encoding encoding = Layouts.STRING.getRope(code).getEncoding();
 
@@ -1173,7 +1174,7 @@ public abstract class ModuleNodes {
         private DynamicObject addMethod(DynamicObject module, String name, InternalMethod method) {
             method = method.withName(name);
 
-            final Frame frame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
+            final Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
             final Visibility visibility = GetCurrentVisibilityNode.getVisibilityFromNameAndFrame(name, frame);
             return addMethodNode.executeAddMethod(module, method, visibility);
         }
@@ -1398,7 +1399,7 @@ public abstract class ModuleNodes {
 
             final List<DynamicObject> modules = new ArrayList<>();
 
-            InternalMethod method = RubyCallStack.getCallingMethod(getContext());
+            InternalMethod method = getContext().getCallStack().getCallingMethodIgnoringSend();
             LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             DynamicObject object = getContext().getCoreLibrary().getObjectClass();
 
@@ -1987,7 +1988,7 @@ public abstract class ModuleNodes {
         }
 
         private void setCurrentVisibility(Visibility visibility) {
-            final Frame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
             DeclarationContext.changeVisibility(callerFrame, visibility);
         }
 

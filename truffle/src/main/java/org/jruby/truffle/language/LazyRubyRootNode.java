@@ -29,6 +29,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.translator.TranslatorDriver;

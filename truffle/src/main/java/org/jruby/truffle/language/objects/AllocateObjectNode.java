@@ -27,7 +27,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -38,27 +37,49 @@ import org.jruby.truffle.language.control.RaiseException;
 })
 public abstract class AllocateObjectNode extends RubyNode {
 
-    private final boolean useCallerFrame;
+    private final boolean useCallerFrameForTracing;
 
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
         this(context, sourceSection, true);
     }
 
-    public AllocateObjectNode(RubyContext context, SourceSection sourceSection, boolean useCallerFrame) {
+    public AllocateObjectNode(RubyContext context, SourceSection sourceSection, boolean useCallerFrameForTracing) {
         super(context, sourceSection);
-        this.useCallerFrame = useCallerFrame;
+        this.useCallerFrameForTracing = useCallerFrameForTracing;
     }
 
     public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {
-        return executeAllocateX(classToAllocate, values);
+        return executeAllocate(classToAllocate, values);
     }
 
-    public DynamicObject allocateHash(DynamicObject classToAllocate, Object store, int size, Entry firstInSequence, Entry lastInSequence, DynamicObject defaultBlock, Object defaultValue,
+    public DynamicObject allocateArray(
+            DynamicObject classToAllocate,
+            Object store,
+            int size) {
+        return allocate(classToAllocate, store, size);
+    }
+
+    public DynamicObject allocateHash(
+            DynamicObject classToAllocate,
+            Object store,
+            int size,
+            Entry firstInSequence,
+            Entry lastInSequence,
+            DynamicObject defaultBlock,
+            Object defaultValue,
             boolean compareByIdentity) {
-        return allocate(classToAllocate, store, size, firstInSequence, lastInSequence, defaultBlock, defaultValue, compareByIdentity);
+        return allocate(
+                classToAllocate,
+                store,
+                size,
+                firstInSequence,
+                lastInSequence,
+                defaultBlock,
+                defaultValue,
+                compareByIdentity);
     }
 
-    public abstract DynamicObject executeAllocateX(DynamicObject classToAllocate, Object[] values);
+    protected abstract DynamicObject executeAllocate(DynamicObject classToAllocate, Object[] values);
 
     @Specialization(guards = {
             "cachedClassToAllocate == classToAllocate",
@@ -92,9 +113,9 @@ public abstract class AllocateObjectNode extends RubyNode {
         final FrameInstance allocatingFrameInstance;
         final Node allocatingNode;
 
-        if (useCallerFrame) {
-            allocatingFrameInstance = RubyCallStack.getCallerFrame(getContext());
-            allocatingNode = RubyCallStack.getTopMostUserCallNode();
+        if (useCallerFrameForTracing) {
+            allocatingFrameInstance = getContext().getCallStack().getCallerFrameIgnoringSend();
+            allocatingNode = getContext().getCallStack().getTopMostUserCallNode();
         } else {
             allocatingFrameInstance = Truffle.getRuntime().getCurrentFrame();
             allocatingNode = this;
@@ -122,8 +143,7 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     @Specialization(guards = "isSingleton(classToAllocate)")
     public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object[] values) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
+        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantCreateInstanceOfSingletonClass(this));
     }
 
     protected Assumption getTracingAssumption() {

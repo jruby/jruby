@@ -97,7 +97,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object addCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :+, b", "b", b);
+            return ruby("redo_coerced :+, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -122,7 +122,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object addCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :+, b", "b", b);
+            return ruby("redo_coerced :+, b", "b", b);
         }
 
     }
@@ -146,7 +146,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object subCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :-, b", "b", b);
+            return ruby("redo_coerced :-, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -171,7 +171,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object subCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :-, b", "b", b);
+            return ruby("redo_coerced :-, b", "b", b);
         }
 
     }
@@ -195,7 +195,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object mulCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :*, b", "b", b);
+            return ruby("redo_coerced :*, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -222,7 +222,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object mulCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :*, b", "b", b);
+            return ruby("redo_coerced :*, b", "b", b);
         }
     }
 
@@ -302,7 +302,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object divCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :/, b", "b", b);
+            return ruby("redo_coerced :/, b", "b", b);
         }
 
         @Specialization(rewriteOn = UnexpectedResultException.class)
@@ -375,7 +375,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object divCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :/, b", "b", b);
+            return ruby("redo_coerced :/, b", "b", b);
         }
 
     }
@@ -512,7 +512,7 @@ public abstract class FixnumNodes {
                 "!isLong(b)",
                 "!isDouble(b)" })
         public Object lessCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
     }
 
@@ -554,7 +554,7 @@ public abstract class FixnumNodes {
                 "!isLong(b)",
                 "!isDouble(b)" })
         public Object lessEqualCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -641,7 +641,7 @@ public abstract class FixnumNodes {
                 "!isDouble(b)",
                 "!isRubyBignum(b)" })
         public Object compare(VirtualFrame frame, Object a, Object b) {
-            return ruby(frame, "begin; b, a = math_coerce(other, :compare_error); a <=> b; rescue ArgumentError; nil; end", "other", b);
+            return ruby("begin; b, a = math_coerce(other, :compare_error); a <=> b; rescue ArgumentError; nil; end", "other", b);
         }
 
     }
@@ -684,7 +684,7 @@ public abstract class FixnumNodes {
                 "!isLong(b)",
                 "!isDouble(b)" })
         public Object greaterEqualCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
+            return ruby("b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
     }
 
@@ -727,7 +727,7 @@ public abstract class FixnumNodes {
                 "!isLong(b)",
                 "!isDouble(b)" })
         public Object greaterCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
+            return ruby("b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
     }
 
@@ -830,7 +830,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object bitXOr(VirtualFrame frame, Object a, DynamicObject b) {
-            return ruby(frame, "a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
+            return ruby("a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
         }
 
     }

@@ -16,9 +16,6 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Cast to boolean and negate, as {@code BasicObject#!}.
- */
 public class NotNode extends RubyNode {
 
     @Child private BooleanCastNode child;

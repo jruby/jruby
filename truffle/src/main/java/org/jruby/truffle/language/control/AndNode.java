@@ -17,31 +17,32 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Represents a Ruby {@code and} or {@code &&} expression.
- */
 public class AndNode extends RubyNode {
 
     @Child private RubyNode left;
-    @Child private BooleanCastNode leftCast;
     @Child private RubyNode right;
+
+    @Child private BooleanCastNode leftCast;
+
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
     public AndNode(RubyContext context, SourceSection sourceSection, RubyNode left, RubyNode right) {
         super(context, sourceSection);
         this.left = left;
-        leftCast = BooleanCastNodeGen.create(context, sourceSection, null);
         this.right = right;
+        leftCast = BooleanCastNodeGen.create(context, sourceSection, null);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final Object leftValue = left.execute(frame);
-        if (conditionProfile.profile(leftCast.executeBoolean(frame, leftValue))) {
-            // Right expression evaluated and returned if left expression returns true.
+        final boolean leftBoolean = leftCast.executeBoolean(frame, leftValue);
+
+        if (conditionProfile.profile(leftBoolean)) {
             return right.execute(frame);
         } else {
             return leftValue;
         }
     }
+
 }

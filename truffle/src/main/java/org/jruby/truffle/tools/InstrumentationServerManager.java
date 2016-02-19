@@ -18,7 +18,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.RubyCallStack;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.util.func.Function2;
@@ -67,7 +66,7 @@ public class InstrumentationServerManager {
                         @Override
                         public Void apply(DynamicObject thread, Node currentNode) {
                             try {
-                                Backtrace backtrace = RubyCallStack.getBacktrace(context, null);
+                                Backtrace backtrace = context.getCallStack().getBacktrace(null);
 
                                 synchronized (this) {
                                     // Not thread-safe so keep the formatting synchronized for now.

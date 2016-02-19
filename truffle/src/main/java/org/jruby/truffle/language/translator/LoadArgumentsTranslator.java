@@ -37,14 +37,15 @@ import org.jruby.truffle.language.arguments.ReadPostArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadRestArgumentNode;
 import org.jruby.truffle.language.arguments.RunBlockKWArgsHelperNode;
+import org.jruby.truffle.language.control.IfElseNode;
 import org.jruby.truffle.language.control.IfNode;
-import org.jruby.truffle.language.control.SequenceNode;
-import org.jruby.truffle.language.literal.NilNode;
+import org.jruby.truffle.language.literal.NilLiteralNode;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
@@ -122,8 +123,7 @@ public class LoadArgumentsTranslator extends Translator {
 
             sequence.add(new IfNode(context, sourceSection,
                     new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
-                    new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil),
-                    new NilNode(context, sourceSection)));
+                    new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil)));
         }
 
         final int preCount = node.getPreCount();
@@ -174,7 +174,7 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
-        final RubyNode notNilSmaller = SequenceNode.sequence(context, sourceSection, notNilSmallerSequence);
+        final RubyNode notNilSmaller = sequence(context, sourceSection, notNilSmallerSequence);
 
         // The load to use when the there is no rest
 
@@ -190,7 +190,7 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
-        final RubyNode noRest = SequenceNode.sequence(context, sourceSection, noRestSequence);
+        final RubyNode noRest = sequence(context, sourceSection, noRestSequence);
 
         // The load to use when the array is not nil and at least as large as the number of required arguments
 
@@ -212,11 +212,11 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
-        final RubyNode notNilAtLeastAsLarge = SequenceNode.sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
+        final RubyNode notNilAtLeastAsLarge = sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
 
         if (useArray()) {
             if (node.getPreCount() == 0 || node.hasRestArg()) {
-                sequence.add(new IfNode(context, sourceSection,
+                sequence.add(new IfElseNode(context, sourceSection,
                         new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
                         notNilAtLeastAsLarge,
                         notNilSmaller));
@@ -247,7 +247,7 @@ public class LoadArgumentsTranslator extends Translator {
             sequence.add(node.getBlock().accept(this));
         }
 
-        return SequenceNode.sequence(context, sourceSection, sequence);
+        return sequence(context, sourceSection, sequence);
     }
 
     @Override
@@ -410,7 +410,7 @@ public class LoadArgumentsTranslator extends Translator {
 
                 if (useArray()) {
                     // TODO CS 10-Jan-16 we should really hoist this check, or see if Graal does it for us
-                    readNode = new IfNode(context, sourceSection,
+                    readNode = new IfElseNode(context, sourceSection,
                             new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), minimum),
                             PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index),
                             defaultValue);
@@ -501,7 +501,7 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
-        final RubyNode notNilSmaller = SequenceNode.sequence(context, sourceSection, notNilSmallerSequence);
+        final RubyNode notNilSmaller = sequence(context, sourceSection, notNilSmallerSequence);
 
         // The load to use when the array is not nil and at least as large as the number of required arguments
 
@@ -531,7 +531,7 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
-        final RubyNode notNilAtLeastAsLarge = SequenceNode.sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
+        final RubyNode notNilAtLeastAsLarge = sequence(context, sourceSection, notNilAtLeastAsLargeSequence);
 
         popArraySlot(arraySlot);
 
@@ -551,7 +551,7 @@ public class LoadArgumentsTranslator extends Translator {
 
                 if (node.getPreCount() == 0 && node.getPostCount() == 0) {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
-                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{new NilNode(context, sourceSection)})));
+                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{new NilLiteralNode(context, sourceSection, true)})));
                 } else {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
                             .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{})));
@@ -579,19 +579,17 @@ public class LoadArgumentsTranslator extends Translator {
             nilSequence.add(childNodes.get(0).accept(this));
         }
 
-        final RubyNode nil = SequenceNode.sequence(context, sourceSection, nilSequence);
+        final RubyNode nil = sequence(context, sourceSection, nilSequence);
 
-        return SequenceNode.sequence(context, sourceSection,
-                new WriteLocalVariableNode(context, sourceSection,
+        return sequence(context, sourceSection, Arrays.asList(new WriteLocalVariableNode(context, sourceSection,
                         SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
-                                readArgument(sourceSection)), arraySlot),
-                new IfNode(context, sourceSection,
+                                readArgument(sourceSection)), arraySlot), new IfElseNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
                         nil,
-                        new IfNode(context, sourceSection,
+                        new IfElseNode(context, sourceSection,
                                 new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot), node.getPreCount() + node.getPostCount()),
                                 notNilAtLeastAsLarge,
-                                notNilSmaller)));
+                                notNilSmaller))));
     }
 
     @Override

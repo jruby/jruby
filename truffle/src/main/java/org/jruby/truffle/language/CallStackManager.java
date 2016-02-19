@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -24,16 +25,22 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.Backtrace;
+import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 import java.util.ArrayList;
 
-public abstract class RubyCallStack {
+public class CallStackManager {
 
-    /** Ignores Kernel#send and aliases */
+    private final RubyContext context;
+
+    public CallStackManager(RubyContext context) {
+        this.context = context;
+    }
+
     @TruffleBoundary
-    public static FrameInstance getCallerFrame(final RubyContext context) {
+    public FrameInstance getCallerFrameIgnoringSend() {
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
             @Override
             public FrameInstance visitFrame(FrameInstance frameInstance) {
@@ -49,35 +56,69 @@ public abstract class RubyCallStack {
         });
     }
 
-    public static InternalMethod getCallingMethod(final RubyContext context) {
-        return getMethod(getCallerFrame(context));
+    @TruffleBoundary
+    public InternalMethod getCallingMethodIgnoringSend() {
+        return getMethod(getCallerFrameIgnoringSend());
     }
 
-    private static InternalMethod getMethod(FrameInstance frame) {
-        CompilerAsserts.neverPartOfCompilation();
+    @TruffleBoundary
+    public Node getTopMostUserCallNode() {
+        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {
+
+            @Override
+            public Node visitFrame(FrameInstance frameInstance) {
+                final SourceSection sourceSection = frameInstance.getCallNode().getEncapsulatingSourceSection();
+
+                if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
+                    return null;
+                } else {
+                    return frameInstance.getCallNode();
+                }
+            }
+
+        });
+    }
+
+    private InternalMethod getMethod(FrameInstance frame) {
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode) {
-        return getBacktrace(context, currentNode, 0);
+    public Backtrace getBacktrace(Node currentNode, Throwable javaThrowable) {
+        return getBacktrace(currentNode, 0, false, null, javaThrowable);
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode, int omit) {
-        return getBacktrace(context, currentNode, omit, null);
+    public Backtrace getBacktrace(Node currentNode) {
+        return getBacktrace(currentNode, 0, false, null, null);
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode, int omit, DynamicObject exception) {
-        return getBacktrace(context, currentNode, omit, false, exception);
+    public Backtrace getBacktrace(Node currentNode, int omit) {
+        return getBacktrace(currentNode, omit, false, null, null);
     }
 
-    public static Backtrace getBacktrace(RubyContext context, Node currentNode, final int omit, final boolean filterNullSourceSection, DynamicObject exception) {
+    public Backtrace getBacktrace(Node currentNode, int omit, DynamicObject exception) {
+        return getBacktrace(currentNode, omit, false, exception, null);
+    }
+
+    public Backtrace getBacktrace(Node currentNode,
+                                  final int omit,
+                                  final boolean filterNullSourceSection,
+                                  DynamicObject exception) {
+        return getBacktrace(currentNode, omit, filterNullSourceSection, exception, null);
+    }
+
+    public Backtrace getBacktrace(Node currentNode,
+                                  final int omit,
+                                  final boolean filterNullSourceSection,
+                                  DynamicObject exception,
+                                  Throwable javaThrowable) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (exception != null
                 && context.getOptions().BACKTRACES_OMIT_UNUSED
                 && DisablingBacktracesNode.areBacktracesDisabled()
-                && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(exception), context.getCoreLibrary().getStandardErrorClass())) {
-            return new Backtrace(new Activation[]{Activation.OMITTED_UNUSED});
+                && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(exception),
+                    context.getCoreLibrary().getStandardErrorClass())) {
+            return new Backtrace(new Activation[]{Activation.OMITTED_UNUSED}, null);
         }
 
         final int limit = context.getOptions().BACKTRACES_LIMIT;
@@ -91,7 +132,10 @@ public abstract class RubyCallStack {
              */
 
         if (omit == 0 && currentNode != null && Truffle.getRuntime().getCurrentFrame() != null) {
-            activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+            final MaterializedFrame currentFrame = Truffle.getRuntime().getCurrentFrame()
+                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
+
+            activations.add(new Activation(currentNode, currentFrame));
         }
 
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
@@ -105,7 +149,9 @@ public abstract class RubyCallStack {
                 }
 
                 if (!ignoreFrame(frameInstance) && depth >= omit) {
-                    if (!filterNullSourceSection || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
+                    if (!filterNullSourceSection
+                            || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null
+                            || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
                         activations.add(new Activation(frameInstance.getCallNode(),
                                 frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
                     }
@@ -118,10 +164,18 @@ public abstract class RubyCallStack {
 
         });
 
-        return new Backtrace(activations.toArray(new Activation[activations.size()]));
+        if (context.getOptions().EXCEPTIONS_STORE_JAVA || context.getOptions().BACKTRACES_INTERLEAVE_JAVA) {
+            if (javaThrowable == null) {
+                javaThrowable = new Exception();
+            }
+        } else {
+            javaThrowable = null;
+        }
+
+        return new Backtrace(activations.toArray(new Activation[activations.size()]), javaThrowable);
     }
 
-    private static boolean ignoreFrame(FrameInstance frameInstance) {
+    private boolean ignoreFrame(FrameInstance frameInstance) {
         final Node callNode = frameInstance.getCallNode();
 
         // Nodes with no call node are top-level - we may have multiple of them due to require
@@ -136,7 +190,8 @@ public abstract class RubyCallStack {
 
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
-        if (sourceSection != null && sourceSection.getSource() != null && sourceSection.getSource().getName().equals("run_jruby_root")) {
+        if (sourceSection != null && sourceSection.getSource() != null
+                && sourceSection.getSource().getName().equals("run_jruby_root")) {
             return true;
         }
 
@@ -149,23 +204,6 @@ public abstract class RubyCallStack {
         }
 
         return false;
-    }
-
-    public static Node getTopMostUserCallNode() {
-        CompilerAsserts.neverPartOfCompilation();
-
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {
-
-            @Override
-            public Node visitFrame(FrameInstance frameInstance) {
-                if (CoreSourceSection.isCoreSourceSection(frameInstance.getCallNode().getEncapsulatingSourceSection())) {
-                    return null;
-                } else {
-                    return frameInstance.getCallNode();
-                }
-            }
-
-        });
     }
 
 }

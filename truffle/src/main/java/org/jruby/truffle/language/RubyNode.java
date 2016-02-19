@@ -186,10 +186,6 @@ public abstract class RubyNode extends Node {
         return getContext().getCodeLoader().inlineRubyHelper(this, expression, arguments);
     }
 
-    protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        return getContext().getCodeLoader().inlineRubyHelper(this, frame, expression, arguments);
-    }
-
     // Accessors
 
     public RubyContext getContext() {

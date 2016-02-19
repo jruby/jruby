@@ -1654,7 +1654,7 @@ public abstract class BigDecimalNodes {
                 "!isRubyBigDecimal(b)",
                 "!isNil(b)" })
         public Object compareCoerced(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return ruby(frame, "redo_coerced :<=>, b", "b", b);
+            return ruby("redo_coerced :<=>, b", "b", b);
         }
 
     }
@@ -2124,15 +2124,9 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = { "!isRubyBignum(value)", "!isRubyBigDecimal(value)" })
         public Object doOther(VirtualFrame frame, DynamicObject value, Object roundingMode) {
-            if (roundingMode instanceof RoundingMode && (boolean) ruby(
-                    frame,
-                    "value.is_a?(Rational)",
-                    "value", value)) {
+            if (roundingMode instanceof RoundingMode && (boolean) ruby("value.is_a?(Rational)", "value", value)) {
 
-                final Object numerator = ruby(
-                        frame,
-                        "value.numerator",
-                        "value", value);
+                final Object numerator = ruby("value.numerator", "value", value);
 
                 final IRubyObject numeratorValue;
 
@@ -2146,10 +2140,7 @@ public abstract class BigDecimalNodes {
                     throw new UnsupportedOperationException(numerator.toString());
                 }
 
-                final Object denominator = ruby(
-                        frame,
-                        "value.denominator",
-                        "value", value);
+                final Object denominator = ruby("value.denominator", "value", value);
 
                 final IRubyObject denominatorValue;
 
@@ -2176,10 +2167,7 @@ public abstract class BigDecimalNodes {
 
                 return rubyBigDecimalValue.getBigDecimalValue();
             } else {
-                final Object result = ruby(
-                        frame,
-                        "value.to_f",
-                        "value", value);
+                final Object result = ruby("value.to_f", "value", value);
                 if (result != nil()) {
                     return new BigDecimal((double) result);
                 } else {

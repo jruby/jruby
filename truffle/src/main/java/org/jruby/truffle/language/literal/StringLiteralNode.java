@@ -35,10 +35,9 @@ public class StringLiteralNode extends RubyNode {
 
     @Child private AllocateObjectNode allocateObjectNode;
 
-    public StringLiteralNode(RubyContext context, SourceSection sourceSection, ByteList byteList, int codeRange) {
+    public StringLiteralNode(RubyContext context, SourceSection sourceSection, Rope rope) {
         super(context, sourceSection);
-        assert byteList != null;
-        this.rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
+        this.rope = rope;
         allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, false, null, null);
     }
 
