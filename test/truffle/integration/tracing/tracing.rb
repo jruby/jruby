@@ -13,6 +13,10 @@ $trace_proc = proc { |*args|
   $trace << args
 }
 
+def empty_binding
+  binding
+end
+
 def check(file)
   expected = nil
   
@@ -23,11 +27,11 @@ def check(file)
   actual = $trace
   
   while actual.size < expected.size
-    actual.push [:missing, :missing, :missing, :missing, :missing, :missing]
+    actual.push ['missing', 'missing', :missing, :missing, empty_binding, :missing]
   end
   
   while expected.size < actual.size
-    expected.push [:missing, :missing, :missing, :missing, :missing, :missing]
+    actual.push ['missing', 'missing', :missing, :missing, empty_binding, :missing]
   end
   
   success = true
