@@ -99,7 +99,7 @@ public class RubyException extends RubyObject {
         } else if (obj instanceof RubyString) {
             backtrace = RubyArray.newArray(getRuntime(), obj);
         } else {
-            throw getRuntime().newTypeError("backtrace must be Array of String or a single String");
+            throw getRuntime().newTypeError("backtrace must be Array of String");
         }
     }
 
