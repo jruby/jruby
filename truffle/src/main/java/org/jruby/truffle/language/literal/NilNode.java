@@ -13,7 +13,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -32,7 +31,7 @@ public class NilNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return stringLiterals().NIL.getString();
+        return stringLiterals().NIL.createInstance();
     }
 
 }

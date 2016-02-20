@@ -41,7 +41,7 @@ public class StringLiteral {
         return rope;
     }
 
-    public DynamicObject getString() {
+    public DynamicObject createInstance() {
         return StringOperations.createString(context, getRope());
     }
 
