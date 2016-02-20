@@ -926,8 +926,8 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(systemStackErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject frozenError(String className, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 
