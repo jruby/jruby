@@ -27,7 +27,6 @@ import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
-import org.jruby.truffle.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.interop.InteropManager;
 import org.jruby.truffle.interop.JRubyInterop;
 import org.jruby.truffle.language.CallStackManager;
@@ -111,8 +110,6 @@ public class RubyContext extends ExecutionContext {
         if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
         }
-
-        env.instrumenter().registerASTProber(new RubyDefaultASTProber(env.instrumenter()));
 
         // Load the core library classes
 

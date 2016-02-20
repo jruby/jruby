@@ -36,7 +36,6 @@ import org.jruby.util.ByteList;
 public abstract class RubyNode extends Node {
 
     private final RubyContext context;
-    private boolean atNewline = false;
 
     public RubyNode(RubyContext context, SourceSection sourceSection) {
         super(sourceSection);
@@ -196,14 +195,6 @@ public abstract class RubyNode extends Node {
 
     public RubyContext getContext() {
         return context;
-    }
-
-    public void setAtNewline() {
-        atNewline = true;
-    }
-
-    public boolean isAtNewline() {
-        return atNewline;
     }
 
 }

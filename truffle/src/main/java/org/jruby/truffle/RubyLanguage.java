@@ -20,11 +20,9 @@ import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
-import org.jruby.truffle.instrument.RubyWrapperNode;
 import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
 
 import java.io.IOException;
 
@@ -90,12 +88,12 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public boolean isInstrumentable(Node node) {
-        return !(node instanceof RubyWrapperNode);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     protected WrapperNode createWrapperNode(Node node) {
-        return new RubyWrapperNode((RubyNode) node);
+        throw new UnsupportedOperationException();
     }
 
     @Override

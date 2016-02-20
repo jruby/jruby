@@ -3153,7 +3153,6 @@ public class BodyTranslator extends Translator {
 
     private RubyNode addNewlineIfNeeded(org.jruby.ast.Node jrubyNode, RubyNode node) {
         if (jrubyNode.isNewline()) {
-            node.setAtNewline();
             final SourceSection current = node.getEncapsulatingSourceSection();
             node.clearSourceSection();
             node.assignSourceSection(current.withTags(AttachmentsManager.LINE_TAG, TraceManager.LINE_TAG, CoverageManager.LINE_TAG));
