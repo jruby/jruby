@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -21,8 +21,6 @@ import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class TaintNode extends RubyNode {
-
-    @Child private WriteHeadObjectFieldNode writeTaintNode;
 
     public TaintNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -56,18 +54,21 @@ public abstract class TaintNode extends RubyNode {
     }
 
     @Specialization(guards = "!isRubySymbol(object)")
-    public Object taint(DynamicObject object) {
-        if (writeTaintNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            writeTaintNode = insert(WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER));
-        }
+    public Object taint(
+            DynamicObject object,
+            @Cached("createWriteTaintNode()") WriteHeadObjectFieldNode writeTaintNode) {
         writeTaintNode.execute(object, true);
         return object;
     }
 
+    protected WriteHeadObjectFieldNode createWriteTaintNode() {
+        return WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
+    }
+
     private Object frozen(Object object) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+        throw new RaiseException(getContext().getCoreLibrary().frozenError(
+                Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(),
+                this));
     }
 
 }

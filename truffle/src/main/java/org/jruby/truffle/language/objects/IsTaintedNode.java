@@ -21,8 +21,6 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class IsTaintedNode extends RubyNode {
 
-    @Child private ReadHeadObjectFieldNode readTaintNode;
-
     public IsTaintedNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
@@ -50,7 +48,8 @@ public abstract class IsTaintedNode extends RubyNode {
     }
 
     @Specialization
-    protected boolean isTainted(DynamicObject object,
+    protected boolean isTainted(
+            DynamicObject object,
             @Cached("createReadTaintedNode()") ReadHeadObjectFieldNode readTaintedNode) {
         return (boolean) readTaintedNode.execute(object);
     }
