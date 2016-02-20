@@ -56,13 +56,13 @@ public abstract class TaintNode extends RubyNode {
     @Specialization(guards = "!isRubySymbol(object)")
     public Object taint(
             DynamicObject object,
-            @Cached("createWriteTaintNode()") WriteHeadObjectFieldNode writeTaintNode) {
+            @Cached("createWriteTaintNode()") WriteObjectFieldNode writeTaintNode) {
         writeTaintNode.execute(object, true);
         return object;
     }
 
-    protected WriteHeadObjectFieldNode createWriteTaintNode() {
-        return WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
+    protected WriteObjectFieldNode createWriteTaintNode() {
+        return WriteObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
     }
 
     private Object frozen(Object object) {

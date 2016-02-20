@@ -21,12 +21,12 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 
 @ImportStatic(RubyGuards.class)
-public abstract class ReadHeadObjectFieldNode extends Node {
+public abstract class ReadObjectFieldNode extends Node {
     private final RubyContext context;
     private final Object defaultValue;
     protected final Object name;
 
-    public ReadHeadObjectFieldNode(RubyContext context, Object name, Object defaultValue) {
+    public ReadObjectFieldNode(RubyContext context, Object name, Object defaultValue) {
         this.context = context;
         this.name = name;
         this.defaultValue = defaultValue;

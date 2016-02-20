@@ -51,11 +51,11 @@ public abstract class IsFrozenNode extends RubyNode {
     @Specialization
     protected boolean isFrozen(
             DynamicObject object,
-            @Cached("createReadFrozenNode()") ReadHeadObjectFieldNode readFrozenNode) {
+            @Cached("createReadFrozenNode()") ReadObjectFieldNode readFrozenNode) {
         return (boolean) readFrozenNode.execute(object);
     }
 
-    protected ReadHeadObjectFieldNode createReadFrozenNode() {
-        return ReadHeadObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER, false);
+    protected ReadObjectFieldNode createReadFrozenNode() {
+        return ReadObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER, false);
     }
 }

@@ -50,12 +50,12 @@ public abstract class IsTaintedNode extends RubyNode {
     @Specialization
     protected boolean isTainted(
             DynamicObject object,
-            @Cached("createReadTaintedNode()") ReadHeadObjectFieldNode readTaintedNode) {
+            @Cached("createReadTaintedNode()") ReadObjectFieldNode readTaintedNode) {
         return (boolean) readTaintedNode.execute(object);
     }
 
-    protected ReadHeadObjectFieldNode createReadTaintedNode() {
-        return ReadHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER, false);
+    protected ReadObjectFieldNode createReadTaintedNode() {
+        return ReadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER, false);
     }
 
 }

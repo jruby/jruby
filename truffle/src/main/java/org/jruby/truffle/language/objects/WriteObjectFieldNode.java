@@ -26,12 +26,12 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 
 @ImportStatic(RubyGuards.class)
-public abstract class WriteHeadObjectFieldNode extends Node {
+public abstract class WriteObjectFieldNode extends Node {
 
     private final RubyContext context;
     private final Object name;
 
-    public WriteHeadObjectFieldNode(RubyContext context, Object name) {
+    public WriteObjectFieldNode(RubyContext context, Object name) {
         this.context = context;
         this.name = name;
     }

@@ -26,8 +26,8 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -89,7 +89,7 @@ public abstract class ExceptionNodes {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readCustomBacktrace = ReadHeadObjectFieldNodeGen.create(getContext(), "@custom_backtrace", null);
+            readCustomBacktrace = ReadObjectFieldNodeGen.create(getContext(), "@custom_backtrace", null);
         }
 
         @Specialization

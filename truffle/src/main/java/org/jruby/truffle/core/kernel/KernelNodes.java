@@ -116,15 +116,15 @@ import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.objects.ThreadLocalObject;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.WriteObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
@@ -1021,7 +1021,7 @@ public abstract class KernelNodes {
                 limit = "getCacheLimit()")
         public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
                 @Cached("name") DynamicObject cachedName,
-                @Cached("createReadFieldNode(checkName(symbolToString(cachedName)))") ReadHeadObjectFieldNode readHeadObjectFieldNode) {
+                @Cached("createReadFieldNode(checkName(symbolToString(cachedName)))") ReadObjectFieldNode readHeadObjectFieldNode) {
             return readHeadObjectFieldNode.execute(object);
         }
 
@@ -1049,8 +1049,8 @@ public abstract class KernelNodes {
             return SymbolTable.checkInstanceVariableName(getContext(), name, this);
         }
 
-        protected ReadHeadObjectFieldNode createReadFieldNode(String name) {
-            return ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
+        protected ReadObjectFieldNode createReadFieldNode(String name) {
+            return ReadObjectFieldNodeGen.create(getContext(), name, nil());
         }
 
         protected int getCacheLimit() {
@@ -1081,7 +1081,7 @@ public abstract class KernelNodes {
                 limit = "getCacheLimit()")
         public Object instanceVariableSetSymbolCached(DynamicObject object, DynamicObject name, Object value,
                                                       @Cached("name") DynamicObject cachedName,
-                                                      @Cached("createWriteFieldNode(checkName(symbolToString(cachedName)))") WriteHeadObjectFieldNode writeHeadObjectFieldNode) {
+                                                      @Cached("createWriteFieldNode(checkName(symbolToString(cachedName)))") WriteObjectFieldNode writeHeadObjectFieldNode) {
             writeHeadObjectFieldNode.execute(object, value);
             return value;
         }
@@ -1111,8 +1111,8 @@ public abstract class KernelNodes {
             return SymbolTable.checkInstanceVariableName(getContext(), name, this);
         }
 
-        protected WriteHeadObjectFieldNode createWriteFieldNode(String name) {
-            return WriteHeadObjectFieldNodeGen.create(getContext(), name);
+        protected WriteObjectFieldNode createWriteFieldNode(String name) {
+            return WriteObjectFieldNodeGen.create(getContext(), name);
         }
 
         protected int getCacheLimit() {
@@ -2130,13 +2130,13 @@ public abstract class KernelNodes {
 
         @Child private IsFrozenNode isFrozenNode;
         @Child private IsTaintedNode isTaintedNode;
-        @Child private WriteHeadObjectFieldNode writeTaintNode;
+        @Child private WriteObjectFieldNode writeTaintNode;
 
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
+            writeTaintNode = WriteObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
         }
 
         @Specialization

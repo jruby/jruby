@@ -30,8 +30,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.ObjectGraph;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
@@ -68,7 +68,7 @@ public abstract class ObjectSpaceNodes {
         @Specialization(guards = "isBasicObjectID(id)")
         public DynamicObject id2Ref(
                 final long id,
-                @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode) {
+                @Cached("createReadObjectIDNode()") ReadObjectFieldNode readObjectIdNode) {
             for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
                 final long objectID = (long) readObjectIdNode.execute(object);
                 if (objectID == id) {
@@ -89,8 +89,8 @@ public abstract class ObjectSpaceNodes {
             return Double.longBitsToDouble(Layouts.BIGNUM.getValue(id).longValue());
         }
 
-        protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return ReadHeadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER, 0L);
+        protected ReadObjectFieldNode createReadObjectIDNode() {
+            return ReadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {

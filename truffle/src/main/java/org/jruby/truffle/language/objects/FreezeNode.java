@@ -66,13 +66,13 @@ public abstract class FreezeNode extends RubyNode {
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
     public Object freeze(
             DynamicObject object,
-            @Cached("createWriteFrozenNode()") WriteHeadObjectFieldNode writeFrozenNode) {
+            @Cached("createWriteFrozenNode()") WriteObjectFieldNode writeFrozenNode) {
         writeFrozenNode.execute(object, true);
         return object;
     }
 
-    protected WriteHeadObjectFieldNode createWriteFrozenNode() {
-        return WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER);
+    protected WriteObjectFieldNode createWriteFrozenNode() {
+        return WriteObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER);
     }
 
 }

@@ -20,14 +20,14 @@ import org.jruby.truffle.language.RubyNode;
 public class ReadInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
-    @Child private ReadHeadObjectFieldNode readNode;
+    @Child private ReadObjectFieldNode readNode;
 
     private final ConditionProfile objectProfile = ConditionProfile.createBinaryProfile();
 
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.receiver = receiver;
-        readNode = ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
+        readNode = ReadObjectFieldNodeGen.create(getContext(), name, nil());
     }
 
     @Override

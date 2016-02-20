@@ -16,19 +16,19 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
 
 public class ReadThreadLocalGlobalVariableNode extends RubyNode {
 
     @Child private ThreadLocalObjectNode threadLocalVariablesObjectNode;
-    @Child private ReadHeadObjectFieldNode readNode;
+    @Child private ReadObjectFieldNode readNode;
 
     public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
         this.threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
-        readNode = ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
+        readNode = ReadObjectFieldNodeGen.create(getContext(), name, nil());
     }
 
     @Override

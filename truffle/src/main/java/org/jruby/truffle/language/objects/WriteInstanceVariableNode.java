@@ -23,13 +23,13 @@ public class WriteInstanceVariableNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private RubyNode rhs;
-    @Child private WriteHeadObjectFieldNode writeNode;
+    @Child private WriteObjectFieldNode writeNode;
 
     public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs) {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;
-        writeNode = WriteHeadObjectFieldNodeGen.create(getContext(), name);
+        writeNode = WriteObjectFieldNodeGen.create(getContext(), name);
     }
 
     @Override
