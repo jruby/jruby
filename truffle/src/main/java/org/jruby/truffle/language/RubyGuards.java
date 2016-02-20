@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.Layouts;
@@ -263,4 +264,12 @@ public abstract class RubyGuards {
     public static boolean isInfinity(double value) {
         return Double.isInfinite(value);
     }
+
+    // Operations
+
+    @TruffleBoundary
+    public static boolean updateShape(DynamicObject object) {
+        return object.updateShape();
+    }
+
 }

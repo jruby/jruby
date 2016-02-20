@@ -24,7 +24,6 @@ import org.jruby.truffle.language.RubyNode;
  * Reads the internal metaclass of an object.
  */
 @NodeChild(value="object", type=RubyNode.class)
-@ImportStatic(ShapeCachingGuards.class)
 public abstract class MetaClassWithShapeCacheNode extends RubyNode {
 
     public MetaClassWithShapeCacheNode(RubyContext context, SourceSection sourceSection) {
