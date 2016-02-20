@@ -1456,6 +1456,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             byte[]bytes = value.getUnsafeBytes();
             int p = value.getBegin();
             int len = value.getRealSize();
+            int end = p + len;
+            int op = len;
+            int cr = getCodeRange();
 
             Encoding enc = value.getEncoding();
             // this really needs to be inlined here
@@ -1465,25 +1468,30 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     bytes[p + i] = bytes[p + len - i - 1];
                     bytes[p + len - i - 1] = b;
                 }
-            } else {
-                int end = p + len;
-                int op = len;
-                byte[]obytes = new byte[len];
-                boolean single = true;
+            } else if (cr == CR_VALID) {
+                byte[] obytes = new byte[len];
                 while (p < end) {
                     int cl = StringSupport.length(enc, bytes, p, end);
-                    if (cl > 1 || (bytes[p] & 0x80) != 0) {
-                        single = false;
-                        op -= cl;
-                        System.arraycopy(bytes, p, obytes, op, cl);
-                        p += cl;
-                    } else {
-                        obytes[--op] = bytes[p++];
-                    }
+
+                    op -= cl;
+                    System.arraycopy(bytes, p, obytes, op, cl);
+                    p += cl;
+                }
+            } else {
+                byte[] obytes = new byte[len];
+                cr = enc.isAsciiCompatible() ? CR_7BIT : CR_VALID;
+                while (p < end) {
+                    int cl = StringSupport.length(enc, bytes, p, end);
+
+                    if (cl > 1 || (bytes[p] & 0x80) != 0) cr = CR_UNKNOWN;
+                    op -= cl;
+                    System.arraycopy(bytes, p, obytes, op, cl);
+                    p += cl;
                 }
                 value.setUnsafeBytes(obytes);
-                if (getCodeRange() == CR_UNKNOWN) setCodeRange(single ? CR_7BIT : CR_VALID);
             }
+            
+            setCodeRange(cr);
         }
         return this;
     }
