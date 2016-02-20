@@ -1244,6 +1244,10 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
     }
 
+    public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
+        return GenericWritable.puts(context, this, args);
+    }
+
     /* rb: check_modifiable */
     public void checkFrozen() {
         super.checkFrozen();
