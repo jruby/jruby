@@ -55,8 +55,8 @@ public abstract class MetaClassNode extends RubyNode {
 
     @Specialization(guards = "object.getShape() == cachedShape",
             assumptions = "cachedShape.getValidAssumption()",
-            limit = "1")
-    protected DynamicObject cachedMetaClass(DynamicObject object,
+            limit = "getCacheLimit()")
+    protected DynamicObject metaClassCached(DynamicObject object,
             @Cached("object.getShape()") Shape cachedShape,
             @Cached("getMetaClass(cachedShape)") DynamicObject metaClass) {
         return metaClass;
@@ -67,13 +67,17 @@ public abstract class MetaClassNode extends RubyNode {
         return executeMetaClass(object);
     }
 
-    @Specialization(contains = { "cachedMetaClass", "updateShapeAndMetaClass" })
-    protected DynamicObject metaClass(DynamicObject object) {
+    @Specialization(contains = { "metaClassCached", "updateShapeAndMetaClass" })
+    protected DynamicObject metaClassUncached(DynamicObject object) {
         return Layouts.BASIC_OBJECT.getMetaClass(object);
     }
 
     protected static DynamicObject getMetaClass(Shape shape) {
         return Layouts.BASIC_OBJECT.getMetaClass(shape.getObjectType());
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().CLASS_CACHE;
     }
 
 }
