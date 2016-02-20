@@ -393,7 +393,7 @@ public class EncodingUtils {
 
         if (estr.toLowerCase().startsWith("bom|")) {
             estr = estr.substring(4);
-            if (estr.startsWith("utf-")) {
+            if (estr.toLowerCase().startsWith("utf-")) {
                 fmode_p[0] |= OpenFile.SETENC_BY_BOM;
                 ioEncodable.setBOM(true);
             } else {
