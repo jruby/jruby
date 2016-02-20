@@ -162,6 +162,7 @@ import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
 import org.jruby.truffle.language.objects.WriteClassVariableNode;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
@@ -3155,7 +3156,7 @@ public class BodyTranslator extends Translator {
             node.setAtNewline();
             final SourceSection current = node.getEncapsulatingSourceSection();
             node.clearSourceSection();
-            node.assignSourceSection(current.withTags(AttachmentsManager.LINE_TAG, TraceManager.LINE_TAG));
+            node.assignSourceSection(current.withTags(AttachmentsManager.LINE_TAG, TraceManager.LINE_TAG, CoverageManager.LINE_TAG));
         }
 
         return node;

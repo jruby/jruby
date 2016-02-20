@@ -312,13 +312,13 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject coverageResult() {
-            if (getContext().getCoverageTracker() == null) {
+            if (getContext().getCoverageManager() == null) {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
 
             final Map<Object, Object> converted = new HashMap<>();
 
-            for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
+            for (Map.Entry<Source, long[]> source : getContext().getCoverageManager().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
                 final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
 
@@ -330,15 +330,11 @@ public abstract class TrufflePrimitiveNodes {
             return BucketsStrategy.create(getContext(), converted.entrySet(), false);
         }
 
-        private Object[] lineCountsStore(Long[] array) {
+        private Object[] lineCountsStore(long[] array) {
             final Object[] store = new Object[array.length];
 
             for (int n = 0; n < array.length; n++) {
-                if (array[n] == null) {
-                    store[n] = getContext().getCoreLibrary().getNilObject();
-                } else {
-                    store[n] = array[n];
-                }
+                store[n] = array[n];
             }
 
             return store;
@@ -353,14 +349,11 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject coverageStart() {
-            if (getContext().getCoverageTracker() == null) {
-                throw new UnsupportedOperationException("coverage is disabled");
-            }
-
-            getContext().getEnv().instrumenter().install(getContext().getCoverageTracker());
-            return getContext().getCoreLibrary().getNilObject();
+            getContext().getCoverageManager().enable();
+            return nil();
         }
 
     }

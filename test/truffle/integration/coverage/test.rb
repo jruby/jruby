@@ -6,6 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+# TODO CS 19-Feb-16 Not compliant with MRI - here as a regression test
+
 require 'coverage'
 
 Coverage.start
@@ -13,6 +15,6 @@ Coverage.start
 require_relative 'subject.rb'
 
 data = Coverage.result[File.join(File.dirname(__FILE__), 'subject.rb')]
-expected = [nil, nil, nil, nil, nil, nil, nil, nil, 1, 1, nil, 1, 10, nil, nil, 1, nil, 1, 1, nil, nil, 1, 2, nil, nil, 1, 1, nil, 1]
+expected = [0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 2, 20, 0, 0, 2, 0, 4, 2, 0, 0, 2, 4, 0, 0, 2, 2, 0, 2] # Doubled line counts
 
 raise 'coverage data not as expected' unless data == expected

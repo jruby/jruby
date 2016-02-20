@@ -16,7 +16,6 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.tools.CoverageTracker;
 import org.jruby.Ruby;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.kernel.AtExitManager;
@@ -45,6 +44,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
+import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -82,10 +82,10 @@ public class RubyContext extends ExecutionContext {
     private final CoreLibrary coreLibrary;
     private final ThreadManager threadManager;
     private final LexicalScope rootLexicalScope;
-    private final CoverageTracker coverageTracker;
     private final InstrumentationServerManager instrumentationServerManager;
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
+    private final CoverageManager coverageManager;
 
     private org.jruby.ast.RootNode initialJRubyRootNode;
     private final AttachmentsManager attachmentsManager;
@@ -113,18 +113,6 @@ public class RubyContext extends ExecutionContext {
         }
 
         env.instrumenter().registerASTProber(new RubyDefaultASTProber(env.instrumenter()));
-
-        // TODO(CS, 28-Jan-15) this is global
-        // TODO(CS, 28-Jan-15) maybe not do this for core?
-        if (options.COVERAGE || options.COVERAGE_GLOBAL) {
-            coverageTracker = new CoverageTracker();
-
-            if (options.COVERAGE_GLOBAL) {
-                env.instrumenter().install(coverageTracker);
-            }
-        } else {
-            coverageTracker = null;
-        }
 
         // Load the core library classes
 
@@ -165,6 +153,7 @@ public class RubyContext extends ExecutionContext {
         final Instrumenter instrumenter = env.lookup(Instrumenter.class);
         attachmentsManager = new AttachmentsManager(this, instrumenter);
         traceManager = new TraceManager(this, instrumenter);
+        coverageManager = new CoverageManager(this, instrumenter);
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -192,7 +181,7 @@ public class RubyContext extends ExecutionContext {
         threadManager.shutdown();
 
         if (options.COVERAGE_GLOBAL) {
-            coverageTracker.print(System.out);
+            coverageManager.print(System.out);
         }
 
         if (callGraph != null) {
@@ -280,8 +269,8 @@ public class RubyContext extends ExecutionContext {
         return rubiniusPrimitiveManager;
     }
 
-    public CoverageTracker getCoverageTracker() {
-        return coverageTracker;
+    public CoverageManager getCoverageManager() {
+        return coverageManager;
     }
 
     public static RubyContext getLatestInstance() {

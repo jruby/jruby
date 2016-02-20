@@ -15,7 +15,6 @@ public class Options {
 
     // Features
 
-    public final boolean COVERAGE = TRUFFLE_COVERAGE.load();
     public final boolean COVERAGE_GLOBAL = TRUFFLE_COVERAGE_GLOBAL.load();
 
     // Resources
