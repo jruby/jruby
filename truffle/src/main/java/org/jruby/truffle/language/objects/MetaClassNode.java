@@ -29,12 +29,12 @@ public abstract class MetaClassNode extends RubyNode {
     public abstract DynamicObject executeMetaClass(Object value);
 
     @Specialization(guards = "value")
-    protected DynamicObject metaClassClassTrue(boolean value) {
+    protected DynamicObject metaClassTrue(boolean value) {
         return coreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
-    protected DynamicObject metaClassClassFalse(boolean value) {
+    protected DynamicObject metaClassFalse(boolean value) {
         return coreLibrary().getFalseClass();
     }
 

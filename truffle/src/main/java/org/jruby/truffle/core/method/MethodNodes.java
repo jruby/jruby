@@ -216,7 +216,7 @@ public abstract class MethodNodes {
 
         @Specialization
         public DynamicObject unbind(VirtualFrame frame, DynamicObject method) {
-            final DynamicObject receiverClass = classNode.executeGetClass(frame, Layouts.METHOD.getReceiver(method));
+            final DynamicObject receiverClass = classNode.executeLogicalClass(Layouts.METHOD.getReceiver(method));
             return Layouts.UNBOUND_METHOD.createUnboundMethod(coreLibrary().getUnboundMethodFactory(), receiverClass, Layouts.METHOD.getMethod(method));
         }
 

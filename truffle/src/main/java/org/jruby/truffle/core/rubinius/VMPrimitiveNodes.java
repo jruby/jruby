@@ -239,7 +239,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmObjectClass(VirtualFrame frame, Object object) {
-            return classNode.executeGetClass(frame, object);
+            return classNode.executeLogicalClass(object);
         }
 
     }

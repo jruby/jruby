@@ -412,7 +412,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public DynamicObject getClass(VirtualFrame frame, Object self) {
-            return classNode.executeGetClass(frame, self);
+            return classNode.executeLogicalClass(self);
         }
 
     }
@@ -970,7 +970,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubyClass(rubyClass)")
         public boolean instanceOf(VirtualFrame frame, Object self, DynamicObject rubyClass) {
-            return classNode.executeGetClass(frame, self) == rubyClass;
+            return classNode.executeLogicalClass(self) == rubyClass;
         }
 
     }
@@ -2116,7 +2116,7 @@ public abstract class KernelNodes {
         public DynamicObject toS(VirtualFrame frame, Object self) {
             CompilerDirectives.transferToInterpreter();
 
-            String className = Layouts.MODULE.getFields(classNode.executeGetClass(frame, self)).getName();
+            String className = Layouts.MODULE.getFields(classNode.executeLogicalClass(self)).getName();
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 

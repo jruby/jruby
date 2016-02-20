@@ -9,10 +9,12 @@
  */
 package org.jruby.truffle.language.objects;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
@@ -26,36 +28,58 @@ public abstract class ClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract DynamicObject executeGetClass(VirtualFrame frame, Object value);
+    public abstract DynamicObject executeLogicalClass(Object value);
 
     @Specialization(guards = "value")
-    protected DynamicObject getClassTrue(boolean value) {
+    protected DynamicObject logicalClassTrue(boolean value) {
         return coreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
-    protected DynamicObject getClassFalse(boolean value) {
+    protected DynamicObject logicalClassFalse(boolean value) {
         return coreLibrary().getFalseClass();
     }
 
     @Specialization
-    protected DynamicObject getClass(int value) {
+    protected DynamicObject logicalClassInt(int value) {
         return coreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected DynamicObject getClass(long value) {
+    protected DynamicObject logicalClassLong(long value) {
         return coreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected DynamicObject getClass(double value) {
+    protected DynamicObject logicalClassDouble(double value) {
         return coreLibrary().getFloatClass();
     }
 
-    @Specialization
-    protected DynamicObject getClass(DynamicObject object) {
+    @Specialization(guards = "object.getShape() == cachedShape",
+            assumptions = "cachedShape.getValidAssumption()",
+            limit = "getCacheLimit()")
+    protected DynamicObject logicalClassCached(DynamicObject object,
+                                            @Cached("object.getShape()") Shape cachedShape,
+                                            @Cached("getLogicalClass(cachedShape)") DynamicObject logicalClass) {
+        return logicalClass;
+    }
+
+    @Specialization(guards = "updateShape(object)")
+    protected DynamicObject updateShapeAndLogicalClass(DynamicObject object) {
+        return executeLogicalClass(object);
+    }
+
+    @Specialization(contains = { "logicalClassCached", "updateShapeAndLogicalClass" })
+    protected DynamicObject logicalClassUncached(DynamicObject object) {
         return Layouts.BASIC_OBJECT.getLogicalClass(object);
+    }
+
+    protected static DynamicObject getLogicalClass(Shape shape) {
+        return Layouts.BASIC_OBJECT.getLogicalClass(shape.getObjectType());
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().CLASS_CACHE;
     }
 
 }
