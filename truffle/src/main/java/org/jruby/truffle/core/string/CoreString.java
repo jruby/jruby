@@ -12,7 +12,7 @@ package org.jruby.truffle.core.string;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
@@ -50,7 +50,7 @@ public class CoreString {
 
         return context.getRopeTable().getRope(
                 literal.getBytes(StandardCharsets.US_ASCII),
-                USASCIIEncoding.INSTANCE,
+                ASCIIEncoding.INSTANCE,
                 CodeRange.CR_7BIT);
     }
 
