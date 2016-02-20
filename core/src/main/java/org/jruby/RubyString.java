@@ -1970,6 +1970,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return inspect19(getRuntime(), value).infectBy(this);
     }
 
+    // MRI: rb_str_escape
     public static IRubyObject inspect19(Ruby runtime, ByteList byteList) {
         Encoding enc = byteList.getEncoding();
         byte bytes[] = byteList.getUnsafeBytes();

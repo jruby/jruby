@@ -61,6 +61,7 @@ import org.jruby.util.Pack;
 import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -1433,27 +1434,28 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     private IRubyObject inspectAry(ThreadContext context) {
         final Ruby runtime = context.runtime;
-        Encoding encoding = runtime.getDefaultInternalEncoding();
-        if (encoding == null) encoding = USASCIIEncoding.INSTANCE;
-        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, encoding);
-        str.cat((byte)'[');
+        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
+        EncodingUtils.strBufCat(runtime, str, OPEN_BRACKET);
         boolean tainted = isTaint();
 
         for (int i = 0; i < realLength; i++) {
 
             RubyString s = inspect(context, safeArrayRef(runtime, values, begin + i));
             if (s.isTaint()) tainted = true;
-            if (i > 0) str.cat(',', encoding).cat(' ', encoding);
+            if (i > 0) EncodingUtils.strBufCat(runtime, str, COMMA_SPACE);
             else str.setEncoding(s.getEncoding());
-
             str.cat19(s);
         }
-        str.cat(']', encoding);
+        EncodingUtils.strBufCat(runtime, str, CLOSE_BRACKET);
 
         if (tainted) str.setTaint(true);
 
         return str;
     }
+
+    private static final ByteList OPEN_BRACKET = new ByteList(new byte[]{(byte)'['}, USASCIIEncoding.INSTANCE);
+    private static final ByteList CLOSE_BRACKET = new ByteList(new byte[]{(byte)']'}, USASCIIEncoding.INSTANCE);
+    private static final ByteList COMMA_SPACE = new ByteList(new byte[]{(byte)',', (byte)' '}, USASCIIEncoding.INSTANCE);
 
     /** rb_ary_inspect
     *

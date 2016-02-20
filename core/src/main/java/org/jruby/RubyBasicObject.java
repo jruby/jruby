@@ -1096,14 +1096,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static IRubyObject rbInspect(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.runtime;
         RubyString str = obj.callMethod(context, "inspect").asString();
-        Encoding ext = EncodingUtils.defaultExternalEncoding(runtime);
-        if (!ext.isAsciiCompatible()) {
-            if (!str.isAsciiOnly())
-                throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only if default external encoding is ASCII incompatible");
+        Encoding enc = runtime.getDefaultInternalEncoding();
+        if (enc == null) enc = runtime.getDefaultExternalEncoding();
+        if (!enc.isAsciiCompatible()) {
+            if (!str.isAsciiOnly()) {
+                return RubyString.inspect19(runtime, str.getByteList());
+            }
             return str;
         }
-        if (str.getEncoding() != ext && !str.isAsciiOnly())
-            throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only or use the default external encoding");
+        if (str.getEncoding() != enc && !str.isAsciiOnly()) {
+            return RubyString.inspect19(runtime, str.getByteList());
+        }
         return str;
     }
     /**
