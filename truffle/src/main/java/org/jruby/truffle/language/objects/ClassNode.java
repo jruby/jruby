@@ -58,8 +58,4 @@ public abstract class ClassNode extends RubyNode {
         return Layouts.BASIC_OBJECT.getLogicalClass(object);
     }
 
-    private CoreLibrary coreLibrary() {
-        return getContext().getCoreLibrary();
-    }
-
 }

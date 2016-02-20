@@ -61,13 +61,13 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization(guards = {"isRegexpLiteral(regexp)", "isRubyString(pattern)"})
         public DynamicObject initializeRegexpLiteral(DynamicObject regexp, DynamicObject pattern, int options) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().securityError("can't modify literal regexp", this));
+            throw new RaiseException(coreLibrary().securityError("can't modify literal regexp", this));
         }
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "isInitialized(regexp)", "isRubyString(pattern)"})
         public DynamicObject initializeAlreadyInitialized(DynamicObject regexp, DynamicObject pattern, int options) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeError("already initialized regexp", this));
+            throw new RaiseException(coreLibrary().typeError("already initialized regexp", this));
         }
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)"})
@@ -94,7 +94,7 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization(guards = "!isInitialized(regexp)")
         public int optionsNotInitialized(DynamicObject regexp) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
+            throw new RaiseException(coreLibrary().typeError("uninitialized Regexp", this));
         }
 
     }
@@ -125,13 +125,13 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization(guards = {"!isInitialized(regexp)", "isRubyString(string)"})
         public Object searchRegionNotInitialized(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
+            throw new RaiseException(coreLibrary().typeError("uninitialized Regexp", this));
         }
 
         @Specialization(guards = {"isRubyString(string)", "!isValidEncoding(string)"})
         public Object searchRegionInvalidEncoding(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+            throw new RaiseException(coreLibrary().argumentError(
                     String.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding()), this));
         }
 

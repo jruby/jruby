@@ -34,7 +34,7 @@ public abstract class AssertNotCompiledNode extends RubyNode {
 
         if (compiled[0]) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RaiseException(getContext().getCoreLibrary().internalError("Call to Truffle::Primitive.assert_not_compiled was compiled", this));
+            throw new RaiseException(coreLibrary().internalError("Call to Truffle::Primitive.assert_not_compiled was compiled", this));
         }
 
         return nil();

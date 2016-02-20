@@ -337,7 +337,7 @@ public abstract class EncodingNodes {
 
         @Specialization(guards = "isNil(nil)")
         public DynamicObject defaultExternal(Object nil) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("default external can not be nil", this));
+            throw new RaiseException(coreLibrary().argumentError("default external can not be nil", this));
         }
 
         @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyString(encoding)", "!isNil(encoding)" })
@@ -410,7 +410,7 @@ public abstract class EncodingNodes {
 
             final Object[] encodings = cloneEncodingList();
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), encodings, encodings.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), encodings, encodings.length);
         }
     }
 
@@ -464,13 +464,13 @@ public abstract class EncodingNodes {
 
         @Specialization
         public Object encodingMap(VirtualFrame frame) {
-            Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
+            Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
 
             final DynamicObject[] encodings = ENCODING_LIST;
             for (int i = 0; i < encodings.length; i++) {
                 final Object upcased = upcaseNode.call(frame, createString(Layouts.ENCODING.getName(encodings[i])), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
-                final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, nil(), i);
+                final Object value = newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, nil(), i);
 
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
@@ -486,7 +486,7 @@ public abstract class EncodingNodes {
                 final int index = e.value.getIndex();
 
 
-                final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, alias, index);
+                final Object value = newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, alias, index);
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
 
@@ -510,7 +510,7 @@ public abstract class EncodingNodes {
         }
 
         private Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
-            return newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, values);
+            return newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, values);
         }
 
         @TruffleBoundary
@@ -563,7 +563,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

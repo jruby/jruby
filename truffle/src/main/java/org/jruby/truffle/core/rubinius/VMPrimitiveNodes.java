@@ -175,10 +175,10 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmExtendedModules(VirtualFrame frame, Object object) {
-            final DynamicObject metaClass = getContext().getCoreLibrary().getMetaClass(object);
+            final DynamicObject metaClass = coreLibrary().getMetaClass(object);
 
             if (Layouts.CLASS.getIsSingleton(metaClass)) {
-                final Object ret = newArrayNode.call(frame, getContext().getCoreLibrary().getArrayClass(), "new", null);
+                final Object ret = newArrayNode.call(frame, coreLibrary().getArrayClass(), "new", null);
 
                 for (DynamicObject included : Layouts.MODULE.getFields(metaClass).prependedAndIncludedModules()) {
                     arrayAppendNode.call(frame, ret, "<<", null, included);
@@ -220,7 +220,7 @@ public abstract class VMPrimitiveNodes {
             final Passwd passwd = posix().getpwnam(username.toString());
             if (passwd == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
+                throw new RaiseException(coreLibrary().argumentError("user " + username.toString() + " does not exist", this));
             }
             return createString(StringOperations.encodeRope(passwd.getHome(), UTF8Encoding.INSTANCE));
         }
@@ -421,7 +421,7 @@ public abstract class VMPrimitiveNodes {
             final double tutime = 0;
             final double tstime = 0;
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new double[]{
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new double[]{
                     utime,
                     stime,
                     cutime,
@@ -465,7 +465,7 @@ public abstract class VMPrimitiveNodes {
             try {
                 getContext().getNativePlatform().getSignalManager().watchDefaultForSignal(signal);
             } catch (IllegalArgumentException e) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }
             return true;
         }
@@ -476,7 +476,7 @@ public abstract class VMPrimitiveNodes {
             try {
                 getContext().getNativePlatform().getSignalManager().watchSignal(signal, newHandler);
             } catch (IllegalArgumentException e) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }
             return true;
         }
@@ -529,11 +529,11 @@ public abstract class VMPrimitiveNodes {
                 Object[] objects = new Object[]{
                         createString(StringOperations.encodeRope(key, UTF8Encoding.INSTANCE)),
                         createString(StringOperations.encodeRope(stringValue, UTF8Encoding.INSTANCE)) };
-                sectionKeyValues.add(Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
+                sectionKeyValues.add(Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length));
             }
 
             Object[] objects = sectionKeyValues.toArray();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -603,7 +603,7 @@ public abstract class VMPrimitiveNodes {
             }
 
             Object[] objects = new Object[]{ output, termsig, stopsig, pid };
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }

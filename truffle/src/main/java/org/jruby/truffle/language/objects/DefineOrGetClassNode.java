@@ -91,7 +91,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
     private boolean isBlankOrRootClass(DynamicObject rubyClass) {
         assert RubyGuards.isRubyClass(rubyClass);
-        return rubyClass == getContext().getCoreLibrary().getBasicObjectClass() || rubyClass == getContext().getCoreLibrary().getObjectClass();
+        return rubyClass == coreLibrary().getBasicObjectClass() || rubyClass == coreLibrary().getObjectClass();
     }
 
     private void checkSuperClassCompatibility(RubyContext context, DynamicObject superClassObject, DynamicObject definingClass) {

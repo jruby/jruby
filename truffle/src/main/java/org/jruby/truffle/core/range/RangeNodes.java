@@ -75,7 +75,7 @@ public abstract class RangeNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(store, length), length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayBuilder.finish(store, length), length);
         }
 
     }
@@ -234,7 +234,7 @@ public abstract class RangeNodes {
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public DynamicObject dupIntRange(DynamicObject range) {
             return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(
-                    getContext().getCoreLibrary().getIntegerFixnumRangeFactory(),
+                    coreLibrary().getIntegerFixnumRangeFactory(),
                     Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range),
                     Layouts.INTEGER_FIXNUM_RANGE.getBegin(range),
                     Layouts.INTEGER_FIXNUM_RANGE.getEnd(range));
@@ -243,7 +243,7 @@ public abstract class RangeNodes {
         @Specialization(guards = "isLongFixnumRange(range)")
         public DynamicObject dupLongRange(DynamicObject range) {
             return Layouts.LONG_FIXNUM_RANGE.createLongFixnumRange(
-                    getContext().getCoreLibrary().getIntegerFixnumRangeFactory(),
+                    coreLibrary().getIntegerFixnumRangeFactory(),
                     Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(range),
                     Layouts.LONG_FIXNUM_RANGE.getBegin(range),
                     Layouts.LONG_FIXNUM_RANGE.getEnd(range));
@@ -444,7 +444,7 @@ public abstract class RangeNodes {
             final int length = result - begin;
 
             if (length < 0) {
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
             } else {
                 final int[] values = new int[length];
 
@@ -452,7 +452,7 @@ public abstract class RangeNodes {
                     values[n] = begin + n;
                 }
 
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), values, length);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), values, length);
             }
         }
 
@@ -555,17 +555,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "rubyClass == rangeClass")
         public DynamicObject intRange(DynamicObject rubyClass, int begin, int end, boolean excludeEnd) {
-            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, begin, end);
+            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(coreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, begin, end);
         }
 
         @Specialization(guards = { "rubyClass == rangeClass", "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
         public DynamicObject longFittingIntRange(DynamicObject rubyClass, long begin, long end, boolean excludeEnd) {
-            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, (int) begin, (int) end);
+            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(coreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, (int) begin, (int) end);
         }
 
         @Specialization(guards = { "rubyClass == rangeClass", "!fitsIntoInteger(begin) || !fitsIntoInteger(end)" })
         public DynamicObject longRange(DynamicObject rubyClass, long begin, long end, boolean excludeEnd) {
-            return Layouts.LONG_FIXNUM_RANGE.createLongFixnumRange(getContext().getCoreLibrary().getLongFixnumRangeFactory(), excludeEnd, begin, end);
+            return Layouts.LONG_FIXNUM_RANGE.createLongFixnumRange(coreLibrary().getLongFixnumRangeFactory(), excludeEnd, begin, end);
         }
 
         @Specialization(guards = { "rubyClass != rangeClass || (!isIntOrLong(begin) || !isIntOrLong(end))" })
@@ -583,11 +583,11 @@ public abstract class RangeNodes {
             try {
                 cmpResult = cmpNode.call(frame, begin, "<=>", null, end);
             } catch (RaiseException e) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
+                throw new RaiseException(coreLibrary().argumentError("bad value for range", this));
             }
 
             if (cmpResult == nil()) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
+                throw new RaiseException(coreLibrary().argumentError("bad value for range", this));
             }
 
             return allocateNode.allocate(rubyClass, excludeEnd, begin, end);

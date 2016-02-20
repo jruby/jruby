@@ -245,11 +245,11 @@ public abstract class PsychParserNodes {
             DumperOptions.Version _version = dse.getVersion();
             Integer[] versionInts = _version == null ? null : _version.getArray();
             Object version = versionInts == null ?
-                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0) :
-                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{ versionInts[0], versionInts[1] }, 2);
+                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) :
+                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{ versionInts[0], versionInts[1] }, 2);
 
             Map<String, String> tagsMap = dse.getTags();
-            DynamicObject tags = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            DynamicObject tags = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
             if (tagsMap != null && tagsMap.size() > 0) {
                 for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
                     Object key = stringFor(tag.getKey(), tainted);
@@ -316,7 +316,7 @@ public abstract class PsychParserNodes {
 
         private Object invoke(Object receiver, String name, Object... args) {
             return ruby("receiver.send(name, *args)", "receiver", receiver, "name", getSymbol(name),
-                    "args", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length));
+                    "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
         }
 
         private static int translateStyle(Character style) {

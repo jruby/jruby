@@ -297,8 +297,8 @@ public abstract class InteropNode extends RubyNode {
                     }
                 }
                 DynamicObject receiver = (DynamicObject) ForeignAccess.getReceiver(frame);
-                InternalMethod labelMethod = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), label.toString());
-                InternalMethod indexedSetter = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), "[]=");
+                InternalMethod labelMethod = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(receiver), label.toString());
+                InternalMethod indexedSetter = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(receiver), "[]=");
                 if (labelMethod == null && indexedSetter != null) {
                     return this.replace(new ResolvedInteropIndexedReadNode(getContext(), getSourceSection(), labelIndex)).execute(frame);
                 } else if (label instanceof  String) {
@@ -545,8 +545,8 @@ public abstract class InteropNode extends RubyNode {
                     }
                 }
                 DynamicObject receiver = (DynamicObject) ForeignAccess.getReceiver(frame);
-                InternalMethod labelMethod = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), label.toString());
-                InternalMethod indexedSetter = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), "[]=");
+                InternalMethod labelMethod = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(receiver), label.toString());
+                InternalMethod indexedSetter = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(receiver), "[]=");
                 if (labelMethod == null && indexedSetter != null) {
                     return this.replace(new ResolvedInteropIndexedWriteNode(getContext(), getSourceSection(), labelIndex, valueIndex)).execute(frame);
                 } else if (label instanceof  String) {

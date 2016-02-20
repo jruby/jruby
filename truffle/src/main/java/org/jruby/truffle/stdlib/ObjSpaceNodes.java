@@ -97,7 +97,7 @@ public abstract class ObjSpaceNodes {
         @Specialization
         public DynamicObject adjacentObjects(DynamicObject object) {
             final Set<DynamicObject> objects = ObjectGraph.getAdjacentObjects(object);
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects.toArray(), objects.size());
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects.toArray(), objects.size());
         }
 
     }
@@ -113,7 +113,7 @@ public abstract class ObjSpaceNodes {
         @Specialization
         public DynamicObject rootObjects() {
             final Set<DynamicObject> objects = ObjectGraph.stopAndGetRootObjects(this, getContext());
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects.toArray(), objects.size());
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects.toArray(), objects.size());
         }
 
     }

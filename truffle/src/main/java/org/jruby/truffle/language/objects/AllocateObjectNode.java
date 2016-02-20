@@ -129,7 +129,7 @@ public abstract class AllocateObjectNode extends RubyNode {
         
         getContext().getObjectSpaceManager().traceAllocation(
                 object,
-                string(Layouts.CLASS.getFields(getContext().getCoreLibrary().getLogicalClass(allocatingSelf)).getName()),
+                string(Layouts.CLASS.getFields(coreLibrary().getLogicalClass(allocatingSelf)).getName()),
                 getSymbol(allocatingMethod),
                 string(allocatingSourceSection.getSource().getName()),
                 allocatingSourceSection.getStartLine());
@@ -143,7 +143,7 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     @Specialization(guards = "isSingleton(classToAllocate)")
     public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object[] values) {
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantCreateInstanceOfSingletonClass(this));
+        throw new RaiseException(coreLibrary().typeErrorCantCreateInstanceOfSingletonClass(this));
     }
 
     protected Assumption getTracingAssumption() {

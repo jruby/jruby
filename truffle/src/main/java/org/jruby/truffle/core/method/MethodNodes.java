@@ -198,7 +198,7 @@ public abstract class MethodNodes {
             } else {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             }
         }
 
@@ -217,7 +217,7 @@ public abstract class MethodNodes {
         @Specialization
         public DynamicObject unbind(VirtualFrame frame, DynamicObject method) {
             final DynamicObject receiverClass = classNode.executeGetClass(frame, Layouts.METHOD.getReceiver(method));
-            return Layouts.UNBOUND_METHOD.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodFactory(), receiverClass, Layouts.METHOD.getMethod(method));
+            return Layouts.UNBOUND_METHOD.createUnboundMethod(coreLibrary().getUnboundMethodFactory(), receiverClass, Layouts.METHOD.getMethod(method));
         }
 
     }
@@ -242,7 +242,7 @@ public abstract class MethodNodes {
             final InternalMethod method = Layouts.METHOD.getMethod(methodObject);
 
             return ProcNodes.createRubyProc(
-                    getContext().getCoreLibrary().getProcFactory(),
+                    coreLibrary().getProcFactory(),
                     ProcNodes.Type.LAMBDA,
                     method.getSharedMethodInfo(),
                     callTarget,
@@ -303,7 +303,7 @@ public abstract class MethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

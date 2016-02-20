@@ -72,7 +72,7 @@ public abstract class EncodingConverterNodes {
             // by Rubinius.  Rubinius will do the heavy lifting of parsing the options hash and setting the `@options`
             // ivar to the resulting int for EConv flags.  Since we don't pass the proper data structures to EncodingUtils,
             // we must override the flags after its had a pass in order to correct the bad flags value.
-            ecflags[0] = rubiniusToJRubyFlags((int) self.get("@options", getContext().getCoreLibrary().getNilObject()));
+            ecflags[0] = rubiniusToJRubyFlags((int) self.get("@options", coreLibrary().getNilObject()));
 
             EConv econv = EncodingUtils.econvOpenOpts(runtime.getCurrentContext(), encNames[0], encNames[1], ecflags[0], ecopts[0]);
 
@@ -147,11 +147,11 @@ public abstract class EncodingConverterNodes {
 
         @Specialization
         public Object transcodingMap(VirtualFrame frame) {
-            final Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
+            final Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
 
             for (CaseInsensitiveBytesHash<TranscoderDB.Entry> sourceEntry : TranscoderDB.transcoders) {
                 Object key = null;
-                final Object value = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
+                final Object value = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
 
                 for (Hash.HashEntry<TranscoderDB.Entry> destinationEntry : sourceEntry.entryIterator()) {
                     final TranscoderDB.Entry e = destinationEntry.value;
@@ -163,7 +163,7 @@ public abstract class EncodingConverterNodes {
 
                     final Object upcasedLookupTableKey = upcaseNode.call(frame, createString(new ByteList(e.getDestination())), "upcase", null);
                     final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym", null);
-                    final Object lookupTableValue = newTranscodingNode.call(frame, getContext().getCoreLibrary().getTranscodingClass(), "create", null, key, lookupTableKey);
+                    final Object lookupTableValue = newTranscodingNode.call(frame, coreLibrary().getTranscodingClass(), "create", null, key, lookupTableKey);
                     lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, lookupTableValue);
                 }
 

@@ -31,7 +31,7 @@ public class CheckProgramNameVariableTypeNode extends RubyNode {
 
         if (!(RubyGuards.isRubyString(childValue))) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(childValue, "String", this));
+            throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(childValue, "String", this));
         }
 
         return childValue;

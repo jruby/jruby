@@ -41,7 +41,7 @@ public class WriteInstanceVariableNode extends RubyNode {
             writeNode.execute((DynamicObject) object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+            throw new RaiseException(coreLibrary().frozenError(Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(), this));
         }
 
         return value;

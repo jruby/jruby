@@ -174,7 +174,7 @@ public abstract class StringPrimitiveNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(
+                throw new RaiseException(coreLibrary().encodingCompatibilityError(
                         String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
             }
 
@@ -253,7 +253,7 @@ public abstract class StringPrimitiveNodes {
             if (len > 0 && (limit || len > b || lim < 0)) ret.add(makeString(string, b, len - b));
 
             Object[] objects = ret.toArray();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
         private DynamicObject makeString(DynamicObject source, int index, int length) {
@@ -369,7 +369,7 @@ public abstract class StringPrimitiveNodes {
             for (int i = 0; i < bytes.length; i++) {
                 if (bytes[i] == 0) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().argumentError("string contains NULL byte", this));
+                    throw new RaiseException(coreLibrary().argumentError("string contains NULL byte", this));
                 }
             }
 
@@ -451,7 +451,7 @@ public abstract class StringPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        getContext().getCoreLibrary().indexError(
+                        coreLibrary().indexError(
                                 String.format("index %d out of string", start),
                                 this
                         ));
@@ -461,7 +461,7 @@ public abstract class StringPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        getContext().getCoreLibrary().indexError(
+                        coreLibrary().indexError(
                                 String.format("index %d out of string", start),
                                 this
                         ));
@@ -690,12 +690,12 @@ public abstract class StringPrimitiveNodes {
                 length = EncodingOperations.getEncoding(encoding).codeToMbcLength(code);
             } catch (EncodingException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
+                throw new RaiseException(coreLibrary().rangeError(code, encoding, this));
             }
 
             if (length <= 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
+                throw new RaiseException(coreLibrary().rangeError(code, encoding, this));
             }
 
             final byte[] bytes = new byte[length];
@@ -704,7 +704,7 @@ public abstract class StringPrimitiveNodes {
                 EncodingOperations.getEncoding(encoding).codeToMbc(code, bytes, 0);
             } catch (EncodingException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
+                throw new RaiseException(coreLibrary().rangeError(code, encoding, this));
             }
 
             return createString(new ByteList(bytes, EncodingOperations.getEncoding(encoding)));
@@ -990,7 +990,7 @@ public abstract class StringPrimitiveNodes {
 
             if (k < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("character index is negative", this));
+                throw new RaiseException(coreLibrary().argumentError("character index is negative", this));
             }
 
             for (i = 0; i < k && p < e; i++) {
@@ -1019,7 +1019,7 @@ public abstract class StringPrimitiveNodes {
 
             if (offset < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative start given", this));
+                throw new RaiseException(coreLibrary().argumentError("negative start given", this));
             }
 
             final Rope stringRope = rope(string);
@@ -1081,7 +1081,7 @@ public abstract class StringPrimitiveNodes {
 
             if (index < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative index given", this));
+                throw new RaiseException(coreLibrary().argumentError("negative index given", this));
             }
 
             final Rope rope = rope(string);
@@ -1190,7 +1190,7 @@ public abstract class StringPrimitiveNodes {
 
             if (pos < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative start given", this));
+                throw new RaiseException(coreLibrary().argumentError("negative start given", this));
             }
 
             final Rope stringRope = rope(string);
@@ -1424,7 +1424,7 @@ public abstract class StringPrimitiveNodes {
                 return (int) value;
             } else if (object instanceof org.jruby.RubyBignum) {
                 final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
-                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
+                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), value);
             } else {
                 throw new UnsupportedOperationException();
             }

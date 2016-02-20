@@ -56,7 +56,7 @@ public class YieldNode extends RubyNode {
             block = RubyArguments.getMethod(frame.getArguments()).getCapturedBlock();
 
             if (block == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noBlockToYieldTo(this));
+                throw new RaiseException(coreLibrary().noBlockToYieldTo(this));
             }
         }
 

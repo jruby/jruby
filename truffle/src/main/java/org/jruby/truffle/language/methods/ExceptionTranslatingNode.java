@@ -84,7 +84,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
 
         // TODO: we might want to do sth smarter here to avoid consuming frames when we are almost out of it.
-        return getContext().getCoreLibrary().systemStackError("stack level too deep", this);
+        return coreLibrary().systemStackError("stack level too deep", this);
     }
 
     private DynamicObject translate(ArithmeticException exception) {
@@ -92,7 +92,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             exception.printStackTrace();
         }
 
-        return getContext().getCoreLibrary().zeroDivisionError(this, exception);
+        return coreLibrary().zeroDivisionError(this, exception);
     }
 
     private DynamicObject translate(UnsupportedSpecializationException exception) {
@@ -152,9 +152,9 @@ public class ExceptionTranslatingNode extends RubyNode {
 
         switch (unsupportedOperationBehavior) {
             case TYPE_ERROR:
-                return getContext().getCoreLibrary().typeError(builder.toString(), this, exception);
+                return coreLibrary().typeError(builder.toString(), this, exception);
             case ARGUMENT_ERROR:
-                return getContext().getCoreLibrary().argumentError(builder.toString(), this, exception);
+                return coreLibrary().argumentError(builder.toString(), this, exception);
             default:
                 throw new UnsupportedOperationException();
         }
@@ -166,9 +166,9 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
 
         if (throwable.getStackTrace().length > 0) {
-            return getContext().getCoreLibrary().internalError(String.format("%s %s %s", throwable.getClass().getSimpleName(), throwable.getMessage(), throwable.getStackTrace()[0].toString()), this, throwable);
+            return coreLibrary().internalError(String.format("%s %s %s", throwable.getClass().getSimpleName(), throwable.getMessage(), throwable.getStackTrace()[0].toString()), this, throwable);
         } else {
-            return getContext().getCoreLibrary().internalError(String.format("%s %s ???", throwable.getClass().getSimpleName(), throwable.getMessage()), this, throwable);
+            return coreLibrary().internalError(String.format("%s %s ???", throwable.getClass().getSimpleName(), throwable.getMessage()), this, throwable);
         }
     }
 

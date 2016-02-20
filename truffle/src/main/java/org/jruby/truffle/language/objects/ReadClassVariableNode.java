@@ -53,7 +53,7 @@ public class ReadClassVariableNode extends RubyNode {
 
         if (value == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedClassVariable(module, name, this));
+            throw new RaiseException(coreLibrary().nameErrorUninitializedClassVariable(module, name, this));
         }
 
         return value;

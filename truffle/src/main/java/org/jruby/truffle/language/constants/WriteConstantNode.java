@@ -46,7 +46,7 @@ public class WriteConstantNode extends RubyNode {
 
         if (!(RubyGuards.isRubyModule(receiverObject))) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
+            throw new RaiseException(coreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
         }
 
         final DynamicObject module = (DynamicObject) receiverObject;

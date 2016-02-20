@@ -39,14 +39,14 @@ public abstract class ArrayDupNode extends RubyNode {
 
     @Specialization(guards = "isNullArray(from)")
     public DynamicObject dupNull(DynamicObject from) {
-        return allocateNode.allocateArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        return allocateNode.allocateArray(coreLibrary().getArrayClass(), null, 0);
     }
 
     @Specialization(guards = "isIntArray(from)")
     public DynamicObject dupIntegerFixnum(DynamicObject from) {
         final int[] store = (int[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocateArray(
-                getContext().getCoreLibrary().getArrayClass(),
+                coreLibrary().getArrayClass(),
                 store.clone(),
                 Layouts.ARRAY.getSize(from));
     }
@@ -55,7 +55,7 @@ public abstract class ArrayDupNode extends RubyNode {
     public DynamicObject dupLongFixnum(DynamicObject from) {
         final long[] store = (long[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocateArray(
-                getContext().getCoreLibrary().getArrayClass(),
+                coreLibrary().getArrayClass(),
                 store.clone(),
                 Layouts.ARRAY.getSize(from));
     }
@@ -64,7 +64,7 @@ public abstract class ArrayDupNode extends RubyNode {
     public DynamicObject dupFloat(DynamicObject from) {
         final double[] store = (double[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocateArray(
-                getContext().getCoreLibrary().getArrayClass(),
+                coreLibrary().getArrayClass(),
                 store.clone(),
                 Layouts.ARRAY.getSize(from));
     }
@@ -73,7 +73,7 @@ public abstract class ArrayDupNode extends RubyNode {
     public DynamicObject dupObject(DynamicObject from) {
         final Object[] store = (Object[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocateArray(
-                getContext().getCoreLibrary().getArrayClass(),
+                coreLibrary().getArrayClass(),
                 ArrayUtils.copy(store),
                 Layouts.ARRAY.getSize(from));
     }

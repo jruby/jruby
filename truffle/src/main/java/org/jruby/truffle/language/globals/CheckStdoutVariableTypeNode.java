@@ -32,8 +32,8 @@ public class CheckStdoutVariableTypeNode extends RubyNode {
 
         final Object childValue = child.execute(frame);
 
-        if (childValue == nil() || ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(childValue), "write") == null) {
-            throw new RaiseException(getContext().getCoreLibrary().typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(childValue)).getName()), this));
+        if (childValue == nil() || ModuleOperations.lookupMethod(coreLibrary().getMetaClass(childValue), "write") == null) {
+            throw new RaiseException(coreLibrary().typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(coreLibrary().getLogicalClass(childValue)).getName()), this));
         }
 
         return childValue;

@@ -30,27 +30,27 @@ public abstract class MetaClassNode extends RubyNode {
 
     @Specialization(guards = "value")
     protected DynamicObject metaClassClassTrue(boolean value) {
-        return getContext().getCoreLibrary().getTrueClass();
+        return coreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
     protected DynamicObject metaClassClassFalse(boolean value) {
-        return getContext().getCoreLibrary().getFalseClass();
+        return coreLibrary().getFalseClass();
     }
 
     @Specialization
     protected DynamicObject metaClassInt(int value) {
-        return getContext().getCoreLibrary().getFixnumClass();
+        return coreLibrary().getFixnumClass();
     }
 
     @Specialization
     protected DynamicObject metaClassLong(long value) {
-        return getContext().getCoreLibrary().getFixnumClass();
+        return coreLibrary().getFixnumClass();
     }
 
     @Specialization
     protected DynamicObject metaClassDouble(double value) {
-        return getContext().getCoreLibrary().getFloatClass();
+        return coreLibrary().getFloatClass();
     }
 
     @Specialization(guards = "object.getShape() == cachedShape",

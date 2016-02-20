@@ -80,19 +80,19 @@ public abstract class ToFNode extends RubyNode {
         try {
             coerced = toFNode.call(frame, object, "to_f", null);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Float", this));
+                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "Float", this));
             } else {
                 throw e;
             }
         }
 
-        if (getContext().getCoreLibrary().getLogicalClass(coerced) == getContext().getCoreLibrary().getFloatClass()) {
+        if (coreLibrary().getLogicalClass(coerced) == coreLibrary().getFloatClass()) {
             return (double) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "Float", "to_f", coerced, this));
+            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "Float", "to_f", coerced, this));
         }
     }
 
