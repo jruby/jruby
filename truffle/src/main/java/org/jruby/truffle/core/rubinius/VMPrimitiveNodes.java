@@ -66,8 +66,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThrowException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.objects.ClassNode;
-import org.jruby.truffle.language.objects.ClassNodeGen;
+import org.jruby.truffle.language.objects.LogicalClassNode;
+import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
@@ -230,11 +230,11 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_object_class", needsSelf = false)
     public static abstract class VMObjectClassPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        @Child private ClassNode classNode;
+        @Child private LogicalClassNode classNode;
 
         public VMObjectClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization

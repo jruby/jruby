@@ -22,9 +22,9 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeChild(value="object", type=RubyNode.class)
-public abstract class ClassNode extends RubyNode {
+public abstract class LogicalClassNode extends RubyNode {
 
-    public ClassNode(RubyContext context, SourceSection sourceSection) {
+    public LogicalClassNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

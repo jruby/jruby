@@ -44,8 +44,8 @@ import org.jruby.truffle.language.methods.CallMethodNode;
 import org.jruby.truffle.language.methods.CallMethodNodeGen;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.objects.ClassNode;
-import org.jruby.truffle.language.objects.ClassNodeGen;
+import org.jruby.truffle.language.objects.LogicalClassNode;
+import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
@@ -207,11 +207,11 @@ public abstract class MethodNodes {
     @CoreMethod(names = "unbind")
     public abstract static class UnbindNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ClassNode classNode;
+        @Child private LogicalClassNode classNode;
 
         public UnbindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization

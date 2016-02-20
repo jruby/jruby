@@ -104,8 +104,8 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.LookupMethodNode;
 import org.jruby.truffle.language.methods.LookupMethodNodeGen;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.language.objects.ClassNode;
-import org.jruby.truffle.language.objects.ClassNodeGen;
+import org.jruby.truffle.language.objects.LogicalClassNode;
+import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.IsANode;
@@ -403,11 +403,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "class")
     public abstract static class KernelClassNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ClassNode classNode;
+        @Child private LogicalClassNode classNode;
 
         public KernelClassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -961,11 +961,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "instance_of?", required = 1)
     public abstract static class InstanceOfNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ClassNode classNode;
+        @Child private LogicalClassNode classNode;
 
         public InstanceOfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization(guards = "isRubyClass(rubyClass)")
@@ -2099,13 +2099,13 @@ public abstract class KernelNodes {
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ClassNode classNode;
+        @Child private LogicalClassNode classNode;
         @Child private ObjectPrimitiveNodes.ObjectIDPrimitiveNode objectIDNode;
         @Child private ToHexStringNode toHexStringNode;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
             objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
         }
