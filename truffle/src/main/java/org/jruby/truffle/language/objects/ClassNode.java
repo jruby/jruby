@@ -15,12 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Reads the class of an object.
- */
 @NodeChild(value="object", type=RubyNode.class)
 public abstract class ClassNode extends RubyNode {
 
@@ -32,32 +30,36 @@ public abstract class ClassNode extends RubyNode {
 
     @Specialization(guards = "value")
     protected DynamicObject getClassTrue(boolean value) {
-        return getContext().getCoreLibrary().getTrueClass();
+        return coreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
     protected DynamicObject getClassFalse(boolean value) {
-        return getContext().getCoreLibrary().getFalseClass();
+        return coreLibrary().getFalseClass();
     }
 
     @Specialization
     protected DynamicObject getClass(int value) {
-        return getContext().getCoreLibrary().getFixnumClass();
+        return coreLibrary().getFixnumClass();
     }
 
     @Specialization
     protected DynamicObject getClass(long value) {
-        return getContext().getCoreLibrary().getFixnumClass();
+        return coreLibrary().getFixnumClass();
     }
 
     @Specialization
     protected DynamicObject getClass(double value) {
-        return getContext().getCoreLibrary().getFloatClass();
+        return coreLibrary().getFloatClass();
     }
 
     @Specialization
     protected DynamicObject getClass(DynamicObject object) {
         return Layouts.BASIC_OBJECT.getLogicalClass(object);
+    }
+
+    private CoreLibrary coreLibrary() {
+        return getContext().getCoreLibrary();
     }
 
 }
