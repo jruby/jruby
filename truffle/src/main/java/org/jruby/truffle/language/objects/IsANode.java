@@ -30,11 +30,11 @@ import org.jruby.truffle.language.control.RaiseException;
 })
 public abstract class IsANode extends RubyNode {
 
-    @Child MetaClassWithShapeCacheNode metaClassNode;
+    @Child private MetaClassNode metaClassNode;
 
     public IsANode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        metaClassNode = MetaClassWithShapeCacheNodeGen.create(context, sourceSection, null);
+        metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
     }
 
     public abstract boolean executeIsA(Object self, DynamicObject module);

@@ -15,15 +15,15 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNode;
-import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNodeGen;
+import org.jruby.truffle.language.objects.MetaClassNode;
+import org.jruby.truffle.language.objects.MetaClassNodeGen;
 
 public class CachedReturnMissingDispatchNode extends CachedDispatchNode {
 
     private final DynamicObject expectedClass;
     private final Assumption unmodifiedAssumption;
 
-    @Child private MetaClassWithShapeCacheNode metaClassNode;
+    @Child private MetaClassNode metaClassNode;
 
     public CachedReturnMissingDispatchNode(
             RubyContext context,
@@ -35,7 +35,7 @@ public class CachedReturnMissingDispatchNode extends CachedDispatchNode {
 
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
-        this.metaClassNode = MetaClassWithShapeCacheNodeGen.create(context, getSourceSection(), null);
+        this.metaClassNode = MetaClassNodeGen.create(context, getSourceSection(), null);
     }
 
     @Override

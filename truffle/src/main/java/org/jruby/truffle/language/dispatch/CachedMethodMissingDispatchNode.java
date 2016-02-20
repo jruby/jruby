@@ -19,8 +19,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNode;
-import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNodeGen;
+import org.jruby.truffle.language.objects.MetaClassNode;
+import org.jruby.truffle.language.objects.MetaClassNodeGen;
 
 public class CachedMethodMissingDispatchNode extends CachedDispatchNode {
 
@@ -28,7 +28,7 @@ public class CachedMethodMissingDispatchNode extends CachedDispatchNode {
     private final Assumption unmodifiedAssumption;
     private final InternalMethod method;
 
-    @Child private MetaClassWithShapeCacheNode metaClassNode;
+    @Child private MetaClassNode metaClassNode;
     @Child private DirectCallNode callNode;
 
     public CachedMethodMissingDispatchNode(
@@ -43,7 +43,7 @@ public class CachedMethodMissingDispatchNode extends CachedDispatchNode {
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.method = method;
-        this.metaClassNode = MetaClassWithShapeCacheNodeGen.create(context, getSourceSection(), null);
+        this.metaClassNode = MetaClassNodeGen.create(context, getSourceSection(), null);
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
         /*
