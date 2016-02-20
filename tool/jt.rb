@@ -161,7 +161,11 @@ module ShellUtils
         false
       else
         $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
-        exit $?.exitstatus
+        if $?
+          exit $?.exitstatus
+        else
+          exit 1
+        end
       end
     end
   end
