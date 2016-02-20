@@ -13,8 +13,12 @@ $trace_proc = proc { |*args|
   $trace << args
 }
 
-def empty_binding
-  binding
+class MockBinding
+
+  def local_variables
+    []
+  end
+
 end
 
 def check(file)
@@ -26,12 +30,14 @@ def check(file)
   
   actual = $trace
   
+  empty_binding = MockBinding.new
+  
   while actual.size < expected.size
     actual.push ['missing', 'missing', :missing, :missing, empty_binding, :missing]
   end
   
   while expected.size < actual.size
-    actual.push ['missing', 'missing', :missing, :missing, empty_binding, :missing]
+    expected.push ['missing', 'missing', :missing, :missing, empty_binding, :missing]
   end
   
   success = true
