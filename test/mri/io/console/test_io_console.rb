@@ -302,7 +302,8 @@ class TestIO_Console < Test::Unit::TestCase
     noctty = [EnvUtil.rubybin, "-e", "Process.daemon(true)"]
   when !(rubyw = RbConfig::CONFIG["RUBYW_INSTALL_NAME"]).empty?
     dir, base = File.split(EnvUtil.rubybin)
-    noctty = [File.join(dir, base.sub(/ruby/, rubyw))]
+    base = base.sub(/ruby/, rubyw) if base != rubyw
+    noctty = [File.join(dir, base)]
   end
 
   if noctty

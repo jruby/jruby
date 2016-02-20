@@ -19,6 +19,31 @@
 # we don't actually disable echo and the password is shown...we will try to
 # do a better version of this in 1.7.1.
 
+require 'rbconfig'
+
+# Methods common to all backend impls
+class IO
+  def getch(*)
+    raw do
+      getc
+    end
+  end
+
+  def getpass(prompt = nil)
+    wio = self == $stdin ? $stderr : self
+    wio.write(prompt) if prompt
+    begin
+      str = nil
+      noecho do
+        str = gets
+      end
+    ensure
+      puts($/)
+    end
+    str.chomp
+  end
+end
+
 # attempt to call stty; if failure, fall back on stubbed version
 
 if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
@@ -108,12 +133,6 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
         ttymode_yield(block) { |t| t[:c_lflag] &= ~(TTY_ECHO) }
       end
 
-      def getch(*)
-        raw do
-          getc
-        end
-      end
-
       def winsize
         ws = LibC::Winsize.new
         if LibC.ioctl(self.fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
@@ -171,8 +190,9 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
           end
         end
 
-        unless con
+        if !con && $stdin.tty?
           con = File.open('/dev/tty', 'r+')
+          con.sync = true
           @console = con
         end
 
@@ -219,10 +239,6 @@ if !result || RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
     end
 
     def cooked!(*)
-    end
-
-    def getch(*)
-      getc
     end
 
     def echo=(echo)
@@ -291,10 +307,6 @@ elsif !IO.method_defined?:ttymode
       stty('-raw')
     end
 
-    def getch(*)
-      getc
-    end
-
     def echo=(echo)
       stty(echo ? 'echo' : '-echo')
     end
@@ -332,5 +344,18 @@ elsif !IO.method_defined?:ttymode
 
     def ioflush
     end
+  end
+end
+
+module IO::GenericReadable
+  def getch(*)
+    getc
+  end
+
+  def getpass(prompt = nil)
+    write(prompt) if prompt
+    str = gets.chomp
+    puts($/)
+    str
   end
 end
