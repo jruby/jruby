@@ -55,6 +55,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.Graal;
+import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.truffle.tools.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
@@ -334,7 +335,11 @@ public abstract class TrufflePrimitiveNodes {
             final Object[] store = new Object[array.length];
 
             for (int n = 0; n < array.length; n++) {
-                store[n] = array[n];
+                if (array[n] == CoverageManager.NO_CODE) {
+                    store[n] = nil();
+                } else {
+                    store[n] = array[n];
+                }
             }
 
             return store;

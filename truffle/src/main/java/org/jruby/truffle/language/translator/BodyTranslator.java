@@ -1770,7 +1770,7 @@ public class BodyTranslator extends Translator {
             ret = sequence(context, sourceSection, Arrays.asList(condition, new NilLiteralNode(context, sourceSection, true)));
         }
 
-        return addNewlineIfNeeded(node, ret);
+        return ret; // no addNewlineIfNeeded(node, ret) as the condition will already have a newline
     }
 
     @Override
@@ -3154,6 +3154,9 @@ public class BodyTranslator extends Translator {
     private RubyNode addNewlineIfNeeded(org.jruby.ast.Node jrubyNode, RubyNode node) {
         if (jrubyNode.isNewline()) {
             final SourceSection current = node.getEncapsulatingSourceSection();
+            if (context.getCoverageManager() != null) {
+                context.getCoverageManager().setLineHasCode(current.getLineLocation());
+            }
             node.clearSourceSection();
             node.assignSourceSection(current.withTags(AttachmentsManager.LINE_TAG, TraceManager.LINE_TAG, CoverageManager.LINE_TAG));
         }
