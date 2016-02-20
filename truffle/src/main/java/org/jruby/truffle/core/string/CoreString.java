@@ -19,14 +19,14 @@ import org.jruby.truffle.core.rope.Rope;
 
 import java.nio.charset.StandardCharsets;
 
-public class StringLiteral {
+public class CoreString {
 
     private final RubyContext context;
     private final String literal;
 
     @CompilationFinal private volatile Rope rope;
 
-    public StringLiteral(RubyContext context, String literal) {
+    public CoreString(RubyContext context, String literal) {
         assert is7Bit(literal);
         this.context = context;
         this.literal = literal;

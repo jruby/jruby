@@ -11,15 +11,15 @@ package org.jruby.truffle.core.string;
 
 import org.jruby.truffle.RubyContext;
 
-public class StringLiterals {
+public class CoreStrings {
 
     private final RubyContext context;
 
-    public final StringLiteral NIL;
+    public final CoreString NIL;
 
-    public StringLiterals(RubyContext context) {
+    public CoreStrings(RubyContext context) {
         this.context = context;
-        NIL = new StringLiteral(context, "nil");
+        NIL = new CoreString(context, "nil");
     }
 
 }

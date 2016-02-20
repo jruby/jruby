@@ -31,7 +31,7 @@ public class NilNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return stringLiterals().NIL.createInstance();
+        return coreStrings().NIL.createInstance();
     }
 
 }
