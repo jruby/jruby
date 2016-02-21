@@ -1435,6 +1435,11 @@ public class RubyProcess {
         return makeClockResult(runtime, getTimeForClock(_clock_id, runtime), _unit.toString());
     }
 
+    @JRubyMethod(rest = true, meta = true)
+    public static IRubyObject exec(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return RubyKernel.exec(context, self, args);
+    }
+
     /**
      * Get the time in nanoseconds corresponding to the requested clock.
      */
