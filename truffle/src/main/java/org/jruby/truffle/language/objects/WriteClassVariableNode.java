@@ -38,7 +38,7 @@ public class WriteClassVariableNode extends RubyNode {
 
         final Object rhsValue = rhs.execute(frame);
 
-        final DynamicObject module = ReadClassVariableNode.resolveTargetModule(lexicalScope);
+        final DynamicObject module = lexicalScope.resolveTargetModule();
 
         ModuleOperations.setClassVariable(getContext(), module, name, rhsValue, this);
 

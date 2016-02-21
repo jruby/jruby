@@ -1139,8 +1139,8 @@ public class CoreLibrary {
         return nameError(message, name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorUninitializedClassVariable(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         return nameError(String.format("uninitialized class variable %s in %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
     }

@@ -1010,7 +1010,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode ret = new ReadClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope());
+        final RubyNode ret = new ReadClassVariableNode(context, sourceSection, environment.getLexicalScope(), node.getName());
         return addNewlineIfNeeded(node, ret);
     }
 
