@@ -34,19 +34,21 @@ public abstract class IsANode extends RubyNode {
 
     public IsANode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
     }
 
     public abstract boolean executeIsA(Object self, DynamicObject module);
 
     @Specialization(
             limit = "getCacheLimit()",
-            guards = { "isRubyModule(cachedModule)",
-                    "metaClass(self) == cachedMetaClass", "module == cachedModule" },
+            guards = {
+                    "isRubyModule(cachedModule)",
+                    "getMetaClass(self) == cachedMetaClass",
+                    "module == cachedModule"
+            },
             assumptions = "getUnmodifiedAssumption(cachedModule)")
     public boolean isACached(Object self,
             DynamicObject module,
-            @Cached("metaClass(self)") DynamicObject cachedMetaClass,
+            @Cached("getMetaClass(self)") DynamicObject cachedMetaClass,
             @Cached("module") DynamicObject cachedModule,
             @Cached("isA(cachedMetaClass, cachedModule)") boolean result) {
         return result;
@@ -58,12 +60,11 @@ public abstract class IsANode extends RubyNode {
 
     @Specialization(guards = "isRubyModule(module)")
     public boolean isAUncached(Object self, DynamicObject module) {
-        return isA(metaClass(self), module);
+        return isA(getMetaClass(self), module);
     }
 
     @Specialization(guards = "!isRubyModule(module)")
     public boolean isATypeError(Object self, DynamicObject module) {
-        CompilerDirectives.transferToInterpreter();
         throw new RaiseException(coreLibrary().typeError("class or module required", this));
     }
 
@@ -72,7 +73,12 @@ public abstract class IsANode extends RubyNode {
         return ModuleOperations.assignableTo(metaClass, module);
     }
 
-    protected DynamicObject metaClass(Object object) {
+    protected DynamicObject getMetaClass(Object object) {
+        if (metaClassNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            metaClassNode = insert(MetaClassNodeGen.create(getContext(), getSourceSection(), null));
+        }
+
         return metaClassNode.executeMetaClass(object);
     }
 

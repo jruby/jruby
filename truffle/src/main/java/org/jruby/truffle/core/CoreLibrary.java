@@ -1039,6 +1039,7 @@ public class CoreLibrary {
         return typeError("can't create instance of singleton class", currentNode, null);
     }
 
+    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode) {
         return typeError(message, currentNode, null);
     }
