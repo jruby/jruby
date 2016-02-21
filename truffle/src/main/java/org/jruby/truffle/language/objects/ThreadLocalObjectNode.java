@@ -30,7 +30,7 @@ public class ThreadLocalObjectNode extends RubyNode {
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
+    public DynamicObject executeDynamicObject(VirtualFrame frame) {
         if (firstThreadSeen == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             firstThreadSeen = currentThread();
@@ -42,6 +42,11 @@ public class ThreadLocalObjectNode extends RubyNode {
         } else {
             return Layouts.THREAD.getThreadLocals(currentThread());
         }
+    }
+
+    @Override
+    public Object execute(VirtualFrame frame) {
+        return executeDynamicObject(frame);
     }
 
     private DynamicObject currentThread() {
