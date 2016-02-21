@@ -29,7 +29,6 @@ import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.CatchNextNode;

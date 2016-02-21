@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.language;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.Layouts;
 

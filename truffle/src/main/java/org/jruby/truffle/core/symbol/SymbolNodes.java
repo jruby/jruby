@@ -33,7 +33,6 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;

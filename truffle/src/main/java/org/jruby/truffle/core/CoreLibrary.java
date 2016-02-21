@@ -11,8 +11,8 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.java.JavaInterop;

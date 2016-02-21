@@ -71,7 +71,6 @@ import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.AddMethodNode;

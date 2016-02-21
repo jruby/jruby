@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ir.Compiler;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.LexicalScope;
