@@ -23,20 +23,22 @@ public class WriteClassVariableNode extends RubyNode {
 
     private final String name;
     private final LexicalScope lexicalScope;
+
     @Child private RubyNode rhs;
 
-    public WriteClassVariableNode(RubyContext context, SourceSection sourceSection, String name, LexicalScope lexicalScope, RubyNode rhs) {
+    public WriteClassVariableNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope,
+                                  String name, RubyNode rhs) {
         super(context, sourceSection);
-        this.name = name;
         this.lexicalScope = lexicalScope;
+        this.name = name;
         this.rhs = rhs;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
         final Object rhsValue = rhs.execute(frame);
+
+        // TODO CS 21-Feb-16 these two operations are uncached and use loops
 
         final DynamicObject module = lexicalScope.resolveTargetModule();
 
