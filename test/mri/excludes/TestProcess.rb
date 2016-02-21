@@ -35,6 +35,7 @@ exclude :test_execopts_redirect_open_order_reverse, "requires Kernel.system to s
 exclude :test_execopts_redirect_pipe, "hangs"
 exclude :test_execopts_redirect_symbol, "Errno::ENOENT: No such file or directory - out"
 exclude :test_execopts_redirect_to_out_and_err, "Errno::ENOENT: No such file or directory - foo"
+exclude :test_execopts_rlimit, "posix_spawn does not support rlimit modification"
 #exclude :test_execopts_uid, "doesn't really pass but test seems OK due throwing NotImplementedError"
 exclude :test_execopts_umask, "unsupported"
 exclude :test_execopts_unsetenv_others, "unsupported"
