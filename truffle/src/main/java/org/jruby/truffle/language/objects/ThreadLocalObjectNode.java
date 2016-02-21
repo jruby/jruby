@@ -9,7 +9,11 @@
  */
 package org.jruby.truffle.language.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
@@ -17,12 +21,31 @@ import org.jruby.truffle.language.RubyNode;
 
 public class ThreadLocalObjectNode extends RubyNode {
 
+    @CompilationFinal private DynamicObject firstThreadSeen;
+    @CompilationFinal private DynamicObject firstThreadSeenLocals;
+    private final ConditionProfile firstThreadProfile = ConditionProfile.createCountingProfile();
+
     public ThreadLocalObjectNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        if (firstThreadSeen == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            firstThreadSeen = currentThread();
+            firstThreadSeenLocals = Layouts.THREAD.getThreadLocals(firstThreadSeen);
+        }
+
+        if (firstThreadProfile.profile(currentThread() == firstThreadSeen)) {
+            return firstThreadSeenLocals;
+        } else {
+            return Layouts.THREAD.getThreadLocals(currentThread());
+        }
     }
+
+    private DynamicObject currentThread() {
+        return getContext().getThreadManager().getCurrentThread();
+    }
+
 }
