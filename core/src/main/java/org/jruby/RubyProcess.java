@@ -41,7 +41,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import jnr.posix.POSIX;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
@@ -59,7 +58,6 @@ import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.WindowsFFI.kernel32;
 import static org.jruby.util.WindowsFFI.Kernel32.*;
 
