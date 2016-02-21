@@ -935,7 +935,7 @@ public class BodyTranslator extends Translator {
 
             final ModuleBodyDefinitionNode definition = moduleTranslator.compileClassNode(sourceSection, name, bodyNode, sclass);
 
-            return new OpenModuleNode(context, sourceSection, defineOrGetNode, definition, newLexicalScope);
+            return new OpenModuleNode(context, sourceSection, newLexicalScope, definition, defineOrGetNode);
         } finally {
             environment.popLexicalScope();
         }
