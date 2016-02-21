@@ -85,7 +85,7 @@ public abstract class ExceptionNodes {
     @CoreMethod(names = "backtrace")
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ReadHeadObjectFieldNode readCustomBacktrace;
+        @Child ReadObjectFieldNode readCustomBacktrace;
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
