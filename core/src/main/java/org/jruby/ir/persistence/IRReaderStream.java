@@ -275,6 +275,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case RESCUE_EQQ: return RescueEQQInstr.decode(this);
             case RESTORE_ERROR_INFO: return RestoreErrorInfoInstr.decode(this);
             case RETURN: return ReturnInstr.decode(this);
+            case RETURN_OR_RETHROW_SAVED_EXC: return ReturnOrRethrowSavedExcInstr.decode(this);
             case RUNTIME_HELPER: return RuntimeHelperCall.decode(this);
             case SEARCH_CONST: return SearchConstInstr.decode(this);
             case SET_CAPTURED_VAR: return SetCapturedVarInstr.decode(this);
