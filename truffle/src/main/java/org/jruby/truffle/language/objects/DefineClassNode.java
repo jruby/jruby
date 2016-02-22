@@ -12,6 +12,8 @@ package org.jruby.truffle.language.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
@@ -29,11 +31,16 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 public class DefineClassNode extends RubyNode {
 
     protected final String name;
+
     @Child private RubyNode superClass;
     @Child private CallDispatchHeadNode inheritedNode;
     @Child private RubyNode lexicalParentModule;
 
-    public DefineClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
+    private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
+    private final BranchProfile errorProfile = BranchProfile.create();
+
+    public DefineClassNode(RubyContext context, SourceSection sourceSection, String name,
+                           RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection);
         this.name = name;
         this.lexicalParentModule = lexicalParent;
@@ -42,54 +49,56 @@ public class DefineClassNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        final Object lexicalParentObject = lexicalParentModule.execute(frame);;
 
-        final RubyContext context = getContext();
-
-        // Look for a current definition of the class, or create a new one
-
-        final Object lexicalParent1 = lexicalParentModule.execute(frame);;
-
-        if (!RubyGuards.isRubyModule(lexicalParent1)) {
-            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParent1, "module", this));
+        if (!RubyGuards.isRubyModule(lexicalParentObject)) {
+            errorProfile.enter();
+            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParentObject, "module", this));
         }
 
-        DynamicObject lexicalParent = (DynamicObject) lexicalParent1;
-        final RubyConstant constant = lookupForExistingModule(lexicalParent);
+        DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
 
-        DynamicObject definingClass;
-        final Object superClassObj = superClass.execute(frame);
+        final RubyConstant constant = DefineModuleNode.lookupForExistingModule(
+                getContext(), name, lexicalParentModule, this);
 
-        if (!RubyGuards.isRubyClass(superClassObj)) {
-            throw new RaiseException(context.getCoreLibrary().typeError("superclass must be a Class", this));
+        final DynamicObject definingClass;
+        final Object superClassObject = superClass.execute(frame);
+
+        if (!RubyGuards.isRubyClass(superClassObject)) {
+            errorProfile.enter();
+            throw new RaiseException(coreLibrary().typeError("superclass must be a Class", this));
         }
-        if (Layouts.CLASS.getIsSingleton((DynamicObject) superClassObj)) {
-            throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
+
+        final DynamicObject superClassModule = (DynamicObject) superClassObject;
+
+        if (Layouts.CLASS.getIsSingleton(superClassModule)) {
+            errorProfile.enter();
+            throw new RaiseException(coreLibrary().typeError("can't make subclass of virtual class", this));
         }
 
-        DynamicObject superClassObject = (DynamicObject) superClassObj;
-
-        if (constant == null) {
-            definingClass = ClassNodes.createRubyClass(context, lexicalParent, superClassObject, name);
-            assert RubyGuards.isRubyClass(superClassObject);
-            assert RubyGuards.isRubyClass(definingClass);
+        if (needToDefineProfile.profile(constant == null)) {
+            definingClass = ClassNodes.createRubyClass(getContext(), lexicalParentModule, superClassModule, name);
 
             if (inheritedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
-            inheritedNode.call(frame, superClassObject, "inherited", null, definingClass);
-        } else {
-            if (RubyGuards.isRubyClass(constant.getValue())) {
-                definingClass = (DynamicObject) constant.getValue();
-                assert RubyGuards.isRubyClass(superClassObject);
-                assert RubyGuards.isRubyClass(definingClass);
 
-                if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && ClassNodes.getSuperClass(definingClass) != superClassObject) {
-                    throw new RaiseException(context.getCoreLibrary().superclassMismatch(Layouts.MODULE.getFields(definingClass).getName(), this));
-                }
-            } else {
-                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.getValue(), "class", this));
+            inheritedNode.call(frame, superClassModule, "inherited", null, definingClass);
+        } else {
+            if (!RubyGuards.isRubyClass(constant.getValue())) {
+                errorProfile.enter();
+                throw new RaiseException(coreLibrary().typeErrorIsNotA(constant.getValue(), "class", this));
+            }
+
+            definingClass = (DynamicObject) constant.getValue();
+
+            if (!isBlankOrRootClass(superClassModule) && !isBlankOrRootClass(definingClass)
+                    && ClassNodes.getSuperClass(definingClass) != superClassModule) {
+                errorProfile.enter();
+
+                throw new RaiseException(coreLibrary().superclassMismatch(
+                        Layouts.MODULE.getFields(definingClass).getName(), this));
             }
         }
 
@@ -97,42 +106,7 @@ public class DefineClassNode extends RubyNode {
     }
 
     private boolean isBlankOrRootClass(DynamicObject rubyClass) {
-        assert RubyGuards.isRubyClass(rubyClass);
         return rubyClass == coreLibrary().getBasicObjectClass() || rubyClass == coreLibrary().getObjectClass();
     }
 
-    @CompilerDirectives.TruffleBoundary
-    protected RubyConstant lookupForExistingModule(DynamicObject lexicalParent) {
-        RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstant(name);
-
-        final DynamicObject objectClass = coreLibrary().getObjectClass();
-
-        if (constant == null && lexicalParent == objectClass) {
-            for (DynamicObject included : Layouts.MODULE.getFields(objectClass).prependedAndIncludedModules()) {
-                constant = Layouts.MODULE.getFields(included).getConstant(name);
-                if (constant != null) {
-                    break;
-                }
-            }
-        }
-
-        if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
-            throw new RaiseException(coreLibrary().nameErrorPrivateConstant(lexicalParent, name, this));
-        }
-
-        // If a constant already exists with this class/module name and it's an autoload module, we have to trigger
-        // the autoload behavior before proceeding.
-        if ((constant != null) && constant.isAutoload()) {
-            // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
-            // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
-            // call or the recursive execute call.
-            Layouts.MODULE.getFields(lexicalParent).removeConstant(getContext(), this, name);
-
-            getContext().getFeatureLoader().require(constant.getValue().toString(), this);
-
-            return lookupForExistingModule(lexicalParent);
-        }
-
-        return constant;
-    }
 }
