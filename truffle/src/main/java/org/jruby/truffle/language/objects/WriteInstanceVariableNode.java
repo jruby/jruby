@@ -59,7 +59,7 @@ public class WriteInstanceVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString("assignment", UTF8Encoding.INSTANCE);
+        return coreStrings().ASSIGNMENT.createInstance();
     }
 
 }

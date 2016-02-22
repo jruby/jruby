@@ -63,7 +63,7 @@ public class ReadInstanceVariableNode extends RubyNode {
             if (readOrNullNode.execute((DynamicObject) receiverObject) == null) {
                 return nil();
             } else {
-                return create7BitString("instance-variable", UTF8Encoding.INSTANCE);
+                return coreStrings().INSTANCE_VARIABLE.createInstance();
             }
         } else {
             return false;

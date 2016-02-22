@@ -53,7 +53,7 @@ public abstract class RubyNode extends Node {
     }
 
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString("expression", UTF8Encoding.INSTANCE);
+        return coreStrings().EXPRESSION.createInstance();
     }
 
     // Utility methods to execute and expect a particular type

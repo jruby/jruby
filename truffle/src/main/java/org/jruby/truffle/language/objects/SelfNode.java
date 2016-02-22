@@ -32,7 +32,7 @@ public class SelfNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString("self", UTF8Encoding.INSTANCE);
+        return coreStrings().SELF.createInstance();
     }
 
 }

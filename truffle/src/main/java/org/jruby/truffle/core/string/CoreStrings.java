@@ -13,10 +13,24 @@ import org.jruby.truffle.RubyContext;
 
 public class CoreStrings {
 
+    public final CoreString ASSIGNMENT;
+    public final CoreString CLASS_VARIABLE;
+    public final CoreString EXPRESSION;
+    public final CoreString FALSE;
+    public final CoreString INSTANCE_VARIABLE;
     public final CoreString NIL;
+    public final CoreString SELF;
+    public final CoreString TRUE;
 
     public CoreStrings(RubyContext context) {
+        ASSIGNMENT = new CoreString(context, "assignment");
+        CLASS_VARIABLE = new CoreString(context, "class variable");
+        EXPRESSION = new CoreString(context, "expression");
+        FALSE = new CoreString(context, "false");
+        INSTANCE_VARIABLE = new CoreString(context, "instance-variable");
         NIL = new CoreString(context, "nil");
+        SELF = new CoreString(context, "self");
+        TRUE = new CoreString(context, "true");
     }
 
 }
