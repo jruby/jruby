@@ -172,6 +172,7 @@ public abstract class ClassNodes {
         return rubyClass;
     }
 
+    @TruffleBoundary
     public static DynamicObject getSingletonClass(RubyContext context, DynamicObject rubyClass) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.

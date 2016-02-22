@@ -1055,8 +1055,8 @@ public class CoreLibrary {
         return typeError(String.format("allocator undefined for %s", className), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return typeError("can't define singleton", currentNode);
     }
 
