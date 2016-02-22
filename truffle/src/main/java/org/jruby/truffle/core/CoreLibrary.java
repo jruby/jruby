@@ -1040,6 +1040,11 @@ public class CoreLibrary {
     }
 
     @TruffleBoundary
+    public DynamicObject superclassMismatch(String name, Node currentNode) {
+        return typeError("superclass mismatch for class " + name, currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode) {
         return typeError(message, currentNode, null);
     }
@@ -1077,8 +1082,13 @@ public class CoreLibrary {
         return typeError(String.format("can't convert %s into %s", Layouts.MODULE.getFields(getLogicalClass(from)).getName(), toClass), currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject typeErrorIsNotA(Object value, String expectedType, Node currentNode) {
+        return typeErrorIsNotA(value.toString(), expectedType, currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeErrorIsNotA(String value, String expectedType, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("%s is not a %s", value, expectedType), currentNode);
     }
 
@@ -1146,8 +1156,8 @@ public class CoreLibrary {
         return nameError(String.format("uninitialized class variable %s in %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorPrivateConstant(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         return nameError(String.format("private constant %s::%s referenced", Layouts.MODULE.getFields(module).getName(), name), name, currentNode);
     }

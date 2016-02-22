@@ -45,8 +45,7 @@ public class DefineModuleNode extends RubyNode {
         final Object lexicalParent1 = lexicalParentModule.execute(frame);;
 
         if (!RubyGuards.isRubyModule(lexicalParent1)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParent1.toString(), "module", this));
+            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParent1, "module", this));
         }
 
         DynamicObject lexicalParent = (DynamicObject) lexicalParent1;

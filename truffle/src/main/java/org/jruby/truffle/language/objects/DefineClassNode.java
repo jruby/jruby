@@ -51,8 +51,7 @@ public class DefineClassNode extends RubyNode {
         final Object lexicalParent1 = lexicalParentModule.execute(frame);;
 
         if (!RubyGuards.isRubyModule(lexicalParent1)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParent1.toString(), "module", this));
+            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParent1, "module", this));
         }
 
         DynamicObject lexicalParent = (DynamicObject) lexicalParent1;
@@ -87,10 +86,10 @@ public class DefineClassNode extends RubyNode {
                 assert RubyGuards.isRubyClass(definingClass);
 
                 if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && ClassNodes.getSuperClass(definingClass) != superClassObject) {
-                    throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + Layouts.MODULE.getFields(definingClass).getName(), this));
+                    throw new RaiseException(context.getCoreLibrary().superclassMismatch(Layouts.MODULE.getFields(definingClass).getName(), this));
                 }
             } else {
-                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.getValue().toString(), "class", this));
+                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.getValue(), "class", this));
             }
         }
 
