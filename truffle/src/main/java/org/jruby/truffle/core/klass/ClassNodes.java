@@ -332,6 +332,8 @@ public abstract class ClassNodes {
         }
 
         @Specialization
+        @TruffleBoundary
+        // TODO (pitr-ch 22-Feb-2016): should it be on fast path?
         public Object getSuperClass(DynamicObject rubyClass) {
             final DynamicObject superclass = ClassNodes.getSuperClass(rubyClass);
             if (superclass == null) {
