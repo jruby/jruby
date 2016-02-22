@@ -13,12 +13,9 @@ import org.jruby.truffle.RubyContext;
 
 public class CoreStrings {
 
-    private final RubyContext context;
-
     public final CoreString NIL;
 
     public CoreStrings(RubyContext context) {
-        this.context = context;
         NIL = new CoreString(context, "nil");
     }
 
