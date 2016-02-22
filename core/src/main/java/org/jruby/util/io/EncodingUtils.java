@@ -1832,15 +1832,9 @@ public class EncodingUtils {
         if (cr == StringSupport.CR_BROKEN) {
             throw context.runtime.newArgumentError("replacement must be valid byte sequence '" + str + "'");
         }
-        else if (cr == StringSupport.CR_7BIT) {
+        else {
             Encoding e = STR_ENC_GET(str);
-            if (!enc.isAsciiCompatible()) {
-                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
-            }
-        }
-        else { /* ENC_CODERANGE_VALID */
-            Encoding e = STR_ENC_GET(str);
-            if (enc != e) {
+            if (cr == StringSupport.CR_7BIT ? enc.minLength() != 1 : enc != e) {
                 throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
             }
         }
