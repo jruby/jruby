@@ -1571,11 +1571,7 @@ public abstract class KernelNodes {
 
             // Pysch loads either the jar or the so - we need to intercept
             if (feature.equals("psych.so") && callerIs("psych.rb")) {
-                try {
-                    getContext().getFeatureLoader().require("truffle/psych.rb", this);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                getContext().getFeatureLoader().require("truffle/psych.rb", this);
                 return true;
             }
 
@@ -1584,11 +1580,7 @@ public abstract class KernelNodes {
                 throw new RaiseException(coreLibrary().loadErrorCannotLoad(feature, this));
             }
 
-            try {
-                return getContext().getFeatureLoader().require(feature, this);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            return getContext().getFeatureLoader().require(feature, this);
         }
 
         private boolean callerIs(String caller) {
@@ -1626,11 +1618,7 @@ public abstract class KernelNodes {
                 featurePath = dirname(sourcePath) + "/" + featureString;
             }
 
-            try {
-                featureLoader.require(featurePath, this);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            featureLoader.require(featurePath, this);
 
             return true;
         }
