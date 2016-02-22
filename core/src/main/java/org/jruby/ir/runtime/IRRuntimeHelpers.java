@@ -554,8 +554,10 @@ public class IRRuntimeHelpers {
     // Due to our current strategy of destructively processing the kwargs hash we need to dup
     // and make sure the copy is not frozen.  This has a poor name as encouragement to rewrite
     // how we handle kwargs internally :)
-    public static void frobnicateKwargsArgument(ThreadContext context, int requiredArguments, IRubyObject[] args) {
-        RubyHash kwargs = IRRuntimeHelpers.extractKwargsHash(args, requiredArguments, true);
+    public static void frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
+        if (args.length <= requiredArgsCount) return; // No kwarg because required args slurp them up.
+
+        RubyHash kwargs = toHash(args[args.length - 1], context);
 
         if (kwargs != null) {
             kwargs = (RubyHash) kwargs.dup(context);
@@ -564,20 +566,23 @@ public class IRRuntimeHelpers {
         }
     }
 
+    private static RubyHash toHash(IRubyObject lastArg, ThreadContext context) {
+        if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+        if (lastArg.respondsTo("to_hash")) {
+            if ( context == null ) context = lastArg.getRuntime().getCurrentContext();
+            lastArg = lastArg.callMethod(context, "to_hash");
+            if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+        }
+        return null;
+    }
+
     public static RubyHash extractKwargsHash(Object[] args, int requiredArgsCount, boolean receivesKwargs) {
         if (!receivesKwargs) return null;
         if (args.length <= requiredArgsCount) return null; // No kwarg because required args slurp them up.
 
         Object lastArg = args[args.length - 1];
 
-        if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
-
-        if (((IRubyObject) lastArg).respondsTo("to_hash")) {
-            lastArg = ((IRubyObject) lastArg).callMethod(((IRubyObject) lastArg).getRuntime().getCurrentContext(), "to_hash");
-
-            if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
-        }
-
+        if (lastArg instanceof IRubyObject) return toHash((IRubyObject) lastArg, null);
         return null;
     }
 
@@ -1666,7 +1671,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
         args = prepareBlockArgsInternal(context, block, args);
         if (usesKwArgs) {
-            frobnicateKwargsArgument(context, block.getBody().getSignature().required(), args);
+            frobnicateKwargsArgument(context, args, block.getBody().getSignature().required());
         }
         return args;
     }
