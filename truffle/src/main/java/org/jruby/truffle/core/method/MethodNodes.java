@@ -44,8 +44,8 @@ import org.jruby.truffle.language.methods.CallMethodNode;
 import org.jruby.truffle.language.methods.CallMethodNodeGen;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.objects.ClassNode;
-import org.jruby.truffle.language.objects.ClassNodeGen;
+import org.jruby.truffle.language.objects.LogicalClassNode;
+import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
@@ -198,7 +198,7 @@ public abstract class MethodNodes {
             } else {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             }
         }
 
@@ -207,17 +207,17 @@ public abstract class MethodNodes {
     @CoreMethod(names = "unbind")
     public abstract static class UnbindNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ClassNode classNode;
+        @Child private LogicalClassNode classNode;
 
         public UnbindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
         public DynamicObject unbind(VirtualFrame frame, DynamicObject method) {
-            final DynamicObject receiverClass = classNode.executeGetClass(frame, Layouts.METHOD.getReceiver(method));
-            return Layouts.UNBOUND_METHOD.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodFactory(), receiverClass, Layouts.METHOD.getMethod(method));
+            final DynamicObject receiverClass = classNode.executeLogicalClass(Layouts.METHOD.getReceiver(method));
+            return Layouts.UNBOUND_METHOD.createUnboundMethod(coreLibrary().getUnboundMethodFactory(), receiverClass, Layouts.METHOD.getMethod(method));
         }
 
     }
@@ -242,7 +242,7 @@ public abstract class MethodNodes {
             final InternalMethod method = Layouts.METHOD.getMethod(methodObject);
 
             return ProcNodes.createRubyProc(
-                    getContext().getCoreLibrary().getProcFactory(),
+                    coreLibrary().getProcFactory(),
                     ProcNodes.Type.LAMBDA,
                     method.getSharedMethodInfo(),
                     callTarget,
@@ -303,7 +303,7 @@ public abstract class MethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

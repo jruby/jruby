@@ -52,11 +52,11 @@ public class DefineOrGetModuleNode extends RubyNode {
         DynamicObject definingModule;
 
         if (constant == null) {
-            definingModule = ModuleNodes.createRubyModule(getContext(), getContext().getCoreLibrary().getModuleClass(), lexicalParent, name, this);
+            definingModule = ModuleNodes.createRubyModule(getContext(), coreLibrary().getModuleClass(), lexicalParent, name, this);
         } else {
             Object module = constant.getValue();
             if (!RubyGuards.isRubyModule(module) || RubyGuards.isRubyClass(module)) {
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(name, "module", this));
+                throw new RaiseException(coreLibrary().typeErrorIsNotA(name, "module", this));
             }
             definingModule = (DynamicObject) module;
         }
@@ -69,7 +69,7 @@ public class DefineOrGetModuleNode extends RubyNode {
 
         if (!RubyGuards.isRubyModule(lexicalParent)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(lexicalParent.toString(), "module", this));
+            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParent.toString(), "module", this));
         }
 
         return (DynamicObject) lexicalParent;
@@ -79,7 +79,7 @@ public class DefineOrGetModuleNode extends RubyNode {
     protected RubyConstant lookupForExistingModule(DynamicObject lexicalParent) {
         RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstant(name);
 
-        final DynamicObject objectClass = getContext().getCoreLibrary().getObjectClass();
+        final DynamicObject objectClass = coreLibrary().getObjectClass();
 
         if (constant == null && lexicalParent == objectClass) {
             for (DynamicObject included : Layouts.MODULE.getFields(objectClass).prependedAndIncludedModules()) {
@@ -91,7 +91,7 @@ public class DefineOrGetModuleNode extends RubyNode {
         }
 
         if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(lexicalParent, name, this));
+            throw new RaiseException(coreLibrary().nameErrorPrivateConstant(lexicalParent, name, this));
         }
 
         // If a constant already exists with this class/module name and it's an autoload module, we have to trigger

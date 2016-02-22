@@ -188,7 +188,7 @@ public abstract class BasicObjectNodes {
         public Object instanceExec(Object receiver, Object[] arguments, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            throw new RaiseException(getContext().getCoreLibrary().localJumpError("no block given", this));
+            throw new RaiseException(coreLibrary().localJumpError("no block given", this));
         }
 
     }
@@ -233,7 +233,7 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object methodMissingNoName(Object self, NotProvided name, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("no id given", this));
+            throw new RaiseException(coreLibrary().argumentError("no id given", this));
         }
 
         @Specialization
@@ -251,13 +251,13 @@ public abstract class BasicObjectNodes {
             final String name = nameObject.toString();
 
             if (lastCallWasSuper()) {
-                throw new RaiseException(getContext().getCoreLibrary().noSuperMethodError(name, this));
+                throw new RaiseException(coreLibrary().noSuperMethodError(name, this));
             } else if (lastCallWasCallingPrivateMethod(self, name)) {
-                throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, self, this));
+                throw new RaiseException(coreLibrary().privateMethodError(name, self, this));
             } else if (lastCallWasVCall()) {
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
+                throw new RaiseException(coreLibrary().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
             } else {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(name, self, this));
+                throw new RaiseException(coreLibrary().noMethodErrorOnReceiver(name, self, this));
             }
         }
 
@@ -271,7 +271,7 @@ public abstract class BasicObjectNodes {
          * The only way to fail if method is not null and not undefined is visibility.
          */
         private boolean lastCallWasCallingPrivateMethod(Object self, String name) {
-            final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(self), name);
+            final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(self), name);
             return method != null && !method.isUndefined();
         }
 

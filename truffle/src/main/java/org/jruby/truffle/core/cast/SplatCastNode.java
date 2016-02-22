@@ -66,10 +66,10 @@ public abstract class SplatCastNode extends RubyNode {
     public Object splatNil(VirtualFrame frame, Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             case CONVERT:
                 return toA.call(frame, nil, "to_a", null);
@@ -101,14 +101,14 @@ public abstract class SplatCastNode extends RubyNode {
                 return (DynamicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] { object }, 1);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] { object }, 1);
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(object, "Array", Layouts.SYMBOL.getString(conversionMethod), array, this));
+                throw new RaiseException(coreLibrary().typeErrorCantConvertTo(object, "Array", Layouts.SYMBOL.getString(conversionMethod), array, this));
             }
         }
 
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] { object }, 1);
+        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] { object }, 1);
     }
 
 }

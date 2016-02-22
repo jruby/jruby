@@ -12,6 +12,7 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.java.JavaInterop;
@@ -925,8 +926,8 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(systemStackErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject frozenError(String className, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 
@@ -1033,6 +1034,12 @@ public class CoreLibrary {
         return localJumpError("no block given (yield)", currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject typeErrorCantCreateInstanceOfSingletonClass(Node currentNode) {
+        return typeError("can't create instance of singleton class", currentNode, null);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode) {
         return typeError(message, currentNode, null);
     }
@@ -1133,8 +1140,8 @@ public class CoreLibrary {
         return nameError(message, name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorUninitializedClassVariable(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         return nameError(String.format("uninitialized class variable %s in %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
     }
@@ -1304,7 +1311,7 @@ public class CoreLibrary {
     }
 
     public DynamicObject internalError(String message, Node currentNode) {
-        return internalError(message, currentNode);
+        return internalError(message, currentNode, null);
     }
 
     public DynamicObject internalError(String message, Node currentNode, Throwable javaThrowable) {

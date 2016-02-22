@@ -9,17 +9,16 @@
  */
 package org.jruby.truffle.language.objects;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Reads the internal metaclass of an object.
- */
 @NodeChild(value="object", type=RubyNode.class)
 public abstract class MetaClassNode extends RubyNode {
 
@@ -30,33 +29,55 @@ public abstract class MetaClassNode extends RubyNode {
     public abstract DynamicObject executeMetaClass(Object value);
 
     @Specialization(guards = "value")
-    protected DynamicObject singletonClassTrue(boolean value) {
-        return getContext().getCoreLibrary().getTrueClass();
+    protected DynamicObject metaClassTrue(boolean value) {
+        return coreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
-    protected DynamicObject singletonClassFalse(boolean value) {
-        return getContext().getCoreLibrary().getFalseClass();
+    protected DynamicObject metaClassFalse(boolean value) {
+        return coreLibrary().getFalseClass();
     }
 
     @Specialization
-    protected DynamicObject singletonClass(int value) {
-        return getContext().getCoreLibrary().getFixnumClass();
+    protected DynamicObject metaClassInt(int value) {
+        return coreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected DynamicObject singletonClass(long value) {
-        return getContext().getCoreLibrary().getFixnumClass();
+    protected DynamicObject metaClassLong(long value) {
+        return coreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected DynamicObject singletonClass(double value) {
-        return getContext().getCoreLibrary().getFloatClass();
+    protected DynamicObject metaClassDouble(double value) {
+        return coreLibrary().getFloatClass();
     }
 
-    @Specialization
-    protected DynamicObject singletonClass(DynamicObject object) {
+    @Specialization(guards = "object.getShape() == cachedShape",
+            assumptions = "cachedShape.getValidAssumption()",
+            limit = "getCacheLimit()")
+    protected DynamicObject metaClassCached(DynamicObject object,
+            @Cached("object.getShape()") Shape cachedShape,
+            @Cached("getMetaClass(cachedShape)") DynamicObject metaClass) {
+        return metaClass;
+    }
+
+    @Specialization(guards = "updateShape(object)")
+    protected DynamicObject updateShapeAndMetaClass(DynamicObject object) {
+        return executeMetaClass(object);
+    }
+
+    @Specialization(contains = { "metaClassCached", "updateShapeAndMetaClass" })
+    protected DynamicObject metaClassUncached(DynamicObject object) {
         return Layouts.BASIC_OBJECT.getMetaClass(object);
+    }
+
+    protected static DynamicObject getMetaClass(Shape shape) {
+        return Layouts.BASIC_OBJECT.getMetaClass(shape.getObjectType());
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().CLASS_CACHE;
     }
 
 }

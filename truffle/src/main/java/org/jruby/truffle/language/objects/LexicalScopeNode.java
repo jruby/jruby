@@ -15,12 +15,9 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Find the RubyModule enclosing us lexically.
- */
 public class LexicalScopeNode extends RubyNode {
 
-    final LexicalScope lexicalScope;
+    private final LexicalScope lexicalScope;
 
     public LexicalScopeNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope) {
         super(context, sourceSection);

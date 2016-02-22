@@ -115,7 +115,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         if (ignoreVisibility) {
             callerClass = null;
         } else {
-            callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
         }
 
         final String methodNameString = toString(methodName);
@@ -126,10 +126,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
 
         if (receiverObject instanceof Boolean) {
-            final Assumption falseUnmodifiedAssumption = Layouts.MODULE.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
+            final Assumption falseUnmodifiedAssumption = Layouts.MODULE.getFields(coreLibrary().getFalseClass()).getUnmodifiedAssumption();
             final InternalMethod falseMethod = lookup(callerClass, false, methodNameString, ignoreVisibility);
 
-            final Assumption trueUnmodifiedAssumption = Layouts.MODULE.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
+            final Assumption trueUnmodifiedAssumption = Layouts.MODULE.getFields(coreLibrary().getTrueClass()).getUnmodifiedAssumption();
             final InternalMethod trueMethod = lookup(callerClass, true, methodNameString, ignoreVisibility);
             assert falseMethod != null || trueMethod != null;
 
@@ -141,7 +141,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else {
             return new CachedUnboxedDispatchNode(getContext(),
                     methodName, first, receiverObject.getClass(),
-                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, getDispatchAction());
+                    Layouts.MODULE.getFields(coreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, getDispatchAction());
         }
     }
 
@@ -157,9 +157,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             callerClass = null;
         } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
             final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-            callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame.getArguments()));
+            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame.getArguments()));
         } else {
-            callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
         }
 
         final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
@@ -168,7 +168,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             return createMethodMissingNode(first, methodName, receiverObject);
         }
 
-        final DynamicObject receiverMetaClass = getContext().getCoreLibrary().getMetaClass(receiverObject);
+        final DynamicObject receiverMetaClass = coreLibrary().getMetaClass(receiverObject);
         if (RubyGuards.isRubySymbol(receiverObject)) {
             return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, getDispatchAction());
         } else if (Layouts.CLASS.getIsSingleton(receiverMetaClass)) {
@@ -198,7 +198,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object receiverObject) {
         switch (missingBehavior) {
             case RETURN_MISSING: {
-                return new CachedReturnMissingDispatchNode(getContext(), methodName, first, getContext().getCoreLibrary().getMetaClass(receiverObject),
+                return new CachedReturnMissingDispatchNode(getContext(), methodName, first, coreLibrary().getMetaClass(receiverObject),
                         getDispatchAction());
             }
 
@@ -206,11 +206,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 final InternalMethod method = lookup(null, receiverObject, "method_missing", true);
 
                 if (method == null) {
-                    throw new RaiseException(getContext().getCoreLibrary().runtimeError(
+                    throw new RaiseException(coreLibrary().runtimeError(
                             receiverObject.toString() + " didn't have a #method_missing", this));
                 }
 
-                return new CachedMethodMissingDispatchNode(getContext(), methodName, first, getContext().getCoreLibrary().getMetaClass(receiverObject),
+                return new CachedMethodMissingDispatchNode(getContext(), methodName, first, coreLibrary().getMetaClass(receiverObject),
                         method, getDispatchAction());
             }
 

@@ -155,7 +155,7 @@ public abstract class StringNodes {
 
             final Rope concatRope = makeConcatNode.executeMake(left, right, enc);
 
-            final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+            final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(),
                     concatRope,
                     null);
 
@@ -185,7 +185,7 @@ public abstract class StringNodes {
         @Specialization(guards = "times < 0")
         public DynamicObject multiplyTimesNegative(DynamicObject string, int times) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            throw new RaiseException(coreLibrary().argumentError("negative argument", this));
         }
 
         @Specialization(guards = "times == 0")
@@ -293,7 +293,7 @@ public abstract class StringNodes {
             CompilerDirectives.transferToInterpreter();
 
             throw new RaiseException(
-                    getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
+                    coreLibrary().rangeError("bignum too big to convert into `long'", this));
         }
 
         @Specialization(guards = { "!isRubyBignum(times)", "!isInteger(times)" })
@@ -397,7 +397,7 @@ public abstract class StringNodes {
 
                     return compare(a, coerced);
                 } catch (RaiseException e) {
-                    if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == getContext().getCoreLibrary().getTypeErrorClass()) {
+                    if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getTypeErrorClass()) {
                         return nil();
                     } else {
                         throw e;
@@ -637,7 +637,7 @@ public abstract class StringNodes {
         }
 
         protected boolean isRubiniusUndefined(Object object) {
-            return object == getContext().getCoreLibrary().getRubiniusUndefined();
+            return object == coreLibrary().getRubiniusUndefined();
         }
 
     }
@@ -699,7 +699,7 @@ public abstract class StringNodes {
                 store[n] = ((int) bytes[n]) & 0xFF;
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
         }
 
     }
@@ -824,7 +824,7 @@ public abstract class StringNodes {
         public int count(VirtualFrame frame, DynamicObject string, Object[] args) {
             if (args.length == 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
+                throw new RaiseException(coreLibrary().argumentErrorEmptyVarargs(this));
             }
 
             DynamicObject[] otherStrings = new DynamicObject[args.length];
@@ -886,7 +886,7 @@ public abstract class StringNodes {
             final Encoding ascii8bit = getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding();
             if (other.byteLength() < 2) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
+                throw new RaiseException(coreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
             final POSIX posix = posix();
@@ -895,7 +895,7 @@ public abstract class StringNodes {
 
             if (saltBytes[0] == 0 || saltBytes[1] == 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
+                throw new RaiseException(coreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
             final byte[] cryptedString = posix.crypt(keyBytes, saltBytes);
@@ -904,7 +904,7 @@ public abstract class StringNodes {
             // return any errors via errno.
             if (cryptedString == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix.errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix.errno(), this));
             }
 
             if (taintResultNode == null) {
@@ -936,7 +936,7 @@ public abstract class StringNodes {
 
             if (ret == null) {
                 // TODO (nirvdrum 08-Jan-16) ByteArrays might be better served if backed by a byte[] instead of a ByteList.
-                final DynamicObject rubiniusDataArray = ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), StringOperations.getByteListReadOnly(string));
+                final DynamicObject rubiniusDataArray = ByteArrayNodes.createByteArray(coreLibrary().getByteArrayFactory(), StringOperations.getByteListReadOnly(string));
                 Layouts.STRING.setRubiniusDataArray(string, rubiniusDataArray);
 
                 return rubiniusDataArray;
@@ -966,7 +966,7 @@ public abstract class StringNodes {
         public Object deleteBang(VirtualFrame frame, DynamicObject string, Object... args) {
             if (args.length == 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
+                throw new RaiseException(coreLibrary().argumentErrorEmptyVarargs(this));
             }
 
             DynamicObject[] otherStrings = new DynamicObject[args.length];
@@ -1050,7 +1050,7 @@ public abstract class StringNodes {
             if (encoding.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().encodingCompatibilityError(
+                        coreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", encoding), this));
             }
 
@@ -1072,7 +1072,7 @@ public abstract class StringNodes {
                 }
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }
         }
 
@@ -1332,7 +1332,7 @@ public abstract class StringNodes {
             if (isFrozenNode.executeIsFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
+                        coreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
             }
 
             StringOperations.setRope(self, StringOperations.rope(from));
@@ -1417,7 +1417,7 @@ public abstract class StringNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(
+                throw new RaiseException(coreLibrary().encodingCompatibilityError(
                         String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
             }
 
@@ -1458,7 +1458,7 @@ public abstract class StringNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(
+                throw new RaiseException(coreLibrary().encodingCompatibilityError(
                         String.format("incompatible encodings: %s and %s", source.getEncoding(), insert.getEncoding()), this));
             }
 
@@ -1588,7 +1588,7 @@ public abstract class StringNodes {
 
             if (count > rope.byteLength()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                throw new RaiseException(coreLibrary().argumentError(
                         String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength()), this));
             }
 
@@ -1609,7 +1609,7 @@ public abstract class StringNodes {
         @Specialization(guards = "isEmpty(string)")
         public int ordEmpty(DynamicObject string) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("empty string", this));
+            throw new RaiseException(coreLibrary().argumentError("empty string", this));
         }
 
         // TODO (nirvdrum 03-Feb-16): Is it possible to have a single-byte optimizable string that isn't ASCII-compatible?
@@ -1626,7 +1626,7 @@ public abstract class StringNodes {
                 return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.realSize());
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }
         }
 
@@ -1762,7 +1762,7 @@ public abstract class StringNodes {
             if (enc.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().encodingCompatibilityError(
+                        coreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));
             }
 
@@ -2178,7 +2178,7 @@ public abstract class StringNodes {
         }
 
         public boolean isStringSubclass(DynamicObject string) {
-            return Layouts.BASIC_OBJECT.getLogicalClass(string) != getContext().getCoreLibrary().getStringClass();
+            return Layouts.BASIC_OBJECT.getLogicalClass(string) != coreLibrary().getStringClass();
         }
 
     }
@@ -2408,24 +2408,24 @@ public abstract class StringNodes {
             try {
                 throw exception;
             } catch (FormatException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                return new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             } catch (TooFewArgumentsException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+                return new RaiseException(coreLibrary().argumentError("too few arguments", this));
             } catch (NoImplicitConversionException e) {
-                return new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+                return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
             } catch (OutsideOfStringException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+                return new RaiseException(coreLibrary().argumentError("X outside of string", this));
             } catch (CantCompressNegativeException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+                return new RaiseException(coreLibrary().argumentError("can't compress negative numbers", this));
             } catch (RangeException e) {
-                return new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+                return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
             } catch (CantConvertException e) {
-                return new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+                return new RaiseException(coreLibrary().typeError(e.getMessage(), this));
             }
         }
 
         private DynamicObject finishUnpack(Rope format, PackResult result) {
-            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
+            final DynamicObject array = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
 
             if (format.isEmpty()) {
                 //StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
@@ -2558,7 +2558,7 @@ public abstract class StringNodes {
             if (encoding.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().encodingCompatibilityError(
+                        coreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", encoding), this));
             }
 
@@ -2579,7 +2579,7 @@ public abstract class StringNodes {
                 }
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }
         }
 
@@ -2636,7 +2636,7 @@ public abstract class StringNodes {
             if (enc.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().encodingCompatibilityError(
+                        coreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));
             }
 

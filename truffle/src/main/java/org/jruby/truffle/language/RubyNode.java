@@ -22,6 +22,7 @@ import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
@@ -134,7 +135,7 @@ public abstract class RubyNode extends Node {
     }
 
     protected boolean isRubiniusUndefined(Object value) {
-        return value == getContext().getCoreLibrary().getRubiniusUndefined();
+        return value == coreLibrary().getRubiniusUndefined();
     }
 
     protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
@@ -144,7 +145,7 @@ public abstract class RubyNode extends Node {
     // Helpers methods for terseness
 
     protected DynamicObject nil() {
-        return getContext().getCoreLibrary().getNilObject();
+        return coreLibrary().getNilObject();
     }
 
     protected DynamicObject getSymbol(String name) {
@@ -173,6 +174,10 @@ public abstract class RubyNode extends Node {
 
     protected CoreStrings coreStrings() {
         return getContext().getCoreStrings();
+    }
+
+    protected CoreLibrary coreLibrary() {
+        return getContext().getCoreLibrary();
     }
 
     protected POSIX posix() {

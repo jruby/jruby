@@ -104,8 +104,6 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.LookupMethodNode;
 import org.jruby.truffle.language.methods.LookupMethodNodeGen;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.language.objects.ClassNode;
-import org.jruby.truffle.language.objects.ClassNodeGen;
 import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.IsANode;
@@ -114,17 +112,19 @@ import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
+import org.jruby.truffle.language.objects.LogicalClassNode;
+import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.objects.ThreadLocalObject;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.WriteObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
@@ -379,7 +379,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject callerLocations(int omit, int length) {
-            final DynamicObject threadBacktraceLocationClass = getContext().getCoreLibrary().getThreadBacktraceLocationClass();
+            final DynamicObject threadBacktraceLocationClass = coreLibrary().getThreadBacktraceLocationClass();
 
             final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, 1 + omit, true, null);
 
@@ -396,23 +396,23 @@ public abstract class KernelNodes {
                 locations[n] = ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocation(Layouts.CLASS.getInstanceFactory(threadBacktraceLocationClass), activation);
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), locations, locations.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), locations, locations.length);
         }
     }
 
     @CoreMethod(names = "class")
     public abstract static class KernelClassNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ClassNode classNode;
+        @Child private LogicalClassNode classNode;
 
         public KernelClassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
         public DynamicObject getClass(VirtualFrame frame, Object self) {
-            return classNode.executeGetClass(frame, self);
+            return classNode.executeLogicalClass(self);
         }
 
     }
@@ -669,7 +669,7 @@ public abstract class KernelNodes {
                 "!isRubyBinding(badBinding)" })
         public Object evalBadBinding(DynamicObject source, DynamicObject badBinding, NotProvided filename,
                                      NotProvided lineNumber) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
+            throw new RaiseException(coreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
         }
 
         @TruffleBoundary
@@ -731,7 +731,7 @@ public abstract class KernelNodes {
                 commandLine[1 + n] = args[n].toString();
             }
 
-            final DynamicObject env = getContext().getCoreLibrary().getENV();
+            final DynamicObject env = coreLibrary().getENV();
             final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
 
             exec(getContext(), envAsHash, commandLine);
@@ -933,7 +933,7 @@ public abstract class KernelNodes {
 
             if (Layouts.BASIC_OBJECT.getLogicalClass(self) != Layouts.BASIC_OBJECT.getLogicalClass(from)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("initialize_copy should take same class object", this));
+                throw new RaiseException(coreLibrary().typeError("initialize_copy should take same class object", this));
             }
 
             return self;
@@ -961,16 +961,16 @@ public abstract class KernelNodes {
     @CoreMethod(names = "instance_of?", required = 1)
     public abstract static class InstanceOfNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ClassNode classNode;
+        @Child private LogicalClassNode classNode;
 
         public InstanceOfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization(guards = "isRubyClass(rubyClass)")
         public boolean instanceOf(VirtualFrame frame, Object self, DynamicObject rubyClass) {
-            return classNode.executeGetClass(frame, self) == rubyClass;
+            return classNode.executeLogicalClass(self) == rubyClass;
         }
 
     }
@@ -1021,7 +1021,7 @@ public abstract class KernelNodes {
                 limit = "getCacheLimit()")
         public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
                 @Cached("name") DynamicObject cachedName,
-                @Cached("createReadFieldNode(checkName(symbolToString(cachedName)))") ReadHeadObjectFieldNode readHeadObjectFieldNode) {
+                @Cached("createReadFieldNode(checkName(symbolToString(cachedName)))") ReadObjectFieldNode readHeadObjectFieldNode) {
             return readHeadObjectFieldNode.execute(object);
         }
 
@@ -1049,8 +1049,8 @@ public abstract class KernelNodes {
             return SymbolTable.checkInstanceVariableName(getContext(), name, this);
         }
 
-        protected ReadHeadObjectFieldNode createReadFieldNode(String name) {
-            return ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
+        protected ReadObjectFieldNode createReadFieldNode(String name) {
+            return ReadObjectFieldNodeGen.create(getContext(), name, nil());
         }
 
         protected int getCacheLimit() {
@@ -1081,7 +1081,7 @@ public abstract class KernelNodes {
                 limit = "getCacheLimit()")
         public Object instanceVariableSetSymbolCached(DynamicObject object, DynamicObject name, Object value,
                                                       @Cached("name") DynamicObject cachedName,
-                                                      @Cached("createWriteFieldNode(checkName(symbolToString(cachedName)))") WriteHeadObjectFieldNode writeHeadObjectFieldNode) {
+                                                      @Cached("createWriteFieldNode(checkName(symbolToString(cachedName)))") WriteObjectFieldNode writeHeadObjectFieldNode) {
             writeHeadObjectFieldNode.execute(object, value);
             return value;
         }
@@ -1111,8 +1111,8 @@ public abstract class KernelNodes {
             return SymbolTable.checkInstanceVariableName(getContext(), name, this);
         }
 
-        protected WriteHeadObjectFieldNode createWriteFieldNode(String name) {
-            return WriteHeadObjectFieldNodeGen.create(getContext(), name);
+        protected WriteObjectFieldNode createWriteFieldNode(String name) {
+            return WriteObjectFieldNodeGen.create(getContext(), name);
         }
 
         protected int getCacheLimit() {
@@ -1144,7 +1144,7 @@ public abstract class KernelNodes {
             final Object value = object.get(ivar, nil());
             if (!object.delete(name)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorInstanceVariableNotDefined(name, this));
+                throw new RaiseException(coreLibrary().nameErrorInstanceVariableNotDefined(name, this));
             }
             return value;
         }
@@ -1186,7 +1186,7 @@ public abstract class KernelNodes {
         @Specialization(guards = "!isRubyModule(module)")
         public boolean isATypeError(Object self, Object module) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeError("class or module required", this));
+            throw new RaiseException(coreLibrary().typeError("class or module required", this));
         }
 
     }
@@ -1206,7 +1206,7 @@ public abstract class KernelNodes {
 
             if (parentBlock == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
+                throw new RaiseException(coreLibrary().argumentError("tried to create Proc object without a block", this));
             }
             return lambda(parentBlock);
         }
@@ -1214,7 +1214,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject lambda(DynamicObject block) {
             return ProcNodes.createRubyProc(
-                    getContext().getCoreLibrary().getProcFactory(),
+                    coreLibrary().getProcFactory(),
                     ProcNodes.Type.LAMBDA,
                     Layouts.PROC.getSharedMethodInfo(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
@@ -1297,15 +1297,15 @@ public abstract class KernelNodes {
                     final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody, false);
                     final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
-                    final DynamicObject module = getContext().getCoreLibrary().getMetaClass(self);
+                    final DynamicObject module = coreLibrary().getMetaClass(self);
                     method = new InternalMethod(info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
                 } else {
-                    throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(
-                            normalizedName, getContext().getCoreLibrary().getLogicalClass(self), this));
+                    throw new RaiseException(coreLibrary().nameErrorUndefinedMethod(
+                            normalizedName, coreLibrary().getLogicalClass(self), this));
                 }
             }
 
-            return Layouts.METHOD.createMethod(getContext().getCoreLibrary().getMethodFactory(), self, method);
+            return Layouts.METHOD.createMethod(coreLibrary().getMethodFactory(), self, method);
         }
 
         private static class CallMethodMissingWithStaticName extends RubyNode {
@@ -1352,7 +1352,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), regular, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
         @Specialization(guards = "!regular")
@@ -1409,7 +1409,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PRIVATE).toArray();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1426,7 +1426,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public DynamicObject proc(VirtualFrame frame, Object maybeBlock) {
-            return procNewNode.executeProcNew(frame, getContext().getCoreLibrary().getProcClass(), ArrayUtils.EMPTY_ARRAY, maybeBlock);
+            return procNewNode.executeProcNew(frame, coreLibrary().getProcClass(), ArrayUtils.EMPTY_ARRAY, maybeBlock);
         }
 
     }
@@ -1456,7 +1456,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PROTECTED).toArray();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1486,7 +1486,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PUBLIC).toArray();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1581,7 +1581,7 @@ public abstract class KernelNodes {
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
             if (feature.equals("strscan") && callerIs("erb.rb")) {
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
+                throw new RaiseException(coreLibrary().loadErrorCannotLoad(feature, this));
             }
 
             try {
@@ -1620,7 +1620,7 @@ public abstract class KernelNodes {
 
                 if (sourcePath == null) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", featureString, this));
+                    throw new RaiseException(coreLibrary().loadError("cannot infer basepath", featureString, this));
                 }
 
                 featurePath = dirname(sourcePath) + "/" + featureString;
@@ -1801,12 +1801,12 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             if (!Layouts.CLASS.getIsSingleton(metaClass)) {
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
             }
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(getContext(), includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1879,7 +1879,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         private long doSleepMillis(final long durationInMillis) {
             if (durationInMillis < 0) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("time interval must be positive", this));
+                throw new RaiseException(coreLibrary().argumentError("time interval must be positive", this));
             }
 
             final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
@@ -1970,17 +1970,17 @@ public abstract class KernelNodes {
             try {
                 throw exception;
             } catch (TooFewArgumentsException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+                return new RaiseException(coreLibrary().argumentError("too few arguments", this));
             } catch (NoImplicitConversionException e) {
-                return new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+                return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
             } catch (OutsideOfStringException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+                return new RaiseException(coreLibrary().argumentError("X outside of string", this));
             } catch (CantCompressNegativeException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+                return new RaiseException(coreLibrary().argumentError("can't compress negative numbers", this));
             } catch (RangeException e) {
-                return new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+                return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
             } catch (CantConvertException e) {
-                return new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+                return new RaiseException(coreLibrary().typeError(e.getMessage(), this));
             }
         }
 
@@ -2025,7 +2025,7 @@ public abstract class KernelNodes {
                 return new PrintfCompiler(getContext(), this).compile(StringOperations.getByteListReadOnly(format));
             } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }
         }
 
@@ -2099,13 +2099,13 @@ public abstract class KernelNodes {
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ClassNode classNode;
+        @Child private LogicalClassNode classNode;
         @Child private ObjectPrimitiveNodes.ObjectIDPrimitiveNode objectIDNode;
         @Child private ToHexStringNode toHexStringNode;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
             objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
         }
@@ -2116,7 +2116,7 @@ public abstract class KernelNodes {
         public DynamicObject toS(VirtualFrame frame, Object self) {
             CompilerDirectives.transferToInterpreter();
 
-            String className = Layouts.MODULE.getFields(classNode.executeGetClass(frame, self)).getName();
+            String className = Layouts.MODULE.getFields(classNode.executeLogicalClass(self)).getName();
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
@@ -2130,13 +2130,13 @@ public abstract class KernelNodes {
 
         @Child private IsFrozenNode isFrozenNode;
         @Child private IsTaintedNode isTaintedNode;
-        @Child private WriteHeadObjectFieldNode writeTaintNode;
+        @Child private WriteObjectFieldNode writeTaintNode;
 
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
+            writeTaintNode = WriteObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
         }
 
         @Specialization
@@ -2147,7 +2147,7 @@ public abstract class KernelNodes {
 
             if (isFrozenNode.executeIsFrozen(object)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+                throw new RaiseException(coreLibrary().frozenError(Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(), this));
             }
 
             writeTaintNode.execute(object, false);

@@ -26,7 +26,7 @@ public abstract class ChannelPrimitiveNodes {
 
         @Specialization
         public DynamicObject channelNew() {
-            final DynamicObject channelClass = getContext().getCoreLibrary().getRubiniusChannelClass();
+            final DynamicObject channelClass = coreLibrary().getRubiniusChannelClass();
             return Layouts.CLASS.getInstanceFactory(channelClass).newInstance();
         }
 

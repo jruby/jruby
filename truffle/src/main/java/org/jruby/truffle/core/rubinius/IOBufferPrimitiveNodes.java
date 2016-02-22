@@ -73,7 +73,7 @@ public abstract class IOBufferPrimitiveNodes {
         public DynamicObject allocate(DynamicObject classToAllocate) {
             return allocateNode.allocate(classToAllocate,
                         true,
-                        ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), new ByteList(IOBUFFER_SIZE)),
+                        ByteArrayNodes.createByteArray(coreLibrary().getByteArrayFactory(), new ByteList(IOBUFFER_SIZE)),
                         0,
                         IOBUFFER_SIZE);
         }
@@ -138,7 +138,7 @@ public abstract class IOBufferPrimitiveNodes {
                 // and now there isn't enough room for this data.
                 if (bytesRead > left(frame, ioBuffer)) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().internalError("IO buffer overrun", this));
+                    throw new RaiseException(coreLibrary().internalError("IO buffer overrun", this));
                 }
                 final int used = Layouts.IO_BUFFER.getUsed(ioBuffer);
                 final ByteList storage = Layouts.BYTE_ARRAY.getBytes(Layouts.IO_BUFFER.getStorage(ioBuffer));
@@ -171,7 +171,7 @@ public abstract class IOBufferPrimitiveNodes {
                         continue;
                     } else {
                         CompilerDirectives.transferToInterpreter();
-                        throw new RaiseException(ExceptionNodes.createRubyException(getContext().getCoreLibrary().getErrnoClass(Errno.valueOf(errno))));
+                        throw new RaiseException(ExceptionNodes.createRubyException(coreLibrary().getErrnoClass(Errno.valueOf(errno))));
                     }
                 } else {
                     break;

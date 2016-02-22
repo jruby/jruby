@@ -30,8 +30,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.ObjectGraph;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
@@ -68,7 +68,7 @@ public abstract class ObjectSpaceNodes {
         @Specialization(guards = "isBasicObjectID(id)")
         public DynamicObject id2Ref(
                 final long id,
-                @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode) {
+                @Cached("createReadObjectIDNode()") ReadObjectFieldNode readObjectIdNode) {
             for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
                 final long objectID = (long) readObjectIdNode.execute(object);
                 if (objectID == id) {
@@ -76,7 +76,7 @@ public abstract class ObjectSpaceNodes {
                 }
             }
 
-            throw new RaiseException(getContext().getCoreLibrary().rangeError(String.format("0x%016x is not id value", id), this));
+            throw new RaiseException(coreLibrary().rangeError(String.format("0x%016x is not id value", id), this));
         }
 
         @Specialization(guards = { "isRubyBignum(id)", "isLargeFixnumID(id)" })
@@ -89,8 +89,8 @@ public abstract class ObjectSpaceNodes {
             return Double.longBitsToDouble(Layouts.BIGNUM.getValue(id).longValue());
         }
 
-        protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return ReadHeadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER, 0L);
+        protected ReadObjectFieldNode createReadObjectIDNode() {
+            return ReadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {
@@ -166,10 +166,10 @@ public abstract class ObjectSpaceNodes {
             if (respondToCallNode.doesRespondTo(frame, "call", finalizer)) {
                 getContext().getObjectSpaceManager().defineFinalizer(object, finalizer);
                 Object[] objects = new Object[]{ 0, finalizer };
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentErrorWrongArgumentType(finalizer, "callable", this));
+                throw new RaiseException(coreLibrary().argumentErrorWrongArgumentType(finalizer, "callable", this));
             }
         }
 

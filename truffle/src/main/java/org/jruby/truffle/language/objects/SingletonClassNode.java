@@ -39,17 +39,17 @@ public abstract class SingletonClassNode extends RubyNode {
 
     @Specialization(guards = "value")
     protected DynamicObject singletonClassTrue(boolean value) {
-        return getContext().getCoreLibrary().getTrueClass();
+        return coreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
     protected DynamicObject singletonClassFalse(boolean value) {
-        return getContext().getCoreLibrary().getFalseClass();
+        return coreLibrary().getFalseClass();
     }
 
     @Specialization(guards = "isNil(value)")
     protected DynamicObject singletonClassNil(DynamicObject value) {
-        return getContext().getCoreLibrary().getNilClass();
+        return coreLibrary().getNilClass();
     }
 
     @Specialization
@@ -131,7 +131,7 @@ public abstract class SingletonClassNode extends RubyNode {
 
     private DynamicObject noSingletonClass() {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+        throw new RaiseException(coreLibrary().typeErrorCantDefineSingleton(this));
     }
 
 }

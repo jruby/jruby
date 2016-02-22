@@ -47,9 +47,9 @@ public abstract class ToStrNode extends RubyNode {
         try {
             coerced = toStrNode.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
+                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "String", this));
             } else {
                 throw e;
             }
@@ -59,7 +59,7 @@ public abstract class ToStrNode extends RubyNode {
             return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
+            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
     }
 

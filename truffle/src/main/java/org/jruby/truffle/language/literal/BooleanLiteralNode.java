@@ -17,7 +17,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-// For isDefined() and convenience
 @NodeInfo(cost = NodeCost.NONE)
 public class BooleanLiteralNode extends RubyNode {
 

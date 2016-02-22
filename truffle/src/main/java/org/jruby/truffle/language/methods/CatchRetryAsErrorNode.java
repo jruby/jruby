@@ -32,7 +32,7 @@ public class CatchRetryAsErrorNode extends RubyNode {
             return body.execute(frame);
         } catch (RetryException e) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().syntaxError("Invalid retry", this));
+            throw new RaiseException(coreLibrary().syntaxError("Invalid retry", this));
         }
     }
 

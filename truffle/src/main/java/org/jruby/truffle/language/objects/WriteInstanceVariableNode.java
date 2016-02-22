@@ -12,6 +12,7 @@ package org.jruby.truffle.language.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
@@ -21,15 +22,19 @@ import org.jruby.truffle.language.control.RaiseException;
 
 public class WriteInstanceVariableNode extends RubyNode {
 
+    private final String name;
+
     @Child private RubyNode receiver;
     @Child private RubyNode rhs;
-    @Child private WriteHeadObjectFieldNode writeNode;
+    @Child private WriteObjectFieldNode writeNode;
+
+    private final ConditionProfile objectProfile = ConditionProfile.createBinaryProfile();
 
     public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs) {
         super(context, sourceSection);
+        this.name = name;
         this.receiver = receiver;
         this.rhs = rhs;
-        writeNode = WriteHeadObjectFieldNodeGen.create(getContext(), name);
     }
 
     @Override
@@ -37,11 +42,16 @@ public class WriteInstanceVariableNode extends RubyNode {
         final Object object = receiver.execute(frame);
         final Object value = rhs.execute(frame);
 
-        if (object instanceof DynamicObject) {
+        if (objectProfile.profile(object instanceof DynamicObject)) {
+            if (writeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeNode = insert(WriteObjectFieldNodeGen.create(getContext(), name));
+            }
+
             writeNode.execute((DynamicObject) object, value);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+            throw new RaiseException(coreLibrary().frozenError(
+                    Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(), this));
         }
 
         return value;

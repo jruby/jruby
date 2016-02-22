@@ -39,7 +39,7 @@ public abstract class ArraySliceNode extends RubyNode {
     public DynamicObject sliceNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
     }
 
     @Specialization(guards = "isIntArray(array)")
@@ -48,9 +48,9 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), from, to), to - from);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
     }
 
@@ -60,9 +60,9 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), from, to), to - from);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
     }
 
@@ -72,9 +72,9 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), from, to), to - from);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
     }
 
@@ -84,9 +84,9 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), from, to), to - from);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
     }
 

@@ -33,7 +33,6 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
@@ -70,7 +69,7 @@ public abstract class SymbolNodes {
         @Specialization
         public DynamicObject allSymbols() {
             Object[] store = getContext().getSymbolTable().allSymbols().toArray();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
         }
 
     }
@@ -156,11 +155,11 @@ public abstract class SymbolNodes {
             final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
 
             return ProcNodes.createRubyProc(
-                    getContext().getCoreLibrary().getProcFactory(),
+                    coreLibrary().getProcFactory(),
                     ProcNodes.Type.PROC,
                     sharedMethodInfo,
                     callTarget, callTarget, null,
-                    method, getContext().getCoreLibrary().getNilObject(),
+                    method, coreLibrary().getNilObject(),
                     null);
         }
 
@@ -194,7 +193,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

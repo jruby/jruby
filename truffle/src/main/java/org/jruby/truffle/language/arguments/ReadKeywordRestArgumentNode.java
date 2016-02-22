@@ -47,7 +47,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
         final DynamicObject hash = (DynamicObject) readUserKeywordsHashNode.execute(frame);
 
         if (hash == null) {
-            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, 0, null, null, null, null, false);
+            return Layouts.HASH.createHash(coreLibrary().getHashFactory(), null, 0, null, null, null, null, false);
         }
 
         final List<Map.Entry<Object, Object>> entries = new ArrayList<>();

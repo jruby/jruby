@@ -81,10 +81,10 @@ public abstract class ArrayCastNode extends RubyNode {
     public Object cast(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             case NIL:
                 return nil;
@@ -109,7 +109,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
         if (!RubyGuards.isRubyArray(result)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(object, "Array", "to_ary", result, this));
+            throw new RaiseException(coreLibrary().typeErrorCantConvertTo(object, "Array", "to_ary", result, this));
         }
 
         return result;

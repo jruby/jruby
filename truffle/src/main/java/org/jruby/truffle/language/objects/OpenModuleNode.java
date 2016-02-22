@@ -24,18 +24,16 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
 
-/**
- * Open a module and execute a method in it - probably to define new methods.
- */
 public class OpenModuleNode extends RubyNode {
 
-    @Child private RubyNode definingModule;
     final protected LexicalScope lexicalScope;
+
+    @Child private RubyNode definingModule;
+    @Child private ModuleBodyDefinitionNode definitionMethod;
     @Child private IndirectCallNode callModuleDefinitionNode;
 
-    final private ModuleBodyDefinitionNode definitionMethod;
-
-    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, ModuleBodyDefinitionNode definition, LexicalScope lexicalScope) {
+    public OpenModuleNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope,
+                          ModuleBodyDefinitionNode definition, RubyNode definingModule) {
         super(context, sourceSection);
         this.definingModule = definingModule;
         this.definitionMethod = definition;
@@ -47,15 +45,15 @@ public class OpenModuleNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        // TODO(CS): cast
         final DynamicObject module = (DynamicObject) definingModule.execute(frame);
 
         lexicalScope.unsafeSetLiveModule(module);
         Layouts.MODULE.getFields(lexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
 
         final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
-        return callModuleDefinitionNode.call(frame, definition.getCallTarget(),
-                RubyArguments.pack(null, null, definition, DeclarationContext.MODULE, null, module, null, new Object[]{}));
+
+        return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(
+                null, null, definition, DeclarationContext.MODULE, null, module, null, new Object[]{}));
     }
 
 }

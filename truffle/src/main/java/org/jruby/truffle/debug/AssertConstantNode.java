@@ -35,7 +35,7 @@ public abstract class AssertConstantNode extends RubyNode {
 
         if (!compilationConstant[0]) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RaiseException(getContext().getCoreLibrary().internalError("Value in Truffle::Primitive.assert_constant was not constant", this));
+            throw new RaiseException(coreLibrary().internalError("Value in Truffle::Primitive.assert_constant was not constant", this));
         }
 
         return value;
