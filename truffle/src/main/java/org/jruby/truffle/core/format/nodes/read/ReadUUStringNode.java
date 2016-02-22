@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.format.nodes.read;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -39,7 +40,7 @@ public abstract class ReadUUStringNode extends PackNode {
     }
 
     @Specialization
-    protected Object encode(VirtualFrame frame, byte[] source) {
+    protected Object encode(VirtualFrame frame, byte[] source, @Cached("getAscii()") Encoding encoding) {
         CompilerDirectives.transferToInterpreter();
 
         // TODO CS 28-Dec-15 should write our own optimizable version of UU
@@ -148,7 +149,6 @@ public abstract class ReadUUStringNode extends PackNode {
             }
         }
 
-        final Encoding encoding = Encoding.load("ASCII");
         final ByteList result = new ByteList(lElem, 0, index, encoding, false);
 
         setSourcePosition(frame, encode.position());

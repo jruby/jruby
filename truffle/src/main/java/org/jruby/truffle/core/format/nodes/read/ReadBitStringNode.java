@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.format.nodes.read;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -42,7 +43,7 @@ public abstract class ReadBitStringNode extends PackNode {
     }
 
     @Specialization
-    public Object read(VirtualFrame frame, byte[] source) {
+    public Object read(VirtualFrame frame, byte[] source, @Cached("getAscii()") Encoding encoding) {
         // Bit string logic copied from jruby.util.Pack - see copyright and authorship there
 
         final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
@@ -80,7 +81,6 @@ public abstract class ReadBitStringNode extends PackNode {
             }
         }
 
-        final Encoding encoding = Encoding.load("ASCII");
         final ByteList result = new ByteList(lElem, encoding, false);
         setSourcePosition(frame, encode.position());
 
