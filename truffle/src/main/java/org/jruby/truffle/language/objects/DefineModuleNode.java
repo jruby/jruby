@@ -9,15 +9,14 @@
  */
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.kernel.KernelNodes;
-import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
@@ -27,8 +26,12 @@ import org.jruby.truffle.language.control.RaiseException;
 
 public class DefineModuleNode extends RubyNode {
 
-    protected final String name;
+    private final String name;
+
     @Child private RubyNode lexicalParentModule;
+
+    private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
+    private final BranchProfile errorProfile = BranchProfile.create();
 
     public DefineModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent) {
         super(context, sourceSection);
@@ -38,64 +41,68 @@ public class DefineModuleNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        final Object lexicalParentObject = lexicalParentModule.execute(frame);;
 
-        // Look for a current definition of the module, or create a new one
-
-        final Object lexicalParent1 = lexicalParentModule.execute(frame);;
-
-        if (!RubyGuards.isRubyModule(lexicalParent1)) {
-            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParent1, "module", this));
+        if (!RubyGuards.isRubyModule(lexicalParentObject)) {
+            errorProfile.enter();
+            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParentObject, "module", this));
         }
 
-        DynamicObject lexicalParent = (DynamicObject) lexicalParent1;
-        final RubyConstant constant = lookupForExistingModule(lexicalParent);
+        final DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
+        final RubyConstant constant = lookupForExistingModule(getContext(), name, lexicalParentModule, this);
 
-        DynamicObject definingModule;
+        final DynamicObject definingModule;
 
-        if (constant == null) {
-            definingModule = ModuleNodes.createRubyModule(getContext(), coreLibrary().getModuleClass(), lexicalParent, name, this);
+        if (needToDefineProfile.profile(constant == null)) {
+            definingModule = ModuleNodes.createRubyModule(getContext(), coreLibrary().getModuleClass(),
+                    lexicalParentModule, name, this);
         } else {
-            Object module = constant.getValue();
-            if (!RubyGuards.isRubyModule(module) || RubyGuards.isRubyClass(module)) {
+            final Object constantValue = constant.getValue();
+
+            if (!RubyGuards.isRubyModule(constantValue) || RubyGuards.isRubyClass(constantValue)) {
+                errorProfile.enter();
                 throw new RaiseException(coreLibrary().typeErrorIsNotA(name, "module", this));
             }
-            definingModule = (DynamicObject) module;
+
+            definingModule = (DynamicObject) constantValue;
         }
 
         return definingModule;
     }
 
     @TruffleBoundary
-    protected RubyConstant lookupForExistingModule(DynamicObject lexicalParent) {
+    public static RubyConstant lookupForExistingModule(RubyContext context, String name,
+                                                       DynamicObject lexicalParent, RubyNode node) {
         RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstant(name);
 
-        final DynamicObject objectClass = coreLibrary().getObjectClass();
+        final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
 
         if (constant == null && lexicalParent == objectClass) {
             for (DynamicObject included : Layouts.MODULE.getFields(objectClass).prependedAndIncludedModules()) {
                 constant = Layouts.MODULE.getFields(included).getConstant(name);
+
                 if (constant != null) {
                     break;
                 }
             }
         }
 
-        if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
-            throw new RaiseException(coreLibrary().nameErrorPrivateConstant(lexicalParent, name, this));
+        if (constant != null && !constant.isVisibleTo(context, LexicalScope.NONE, lexicalParent)) {
+            throw new RaiseException(context.getCoreLibrary().nameErrorPrivateConstant(lexicalParent, name, node));
         }
 
         // If a constant already exists with this class/module name and it's an autoload module, we have to trigger
         // the autoload behavior before proceeding.
+
         if ((constant != null) && constant.isAutoload()) {
+
             // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
             // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
             // call or the recursive execute call.
-            Layouts.MODULE.getFields(lexicalParent).removeConstant(getContext(), this, name);
 
-            getContext().getFeatureLoader().require(constant.getValue().toString(), this);
-
-            return lookupForExistingModule(lexicalParent);
+            Layouts.MODULE.getFields(lexicalParent).removeConstant(context, node, name);
+            context.getFeatureLoader().require(constant.getValue().toString(), node);
+            return lookupForExistingModule(context, name, lexicalParent, node);
         }
 
         return constant;
