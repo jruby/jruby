@@ -28,13 +28,13 @@ import org.jruby.truffle.language.control.RaiseException;
 /**
  * Define a new module, or get the existing one of the same name.
  */
-public class DefineOrGetModuleNode extends RubyNode {
+public class DefineModuleNode extends RubyNode {
 
     protected final String name;
     @Child private RubyNode lexicalParentModule;
     @Child private KernelNodes.RequireNode requireNode;
 
-    public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent) {
+    public DefineModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent) {
         super(context, sourceSection);
         this.name = name;
         this.lexicalParentModule = lexicalParent;

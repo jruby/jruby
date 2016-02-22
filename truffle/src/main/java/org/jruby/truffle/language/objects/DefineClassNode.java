@@ -29,7 +29,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 /**
  * Define a new class, or get the existing one of the same name.
  */
-public class DefineOrGetClassNode extends RubyNode {
+public class DefineClassNode extends RubyNode {
 
     protected final String name;
     @Child private RubyNode superClass;
@@ -37,7 +37,7 @@ public class DefineOrGetClassNode extends RubyNode {
     @Child private RubyNode lexicalParentModule;
     @Child private KernelNodes.RequireNode requireNode;
 
-    public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
+    public DefineClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection);
         this.name = name;
         this.lexicalParentModule = lexicalParent;

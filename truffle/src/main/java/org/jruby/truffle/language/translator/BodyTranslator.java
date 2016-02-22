@@ -147,8 +147,8 @@ import org.jruby.truffle.language.methods.GetDefaultDefineeNode;
 import org.jruby.truffle.language.methods.MethodDefinitionNode;
 import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.language.objects.DefineOrGetClassNode;
-import org.jruby.truffle.language.objects.DefineOrGetModuleNode;
+import org.jruby.truffle.language.objects.DefineClassNode;
+import org.jruby.truffle.language.objects.DefineModuleNode;
 import org.jruby.truffle.language.objects.LexicalScopeNode;
 import org.jruby.truffle.language.objects.RunModuleDefinitionNode;
 import org.jruby.truffle.language.objects.ReadClassVariableNode;
@@ -992,7 +992,7 @@ public class BodyTranslator extends Translator {
             superClass = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         }
 
-        final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, name, lexicalParent, superClass);
+        final DefineClassNode defineOrGetClass = new DefineClassNode(context, sourceSection, name, lexicalParent, superClass);
 
         final RubyNode ret = openModule(sourceSection, defineOrGetClass, name, node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
@@ -2105,7 +2105,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode lexicalParent = translateCPath(sourceSection, node.getCPath());
 
-        final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, lexicalParent);
+        final DefineModuleNode defineModuleNode = new DefineModuleNode(context, sourceSection, name, lexicalParent);
 
         final RubyNode ret = openModule(sourceSection, defineModuleNode, name, node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
