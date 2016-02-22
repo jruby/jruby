@@ -119,12 +119,21 @@ public class RubyStruct extends RubyObject {
     }
 
     @JRubyMethod
-    public RubyFixnum hash(ThreadContext context) {
+    public RubyFixnum hash(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
         int h = getMetaClass().getRealClass().hashCode();
+
 
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            h ^= RubyNumeric.num2long(invokedynamic(context, values[i], HASH));
+            IRubyObject hash = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+                @Override
+                public IRubyObject call(IRubyObject obj, boolean recur) {
+                    if (recur) return RubyFixnum.zero(runtime);
+                    return invokedynamic(context, obj, HASH);
+                }
+            }, values[i]);
+            h ^= RubyNumeric.num2long(hash);
         }
 
         return context.runtime.newFixnum(h);
