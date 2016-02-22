@@ -31,13 +31,13 @@ import java.util.Set;
 
 public abstract class ObjectGraph {
 
-    public static Set<DynamicObject> stopAndGetAllObjects(
-            Node currentNode, final RubyContext context) {
+    public static Set<DynamicObject> stopAndGetAllObjects(Node currentNode, final RubyContext context) {
         final Set<DynamicObject> visited = new HashSet<>();
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new Function2<Void, DynamicObject, Node>() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false,
+                new Function2<Void, DynamicObject, Node>() {
 
             @Override
             public Void apply(DynamicObject thread, Node currentNode) {
@@ -51,16 +51,21 @@ public abstract class ObjectGraph {
                     }
 
                     final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+
                     if (currentFrame != null) {
-                        stack.addAll(getObjectsInFrame(currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
+                        stack.addAll(getObjectsInFrame(currentFrame.getFrame(
+                                FrameInstance.FrameAccess.READ_ONLY, true)));
                     }
 
                     Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+
                         @Override
                         public Object visitFrame(FrameInstance frameInstance) {
-                            stack.addAll(getObjectsInFrame(frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
+                            stack.addAll(getObjectsInFrame(frameInstance.getFrame(
+                                    FrameInstance.FrameAccess.READ_ONLY, true)));
                             return null;
                         }
+
                     });
 
                     while (!stack.isEmpty()) {
@@ -84,7 +89,9 @@ public abstract class ObjectGraph {
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new Function2<Void, DynamicObject, Node>() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false,
+                new Function2<Void, DynamicObject, Node>() {
+
             @Override
             public Void apply(DynamicObject thread, Node currentNode) {
                 objects.add(thread);
@@ -95,6 +102,7 @@ public abstract class ObjectGraph {
 
                 return null;
             }
+
         });
 
         return objects;
@@ -103,7 +111,6 @@ public abstract class ObjectGraph {
     public static void visitContextRoots(RubyContext context, Collection<DynamicObject> stack) {
         // We do not want to expose the global object
         stack.addAll(ObjectGraph.getAdjacentObjects(context.getCoreLibrary().getGlobalVariablesObject()));
-
         stack.addAll(context.getAtExitManager().getHandlers());
         stack.addAll(context.getObjectSpaceManager().getFinalizerHandlers());
     }
