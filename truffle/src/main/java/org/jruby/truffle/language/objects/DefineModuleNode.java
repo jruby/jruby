@@ -29,7 +29,6 @@ public class DefineModuleNode extends RubyNode {
 
     protected final String name;
     @Child private RubyNode lexicalParentModule;
-    @Child private KernelNodes.RequireNode requireNode;
 
     public DefineModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent) {
         super(context, sourceSection);
@@ -90,17 +89,12 @@ public class DefineModuleNode extends RubyNode {
         // If a constant already exists with this class/module name and it's an autoload module, we have to trigger
         // the autoload behavior before proceeding.
         if ((constant != null) && constant.isAutoload()) {
-            if (requireNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
             // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
             // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
             // call or the recursive execute call.
             Layouts.MODULE.getFields(lexicalParent).removeConstant(getContext(), this, name);
 
-            requireNode.require((DynamicObject) constant.getValue());
+            getContext().getFeatureLoader().require(constant.getValue().toString(), this);
 
             return lookupForExistingModule(lexicalParent);
         }
