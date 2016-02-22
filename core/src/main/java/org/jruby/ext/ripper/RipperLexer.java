@@ -1245,7 +1245,7 @@ public class RipperLexer extends LexingCommon {
             setState(EXPR_END);
         }
 
-        identValue = value;
+        identValue = value.intern();
         return result;
     }
     
