@@ -54,7 +54,7 @@ public class DefineModuleNode extends RubyNode {
         final DynamicObject definingModule;
 
         if (needToDefineProfile.profile(constant == null)) {
-            definingModule = ModuleNodes.createRubyModule(getContext(), coreLibrary().getModuleClass(),
+            definingModule = ModuleNodes.createModule(getContext(), coreLibrary().getModuleClass(),
                     lexicalParentModule, name, this);
         } else {
             final Object constantValue = constant.getValue();

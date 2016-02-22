@@ -745,7 +745,7 @@ public class CoreLibrary {
 
     private DynamicObject defineModule(DynamicObject lexicalParent, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
-        return ModuleNodes.createRubyModule(context, moduleClass, lexicalParent, name, node);
+        return ModuleNodes.createModule(context, moduleClass, lexicalParent, name, node);
     }
 
     public void initializeAfterBasicMethodsAdded() {
