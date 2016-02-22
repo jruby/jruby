@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -75,9 +76,26 @@ public abstract class SingletonClassNode extends RubyNode {
         return noSingletonClass();
     }
 
-    @Specialization(guards = "isRubyClass(rubyClass)")
-    protected DynamicObject singletonClassClass(DynamicObject rubyClass) {
-        return ClassNodes.getSingletonClass(getContext(), rubyClass);
+    @Specialization(
+            guards = {
+                    "isRubyClass(rubyClass)",
+                    "rubyClass.getShape() == cachedShape"
+            },
+            limit = "getCacheLimit()"
+    )
+    protected DynamicObject singletonClassClassCached(
+            DynamicObject rubyClass,
+            @Cached("rubyClass.getShape()") Shape cachedShape,
+            @Cached("getSingletonClassForClass(rubyClass)") DynamicObject singletonClass) {
+        return singletonClass;
+    }
+
+    @Specialization(
+            guards = "isRubyClass(rubyClass)",
+            contains = "singletonClassClassCached"
+    )
+    protected DynamicObject singletonClassClassUncached(DynamicObject rubyClass) {
+        return getSingletonClassForClass(rubyClass);
     }
 
     @Specialization(guards = {
@@ -131,6 +149,14 @@ public abstract class SingletonClassNode extends RubyNode {
 
     private DynamicObject noSingletonClass() {
         throw new RaiseException(coreLibrary().typeErrorCantDefineSingleton(this));
+    }
+
+    protected DynamicObject getSingletonClassForClass(DynamicObject rubyClass) {
+        return ClassNodes.getSingletonClass(getContext(), rubyClass);
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().CLASS_CACHE;
     }
 
 }
