@@ -86,7 +86,7 @@ public abstract class ProcessNodes {
             int r = libCClockGetTime.clock_gettime(clock_id, timeSpec);
             if (r != 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().systemCallError("clock_gettime failed: " + r, this));
+                throw new RaiseException(coreLibrary().systemCallError("clock_gettime failed: " + r, this));
             }
             long nanos = timeSpec.getTVsec() * 1_000_000_000 + timeSpec.getTVnsec();
             return timeToUnit(nanos, unit);
@@ -146,7 +146,7 @@ public abstract class ProcessNodes {
             try {
                 getContext().getNativePlatform().getSignalManager().raise(signal);
             } catch (IllegalArgumentException e) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }
             return 1;
         }

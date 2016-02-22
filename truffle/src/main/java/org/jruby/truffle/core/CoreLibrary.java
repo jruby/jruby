@@ -11,8 +11,8 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.java.JavaInterop;
@@ -745,7 +745,7 @@ public class CoreLibrary {
 
     private DynamicObject defineModule(DynamicObject lexicalParent, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
-        return ModuleNodes.createRubyModule(context, moduleClass, lexicalParent, name, node);
+        return ModuleNodes.createModule(context, moduleClass, lexicalParent, name, node);
     }
 
     public void initializeAfterBasicMethodsAdded() {
@@ -926,8 +926,8 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(systemStackErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject frozenError(String className, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 
@@ -1039,6 +1039,12 @@ public class CoreLibrary {
         return typeError("can't create instance of singleton class", currentNode, null);
     }
 
+    @TruffleBoundary
+    public DynamicObject superclassMismatch(String name, Node currentNode) {
+        return typeError("superclass mismatch for class " + name, currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode) {
         return typeError(message, currentNode, null);
     }
@@ -1054,8 +1060,8 @@ public class CoreLibrary {
         return typeError(String.format("allocator undefined for %s", className), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return typeError("can't define singleton", currentNode);
     }
 
@@ -1076,8 +1082,13 @@ public class CoreLibrary {
         return typeError(String.format("can't convert %s into %s", Layouts.MODULE.getFields(getLogicalClass(from)).getName(), toClass), currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject typeErrorIsNotA(Object value, String expectedType, Node currentNode) {
+        return typeErrorIsNotA(value.toString(), expectedType, currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeErrorIsNotA(String value, String expectedType, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("%s is not a %s", value, expectedType), currentNode);
     }
 
@@ -1139,14 +1150,14 @@ public class CoreLibrary {
         return nameError(message, name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorUninitializedClassVariable(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         return nameError(String.format("uninitialized class variable %s in %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorPrivateConstant(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         return nameError(String.format("private constant %s::%s referenced", Layouts.MODULE.getFields(module).getName(), name), name, currentNode);
     }

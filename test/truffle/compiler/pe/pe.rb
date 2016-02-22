@@ -65,6 +65,7 @@ else
   require_relative 'language/ivar_pe.rb'
   require_relative 'language/metaprogramming_pe.rb'
   require_relative 'language/super_pe.rb'
+  require_relative 'language/defined_pe.rb'
   require_relative 'core/truefalse_pe.rb'
   require_relative 'core/fixnum_pe.rb'
   require_relative 'core/float_pe.rb'

@@ -80,7 +80,7 @@ public class ReadRestArgumentNode extends RubyNode {
             }
         }
 
-        final DynamicObject rest = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), resultStore, resultLength);
+        final DynamicObject rest = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), resultStore, resultLength);
 
         if (keywordArguments) {
             CompilerDirectives.transferToInterpreter();

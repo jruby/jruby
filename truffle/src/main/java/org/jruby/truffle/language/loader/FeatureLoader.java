@@ -50,7 +50,7 @@ public class FeatureLoader {
         }
     }
 
-    public boolean require(String feature, Node currentNode) throws IOException {
+    public boolean require(String feature, Node currentNode) {
         final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, context.getCoreLibrary().getObjectClass(), "DATA");
 
         if (feature.startsWith("./")) {
@@ -88,6 +88,8 @@ public class FeatureLoader {
             }
 
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             if (dataConstantBefore == null) {
                 Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(context, currentNode, "DATA");

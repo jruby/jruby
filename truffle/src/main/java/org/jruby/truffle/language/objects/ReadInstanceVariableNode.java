@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -19,15 +20,18 @@ import org.jruby.truffle.language.RubyNode;
 
 public class ReadInstanceVariableNode extends RubyNode {
 
+    private final String name;
+
     @Child private RubyNode receiver;
-    @Child private ReadHeadObjectFieldNode readNode;
+    @Child private ReadObjectFieldNode readNode;
+    @Child private ReadObjectFieldNode readOrNullNode;
 
     private final ConditionProfile objectProfile = ConditionProfile.createBinaryProfile();
 
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
+        this.name = name;
         this.receiver = receiver;
-        readNode = ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
     }
 
     @Override
@@ -35,6 +39,11 @@ public class ReadInstanceVariableNode extends RubyNode {
         final Object receiverObject = receiver.execute(frame);
 
         if (objectProfile.profile(receiverObject instanceof DynamicObject)) {
+            if (readNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readNode = insert(ReadObjectFieldNodeGen.create(getContext(), name, nil()));
+            }
+
             return readNode.execute((DynamicObject) receiverObject);
         } else {
             return nil();
@@ -45,13 +54,16 @@ public class ReadInstanceVariableNode extends RubyNode {
     public Object isDefined(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
 
-        if (receiverObject instanceof DynamicObject) {
-            final DynamicObject receiverRubyObject = (DynamicObject) receiverObject;
+        if (objectProfile.profile(receiverObject instanceof DynamicObject)) {
+            if (readNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readOrNullNode = insert(ReadObjectFieldNodeGen.create(getContext(), name, null));
+            }
 
-            if (receiverRubyObject.getShape().hasProperty(readNode.getName())) {
-                return create7BitString("instance-variable", UTF8Encoding.INSTANCE);
-            } else {
+            if (readOrNullNode.execute((DynamicObject) receiverObject) == null) {
                 return nil();
+            } else {
+                return coreStrings().INSTANCE_VARIABLE.createInstance();
             }
         } else {
             return false;

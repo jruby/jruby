@@ -31,7 +31,7 @@ public class CheckRecordSeparatorVariableTypeNode extends RubyNode {
 
         if (!(RubyGuards.isRubyString(childValue)) && childValue != nil()) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorMustBe("$/", "String", this));
+            throw new RaiseException(coreLibrary().typeErrorMustBe("$/", "String", this));
         }
 
         return childValue;

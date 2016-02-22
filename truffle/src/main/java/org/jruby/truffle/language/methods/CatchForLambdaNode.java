@@ -56,7 +56,7 @@ public class CatchForLambdaNode extends RubyNode {
                 }
             } catch (RetryException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().syntaxError("Invalid retry", this));
+                throw new RaiseException(coreLibrary().syntaxError("Invalid retry", this));
             } catch (RedoException e) {
                 redoProfile.enter();
                 getContext().getSafepointManager().poll(this);

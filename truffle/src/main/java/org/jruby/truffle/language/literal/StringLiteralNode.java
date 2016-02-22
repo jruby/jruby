@@ -22,12 +22,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.util.ByteList;
 
 public class StringLiteralNode extends RubyNode {
 
@@ -43,7 +41,7 @@ public class StringLiteralNode extends RubyNode {
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        return allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(), rope, null);
+        return allocateObjectNode.allocate(coreLibrary().getStringClass(), rope, null);
     }
 
 }

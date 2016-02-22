@@ -57,7 +57,7 @@ public class TaintResultNode extends RubyNode {
                 taintNode = insert(TaintNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            taintNode.taint(result);
+            taintNode.executeTaint(result);
         }
 
         return result;

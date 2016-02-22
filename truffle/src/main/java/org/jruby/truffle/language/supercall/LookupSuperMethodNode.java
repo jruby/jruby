@@ -24,8 +24,8 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNode;
-import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNodeGen;
+import org.jruby.truffle.language.objects.MetaClassNode;
+import org.jruby.truffle.language.objects.MetaClassNodeGen;
 
 /**
  * Caches {@link ModuleOperations#lookupSuperMethod}
@@ -34,11 +34,11 @@ import org.jruby.truffle.language.objects.MetaClassWithShapeCacheNodeGen;
 @NodeChild("self")
 public abstract class LookupSuperMethodNode extends RubyNode {
 
-    @Child MetaClassWithShapeCacheNode metaClassNode;
+    @Child private MetaClassNode metaClassNode;
 
     public LookupSuperMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        metaClassNode = MetaClassWithShapeCacheNodeGen.create(context, sourceSection, null);
+        metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
     }
 
     public abstract InternalMethod executeLookupSuperMethod(VirtualFrame frame, Object self);

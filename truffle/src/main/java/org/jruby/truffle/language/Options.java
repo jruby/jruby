@@ -45,6 +45,7 @@ public class Options {
     public final int PACK_CACHE = TRUFFLE_PACK_CACHE.load();
     public final int UNPACK_CACHE = TRUFFLE_UNPACK_CACHE.load();
     public final int EVAL_CACHE = TRUFFLE_EVAL_CACHE.load();
+    public final int CLASS_CACHE = TRUFFLE_CLASS_CACHE.load();
     public final int ENCODING_COMPATIBILE_QUERY_CACHE = TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE.load();
 
     // Cloning and inlining

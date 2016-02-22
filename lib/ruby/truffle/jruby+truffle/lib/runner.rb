@@ -22,25 +22,67 @@ rescue LoadError => e
 end
 
 class JRubyTruffleRunner
+  module Utils
+    def execute_cmd(cmd, dir: nil, raise: true, print: false)
+      result      = nil
+      system_call = proc do
+        result = system(*print_cmd(cmd, dir, print))
+      end
+
+      if dir
+        Dir.chdir dir, &system_call
+      else
+        system_call.call
+      end
+
+      raise 'command failed' if raise && !result
+
+      return result
+    end
+
+    def print_cmd(cmd, dir, print)
+      return cmd unless print
+
+      formatted_cmd = if String === cmd
+                        cmd
+                      else
+                        cmd.map do |v|
+                          if Hash === v
+                            v.map { |k, v| "#{k}=#{v}" }.join(' ')
+                          else
+                            Shellwords.escape v
+                          end
+                        end.join(' ')
+                      end
+      puts '$ ' + formatted_cmd + (dir ? " (in #{dir})" : '')
+      return cmd
+    end
+
+  end
+
+  include Utils
+
   attr_reader :options
 
   EXECUTABLE        = File.basename($PROGRAM_NAME)
   BRANDING          = EXECUTABLE.include?('jruby') ? 'JRuby+Truffle' : 'RubyTruffle'
   LOCAL_CONFIG_FILE = '.jruby+truffle.yaml'
+  ROOT              = Pathname(__FILE__).dirname.parent.expand_path
+  JRUBY_PATH        = (ROOT + '../../../..').expand_path
 
   begin
-    assign_new_value   = -> (new, old) { new }
-    add_to_array       = -> (new, old) { old << new }
-    merge_hash         = -> ((k, v), old) { old.merge k => v }
-    apply_pattern      = -> (pattern, old) do
+    assign_new_value   = -> (new, old, _) { new }
+    add_to_array       = -> (new, old, _) { old << new }
+    merge_hash         = -> ((k, v), old, _) { old.merge k => v }
+    apply_pattern      = -> (pattern, old, options) do
       Dir.glob(pattern) do |file|
-        if @options[:run][:exclude_pattern].any? { |p| /#{p}/ =~ file }
-          puts "skipped: #{file}" if @options[:global][:verbose]
+        if options[:exclude_pattern].any? { |p| /#{p}/ =~ file }
+          puts "skipped: #{file}" if verbose?
           next
         end
-        @options[:run][:require] << File.expand_path(file)
+        options[:require] << File.expand_path(file)
       end
-      old
+      old << pattern
     end
 
     # Format:
@@ -58,7 +100,7 @@ class JRubyTruffleRunner
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
             truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, '.jruby+truffle_bundle'],
             interpreter_path:    ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", assign_new_value,
-                                  File.expand_path(File.join(File.dirname(__FILE__), '../../../../../bin/jruby'))],
+                                  JRUBY_PATH + 'bin' + 'jruby'],
             graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
             mock_load_path:      ['--mock-load-path PATH',
                                   'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
@@ -83,15 +125,17 @@ class JRubyTruffleRunner
             rebuild:         ['--rebuild', 'Run `jt rebuild` using conventional JRuby', assign_new_value, false],
             debug:           ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:         ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
-            require_pattern: ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', apply_pattern, nil],
+            require_pattern: ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', apply_pattern, []],
             exclude_pattern: ['--exclude-pattern REGEXP', 'Files matching the regexp will not be required by --require-pattern (applies to subsequent --require-pattern options)', add_to_array, []],
             load_path:       ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
             executable:      ['-S', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
             jexception:      ['--jexception', 'print Java exceptions', assign_new_value, false]
         },
-        stored: {
-            help: ['-h', '--help', 'Show this message', assign_new_value, false],
-            list: ['-l', '--list', 'List stored commands', assign_new_value, false]
+        ci:     {
+            git:   ['--git URL', 'Path to the gem\'s repository', assign_new_value, nil],
+            batch: ['--batch FILE', 'Run batch of ci tests supplied in a file. One ci command options per line. If FILE is in or stdin it reads from $stdin.',
+                    assign_new_value, nil],
+            help:  ['-h', '--help', 'Show this message', assign_new_value, false]
         },
         clean:  {
             help: ['-h', '--help', 'Show this message', assign_new_value, false]
@@ -150,29 +194,25 @@ class JRubyTruffleRunner
 
     TXT
 
-    stored_help = <<-TXT.gsub(/^ {6}/, '')
+    ci_help = <<-TXT.gsub(/^ {6}/, '')
 
-      Usage: #{EXECUTABLE} [options] stored [subcommand-options] [COMMAND_NAME]
+      Usage: #{EXECUTABLE} [options] ci [subcommand-options] GEM_NAME
 
-      Runs stored list of bash commands. They are stored under :stored_commands key
-      in options. It can contain single command or an array of commands,
-      e.g. to define how to run CI cycle for a given gem/application on JRuby+Truffle.
+      Runs CI tests for predefined gems or it uses default CI definition. CI Definitions
+      are stored in gem_ci directory. The CI definition files are evaluated in CIEnvironment
+      instances which are providing the helper methods.
 
-      Examples: #{EXECUTABLE} stored --list
-                #{EXECUTABLE} stored ci
+      The command is creating a directory for testing based on GEM_NAME in current
+      working directory (change with --dir).
 
-      Stored commands may reference each other by Symbols.
-
-      Configuration example:
-        :stored_commands:
-          :ci:
-            - "jruby+truffle setup"
-            - :test
-          :test: "jruby+truffle run -S rake -- test"
+      Examples: #{EXECUTABLE} ci activesupport
+                    (Runs gem_ci/activesupport.rb CI definition)
+                #{EXECUTABLE} ci --git https://github.com/ruby-concurrency/concurrent-ruby.git concurrent-ruby
+                    (Runs gem_ci/default.rb CI definition which uses git option)
 
     TXT
 
-    HELP = { global: global_help, setup: setup_help, run: run_help, clean: clean_help, stored: stored_help }
+    HELP = { global: global_help, setup: setup_help, run: run_help, clean: clean_help, ci: ci_help }
   end
 
 
@@ -220,20 +260,24 @@ class JRubyTruffleRunner
   end
 
   def build_option_parsers
-    @option_parsers = OPTION_DEFINITIONS.each_with_object({}) do |(group, group_options), parsers|
-      parsers[group] = OptionParser.new do |option_parser|
-        group_options.each do |option, data|
-          *args, description, block, default = data
-
-          option_parser.on(*args, description + " (default: #{default.inspect})") do |new_value|
-            old_value               = @options[group][option]
-            @options[group][option] = instance_exec new_value, old_value, &block
-          end
-        end
-      end
+    @option_parsers = OPTION_DEFINITIONS.each_with_object({}) do |(name, parser_options), parsers|
+      parsers[name] = build_option_parser(parser_options, @options.fetch(name))
     end
 
     @option_parsers.each { |key, option_parser| option_parser.banner = HELP[key] }
+  end
+
+  def build_option_parser(parser_options, options_hash)
+    OptionParser.new do |option_parser|
+      parser_options.each do |option, data|
+        *args, description, block, default = data
+
+        option_parser.on(*args, description + " (default: #{default.inspect})") do |new_value|
+          old_value            = options_hash[option]
+          options_hash[option] = instance_exec new_value, old_value, options_hash, &block
+        end
+      end
+    end
   end
 
   def load_gem_configuration
@@ -241,7 +285,7 @@ class JRubyTruffleRunner
 
     if candidates.size == 1
       gem_name, _ = candidates.first.split('.')
-      yaml_path   = File.dirname(__FILE__) + "/../gem_configurations/#{gem_name}.yaml"
+      yaml_path   = ROOT + 'gem_configurations'+ "#{gem_name}.yaml"
     end
 
     apply_yaml_to_configuration(yaml_path)
@@ -282,7 +326,7 @@ class JRubyTruffleRunner
   def deep_merge(a, b)
     if Hash === a
       if Hash === b
-        return a.merge(b) { |k, ov, nv| deep_merge ov, nv }
+        return a.merge!(b) { |k, ov, nv| deep_merge ov, nv }
       else
         return a
       end
@@ -290,7 +334,7 @@ class JRubyTruffleRunner
 
     if Array === a
       if Array === b
-        return a + b.map { |v| eval_yaml_strings v }
+        return a.replace a + b.map { |v| eval_yaml_strings v }
       else
         return a
       end
@@ -400,39 +444,14 @@ class JRubyTruffleRunner
     env['JAVACMD'] = @options[:global][:graal_path] if @options[:run][:graal]
 
     cmd = [(env unless env.empty?),
-           @options[:global][:interpreter_path],
+           @options[:global][:interpreter_path].to_s,
            *cmd_options,
            executable,
            *rest
     ].compact
 
-    execute_cmd(cmd, fail: false, print_always: true)
+    execute_cmd(cmd, raise: false, print_always: true)
     exit $?.exitstatus
-  end
-
-  def subcommand_stored(rest)
-    if @options[:stored][:list]
-      pp @options[:stored_commands]
-      exit
-    end
-
-    commands = get_stored_command rest.first
-
-    puts "executing #{commands.size} commands:"
-    commands.each { |cmd| print_cmd cmd, true }
-    puts
-
-    commands.each do |cmd|
-      unless execute_cmd(cmd, fail: false, print_always: true)
-        exit $?.exitstatus
-      end
-    end
-  end
-
-  def get_stored_command(name, fail: true)
-    result = @options.fetch(:stored_commands, {})[name.to_sym]
-    raise("unknown stored command: #{name}") if fail && !result
-    Array(result).flat_map { |c| (c.is_a? Symbol) ? get_stored_command(c) : c }
   end
 
   def subcommand_clean(rest)
@@ -440,33 +459,129 @@ class JRubyTruffleRunner
   end
 
   def subcommand_readme(rest)
-    readme_path = File.join File.dirname(__FILE__), '../README.md'
-    puts File.read(readme_path)
+    puts File.read(ROOT + 'README.md')
   end
 
-  def print_cmd(cmd, print_always)
-    unless verbose? || print_always
-      return cmd
+  def subcommand_ci(rest)
+    if (path = options[:ci][:batch])
+      batch = if path =~ /^in|stdin$/
+                $stdin.read
+              else
+                File.read(path)
+              end
+
+      results = batch.each_line.map do |line|
+        next if line =~ /^#/ || line.strip.empty?
+
+        options       = {}
+        option_parser = build_option_parser OPTION_DEFINITIONS[:ci], options
+        rest          = option_parser.order line.split
+
+        gem_name = rest.first
+        CIEnvironment.new(options, self.options[:global][:dir], gem_name).success?
+      end
+
+      exit results.all? ? 0 : 1
+    else
+      gem_name = rest.first
+      CIEnvironment.new options[:ci], options[:global][:dir], gem_name
+    end
+  end
+
+  def execute_cmd(cmd, dir: nil, raise: true, print_always: false)
+    super cmd, dir: dir, raise: raise, print: verbose? || print_always
+  end
+
+  class CIEnvironment
+    include Utils
+
+    def self.define_dsl_attr(*names, &conversion)
+      nothing = Object.new
+
+      names.each do |name|
+        ivar_name = :"@#{name}"
+
+        define_method name do |value = nothing|
+          if value == nothing
+            instance_variable_get ivar_name
+          else
+            conversion ||= -> v { v }
+            instance_variable_set ivar_name, conversion.call(value)
+          end
+        end
+      end
     end
 
-    print = if String === cmd
-              cmd
-            else
-              cmd.map do |v|
-                if Hash === v
-                  v.map { |k, v| "#{k}=#{v}" }.join(' ')
-                else
-                  Shellwords.escape v
-                end
-              end.join(' ')
-            end
-    puts '$ ' + print
-    return cmd
-  end
+    define_dsl_attr :repository_name, :subdir
+    define_dsl_attr(:working_dir) { |v| Pathname(v) }
+    attr_reader :gem_name
 
-  def execute_cmd(cmd, fail: true, print_always: false)
-    result = system(*print_cmd(cmd, print_always))
-  ensure
-    raise 'command failed' if fail && !result
+    def initialize(options, working_dir, gem_name)
+      @options  = options
+      @gem_name = gem_name
+
+      ci_file = Dir.glob(ROOT + 'gem_ci' + "#{@gem_name}.rb").first ||
+          Dir.glob(ROOT + 'gem_ci' + 'default.rb').first
+
+      puts "Running #{ci_file}"
+
+      @working_dir     = Pathname(working_dir)
+      @repository_name = gem_name # TODO (pitr-ch 11-Feb-2016): gem name?
+      @subdir          = '.'
+      @result          = nil
+
+      instance_eval File.read(ci_file), ci_file, 1
+    end
+
+    def repository_dir
+      working_dir + repository_name
+    end
+
+    def testing_dir
+      repository_dir + subdir
+    end
+
+    def jruby_path
+      JRUBY_PATH
+    end
+
+    def jruby_truffle_path
+      jruby_path + 'bin' + 'jruby+truffle'
+    end
+
+    def option(key)
+      @options.fetch(key)
+    end
+
+    def git_clone(url, branch: 'master')
+      execute_cmd "git clone -b #{branch} #{url} #{repository_name}", dir: working_dir, print: true
+    end
+
+    def setup
+      execute_cmd [jruby_truffle_path.to_s, 'setup'], dir: testing_dir, print: true
+    end
+
+    def run(options, raise: true)
+      cmd = [jruby_truffle_path.to_s, 'run', *options]
+      cmd = cmd.join ' ' if options.is_a? String
+      execute_cmd cmd, dir: testing_dir, print: true, raise: raise
+    end
+
+    def execute(cmd, dir: testing_dir, raise: true)
+      execute_cmd cmd, dir: dir, print: true, raise: raise
+    end
+
+    def clean
+      FileUtils.rmtree repository_dir
+    end
+
+    def result(boolean)
+      @result = boolean
+    end
+
+    def success?
+      @result
+    end
+
   end
 end

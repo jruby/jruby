@@ -128,8 +128,8 @@ import org.jruby.truffle.language.literal.BooleanLiteralNode;
 import org.jruby.truffle.language.literal.FloatLiteralNode;
 import org.jruby.truffle.language.literal.IntegerFixnumLiteralNode;
 import org.jruby.truffle.language.literal.LongFixnumLiteralNode;
-import org.jruby.truffle.language.literal.ObjectLiteralNode;
 import org.jruby.truffle.language.literal.NilLiteralNode;
+import org.jruby.truffle.language.literal.ObjectLiteralNode;
 import org.jruby.truffle.language.literal.StringLiteralNode;
 import org.jruby.truffle.language.locals.DeclarationFlipFlopStateNode;
 import org.jruby.truffle.language.locals.FlipFlopNode;
@@ -149,10 +149,10 @@ import org.jruby.truffle.language.methods.GetDefaultDefineeNode;
 import org.jruby.truffle.language.methods.MethodDefinitionNode;
 import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.language.objects.DefineOrGetClassNode;
-import org.jruby.truffle.language.objects.DefineOrGetModuleNode;
+import org.jruby.truffle.language.objects.DefineClassNode;
+import org.jruby.truffle.language.objects.DefineModuleNode;
 import org.jruby.truffle.language.objects.LexicalScopeNode;
-import org.jruby.truffle.language.objects.OpenModuleNode;
+import org.jruby.truffle.language.objects.RunModuleDefinitionNode;
 import org.jruby.truffle.language.objects.ReadClassVariableNode;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.language.objects.SelfNode;
@@ -947,7 +947,7 @@ public class BodyTranslator extends Translator {
 
             final ModuleBodyDefinitionNode definition = moduleTranslator.compileClassNode(sourceSection, name, bodyNode, sclass);
 
-            return new OpenModuleNode(context, sourceSection, defineOrGetNode, definition, newLexicalScope);
+            return new RunModuleDefinitionNode(context, sourceSection, newLexicalScope, definition, defineOrGetNode);
         } finally {
             environment.popLexicalScope();
         }
@@ -1004,7 +1004,7 @@ public class BodyTranslator extends Translator {
             superClass = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         }
 
-        final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, name, lexicalParent, superClass);
+        final DefineClassNode defineOrGetClass = new DefineClassNode(context, sourceSection, name, lexicalParent, superClass);
 
         final RubyNode ret = openModule(sourceSection, defineOrGetClass, name, node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
@@ -1015,14 +1015,14 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode rhs = node.getValueNode().accept(this);
 
-        final RubyNode ret = new WriteClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope(), rhs);
+        final RubyNode ret = new WriteClassVariableNode(context, sourceSection, environment.getLexicalScope(), node.getName(), rhs);
         return addNewlineIfNeeded(node, ret);
     }
 
     @Override
     public RubyNode visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode ret = new ReadClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope());
+        final RubyNode ret = new ReadClassVariableNode(context, sourceSection, environment.getLexicalScope(), node.getName());
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2117,7 +2117,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode lexicalParent = translateCPath(sourceSection, node.getCPath());
 
-        final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, lexicalParent);
+        final DefineModuleNode defineModuleNode = new DefineModuleNode(context, sourceSection, name, lexicalParent);
 
         final RubyNode ret = openModule(sourceSection, defineModuleNode, name, node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);

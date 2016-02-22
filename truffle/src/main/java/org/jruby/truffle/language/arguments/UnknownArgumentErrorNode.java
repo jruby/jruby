@@ -27,7 +27,7 @@ public class UnknownArgumentErrorNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new RaiseException(getContext().getCoreLibrary().argumentError(
+        throw new RaiseException(coreLibrary().argumentError(
                 "unknown keyword: " + label, this));
     }
 

@@ -197,7 +197,7 @@ public abstract class MatchDataNodes {
             final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, length);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -212,7 +212,7 @@ public abstract class MatchDataNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                    getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
+                    coreLibrary().indexError(String.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
             }
         }
 
@@ -229,7 +229,7 @@ public abstract class MatchDataNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
+                        coreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
             }
         }
 
@@ -255,7 +255,7 @@ public abstract class MatchDataNodes {
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, length);
         }
 
     }
@@ -275,7 +275,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object beginError(DynamicObject matchData, int index) {
-            throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreLibrary().indexError(String.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {
@@ -295,7 +295,7 @@ public abstract class MatchDataNodes {
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
             Object[] objects = getCaptures(matchData);
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -314,7 +314,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object endError(DynamicObject matchData, int index) {
-            throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreLibrary().indexError(String.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {
@@ -344,7 +344,7 @@ public abstract class MatchDataNodes {
             }
 
             final Object fullTuple = newTupleNode.call(frame,
-                    getContext().getCoreLibrary().getTupleClass(),
+                    coreLibrary().getTupleClass(),
                     "create",
                     null, Layouts.MATCH_DATA.getBegin(matchData), Layouts.MATCH_DATA.getEnd(matchData));
 
@@ -412,7 +412,7 @@ public abstract class MatchDataNodes {
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
             Object[] objects = ArrayUtils.copy(Layouts.MATCH_DATA.getValues(matchData));
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -454,7 +454,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

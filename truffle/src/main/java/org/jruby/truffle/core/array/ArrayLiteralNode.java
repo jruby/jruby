@@ -51,7 +51,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
         }
 
-        return allocateObjectNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, executedValues.length);
+        return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, executedValues.length);
     }
 
     @Override
@@ -90,7 +90,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return allocateObjectNode.allocate(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), null, 0);
         }
 
     }
@@ -114,7 +114,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return allocateObjectNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, values.length);
         }
 
         private DynamicObject makeGeneric(VirtualFrame frame,
@@ -149,7 +149,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return allocateObjectNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, values.length);
         }
 
         private DynamicObject makeGeneric(VirtualFrame frame,
@@ -184,7 +184,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return allocateObjectNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, values.length);
         }
 
         private DynamicObject makeGeneric(VirtualFrame frame,
@@ -215,7 +215,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            return allocateObjectNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, values.length);
         }
 
     }
@@ -237,7 +237,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            final DynamicObject array = allocateObjectNode.allocate(getContext().getCoreLibrary().getArrayClass(), storeSpecialisedFromObjects(executedValues), executedValues.length);
+            final DynamicObject array = allocateObjectNode.allocate(coreLibrary().getArrayClass(), storeSpecialisedFromObjects(executedValues), executedValues.length);
             final Object store = Layouts.ARRAY.getStore(array);
 
             if (store == null) {
@@ -314,7 +314,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 final double[] store = new double[objects.length];
 
                 for (int n = 0; n < objects.length; n++) {
-                    store[n] = CoreLibrary.toDouble(objects[n], getContext().getCoreLibrary().getNilObject());
+                    store[n] = CoreLibrary.toDouble(objects[n], coreLibrary().getNilObject());
                 }
 
                 return store;

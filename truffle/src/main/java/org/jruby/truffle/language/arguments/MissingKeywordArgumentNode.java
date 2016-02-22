@@ -28,7 +28,7 @@ public class MissingKeywordArgumentNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().argumentErrorMissingKeyword(name, this));
+        throw new RaiseException(coreLibrary().argumentErrorMissingKeyword(name, this));
     }
 
 }

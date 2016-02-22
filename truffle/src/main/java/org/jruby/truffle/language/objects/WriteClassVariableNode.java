@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -23,22 +22,24 @@ public class WriteClassVariableNode extends RubyNode {
 
     private final String name;
     private final LexicalScope lexicalScope;
+
     @Child private RubyNode rhs;
 
-    public WriteClassVariableNode(RubyContext context, SourceSection sourceSection, String name, LexicalScope lexicalScope, RubyNode rhs) {
+    public WriteClassVariableNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope,
+                                  String name, RubyNode rhs) {
         super(context, sourceSection);
-        this.name = name;
         this.lexicalScope = lexicalScope;
+        this.name = name;
         this.rhs = rhs;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
         final Object rhsValue = rhs.execute(frame);
 
-        final DynamicObject module = ReadClassVariableNode.resolveTargetModule(lexicalScope);
+        // TODO CS 21-Feb-16 these two operations are uncached and use loops
+
+        final DynamicObject module = lexicalScope.resolveTargetModule();
 
         ModuleOperations.setClassVariable(getContext(), module, name, rhsValue, this);
 
@@ -47,7 +48,7 @@ public class WriteClassVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString("assignment", UTF8Encoding.INSTANCE);
+        return coreStrings().ASSIGNMENT.createInstance();
     }
 
 }

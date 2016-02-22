@@ -88,15 +88,15 @@ public abstract class UnboundMethodNodes {
                 CompilerDirectives.transferToInterpreter();
                 final DynamicObject declaringModule = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
                 if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeError(
+                    throw new RaiseException(coreLibrary().typeError(
                             "singleton method called for a different object", this));
                 } else {
-                    throw new RaiseException(getContext().getCoreLibrary().typeError(
+                    throw new RaiseException(coreLibrary().typeError(
                             "bind argument must be an instance of " + Layouts.MODULE.getFields(declaringModule).getName(), this));
                 }
             }
 
-            return Layouts.METHOD.createMethod(getContext().getCoreLibrary().getMethodFactory(), object, Layouts.UNBOUND_METHOD.getMethod(unboundMethod));
+            return Layouts.METHOD.createMethod(coreLibrary().getMethodFactory(), object, Layouts.UNBOUND_METHOD.getMethod(unboundMethod));
         }
 
         protected DynamicObject metaClass(Object object) {
@@ -182,7 +182,7 @@ public abstract class UnboundMethodNodes {
             } else {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             }
         }
 
@@ -198,7 +198,7 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

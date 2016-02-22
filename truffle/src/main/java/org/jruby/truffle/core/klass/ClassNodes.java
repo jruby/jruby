@@ -172,6 +172,7 @@ public abstract class ClassNodes {
         return rubyClass;
     }
 
+    @TruffleBoundary
     public static DynamicObject getSingletonClass(RubyContext context, DynamicObject rubyClass) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
@@ -268,7 +269,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public DynamicObject initialize(VirtualFrame frame, DynamicObject rubyClass, NotProvided superclass, NotProvided block) {
-            return initializeGeneralWithoutBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass());
+            return initializeGeneralWithoutBlock(frame, rubyClass, coreLibrary().getObjectClass());
         }
 
         @Specialization(guards = "isRubyClass(superclass)")
@@ -278,7 +279,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public DynamicObject initialize(VirtualFrame frame, DynamicObject rubyClass, NotProvided superclass, DynamicObject block) {
-            return initializeGeneralWithBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
+            return initializeGeneralWithBlock(frame, rubyClass, coreLibrary().getObjectClass(), block);
         }
 
         @Specialization(guards = "isRubyClass(superclass)")
@@ -349,7 +350,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createRubyClass(getContext(), getContext().getCoreLibrary().getClassClass(), null, getContext().getCoreLibrary().getObjectClass(), null, false, null);
+            return createRubyClass(getContext(), coreLibrary().getClassClass(), null, coreLibrary().getObjectClass(), null, false, null);
         }
 
     }
