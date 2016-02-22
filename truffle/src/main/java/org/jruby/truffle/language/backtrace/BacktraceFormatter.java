@@ -128,6 +128,10 @@ public class BacktraceFormatter {
     private String formatInLine(List<Activation> activations, DynamicObject exception) {
         final StringBuilder builder = new StringBuilder();
 
+        if (activations.size() == 0) {
+            throw new UnsupportedOperationException();
+        }
+
         final Activation activation = activations.get(0);
 
         if (activation == Activation.OMITTED_LIMIT) {
