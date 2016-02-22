@@ -206,6 +206,11 @@ public class CompiledIRMethod extends AbstractIRMethod {
         return method.getLineNumber();
     }
 
+    @Override
+    public String toString() {
+        return getClass().getName() + '@' + Integer.toHexString(hashCode()) + ' ' + method + ' ' + getSignature();
+    }
+
     private static IRubyObject invokeExact(MethodHandle method,
             ThreadContext context, StaticScope staticScope, IRubyObject self,
             IRubyObject[] args, Block block,
