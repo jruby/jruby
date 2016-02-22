@@ -886,13 +886,16 @@ class Date
       h,   fr = fr.divmod(3600)
       min, fr = fr.divmod(60)
       s,   fr = fr.divmod(1)
+      offset = elem[:offset]
+      unless offset.nil?
+        seconds += offset
+      end
       elem[:jd] = UNIX_EPOCH_IN_CJD + d
       elem[:hour] = h
       elem[:min] = min
       elem[:sec] = s
       elem[:sec_fraction] = fr
       elem.delete(:seconds)
-      elem.delete(:offset)
     end
     elem
   end
