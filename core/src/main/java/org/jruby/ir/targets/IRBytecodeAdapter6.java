@@ -172,14 +172,25 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         });
     }
 
-    private static String keyFor(Object... objs) {
-        StringBuilder sb = new StringBuilder();
-        for (Object obj : objs) {
-            sb.append(obj.toString());
-            if (obj instanceof ByteList) sb.append('_').append(((ByteList) obj).getEncoding());
-            sb.append("_");
-        }
+    private static String keyFor(Object obj1, Object obj2) {
+        StringBuilder sb = new StringBuilder(16);
+        keyFor(sb, obj1);
+        keyFor(sb, obj2);
         return sb.toString();
+    }
+
+    private static String keyFor(Object obj1, Object obj2, Object obj3) {
+        StringBuilder sb = new StringBuilder(24);
+        keyFor(sb, obj1);
+        keyFor(sb, obj2);
+        keyFor(sb, obj3);
+        return sb.toString();
+    }
+
+    private static void keyFor(StringBuilder builder, Object obj) {
+        builder.append(obj.toString());
+        if (obj instanceof ByteList) builder.append('_').append(((ByteList) obj).getEncoding());
+        builder.append('_');
     }
 
     public void pushDRegexp(final Runnable callback, final RegexpOptions options, final int arity) {
@@ -188,11 +199,14 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         SkinnyMethodAdapter adapter2;
         final String incomingSig = sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity, int.class));
 
-        if (!getClassData().dregexpMethodsDefined.contains(arity)) {
+        final String methodName = "dregexp:" + arity;
+        final ClassData classData = getClassData();
+
+        if (!classData.dregexpMethodsDefined.contains(arity)) {
             adapter2 = new SkinnyMethodAdapter(
                     adapter.getClassVisitor(),
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
-                    "dregexp:" + arity,
+                    methodName,
                     incomingSig,
                     null,
                     null);
@@ -205,21 +219,23 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             adapter2.areturn();
             adapter2.end();
 
-            getClassData().dregexpMethodsDefined.add(arity);
+            classData.dregexpMethodsDefined.add(arity);
         }
+
+        final String className = classData.clsName;
 
         if (options.isOnce()) {
             // need to cache result forever, but do it under sync to avoid double init
-            final String cacheField = "dregexp" + getClassData().callSiteCount.getAndIncrement();
+            final String cacheField = "dregexp" + classData.callSiteCount.getAndIncrement();
             final Label done = new Label();
-            final String clsDesc = "L" + getClassData().clsName.replaceAll("\\.", "/") + ";";
+            final String clsDesc = 'L' + className.replace('.', '/') + ';';
             adapter.ldc(Type.getType(clsDesc));
             adapter.monitorenter();
             adapter.trycatch(p(Throwable.class),
                     new Runnable() {
                         public void run() {
                             adapter.getClassVisitor().visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
-                            adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
+                            adapter.getstatic(className, cacheField, ci(RubyRegexp.class));
                             adapter.dup();
                             adapter.ifnonnull(done);
                             adapter.pop();
@@ -227,10 +243,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                             // call synthetic method if we still need to build dregexp
                             callback.run();
                             adapter.ldc(options.toEmbeddedOptions());
-                            adapter.invokestatic(getClassData().clsName, "dregexp:" + arity, incomingSig);
+                            adapter.invokestatic(className, methodName, incomingSig);
 
                             adapter.dup();
-                            adapter.putstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
+                            adapter.putstatic(className, cacheField, ci(RubyRegexp.class));
                             adapter.label(done);
 
                             adapter.ldc(Type.getType(clsDesc));
@@ -248,7 +264,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             // call synthetic method if we still need to build dregexp
             callback.run();
             adapter.ldc(options.toEmbeddedOptions());
-            adapter.invokestatic(getClassData().clsName, "dregexp:" + arity, incomingSig);
+            adapter.invokestatic(className, methodName, incomingSig);
         }
     }
 
@@ -473,7 +489,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));
 
-        String methodName = "invokeOtherOneFloat" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+        String methodName = "invokeOtherOneFloat" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -559,7 +575,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                     sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, String.class, RubyModule.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class));
         }
 
-        String methodName = "invokeSuper" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+        String methodName = "invokeSuper" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
@@ -661,7 +677,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(VariableAccessor.class, params(JVM.OBJECT));
 
-        String methodName = (write ? "ivarSet" : "ivarGet") + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+        String methodName = (write ? "ivarSet" : "ivarGet") + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -674,8 +690,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         // call site object field
         adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(VariableAccessor.class), null, null).visitEnd();
 
+        final String className = getClassData().clsName;
+
         // retrieve accessor, verifying if non-null
-        adapter2.getstatic(getClassData().clsName, methodName, ci(VariableAccessor.class));
+        adapter2.getstatic(className, methodName, ci(VariableAccessor.class));
         adapter2.dup();
         Label get = new Label();
         adapter2.ifnull(get);
@@ -693,13 +711,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter2.ldc(name);
         adapter2.invokestatic(p(IRRuntimeHelpers.class), write ? "getVariableAccessorForWrite" : "getVariableAccessorForRead", sig(VariableAccessor.class, IRubyObject.class, String.class));
         adapter2.dup();
-        adapter2.putstatic(getClassData().clsName, methodName, ci(VariableAccessor.class));
+        adapter2.putstatic(className, methodName, ci(VariableAccessor.class));
         adapter2.areturn();
 
         adapter2.end();
 
         // call it from original method to get accessor
-        adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
+        adapter.invokestatic(className, methodName, incomingSig);
     }
 
     public void array(int length) {
@@ -708,11 +726,14 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length));
 
-        if (!getClassData().arrayMethodsDefined.contains(length)) {
+        final String methodName = "array:" + length;
+        final ClassData classData = getClassData();
+
+        if (!classData.arrayMethodsDefined.contains(length)) {
             adapter2 = new SkinnyMethodAdapter(
                     adapter.getClassVisitor(),
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
-                    "array:" + length,
+                    methodName,
                     incomingSig,
                     null,
                     null);
@@ -725,11 +746,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             adapter2.areturn();
             adapter2.end();
 
-            getClassData().arrayMethodsDefined.add(length);
+            classData.arrayMethodsDefined.add(length);
         }
 
         // now call it
-        adapter.invokestatic(getClassData().clsName, "array:" + length, incomingSig);
+        adapter.invokestatic(classData.clsName, methodName, incomingSig);
     }
 
     public void hash(int length) {
@@ -738,11 +759,14 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2));
 
-        if (!getClassData().hashMethodsDefined.contains(length)) {
+        final String methodName = "hash:" + length;
+        final ClassData classData = getClassData();
+
+        if (!classData.hashMethodsDefined.contains(length)) {
             adapter2 = new SkinnyMethodAdapter(
                     adapter.getClassVisitor(),
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
-                    "hash:" + length,
+                    methodName,
                     incomingSig,
                     null,
                     null);
@@ -755,11 +779,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             adapter2.areturn();
             adapter2.end();
 
-            getClassData().hashMethodsDefined.add(length);
+            classData.hashMethodsDefined.add(length);
         }
 
         // now call it
-        adapter.invokestatic(getClassData().clsName, "hash:" + length, incomingSig);
+        adapter.invokestatic(classData.clsName, methodName, incomingSig);
     }
 
     public void kwargsHash(int length) {
@@ -768,11 +792,14 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, RubyHash.class, IRubyObject.class, length * 2));
 
-        if (!getClassData().kwargsHashMethodsDefined.contains(length)) {
+        final String methodName = "kwargsHash:" + length;
+        final ClassData classData = getClassData();
+
+        if (!classData.kwargsHashMethodsDefined.contains(length)) {
             adapter2 = new SkinnyMethodAdapter(
                     adapter.getClassVisitor(),
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
-                    "kwargsHash:" + length,
+                    methodName,
                     incomingSig,
                     null,
                     null);
@@ -785,11 +812,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             adapter2.areturn();
             adapter2.end();
 
-            getClassData().kwargsHashMethodsDefined.add(length);
+            classData.kwargsHashMethodsDefined.add(length);
         }
 
         // now call it
-        adapter.invokestatic(getClassData().clsName, "kwargsHash:" + length, incomingSig);
+        adapter.invokestatic(classData.clsName, methodName, incomingSig);
     }
 
     public void checkpoint() {
