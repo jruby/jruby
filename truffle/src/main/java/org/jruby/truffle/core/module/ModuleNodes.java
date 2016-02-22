@@ -671,7 +671,7 @@ public abstract class ModuleNodes {
 
             CompilerDirectives.transferToInterpreter();
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS
-            final String space = new String(new char[Integer.max(line - 1, 0)]).replace("\0", "\n");
+            final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
             Source source = Source.fromText(space + code.toString(), file);
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, encoding, ParserContext.MODULE, callerFrame, true, this);
