@@ -24,7 +24,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
 
-public class OpenModuleNode extends RubyNode {
+public class RunModuleDefinitionNode extends RubyNode {
 
     final protected LexicalScope lexicalScope;
 
@@ -32,8 +32,8 @@ public class OpenModuleNode extends RubyNode {
     @Child private ModuleBodyDefinitionNode definitionMethod;
     @Child private IndirectCallNode callModuleDefinitionNode;
 
-    public OpenModuleNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope,
-                          ModuleBodyDefinitionNode definition, RubyNode definingModule) {
+    public RunModuleDefinitionNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope,
+                                   ModuleBodyDefinitionNode definition, RubyNode definingModule) {
         super(context, sourceSection);
         this.definingModule = definingModule;
         this.definitionMethod = definition;
