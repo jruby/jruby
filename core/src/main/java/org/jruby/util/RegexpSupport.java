@@ -119,10 +119,13 @@ public class RegexpSupport {
                             p -= 2;
                             if (enc == USASCIIEncoding.INSTANCE) {
                                 if (buf == null) buf = new byte[1];
+                                int pbeg = p;
                                 p = readEscapedByte(runtime, buf, 0, bytes, p, end, str, mode);
                                 c = buf[0];
                                 if (c == (char)-1) return false;
-                                if (to != null) to.append(c);
+                                if (to != null) {
+                                    to.append(bytes, pbeg, p - pbeg);
+                                }
                             }
                             else {
                                 p = unescapeEscapedNonAscii(runtime, to, bytes, p, end, enc, encp, str, mode);
