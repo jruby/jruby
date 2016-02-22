@@ -240,17 +240,7 @@ public abstract class LexingCommon {
      * mri: is_identchar
      */
     public boolean isIdentifierChar(int c) {
-        return Character.isLetterOrDigit(c) || c == '_' || isMultiByteChar(c);
-    }
-
-    /**
-     * Is this a multibyte character from a multibyte encoding?
-     *
-     * @param c byte to check against
-     * @return whether c is an multibyte char or not
-     */
-    protected boolean isMultiByteChar(int c) {
-        return current_enc.codeToMbcLength(c) != 1;
+        return c != EOF && (Character.isLetterOrDigit(c) || c == '_' || !isASCII(c));
     }
 
     public void lex_goto_eol() {
@@ -540,7 +530,6 @@ public abstract class LexingCommon {
      */
     public boolean tokadd_mbchar(int first_byte) {
         int length = precise_mbclen();
-
 
         if (length <= 0) {
             compile_error("invalid multibyte char (" + getEncoding() + ")");
