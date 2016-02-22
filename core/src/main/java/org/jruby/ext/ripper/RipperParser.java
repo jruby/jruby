@@ -1829,10 +1829,10 @@ states[37] = new RipperParserState() {
 };
 states[38] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_opassign", 
+                    yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop])), 
-                                    ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop])));
+                                    ((IRubyObject)yyVals[-1+yyTop]),
+                                    ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };

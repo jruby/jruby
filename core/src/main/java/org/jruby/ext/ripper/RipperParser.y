@@ -340,10 +340,10 @@ stmt            : kALIAS fitem {
                                     $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    $$ = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_opassign", 
+                    $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_const_path_field", $1, $3), 
-                                    $4, $5));
+                                    $4,
+                                    $5);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
                     $$ = p.dispatch("on_opassign", 
