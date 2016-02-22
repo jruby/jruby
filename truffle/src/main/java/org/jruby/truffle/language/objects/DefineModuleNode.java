@@ -25,9 +25,6 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-/**
- * Define a new module, or get the existing one of the same name.
- */
 public class DefineModuleNode extends RubyNode {
 
     protected final String name;
@@ -46,7 +43,14 @@ public class DefineModuleNode extends RubyNode {
 
         // Look for a current definition of the module, or create a new one
 
-        DynamicObject lexicalParent = getLexicalParentModule(frame);
+        final Object lexicalParent1 = lexicalParentModule.execute(frame);;
+
+        if (!RubyGuards.isRubyModule(lexicalParent1)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParent1.toString(), "module", this));
+        }
+
+        DynamicObject lexicalParent = (DynamicObject) lexicalParent1;
         final RubyConstant constant = lookupForExistingModule(lexicalParent);
 
         DynamicObject definingModule;
@@ -62,17 +66,6 @@ public class DefineModuleNode extends RubyNode {
         }
 
         return definingModule;
-    }
-
-    protected DynamicObject getLexicalParentModule(VirtualFrame frame) {
-        final Object lexicalParent = lexicalParentModule.execute(frame);;
-
-        if (!RubyGuards.isRubyModule(lexicalParent)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParent.toString(), "module", this));
-        }
-
-        return (DynamicObject) lexicalParent;
     }
 
     @TruffleBoundary
