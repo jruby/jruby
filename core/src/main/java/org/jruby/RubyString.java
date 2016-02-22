@@ -1979,6 +1979,70 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     // MRI: rb_str_escape
+    public static IRubyObject rbStrEscape(ThreadContext context, RubyString str) {
+        Ruby runtime = context.runtime;
+
+        Encoding enc = str.getEncoding();
+        ByteList strBL = str.getByteList();
+        byte[] pBytes = strBL.unsafeBytes();
+        int p = strBL.begin();
+        int pend = p + strBL.realSize();
+        int prev = p;
+        RubyString result = RubyString.newEmptyString(runtime);
+        boolean unicode_p = enc.isUnicode();
+        boolean asciicompat = enc.isAsciiCompatible();
+
+        while (p < pend) {
+            int c, cc;
+            int n = enc.length(pBytes, p, pend);
+            if (!MBCLEN_CHARFOUND_P(n)) {
+                if (p > prev) result.cat(pBytes, prev, p - prev);
+                n = enc.minLength();
+                if (pend < p + n)
+                    n = (int)(pend - p);
+                while ((n--) > 0) {
+                    result.modify();
+                    Sprintf.sprintf(runtime, result.getByteList(), "\\x%02X", pBytes[p] & 0377);
+                    prev = ++p;
+                }
+                continue;
+            }
+            n = MBCLEN_CHARFOUND_LEN(n);
+            c = enc.mbcToCode(pBytes, p, pend);
+            p += n;
+            switch (c) {
+                case '\n': cc = 'n'; break;
+                case '\r': cc = 'r'; break;
+                case '\t': cc = 't'; break;
+                case '\f': cc = 'f'; break;
+                case '\013': cc = 'v'; break;
+                case '\010': cc = 'b'; break;
+                case '\007': cc = 'a'; break;
+                case 033: cc = 'e'; break;
+                default: cc = 0; break;
+            }
+            if (cc != 0) {
+                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
+                result.cat('\\');
+                result.cat((byte) cc);
+                prev = p;
+            }
+            else if (asciicompat && Encoding.isAscii(c) && (c < 0x7F && c > 31 /*ISPRINT(c)*/)) {
+            }
+            else {
+                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
+                result.modify();
+                Sprintf.sprintf(runtime, result.getByteList(), StringSupport.escapedCharFormat(c, unicode_p), (c & 0xFFFFFFFFL));
+                prev = p;
+            }
+        }
+        if (p > prev) result.cat(pBytes, prev, p - prev);
+        result.setEncodingAndCodeRange(USASCIIEncoding.INSTANCE, CR_7BIT);
+
+        result.infectBy(str);
+        return result;
+    }
+
     public static IRubyObject inspect19(Ruby runtime, ByteList byteList) {
         Encoding enc = byteList.getEncoding();
         byte bytes[] = byteList.getUnsafeBytes();

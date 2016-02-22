@@ -1100,12 +1100,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (enc == null) enc = runtime.getDefaultExternalEncoding();
         if (!enc.isAsciiCompatible()) {
             if (!str.isAsciiOnly()) {
-                return RubyString.inspect19(runtime, str.getByteList());
+                return RubyString.rbStrEscape(context, str);
             }
             return str;
         }
         if (str.getEncoding() != enc && !str.isAsciiOnly()) {
-            return RubyString.inspect19(runtime, str.getByteList());
+            return RubyString.rbStrEscape(context, str);
         }
         return str;
     }
