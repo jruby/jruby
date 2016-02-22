@@ -2,7 +2,7 @@ package org.jruby.runtime.backtrace;
 
 import org.jruby.lexer.yacc.ISourcePosition;
 
-public class BacktraceElement {
+public final class BacktraceElement implements Cloneable {
 
     public BacktraceElement() {
     }
