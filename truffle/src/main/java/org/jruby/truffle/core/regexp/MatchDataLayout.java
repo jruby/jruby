@@ -49,9 +49,9 @@ public interface MatchDataLayout extends BasicObjectLayout {
     int getEnd(DynamicObject object);
 
     Region getCharOffsets(DynamicObject object);
-    void setCharOffsets(DynamicObject object, Region charOffsets);
+    void setCharOffsets(DynamicObject object, Region value);
 
     Object getFullTuple(DynamicObject object);
-    void setFullTuple(DynamicObject object, Object fullTuple);
+    void setFullTuple(DynamicObject object, Object value);
 
 }

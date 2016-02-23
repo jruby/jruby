@@ -32,6 +32,6 @@ public interface BigDecimalLayout extends BasicObjectLayout {
     void setValue(DynamicObject object, BigDecimal value);
 
     BigDecimalNodes.Type getType(DynamicObject object);
-    void setType(DynamicObject object, BigDecimalNodes.Type type);
+    void setType(DynamicObject object, BigDecimalNodes.Type value);
 
 }

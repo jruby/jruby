@@ -31,12 +31,12 @@ public interface EmitterLayout extends BasicObjectLayout {
     boolean isEmitter(DynamicObject object);
 
     Emitter getEmitter(DynamicObject object);
-    void setEmitter(DynamicObject object, Emitter emitter);
+    void setEmitter(DynamicObject object, Emitter value);
 
     DumperOptions getOptions(DynamicObject object);
-    void setOptions(DynamicObject object, DumperOptions options);
+    void setOptions(DynamicObject object, DumperOptions value);
 
     Object getIo(DynamicObject object);
-    void setIo(DynamicObject object, Object io);
+    void setIo(DynamicObject object, Object value);
 
 }

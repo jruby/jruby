@@ -26,6 +26,6 @@ public interface WeakRefLayout extends BasicObjectLayout {
                                 WeakReference<Object> reference);
 
     WeakReference<Object> getReference(DynamicObject object);
-    void setReference(DynamicObject object, WeakReference<Object> reference);
+    void setReference(DynamicObject object, WeakReference<Object> value);
 
 }

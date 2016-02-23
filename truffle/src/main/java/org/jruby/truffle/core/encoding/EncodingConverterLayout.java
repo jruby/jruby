@@ -28,6 +28,6 @@ public interface EncodingConverterLayout extends BasicObjectLayout {
     boolean isEncodingConverter(DynamicObject object);
 
     EConv getEconv(DynamicObject object);
-    void setEconv(DynamicObject object, EConv econv);
+    void setEconv(DynamicObject object, EConv value);
 
 }

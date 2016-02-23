@@ -27,6 +27,6 @@ public interface PointerLayout extends BasicObjectLayout {
     boolean isPointer(DynamicObject object);
 
     Pointer getPointer(DynamicObject object);
-    void setPointer(DynamicObject object, Pointer pointer);
+    void setPointer(DynamicObject object, Pointer value);
 
 }

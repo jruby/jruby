@@ -37,6 +37,6 @@ public interface SymbolLayout extends BasicObjectLayout {
     int getHashCode(DynamicObject object);
 
     SymbolCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
-    void setCodeRangeableWrapper(DynamicObject object, SymbolCodeRangeableWrapper codeRangeableWrapper);
+    void setCodeRangeableWrapper(DynamicObject object, SymbolCodeRangeableWrapper value);
 
 }
