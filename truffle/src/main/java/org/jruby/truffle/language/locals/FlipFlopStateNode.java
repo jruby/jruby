@@ -15,10 +15,6 @@ import com.oracle.truffle.api.source.SourceSection;
 
 public abstract class FlipFlopStateNode extends Node {
 
-    public FlipFlopStateNode(SourceSection sourceSection) {
-        super(sourceSection);
-    }
-
     public abstract boolean getState(VirtualFrame frame);
 
     public abstract void setState(VirtualFrame frame, boolean state);

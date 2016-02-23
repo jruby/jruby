@@ -1406,9 +1406,9 @@ public class BodyTranslator extends Translator {
         environment.getFlipFlopStates().add(frameSlot);
 
         if (depth == 0) {
-            return new LocalFlipFlopStateNode(sourceSection, frameSlot);
+            return new LocalFlipFlopStateNode(frameSlot);
         } else {
-            return new DeclarationFlipFlopStateNode(sourceSection, depth, frameSlot);
+            return new DeclarationFlipFlopStateNode(depth, frameSlot);
         }
     }
 

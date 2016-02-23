@@ -21,9 +21,7 @@ public class DeclarationFlipFlopStateNode extends FlipFlopStateNode {
     private final int level;
     private final FrameSlot frameSlot;
 
-    public DeclarationFlipFlopStateNode(SourceSection sourceSection, int level,
-                                        FrameSlot frameSlot) {
-        super(sourceSection);
+    public DeclarationFlipFlopStateNode(int level, FrameSlot frameSlot) {
         this.level = level;
         this.frameSlot = frameSlot;
     }

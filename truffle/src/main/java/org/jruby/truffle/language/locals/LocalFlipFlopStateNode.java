@@ -18,8 +18,7 @@ public class LocalFlipFlopStateNode extends FlipFlopStateNode {
 
     private final FrameSlot frameSlot;
 
-    public LocalFlipFlopStateNode(SourceSection sourceSection, FrameSlot frameSlot) {
-        super(sourceSection);
+    public LocalFlipFlopStateNode(FrameSlot frameSlot) {
         this.frameSlot = frameSlot;
     }
 
