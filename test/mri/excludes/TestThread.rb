@@ -9,6 +9,7 @@ exclude :test_main_thread_variable_in_enumerator, "differing notions of current 
 exclude :test_mutex_interrupt, "hangs"
 exclude :test_mutex_unlock_on_trap, "traps execute in a separate thread in JRuby, and can't unlock a mutex"
 exclude :test_no_valid_cfp, "may depend on MRI internal stack structures"
+exclude :test_priority, "unreliably depends on thread scheduling"
 exclude :test_recursive_outer, "expected to be fixed by our change based on MRI r43981 but was not"
 exclude :test_safe_level, "SAFE levels are unsupported"
 exclude :test_thread_join_main_thread, "hangs"
