@@ -51,6 +51,7 @@ import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
+import org.jruby.util.TypeConverter;
 
 import java.math.BigInteger;
 
@@ -267,8 +268,16 @@ public class RubyNumeric extends RubyObject {
             }
         }
 
-        IRubyObject val = f_to_f(runtime.getCurrentContext(), arg);
+        IRubyObject val = numericToFloat(runtime, arg);
         return ((RubyFloat) val).getDoubleValue();
+    }
+
+    private static IRubyObject numericToFloat(Ruby runtime, IRubyObject num) {
+        if (!(num instanceof RubyNumeric)) {
+            throw runtime.newTypeError("can't convert " + num.getType() + " into Float");
+        }
+
+        return TypeConverter.convertToType(num, runtime.getFloat(), "to_f");
     }
 
     /** rb_dbl_cmp (numeric.c)
