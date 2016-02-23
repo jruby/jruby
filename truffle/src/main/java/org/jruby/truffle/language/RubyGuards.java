@@ -265,11 +265,4 @@ public abstract class RubyGuards {
         return Double.isInfinite(value);
     }
 
-    // Operations
-
-    @TruffleBoundary
-    public static boolean updateShape(DynamicObject object) {
-        return object.updateShape();
-    }
-
 }
