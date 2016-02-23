@@ -59,8 +59,13 @@ module Utilities
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
   end
 
+  def self.jruby_eclipse?
+    # tool/jruby_eclipse only works on release currently
+    ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
+  end
+
   def self.find_jruby
-    if USE_JRUBY_ECLIPSE
+    if jruby_eclipse?
       "#{JRUBY_DIR}/tool/jruby_eclipse"
     elsif ENV['RUBY_BIN']
       ENV['RUBY_BIN']
@@ -211,7 +216,7 @@ module ShellUtils
       command, *args = args
     end
 
-    if USE_JRUBY_ECLIPSE
+    if Utilities.jruby_eclipse?
       args.unshift "-ttool/jruby_eclipse"
     end
 
@@ -739,6 +744,8 @@ module Commands
 
   def check_ambiguous_arguments
     ENV.delete "JRUBY_ECLIPSE" # never run from the Eclipse launcher here
+    clean
+    # modify pom
     pom = "#{JRUBY_DIR}/truffle/pom.rb"
     contents = File.read(pom)
     contents.gsub!(/^(\s+)'source'\s*=>.+'1.7'.+,\n\s+'target'\s*=>.+\s*'1.7.+,\n/) do
@@ -749,8 +756,8 @@ module Commands
       "#{$1}#{$2},\n#{$1}'-parameters'#{$3}"
     end
     File.write pom, contents
-    FileUtils::Verbose.rm_r "#{JRUBY_DIR}/truffle/target/classes"
-    build('truffle')
+
+    build
     run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
   end
 
@@ -824,8 +831,5 @@ class JT
     end
   end
 end
-
-# tool/jruby_eclipse only works on release currently
-USE_JRUBY_ECLIPSE = ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
 
 JT.new.main(ARGV)
