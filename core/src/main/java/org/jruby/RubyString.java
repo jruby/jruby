@@ -1467,7 +1467,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
             Encoding enc = value.getEncoding();
             // this really needs to be inlined here
-            if (singleByteOptimizable(enc)) {
+            if (singleByteOptimizable()) {
                 for (int i = 0; i < len >> 1; i++) {
                     byte b = bytes[p + i];
                     bytes[p + i] = bytes[p + len - i - 1];
@@ -1476,12 +1476,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             } else if (cr == CR_VALID) {
                 byte[] obytes = new byte[len];
                 while (p < end) {
-                    int cl = StringSupport.length(enc, bytes, p, end);
+                    int cl = StringSupport.encFastMBCLen(bytes, p, end, enc);
 
                     op -= cl;
                     System.arraycopy(bytes, p, obytes, op, cl);
                     p += cl;
                 }
+                value.setUnsafeBytes(obytes);
             } else {
                 byte[] obytes = new byte[len];
                 cr = enc.isAsciiCompatible() ? CR_7BIT : CR_VALID;
