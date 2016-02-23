@@ -1397,7 +1397,7 @@ public class BodyTranslator extends Translator {
 
         final FlipFlopStateNode stateNode = createFlipFlopState(sourceSection, 0);
 
-        final RubyNode ret = new FlipFlopNode(context, sourceSection, begin, end, stateNode, node.isExclusive());
+        final RubyNode ret = new FlipFlopNode(node.isExclusive(), sourceSection, begin, end, stateNode, context);
         return addNewlineIfNeeded(node, ret);
     }
 
