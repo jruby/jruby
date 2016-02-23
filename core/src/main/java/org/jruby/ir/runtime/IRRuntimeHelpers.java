@@ -1764,7 +1764,6 @@ public class IRRuntimeHelpers {
         return block;
     }
 
-    @JIT
     public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
         Ruby runtime = context.runtime;
 
