@@ -683,6 +683,8 @@ public final class ThreadContext {
      * @return an Array with the backtrace locations
      */
     public IRubyObject createCallerLocations(int level, Integer length, StackTraceElement[] stacktrace) {
+        runtime.incrementCallerCount();
+
         RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
 
         if (trace == null) return nil;
@@ -691,7 +693,6 @@ public final class ThreadContext {
     }
 
     private RubyStackTraceElement[] getTraceSubset(int level, Integer length, StackTraceElement[] stacktrace) {
-        runtime.incrementCallerCount();
 
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
 
@@ -751,8 +752,14 @@ public final class ThreadContext {
      * @return the backtrace
      */
     public BacktraceElement[] getBacktrace() {
-        BacktraceElement[] newTrace = new BacktraceElement[backtraceIndex + 1];
-        System.arraycopy(backtrace, 0, newTrace, 0, newTrace.length);
+        return getBacktrace(0);
+    }
+
+    public final BacktraceElement[] getBacktrace(int level) {
+        final int len = backtraceIndex + 1;
+        if ( level < 0 ) level = len + level;
+        BacktraceElement[] newTrace = new BacktraceElement[len - level];
+        System.arraycopy(backtrace, level, newTrace, 0, newTrace.length);
         return newTrace;
     }
 
