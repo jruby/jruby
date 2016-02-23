@@ -9,39 +9,46 @@
  */
 package org.jruby.truffle.language.locals;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 public class WriteDeclarationVariableNode extends RubyNode {
 
+    private final int frameDepth;
+    private final FrameSlot frameSlot;
+
     @Child private RubyNode valueNode;
     @Child private WriteFrameSlotNode writeFrameSlotNode;
 
-    private final int frameDepth;
-
     public WriteDeclarationVariableNode(RubyContext context, SourceSection sourceSection,
-                                        RubyNode valueNode, int frameDepth, FrameSlot frameSlot) {
+                                        FrameSlot frameSlot, int frameDepth, RubyNode valueNode) {
         super(context, sourceSection);
-        this.valueNode = valueNode;
-        writeFrameSlotNode = WriteFrameSlotNodeGen.create(frameSlot);
         this.frameDepth = frameDepth;
+        this.frameSlot = frameSlot;
+        this.valueNode = valueNode;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
+        if (writeFrameSlotNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            writeFrameSlotNode = insert(WriteFrameSlotNodeGen.create(frameSlot));
+        }
+
         final MaterializedFrame declarationFrame = RubyArguments.getDeclarationFrame(frame, frameDepth);
-        return writeFrameSlotNode.executeWrite(declarationFrame, valueNode.execute(frame));
+        final Object value = valueNode.execute(frame);
+        return writeFrameSlotNode.executeWrite(declarationFrame, value);
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString("assignment", UTF8Encoding.INSTANCE);
+        return coreStrings().ASSIGNMENT.createInstance();
     }
 
 }

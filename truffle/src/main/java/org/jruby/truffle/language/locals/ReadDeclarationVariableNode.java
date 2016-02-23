@@ -14,16 +14,10 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.translator.ReadLocalNode;
-import org.jruby.truffle.language.translator.Translator;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 public class ReadDeclarationVariableNode extends ReadLocalNode {
 
@@ -81,7 +75,7 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteDeclarationVariableNode(getContext(), getSourceSection(), rhs, frameDepth, frameSlot);
+        return new WriteDeclarationVariableNode(getContext(), getSourceSection(), frameSlot, frameDepth, rhs);
     }
 
 }
