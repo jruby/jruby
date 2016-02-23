@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -19,6 +20,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
+@ImportStatic(ShapeCachingGuards.class)
 @NodeChild(value="object", type=RubyNode.class)
 public abstract class LogicalClassNode extends RubyNode {
 
