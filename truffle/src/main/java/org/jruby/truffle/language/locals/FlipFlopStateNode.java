@@ -11,7 +11,6 @@ package org.jruby.truffle.language.locals;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.source.SourceSection;
 
 public abstract class FlipFlopStateNode extends Node {
 
