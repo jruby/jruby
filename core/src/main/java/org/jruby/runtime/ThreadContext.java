@@ -266,7 +266,7 @@ public final class ThreadContext {
     }
 
     private void expandFrameStack() {
-        int newSize = frameStack.length * 2;
+        final int newSize = frameStack.length * 2;
         frameStack = fillNewFrameStack(new Frame[newSize], newSize);
     }
 
@@ -506,7 +506,7 @@ public final class ThreadContext {
     /////////////////// BACKTRACE ////////////////////
 
     private static void expandBacktraceStack(ThreadContext context) {
-        int newSize = context.backtrace.length * 2;
+        final int newSize = context.backtrace.length * 2;
         context.backtrace = fillNewBacktrace(context, new BacktraceElement[newSize], newSize);
     }
 
@@ -521,11 +521,11 @@ public final class ThreadContext {
     }
 
     public static void pushBacktrace(ThreadContext context, String method, String file, int line) {
-        int index = ++context.backtraceIndex;
-        BacktraceElement[] stack = context.backtrace;
-        BacktraceElement.update(stack[index], method, file, line);
-        if (index + 1 == stack.length) {
-            ThreadContext.expandBacktraceStack(context);
+        final int index = ++context.backtraceIndex;
+        BacktraceElement[] backtrace = context.backtrace;
+        BacktraceElement.update(backtrace[index], method, file, line);
+        if (index + 1 == backtrace.length) {
+            expandBacktraceStack(context);
         }
     }
 
@@ -741,14 +741,16 @@ public final class ThreadContext {
         eventHooksEnabled = flag;
     }
 
-    /**
-     * Create an Array with backtrace information.
-     * @param level
-     * @param nativeException
-     * @return an Array with the backtrace
-     */
+    @Deprecated
     public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
-        BacktraceElement[] backtrace = this.backtrace;
+        return getBacktrace();
+    }
+
+    /**
+     * Create a snapshot Array with current backtrace information.
+     * @return the backtrace
+     */
+    public BacktraceElement[] getBacktrace() {
         BacktraceElement[] newTrace = new BacktraceElement[backtraceIndex + 1];
         System.arraycopy(backtrace, 0, newTrace, 0, newTrace.length);
         return newTrace;

@@ -155,7 +155,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        context.createBacktrace2(0, nativeException),
+                        context.getBacktrace(),
                         true,
                         false,
                         false);
@@ -169,7 +169,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        context.createBacktrace2(0, nativeException),
+                        context.getBacktrace(),
                         false,
                         false,
                         true);
@@ -183,7 +183,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        context.createBacktrace2(0, nativeException),
+                        context.getBacktrace(),
                         false,
                         context.runtime.getInstanceConfig().getBacktraceMask(),
                         false);
@@ -197,7 +197,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        context.createBacktrace2(0, nativeException),
+                        context.getBacktrace(),
                         false,
                         true,
                         false);
