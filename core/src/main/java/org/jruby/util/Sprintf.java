@@ -169,10 +169,10 @@ public class Sprintf {
                     } else if (rubyHash.hasDefaultProc()) {
                         object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                     }
-                }
 
-                if (object.isNil()) {
-                    throw runtime.newKeyError("key " + nameSym + " not found");
+                    if (object.isNil()) {
+                        throw runtime.newKeyError("key " + nameSym + " not found");
+                    }
                 }
 
                 return object;
