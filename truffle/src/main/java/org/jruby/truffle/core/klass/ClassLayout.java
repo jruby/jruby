@@ -23,7 +23,7 @@ public interface ClassLayout extends ModuleLayout {
                                           DynamicObject metaClass);
 
     DynamicObject createClass(DynamicObjectFactory factory,
-                              ModuleFields model,
+                              ModuleFields fields,
                               boolean isSingleton,
                               @Nullable DynamicObject attached,
                               @Nullable DynamicObjectFactory instanceFactory);
@@ -36,6 +36,6 @@ public interface ClassLayout extends ModuleLayout {
     DynamicObject getAttached(DynamicObject object);
 
     DynamicObjectFactory getInstanceFactory(DynamicObject object);
-    void setInstanceFactoryUnsafe(DynamicObject object, DynamicObjectFactory instanceFactory);
+    void setInstanceFactoryUnsafe(DynamicObject object, DynamicObjectFactory value);
 
 }
