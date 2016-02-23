@@ -21,71 +21,71 @@ import org.jruby.truffle.language.RubyGuards;
 @ImportStatic(RubyGuards.class)
 public abstract class WriteFrameSlotNode extends Node {
 
-    protected final FrameSlot frameSlot;
+    private final FrameSlot frameSlot;
 
     public WriteFrameSlotNode(FrameSlot frameSlot) {
-        assert frameSlot != null;
         this.frameSlot = frameSlot;
     }
 
     public abstract Object executeWrite(Frame frame, Object value);
 
-    @Specialization(guards = "isBooleanKind(frame)")
+    @Specialization(guards = "checkBooleanKind(frame)")
     public boolean writeBoolean(Frame frame, boolean value) {
         frame.setBoolean(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "isIntegerKind(frame)")
+    @Specialization(guards = "checkIntegerKind(frame)")
     public int writeInteger(Frame frame, int value) {
         frame.setInt(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "isLongKind(frame)")
+    @Specialization(guards = "checkLongKind(frame)")
     public long writeLong(Frame frame, long value) {
         frame.setLong(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "isDoubleKind(frame)")
+    @Specialization(guards = "checkDoubleKind(frame)")
     public double writeDouble(Frame frame, double value) {
         frame.setDouble(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "isObjectKind(frame)")
+    @Specialization(guards = "checkObjectKind(frame)")
     public Object writeObject(Frame frame, Object value) {
         assert RubyGuards.wasProvided(value); // Useful debug aid to catch a running-away NotProvided
         frame.setObject(frameSlot, value);
         return value;
     }
 
-    protected final boolean isBooleanKind(Frame frame) {
-        return isKind(FrameSlotKind.Boolean);
+    protected boolean checkBooleanKind(Frame frame) {
+        return checkKind(FrameSlotKind.Boolean);
     }
 
-    protected final boolean isIntegerKind(Frame frame) {
-        return isKind(FrameSlotKind.Int);
+    protected boolean checkIntegerKind(Frame frame) {
+        return checkKind(FrameSlotKind.Int);
     }
 
-    protected final boolean isLongKind(Frame frame) {
-        return isKind(FrameSlotKind.Long);
+    protected boolean checkLongKind(Frame frame) {
+        return checkKind(FrameSlotKind.Long);
     }
 
-    protected final boolean isDoubleKind(Frame frame) {
-        return isKind(FrameSlotKind.Double);
+    protected boolean checkDoubleKind(Frame frame) {
+        return checkKind(FrameSlotKind.Double);
     }
 
-    protected final boolean isObjectKind(Frame frame) {
+    protected boolean checkObjectKind(Frame frame) {
         if (frameSlot.getKind() != FrameSlotKind.Object) {
             CompilerDirectives.transferToInterpreter();
             frameSlot.setKind(FrameSlotKind.Object);
         }
+
         return true;
     }
 
-    private boolean isKind(FrameSlotKind kind) {
+    private boolean checkKind(FrameSlotKind kind) {
         if (frameSlot.getKind() == kind) {
             return true;
         } else {
@@ -99,6 +99,7 @@ public abstract class WriteFrameSlotNode extends Node {
             frameSlot.setKind(kind);
             return true;
         }
+
         return false;
     }
 
