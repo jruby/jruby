@@ -85,7 +85,7 @@ public class #{StarterName} {
     remove_ruby_source_files
 
     java = ENV['JAVA_HOME'] ? "#{ENV['JAVA_HOME']}/bin/java" : "java"
-    java_cmd = "#{java} -jar -Djruby.aot.loadClasses=true #{JarFile}"
+    java_cmd = "#{java} -Djruby.home=#{ENV_JAVA['jruby.home']} -jar -Djruby.aot.loadClasses=true #{JarFile}"
     puts java_cmd if $VERBOSE; result = `#{java_cmd}`
     assert_equal 0, $?.exitstatus, "did not get 0 for exit status from running java against the jar"
     assert_equal "hello from runner", result, "wrong text from runner"
