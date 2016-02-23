@@ -18,20 +18,20 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 
 public class DeclarationFlipFlopStateNode extends FlipFlopStateNode {
 
-    private final int level;
+    private final int frameLevel;
     private final FrameSlot frameSlot;
 
-    public DeclarationFlipFlopStateNode(int level, FrameSlot frameSlot) {
-        this.level = level;
+    public DeclarationFlipFlopStateNode(int frameLevel, FrameSlot frameSlot) {
+        this.frameLevel = frameLevel;
         this.frameSlot = frameSlot;
     }
 
     @Override
     public boolean getState(VirtualFrame frame) {
-        final MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, level);
+        final MaterializedFrame declarationFrame = RubyArguments.getDeclarationFrame(frame, frameLevel);
 
         try {
-            return levelFrame.getBoolean(frameSlot);
+            return declarationFrame.getBoolean(frameSlot);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException();
         }
@@ -39,8 +39,8 @@ public class DeclarationFlipFlopStateNode extends FlipFlopStateNode {
 
     @Override
     public void setState(VirtualFrame frame, boolean state) {
-        final MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, level);
-        levelFrame.setBoolean(frameSlot, state);
+        final MaterializedFrame declarationFrame = RubyArguments.getDeclarationFrame(frame, frameLevel);
+        declarationFrame.setBoolean(frameSlot, state);
     }
 
 }
