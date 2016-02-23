@@ -147,22 +147,22 @@ public class TranslatorEnvironment {
                 level++;
                 FrameSlot slot = current.getFrameDescriptor().findFrameSlot(name);
                 if (slot != null) {
-                    if (level == 0) {
-                        final LocalVariableType type;
+                    final LocalVariableType type;
 
-                        if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-                            if (Translator.ALWAYS_DEFINED_GLOBALS.contains(name)) {
-                                type = LocalVariableType.ALWAYS_DEFINED_GLOBAL;
-                            } else {
-                                type = LocalVariableType.FRAME_LOCAL_GLOBAL;
-                            }
+                    if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
+                        if (Translator.ALWAYS_DEFINED_GLOBALS.contains(name)) {
+                            type = LocalVariableType.ALWAYS_DEFINED_GLOBAL;
                         } else {
-                            type = LocalVariableType.FRAME_LOCAL;
+                            type = LocalVariableType.FRAME_LOCAL_GLOBAL;
                         }
+                    } else {
+                        type = LocalVariableType.FRAME_LOCAL;
+                    }
 
+                    if (level == 0) {
                         return new ReadLocalVariableNode(context, sourceSection, type, slot);
                     } else {
-                        return new ReadDeclarationVariableNode(context, sourceSection, level, slot);
+                        return new ReadDeclarationVariableNode(context, sourceSection, type, level, slot);
                     }
                 }
 
