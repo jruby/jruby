@@ -40,6 +40,7 @@ import org.jruby.truffle.language.arguments.RunBlockKWArgsHelperNode;
 import org.jruby.truffle.language.control.IfElseNode;
 import org.jruby.truffle.language.control.IfNode;
 import org.jruby.truffle.language.literal.NilLiteralNode;
+import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 
@@ -394,7 +395,7 @@ public class LoadArgumentsTranslator extends Translator {
                     // Just consider the circular case for now as that's all that's speced
 
                     if (calledName.equals(name)) {
-                        defaultValue = new ReadLocalVariableNode(context, sourceSection, slot);
+                        defaultValue = new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, slot);
                     } else {
                         defaultValue = valueNode.accept(this);
                     }
@@ -584,10 +585,10 @@ public class LoadArgumentsTranslator extends Translator {
         return sequence(context, sourceSection, Arrays.asList(new WriteLocalVariableNode(context, sourceSection,
                         SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
                                 readArgument(sourceSection)), arraySlot), new IfElseNode(context, sourceSection,
-                        new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
+                        new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
                         nil,
                         new IfElseNode(context, sourceSection,
-                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot), node.getPreCount() + node.getPostCount()),
+                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot), node.getPreCount() + node.getPostCount()),
                                 notNilAtLeastAsLarge,
                                 notNilSmaller))));
     }
@@ -611,7 +612,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     protected RubyNode loadArray(SourceSection sourceSection) {
-        return new ReadLocalVariableNode(context, sourceSection, arraySlotStack.peek().getArraySlot());
+        return new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlotStack.peek().getArraySlot());
     }
 
     @Override

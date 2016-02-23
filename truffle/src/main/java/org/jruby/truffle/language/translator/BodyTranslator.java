@@ -134,6 +134,7 @@ import org.jruby.truffle.language.locals.FlipFlopNode;
 import org.jruby.truffle.language.locals.FlipFlopStateNode;
 import org.jruby.truffle.language.locals.InitFlipFlopSlotNode;
 import org.jruby.truffle.language.locals.LocalFlipFlopStateNode;
+import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
@@ -372,7 +373,7 @@ public class BodyTranslator extends Translator {
         boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
         final RubyNode actualCall = translateCallNode(callNode, isAccessorOnSelf, false);
 
-        final RubyNode ret = sequence(context, sourceSection, Arrays.asList(writeValue, actualCall, new ReadLocalVariableNode(context, sourceSection, frameSlot)));
+        final RubyNode ret = sequence(context, sourceSection, Arrays.asList(writeValue, actualCall, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, frameSlot)));
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -3125,7 +3126,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitOther(org.jruby.ast.Node node) {
         if (node instanceof ReadLocalDummyNode) {
             final ReadLocalDummyNode readLocal = (ReadLocalDummyNode) node;
-            final RubyNode ret = new ReadLocalVariableNode(context, readLocal.getSourceSection(), readLocal.getFrameSlot());
+            final RubyNode ret = new ReadLocalVariableNode(context, readLocal.getSourceSection(), LocalVariableType.FRAME_LOCAL, readLocal.getFrameSlot());
             return addNewlineIfNeeded(node, ret);
         } else {
             throw new UnsupportedOperationException();

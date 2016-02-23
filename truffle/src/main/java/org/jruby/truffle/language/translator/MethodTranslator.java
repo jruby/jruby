@@ -41,6 +41,7 @@ import org.jruby.truffle.language.control.NotNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.dispatch.RespondToNode;
 import org.jruby.truffle.language.locals.FlipFlopStateNode;
+import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
@@ -107,7 +108,7 @@ public class MethodTranslator extends BodyTranslator {
 
             final RubyNode shouldDestructure = new ShouldDestructureNode(context, sourceSection, new RespondToNode(context, sourceSection, readArrayNode, "to_ary"));
 
-            final RubyNode arrayWasNotNil = sequence(context, sourceSection, Arrays.asList(writeArrayNode, new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)))));
+            final RubyNode arrayWasNotNil = sequence(context, sourceSection, Arrays.asList(writeArrayNode, new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
             final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(context, sourceSection,
                     shouldDestructure,

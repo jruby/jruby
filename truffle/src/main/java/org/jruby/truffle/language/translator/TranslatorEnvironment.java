@@ -16,6 +16,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.control.BreakID;
 import org.jruby.truffle.language.control.ReturnID;
+import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
@@ -147,7 +148,19 @@ public class TranslatorEnvironment {
                 FrameSlot slot = current.getFrameDescriptor().findFrameSlot(name);
                 if (slot != null) {
                     if (level == 0) {
-                        return new ReadLocalVariableNode(context, sourceSection, slot);
+                        final LocalVariableType type;
+
+                        if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
+                            if (Translator.ALWAYS_DEFINED_GLOBALS.contains(name)) {
+                                type = LocalVariableType.ALWAYS_DEFINED_GLOBAL;
+                            } else {
+                                type = LocalVariableType.FRAME_LOCAL_GLOBAL;
+                            }
+                        } else {
+                            type = LocalVariableType.FRAME_LOCAL;
+                        }
+
+                        return new ReadLocalVariableNode(context, sourceSection, type, slot);
                     } else {
                         return new ReadDeclarationVariableNode(context, sourceSection, level, slot);
                     }
