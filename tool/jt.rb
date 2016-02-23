@@ -74,7 +74,7 @@ module Utilities
     end
   end
 
-  def self.find_jruby_dir
+  def self.find_jruby_bin_dir
     File.dirname(find_jruby)
   end
 
@@ -429,7 +429,7 @@ module Commands
   def test_compiler(*args)
     env_vars = {}
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
-    env_vars["PATH"] = "#{Utilities.find_jruby_dir}:#{ENV["PATH"]}"
+    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
     end
@@ -439,7 +439,7 @@ module Commands
   def test_integration(*args)
     no_gems = args.delete('--no-gems')
     env_vars = {}
-    env_vars["PATH"] = "#{Utilities.find_jruby_dir}:#{ENV["PATH"]}"
+    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
 
     test_names = if args.empty?
                    '*'
