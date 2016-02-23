@@ -21,6 +21,12 @@ class MockBinding
 
 end
 
+def expand_binding(binding)
+  Hash[binding.local_variables.sort.map { |v|
+    [v, binding.local_variable_get(v)]
+  }]
+end
+
 def check(file)
   expected = nil
   
@@ -29,6 +35,11 @@ def check(file)
   end
   
   actual = $trace
+  
+  #actual.each do |a|
+  #  a[4] = expand_binding(a[4])
+  #  p a
+  #end
   
   empty_binding = MockBinding.new
   
@@ -63,7 +74,7 @@ def check(file)
       success = false
     end
     
-    ab = Hash[a[4].local_variables.sort.map { |v| [v, a[4].local_variable_get(v)] }]
+    ab = expand_binding(a[4])
   
     unless ab == e[4]
       puts "Expected Binding, actually #{ab.inspect}"

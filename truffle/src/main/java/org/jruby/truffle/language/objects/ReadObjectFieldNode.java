@@ -20,7 +20,7 @@ import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 
-@ImportStatic(RubyGuards.class)
+@ImportStatic({ RubyGuards.class, ShapeCachingGuards.class })
 public abstract class ReadObjectFieldNode extends Node {
     private final RubyContext context;
     private final Object defaultValue;

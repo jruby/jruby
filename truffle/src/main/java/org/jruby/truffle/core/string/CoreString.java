@@ -37,21 +37,19 @@ public class CoreString {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             rope = createRope();
         }
-
         return rope;
     }
 
-    public DynamicObject createInstance() {
-        return StringOperations.createString(context, getRope());
-    }
-
     private Rope createRope() {
-        // getRope is fully synchronised and returns identically the same object for the same parameters
-
+        // RopeTable.getRope is fully synchronized and returns the same object for equivalent parameters
         return context.getRopeTable().getRope(
                 literal.getBytes(StandardCharsets.US_ASCII),
                 ASCIIEncoding.INSTANCE,
                 CodeRange.CR_7BIT);
+    }
+
+    public DynamicObject createInstance() {
+        return StringOperations.createString(context, getRope());
     }
 
     private static boolean is7Bit(String literal) {
