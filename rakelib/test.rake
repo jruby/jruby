@@ -78,22 +78,22 @@ namespace :test do
   namespace :mri do
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
     task :int do
-      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -X-C'
+      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri --debug -X-C'
       ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :fullint do
-      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -X-C -Xjit.threshold=0 -Xjit.background=false'
+      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri --debug -X-C -Xjit.threshold=0 -Xjit.background=false'
       ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :jit do
-      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -J-XX:MaxPermSize=512M -Xjit.threshold=0 -Xjit.background=false'
+      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri --debug -J-XX:MaxPermSize=512M -Xjit.threshold=0 -Xjit.background=false'
       ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :aot do
-      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -J-XX:MaxPermSize=512M -X+C -Xjit.background=false'
+      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri --debug -J-XX:MaxPermSize=512M -X+C -Xjit.background=false'
       ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
