@@ -14,8 +14,8 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.joni.Regex;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
+import com.oracle.truffle.api.object.dsl.Layout;
+import com.oracle.truffle.api.object.dsl.Nullable;
 import org.jruby.util.RegexpOptions;
 
 @Layout

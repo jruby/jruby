@@ -15,7 +15,7 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.language.methods.InternalMethod;
 
-@org.jruby.truffle.om.dsl.api.Layout
+@com.oracle.truffle.api.object.dsl.Layout
 public interface MethodLayout extends BasicObjectLayout {
 
     DynamicObjectFactory createMethodShape(DynamicObject logicalClass,

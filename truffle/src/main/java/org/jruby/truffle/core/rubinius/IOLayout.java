@@ -13,7 +13,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 
-@org.jruby.truffle.om.dsl.api.Layout
+@com.oracle.truffle.api.object.dsl.Layout
 public interface IOLayout extends BasicObjectLayout {
 
     String I_BUFFER_IDENTIFIER = "@ibuffer";

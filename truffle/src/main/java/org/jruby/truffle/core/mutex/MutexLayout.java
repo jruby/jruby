@@ -15,7 +15,7 @@ import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-@org.jruby.truffle.om.dsl.api.Layout
+@com.oracle.truffle.api.object.dsl.Layout
 public interface MutexLayout extends BasicObjectLayout {
 
     DynamicObjectFactory createMutexShape(DynamicObject logicalClass,

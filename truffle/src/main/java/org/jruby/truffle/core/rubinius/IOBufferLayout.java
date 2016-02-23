@@ -13,7 +13,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 
-@org.jruby.truffle.om.dsl.api.Layout
+@com.oracle.truffle.api.object.dsl.Layout
 public interface IOBufferLayout extends BasicObjectLayout {
 
     String WRITE_SYNCED_IDENTIFIER = "@write_synced";

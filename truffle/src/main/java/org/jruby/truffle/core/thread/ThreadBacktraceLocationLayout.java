@@ -14,7 +14,7 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.language.backtrace.Activation;
 
-@org.jruby.truffle.om.dsl.api.Layout
+@com.oracle.truffle.api.object.dsl.Layout
 public interface ThreadBacktraceLocationLayout extends BasicObjectLayout {
 
     DynamicObjectFactory createThreadBacktraceLocationShape(DynamicObject logicalClass,

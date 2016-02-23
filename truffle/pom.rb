@@ -17,10 +17,11 @@ project 'JRuby Truffle' do
   repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
               :id => 'truffle' )
 
-  truffle_version = '8495d7692f7a0ef12a696af2aed21f4db4d69658-SNAPSHOT'
+  truffle_version = '0.12-SNAPSHOT'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
   jar 'com.oracle.truffle:truffle-debug:' + truffle_version
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
+  jar 'com.oracle.truffle:truffle-object-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
   jar 'junit:junit', :scope => 'test'
 
@@ -38,15 +39,9 @@ project 'JRuby Truffle' do
           'target' => [ '${base.javac.version}', '1.7' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
-                   :id => 'anno',
-                   :phase => 'process-resources',
-                   'includes' => [ 'org/jruby/truffle/om/dsl/processor/OMProcessor.java' ],
-                   'compilerArgs' => [ '-XDignore.symbol.file=true',
-                                       '-J-ea' ] )
-    execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
-                   'annotationProcessors' => [ 'org.jruby.truffle.om.dsl.processor.OMProcessor',
+                   'annotationProcessors' => [ 'com.oracle.truffle.object.dsl.processor.LayoutProcessor',
                                                'com.oracle.truffle.dsl.processor.InstrumentableProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',
                                                'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor',
