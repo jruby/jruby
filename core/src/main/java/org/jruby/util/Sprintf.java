@@ -170,6 +170,11 @@ public class Sprintf {
                         object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                     }
                 }
+
+                if (object.isNil()) {
+                    throw runtime.newKeyError("key " + nameSym + " not found");
+                }
+
                 return object;
             } else if (rubyHash != null) {
                 raiseArgumentError("positional args mixed with named args");
