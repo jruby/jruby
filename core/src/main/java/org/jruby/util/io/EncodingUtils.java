@@ -402,13 +402,13 @@ public class EncodingUtils {
             }
         }
 
-        EncodingDB.Entry idx = service.findEncodingOrAliasEntry(estr.getBytes());
+        Encoding idx = service.findEncodingNoError(new ByteList(estr.getBytes()));
 
         if (idx == null) {
             runtime.getWarnings().warn("Unsupported encoding " + estr + " ignored");
             extEnc = null;
         } else {
-            extEnc = idx.getEncoding();
+            extEnc = idx;
         }
 
         intEnc = null;
