@@ -2928,7 +2928,11 @@ public final class Ruby implements Constantizable {
                 // toss an anonymous module into the search path
                 RubyModule wrapper = RubyModule.newModule(this);
                 ((RubyBasicObject)self).extend(new IRubyObject[] {wrapper});
-                ((RootNode) parseResult).getStaticScope().setModule(wrapper);
+                RootNode root = (RootNode) parseResult;
+                StaticScope top = root.getStaticScope();
+                StaticScope newTop = staticScopeFactory.newLocalScope(null);
+                top.setPreviousCRefScope(newTop);
+                top.setModule(wrapper);
             }
 
             runInterpreter(context, parseResult, self);
