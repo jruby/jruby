@@ -4,8 +4,11 @@ set -e
 
 cd test/truffle/integration/rails
 
-JRUBY=./../../../../bin/jruby
-JTR=./../../../../bin/jruby+truffle
+JRUBY_BIN=../../../../bin
+JRUBY=$JRUBY_BIN/jruby
+JTR=$JRUBY_BIN/jruby+truffle
+
+$JRUBY_BIN/gem install bundler
 
 $JTR setup
 $JTR run -r rubygems -- bin/rails server &
