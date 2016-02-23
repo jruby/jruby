@@ -17,6 +17,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.translator.ReadLocalNode;
 import org.jruby.truffle.language.translator.Translator;
 
 import java.util.Collections;

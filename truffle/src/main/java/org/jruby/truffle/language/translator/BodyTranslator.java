@@ -134,7 +134,6 @@ import org.jruby.truffle.language.locals.FlipFlopNode;
 import org.jruby.truffle.language.locals.FlipFlopStateNode;
 import org.jruby.truffle.language.locals.InitFlipFlopSlotNode;
 import org.jruby.truffle.language.locals.LocalFlipFlopStateNode;
-import org.jruby.truffle.language.locals.ReadLocalNode;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
