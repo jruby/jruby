@@ -1560,6 +1560,10 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz) {
+        return defineOrGetClassUnder(name, superClazz, null);
+    }
+
+    public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator) {
         // This method is intended only for defining new classes in Ruby code,
         // so it uses the allocator of the specified superclass or default to
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
@@ -1584,17 +1588,18 @@ public class RubyModule extends RubyObject {
         } else {
             if (superClazz == null) superClazz = runtime.getObject();
 
-            ObjectAllocator allocator;
-            if (superClazz == runtime.getObject()) {
-                if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
-                    allocator = REIFYING_OBJECT_ALLOCATOR;
-                } else if (Options.REIFY_VARIABLES.load()) {
-                    allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
+            if (allocator == null) {
+                if (superClazz == runtime.getObject()) {
+                    if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
+                        allocator = REIFYING_OBJECT_ALLOCATOR;
+                    } else if (Options.REIFY_VARIABLES.load()) {
+                        allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
+                    } else {
+                        allocator = OBJECT_ALLOCATOR;
+                    }
                 } else {
-                    allocator = OBJECT_ALLOCATOR;
+                    allocator = superClazz.getAllocator();
                 }
-            } else {
-                allocator = superClazz.getAllocator();
             }
 
             clazz = RubyClass.newClass(runtime, superClazz, name, allocator, this, true);
