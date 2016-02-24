@@ -2759,7 +2759,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "remove_method", rest = true, visibility = PRIVATE)
     public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
-            removeMethod(context, args[i].asJavaString());
+            removeMethod(context, TypeConverter.checkID(args[i]).toString());
         }
         return this;
     }
