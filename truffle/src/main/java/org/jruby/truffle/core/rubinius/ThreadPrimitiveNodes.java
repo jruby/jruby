@@ -48,7 +48,7 @@ public class ThreadPrimitiveNodes {
 
             context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new SafepointAction() {
                 @Override
-                public Void apply(DynamicObject currentThread, Node currentNode) {
+                public void run(DynamicObject currentThread, Node currentNode) {
                     if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
                         Backtrace backtrace = context.getCallStack().getBacktrace(currentNode);
                         Layouts.EXCEPTION.setBacktrace(exception, backtrace);

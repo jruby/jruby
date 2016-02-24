@@ -37,7 +37,7 @@ public abstract class ObjectGraph {
 
         context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
             @Override
-            public Void apply(DynamicObject thread, Node currentNode) {
+            public void run(DynamicObject thread, Node currentNode) {
                 synchronized (visited) {
                     final Deque<DynamicObject> stack = new ArrayDeque<>();
 
@@ -72,8 +72,6 @@ public abstract class ObjectGraph {
                             stack.addAll(ObjectGraph.getAdjacentObjects(object));
                         }
                     }
-
-                    return null;
                 }
             }
         });
@@ -88,14 +86,12 @@ public abstract class ObjectGraph {
 
         context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
             @Override
-            public Void apply(DynamicObject thread, Node currentNode) {
+            public void run(DynamicObject thread, Node currentNode) {
                 objects.add(thread);
 
                 if (Thread.currentThread() == stoppingThread) {
                     visitContextRoots(context, objects);
                 }
-
-                return null;
             }
         });
 

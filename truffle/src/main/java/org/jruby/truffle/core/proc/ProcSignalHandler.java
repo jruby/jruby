@@ -35,9 +35,8 @@ public class ProcSignalHandler implements SignalHandler {
         Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
         context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
             @Override
-            public Void apply(DynamicObject thread, Node currentNode) {
+            public void run(DynamicObject thread, Node currentNode) {
                 ProcNodes.rootCall(proc);
-                return null;
             }
         });
     }

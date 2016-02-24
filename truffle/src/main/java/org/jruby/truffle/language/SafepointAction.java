@@ -14,6 +14,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 
 public interface SafepointAction {
 
-    Void apply(DynamicObject thread, Node currentNode);
+    void run(DynamicObject thread, Node currentNode);
 }
 
