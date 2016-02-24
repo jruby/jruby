@@ -246,11 +246,11 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public RubyHash(Ruby runtime, int buckets) {
-        this(runtime, runtime.getNil(), buckets);
+        this(runtime, UNDEF, buckets);
     }
 
     public RubyHash(Ruby runtime) {
-        this(runtime, runtime.getNil());
+        this(runtime, UNDEF);
     }
 
     public RubyHash(Ruby runtime, IRubyObject defaultValue) {
