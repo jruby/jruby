@@ -172,28 +172,29 @@
               </arguments>
             </configuration>
           </execution>
-          <execution>
-            <id>gem install thrift -v0.9.2.0 - GH-3141</id>
-            <phase>test</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>java</executable>
-              <arguments>
-                <argument>-classpath</argument>
-                <!-- automatically creates the classpath using all project dependencies,
-                     also adding the project build directory -->
-                <classpath/>
-                <argument>org.jruby.Main</argument>
-                <argument>-S</argument>
-                <argument>gem</argument>
-                <argument>install</argument>
-                <argument>thrift</argument>
-                <argument>-v0.9.2.0</argument>
-              </arguments>
-            </configuration>
-          </execution>
+          <!-- commented out because I don't understand why we're trying to install a gem with a native ext anyway -->
+          <!--<execution>-->
+            <!--<id>gem install thrift -v0.9.2.0 - GH-3141</id>-->
+            <!--<phase>test</phase>-->
+            <!--<goals>-->
+              <!--<goal>exec</goal>-->
+            <!--</goals>-->
+            <!--<configuration>-->
+              <!--<executable>java</executable>-->
+              <!--<arguments>-->
+                <!--<argument>-classpath</argument>-->
+                <!--&lt;!&ndash; automatically creates the classpath using all project dependencies,-->
+                     <!--also adding the project build directory &ndash;&gt;-->
+                <!--<classpath/>-->
+                <!--<argument>org.jruby.Main</argument>-->
+                <!--<argument>-S</argument>-->
+                <!--<argument>gem</argument>-->
+                <!--<argument>install</argument>-->
+                <!--<argument>thrift</argument>-->
+                <!--<argument>-v0.9.2.0</argument>-->
+              <!--</arguments>-->
+            <!--</configuration>-->
+          <!--</execution>-->
           <execution>
             <id>-S me - GH-3233</id>
             <phase>test</phase>
