@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jcodings.Encoding;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -36,7 +37,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * In JRuby 2, we will rename this.
  */
 public class Colon2ImplicitNode extends Colon2Node {
-    public Colon2ImplicitNode(ISourcePosition position, String name) {
-        super(position, null, name);
+    public Colon2ImplicitNode(ISourcePosition position, String name, Encoding encoding) {
+        super(position, null, name, encoding);
     }
 }

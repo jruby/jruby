@@ -33,6 +33,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -42,10 +43,12 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class ConstNode extends Node implements INameNode {
     private String name;
+    private final Encoding encoding;
 
-    public ConstNode(ISourcePosition position, String name) {
+    public ConstNode(ISourcePosition position, String name, Encoding encoding) {
         super(position, false);
         this.name = name;
+        this.encoding = encoding;
     }
 
     public NodeType getNodeType() {
@@ -66,6 +69,10 @@ public class ConstNode extends Node implements INameNode {
      */
     public String getName() {
         return name;
+    }
+
+    public Encoding getEncoding() {
+        return encoding;
     }
     
     public List<Node> childNodes() {

@@ -37,6 +37,7 @@ import java.util.List;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 
+import org.jruby.RubyEncoding;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -66,7 +67,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
     // String path (e.g. [':', str_beg, str_content, str_end])
     public SymbolNode(ISourcePosition position, ByteList value) {
         super(position, false);
-        this.name = value.toString().intern();
+        this.name = RubyEncoding.decode(value.unsafeBytes(), value.begin(), value.realSize(), value.getEncoding().getCharset()).intern();
 
         if (value.getEncoding() != USASCIIEncoding.INSTANCE) {
             int size = value.realSize();

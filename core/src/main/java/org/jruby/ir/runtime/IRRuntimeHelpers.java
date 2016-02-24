@@ -2,6 +2,7 @@ package org.jruby.ir.runtime;
 
 import com.headius.invokebinder.Signature;
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
@@ -840,7 +841,7 @@ public class IRRuntimeHelpers {
     public static RubyBoolean isBlockGiven(ThreadContext context, Object blk) {
         if (blk instanceof RubyProc) blk = ((RubyProc) blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        return context.runtime.newBoolean( ((Block) blk).isGiven() );
+        return context.runtime.newBoolean(((Block) blk).isGiven());
     }
 
     public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
@@ -1074,12 +1075,22 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyString newFrozenStringFromRaw(ThreadContext context, String str, String encoding, int cr, String file, int line) {
-        return newFrozenString(context, newByteListFromRaw(context.runtime, str, encoding), cr, file, line);
+        return newFrozenString(context, newByteListFromRaw(str, encoding), cr, file, line);
     }
 
     @JIT
-    public static final ByteList newByteListFromRaw(Ruby runtime, String str, String encoding) {
-        return new ByteList(str.getBytes(RubyEncoding.ISO), runtime.getEncodingService().getEncodingFromString(encoding), false);
+    public static final ByteList newByteListFromRaw(String str, String encodingName) {
+        Encoding encoding;
+        EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
+        if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
+        if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
+        encoding = entry.getEncoding();
+        return newByteListFromRaw(str, encoding);
+    }
+
+    @JIT
+    public static final ByteList newByteListFromRaw(String str, Encoding encoding) {
+        return new ByteList(str.getBytes(RubyEncoding.ISO), encoding);
     }
 
     @JIT
@@ -1120,29 +1131,29 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
+    public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, RubySymbol constName, boolean noPrivateConsts) {
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
-        IRubyObject constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+        IRubyObject constant = (staticScope == null) ? object.getConstant(constName.toID()) : staticScope.getConstantInner(constName.toID());
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
-            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName.toID(), false) : module.getConstantNoConstMissing(constName.toID());
         }
 
         // Call const_missing or cache
         if (constant == null) {
-            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
+            return module.callMethod(context, "const_missing", constName);
         }
 
         return constant;
     }
 
     @JIT
-    public static IRubyObject inheritedSearchConst(ThreadContext context, IRubyObject cmVal, String constName, boolean noPrivateConsts) {
+    public static IRubyObject inheritedSearchConst(ThreadContext context, IRubyObject cmVal, RubySymbol constName, boolean noPrivateConsts) {
         Ruby runtime = context.runtime;
         RubyModule module;
         if (cmVal instanceof RubyModule) {
@@ -1151,7 +1162,7 @@ public class IRRuntimeHelpers {
             throw runtime.newTypeError(cmVal + " is not a type/class");
         }
 
-        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName.toID(), false) : module.getConstantNoConstMissing(constName.toID());
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
@@ -1161,8 +1172,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope staticScope, String constName) {
-        IRubyObject constant = staticScope.getConstantInner(constName);
+    public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope staticScope, RubySymbol constName) {
+        IRubyObject constant = staticScope.getConstantInner(constName.toID());
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
@@ -1230,20 +1241,20 @@ public class IRRuntimeHelpers {
     }
 
     @Interp
-    public static DynamicMethod newInterpretedClassBody(ThreadContext context, IRScope irClassBody, Object container, Object superClass) {
-        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
+    public static DynamicMethod newInterpretedClassBody(ThreadContext context, IRScope irClassBody, RubySymbol name, Object container, Object superClass) {
+        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, name, superClass, container);
 
         return new InterpretedIRBodyMethod(irClassBody, newRubyClass);
     }
 
     @JIT
-    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, IRScope irClassBody, Object container, Object superClass) {
-        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
+    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, IRScope irClassBody, RubySymbol name, Object container, Object superClass) {
+        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, name, superClass, container);
 
         return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass, false);
     }
 
-    public static RubyModule newRubyClassFromIR(Ruby runtime, IRScope irClassBody, Object superClass, Object container) {
+    public static RubyModule newRubyClassFromIR(Ruby runtime, IRScope irClassBody, RubySymbol name, Object superClass, Object container) {
         if (!(container instanceof RubyModule)) {
             throw runtime.newTypeError("no outer class/module");
         }
@@ -1780,4 +1791,5 @@ public class IRRuntimeHelpers {
 
         return string;
     }
+
 }

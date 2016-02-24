@@ -876,7 +876,7 @@ public class Java implements Library {
             clazz = runtime.getJavaSupport().loadJavaClass(className);
         }
         catch (ExceptionInInitializerError ex) {
-            throw runtime.newNameError("cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex, false);
+            throw runtime.newNameError("cannot initialize Java class %1$s (" + ex.getLocalizedMessage() + ")", className, ex, false);
         }
         catch (UnsupportedClassVersionError ex) { // LinkageError
             String type = ex.getClass().getName();
@@ -894,10 +894,10 @@ public class Java implements Library {
             }
             else msg = '(' + type + ')';
             // cannot link Java class com.sample.FooBar needs Java 8 (java.lang.UnsupportedClassVersionError: com/sample/FooBar : Unsupported major.minor version 52.0)
-            throw runtime.newNameError("cannot link Java class " + className + ' ' + msg, className, ex, false);
+            throw runtime.newNameError("cannot link Java class %1$s (" + ex.getLocalizedMessage() + ")", className, ex, false);
         }
         catch (LinkageError ex) {
-            throw runtime.newNameError("cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex, false);
+            throw runtime.newNameError("cannot link Java class %1$s (" + ex.getLocalizedMessage() + ")", className, ex, false);
         }
         catch (SecurityException ex) {
             throw runtime.newSecurityError(ex.getLocalizedMessage());

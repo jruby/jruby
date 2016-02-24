@@ -33,6 +33,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -42,15 +43,17 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Object class) when referring to a constant or method.
  */
 public class Colon3Node extends Node implements INameNode {
-    protected String name;
+    protected final String name;
+    protected final Encoding encoding;
 
-    public Colon3Node(ISourcePosition position, String name) {
-        this(position, name, false);
+    public Colon3Node(ISourcePosition position, String name, Encoding encoding) {
+        this(position, name, encoding, false);
     }
 
-    protected Colon3Node(ISourcePosition position, String name, boolean containsAssignment) {
+    protected Colon3Node(ISourcePosition position, String name, Encoding encoding, boolean containsAssignment) {
         super(position, containsAssignment);
         this.name = name;
+        this.encoding = encoding;
     }
 
     public NodeType getNodeType() {
@@ -72,12 +75,12 @@ public class Colon3Node extends Node implements INameNode {
     public String getName() {
         return name;
     }
+
+    public Encoding getEncoding() {
+        return encoding;
+    }
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 }

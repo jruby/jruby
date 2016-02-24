@@ -1985,8 +1985,8 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "method", required = 1)
-    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
-        return ((RubyBasicObject)self).method19(symbol);
+    public static IRubyObject method(IRubyObject self, IRubyObject symbol) {
+        return ((RubyBasicObject)self).method(symbol);
     }
 
     @JRubyMethod(name = "to_s")
@@ -2064,6 +2064,11 @@ public class RubyKernel {
     @Deprecated
     public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
         return methodMissing(context, recv, name, lastVis, lastCallType, args);
+    }
+
+    @Deprecated
+    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
+        return ((RubyBasicObject)self).method(symbol);
     }
 
 }

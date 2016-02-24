@@ -140,7 +140,7 @@ public class ParserSupport {
             }
             return currentScope.declare(node.getPosition(), name);
         case CONSTDECLNODE: // CONSTANT
-            return new ConstNode(node.getPosition(), ((INameNode) node).getName());
+            return new ConstNode(node.getPosition(), ((INameNode) node).getName(), lexer.getEncoding());
         case INSTASGNNODE: // INSTANCE VARIABLE
             return new InstVarNode(node.getPosition(), ((INameNode) node).getName());
         case CLASSVARDECLNODE:
@@ -813,13 +813,13 @@ public class ParserSupport {
     }
 
     public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
-        if (leftNode == null) return new Colon2ImplicitNode(position, name);
+        if (leftNode == null) return new Colon2ImplicitNode(position, name, lexer.getEncoding());
 
-        return new Colon2ConstNode(position, leftNode, name);
+        return new Colon2ConstNode(position, leftNode, name, lexer.getEncoding());
     }
 
-    public Colon3Node new_colon3(ISourcePosition position, String name) {
-        return new Colon3Node(position, name);
+    public Colon3Node new_colon3(ISourcePosition position, String name, Encoding encoding) {
+        return new Colon3Node(position, name, encoding);
     }
 
     public void frobnicate_fcall_args(FCallNode fcall, Node args, Node iter) {

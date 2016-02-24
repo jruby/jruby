@@ -132,7 +132,11 @@ public class RaiseException extends JumpException {
     }
 
     public RaiseException(RubyException exception, boolean nativeException) {
-        super(exception.message.toString());
+        this(exception, null, nativeException);
+    }
+
+    public RaiseException(RubyException exception, Throwable cause, boolean nativeException) {
+        super(exception.message.toString(), cause);
         if (DEBUG) {
             Thread.dumpStack();
         }

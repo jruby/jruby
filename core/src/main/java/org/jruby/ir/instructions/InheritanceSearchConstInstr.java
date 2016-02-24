@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -21,18 +22,18 @@ import org.jruby.runtime.opto.Invalidator;
 // this call to the parent scope.
 
 public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    String   constName;
+    private final Symbol symbol;
     private final boolean  noPrivateConsts;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
+    public InheritanceSearchConstInstr(Variable result, Operand currentModule, Symbol symbol, boolean noPrivateConsts) {
         super(Operation.INHERITANCE_SEARCH_CONST, result, currentModule);
 
         assert result != null: "InheritanceSearchConstInstr result is null";
 
-        this.constName = constName;
+        this.symbol = symbol;
         this.noPrivateConsts = noPrivateConsts;
     }
 
@@ -40,8 +41,8 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
         return getOperand1();
     }
 
-    public String getConstName() {
-        return constName;
+    public Symbol getConstName() {
+        return symbol;
     }
 
     public boolean isNoPrivateConsts() {
@@ -51,21 +52,23 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
     @Override
     public Instr clone(CloneInfo ii) {
         return new InheritanceSearchConstInstr(ii.getRenamedVariable(result),
-                getCurrentModule().cloneForInlining(ii), constName, noPrivateConsts);
+                getCurrentModule().cloneForInlining(ii), symbol, noPrivateConsts);
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + constName, "no_priv: " + noPrivateConsts};
+        return new String[] { "name: " + symbol.getName(), "no_priv: " + noPrivateConsts};
     }
 
-    private Object cache(Ruby runtime, RubyModule module) {
-        Object constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+    private Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, RubyModule module) {
+        RubySymbol symName = (RubySymbol) symbol.retrieve(context, self, currScope, currDynScope, temp);
+
+        Object constant = noPrivateConsts ? module.getConstantFromNoConstMissing(symName.toID(), false) : module.getConstantNoConstMissing(symName.toID());
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            Invalidator invalidator = runtime.getConstantInvalidator(constName);
+            Invalidator invalidator = context.runtime.getConstantInvalidator(symName.toID());
             cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator, module.hashCode());
         }
         return constant;
@@ -75,12 +78,12 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getCurrentModule());
-        e.encode(getConstName());
+        e.encode(symbol);
         e.encode(isNoPrivateConsts());
     }
 
     public static InheritanceSearchConstInstr decode(IRReaderDecoder d) {
-        return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
+        return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), (Symbol) d.decodeOperand(), d.decodeBoolean());
     }
 
     @Override
@@ -92,7 +95,7 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
         RubyModule module = (RubyModule) cmVal;
         ConstantCache cache = this.cache;
 
-        return !ConstantCache.isCachedFrom(module, cache) ? cache(context.runtime, module) : cache.value;
+        return !ConstantCache.isCachedFrom(module, cache) ? cache(context, currScope, currDynScope, self, temp, module) : cache.value;
     }
 
     @Override

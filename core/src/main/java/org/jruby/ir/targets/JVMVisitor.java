@@ -966,8 +966,8 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().checkcast("org/jruby/RubyModule");
         jvmMethod().loadContext();
         jvmAdapter().ldc("const_missing");
-        // FIXME: This has lost it's encoding info by this point
-        jvmMethod().pushSymbol(constmissinginstr.getMissingConst(), USASCIIEncoding.INSTANCE);
+        // FIXME: This has lost its original encoding info by this point
+        visit(constmissinginstr.getMissingConst());
         jvmMethod().invokeVirtual(Type.getType(RubyModule.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject callMethod(org.jruby.runtime.ThreadContext, java.lang.String, org.jruby.runtime.builtin.IRubyObject)"));
         jvmStoreLocal(constmissinginstr.getResult());
     }
@@ -1180,7 +1180,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(inheritancesearchconstinstr.getCurrentModule());
 
-        jvmMethod().inheritanceSearchConst(inheritancesearchconstinstr.getConstName(), inheritancesearchconstinstr.isNoPrivateConsts());
+        visit(inheritancesearchconstinstr.getConstName());
+        jvmMethod().inheritanceSearchConst(inheritancesearchconstinstr.isNoPrivateConsts());
         jvmStoreLocal(inheritancesearchconstinstr.getResult());
     }
 
@@ -1261,7 +1262,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(lexicalsearchconstinstr.getDefiningScope());
 
-        jvmMethod().lexicalSearchConst(lexicalsearchconstinstr.getConstName());
+        visit(lexicalsearchconstinstr.getConstName());
+        jvmMethod().lexicalSearchConst();
 
         jvmStoreLocal(lexicalsearchconstinstr.getResult());
     }
@@ -1901,7 +1903,8 @@ public class JVMVisitor extends IRVisitor {
     public void SearchConstInstr(SearchConstInstr searchconstinstr) {
         jvmMethod().loadContext();
         visit(searchconstinstr.getStartingScope());
-        jvmMethod().searchConst(searchconstinstr.getConstName(), searchconstinstr.isNoPrivateConsts());
+        visit(searchconstinstr.getConstName());
+        jvmMethod().searchConst(searchconstinstr.isNoPrivateConsts());
         jvmStoreLocal(searchconstinstr.getResult());
     }
 
@@ -2327,7 +2330,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Symbol(Symbol symbol) {
-        jvmMethod().pushSymbol(symbol.getName(), symbol.getEncoding());
+        jvmMethod().pushSymbol(symbol.getBytes());
     }
 
     @Override

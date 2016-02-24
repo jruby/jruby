@@ -121,10 +121,9 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         cacheValuePermanently("bytelist", ByteList.class, keyFor("bytelist", bl), new Runnable() {
             @Override
             public void run() {
-                loadRuntime();
                 adapter.ldc(bl.toString());
                 adapter.ldc(bl.getEncoding().toString());
-                invokeIRHelper("newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
+                invokeIRHelper("newByteListFromRaw", sig(ByteList.class, String.class, String.class));
             }
         });
     }
@@ -254,17 +253,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void pushSymbol(final String sym, final Encoding encoding) {
-        cacheValuePermanently("symbol", RubySymbol.class, keyFor("symbol", sym, encoding), new Runnable() {
+    public void pushSymbol(final ByteList bl) {
+        cacheValuePermanently("symbol", RubySymbol.class, keyFor("symbol", bl), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
-                adapter.ldc(sym);
-                loadContext();
-                adapter.ldc(encoding.toString());
-                invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
-
-                adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, String.class, Encoding.class));
+                pushByteList(bl);
+                adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, ByteList.class));
             }
         });
     }
@@ -605,21 +600,18 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         return false;
     }
 
-    public void searchConst(String name, boolean noPrivateConsts) {
-        adapter.ldc(name);
+    public void searchConst(boolean noPrivateConsts) {
         adapter.ldc(noPrivateConsts);
-        invokeIRHelper("searchConst", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class, boolean.class));
+        invokeIRHelper("searchConst", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, RubySymbol.class, boolean.class));
     }
 
-    public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
-        adapter.ldc(name);
+    public void inheritanceSearchConst(boolean noPrivateConsts) {
         adapter.ldc(noPrivateConsts);
-        invokeIRHelper("inheritedSearchConst", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class));
+        invokeIRHelper("inheritedSearchConst", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubySymbol.class, boolean.class));
     }
 
-    public void lexicalSearchConst(String name) {
-        adapter.ldc(name);
-        invokeIRHelper("lexicalSearchConst", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class));}
+    public void lexicalSearchConst() {
+        invokeIRHelper("lexicalSearchConst", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, RubySymbol.class));}
 
     public void pushNil() {
         loadContext();

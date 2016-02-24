@@ -2596,32 +2596,6 @@ public class Helpers {
     }
 
     /**
-     * Decode the given value to a Java string using the following rules:
-     *
-     * * If the string is all US-ASCII characters, it will be decoded as US-ASCII.
-     * * If the string is a unicode encoding, it will be decoded as such.
-     * * If the string is any other encoding, it will be encoded as raw bytes
-     *   using ISO-8859-1.
-     *
-     * This allows non-unicode, non-US-ASCII encodings to be represented in the
-     * symbol table as their raw versions, but properly decodes unicode-
-     * encoded strings.
-     *
-     * @param value the value to decode
-     * @return the resulting symbol string
-     */
-    public static String symbolBytesToString(ByteList value) {
-        Encoding encoding = value.getEncoding();
-        if (encoding == USASCIIEncoding.INSTANCE || encoding == ASCIIEncoding.INSTANCE) {
-            return value.toString(); // raw
-        } else if (encoding instanceof UnicodeEncoding) {
-            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), value.getEncoding().getCharset());
-        } else {
-            return value.toString(); // raw
-        }
-    }
-
-    /**
      * Decode a given ByteList to a Java string.
      *
      * @param runtime the current runtime
@@ -2728,6 +2702,33 @@ public class Helpers {
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Decode the given value to a Java string using the following rules:
+     *
+     * * If the string is all US-ASCII characters, it will be decoded as US-ASCII.
+     * * If the string is a unicode encoding, it will be decoded as such.
+     * * If the string is any other encoding, it will be encoded as raw bytes
+     *   using ISO-8859-1.
+     *
+     * This allows non-unicode, non-US-ASCII encodings to be represented in the
+     * symbol table as their raw versions, but properly decodes unicode-
+     * encoded strings.
+     *
+     * @param value the value to decode
+     * @return the resulting symbol string
+     */
+    @Deprecated
+    public static String symbolBytesToString(ByteList value) {
+        Encoding encoding = value.getEncoding();
+        if (encoding == USASCIIEncoding.INSTANCE || encoding == ASCIIEncoding.INSTANCE) {
+            return value.toString(); // raw
+        } else if (encoding instanceof UnicodeEncoding) {
+            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), value.getEncoding().getCharset());
+        } else {
+            return value.toString(); // raw
+        }
     }
 
 }

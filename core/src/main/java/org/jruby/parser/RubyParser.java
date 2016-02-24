@@ -84,7 +84,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.NonLocalControlFlowNode;
 import org.jruby.ast.NumericNode;
 import org.jruby.ast.OpAsgnAndNode;
-import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.PostExeNode;
@@ -119,11 +118,9 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StrTerm;
-import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
 import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
@@ -2272,7 +2269,7 @@ states[94] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    yyVal = new ConstDeclNode(lexer.getPosition(), ((String)yyVals[0+yyTop]), null, NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(lexer.getPosition(), ((String)yyVals[0+yyTop]), lexer.getEncoding(), null, NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2363,7 +2360,7 @@ states[107] = new ParserState() {
 
                     ISourcePosition position = support.getPosition(((Node)yyVals[-2+yyTop]));
 
-                    yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop])), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, null, lexer.getEncoding(), support.new_colon2(position, ((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2375,7 +2372,7 @@ states[108] = new ParserState() {
 
                     ISourcePosition position = lexer.getPosition();
 
-                    yyVal = new ConstDeclNode(position, null, support.new_colon3(position, ((String)yyVals[0+yyTop])), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, null, lexer.getEncoding(), support.new_colon3(position, ((String)yyVals[0+yyTop]), lexer.getEncoding()), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2407,7 +2404,7 @@ states[113] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    yyVal = new ConstDeclNode(lexer.getPosition(), ((String)yyVals[0+yyTop]), null, NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(lexer.getPosition(), ((String)yyVals[0+yyTop]), lexer.getEncoding(), null, NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2498,7 +2495,7 @@ states[126] = new ParserState() {
 
                     ISourcePosition position = support.getPosition(((Node)yyVals[-2+yyTop]));
 
-                    yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop])), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, null, lexer.getEncoding(), support.new_colon2(position, ((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2510,7 +2507,7 @@ states[127] = new ParserState() {
 
                     ISourcePosition position = lexer.getPosition();
 
-                    yyVal = new ConstDeclNode(position, null, support.new_colon3(position, ((String)yyVals[0+yyTop])), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, null, lexer.getEncoding(), support.new_colon3(position, ((String)yyVals[0+yyTop]), lexer.getEncoding()), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2528,7 +2525,7 @@ states[129] = new ParserState() {
 };
 states[131] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.new_colon3(lexer.getPosition(), ((String)yyVals[0+yyTop]));
+                    yyVal = support.new_colon3(lexer.getPosition(), ((String)yyVals[0+yyTop]), lexer.getEncoding());
     return yyVal;
   }
 };
@@ -2942,7 +2939,7 @@ states[226] = new ParserState() {
 states[227] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     ISourcePosition pos = lexer.getPosition();
-                    yyVal = support.newOpConstAsgn(pos, new Colon3Node(pos, ((String)yyVals[-3+yyTop])), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.newOpConstAsgn(pos, new Colon3Node(pos, ((String)yyVals[-3+yyTop]), lexer.getEncoding()), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3437,7 +3434,7 @@ states[313] = new ParserState() {
 };
 states[314] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.new_colon3(lexer.getPosition(), ((String)yyVals[0+yyTop]));
+                    yyVal = support.new_colon3(lexer.getPosition(), ((String)yyVals[0+yyTop]), lexer.getEncoding());
     return yyVal;
   }
 };
@@ -4669,7 +4666,7 @@ states[512] = new ParserState() {
 };
 states[513] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new ConstNode(lexer.getPosition(), ((String)yyVals[0+yyTop]));
+                    yyVal = new ConstNode(lexer.getPosition(), ((String)yyVals[0+yyTop]), lexer.getEncoding());
     return yyVal;
   }
 };
@@ -4744,7 +4741,7 @@ states[525] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    yyVal = new ConstDeclNode(lexer.getPosition(), ((String)yyVals[0+yyTop]), null, NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(lexer.getPosition(), ((String)yyVals[0+yyTop]), lexer.getEncoding(), null, NilImplicitNode.NIL);
     return yyVal;
   }
 };

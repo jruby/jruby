@@ -2018,7 +2018,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         // MRI (1.9) always passes down a symbol when calling respond_to_missing?
         if ( ! (mname instanceof RubySymbol) ) mname = runtime.newSymbol(name);
         IRubyObject respond = Helpers.invoke(runtime.getCurrentContext(), this, "respond_to_missing?", mname, runtime.newBoolean(includePrivate));
-        return runtime.newBoolean( respond.isTrue() );
+        return runtime.newBoolean(respond.isTrue());
     }
 
     /** rb_obj_id
@@ -2427,12 +2427,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     m.call   #=> "Hello, @iv = Fred"
      */
     public IRubyObject method(IRubyObject name) {
-        return getMetaClass().newMethod(this, name.asJavaString(), true, null);
-    }
-
-    public IRubyObject method19(IRubyObject name) {
         final RubySymbol symbol = TypeConverter.checkID(name);
-        return getMetaClass().newMethod(this, symbol.asJavaString(), true, null, true);
+        return getMetaClass().newMethod(this, symbol.toID(), true, null, true);
     }
 
     /** rb_any_to_s
@@ -2783,7 +2779,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if ((value = (IRubyObject)variableTableRemove(validateInstanceVariable(name, name.asJavaString()))) != null) {
             return value;
         }
-        throw context.runtime.newNameError("instance variable " + name.asJavaString() + " not defined", this, name);
+        throw context.runtime.newNameError("instance variable %1$s not defined", this, name);
     }
 
     /** rb_obj_instance_variables
@@ -2876,13 +2872,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected String validateInstanceVariable(String name) {
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
-        throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", this, name);
+        throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, name);
     }
 
     protected String validateInstanceVariable(IRubyObject nameObj, String name) {
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
-        throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", this, nameObj);
+        throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, nameObj);
     }
 
     /**
@@ -3076,5 +3072,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Deprecated
     public final void setNativeHandle(Object value) {
+    }
+
+    @Deprecated
+    public IRubyObject method19(IRubyObject name) {
+        return method(name);
     }
 }

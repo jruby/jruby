@@ -33,6 +33,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -42,13 +43,15 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class ConstDeclNode extends AssignableNode implements INameNode {
     private final String name;
+    private final Encoding encoding;
     private final INameNode constNode;
 
     // TODO: Split this into two sub-classes so that name and constNode can be specified seperately.
-    public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
+    public ConstDeclNode(ISourcePosition position, String name, Encoding encoding, INameNode constNode, Node valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
-        this.name = name;        
+        this.name = name;
+        this.encoding = encoding;
         this.constNode = constNode;
     }
 
@@ -71,6 +74,10 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
      */
     public String getName() {
     	return (name == null ? constNode.getName() : name);
+    }
+
+    public Encoding getEncoding() {
+        return encoding;
     }
     
     /**

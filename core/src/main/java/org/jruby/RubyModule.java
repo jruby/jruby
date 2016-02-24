@@ -56,6 +56,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import org.jcodings.specific.ISO8859_11Encoding;
+import org.jcodings.specific.ISO8859_1Encoding;
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
 import org.jruby.anno.JRubyClass;
@@ -1195,7 +1197,8 @@ public class RubyModule extends RubyObject {
         synchronized (methodsForWrite) {
             DynamicMethod method = (DynamicMethod) methodsForWrite.remove(name);
             if (method == null) {
-                throw runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
+                String decoded = new String(name.getBytes(ISO8859_1Encoding.INSTANCE.getCharset()), runtime.getDefaultExternalEncoding().getCharset());
+                throw runtime.newNameError("method '" + decoded + "' not defined in " + getName(), decoded);
             }
 
             invalidateCoreClasses();
@@ -1642,7 +1645,7 @@ public class RubyModule extends RubyObject {
     }
 
     private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
-        String internedIdentifier = identifier.toString();
+        String internedIdentifier = identifier.toID();
 
         final Ruby runtime = context.runtime;
 
@@ -1656,7 +1659,7 @@ public class RubyModule extends RubyObject {
         }
 
         // FIXME: This only works if identifier's encoding is ASCII-compatible
-        final String variableName = TypeConverter.checkID(runtime, '@' + internedIdentifier).toString();
+        final String variableName = TypeConverter.checkID(runtime, '@' + internedIdentifier).toID();
         if (readable) {
             addMethod(internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
@@ -1664,7 +1667,7 @@ public class RubyModule extends RubyObject {
         if (writeable) {
             // FIXME: This only works if identifier's encoding is ASCII-compatible
             identifier = TypeConverter.checkID(runtime, internedIdentifier + '=');
-            internedIdentifier = identifier.toString();
+            internedIdentifier = identifier.toID();
             addMethod(internedIdentifier, new AttrWriterMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
         }
@@ -1819,7 +1822,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject defineMethodFromBlock(ThreadContext context, IRubyObject arg0, Block block, Visibility visibility) {
         final Ruby runtime = context.runtime;
         RubySymbol nameSym = TypeConverter.checkID(arg0);
-        String name = nameSym.toString();
+        String name = nameSym.toID();
         DynamicMethod newMethod;
 
         if (!block.isGiven()) {
@@ -1864,7 +1867,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject defineMethodFromCallable(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Visibility visibility) {
         final Ruby runtime = context.runtime;
         RubySymbol nameSym = TypeConverter.checkID(arg0);
-        String name = nameSym.toString();
+        String name = nameSym.toID();
         DynamicMethod newMethod;
 
         if (runtime.getProc().isInstance(arg1)) {
@@ -2686,9 +2689,10 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "alias_method", required = 2, visibility = PRIVATE)
     public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
-        String newName = newId.asJavaString();
-        defineAlias(newName, oldId.asJavaString());
         RubySymbol newSym = TypeConverter.checkID(newId);
+        RubySymbol oldSym = TypeConverter.checkID(oldId);
+        String newName = newSym.toID();
+        defineAlias(newName, oldSym.toID());
         if (isSingleton()) {
             ((MetaClass)this).getAttached().callMethod(context, "singleton_method_added", newSym);
         } else {
@@ -2700,7 +2704,8 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "undef_method", rest = true, visibility = PRIVATE)
     public RubyModule undef_method(ThreadContext context, IRubyObject[] args) {
         for (int i=0; i<args.length; i++) {
-            undef(context, args[i].asJavaString());
+            RubySymbol sym = TypeConverter.checkID(args[i]);
+            undef(context, sym.toID());
         }
         return this;
     }
@@ -2759,7 +2764,9 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "remove_method", rest = true, visibility = PRIVATE)
     public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
-            removeMethod(context, args[i].asJavaString());
+            RubySymbol nameSym = TypeConverter.checkID(args[i]);
+            String name = nameSym.toID();
+            removeMethod(context, name);
         }
         return this;
     }
@@ -3078,13 +3085,14 @@ public class RubyModule extends RubyObject {
         boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
         final IRubyObject symbol = args[0];
-        final String fullName = symbol.asJavaString();
-        String name = fullName;
+        RubySymbol nameSym = TypeConverter.checkID(symbol);
+        String id = nameSym.toID();
+        String name = nameSym.toString();
 
         int sep = name.indexOf("::");
         // symbol form does not allow ::
         if (symbol instanceof RubySymbol && sep != -1) {
-            throw runtime.newNameError("wrong constant name", name);
+            throw runtime.newNameError("wrong constant name %s", name);
         }
 
         RubyModule mod = this;
@@ -3092,30 +3100,39 @@ public class RubyModule extends RubyObject {
         if (sep == 0) { // ::Foo::Bar
             mod = runtime.getObject();
             name = name.substring(2);
+            id = id.substring(2);
         }
 
         // Bare ::
         if (name.length() == 0) {
-            throw runtime.newNameError("wrong constant name ", fullName);
+            throw runtime.newNameError("wrong constant name %s", name);
         }
 
         IRubyObject obj;
         while ( ( sep = name.indexOf("::") ) != -1 ) {
-            final String segment = name.substring(0, sep);
-            if (segment.length() == 0) {
-                throw runtime.newNameError("wrong constant name " + fullName, name);
+            // prep name segment
+            String nameSegment = name.substring(0, sep);
+            if (nameSegment.length() == 0) {
+                throw runtime.newNameError("wrong constant name %s", name);
             }
-            obj = mod.getConstantNoConstMissing(validateConstant(segment, symbol), inherit, inherit);
+            validateConstant(nameSegment, symbol);
+
+            // prep id segment
+            int idSep = id.indexOf("::");
+            String idSegment = id.substring(0, idSep);
+            obj = mod.getConstantNoConstMissing(idSegment, inherit, inherit);
             if (obj == null) return runtime.getFalse();
             if (obj instanceof RubyModule) {
                 mod = (RubyModule) obj;
             } else {
-                throw runtime.newTypeError(segment + " does not refer to class/module");
+                throw runtime.newTypeError(nameSegment + " does not refer to class/module");
             }
             name = name.substring(sep + 2);
+            id = id.substring(idSep + 2);
         }
 
-        obj = mod.getConstantSkipAutoload(validateConstant(name, symbol), inherit, inherit);
+        validateConstant(name, symbol);
+        obj = mod.getConstantSkipAutoload(id, inherit, inherit);
         return runtime.newBoolean(obj != null);
     }
 
@@ -3176,29 +3193,32 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        return setConstant(validateConstant(symbol).intern(), value);
+        RubySymbol name = TypeConverter.checkID(symbol);
+        validateConstant(name.toString(), name);
+        return setConstant(name.toID(), value);
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
     public IRubyObject remove_const(ThreadContext context, IRubyObject rubyName) {
         String name = validateConstant(rubyName);
+        String id = TypeConverter.checkID(rubyName).toID();
         IRubyObject value;
-        if ((value = deleteConstant(name)) != null) {
-            invalidateConstantCache(name);
+        if ((value = deleteConstant(id)) != null) {
+            invalidateConstantCache(id);
             if (value != UNDEF) {
                 return value;
             }
-            removeAutoload(name);
+            removeAutoload(id);
             // FIXME: I'm not sure this is right, but the old code returned
             // the undef, which definitely isn't right...
             return context.runtime.getNil();
         }
 
-        if (hasConstantInHierarchy(name)) {
+        if (hasConstantInHierarchy(id)) {
             throw cannotRemoveError(name);
         }
 
-        throw context.runtime.newNameError("constant " + name + " not defined for " + getName(), name);
+        throw context.runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
     }
 
     private boolean hasConstantInHierarchy(final String name) {
@@ -3219,16 +3239,16 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "const_missing", required = 1)
     public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
         Ruby runtime = context.runtime;
-        String shortName = rubyName.asJavaString();
-        String longName;
+        RubySymbol symName = TypeConverter.checkID(rubyName);
+        String message;
 
         if (this != runtime.getObject()) {
-            longName = getName() + "::" + shortName;
+            message = "uninitialized constant " + getName() + "::%1$s";
         } else {
-            longName = shortName;
+            message = "uninitialized constant %1$s";
         }
 
-        throw runtime.newNameError("uninitialized constant " + longName, this, rubyName);
+        throw runtime.newNameError(message, this, rubyName);
     }
 
     public RubyArray constants(ThreadContext context) {
@@ -3252,7 +3272,7 @@ public class RubyModule extends RubyObject {
         Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants, false);
 
         for (String name : constantNames) {
-            array.add(runtime.newSymbol(name));
+            array.add(RubySymbol.newHardSymbol(runtime, name));
         }
         return array;
     }
@@ -4009,14 +4029,14 @@ public class RubyModule extends RubyObject {
         if (IdUtil.isValidClassVariableName(name)) {
             return name;
         }
-        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", this, name);
+        throw getRuntime().newNameError("`%1$s' is not allowed as a class variable name", this, name);
     }
 
     protected final String validateClassVariable(IRubyObject nameObj, String name) {
         if (IdUtil.isValidClassVariableName(name)) {
             return name;
         }
-        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", this, nameObj);
+        throw getRuntime().newNameError("`%1$s' is not allowed as a class variable name", this, nameObj);
     }
 
     protected final void ensureClassVariablesSettable() {
@@ -4162,7 +4182,7 @@ public class RubyModule extends RubyObject {
             nameString = (RubyString) nameString.inspect();
         }
 
-        throw getRuntime().newNameError("wrong constant name " + nameString, name);
+        throw getRuntime().newNameError("wrong constant name %s", this, errorName);
     }
 
     protected final void ensureConstantsSettable() {

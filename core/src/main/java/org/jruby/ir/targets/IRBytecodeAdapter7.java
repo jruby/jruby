@@ -13,6 +13,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyHash;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
@@ -109,11 +110,11 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
     /**
      * Push a symbol on the stack
-     * @param sym the symbol's string identifier
+     * @param bl the symbol's string identifier
      */
-    public void pushSymbol(String sym, Encoding encoding) {
+    public void pushSymbol(ByteList bl) {
         loadContext();
-        adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), SymbolObjectSite.BOOTSTRAP, sym, new String(encoding.getName()));
+        adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), SymbolObjectSite.BOOTSTRAP, new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
     }
 
     public void loadRuntime() {
@@ -240,15 +241,15 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     public void searchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), name, noPrivateConsts?1:0);
+        adapter.invokedynamic("searchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class, RubySymbol.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
     }
 
     public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("inheritanceSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.searchConst(), name, noPrivateConsts?1:0);
+        adapter.invokedynamic("inheritanceSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, RubySymbol.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
     }
 
     public void lexicalSearchConst(String name) {
-        adapter.invokedynamic("lexicalSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), name, 0);
+        adapter.invokedynamic("lexicalSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class, RubySymbol.class)), Bootstrap.searchConst(), 0);
     }
 
     public void pushNil() {

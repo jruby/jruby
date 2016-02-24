@@ -33,6 +33,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -43,8 +44,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public abstract class Colon2Node extends Colon3Node implements INameNode {
     protected final Node leftNode;
 
-    public Colon2Node(ISourcePosition position, Node leftNode, String name) {
-        super(position, name, leftNode != null && leftNode.containsVariableAssignment);
+    public Colon2Node(ISourcePosition position, Node leftNode, String name, Encoding encoding) {
+        super(position, name, encoding, leftNode != null && leftNode.containsVariableAssignment);
         this.leftNode = leftNode;
     }
 

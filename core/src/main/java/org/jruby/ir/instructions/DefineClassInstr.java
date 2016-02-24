@@ -53,6 +53,7 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getNewIRClassBody());
+        e.encode(name);
         e.encode(getContainer());
         e.encode(getSuperClass());
     }

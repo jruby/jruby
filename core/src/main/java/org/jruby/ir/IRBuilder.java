@@ -1,13 +1,16 @@
 package org.jruby.ir;
 
+import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.ir.instructions.*;
@@ -396,7 +399,7 @@ public class IRBuilder {
             case COLON3NODE: return buildColon3((Colon3Node) node);
             case COMPLEXNODE: return buildComplex((ComplexNode) node);
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node);
-            case CONSTNODE: return searchConst(((ConstNode) node).getName());
+            case CONSTNODE: return searchConst(((ConstNode) node).getName(), ((ConstNode) node).getEncoding());
             case DASGNNODE: return buildDAsgn((DAsgnNode) node);
             case DEFINEDNODE: return buildGetDefinition(((DefinedNode) node).getExpressionNode());
             case DEFNNODE: return buildDefn((MethodDefNode) node);
@@ -1170,6 +1173,7 @@ public class IRBuilder {
         Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? null : build(superNode);
         String className = cpath.getName();
+        Encoding nameEnc = cpath.getEncoding();
         Operand container = getContainerFromCPath(cpath);
         IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope());
         Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
@@ -1284,7 +1288,7 @@ public class IRBuilder {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            return putConstant(constDeclNode.getName(), value);
+            return putConstant(new Symbol(constDeclNode.getName(), constDeclNode.getEncoding()), value);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             return putConstant((Colon2Node) constNode, value);
         } else { // colon3, assign in Object
@@ -1292,20 +1296,20 @@ public class IRBuilder {
         }
     }
 
-    private Operand putConstant(String name, Operand value) {
+    private Operand putConstant(Symbol name, Operand value) {
         addInstr(new PutConstInstr(findContainerModule(), name, value));
 
         return value;
     }
 
     private Operand putConstant(Colon3Node node, Operand value) {
-        addInstr(new PutConstInstr(new ObjectClass(), node.getName(), value));
+        addInstr(new PutConstInstr(new ObjectClass(), new Symbol(node.getName(), node.getEncoding()), value));
 
         return value;
     }
 
     private Operand putConstant(Colon2Node node, Operand value) {
-        addInstr(new PutConstInstr(build(node.getLeftNode()), node.getName(), value));
+        addInstr(new PutConstInstr(build(node.getLeftNode()), new Symbol(node.getName(), node.getEncoding()), value));
 
         return value;
     }
@@ -1318,20 +1322,20 @@ public class IRBuilder {
         return putConstant((Colon3Node) constNode, value);
     }
 
-    private void genInheritanceSearchInstrs(Operand startingModule, Variable constVal, Label foundLabel, boolean noPrivateConstants, String name) {
+    private void genInheritanceSearchInstrs(Operand startingModule, Variable constVal, Label foundLabel, boolean noPrivateConstants, Symbol name) {
         addInstr(new InheritanceSearchConstInstr(constVal, startingModule, name, noPrivateConstants));
         addInstr(BNEInstr.create(foundLabel, constVal, UndefinedValue.UNDEFINED));
         addInstr(new ConstMissingInstr(constVal, startingModule, name, scope.maybeUsingRefinements()));
         addInstr(new LabelInstr(foundLabel));
     }
 
-    private Operand searchConstInInheritanceHierarchy(Operand startingModule, String name) {
+    private Operand searchConstInInheritanceHierarchy(Operand startingModule, Symbol name) {
         Variable constVal = createTemporaryVariable();
         genInheritanceSearchInstrs(startingModule, constVal, getNewLabel(), true, name);
         return constVal;
     }
 
-    private Operand searchConst(String name) {
+    private Operand searchConst(String name, Encoding encoding) {
         final boolean noPrivateConstants = false;
         Variable v = createTemporaryVariable();
 /**
@@ -1344,26 +1348,27 @@ public class IRBuilder {
         addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
         genInheritanceSearchInstrs(s, findContainerModule(startingScope), v, foundLabel, noPrivateConstants, name);
 **/
-        addInstr(new SearchConstInstr(v, name, startingSearchScope(), noPrivateConstants));
+        addInstr(new SearchConstInstr(v, new Symbol(new ByteList(name.getBytes(encoding.getCharset()), encoding)), startingSearchScope(), noPrivateConstants));
         return v;
     }
 
     public Operand buildColon2(final Colon2Node iVisited) {
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
+        final Encoding encoding = iVisited.getEncoding();
 
         // Colon2ImplicitNode
-        if (leftNode == null) return searchConst(name);
+        if (leftNode == null) return searchConst(name, encoding);
 
         // Colon2ConstNode
         // 1. Load the module first (lhs of node)
         // 2. Then load the constant from the module
         Operand module = build(leftNode);
-        return searchConstInInheritanceHierarchy(module, name);
+        return searchConstInInheritanceHierarchy(module, new Symbol(name, encoding));
     }
 
     public Operand buildColon3(Colon3Node node) {
-        return searchConstInInheritanceHierarchy(new ObjectClass(), node.getName());
+        return searchConstInInheritanceHierarchy(new ObjectClass(), new Symbol(node.getName(), node.getEncoding()));
     }
 
     public Operand buildComplex(ComplexNode node) {
@@ -1411,7 +1416,7 @@ public class IRBuilder {
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         addInstr(new LabelInstr(rescueLabel));
         addInstr(new ReceiveRubyExceptionInstr(exc));
-        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception", false));
+        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), new Symbol("Exception", USASCIIEncoding.INSTANCE), false));
         outputExceptionCheck(excType, exc, caughtLabel);
 
         // Fall-through when the exc !== Exception; rethrow 'exc'
@@ -1531,9 +1536,11 @@ public class IRBuilder {
             Label doneLabel = getNewLabel();
             Variable tmpVar  = createTemporaryVariable();
             String constName = ((ConstNode) node).getName();
-            addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), constName));
+            Encoding encoding = ((ConstNode) node).getEncoding();
+            Symbol symbol = new Symbol(constName, encoding);
+            addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), symbol));
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
-            addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName, false)); // SSS FIXME: should this be the current-module var or something else?
+            addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), symbol, false)); // SSS FIXME: should this be the current-module var or something else?
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new CopyInstr(tmpVar, manager.getNil()));
             addInstr(new JumpInstr(doneLabel));
@@ -1808,7 +1815,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, true);
         addInstr(new DefineInstanceMethodInstr(method));
         // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), ASCIIEncoding.INSTANCE);
+        return new Symbol(RubySymbol.symbolBytesFromString(method.getName()));
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
@@ -1816,7 +1823,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, false);
         addInstr(new DefineClassMethodInstr(container, method));
         // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), ASCIIEncoding.INSTANCE);
+        return new Symbol(RubySymbol.symbolBytesFromString(method.getName()));
     }
 
     protected LocalVariable getArgVariable(String name, int depth) {
@@ -2468,7 +2475,7 @@ public class IRBuilder {
         // for JIT/AOT.  Also it means needing to grow the size of any heap scope for variables.
         if (nearestNonClosureBuilder == null) {
             Variable excType = createTemporaryVariable();
-            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError", false));
+            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), new Symbol("NotImplementedError", USASCIIEncoding.INSTANCE), false));
             Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), "new", excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
             addInstr(new ThrowExceptionInstr(exc));
             return buildNil();
@@ -3780,7 +3787,7 @@ public class IRBuilder {
         } else if (instr instanceof ReceiveKeywordArgInstr) {
             ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr) instr;
             // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
-            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
+            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(RubySymbol.symbolBytesFromString(rkai.argName)), rkai.getResult()));
         } else if (instr instanceof ReceiveRestArgInstr) {
             callArgs.add(new Splat(((ReceiveRestArgInstr) instr).getResult()));
         } else if (instr instanceof ReceiveArgBase) {

@@ -172,11 +172,11 @@ public class JavaSupportImpl extends JavaSupport {
         try {
             return loadJavaClass(className);
         } catch (ClassNotFoundException cnfExcptn) {
-            throw runtime.newNameError("cannot load Java class " + className, className, cnfExcptn, false);
+            throw runtime.newNameError("cannot load Java class %1$s (" + cnfExcptn.getLocalizedMessage() + ")", className, cnfExcptn, false);
         } catch (ExceptionInInitializerError eiie) {
-            throw runtime.newNameError("cannot initialize Java class " + className, className, eiie, false);
+            throw runtime.newNameError("cannot initialize Java class %1$s (" + eiie.getLocalizedMessage() + ")", className, eiie, false);
         } catch (LinkageError le) {
-            throw runtime.newNameError("cannot link Java class " + className, className, le, false);
+            throw runtime.newNameError("cannot link Java class %1$s (" + le.getLocalizedMessage() + ")", className, le, false);
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }

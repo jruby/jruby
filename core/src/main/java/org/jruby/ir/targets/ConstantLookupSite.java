@@ -3,6 +3,7 @@ package org.jruby.ir.targets;
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
@@ -23,36 +24,34 @@ import static java.lang.invoke.MethodHandles.guardWithTest;
  */
 public class ConstantLookupSite extends MutableCallSite {
     private static final Logger LOG = LoggerFactory.getLogger("ConstantLookupSite");
-    private final String name;
     private final boolean publicOnly;
 
-    public ConstantLookupSite(MethodType type, String name, boolean publicOnly) {
+    public ConstantLookupSite(MethodType type, boolean publicOnly) {
         super(type);
-
-        this.name = name;
         this.publicOnly = publicOnly;
+
     }
 
-    public IRubyObject searchConst(ThreadContext context, StaticScope staticScope) {
+    public IRubyObject searchConst(ThreadContext context, StaticScope staticScope, RubySymbol name) {
         // Lexical lookup
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
-        IRubyObject constant = (staticScope == null) ? object.getConstant(name) : staticScope.getConstantInner(name);
+        IRubyObject constant = (staticScope == null) ? object.getConstant(name.toID()) : staticScope.getConstantInner(name.toID());
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
-            constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
+            constant = publicOnly ? module.getConstantFromNoConstMissing(name.toID(), false) : module.getConstantNoConstMissing(name.toID());
         }
 
         // Call const_missing or cache
         if (constant == null) {
-            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(name));
+            return module.callMethod(context, "const_missing", name);
         }
 
-        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();
+        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name.toID()).getData();
 
         // bind constant until invalidated
         MethodHandle target = Binder.from(type())
@@ -74,7 +73,7 @@ public class ConstantLookupSite extends MutableCallSite {
         return constant;
     }
 
-    public IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal) {
+    public IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal, RubySymbol name) {
         Ruby runtime = context.runtime;
         RubyModule module;
 
@@ -84,13 +83,13 @@ public class ConstantLookupSite extends MutableCallSite {
             throw runtime.newTypeError(cmVal + " is not a type/class");
         }
 
-        IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
+        IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name.toID(), false) : module.getConstantNoConstMissing(name.toID());
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         }
 
-        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();
+        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name.toID()).getData();
 
         // bind constant until invalidated
         MethodHandle target = Binder.from(type())
@@ -121,16 +120,16 @@ public class ConstantLookupSite extends MutableCallSite {
         return constant;
     }
 
-    public IRubyObject lexicalSearchConst(ThreadContext context, StaticScope scope) {
+    public IRubyObject lexicalSearchConst(ThreadContext context, StaticScope scope, RubySymbol name) {
         Ruby runtime = context.runtime;
 
-        IRubyObject constant = scope.getConstantInner(name);
+        IRubyObject constant = scope.getConstantInner(name.toID());
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         }
 
-        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();
+        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name.toID()).getData();
 
         // bind constant until invalidated
         MethodHandle target = Binder.from(type())

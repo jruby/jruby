@@ -326,10 +326,9 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: none
      *
-     * @param sym the symbol's string identifier
-     * @param encoding the symbol's encoding
+     * @param sym the symbol's ByteList identifier
      */
-    public abstract void pushSymbol(String sym, Encoding encoding);
+    public abstract void pushSymbol(ByteList sym);
 
     /**
      * Push a Symbol.to_proc on the stack.
@@ -450,31 +449,27 @@ public abstract class IRBytecodeAdapter {
     /**
      * Lookup a constant from current context.
      *
-     * Stack required: context, static scope
+     * Stack required: context, static scope, symbol
      *
-     * @param name name of the constant
      * @param noPrivateConsts whether to ignore private constants
      */
-    public abstract void searchConst(String name, boolean noPrivateConsts);
+    public abstract void searchConst(boolean noPrivateConsts);
 
     /**
      * Lookup a constant from a given class or module.
      *
-     * Stack required: context, module
+     * Stack required: context, module, symbol
      *
-     * @param name name of the constant
      * @param noPrivateConsts whether to ignore private constants
      */
-    public abstract void inheritanceSearchConst(String name, boolean noPrivateConsts);
+    public abstract void inheritanceSearchConst(boolean noPrivateConsts);
 
     /**
      * Lookup a constant from a lexical scope.
      *
-     * Stack required: context, static scope
-     *
-     * @param name name of the constant
+     * Stack required: context, static scope, symbol
      */
-    public abstract void lexicalSearchConst(String name);
+    public abstract void lexicalSearchConst();
 
     /**
      * Load nil onto the stack.

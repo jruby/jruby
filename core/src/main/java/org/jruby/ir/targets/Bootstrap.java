@@ -4,8 +4,6 @@ import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
-import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.internal.runtime.GlobalVariable;
@@ -65,12 +63,7 @@ public class Bootstrap {
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr, String file, int line) {
-        Encoding encoding;
-        EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
-        if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
-        if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
-        encoding = entry.getEncoding();
-        ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
+        ByteList byteList = IRRuntimeHelpers.newByteListFromRaw(value, encodingName);
         MutableCallSite site = new MutableCallSite(type);
         Binder binder = Binder
                 .from(RubyString.class, ThreadContext.class)
@@ -85,12 +78,7 @@ public class Bootstrap {
     }
 
     public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, String encodingName) {
-        Encoding encoding;
-        EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
-        if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
-        if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
-        encoding = entry.getEncoding();
-        ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
+        ByteList byteList = IRRuntimeHelpers.newByteListFromRaw(value, encodingName);
         return new ConstantCallSite(constant(ByteList.class, byteList));
     }
 
@@ -794,11 +782,11 @@ public class Bootstrap {
     // constant lookup
 
     public static Handle searchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
-    public static CallSite searchConst(Lookup lookup, String searchType, MethodType type, String constName, int publicOnly) {
-        ConstantLookupSite site = new ConstantLookupSite(type, constName, publicOnly == 0 ? false : true);
+    public static CallSite searchConst(Lookup lookup, String searchType, MethodType type, int publicOnly) {
+        ConstantLookupSite site = new ConstantLookupSite(type, publicOnly == 0 ? false : true);
 
         MethodHandle handle = Binder
                 .from(lookup, type)
