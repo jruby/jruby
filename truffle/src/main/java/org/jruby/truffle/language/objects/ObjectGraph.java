@@ -20,9 +20,8 @@ import com.oracle.truffle.api.object.Property;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.hash.Entry;
+import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.util.func.Function2;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -36,9 +35,7 @@ public abstract class ObjectGraph {
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false,
-                new Function2<Void, DynamicObject, Node>() {
-
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
             @Override
             public Void apply(DynamicObject thread, Node currentNode) {
                 synchronized (visited) {
@@ -89,9 +86,7 @@ public abstract class ObjectGraph {
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false,
-                new Function2<Void, DynamicObject, Node>() {
-
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
             @Override
             public Void apply(DynamicObject thread, Node currentNode) {
                 objects.add(thread);
@@ -102,7 +97,6 @@ public abstract class ObjectGraph {
 
                 return null;
             }
-
         });
 
         return objects;

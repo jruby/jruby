@@ -16,10 +16,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.func.Function2;
-
 import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
 import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
 import static org.jruby.RubyThread.javaPriorityToRubyPriority;
@@ -47,7 +46,7 @@ public class ThreadPrimitiveNodes {
         public static void raiseInThread(final RubyContext context, DynamicObject rubyThread, final DynamicObject exception, Node currentNode) {
             final Thread javaThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber()));
 
-            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new Function2<Void, DynamicObject, Node>() {
+            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new SafepointAction() {
                 @Override
                 public Void apply(DynamicObject currentThread, Node currentNode) {
                     if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
