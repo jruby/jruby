@@ -26,7 +26,7 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
 
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        dispatchNode = new YieldNode(context, DeclarationContext.BLOCK);
+        dispatchNode = new YieldNode(context);
     }
 
     private boolean booleanCast(VirtualFrame frame, Object value) {

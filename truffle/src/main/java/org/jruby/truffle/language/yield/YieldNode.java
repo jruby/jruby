@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.yield;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -19,30 +20,62 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 
 public class YieldNode extends Node {
 
-    @Child CallBlockNode callBlockNode;
+    private RubyContext context;
+    private DeclarationContext declarationContext;
+
+    @Child private CallBlockNode callBlockNode;
 
     public YieldNode(RubyContext context) {
         this(context, DeclarationContext.BLOCK);
     }
 
     public YieldNode(RubyContext context, DeclarationContext declarationContext) {
-        callBlockNode = CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null);
+        this.context = context;
+        this.declarationContext = declarationContext;
     }
 
-    public Object dispatch(VirtualFrame frame, DynamicObject block, Object... argumentsObjects) {
-        assert block == null || RubyGuards.isRubyProc(block);
-        return callBlockNode.executeCallBlock(frame, block, Layouts.PROC.getSelf(block), Layouts.PROC.getBlock(block), argumentsObjects);
+    public Object dispatch(VirtualFrame frame,
+                           DynamicObject block,
+                           Object... argumentsObjects) {
+        return getCallBlockNode().executeCallBlock(
+                frame,
+                block,
+                Layouts.PROC.getSelf(block),
+                Layouts.PROC.getBlock(block),
+                argumentsObjects);
     }
 
-    public Object dispatchWithModifiedBlock(VirtualFrame frame, DynamicObject block, DynamicObject modifiedBlock, Object... argumentsObjects) {
-        assert block == null || RubyGuards.isRubyProc(block);
-        assert modifiedBlock == null || RubyGuards.isRubyProc(modifiedBlock);
-        return callBlockNode.executeCallBlock(frame, block, Layouts.PROC.getSelf(block), modifiedBlock, argumentsObjects);
+    public Object dispatchWithModifiedBlock(VirtualFrame frame,
+                                            DynamicObject block,
+                                            DynamicObject modifiedBlock,
+                                            Object... argumentsObjects) {
+        return getCallBlockNode().executeCallBlock(
+                frame,
+                block,
+                Layouts.PROC.getSelf(block),
+                modifiedBlock,
+                argumentsObjects);
     }
 
-    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, DynamicObject block, Object self, Object... argumentsObjects) {
-        assert block == null || RubyGuards.isRubyProc(block);
-        return callBlockNode.executeCallBlock(currentFrame, block, self, Layouts.PROC.getBlock(block), argumentsObjects);
+    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame,
+                                           DynamicObject block,
+                                           Object self,
+                                           Object... argumentsObjects) {
+        return getCallBlockNode().executeCallBlock(
+                currentFrame,
+                block,
+                self,
+                Layouts.PROC.getBlock(block),
+                argumentsObjects);
+    }
+
+    private CallBlockNode getCallBlockNode() {
+        if (callBlockNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            callBlockNode = insert(CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null));
+        }
+
+        return callBlockNode;
     }
 
 }
