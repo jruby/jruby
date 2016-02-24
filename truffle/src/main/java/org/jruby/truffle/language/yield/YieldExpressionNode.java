@@ -26,13 +26,13 @@ import org.jruby.truffle.language.control.RaiseException;
 /**
  * Yield to the current block.
  */
-public class YieldNode extends RubyNode {
+public class YieldExpressionNode extends RubyNode {
 
     @Children private final RubyNode[] arguments;
     @Child private YieldDispatchHeadNode dispatch;
     private final boolean unsplat;
 
-    public YieldNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {
+    public YieldExpressionNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {
         super(context, sourceSection);
         this.arguments = arguments;
         dispatch = new YieldDispatchHeadNode(getContext());

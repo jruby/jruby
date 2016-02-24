@@ -160,7 +160,7 @@ import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
 import org.jruby.truffle.language.objects.ThreadLocalObjectNodeGen;
 import org.jruby.truffle.language.objects.WriteClassVariableNode;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
-import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.language.yield.YieldExpressionNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
@@ -3036,7 +3036,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode[] argumentsTranslatedArray = argumentsTranslated.toArray(new RubyNode[argumentsTranslated.size()]);
 
-        final RubyNode ret = new YieldNode(context, translate(node.getPosition()), argumentsTranslatedArray, unsplat);
+        final RubyNode ret = new YieldExpressionNode(context, translate(node.getPosition()), argumentsTranslatedArray, unsplat);
         return addNewlineIfNeeded(node, ret);
     }
 
