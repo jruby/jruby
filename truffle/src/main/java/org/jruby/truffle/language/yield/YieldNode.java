@@ -17,15 +17,15 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.methods.DeclarationContext;
 
-public class YieldDispatchHeadNode extends Node {
+public class YieldNode extends Node {
 
     @Child CallBlockNode callBlockNode;
 
-    public YieldDispatchHeadNode(RubyContext context) {
+    public YieldNode(RubyContext context) {
         this(context, DeclarationContext.BLOCK);
     }
 
-    public YieldDispatchHeadNode(RubyContext context, DeclarationContext declarationContext) {
+    public YieldNode(RubyContext context, DeclarationContext declarationContext) {
         callBlockNode = CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null);
     }
 

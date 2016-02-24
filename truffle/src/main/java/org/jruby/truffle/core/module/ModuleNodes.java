@@ -91,7 +91,7 @@ import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.translator.Translator;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
@@ -617,12 +617,12 @@ public abstract class ModuleNodes {
     @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, lowerFixnumParameters = 2, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldDispatchHeadNode yield;
+        @Child private YieldNode yield;
         @Child private ToStrNode toStrNode;
 
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context, DeclarationContext.CLASS_EVAL);
+            yield = new YieldNode(context, DeclarationContext.CLASS_EVAL);
         }
 
         protected DynamicObject toStr(VirtualFrame frame, Object object) {
@@ -700,11 +700,11 @@ public abstract class ModuleNodes {
     @CoreMethod(names = { "class_exec", "module_exec" }, rest = true, needsBlock = true)
     public abstract static class ClassExecNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldDispatchHeadNode yield;
+        @Child private YieldNode yield;
 
         public ClassExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context, DeclarationContext.CLASS_EVAL);
+            yield = new YieldNode(context, DeclarationContext.CLASS_EVAL);
         }
 
         public abstract Object executeClassExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block);

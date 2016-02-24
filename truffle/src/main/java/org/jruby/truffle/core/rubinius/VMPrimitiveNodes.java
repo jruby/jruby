@@ -70,7 +70,7 @@ import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
@@ -93,12 +93,12 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_catch", needsSelf = false)
     public abstract static class CatchNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        @Child private YieldDispatchHeadNode dispatchNode;
+        @Child private YieldNode dispatchNode;
         @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatchNode = new YieldDispatchHeadNode(context);
+            dispatchNode = new YieldNode(context);
         }
 
         private boolean areSame(VirtualFrame frame, Object left, Object right) {

@@ -29,13 +29,13 @@ import org.jruby.truffle.language.control.RaiseException;
 public class YieldExpressionNode extends RubyNode {
 
     @Children private final RubyNode[] arguments;
-    @Child private YieldDispatchHeadNode dispatch;
+    @Child private YieldNode dispatch;
     private final boolean unsplat;
 
     public YieldExpressionNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {
         super(context, sourceSection);
         this.arguments = arguments;
-        dispatch = new YieldDispatchHeadNode(getContext());
+        dispatch = new YieldNode(getContext());
         this.unsplat = unsplat;
     }
 

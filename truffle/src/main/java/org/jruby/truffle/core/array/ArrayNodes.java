@@ -88,7 +88,7 @@ import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
 
 import java.util.Arrays;
@@ -4066,12 +4066,12 @@ public abstract class ArrayNodes {
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode compareDispatchNode;
-        @Child private YieldDispatchHeadNode yieldNode;
+        @Child private YieldNode yieldNode;
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
-            yieldNode = new YieldDispatchHeadNode(context);
+            yieldNode = new YieldNode(context);
         }
 
         @Specialization(guards = "isNullArray(array)")
