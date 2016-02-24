@@ -61,6 +61,12 @@ public final class WhileNode extends RubyNode {
             this.condition = BooleanCastNodeGen.create(context, condition.getSourceSection(), condition);
             this.body = body;
         }
+
+        @Override
+        public String toString() {
+            return condition.getEncapsulatingSourceSection().getShortDescription();
+        }
+
     }
 
     private static class WhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
