@@ -28,6 +28,6 @@ public interface ModuleLayout extends BasicObjectLayout {
 
     ModuleFields getFields(DynamicObject object);
 
-    void setFields(DynamicObject object, ModuleFields model);
+    void setFields(DynamicObject object, ModuleFields value);
 
 }

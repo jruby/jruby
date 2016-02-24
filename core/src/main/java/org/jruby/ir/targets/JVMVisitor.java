@@ -85,15 +85,6 @@ public class JVMVisitor extends IRVisitor {
 
     public byte[] compileToBytecode(IRScope scope, JVMVisitorMethodContext context) {
         codegenScope(scope, context);
-
-//        try {
-//            FileOutputStream fos = new FileOutputStream("tmp.class");
-//            fos.write(target.code());
-//            fos.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
         return code();
     }
 
@@ -142,7 +133,7 @@ public class JVMVisitor extends IRVisitor {
             LOG.info("Printing JIT IR for " + scope.getName(), "\n" + new String(baos.toByteArray()));
         }
 
-        Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
+        Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
         emitClosures(scope, print);
 

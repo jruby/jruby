@@ -50,10 +50,10 @@ public interface ThreadLayout extends BasicObjectLayout {
     boolean isThread(DynamicObject object);
 
     FiberManager getFiberManager(DynamicObject object);
-    void setFiberManagerUnsafe(DynamicObject object, FiberManager fiberManager);
+    void setFiberManagerUnsafe(DynamicObject object, FiberManager value);
 
     String getName(DynamicObject object);
-    void setNameUnsafe(DynamicObject object, String name);
+    void setNameUnsafe(DynamicObject object, String value);
 
     CountDownLatch getFinishedLatch(DynamicObject object);
 
@@ -62,19 +62,19 @@ public interface ThreadLayout extends BasicObjectLayout {
     List<Lock> getOwnedLocks(DynamicObject object);
 
     boolean getAbortOnException(DynamicObject object);
-    void setAbortOnException(DynamicObject object, boolean abortOnException);
+    void setAbortOnException(DynamicObject object, boolean value);
 
     InterruptMode getInterruptMode(DynamicObject object);
-    void setInterruptMode(DynamicObject object, InterruptMode interruptMode);
+    void setInterruptMode(DynamicObject object, InterruptMode value);
 
     Thread getThread(DynamicObject object);
-    void setThread(DynamicObject object, Thread thread);
+    void setThread(DynamicObject object, Thread value);
 
     RubyThread.Status getStatus(DynamicObject object);
-    void setStatus(DynamicObject object, RubyThread.Status status);
+    void setStatus(DynamicObject object, RubyThread.Status value);
 
     DynamicObject getException(DynamicObject object);
-    void setException(DynamicObject object, DynamicObject exception);
+    void setException(DynamicObject object, DynamicObject value);
 
     Object getValue(DynamicObject object);
     void setValue(DynamicObject object, Object value);

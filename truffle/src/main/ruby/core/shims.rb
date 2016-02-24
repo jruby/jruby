@@ -280,3 +280,9 @@ module Truffle::Primitive
     end
   end
 end
+
+def when_splat(cases, expression)
+  cases.any? do |c|
+    c === expression
+  end
+end

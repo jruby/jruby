@@ -27,16 +27,16 @@ public final class WhileNode extends RubyNode {
 
     private WhileNode(RubyContext context, SourceSection sourceSection, RepeatingNode repeatingNode) {
         super(context, sourceSection);
-        this.loopNode = Truffle.getRuntime().createLoopNode(repeatingNode);
+        loopNode = Truffle.getRuntime().createLoopNode(repeatingNode);
     }
 
     public static WhileNode createWhile(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode body) {
-        RepeatingNode repeatingNode = new WhileRepeatingNode(context, condition, body);
+        final RepeatingNode repeatingNode = new WhileRepeatingNode(context, condition, body);
         return new WhileNode(context, sourceSection, repeatingNode);
     }
 
     public static WhileNode createDoWhile(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode body) {
-        RepeatingNode repeatingNode = new DoWhileRepeatingNode(context, condition, body);
+        final RepeatingNode repeatingNode = new DoWhileRepeatingNode(context, condition, body);
         return new WhileNode(context, sourceSection, repeatingNode);
     }
 
@@ -61,6 +61,12 @@ public final class WhileNode extends RubyNode {
             this.condition = BooleanCastNodeGen.create(context, condition.getSourceSection(), condition);
             this.body = body;
         }
+
+        @Override
+        public String toString() {
+            return condition.getEncapsulatingSourceSection().getShortDescription();
+        }
+
     }
 
     private static class WhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
@@ -90,10 +96,6 @@ public final class WhileNode extends RubyNode {
             }
         }
 
-        @Override
-        public String toString() {
-            return condition.getEncapsulatingSourceSection().getShortDescription();
-        }
     }
     
     private static class DoWhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {

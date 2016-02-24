@@ -49,7 +49,7 @@ public abstract class CheckArityNode {
             final int given = RubyArguments.getArgumentsCount(frame.getArguments());
             if (!checkArity(given)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
+                throw new RaiseException(coreLibrary().argumentError(given, arity.getRequired(), this));
             }
         }
 
@@ -98,7 +98,7 @@ public abstract class CheckArityNode {
 
             if (!checkArity(frame, given, keywordArguments)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
+                throw new RaiseException(coreLibrary().argumentError(given, arity.getRequired(), this));
             }
 
             if (!arity.hasKeywordsRest() && keywordArguments != null) {
@@ -106,13 +106,13 @@ public abstract class CheckArityNode {
                     if (RubyGuards.isRubySymbol(keyValue.getKey())) {
                         if (!keywordAllowed(keyValue.getKey().toString())) {
                             CompilerDirectives.transferToInterpreter();
-                            throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
+                            throw new RaiseException(coreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
                         }
                     } else {
                         given++;
 
                         if (given > arity.getRequired() && !arity.hasRest() && arity.getOptional() == 0) {
-                            throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
+                            throw new RaiseException(coreLibrary().argumentError(given, arity.getRequired(), this));
                         }
                     }
                 }
@@ -124,7 +124,7 @@ public abstract class CheckArityNode {
                         given++;
 
                         if (given > arity.getRequired() && !arity.hasRest() && arity.getOptional() == 0) {
-                            throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
+                            throw new RaiseException(coreLibrary().argumentError(given, arity.getRequired(), this));
                         }
                     }
                 }

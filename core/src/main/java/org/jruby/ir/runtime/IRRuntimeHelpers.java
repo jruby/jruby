@@ -200,7 +200,7 @@ public class IRRuntimeHelpers {
             return ((IRWrappedLambdaReturnValue)exc).returnValue;
         } else if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
-            context.setSavedExceptionInLambda(IRException.BREAK_LocalJumpError.getException(context.getRuntime()));
+            context.setSavedExceptionInLambda(IRException.BREAK_LocalJumpError.getException(context.runtime));
             return null;
         } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
             try {
@@ -247,7 +247,7 @@ public class IRRuntimeHelpers {
             IRScopeType scopeType = scope.getScopeType();
             if (!scopeType.isClosureType()) {
                 // Error -- breaks can only be initiated in closures
-                throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+                throw IRException.BREAK_LocalJumpError.getException(context.runtime);
             } else {
                 bj.breakInEval = false;
                 throw bj;
@@ -311,7 +311,7 @@ public class IRRuntimeHelpers {
 
         module.undef(context, name);
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     public static double unboxFloat(IRubyObject val) {
@@ -554,8 +554,10 @@ public class IRRuntimeHelpers {
     // Due to our current strategy of destructively processing the kwargs hash we need to dup
     // and make sure the copy is not frozen.  This has a poor name as encouragement to rewrite
     // how we handle kwargs internally :)
-    public static void frobnicateKwargsArgument(ThreadContext context, int requiredArguments, IRubyObject[] args) {
-        RubyHash kwargs = IRRuntimeHelpers.extractKwargsHash(args, requiredArguments, true);
+    public static void frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
+        if (args.length <= requiredArgsCount) return; // No kwarg because required args slurp them up.
+
+        RubyHash kwargs = toHash(args[args.length - 1], context);
 
         if (kwargs != null) {
             kwargs = (RubyHash) kwargs.dup(context);
@@ -564,20 +566,23 @@ public class IRRuntimeHelpers {
         }
     }
 
+    private static RubyHash toHash(IRubyObject lastArg, ThreadContext context) {
+        if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+        if (lastArg.respondsTo("to_hash")) {
+            if ( context == null ) context = lastArg.getRuntime().getCurrentContext();
+            lastArg = lastArg.callMethod(context, "to_hash");
+            if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+        }
+        return null;
+    }
+
     public static RubyHash extractKwargsHash(Object[] args, int requiredArgsCount, boolean receivesKwargs) {
         if (!receivesKwargs) return null;
         if (args.length <= requiredArgsCount) return null; // No kwarg because required args slurp them up.
 
         Object lastArg = args[args.length - 1];
 
-        if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
-
-        if (((IRubyObject) lastArg).respondsTo("to_hash")) {
-            lastArg = ((IRubyObject) lastArg).callMethod(((IRubyObject) lastArg).getRuntime().getCurrentContext(), "to_hash");
-
-            if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
-        }
-
+        if (lastArg instanceof IRubyObject) return toHash((IRubyObject) lastArg, null);
         return null;
     }
 
@@ -709,7 +714,7 @@ public class IRRuntimeHelpers {
             if (methodName == null || !methodName.equals("")) {
                 throw context.runtime.newNameError("superclass method '" + methodName + "' disabled", methodName);
             } else {
-                throw context.runtime.newNoMethodError("super called outside of method", null, context.runtime.getNil());
+                throw context.runtime.newNoMethodError("super called outside of method", null, context.nil);
             }
         }
     }
@@ -911,7 +916,7 @@ public class IRRuntimeHelpers {
 
         if (keywordArguments == null) return UndefinedValue.UNDEFINED;
 
-        RubySymbol keywordName = context.getRuntime().newSymbol(argName);
+        RubySymbol keywordName = context.runtime.newSymbol(argName);
 
         if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
 
@@ -923,7 +928,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
         RubyHash keywordArguments = extractKwargsHash(args, required, keywordArgumentSupplied);
 
-        return keywordArguments == null ? RubyHash.newSmallHash(context.getRuntime()) : keywordArguments;
+        return keywordArguments == null ? RubyHash.newSmallHash(context.runtime) : keywordArguments;
     }
 
     public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String varName) {
@@ -1121,8 +1126,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
-        Ruby runtime = context.getRuntime();
-        RubyModule object = runtime.getObject();
+        RubyModule object = context.runtime.getObject();
         IRubyObject constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
 
         // Inheritance lookup
@@ -1143,12 +1147,11 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject inheritedSearchConst(ThreadContext context, IRubyObject cmVal, String constName, boolean noPrivateConsts) {
-        Ruby runtime = context.runtime;
         RubyModule module;
         if (cmVal instanceof RubyModule) {
             module = (RubyModule) cmVal;
         } else {
-            throw runtime.newTypeError(cmVal + " is not a type/class");
+            throw context.runtime.newTypeError(cmVal + " is not a type/class");
         }
 
         IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
@@ -1675,7 +1678,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
         args = prepareBlockArgsInternal(context, block, args);
         if (usesKwArgs) {
-            frobnicateKwargsArgument(context, block.getBody().getSignature().required(), args);
+            frobnicateKwargsArgument(context, args, block.getBody().getSignature().required());
         }
         return args;
     }

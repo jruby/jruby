@@ -34,12 +34,11 @@ import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
-import org.jruby.util.func.Function2;
-
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -117,7 +116,7 @@ public abstract class ThreadNodes {
             Layouts.THREAD.setValue(thread, context.getCoreLibrary().getNilObject());
             return;
         } catch (RaiseException e) {
-            Layouts.THREAD.setException(thread, e.getRubyException());
+            Layouts.THREAD.setException(thread, e.getException());
         } catch (ReturnException e) {
             Layouts.THREAD.setException(thread, context.getCoreLibrary().unexpectedReturn(currentNode));
         } finally {
@@ -186,12 +185,11 @@ public abstract class ThreadNodes {
 
             final DynamicObject[] result = new DynamicObject[1];
 
-            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new Function2<Void, DynamicObject, Node>() {
+            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new SafepointAction() {
                 @Override
-                public Void apply(DynamicObject thread, Node currentNode) {
+                public void run(DynamicObject thread, Node currentNode) {
                     final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
                     result[0] = ExceptionNodes.backtraceAsRubyStringArray(getContext(), null, backtrace);
-                    return null;
                 }
             });
 
@@ -230,11 +228,10 @@ public abstract class ThreadNodes {
                 return rubyThread;
             }
 
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new Function2<Void, DynamicObject, Node>() {
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
                 @Override
-                public Void apply(DynamicObject currentThread, Node currentNode) {
+                public void run(DynamicObject currentThread, Node currentNode) {
                     shutdown(getContext(), currentThread, currentNode);
-                    return null;
                 }
             });
 
@@ -278,7 +275,7 @@ public abstract class ThreadNodes {
                 return InterruptMode.NEVER;
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("invalid timing symbol", this));
+                throw new RaiseException(coreLibrary().argumentError("invalid timing symbol", this));
             }
         }
 
@@ -469,7 +466,7 @@ public abstract class ThreadNodes {
         public DynamicObject wakeup(final DynamicObject thread) {
             if (Layouts.THREAD.getStatus(thread) == Status.DEAD) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().threadError("killed thread", this));
+                throw new RaiseException(coreLibrary().threadError("killed thread", this));
             }
 
             // TODO: should only interrupt sleep
@@ -539,7 +536,7 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject list() {
             final Object[] threads = getContext().getThreadManager().getThreadList();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), threads, threads.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), threads, threads.length);
         }
     }
 

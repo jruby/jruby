@@ -95,7 +95,7 @@ project 'JRuby Lib Setup' do
     lib_dir = File.join( target, 'lib' )
     openssl = File.join( lib_dir, 'openssl.rb' )
     FileUtils.mkdir_p( lib_dir )
-    File.open( openssl, 'w' )
+    FileUtils.touch( openssl )
     $LOAD_PATH.unshift lib_dir
 
     # since the bouncy castle .jars are version-ed (e.g. bcprov-jdk15on-1.47)

@@ -439,7 +439,7 @@ public abstract class FixnumNodes {
 
             if (mod < 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) > 0 || mod > 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
                 adjustProfile.enter();
-                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
+                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
             }
 
             return mod;
@@ -1007,7 +1007,7 @@ public abstract class FixnumNodes {
         @Specialization(contains = "absInBounds")
         public Object abs(long n) {
             if (n == Long.MIN_VALUE) {
-                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), BigInteger.valueOf(n).abs());
+                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(n).abs());
             }
             return (n < 0) ? -n : n;
         }
@@ -1138,7 +1138,7 @@ public abstract class FixnumNodes {
         public DynamicObject toS(long n, int base) {
             if (base < 2 || base > 36) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
+                throw new RaiseException(coreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
             return create7BitString(Long.toString(n, base), USASCIIEncoding.INSTANCE);

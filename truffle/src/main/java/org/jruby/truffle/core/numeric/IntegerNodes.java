@@ -123,7 +123,7 @@ public abstract class IntegerNodes {
                 array[i] = i;
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, n);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array, n);
         }
 
         @Specialization

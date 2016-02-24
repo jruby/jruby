@@ -38,7 +38,7 @@ public class UpdateLastBacktraceNode extends RubyNode {
 
         if (lastException == nil()) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("$! is not set", this));
+            throw new RaiseException(coreLibrary().argumentError("$! is not set", this));
         }
 
         final Object newBacktrace = child.execute(frame);

@@ -117,7 +117,7 @@ public class TraceManager {
 
             @Override
             public void probeTaggedAs(Probe probe, SyntaxTag tag, Object tagValue) {
-                if (eventFactories.containsKey(tag)) {
+                if (instruments != null && eventFactories.containsKey(tag)) {
                     instruments.add(context.getEnv().instrumenter().attach(probe, eventFactories.get(tag).createInstrumentListener(context, traceFunc), "set_trace_func"));
                 }
             }

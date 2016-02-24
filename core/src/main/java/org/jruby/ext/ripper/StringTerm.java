@@ -59,7 +59,7 @@ public class StringTerm extends StrTerm {
     }
 
     protected ByteList createByteList(RipperLexer lexer) {
-        return new ByteList(new byte[]{}, lexer.getEncoding());
+        return new ByteList(ByteList.NULL_ARRAY, lexer.getEncoding());
     }
 
     private int endFound(RipperLexer lexer, LexerSource src, ByteList buffer) throws IOException {

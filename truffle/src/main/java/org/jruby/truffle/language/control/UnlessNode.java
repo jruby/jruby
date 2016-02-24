@@ -33,7 +33,7 @@ public class UnlessNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (conditionProfile.profile(!condition.executeBoolean(frame))) {
+        if (!conditionProfile.profile(condition.executeBoolean(frame))) {
             return thenBody.execute(frame);
         } else {
             return nil();

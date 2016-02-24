@@ -28,13 +28,13 @@ public interface StringLayout extends BasicObjectLayout {
                                @Nullable DynamicObject rubiniusDataArray);
 
     boolean isString(ObjectType objectType);
-    boolean isString(DynamicObject dynamicObject);
-    boolean isString(Object dynamicObject);
+    boolean isString(DynamicObject object);
+    boolean isString(Object object);
 
     Rope getRope(DynamicObject object);
-    void setRope(DynamicObject object, Rope rope);
+    void setRope(DynamicObject object, Rope value);
 
     DynamicObject getRubiniusDataArray(DynamicObject object);
-    void setRubiniusDataArray(DynamicObject object, DynamicObject rubiniusDataArray);
+    void setRubiniusDataArray(DynamicObject object, DynamicObject value);
 
 }

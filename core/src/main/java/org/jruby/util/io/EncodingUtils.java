@@ -53,7 +53,7 @@ public class EncodingUtils {
     public static final int DEFAULT_TEXTMODE = Platform.IS_WINDOWS ? OpenFile.TEXTMODE : 0;
     public static final int TEXTMODE_NEWLINE_DECORATOR_ON_WRITE = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
 
-    private static final byte[] NULL_BYTE_ARRAY = new byte[0];
+    private static final byte[] NULL_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // rb_to_encoding
     public static Encoding rbToEncoding(ThreadContext context, IRubyObject enc) {
@@ -1731,8 +1731,8 @@ public class EncodingUtils {
         if (first) {
             encs[0] = null;
             encs[1] = null;
-            encNames[0] = new byte[0];
-            encNames[1] = new byte[0];
+            encNames[0] = NULL_BYTE_ARRAY;
+            encNames[1] = NULL_BYTE_ARRAY;
         }
 
         ec.source = encNames[0];

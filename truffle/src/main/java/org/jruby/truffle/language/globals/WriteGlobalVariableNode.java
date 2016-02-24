@@ -15,21 +15,21 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.WriteObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 
 public class WriteGlobalVariableNode extends RubyNode {
 
     private final DynamicObject globalVariablesObject;
 
     @Child private RubyNode rhs;
-    @Child private WriteHeadObjectFieldNode writeNode;
+    @Child private WriteObjectFieldNode writeNode;
 
     public WriteGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode rhs) {
         super(context, sourceSection);
         this.globalVariablesObject = context.getCoreLibrary().getGlobalVariablesObject();
         this.rhs = rhs;
-        writeNode = WriteHeadObjectFieldNodeGen.create(getContext(), name);
+        writeNode = WriteObjectFieldNodeGen.create(getContext(), name);
     }
 
     @Override

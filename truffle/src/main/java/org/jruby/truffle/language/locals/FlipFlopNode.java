@@ -18,20 +18,19 @@ import org.jruby.truffle.language.RubyNode;
 
 public class FlipFlopNode extends RubyNode {
 
+    private final boolean exclusive;
+
     @Child private BooleanCastNode begin;
     @Child private BooleanCastNode end;
     @Child private FlipFlopStateNode stateNode;
 
-    private final boolean exclusive;
-
-    public FlipFlopNode(RubyContext context, SourceSection sourceSection,
-                        RubyNode begin, RubyNode end, FlipFlopStateNode stateNode,
-                        boolean exclusive) {
+    public FlipFlopNode(RubyContext context, SourceSection sourceSection, RubyNode begin, RubyNode end,
+                        FlipFlopStateNode stateNode, boolean exclusive) {
         super(context, sourceSection);
+        this.exclusive = exclusive;
         this.begin = BooleanCastNodeGen.create(context, sourceSection, begin);
         this.end = BooleanCastNodeGen.create(context, sourceSection, end);
         this.stateNode = stateNode;
-        this.exclusive = exclusive;
     }
 
     @Override

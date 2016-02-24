@@ -210,7 +210,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, ZERO, 0, getContext().getCoreLibrary().getNilObject(),
+            return allocateObjectNode.allocate(rubyClass, ZERO, 0, coreLibrary().getNilObject(),
                     0, false, false);
         }
 

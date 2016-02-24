@@ -787,7 +787,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             adapter2.areturn();
             adapter2.end();
 
-            getClassData().hashMethodsDefined.add(length);
+            getClassData().kwargsHashMethodsDefined.add(length);
         }
 
         // now call it

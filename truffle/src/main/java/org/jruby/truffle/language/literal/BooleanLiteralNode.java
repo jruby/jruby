@@ -13,11 +13,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-// For isDefined() and convenience
 @NodeInfo(cost = NodeCost.NONE)
 public class BooleanLiteralNode extends RubyNode {
 
@@ -40,7 +38,11 @@ public class BooleanLiteralNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString(Boolean.toString(value), UTF8Encoding.INSTANCE);
+        if (value) {
+            return coreStrings().TRUE.createInstance();
+        } else {
+            return coreStrings().FALSE.createInstance();
+        }
     }
 
 }

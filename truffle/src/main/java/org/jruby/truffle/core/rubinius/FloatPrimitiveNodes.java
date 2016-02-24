@@ -72,7 +72,7 @@ public abstract class FloatPrimitiveNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{create7BitString(string, UTF8Encoding.INSTANCE), decimal, sign, string.length()}, 4);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{create7BitString(string, UTF8Encoding.INSTANCE), decimal, sign, string.length()}, 4);
         }
 
     }
@@ -111,12 +111,12 @@ public abstract class FloatPrimitiveNodes {
 
             if (Double.isInfinite(n)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));
+                throw new RaiseException(coreLibrary().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(n)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
+                throw new RaiseException(coreLibrary().floatDomainError("NaN", this));
             }
 
             double f = n;

@@ -11,9 +11,6 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 
-/**
- * Controls a break from a control structure or method.
- */
 public final class BreakException extends ControlFlowException {
 
     private final BreakID breakID;
@@ -31,7 +28,5 @@ public final class BreakException extends ControlFlowException {
     public Object getResult() {
         return result;
     }
-
-    private static final long serialVersionUID = -8650123232850256133L;
 
 }

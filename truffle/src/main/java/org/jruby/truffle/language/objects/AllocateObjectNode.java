@@ -37,27 +37,49 @@ import org.jruby.truffle.language.control.RaiseException;
 })
 public abstract class AllocateObjectNode extends RubyNode {
 
-    private final boolean useCallerFrame;
+    private final boolean useCallerFrameForTracing;
 
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
         this(context, sourceSection, true);
     }
 
-    public AllocateObjectNode(RubyContext context, SourceSection sourceSection, boolean useCallerFrame) {
+    public AllocateObjectNode(RubyContext context, SourceSection sourceSection, boolean useCallerFrameForTracing) {
         super(context, sourceSection);
-        this.useCallerFrame = useCallerFrame;
+        this.useCallerFrameForTracing = useCallerFrameForTracing;
     }
 
     public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {
-        return executeAllocateX(classToAllocate, values);
+        return executeAllocate(classToAllocate, values);
     }
 
-    public DynamicObject allocateHash(DynamicObject classToAllocate, Object store, int size, Entry firstInSequence, Entry lastInSequence, DynamicObject defaultBlock, Object defaultValue,
+    public DynamicObject allocateArray(
+            DynamicObject classToAllocate,
+            Object store,
+            int size) {
+        return allocate(classToAllocate, store, size);
+    }
+
+    public DynamicObject allocateHash(
+            DynamicObject classToAllocate,
+            Object store,
+            int size,
+            Entry firstInSequence,
+            Entry lastInSequence,
+            DynamicObject defaultBlock,
+            Object defaultValue,
             boolean compareByIdentity) {
-        return allocate(classToAllocate, store, size, firstInSequence, lastInSequence, defaultBlock, defaultValue, compareByIdentity);
+        return allocate(
+                classToAllocate,
+                store,
+                size,
+                firstInSequence,
+                lastInSequence,
+                defaultBlock,
+                defaultValue,
+                compareByIdentity);
     }
 
-    public abstract DynamicObject executeAllocateX(DynamicObject classToAllocate, Object[] values);
+    protected abstract DynamicObject executeAllocate(DynamicObject classToAllocate, Object[] values);
 
     @Specialization(guards = {
             "cachedClassToAllocate == classToAllocate",
@@ -91,7 +113,7 @@ public abstract class AllocateObjectNode extends RubyNode {
         final FrameInstance allocatingFrameInstance;
         final Node allocatingNode;
 
-        if (useCallerFrame) {
+        if (useCallerFrameForTracing) {
             allocatingFrameInstance = getContext().getCallStack().getCallerFrameIgnoringSend();
             allocatingNode = getContext().getCallStack().getTopMostUserCallNode();
         } else {
@@ -107,7 +129,7 @@ public abstract class AllocateObjectNode extends RubyNode {
         
         getContext().getObjectSpaceManager().traceAllocation(
                 object,
-                string(Layouts.CLASS.getFields(getContext().getCoreLibrary().getLogicalClass(allocatingSelf)).getName()),
+                string(Layouts.CLASS.getFields(coreLibrary().getLogicalClass(allocatingSelf)).getName()),
                 getSymbol(allocatingMethod),
                 string(allocatingSourceSection.getSource().getName()),
                 allocatingSourceSection.getStartLine());
@@ -121,8 +143,7 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     @Specialization(guards = "isSingleton(classToAllocate)")
     public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object[] values) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
+        throw new RaiseException(coreLibrary().typeErrorCantCreateInstanceOfSingletonClass(this));
     }
 
     protected Assumption getTracingAssumption() {

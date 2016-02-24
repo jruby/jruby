@@ -25,6 +25,6 @@ public interface SizedQueueLayout extends BasicObjectLayout {
                                    @Nullable ArrayBlockingQueueLocksConditions<Object> queue);
 
     ArrayBlockingQueueLocksConditions<Object> getQueue(DynamicObject object);
-    void setQueue(DynamicObject object, ArrayBlockingQueueLocksConditions<Object> queue);
+    void setQueue(DynamicObject object, ArrayBlockingQueueLocksConditions<Object> value);
 
 }

@@ -217,7 +217,7 @@ public abstract class MutexNodes {
 
         public long doSleepMillis(DynamicObject mutex, long durationInMillis) {
             if (durationInMillis < 0) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("time interval must be positive", this));
+                throw new RaiseException(coreLibrary().argumentError("time interval must be positive", this));
             }
 
             final ReentrantLock lock = Layouts.MUTEX.getLock(mutex);

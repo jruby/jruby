@@ -51,7 +51,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
-import org.jruby.truffle.language.backtrace.BacktraceInterleaver;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -186,7 +185,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject assertConstant(Object value) {
-            throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_constant can only be called lexically", this));
+            throw new RaiseException(coreLibrary().runtimeError("Truffle::Primitive.assert_constant can only be called lexically", this));
         }
 
     }
@@ -201,7 +200,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject assertNotCompiled() {
-            throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
+            throw new RaiseException(coreLibrary().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
         }
 
     }
@@ -321,7 +320,7 @@ public abstract class TrufflePrimitiveNodes {
 
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
-                final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
+                final DynamicObject array = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
 
                 if (source.getKey().getPath() != null) {
                     converted.put(createString(StringOperations.encodeRope(source.getKey().getPath(), UTF8Encoding.INSTANCE)), array);
@@ -336,7 +335,7 @@ public abstract class TrufflePrimitiveNodes {
 
             for (int n = 0; n < array.length; n++) {
                 if (array[n] == null) {
-                    store[n] = getContext().getCoreLibrary().getNilObject();
+                    store[n] = coreLibrary().getNilObject();
                 } else {
                     store[n] = array[n];
                 }
@@ -361,7 +360,7 @@ public abstract class TrufflePrimitiveNodes {
             }
 
             getContext().getEnv().instrumenter().install(getContext().getCoverageTracker());
-            return getContext().getCoreLibrary().getNilObject();
+            return coreLibrary().getNilObject();
         }
 
     }
@@ -376,7 +375,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
         public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
-            return Layouts.HANDLE.createHandle(getContext().getCoreLibrary().getHandleFactory(), getContext().getAttachmentsManager().attach(file.toString(), line, block));
+            return Layouts.HANDLE.createHandle(coreLibrary().getHandleFactory(), getContext().getAttachmentsManager().attach(file.toString(), line, block));
         }
 
     }
@@ -393,7 +392,7 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject detach(DynamicObject handle) {
             final Instrument instrument = (Instrument) Layouts.HANDLE.getObject(handle);
             instrument.dispose();
-            return getContext().getCoreLibrary().getNilObject();
+            return coreLibrary().getNilObject();
         }
 
     }
@@ -432,7 +431,7 @@ public abstract class TrufflePrimitiveNodes {
                     n++;
                 } else {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(object, "String", this));
+                    throw new RaiseException(coreLibrary().typeErrorCantConvertInto(object, "String", this));
                 }
             }
 
@@ -736,7 +735,7 @@ public abstract class TrufflePrimitiveNodes {
                 array.add(ast(child));
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array.toArray(), array.size());
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array.toArray(), array.size());
         }
 
     }
@@ -779,7 +778,7 @@ public abstract class TrufflePrimitiveNodes {
 
             if (pid == -1) {
                 // TODO (pitr 07-Sep-2015): needs compatibility improvements
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getNativePlatform().getPosix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(getContext().getNativePlatform().getPosix().errno(), this));
             }
 
             return pid;
@@ -841,7 +840,7 @@ public abstract class TrufflePrimitiveNodes {
                 getContext().getCodeLoader().loadFile(StringOperations.getString(getContext(), file), this);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+                throw new RaiseException(coreLibrary().loadErrorCannotLoad(file.toString(), this));
             }
 
             return true;
@@ -915,7 +914,7 @@ public abstract class TrufflePrimitiveNodes {
                 array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(argv[n], UTF8Encoding.INSTANCE));
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, array.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array, array.length);
         }
 
     }
@@ -937,7 +936,7 @@ public abstract class TrufflePrimitiveNodes {
                 array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(path[n], UTF8Encoding.INSTANCE));
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, array.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array, array.length);
         }
 
     }

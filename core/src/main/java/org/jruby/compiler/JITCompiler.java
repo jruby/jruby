@@ -236,12 +236,12 @@ public class JITCompiler implements JITCompilerMBean {
                     }
 
                     if ((config.getExcludedMethods().contains(excludeModuleName)
-                            || config.getExcludedMethods().contains(excludeModuleName + "#" + methodName)
+                            || config.getExcludedMethods().contains(excludeModuleName + '#' + methodName)
                             || config.getExcludedMethods().contains(methodName))) {
                         method.setCallCount(-1);
 
                         if (config.isJitLogging()) {
-                            log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + "#" + methodName);
+                            log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + '#' + methodName);
                         }
                         return;
                     }
@@ -446,6 +446,14 @@ public class JITCompiler implements JITCompilerMBean {
             // CON FIXME: Really should clone scope before passes in any case
             bytecode = visitor.compileToBytecode(method.getIRScope(), context);
 
+//            try {
+//                java.io.FileOutputStream fos = new java.io.FileOutputStream(className + '#' + methodName + ".class");
+//                fos.write(bytecode);
+//                fos.close();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+
             compileTime = System.nanoTime() - start;
         }
 
@@ -584,16 +592,14 @@ public class JITCompiler implements JITCompilerMBean {
         String className = isBlock ? "<block>" : implementationClass.getBaseName();
         if (className == null) className = "<anon class>";
 
-        name = isBlock ? "" : "." + name;
-
         StringBuilder builder = new StringBuilder(32);
-        builder.append(message).append(':').append(className).append(name).append(" at ").append(file).append(':').append(line);
+        builder.append(message).append(": ").append(className)
+               .append(' ').append(name == null ? "" : name)
+               .append(" at ").append(file).append(':').append(line);
 
         if (reason.length > 0) {
             builder.append(" because of: \"");
-            for (String aReason : reason) {
-                builder.append(aReason);
-            }
+            for (String aReason : reason) builder.append(aReason);
             builder.append('"');
         }
 

@@ -13,16 +13,17 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-// For isDefined() and convenience
 @NodeInfo(cost = NodeCost.NONE)
-public class NilNode extends RubyNode {
+public class NilLiteralNode extends RubyNode {
 
-    public NilNode(RubyContext context, SourceSection sourceSection) {
+    private final boolean isImplicit;
+
+    public NilLiteralNode(RubyContext context, SourceSection sourceSection, boolean isImplicit) {
         super(context, sourceSection);
+        this.isImplicit = isImplicit;
     }
 
     @Override
@@ -32,7 +33,11 @@ public class NilNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString("nil", UTF8Encoding.INSTANCE);
+        return coreStrings().NIL.createInstance();
+    }
+
+    public boolean isImplicit() {
+        return isImplicit;
     }
 
 }

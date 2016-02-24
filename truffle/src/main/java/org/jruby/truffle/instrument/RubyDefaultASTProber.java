@@ -19,7 +19,7 @@ import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.objects.OpenModuleNode;
+import org.jruby.truffle.language.objects.RunModuleDefinitionNode;
 
 public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
 
@@ -42,7 +42,7 @@ public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
                     probe.tagAs(RubySyntaxTag.LINE, null);
                 }
 
-                if (rubyNode instanceof OpenModuleNode) {
+                if (rubyNode instanceof RunModuleDefinitionNode) {
                     final Probe probe = instrumenter.probe(rubyNode);
                     probe.tagAs(RubySyntaxTag.CLASS, null);
                 }

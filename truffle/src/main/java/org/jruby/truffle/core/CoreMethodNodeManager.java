@@ -34,13 +34,13 @@ import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.arguments.ReadCallerFrameNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadRemainingArgumentsNode;
-import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.language.translator.Translator;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -232,7 +232,7 @@ public class CoreMethodNodeManager {
         }
 
         final RubyNode checkArity = CheckArityNode.create(context, sourceSection, arity);
-        RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
+        RubyNode sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
 
         if (method.returnsEnumeratorIfNoBlock()) {
             // TODO BF 3-18-2015 Handle multiple method names correctly

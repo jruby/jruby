@@ -46,7 +46,7 @@ public class CatchForProcNode extends RubyNode {
                 return e.getResult();
             } catch (RetryException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().syntaxError("Invalid retry", this));
+                throw new RaiseException(coreLibrary().syntaxError("Invalid retry", this));
             }
         }
     }

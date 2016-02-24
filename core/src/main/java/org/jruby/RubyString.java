@@ -117,7 +117,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
-    private static final byte[] EMPTY_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // string doesn't share any resources
     private static final int SHARE_LEVEL_NONE = 0;
@@ -347,7 +346,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass) {
-        this(runtime, rubyClass, EMPTY_BYTE_ARRAY);
+        this(runtime, rubyClass, ByteList.NULL_ARRAY);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
@@ -600,8 +599,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return newEmptyString(runtime, runtime.getString());
     }
 
-    private static final ByteList EMPTY_ASCII8BIT_BYTELIST = new ByteList(new byte[0], ASCIIEncoding.INSTANCE);
-    private static final ByteList EMPTY_USASCII_BYTELIST = new ByteList(new byte[0], USASCIIEncoding.INSTANCE);
+    private static final ByteList EMPTY_ASCII8BIT_BYTELIST = new ByteList(ByteList.NULL_ARRAY, ASCIIEncoding.INSTANCE);
+    private static final ByteList EMPTY_USASCII_BYTELIST = new ByteList(ByteList.NULL_ARRAY, USASCIIEncoding.INSTANCE);
 
     public static RubyString newAllocatedString(Ruby runtime, RubyClass metaClass) {
         RubyString empty = new RubyString(runtime, metaClass, EMPTY_ASCII8BIT_BYTELIST);

@@ -29,7 +29,6 @@ import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.CatchNextNode;
@@ -40,6 +39,7 @@ import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class TranslatorDriver {
@@ -171,17 +171,17 @@ public class TranslatorDriver {
                 final String name = argumentNames[n];
                 final RubyNode readNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.NIL);
                 final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(name);
-                sequence.add(new WriteLocalVariableNode(context, sourceSection, readNode, slot));
+                sequence.add(new WriteLocalVariableNode(context, sourceSection, slot, readNode));
             }
 
             sequence.add(truffleNode);
-            truffleNode = SequenceNode.sequence(context, sourceSection, sequence);
+            truffleNode = Translator.sequence(context, sourceSection, sequence);
         }
 
         // Load flip-flop states
 
         if (environment.getFlipFlopStates().size() > 0) {
-            truffleNode = SequenceNode.sequence(context, truffleNode.getSourceSection(), translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode);
+            truffleNode = Translator.sequence(context, truffleNode.getSourceSection(), Arrays.asList(translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode));
         }
 
         // Catch next

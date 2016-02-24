@@ -263,4 +263,5 @@ public abstract class RubyGuards {
     public static boolean isInfinity(double value) {
         return Double.isInfinite(value);
     }
+
 }

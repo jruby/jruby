@@ -43,7 +43,7 @@ import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.supercall.SuperCallNode;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,11 +147,11 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldDispatchHeadNode yield;
+        @Child private YieldNode yield;
 
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
+            yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -170,11 +170,11 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_exec", needsBlock = true, rest = true)
     public abstract static class InstanceExecNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldDispatchHeadNode yield;
+        @Child private YieldNode yield;
 
         public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
+            yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
         @Specialization
@@ -188,7 +188,7 @@ public abstract class BasicObjectNodes {
         public Object instanceExec(Object receiver, Object[] arguments, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            throw new RaiseException(getContext().getCoreLibrary().localJumpError("no block given", this));
+            throw new RaiseException(coreLibrary().localJumpError("no block given", this));
         }
 
     }
@@ -233,7 +233,7 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object methodMissingNoName(Object self, NotProvided name, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("no id given", this));
+            throw new RaiseException(coreLibrary().argumentError("no id given", this));
         }
 
         @Specialization
@@ -251,13 +251,13 @@ public abstract class BasicObjectNodes {
             final String name = nameObject.toString();
 
             if (lastCallWasSuper()) {
-                throw new RaiseException(getContext().getCoreLibrary().noSuperMethodError(name, this));
+                throw new RaiseException(coreLibrary().noSuperMethodError(name, this));
             } else if (lastCallWasCallingPrivateMethod(self, name)) {
-                throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, self, this));
+                throw new RaiseException(coreLibrary().privateMethodError(name, self, this));
             } else if (lastCallWasVCall()) {
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
+                throw new RaiseException(coreLibrary().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
             } else {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(name, self, this));
+                throw new RaiseException(coreLibrary().noMethodErrorOnReceiver(name, self, this));
             }
         }
 
@@ -271,7 +271,7 @@ public abstract class BasicObjectNodes {
          * The only way to fail if method is not null and not undefined is visibility.
          */
         private boolean lastCallWasCallingPrivateMethod(Object self, String name) {
-            final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(self), name);
+            final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(self), name);
             return method != null && !method.isUndefined();
         }
 

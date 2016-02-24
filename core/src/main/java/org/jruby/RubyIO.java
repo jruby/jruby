@@ -2412,8 +2412,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return runtime.newFixnum(0);
     }
 
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-
     @JRubyMethod(name = "puts")
     public IRubyObject puts(ThreadContext context) {
         return puts0(context, this);
@@ -4285,14 +4283,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * @author realjenius
      */
     private static class ByteListCache {
-        private byte[] buffer = EMPTY_BYTE_ARRAY;
-        public void release(ByteList l) {
-            buffer = l.getUnsafeBytes();
+
+        private byte[] buffer = ByteList.NULL_ARRAY;
+
+        final void release(ByteList bytes) {
+            buffer = bytes.getUnsafeBytes();
         }
 
-        public ByteList allocate(int size) {
-            ByteList l = new ByteList(buffer, 0, size, false);
-            return l;
+        final ByteList allocate(int size) {
+            return new ByteList(buffer, 0, size, false);
         }
     }
 

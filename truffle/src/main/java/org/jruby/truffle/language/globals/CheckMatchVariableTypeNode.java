@@ -31,7 +31,7 @@ public class CheckMatchVariableTypeNode extends RubyNode {
 
         if (!(RubyGuards.isRubyMatchData(childValue) || childValue == nil() || childValue == nil())) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(childValue, "MatchData", this));
+            throw new RaiseException(coreLibrary().typeErrorWrongArgumentType(childValue, "MatchData", this));
         }
 
         return childValue;

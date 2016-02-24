@@ -22,12 +22,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.util.ByteList;
 
 public class StringLiteralNode extends RubyNode {
 
@@ -35,16 +33,15 @@ public class StringLiteralNode extends RubyNode {
 
     @Child private AllocateObjectNode allocateObjectNode;
 
-    public StringLiteralNode(RubyContext context, SourceSection sourceSection, ByteList byteList, int codeRange) {
+    public StringLiteralNode(RubyContext context, SourceSection sourceSection, Rope rope) {
         super(context, sourceSection);
-        assert byteList != null;
-        this.rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
+        this.rope = rope;
         allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, false, null, null);
     }
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        return allocateObjectNode.allocate(getContext().getCoreLibrary().getStringClass(), rope, null);
+        return allocateObjectNode.allocate(coreLibrary().getStringClass(), rope, null);
     }
 
 }

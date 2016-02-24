@@ -42,12 +42,13 @@ env:
     - PHASE='-Prake -Dtask=spec:jruby'
     - PHASE='-Prake -Dtask=spec:jrubyc'
     - PHASE='-Prake -Dtask=spec:profiler'
-    #- JT='test specs :language'
-    #- JT='test specs :core'
-    #- JT='test specs :library'
-    #- JT='test specs :truffle'
-    #- JT='test mri'
-    #- JT='test integration'
+    - JT='test specs :language'
+    - JT='test specs :core'
+    - JT='test specs :library'
+    - JT='test specs :truffle'
+    - JT='test mri'
+    - JT='test integration'
+    - JTR='ci --batch ../lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
 
 matrix:
   include:

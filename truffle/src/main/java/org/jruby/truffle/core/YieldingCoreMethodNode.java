@@ -17,16 +17,16 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 
 public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
-    @Child private YieldDispatchHeadNode dispatchNode;
+    @Child private YieldNode dispatchNode;
     @Child private BooleanCastNode booleanCastNode;
 
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        dispatchNode = new YieldDispatchHeadNode(context, DeclarationContext.BLOCK);
+        dispatchNode = new YieldNode(context);
     }
 
     private boolean booleanCast(VirtualFrame frame, Object value) {

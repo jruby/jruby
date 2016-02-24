@@ -19,11 +19,10 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.SafepointManager;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.func.Function2;
-
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -236,19 +235,18 @@ public class ThreadManager {
     private void killOtherThreads() {
         while (true) {
             try {
-                context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new Function2<Void, DynamicObject, Node>() {
+                context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
                     @Override
-                    public synchronized Void apply(DynamicObject thread, Node currentNode) {
+                    public synchronized void run(DynamicObject thread, Node currentNode) {
                         if (thread != rootThread && Thread.currentThread() == Layouts.THREAD.getThread(thread)) {
                             ThreadNodes.shutdown(context, thread, currentNode);
                         }
-                        return null;
                     }
                 });
                 break; // Successfully executed the safepoint and sent the exceptions.
             } catch (RaiseException e) {
-                final Object rubyException = e.getRubyException();
-                BacktraceFormatter.createDefaultFormatter(context).printBacktrace(context, (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
+                final DynamicObject rubyException = e.getException();
+                BacktraceFormatter.createDefaultFormatter(context).printBacktrace(context, rubyException, Layouts.EXCEPTION.getBacktrace(rubyException));
             }
         }
     }

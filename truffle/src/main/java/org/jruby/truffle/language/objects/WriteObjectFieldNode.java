@@ -23,14 +23,15 @@ import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyGuards;
 
-@ImportStatic(ShapeCachingGuards.class)
-public abstract class WriteHeadObjectFieldNode extends Node {
+@ImportStatic({ RubyGuards.class, ShapeCachingGuards.class })
+public abstract class WriteObjectFieldNode extends Node {
 
     private final RubyContext context;
     private final Object name;
 
-    public WriteHeadObjectFieldNode(RubyContext context, Object name) {
+    public WriteObjectFieldNode(RubyContext context, Object name) {
         this.context = context;
         this.name = name;
     }

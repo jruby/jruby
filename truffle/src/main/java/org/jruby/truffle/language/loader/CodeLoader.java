@@ -34,15 +34,16 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.translator.Translator;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class CodeLoader {
 
@@ -129,10 +130,7 @@ public class CodeLoader {
         final SourceSection sourceSection = originalRootNode.getSourceSection();
         final RubyNode wrappedBody =
                 new TopLevelRaiseHandler(context, sourceSection,
-                        SequenceNode.sequence(context, sourceSection,
-                                new SetTopLevelBindingNode(context, sourceSection),
-                                new LoadRequiredLibrariesNode(context, sourceSection),
-                                originalRootNode.getBody()));
+                        Translator.sequence(context, sourceSection, Arrays.asList(new SetTopLevelBindingNode(context, sourceSection), new LoadRequiredLibrariesNode(context, sourceSection), originalRootNode.getBody())));
 
         final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
 
