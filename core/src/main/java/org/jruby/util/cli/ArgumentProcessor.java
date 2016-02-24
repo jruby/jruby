@@ -511,7 +511,7 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--disable")) {
                         errorMissingEquals("disable");
                     } else if (argument.equals("--disable-frozen-string-literal")) {
-                        config.setFrozenStringLiteral(true);
+                        config.setFrozenStringLiteral(false);
                         break FOR;
                     } else if (argument.startsWith("--disable=")) {
                         for (String disable : valueListFor(argument, "disable")) {
