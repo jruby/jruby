@@ -1775,7 +1775,7 @@ public class IRRuntimeHelpers {
         if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
             // stuff location info into the string and then freeze it
             RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line)).freeze(context);
-            string.setInternalVariable(RubyString.DEBUG_INFO_FIELD, info);
+            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
             string.setFrozen(true);
         } else {
             string = runtime.freezeAndDedupString(string);
@@ -1790,7 +1790,7 @@ public class IRRuntimeHelpers {
         if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
             // stuff location info into the string and then freeze it
             RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line)).freeze(context);
-            string.setInternalVariable(RubyString.DEBUG_INFO_FIELD, info);
+            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
         }
 
         string.setFrozen(true);
