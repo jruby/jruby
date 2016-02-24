@@ -248,6 +248,7 @@ public class Options {
     public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", TRUFFLE_DEFAULT_CACHE.load(), "eval lookup cache size");
     public static final Option<Integer> TRUFFLE_CLASS_CACHE = integer(TRUFFLE, "truffle.class.cache", TRUFFLE_DEFAULT_CACHE.load(), ".class and .metaclass cache size");
     public static final Option<Integer> TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE = integer(TRUFFLE, "truffle.encoding_compatible_query.cache", TRUFFLE_DEFAULT_CACHE.load(), "Encoding.compatible? cache size");
+    public static final Option<Integer> TRUFFLE_THREAD_CACHE = integer(TRUFFLE, "truffle.thread.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size of operations that depend on a particular thread");
 
     public static final Option<Boolean> TRUFFLE_CLONE_DEFAULT = bool(TRUFFLE, "truffle.clone.default", true, "Default option for cloning.");
     public static final Option<Boolean> TRUFFLE_INLINE_DEFAULT = bool(TRUFFLE, "truffle.inline.default", true, "Default option for inlining.");

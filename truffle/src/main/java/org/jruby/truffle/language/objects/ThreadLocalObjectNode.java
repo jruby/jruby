@@ -9,48 +9,48 @@
  */
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
-public class ThreadLocalObjectNode extends RubyNode {
-
-    @CompilationFinal private DynamicObject firstThreadSeen;
-    @CompilationFinal private DynamicObject firstThreadSeenLocals;
-    private final ConditionProfile firstThreadProfile = ConditionProfile.createCountingProfile();
+public abstract class ThreadLocalObjectNode extends RubyNode {
 
     public ThreadLocalObjectNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    @Override
-    public DynamicObject executeDynamicObject(VirtualFrame frame) {
-        if (firstThreadSeen == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            firstThreadSeen = currentThread();
-            firstThreadSeenLocals = Layouts.THREAD.getThreadLocals(firstThreadSeen);
-        }
+    public abstract DynamicObject executeDynamicObject(VirtualFrame frame);
 
-        if (firstThreadProfile.profile(currentThread() == firstThreadSeen)) {
-            return firstThreadSeenLocals;
-        } else {
-            return Layouts.THREAD.getThreadLocals(currentThread());
-        }
+    @Specialization(
+            guards = "cachedThread == getCurrentThread(frame)",
+            limit = "getCacheLimit()"
+    )
+    protected DynamicObject getThreadLocalObjectCached(VirtualFrame frame,
+                                                       @Cached("getCurrentThread(frame)") DynamicObject cachedThread,
+                                                       @Cached("getThreadLocals(cachedThread)") DynamicObject cachedThreadLocals) {
+        return cachedThreadLocals;
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeDynamicObject(frame);
+    @Specialization(contains = "getThreadLocalObjectCached")
+    protected DynamicObject getThreadLocalObjectUncached(VirtualFrame frame) {
+        return getThreadLocals(getCurrentThread(frame));
     }
 
-    private DynamicObject currentThread() {
+    protected DynamicObject getCurrentThread(VirtualFrame frame) {
         return getContext().getThreadManager().getCurrentThread();
+    }
+
+    protected DynamicObject getThreadLocals(DynamicObject thread) {
+        return Layouts.THREAD.getThreadLocals(thread);
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().THREAD_CACHE;
     }
 
 }

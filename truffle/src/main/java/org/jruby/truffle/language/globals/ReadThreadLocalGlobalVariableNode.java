@@ -19,6 +19,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
+import org.jruby.truffle.language.objects.ThreadLocalObjectNodeGen;
 
 public class ReadThreadLocalGlobalVariableNode extends RubyNode {
 
@@ -27,7 +28,7 @@ public class ReadThreadLocalGlobalVariableNode extends RubyNode {
 
     public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
-        this.threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
+        this.threadLocalVariablesObjectNode = ThreadLocalObjectNodeGen.create(context, sourceSection);
         readNode = ReadObjectFieldNodeGen.create(getContext(), name, nil());
     }
 
