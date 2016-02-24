@@ -99,11 +99,11 @@ public abstract class SingletonClassNode extends RubyNode {
 
     @Specialization(
             guards = {
-                    "!isNil(object)",
-                    "!isRubyBignum(object)",
-                    "!isRubySymbol(object)",
-                    "!isRubyClass(object)",
                     "object == cachedObject",
+                    "!isNil(cachedObject)",
+                    "!isRubyBignum(cachedObject)",
+                    "!isRubySymbol(cachedObject)",
+                    "!isRubyClass(cachedObject)",
                     "object.getShape() == cachedShape"
             },
             limit = "getCacheLimit()")
