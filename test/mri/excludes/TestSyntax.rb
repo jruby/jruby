@@ -1,6 +1,7 @@
 exclude :test__END___cr, "needs investigation"
 exclude :test_constant_reassignment_nested, "needs investigation"
 exclude :test_constant_reassignment_toplevel, "needs investigation"
+exclude :test_dedented_heredoc_with_interpolated_string, "needs investigation"
 exclude :test_defined_empty_argument, "needs investigation"
 exclude :test_duplicated_when, "needs investigation"
 exclude :test_error_message_encoding, "#2127"
