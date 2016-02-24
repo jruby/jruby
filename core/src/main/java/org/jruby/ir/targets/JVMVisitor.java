@@ -804,6 +804,13 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
 //            }
         }
+        if (compoundstring.isFrozen()) {
+            jvmMethod().loadContext();
+            jvmAdapter().swap();
+            jvmAdapter().ldc(compoundstring.getFile());
+            jvmAdapter().ldc(compoundstring.getLine());
+            jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, ThreadContext.class, RubyString.class, String.class, int.class));
+        }
         jvmStoreLocal(compoundstring.getResult());
     }
 

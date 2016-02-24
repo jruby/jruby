@@ -1780,4 +1780,18 @@ public class IRRuntimeHelpers {
 
         return string;
     }
+
+    public static RubyString freezeLiteralString(ThreadContext context, RubyString string, String file, int line) {
+        Ruby runtime = context.runtime;
+
+        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
+            // stuff location info into the string and then freeze it
+            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line)).freeze(context);
+            string.setInternalVariable(RubyString.DEBUG_INFO_FIELD, info);
+        }
+
+        string.setFrozen(true);
+
+        return string;
+    }
 }

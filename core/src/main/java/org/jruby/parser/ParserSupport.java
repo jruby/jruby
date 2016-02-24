@@ -924,7 +924,9 @@ public class ParserSupport {
     }
 
     public DStrNode createDStrNode(ISourcePosition position) {
-        return new DStrNode(position, lexer.getEncoding());
+        DStrNode dstr = new DStrNode(position, lexer.getEncoding());
+        if (getConfiguration().isFrozenStringLiteral()) dstr.setFrozen(true);
+        return dstr;
     }
 
     public KeyValuePair<Node, Node> createKeyValue(Node key, Node value) {
@@ -978,6 +980,7 @@ public class ParserSupport {
                 DStrNode newDStr = new DStrNode(head.getPosition(), ((DStrNode) tail).getEncoding());
                 newDStr.add(head);
                 newDStr.addAll(tail);
+                if (getConfiguration().isFrozenStringLiteral()) newDStr.setFrozen(true);
                 return newDStr;
             } 
 
