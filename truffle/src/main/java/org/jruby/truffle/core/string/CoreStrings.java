@@ -23,6 +23,7 @@ public class CoreStrings {
     public final CoreString NIL;
     public final CoreString SELF;
     public final CoreString TRUE;
+    public final CoreString YIELD;
 
     public CoreStrings(RubyContext context) {
         ASSIGNMENT = new CoreString(context, "assignment");
@@ -35,6 +36,7 @@ public class CoreStrings {
         NIL = new CoreString(context, "nil");
         SELF = new CoreString(context, "self");
         TRUE = new CoreString(context, "true");
+        YIELD = new CoreString(context, "yield");
     }
 
 }

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
@@ -23,20 +24,21 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 
-/**
- * Yield to the current block.
- */
 public class YieldExpressionNode extends RubyNode {
 
-    @Children private final RubyNode[] arguments;
-    @Child private YieldNode dispatch;
     private final boolean unsplat;
 
-    public YieldExpressionNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {
+    @Children private final RubyNode[] arguments;
+    @Child private YieldNode yieldNode;
+
+    private final BranchProfile useCapturedBlock = BranchProfile.create();
+    private final BranchProfile noCapturedBlock = BranchProfile.create();
+
+    public YieldExpressionNode(RubyContext context, SourceSection sourceSection,
+                               boolean unsplat, RubyNode[] arguments) {
         super(context, sourceSection);
-        this.arguments = arguments;
-        dispatch = new YieldNode(getContext());
         this.unsplat = unsplat;
+        this.arguments = arguments;
     }
 
     @ExplodeLoop
@@ -51,11 +53,12 @@ public class YieldExpressionNode extends RubyNode {
         DynamicObject block = RubyArguments.getBlock(frame.getArguments());
 
         if (block == null) {
-            CompilerDirectives.transferToInterpreter();
+            useCapturedBlock.enter();
 
             block = RubyArguments.getMethod(frame.getArguments()).getCapturedBlock();
 
             if (block == null) {
+                noCapturedBlock.enter();
                 throw new RaiseException(coreLibrary().noBlockToYieldTo(this));
             }
         }
@@ -64,12 +67,11 @@ public class YieldExpressionNode extends RubyNode {
             argumentsObjects = unsplat(argumentsObjects);
         }
 
-        return dispatch.dispatch(frame, block, argumentsObjects);
+        return getYieldNode().dispatch(frame, block, argumentsObjects);
     }
 
     @TruffleBoundary
     private Object[] unsplat(Object[] argumentsObjects) {
-        // TOOD(CS): what is the error behaviour here?
         assert argumentsObjects.length == 1;
         assert RubyGuards.isRubyArray(argumentsObjects[0]);
         return ArrayOperations.toObjectArray(((DynamicObject) argumentsObjects[0]));
@@ -80,8 +82,17 @@ public class YieldExpressionNode extends RubyNode {
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return nil();
         } else {
-            return create7BitString("yield", UTF8Encoding.INSTANCE);
+            return coreStrings().YIELD.createInstance();
         }
+    }
+
+    private YieldNode getYieldNode() {
+        if (yieldNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            yieldNode = insert(new YieldNode(getContext()));
+        }
+
+        return yieldNode;
     }
 
 }
