@@ -37,9 +37,7 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        checkReadFrameSlotNode();
-        final MaterializedFrame declarationFrame = RubyArguments.getDeclarationFrame(frame, frameDepth);
-        return readFrameSlotNode.executeRead(declarationFrame);
+        return readFrameSlot(frame);
     }
 
 
@@ -50,9 +48,7 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
                 return coreStrings().LOCAL_VARIABLE.createInstance();
 
             case FRAME_LOCAL_GLOBAL:
-                checkReadFrameSlotNode();
-
-                if (readFrameSlotNode.executeRead(frame) != nil()) {
+                if (readFrameSlot(frame) != nil()) {
                     return coreStrings().GLOBAL_VARIABLE.createInstance();
                 } else {
                     return nil();
@@ -66,11 +62,14 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
         }
     }
 
-    private void checkReadFrameSlotNode() {
+    private Object readFrameSlot(VirtualFrame frame) {
         if (readFrameSlotNode == null) {
             CompilerDirectives.transferToInterpreter();
             readFrameSlotNode = insert(ReadFrameSlotNodeGen.create(frameSlot));
         }
+
+        final MaterializedFrame declarationFrame = RubyArguments.getDeclarationFrame(frame, frameDepth);
+        return readFrameSlotNode.executeRead(declarationFrame);
     }
 
     @Override
