@@ -905,7 +905,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 }
             }
 
-            throw getRuntime().newFrozenError("string", runtimeError);
+            throw getRuntime().newFrozenError("String", runtimeError);
         }
     }
 
