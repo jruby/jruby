@@ -218,7 +218,6 @@ project 'JRuby Core' do
           'forkCount' =>  '1',
           'reuseForks' =>  'false',
           'systemProperties' => {
-            'jruby.compat.version' =>  '1.9',
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
