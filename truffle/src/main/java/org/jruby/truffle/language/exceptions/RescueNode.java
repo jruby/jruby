@@ -15,10 +15,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Base node for all nodes which may be able to rescue an exception. They have a test method
- * {@link #canHandle} and a body to execute if that test passes.
- */
 public abstract class RescueNode extends RubyNode {
 
     @Child private RubyNode body;

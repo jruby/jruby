@@ -18,15 +18,14 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.objects.IsANode;
+import org.jruby.truffle.language.objects.IsANodeGen;
 
-/**
- * Rescue any of several classes, that we get from an expression that evaluates to an array of
- * classes.
- * 
- */
 public class RescueSplatNode extends RescueNode {
 
-    @Child RubyNode handlingClassesArray;
+    @Child private RubyNode handlingClassesArray;
+
+    @Child private IsANode isANode;
 
     public RescueSplatNode(RubyContext context, SourceSection sourceSection, RubyNode handlingClassesArray, RubyNode body) {
         super(context, sourceSection, body);
@@ -35,19 +34,24 @@ public class RescueSplatNode extends RescueNode {
 
     @Override
     public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
-        CompilerDirectives.transferToInterpreter();
-
         final DynamicObject handlingClasses = (DynamicObject) handlingClassesArray.execute(frame);
 
-        final DynamicObject exceptionRubyClass = Layouts.BASIC_OBJECT.getLogicalClass(exception);
-
         for (Object handlingClass : ArrayOperations.toIterable(handlingClasses)) {
-            if (ModuleOperations.assignableTo(exceptionRubyClass, (DynamicObject) handlingClass)) {
+            if (getIsANode().executeIsA(exception, (DynamicObject) handlingClass)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private IsANode getIsANode() {
+        if (isANode == null) {
+            CompilerDirectives.transferToInterpreter();
+            isANode = insert(IsANodeGen.create(getContext(), getSourceSection(), null, null));
+        }
+
+        return isANode;
     }
 
 }
