@@ -13,19 +13,21 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.CoreString;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 
 public class DefinedWrapperNode extends RubyNode {
 
+    private final CoreString definition;
+
     @Child private RubyNode child;
 
-    private final String definition;
-
-    public DefinedWrapperNode(RubyContext context, SourceSection sourceSection, RubyNode child, String definition) {
+    public DefinedWrapperNode(RubyContext context, SourceSection sourceSection,
+                              CoreString definition, RubyNode child) {
         super(context, sourceSection);
-        this.child = child;
         this.definition = definition;
+        this.child = child;
     }
 
     @Override
@@ -35,7 +37,7 @@ public class DefinedWrapperNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return createString(StringOperations.encodeRope(definition, UTF8Encoding.INSTANCE));
+        return definition.createInstance();
     }
 
 }

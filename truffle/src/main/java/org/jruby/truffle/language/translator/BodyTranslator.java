@@ -2427,7 +2427,7 @@ public class BodyTranslator extends Translator {
             result = nilNode(sourceSection);
         }
 
-        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, result, "assignment");
+        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT, result);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2494,7 +2494,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, new AndNode(context, sourceSection, lhs.accept(this), rhs.accept(this)), "assignment");
+        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT, new AndNode(context, sourceSection, lhs.accept(this), rhs.accept(this)));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2516,9 +2516,8 @@ public class BodyTranslator extends Translator {
             RubyNode lhs = readMethod.accept(this);
             RubyNode rhs = writeMethod.accept(this);
 
-            final RubyNode ret = new DefinedWrapperNode(context, sourceSection,
-                    sequence(context, sourceSection, Arrays.asList(writeReceiverToTemp.accept(this), new OrNode(context, sourceSection, lhs, rhs))),
-                    "assignment");
+            final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT,
+                    sequence(context, sourceSection, Arrays.asList(writeReceiverToTemp.accept(this), new OrNode(context, sourceSection, lhs, rhs))));
 
             return addNewlineIfNeeded(node, ret);
         }
@@ -2567,9 +2566,8 @@ public class BodyTranslator extends Translator {
             lhs = new AndNode(context, lhs.getSourceSection(), defined, lhs);
         }
 
-        final RubyNode ret = new DefinedWrapperNode(context, sourceSection,
-                new OrNode(context, sourceSection, lhs, rhs),
-                "assignment");
+        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT,
+                new OrNode(context, sourceSection, lhs, rhs));
 
         return addNewlineIfNeeded(node, ret);
     }
