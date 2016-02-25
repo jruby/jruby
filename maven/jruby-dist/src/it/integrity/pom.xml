@@ -109,7 +109,6 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
-		<argument>-Djruby.home=${jruby.home}</argument>
 		<argument>org.jruby.Main</argument>
 		<argument>-e</argument>
 		<argument>p JRuby.runtime.jruby_home</argument>
