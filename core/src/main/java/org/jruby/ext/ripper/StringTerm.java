@@ -184,6 +184,10 @@ public class StringTerm extends StrTerm {
         int c;
 
         while ((c = lexer.nextc()) != EOF) {
+            if (lexer.getHeredocIndent() > 0) {
+                lexer.update_heredoc_indent(c);
+            }
+
             if (begin != '\0' && c == begin) {
                 nest++;
             } else if (c == end) {

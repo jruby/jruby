@@ -268,6 +268,20 @@ public class RipperParserBase {
     public void pushLocalScope() {
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
     }
+
+    public int getHeredocIndent() {
+        return lexer.getHeredocIndent();
+    }
+
+    public void setHeredocIndent(int indent) {
+        lexer.setHeredocIndent(indent);
+    }
+
+    public void heredoc_dedent(IRubyObject array) {
+        if (lexer.getHeredocIndent() <= 0) return;
+
+        dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(lexer.getHeredocIndent()));
+    }
     
     public void setCommandStart(boolean value) {
         lexer.commandStart = value;
