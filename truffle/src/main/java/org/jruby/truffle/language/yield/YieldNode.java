@@ -20,8 +20,8 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 
 public class YieldNode extends Node {
 
-    private RubyContext context;
-    private DeclarationContext declarationContext;
+    private final RubyContext context;
+    private final DeclarationContext declarationContext;
 
     @Child private CallBlockNode callBlockNode;
 
