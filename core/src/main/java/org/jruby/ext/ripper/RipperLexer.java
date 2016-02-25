@@ -1647,7 +1647,7 @@ public class RipperLexer extends LexingCommon {
             if (isLabelSuffix()) {
                 setState(EXPR_ARG|EXPR_LABELED);
                 nextc();
-                yaccValue = tempVal.intern();
+                identValue = tempVal.intern();
                 return Tokens.tLABEL;
             }
         }
@@ -1660,7 +1660,7 @@ public class RipperLexer extends LexingCommon {
                 setState(keyword.state);
 
                 if (isLexState(state, EXPR_FNAME)) {
-                    yaccValue = keyword.name;
+                    identValue = keyword.name;
                     return keyword.id0;
                 }
 
