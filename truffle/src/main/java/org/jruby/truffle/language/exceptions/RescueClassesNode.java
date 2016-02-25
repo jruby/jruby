@@ -25,8 +25,6 @@ public class RescueClassesNode extends RescueNode {
 
     @Children final RubyNode[] handlingClassNodes;
 
-    @Child private IsANode isANode;
-
     public RescueClassesNode(RubyContext context, SourceSection sourceSection,
                              RubyNode[] handlingClassNodes, RubyNode body) {
         super(context, sourceSection, body);
@@ -45,15 +43,6 @@ public class RescueClassesNode extends RescueNode {
         }
 
         return false;
-    }
-
-    private IsANode getIsANode() {
-        if (isANode == null) {
-            CompilerDirectives.transferToInterpreter();
-            isANode = insert(IsANodeGen.create(getContext(), getSourceSection(), null, null));
-        }
-
-        return isANode;
     }
 
 }

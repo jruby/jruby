@@ -25,8 +25,6 @@ public class RescueSplatNode extends RescueNode {
 
     @Child private RubyNode handlingClassesArray;
 
-    @Child private IsANode isANode;
-
     public RescueSplatNode(RubyContext context, SourceSection sourceSection, RubyNode handlingClassesArray, RubyNode body) {
         super(context, sourceSection, body);
         this.handlingClassesArray = handlingClassesArray;
@@ -43,15 +41,6 @@ public class RescueSplatNode extends RescueNode {
         }
 
         return false;
-    }
-
-    private IsANode getIsANode() {
-        if (isANode == null) {
-            CompilerDirectives.transferToInterpreter();
-            isANode = insert(IsANodeGen.create(getContext(), getSourceSection(), null, null));
-        }
-
-        return isANode;
     }
 
 }

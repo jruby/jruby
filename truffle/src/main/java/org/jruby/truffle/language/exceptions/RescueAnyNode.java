@@ -20,8 +20,6 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 
 public class RescueAnyNode extends RescueNode {
 
-    @Child private IsANode isANode;
-
     public RescueAnyNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection, body);
     }
@@ -29,15 +27,6 @@ public class RescueAnyNode extends RescueNode {
     @Override
     public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
         return getIsANode().executeIsA(exception, coreLibrary().getStandardErrorClass());
-    }
-
-    private IsANode getIsANode() {
-        if (isANode == null) {
-            CompilerDirectives.transferToInterpreter();
-            isANode = insert(IsANodeGen.create(getContext(), getSourceSection(), null, null));
-        }
-
-        return isANode;
     }
 
 }
