@@ -9,22 +9,28 @@
  */
 package org.jruby.truffle.language.exceptions;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
+import org.jruby.truffle.language.objects.ThreadLocalObjectNodeGen;
+import org.jruby.truffle.language.objects.WriteObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 
-/**
- * Represents an ensure clause in exception handling. Represented separately to the try part.
- */
 public class EnsureNode extends RubyNode {
 
     @Child private RubyNode tryPart;
     @Child private RubyNode ensurePart;
+    @Child private ThreadLocalObjectNode threadLocalNode;
+    @Child private ReadObjectFieldNode readDollarBang;
+    @Child private WriteObjectFieldNode writeDollarBang;
 
     private final BranchProfile rubyExceptionPath = BranchProfile.create();
     private final BranchProfile javaExceptionPath = BranchProfile.create();
@@ -38,6 +44,7 @@ public class EnsureNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object value;
+
         try {
             value = tryPart.execute(frame);
         } catch (RaiseException exception) {
@@ -50,6 +57,7 @@ public class EnsureNode extends RubyNode {
         }
 
         ensurePart.executeVoid(frame);
+
         return value;
     }
 
@@ -70,16 +78,44 @@ public class EnsureNode extends RubyNode {
     }
 
     private RaiseException setLastExceptionAndRunEnsure(VirtualFrame frame, RaiseException exception) {
-        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        final DynamicObject threadLocals = getThreadLocalsObject(frame);
 
-        final Object lastException = threadLocals.get("$!", nil());
-        threadLocals.set("$!", exception.getException());
+        final Object lastException = readDollarBang(threadLocals);
+        writeDollarBang(threadLocals, exception.getException());
+
         try {
             ensurePart.executeVoid(frame);
             return exception;
         } finally {
-            threadLocals.set("$!", lastException);
+            writeDollarBang(threadLocals, lastException);
         }
+    }
+
+    private DynamicObject getThreadLocalsObject(VirtualFrame frame) {
+        if (threadLocalNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            threadLocalNode = insert(ThreadLocalObjectNodeGen.create(getContext(), getEncapsulatingSourceSection()));
+        }
+
+        return threadLocalNode.executeDynamicObject(frame);
+    }
+
+    private void writeDollarBang(DynamicObject threadLocals, Object value) {
+        if (writeDollarBang == null) {
+            CompilerDirectives.transferToInterpreter();
+            writeDollarBang = insert(WriteObjectFieldNodeGen.create(getContext(), "$!"));
+        }
+
+        writeDollarBang.execute(threadLocals, value);
+    }
+
+    private Object readDollarBang(DynamicObject threadLocals) {
+        if (readDollarBang == null) {
+            CompilerDirectives.transferToInterpreter();
+            readDollarBang = insert(ReadObjectFieldNodeGen.create(getContext(), "$!", nil()));
+        }
+
+        return readDollarBang.execute(threadLocals);
     }
 
 }
