@@ -28,9 +28,8 @@ public class EnsureNode extends RubyNode {
 
     @Child private RubyNode tryPart;
     @Child private RubyNode ensurePart;
-    @Child private ThreadLocalObjectNode threadLocalNode;
-    @Child private ReadObjectFieldNode readDollarBang;
-    @Child private WriteObjectFieldNode writeDollarBang;
+
+    @Child private SetExceptionVariableNode setExceptionVariableNode;
 
     private final BranchProfile rubyExceptionPath = BranchProfile.create();
     private final BranchProfile javaExceptionPath = BranchProfile.create();
@@ -49,7 +48,8 @@ public class EnsureNode extends RubyNode {
             value = tryPart.execute(frame);
         } catch (RaiseException exception) {
             rubyExceptionPath.enter();
-            throw setLastExceptionAndRunEnsure(frame, exception);
+            setLastExceptionAndRunEnsure(frame, exception);
+            throw exception;
         } catch (Throwable throwable) {
             javaExceptionPath.enter();
             ensurePart.executeVoid(frame);
@@ -67,7 +67,8 @@ public class EnsureNode extends RubyNode {
             tryPart.executeVoid(frame);
         } catch (RaiseException exception) {
             rubyExceptionPath.enter();
-            throw setLastExceptionAndRunEnsure(frame, exception);
+            setLastExceptionAndRunEnsure(frame, exception);
+            throw exception;
         } catch (Throwable throwable) {
             javaExceptionPath.enter();
             ensurePart.executeVoid(frame);
@@ -77,45 +78,13 @@ public class EnsureNode extends RubyNode {
         ensurePart.executeVoid(frame);
     }
 
-    private RaiseException setLastExceptionAndRunEnsure(VirtualFrame frame, RaiseException exception) {
-        final DynamicObject threadLocals = getThreadLocalsObject(frame);
-
-        final Object lastException = readDollarBang(threadLocals);
-        writeDollarBang(threadLocals, exception.getException());
-
-        try {
-            ensurePart.executeVoid(frame);
-            return exception;
-        } finally {
-            writeDollarBang(threadLocals, lastException);
-        }
-    }
-
-    private DynamicObject getThreadLocalsObject(VirtualFrame frame) {
-        if (threadLocalNode == null) {
+    private void setLastExceptionAndRunEnsure(VirtualFrame frame, RaiseException exception) {
+        if (setExceptionVariableNode == null) {
             CompilerDirectives.transferToInterpreter();
-            threadLocalNode = insert(ThreadLocalObjectNodeGen.create(getContext(), getEncapsulatingSourceSection()));
+            setExceptionVariableNode = insert(new SetExceptionVariableNode(getContext()));
         }
 
-        return threadLocalNode.executeDynamicObject(frame);
-    }
-
-    private void writeDollarBang(DynamicObject threadLocals, Object value) {
-        if (writeDollarBang == null) {
-            CompilerDirectives.transferToInterpreter();
-            writeDollarBang = insert(WriteObjectFieldNodeGen.create(getContext(), "$!"));
-        }
-
-        writeDollarBang.execute(threadLocals, value);
-    }
-
-    private Object readDollarBang(DynamicObject threadLocals) {
-        if (readDollarBang == null) {
-            CompilerDirectives.transferToInterpreter();
-            readDollarBang = insert(ReadObjectFieldNodeGen.create(getContext(), "$!", nil()));
-        }
-
-        return readDollarBang.execute(threadLocals);
+        setExceptionVariableNode.setLastExceptionAndRun(frame, exception, ensurePart);
     }
 
 }
