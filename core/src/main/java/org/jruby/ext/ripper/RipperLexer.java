@@ -1592,7 +1592,7 @@ public class RipperLexer extends LexingCommon {
             compile_error("Invalid char `" + badChar + "' ('" + (char) c + "') in expression");
         }
 
-        newtok(true);
+        //newtok(true);  MRI does this but we don't so BOM + keyword will return goofy offset instead of logical one (yard seems to rely on this too).
         int first = c;
         do {
             if (!tokadd_mbchar(c)) return EOF;
