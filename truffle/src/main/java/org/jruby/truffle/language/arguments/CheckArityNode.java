@@ -32,7 +32,7 @@ public class CheckArityNode extends RubyNode {
     public void executeVoid(VirtualFrame frame) {
         final int given = RubyArguments.getArgumentsCount(frame);
 
-        if (!checkArity(given)) {
+        if (!checkArity(arity, given)) {
             checkFailedProfile.enter();
             throw new RaiseException(coreLibrary().argumentError(given, arity.getRequired(), this));
         }
@@ -44,7 +44,7 @@ public class CheckArityNode extends RubyNode {
         return nil();
     }
 
-    private boolean checkArity(int given) {
+    public static boolean checkArity(Arity arity, int given) {
         final int required = arity.getRequired();
 
         if (required != 0 && given < required) {
