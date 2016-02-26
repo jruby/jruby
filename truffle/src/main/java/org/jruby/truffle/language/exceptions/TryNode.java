@@ -22,14 +22,10 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.RetryException;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 
-/**
- * Represents a block of code run with exception handlers. There's no {@code try} keyword in Ruby -
- * it's implicit - but it's similar to a try statement in any other language.
- */
 public class TryNode extends RubyNode {
 
     @Child private ExceptionTranslatingNode tryPart;
-    @Children final RescueNode[] rescueParts;
+    @Children private final RescueNode[] rescueParts;
     @Child private RubyNode elsePart;
 
     private final BranchProfile elseProfile = BranchProfile.create();
