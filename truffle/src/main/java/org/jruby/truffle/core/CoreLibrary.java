@@ -955,8 +955,8 @@ public class CoreLibrary {
         return argumentError(String.format("invalid radix %d", radix), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject argumentErrorMissingKeyword(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("missing keyword: %s", name), currentNode);
     }
 
