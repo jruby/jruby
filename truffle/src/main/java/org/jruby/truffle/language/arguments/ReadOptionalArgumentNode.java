@@ -19,22 +19,23 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Read an optional argument.
- */
 public class ReadOptionalArgumentNode extends RubyNode {
 
     private final int index;
     private final int minimum;
     private final boolean considerRejectedKWArgs;
-    @Child private RubyNode defaultValue;
-    @Child private ReadRestArgumentNode readRestArgumentNode;
     private final boolean reduceMinimumWhenNoKWargs;
+
+    @Child private ReadRestArgumentNode readRestArgumentNode;
+    @Child private RubyNode defaultValue;
     @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
     private final BranchProfile defaultValueProfile = BranchProfile.create();
 
-    public ReadOptionalArgumentNode(RubyContext context, SourceSection sourceSection, int index, int minimum, boolean considerRejectedKWArgs, RubyNode defaultValue, ReadRestArgumentNode readRestArgumentNode, int requiredForKWArgs, boolean reduceMinimumWhenNoKWargs) {
+    public ReadOptionalArgumentNode(RubyContext context, SourceSection sourceSection, int index, int minimum,
+                                    boolean considerRejectedKWArgs, boolean reduceMinimumWhenNoKWargs,
+                                    int requiredForKWArgs, ReadRestArgumentNode readRestArgumentNode,
+                                    RubyNode defaultValue) {
         super(context, sourceSection);
         this.index = index;
         this.minimum = minimum;
@@ -42,38 +43,39 @@ public class ReadOptionalArgumentNode extends RubyNode {
         this.defaultValue = defaultValue;
         this.readRestArgumentNode = readRestArgumentNode;
         this.reduceMinimumWhenNoKWargs = reduceMinimumWhenNoKWargs;
-        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, requiredForKWArgs);
+
+        if (reduceMinimumWhenNoKWargs) {
+            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, requiredForKWArgs);
+        }
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        int actualMinimum = minimum;
+        int effectiveMinimum = minimum;
 
         if (reduceMinimumWhenNoKWargs) {
-            CompilerDirectives.transferToInterpreter();
-
             if (readUserKeywordsHashNode.execute(frame) == null) {
-                actualMinimum--;
+                effectiveMinimum--;
             }
         }
 
-        if (RubyArguments.getArgumentsCount(frame) < actualMinimum) {
-            defaultValueProfile.enter();
-
-            if (considerRejectedKWArgs) {
-                CompilerDirectives.transferToInterpreter();
-
-                final Object rest = readRestArgumentNode.execute(frame);
-
-                if (RubyGuards.isRubyArray(rest) && Layouts.ARRAY.getSize((DynamicObject) rest) > 0) {
-                    return ruby("rest[0]", "rest", rest);
-                }
-            }
-
-            return defaultValue.execute(frame);
-        } else {
+        if (RubyArguments.getArgumentsCount(frame) >= effectiveMinimum) {
             return RubyArguments.getArgument(frame.getArguments(), index);
         }
+
+        defaultValueProfile.enter();
+
+        if (considerRejectedKWArgs) {
+            CompilerDirectives.bailout("Ruby keyword arguments aren't optimized");
+
+            final Object rest = readRestArgumentNode.execute(frame);
+
+            if (RubyGuards.isRubyArray(rest) && Layouts.ARRAY.getSize((DynamicObject) rest) > 0) {
+                return ruby("rest[0]", "rest", rest);
+            }
+        }
+
+        return defaultValue.execute(frame);
     }
 
 }
