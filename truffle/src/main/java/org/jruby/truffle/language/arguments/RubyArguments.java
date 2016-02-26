@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.arguments;
 
+import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -63,7 +64,7 @@ public final class RubyArguments {
         return packed;
     }
 
-    // Basic getters
+    // Getters on Object[]
 
     public static MaterializedFrame getDeclarationFrame(Object[] arguments) {
         return (MaterializedFrame) arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()];
@@ -107,6 +108,52 @@ public final class RubyArguments {
 
     public static Object[] getArguments(Object[] arguments, int start) {
         return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT + start, arguments.length);
+    }
+
+    // Getters on Frame
+
+    public static MaterializedFrame getDeclarationFrame(Frame frame) {
+        return getDeclarationFrame(frame.getArguments());
+    }
+
+    public static MaterializedFrame getCallerFrame(Frame frame) {
+        return getCallerFrame(frame.getArguments());
+    }
+
+    public static InternalMethod getMethod(Frame frame) {
+        return getMethod(frame.getArguments());
+    }
+
+    public static DeclarationContext getDeclarationContext(Frame frame) {
+        return getDeclarationContext(frame.getArguments());
+    }
+
+    public static FrameOnStackMarker getFrameOnStackMarker(Frame frame) {
+        return getFrameOnStackMarker(frame.getArguments());
+    }
+
+    public static Object getSelf(Frame frame) {
+        return getSelf(frame.getArguments());
+    }
+
+    public static DynamicObject getBlock(Frame frame) {
+        return getBlock(frame.getArguments());
+    }
+
+    public static int getArgumentsCount(Frame frame) {
+        return getArgumentsCount(frame.getArguments());
+    }
+
+    public static Object getArgument(Frame frame, int index) {
+        return getArgument(frame.getArguments(), index);
+    }
+
+    public static Object[] getArguments(Frame frame) {
+        return getArguments(frame.getArguments());
+    }
+
+    public static Object[] getArguments(Frame frame, int start) {
+        return getArguments(frame.getArguments(), start);
     }
 
     // Getters for the declaration frame that let you reach up several levels
