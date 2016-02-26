@@ -70,7 +70,12 @@ module Utilities
     if ENV["RUBY_BIN"]
       ENV["RUBY_BIN"]
     else
-      "ruby"
+      version = `ruby -e 'print RUBY_VERSION' 2>/dev/null`
+      if version.start_with?("2.")
+        "ruby"
+      else
+        find_jruby
+      end
     end
   end
 
