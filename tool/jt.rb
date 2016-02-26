@@ -14,6 +14,8 @@
 require 'fileutils'
 require 'digest/sha1'
 
+GRAALVM_VERSION = "0.10"
+
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 JDEBUG_PORT = 51819
@@ -39,9 +41,9 @@ module Utilities
     graal_locations = [
       ENV['GRAAL_BIN'],
       ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
-      "GraalVM-0.9/jre/bin/javao",
-      "../GraalVM-0.9/jre/bin/javao",
-      "../../GraalVM-0.9/jre/bin/javao",
+      "GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
+      "../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
+      "../../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
     ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
     not_found = -> {
