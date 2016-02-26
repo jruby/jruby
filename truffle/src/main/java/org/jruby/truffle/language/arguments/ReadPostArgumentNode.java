@@ -14,23 +14,19 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Read a post argument.
- */
 public class ReadPostArgumentNode extends RubyNode {
 
-    private final int negativeIndex;
+    private final int indexFromCount;
 
-    public ReadPostArgumentNode(RubyContext context, SourceSection sourceSection, int negativeIndex) {
+    public ReadPostArgumentNode(RubyContext context, SourceSection sourceSection, int indexFromCount) {
         super(context, sourceSection);
-        this.negativeIndex = negativeIndex;
+        this.indexFromCount = indexFromCount;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final int count = RubyArguments.getArgumentsCount(frame);
-        final int effectiveIndex = count + negativeIndex;
-        assert effectiveIndex < count;
+        final int effectiveIndex = count - indexFromCount;
         return RubyArguments.getArgument(frame.getArguments(), effectiveIndex);
     }
 

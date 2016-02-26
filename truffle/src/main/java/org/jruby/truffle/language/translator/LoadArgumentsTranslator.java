@@ -313,7 +313,7 @@ public class LoadArgumentsTranslator extends Translator {
             if (state == State.PRE) {
                 return new ReadPreArgumentNode(context, sourceSection, index, isProc ? MissingArgumentBehaviour.NIL : MissingArgumentBehaviour.RUNTIME_ERROR);
             } else if (state == State.POST) {
-                return new ReadPostArgumentNode(context, sourceSection, index);
+                return new ReadPostArgumentNode(context, sourceSection, -index);
             } else {
                 throw new IllegalStateException();
             }
