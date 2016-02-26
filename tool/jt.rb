@@ -66,6 +66,14 @@ module Utilities
     ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
   end
 
+  def self.find_ruby
+    if ENV["RUBY_BIN"]
+      ENV["RUBY_BIN"]
+    else
+      "ruby"
+    end
+  end
+
   def self.find_jruby
     if jruby_eclipse?
       "#{JRUBY_DIR}/tool/jruby_eclipse"
@@ -222,7 +230,7 @@ module ShellUtils
       args.unshift "-ttool/jruby_eclipse"
     end
 
-    sh env_vars, Utilities.find_jruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
+    sh env_vars, Utilities.find_ruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
   end
 end
 
