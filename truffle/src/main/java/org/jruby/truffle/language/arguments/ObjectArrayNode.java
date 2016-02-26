@@ -15,11 +15,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-public class NodeArrayToObjectArrayNode extends RubyNode {
+public class ObjectArrayNode extends RubyNode {
 
-    @Children final RubyNode[] nodes;
+    @Children private final RubyNode[] nodes;
 
-    public NodeArrayToObjectArrayNode(RubyContext context, SourceSection sourceSection, RubyNode[] nodes) {
+    public ObjectArrayNode(RubyContext context, SourceSection sourceSection, RubyNode[] nodes) {
         super(context, sourceSection);
         this.nodes = nodes;
     }

@@ -17,7 +17,7 @@ import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.arguments.NodeArrayToObjectArrayNode;
+import org.jruby.truffle.language.arguments.ObjectArrayNode;
 import org.jruby.truffle.language.arguments.ReadAllArgumentsNode;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.control.ReturnID;
@@ -51,7 +51,7 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
         return MethodNodesFactory.CallNodeFactory.create(context, sourceSection, new RubyNode[] {
                 new ObjectLiteralNode(context, sourceSection, method),
-                new NodeArrayToObjectArrayNode(context, sourceSection, arguments),
+                new ObjectArrayNode(context, sourceSection, arguments),
                 new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
         });
     }
