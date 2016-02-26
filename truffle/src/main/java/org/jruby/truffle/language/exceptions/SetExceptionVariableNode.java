@@ -35,14 +35,14 @@ public class SetExceptionVariableNode extends Node {
         this.context = context;
     }
 
-    public void setLastExceptionAndRun(VirtualFrame frame, RaiseException exception, RubyNode node) {
+    public Object setLastExceptionAndRun(VirtualFrame frame, RaiseException exception, RubyNode node) {
         final DynamicObject threadLocals = getThreadLocalsObject(frame);
 
         final Object lastException = readDollarBang(threadLocals);
         writeDollarBang(threadLocals, exception.getException());
 
         try {
-            node.executeVoid(frame);
+            return node.execute(frame);
         } finally {
             writeDollarBang(threadLocals, lastException);
         }

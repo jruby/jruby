@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.exceptions;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -27,6 +28,8 @@ public class TryNode extends RubyNode {
     @Child private ExceptionTranslatingNode tryPart;
     @Children private final RescueNode[] rescueParts;
     @Child private RubyNode elsePart;
+
+    @Child private SetExceptionVariableNode setExceptionVariableNode;
 
     private final BranchProfile elseProfile = BranchProfile.create();
     private final BranchProfile controlFlowProfile = BranchProfile.create();
@@ -78,20 +81,16 @@ public class TryNode extends RubyNode {
             }
         }
 
-        // Not handled by any of the rescue
         throw exception;
     }
 
-    private Object setLastExceptionAndRunRescue(VirtualFrame frame, RaiseException exception, RescueNode rescue) {
-        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
-
-        final Object lastException = threadLocals.get("$!", nil());
-        threadLocals.set("$!", exception.getException());
-        try {
-            return rescue.execute(frame);
-        } finally {
-            threadLocals.set("$!", lastException);
+    private Object setLastExceptionAndRunRescue(VirtualFrame frame, RaiseException exception, RubyNode rescue) {
+        if (setExceptionVariableNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            setExceptionVariableNode = insert(new SetExceptionVariableNode(getContext()));
         }
+
+        return setExceptionVariableNode.setLastExceptionAndRun(frame, exception, rescue);
     }
 
 }
