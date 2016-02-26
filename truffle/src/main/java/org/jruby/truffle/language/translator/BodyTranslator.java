@@ -74,7 +74,7 @@ import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
-import org.jruby.truffle.language.arguments.IsRubiniusUndefinedNode;
+import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.language.constants.WriteConstantNode;
