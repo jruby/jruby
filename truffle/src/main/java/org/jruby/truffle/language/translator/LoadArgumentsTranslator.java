@@ -26,7 +26,7 @@ import org.jruby.truffle.core.cast.SplatCastNode;
 import org.jruby.truffle.core.cast.SplatCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
-import org.jruby.truffle.language.arguments.IsNilNode;
+import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.MissingKeywordArgumentNode;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
