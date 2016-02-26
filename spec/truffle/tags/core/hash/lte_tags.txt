@@ -1,0 +1,4 @@
+fails:Hash#<= returns false when receiver size is larger than argument
+fails:Hash#<= returns false when receiver size is the same as argument
+fails:Hash#<= returns true when receiver is a subset of argument or equals to argument
+fails:Hash#<= returns false when keys match but values don't

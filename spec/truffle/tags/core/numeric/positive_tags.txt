@@ -1,0 +1,3 @@
+fails:Numeric#positive? on positive numbers returns true
+fails:Numeric#positive? on zero returns false
+fails:Numeric#positive? on negative numbers returns false

@@ -1,0 +1,1 @@
+fails:Enumerable#slice_before when given a block does not accept arguments
