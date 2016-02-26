@@ -22,20 +22,9 @@ import org.jruby.truffle.language.methods.Arity;
 
 import java.util.Map;
 
-/**
- * Check arguments meet the arity of the method.
- */
 public abstract class CheckArityNode {
 
-    public static RubyNode create(RubyContext context, SourceSection sourceSection, Arity arity) {
-        if (!arity.acceptsKeywords()) {
-            return new CheckAritySimple(context, sourceSection, arity);
-        } else {
-            return new CheckArityKeywords(context, sourceSection, arity);
-        }
-    }
-
-    private static class CheckAritySimple extends RubyNode {
+    public static class CheckAritySimple extends RubyNode {
 
         private final Arity arity;
 
@@ -71,12 +60,12 @@ public abstract class CheckArityNode {
 
     }
 
-    private static class CheckArityKeywords extends RubyNode {
+    public static class CheckArityKeywords extends RubyNode {
 
         private final Arity arity;
         @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
-        private CheckArityKeywords(RubyContext context, SourceSection sourceSection, Arity arity) {
+        public CheckArityKeywords(RubyContext context, SourceSection sourceSection, Arity arity) {
             super(context, sourceSection);
             this.arity = arity;
             readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, arity.getRequired());

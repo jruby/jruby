@@ -122,7 +122,15 @@ public class MethodTranslator extends BodyTranslator {
             preludeProc = loadArguments;
         }
 
-        final RubyNode preludeLambda = sequence(context, sourceSection, Arrays.asList(CheckArityNode.create(context, sourceSection, arityForCheck), NodeUtil.cloneNode(loadArguments)));
+        final RubyNode checkArity;
+
+        if (!arityForCheck.acceptsKeywords()) {
+            checkArity = new CheckArityNode.CheckAritySimple(context, sourceSection, arityForCheck);
+        } else {
+            checkArity = new CheckArityNode.CheckArityKeywords(context, sourceSection, arityForCheck);
+        }
+
+        final RubyNode preludeLambda = sequence(context, sourceSection, Arrays.asList(checkArity, NodeUtil.cloneNode(loadArguments)));
 
         RubyNode body;
 
@@ -234,7 +242,15 @@ public class MethodTranslator extends BodyTranslator {
             // Use Rubinius.primitive seems to turn off arity checking. See Time.from_array for example.
             prelude = loadArguments;
         } else {
-            prelude = sequence(context, sourceSection, Arrays.asList(CheckArityNode.create(context, sourceSection, arity), loadArguments));
+            final RubyNode checkArity;
+
+            if (!arity.acceptsKeywords()) {
+                checkArity = new CheckArityNode.CheckAritySimple(context, sourceSection, arity);
+            } else {
+                checkArity = new CheckArityNode.CheckArityKeywords(context, sourceSection, arity);
+            }
+
+            prelude = sequence(context, sourceSection, Arrays.asList(checkArity, loadArguments));
         }
 
         body = sequence(context, body.getSourceSection(), Arrays.asList(prelude, body));
