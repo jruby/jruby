@@ -14,10 +14,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Switches execution to the parallel {@link RubyNode#isDefined} semantic path. Represents the
- * {@code defined?} keyword in Ruby.
- */
 public class DefinedNode extends RubyNode {
 
     @Child private RubyNode child;

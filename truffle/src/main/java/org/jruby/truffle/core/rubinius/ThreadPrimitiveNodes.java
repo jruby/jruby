@@ -19,6 +19,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
+
 import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
 import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
 import static org.jruby.RubyThread.javaPriorityToRubyPriority;

@@ -14,24 +14,16 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.objects.IsANode;
-import org.jruby.truffle.language.objects.IsANodeGen;
 
-/**
- * Rescues any exception where {@code $!.is_a?(StandardError)}.
- */
 public class RescueAnyNode extends RescueNode {
-
-    @Child private IsANode isANode;
 
     public RescueAnyNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection, body);
-        isANode = IsANodeGen.create(context, sourceSection, null, null);
     }
 
     @Override
     public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
-        return isANode.executeIsA(exception, coreLibrary().getStandardErrorClass());
+        return getIsANode().executeIsA(exception, coreLibrary().getStandardErrorClass());
     }
 
 }

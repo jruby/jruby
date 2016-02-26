@@ -22,6 +22,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.arguments.RubyArguments;
+
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
