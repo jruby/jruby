@@ -9,6 +9,6 @@
  */
 package org.jruby.truffle.language.arguments;
 
-public enum MissingArgumentBehaviour {
+public enum MissingArgumentBehavior {
     RUNTIME_ERROR, UNDEFINED, NIL;
 }

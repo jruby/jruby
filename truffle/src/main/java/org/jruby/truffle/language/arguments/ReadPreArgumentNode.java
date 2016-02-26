@@ -22,15 +22,15 @@ public class ReadPreArgumentNode extends RubyNode {
     private final int index;
 
     private final BranchProfile outOfRangeProfile = BranchProfile.create();
-    private final MissingArgumentBehaviour missingArgumentBehaviour;
+    private final MissingArgumentBehavior missingArgumentBehavior;
 
     private final ValueProfile argumentValueProfile = ValueProfile.createEqualityProfile();
 
     public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index,
-                               MissingArgumentBehaviour missingArgumentBehaviour) {
+                               MissingArgumentBehavior missingArgumentBehavior) {
         super(context, sourceSection);
         this.index = index;
-        this.missingArgumentBehaviour = missingArgumentBehaviour;
+        this.missingArgumentBehavior = missingArgumentBehavior;
     }
 
     @Override
@@ -41,7 +41,7 @@ public class ReadPreArgumentNode extends RubyNode {
 
         outOfRangeProfile.enter();
 
-        switch (missingArgumentBehaviour) {
+        switch (missingArgumentBehavior) {
             case RUNTIME_ERROR:
                 throw new IndexOutOfBoundsException();
 
