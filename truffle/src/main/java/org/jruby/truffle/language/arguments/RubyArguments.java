@@ -109,7 +109,7 @@ public final class RubyArguments {
         return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT + start, arguments.length);
     }
 
-    // Getters for the decalaration frame that let you reach up several levels
+    // Getters for the declaration frame that let you reach up several levels
 
     public static MaterializedFrame getDeclarationFrame(VirtualFrame frame, int level) {
         assert level > 0;
