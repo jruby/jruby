@@ -308,6 +308,7 @@ public class CoreLibrary {
         // Close the cycles
         Layouts.MODULE.getFields(classClass).parentModule = Layouts.MODULE.getFields(moduleClass).start;
         Layouts.MODULE.getFields(moduleClass).addDependent(classClass);
+        Layouts.CLASS.setSuperclass(classClass, moduleClass);
         Layouts.MODULE.getFields(classClass).newVersion();
 
         Layouts.MODULE.getFields(classClass).getAdoptedByLexicalParent(context, objectClass, "Class", node);
@@ -547,6 +548,9 @@ public class CoreLibrary {
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
+
+        Layouts.CLASS.setSuperclass(basicObjectClass, nilObject);
+        Layouts.MODULE.getFields(basicObjectClass).newVersion();
     }
 
     private static DynamicObjectFactory alwaysFrozen(DynamicObjectFactory factory) {
@@ -733,13 +737,13 @@ public class CoreLibrary {
 
     private DynamicObject defineClass(DynamicObject superclass, String name) {
         assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createRubyClass(context, objectClass, superclass, name);
+        return ClassNodes.createInitializedRubyClass(context, objectClass, superclass, name);
     }
 
     private DynamicObject defineClass(DynamicObject lexicalParent, DynamicObject superclass, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
         assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createRubyClass(context, lexicalParent, superclass, name);
+        return ClassNodes.createInitializedRubyClass(context, lexicalParent, superclass, name);
     }
 
     private DynamicObject defineModule(String name) {

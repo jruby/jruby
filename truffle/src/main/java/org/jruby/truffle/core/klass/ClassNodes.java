@@ -31,6 +31,7 @@ import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
@@ -96,6 +97,7 @@ public abstract class ClassNodes {
 
             fields.parentModule = Layouts.MODULE.getFields(superclass).start;
             Layouts.MODULE.getFields(superclass).addDependent(rubyClass);
+            Layouts.CLASS.setSuperclass(rubyClass, superclass);
 
             fields.newVersion();
         }
@@ -110,21 +112,36 @@ public abstract class ClassNodes {
         // Allocator is null here, we cannot create instances of singleton classes.
         assert RubyGuards.isRubyClass(superclass);
         assert attached != null;
-        return ensureSingletonConsistency(context, createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached));
+        return ensureSingletonConsistency(context, createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached, true));
     }
 
     @TruffleBoundary
-    public static DynamicObject createRubyClass(RubyContext context, DynamicObject lexicalParent, DynamicObject superclass, String name) {
-        final DynamicObject rubyClass = createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), lexicalParent, superclass, name, false, null);
+    public static DynamicObject createInitializedRubyClass(RubyContext context, DynamicObject lexicalParent, DynamicObject superclass, String name) {
+        final DynamicObject rubyClass = createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, true);
         ensureSingletonConsistency(context, rubyClass);
         return rubyClass;
     }
 
     @TruffleBoundary
-    public static DynamicObject createRubyClass(RubyContext context, DynamicObject classClass, DynamicObject lexicalParent, DynamicObject superclass, String name, boolean isSingleton, DynamicObject attached) {
+    public static DynamicObject createRubyClass(RubyContext context,
+                                                DynamicObject classClass,
+                                                DynamicObject lexicalParent,
+                                                DynamicObject superclass,
+                                                String name,
+                                                boolean isSingleton,
+                                                DynamicObject attached,
+                                                boolean initialized) {
+        assert superclass == null || RubyGuards.isRubyClass(superclass);
+
         final ModuleFields model = new ModuleFields(context, lexicalParent, name);
 
-        final DynamicObject rubyClass = Layouts.CLASS.createClass(Layouts.CLASS.getInstanceFactory(classClass), model, isSingleton, attached, null, null);
+        final DynamicObject rubyClass = Layouts.CLASS.createClass(
+                Layouts.CLASS.getInstanceFactory(classClass),
+                model,
+                isSingleton,
+                attached,
+                null,
+                initialized ? superclass : null);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
         assert RubyGuards.isRubyModule(rubyClass) : classClass.getShape().getObjectType().getClass();
 
@@ -138,8 +155,6 @@ public abstract class ClassNodes {
         }
 
         if (superclass != null) {
-            assert RubyGuards.isRubyClass(superclass);
-
             fields.parentModule = Layouts.MODULE.getFields(superclass).start;
             Layouts.MODULE.getFields(superclass).addDependent(rubyClass);
 
@@ -199,7 +214,7 @@ public abstract class ClassNodes {
         }
 
         String name = String.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
-        Layouts.BASIC_OBJECT.setMetaClass(rubyClass, ClassNodes.createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass));
+        Layouts.BASIC_OBJECT.setMetaClass(rubyClass, ClassNodes.createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass, true));
 
         return Layouts.BASIC_OBJECT.getMetaClass(rubyClass);
     }
@@ -342,28 +357,19 @@ public abstract class ClassNodes {
             return cachedSuperclass;
         }
 
-        @Specialization
-        DynamicObject getGetSuperClass(DynamicObject rubyClass) {
+        @Specialization(contains = "getSuperClass")
+        DynamicObject getSuperClassUncached(DynamicObject rubyClass) {
             final DynamicObject superclass = fastLookUp(rubyClass);
             if (superclass != null) {
                 return superclass;
             } else {
-                return slowLookUp(rubyClass);
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized class", this));
             }
         }
 
         protected DynamicObject fastLookUp(DynamicObject rubyClass) {
             return Layouts.CLASS.getSuperclass(rubyClass);
-        }
-
-        @TruffleBoundary
-        private DynamicObject slowLookUp(DynamicObject rubyClass) {
-            final DynamicObject superclass = ClassNodes.getSuperClass(rubyClass);
-            if (superclass == null) {
-                return nil();
-            } else {
-                return superclass;
-            }
         }
 
         protected int getCacheLimit() {
@@ -380,7 +386,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createRubyClass(getContext(), coreLibrary().getClassClass(), null, coreLibrary().getObjectClass(), null, false, null);
+            return createRubyClass(getContext(), coreLibrary().getClassClass(), null, coreLibrary().getObjectClass(), null, false, null, false);
         }
 
     }

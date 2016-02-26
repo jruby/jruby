@@ -74,7 +74,7 @@ public class DefineClassNode extends RubyNode {
         }
 
         if (needToDefineProfile.profile(constant == null)) {
-            definingClass = ClassNodes.createRubyClass(getContext(), lexicalParentModule, superClassModule, name);
+            definingClass = ClassNodes.createInitializedRubyClass(getContext(), lexicalParentModule, superClassModule, name);
 
             if (inheritedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
