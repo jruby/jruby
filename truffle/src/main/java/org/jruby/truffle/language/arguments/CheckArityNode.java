@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.language.arguments;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
@@ -21,6 +21,8 @@ public class CheckArityNode extends RubyNode {
 
     private final Arity arity;
 
+    private final BranchProfile checkFailedProfile = BranchProfile.create();
+
     public CheckArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
         super(context, sourceSection);
         this.arity = arity;
@@ -29,26 +31,31 @@ public class CheckArityNode extends RubyNode {
     @Override
     public void executeVoid(VirtualFrame frame) {
         final int given = RubyArguments.getArgumentsCount(frame);
+
         if (!checkArity(given)) {
-            CompilerDirectives.transferToInterpreter();
+            checkFailedProfile.enter();
             throw new RaiseException(coreLibrary().argumentError(given, arity.getRequired(), this));
         }
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException("CheckArity should be call with executeVoid()");
+        executeVoid(frame);
+        return nil();
     }
 
     private boolean checkArity(int given) {
         final int required = arity.getRequired();
+
         if (required != 0 && given < required) {
             return false;
-        } else if (!arity.hasRest() && given > required + arity.getOptional()) {
-            return false;
-        } else {
-            return true;
         }
+
+        if (!arity.hasRest() && given > required + arity.getOptional()) {
+            return false;
+        }
+
+        return true;
     }
 
 }

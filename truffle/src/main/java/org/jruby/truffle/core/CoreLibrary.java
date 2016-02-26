@@ -955,8 +955,8 @@ public class CoreLibrary {
         return argumentError(String.format("missing keyword: %s", name), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject argumentError(int passed, int required, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
     }
 
