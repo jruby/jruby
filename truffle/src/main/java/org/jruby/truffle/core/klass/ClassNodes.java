@@ -12,6 +12,7 @@ package org.jruby.truffle.core.klass;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -76,7 +77,7 @@ public abstract class ClassNodes {
         assert superclass == null || RubyGuards.isRubyClass(superclass);
         final ModuleFields model = new ModuleFields(context, null, name);
 
-        final DynamicObject rubyClass = Layouts.CLASS.createClass(Layouts.CLASS.getInstanceFactory(classClass), model, false, null, null);
+        final DynamicObject rubyClass = Layouts.CLASS.createClass(Layouts.CLASS.getInstanceFactory(classClass), model, false, null, null, null);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
         assert RubyGuards.isRubyModule(rubyClass) : classClass.getShape().getObjectType().getClass();
 
@@ -123,7 +124,7 @@ public abstract class ClassNodes {
     public static DynamicObject createRubyClass(RubyContext context, DynamicObject classClass, DynamicObject lexicalParent, DynamicObject superclass, String name, boolean isSingleton, DynamicObject attached) {
         final ModuleFields model = new ModuleFields(context, lexicalParent, name);
 
-        final DynamicObject rubyClass = Layouts.CLASS.createClass(Layouts.CLASS.getInstanceFactory(classClass), model, isSingleton, attached, null);
+        final DynamicObject rubyClass = Layouts.CLASS.createClass(Layouts.CLASS.getInstanceFactory(classClass), model, isSingleton, attached, null, null);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
         assert RubyGuards.isRubyModule(rubyClass) : classClass.getShape().getObjectType().getClass();
 
@@ -167,6 +168,8 @@ public abstract class ClassNodes {
         factory = Layouts.BASIC_OBJECT.setLogicalClass(factory, rubyClass);
         factory = Layouts.BASIC_OBJECT.setMetaClass(factory, rubyClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, factory);
+        // superclass is set only here in initialize method to its final value
+        Layouts.CLASS.setSuperclass(rubyClass, superclass);
     }
 
     public static DynamicObject ensureSingletonConsistency(RubyContext context, DynamicObject rubyClass) {
@@ -331,16 +334,40 @@ public abstract class ClassNodes {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = { "rubyClass == cachedRubyCLass", "cachedSuperclass != null" }, limit = "getCacheLimit()")
+        public Object getSuperClass(DynamicObject rubyClass,
+                                    @Cached("rubyClass") DynamicObject cachedRubyCLass,
+                                    @Cached("fastLookUp(cachedRubyCLass)") DynamicObject cachedSuperclass) {
+            // caches only initialized classes, just allocated will go through slow look up
+            return cachedSuperclass;
+        }
+
         @Specialization
+        DynamicObject getGetSuperClass(DynamicObject rubyClass) {
+            final DynamicObject superclass = fastLookUp(rubyClass);
+            if (superclass != null) {
+                return superclass;
+            } else {
+                return slowLookUp(rubyClass);
+            }
+        }
+
+        protected DynamicObject fastLookUp(DynamicObject rubyClass) {
+            return Layouts.CLASS.getSuperclass(rubyClass);
+        }
+
         @TruffleBoundary
-        // TODO (pitr-ch 22-Feb-2016): should it be on fast path?
-        public Object getSuperClass(DynamicObject rubyClass) {
+        private DynamicObject slowLookUp(DynamicObject rubyClass) {
             final DynamicObject superclass = ClassNodes.getSuperClass(rubyClass);
             if (superclass == null) {
                 return nil();
             } else {
                 return superclass;
             }
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().CLASS_CACHE;
         }
     }
 
