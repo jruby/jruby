@@ -436,7 +436,7 @@ public abstract class ArrayNodes {
                 fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            InternalMethod method = RubyArguments.getMethod(frame);
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
                     createString(StringOperations.encodeRope(method.getName(), UTF8Encoding.INSTANCE)), args);
         }
@@ -1899,7 +1899,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object insertBoxed(VirtualFrame frame, DynamicObject array, Object idxObject, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments(), 1);
+            final Object[] values = RubyArguments.getArguments(frame, 1);
             final int idx = toInt(frame, idxObject);
 
             CompilerDirectives.transferToInterpreter();
@@ -2166,7 +2166,7 @@ public abstract class ArrayNodes {
 
             final Memo<Object> maximum = new Memo<>();
 
-            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final InternalMethod method = RubyArguments.getMethod(frame);
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
                     RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
@@ -2284,7 +2284,7 @@ public abstract class ArrayNodes {
 
             final Memo<Object> minimum = new Memo<>();
 
-            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final InternalMethod method = RubyArguments.getMethod(frame);
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
                     RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
@@ -2915,7 +2915,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject pushNullEmptyObjects(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
             setStoreAndSize(array, values, values.length);
             return array;
         }
@@ -2923,7 +2923,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "!isNullArray(array)", "isEmptyArray(array)" })
         public DynamicObject pushEmptySingleIntegerFixnum(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
             // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
             setStoreAndSize(array, values, values.length);
             return array;
         }
@@ -2967,7 +2967,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isIntArray(array)", "wasProvided(value)", "rest.length != 0" })
         public DynamicObject pushIntegerFixnum(VirtualFrame frame, DynamicObject array, Object value, Object[] rest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
 
             final int oldSize = getSize(array);
             final int newSize = oldSize + values.length;
@@ -3031,14 +3031,14 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
 
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
             setStoreAndSize(array, values, values.length);
             return array;
         }
 
         @Specialization(guards = "isObjectArray(array)")
         public DynamicObject pushObject(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
 
             final int oldSize = getSize(array);
             final int newSize = oldSize + values.length;
@@ -4293,7 +4293,7 @@ public abstract class ArrayNodes {
                 zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object[] others = RubyArguments.getArguments(frame.getArguments());
+            final Object[] others = RubyArguments.getArguments(frame);
 
             return zipInternalCall.call(frame, array, "zip_internal", block, others);
         }

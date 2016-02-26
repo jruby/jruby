@@ -49,12 +49,12 @@ public class YieldExpressionNode extends RubyNode {
             argumentsObjects[i] = arguments[i].execute(frame);
         }
 
-        DynamicObject block = RubyArguments.getBlock(frame.getArguments());
+        DynamicObject block = RubyArguments.getBlock(frame);
 
         if (block == null) {
             useCapturedBlock.enter();
 
-            block = RubyArguments.getMethod(frame.getArguments()).getCapturedBlock();
+            block = RubyArguments.getMethod(frame).getCapturedBlock();
 
             if (block == null) {
                 noCapturedBlock.enter();
@@ -78,7 +78,7 @@ public class YieldExpressionNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        if (RubyArguments.getBlock(frame.getArguments()) == null) {
+        if (RubyArguments.getBlock(frame) == null) {
             return nil();
         } else {
             return coreStrings().YIELD.createInstance();

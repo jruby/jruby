@@ -35,7 +35,7 @@ public class ShouldDestructureNode extends RubyNode {
     public boolean executeBoolean(VirtualFrame frame) {
         // If the caller supplied no arguments, or more than one argument, there's no need to destructure this time
 
-        if (RubyArguments.getArgumentsCount(frame.getArguments()) != 1) {
+        if (RubyArguments.getArgumentsCount(frame) != 1) {
             return false;
         }
 

@@ -34,7 +34,7 @@ public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final DynamicObject block = RubyArguments.getBlock(frame.getArguments());
+        final DynamicObject block = RubyArguments.getBlock(frame);
 
         if (noBlockProfile.profile(block == null)) {
             if (toEnumNode == null) {
@@ -42,8 +42,8 @@ public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object[] arguments = ArrayUtils.unshift(RubyArguments.getArguments(frame.getArguments()), getSymbol(methodName));
-            return toEnumNode.call(frame, RubyArguments.getSelf(frame.getArguments()), "to_enum", null, arguments);
+            final Object[] arguments = ArrayUtils.unshift(RubyArguments.getArguments(frame), getSymbol(methodName));
+            return toEnumNode.call(frame, RubyArguments.getSelf(frame), "to_enum", null, arguments);
 
         } else {
 

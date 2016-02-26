@@ -46,12 +46,12 @@ public class ReadRestArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        int count = RubyArguments.getArgumentsCount(frame.getArguments());
+        int count = RubyArguments.getArgumentsCount(frame);
 
         int endIndex = count + negativeEndIndex;
 
         if (keywordArguments) {
-            final Object lastArgument = RubyArguments.getArgument(frame.getArguments(), RubyArguments.getArgumentsCount(frame.getArguments()) - 1);
+            final Object lastArgument = RubyArguments.getArgument(frame.getArguments(), RubyArguments.getArgumentsCount(frame) - 1);
 
             if (RubyGuards.isRubyHash(lastArgument)) {
                 endIndex -= 1;
@@ -64,7 +64,7 @@ public class ReadRestArgumentNode extends RubyNode {
         final int resultLength;
 
         if (startIndex == 0) {
-            final Object[] arguments = RubyArguments.getArguments(frame.getArguments());
+            final Object[] arguments = RubyArguments.getArguments(frame);
             resultStore = arguments;
             resultLength = length;
         } else {
@@ -74,7 +74,7 @@ public class ReadRestArgumentNode extends RubyNode {
                 resultLength = 0;
             } else {
                 subsetOfArgumentsProfile.enter();
-                final Object[] arguments = RubyArguments.getArguments(frame.getArguments());
+                final Object[] arguments = RubyArguments.getArguments(frame);
                 resultStore = ArrayUtils.extractRange(arguments, startIndex, endIndex);
                 resultLength = length;
             }

@@ -605,7 +605,7 @@ public abstract class HashNodes {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
-            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            InternalMethod method = RubyArguments.getMethod(frame);
             return toEnumNode.call(frame, hash, "to_enum", null, getSymbol(method.getName()));
         }
 

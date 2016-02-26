@@ -195,7 +195,7 @@ public class RubyCallNode extends RubyNode {
 
         final InternalMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(receiverObject), methodName);
 
-        final Object self = RubyArguments.getSelf(frame.getArguments());
+        final Object self = RubyArguments.getSelf(frame);
 
         if (method == null) {
             final Object r = respondToMissing(frame, receiverObject);

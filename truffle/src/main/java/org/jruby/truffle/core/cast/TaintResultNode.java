@@ -77,13 +77,13 @@ public class TaintResultNode extends RubyNode {
 
         if (result != nil()) {
             if (taintFromSelf) {
-                maybeTaint((DynamicObject) RubyArguments.getSelf(frame.getArguments()), result);
+                maybeTaint((DynamicObject) RubyArguments.getSelf(frame), result);
             }
 
             // It's possible the taintFromParameter value was misconfigured by the user, but the far more likely
             // scenario is that the argument at that position is a NotProvided argument, which doesn't take up
             // a space in the frame.
-            if (taintFromParameter < RubyArguments.getArgumentsCount(frame.getArguments())) {
+            if (taintFromParameter < RubyArguments.getArgumentsCount(frame)) {
                 final Object argument = RubyArguments.getArgument(frame.getArguments(), taintFromParameter);
 
                 if (argument instanceof DynamicObject) {

@@ -239,9 +239,9 @@ public class TraceManager {
                 return;
             }
 
-            final Object self = RubyArguments.getSelf(frame.getArguments());
+            final Object self = RubyArguments.getSelf(frame);
             final Object classname = context.getCoreLibrary().getLogicalClass(self);
-            final Object id = context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
+            final Object id = context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame).getName());
 
             final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize());
 

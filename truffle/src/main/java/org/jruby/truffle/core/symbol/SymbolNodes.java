@@ -152,7 +152,7 @@ public abstract class SymbolNodes {
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection, Arrays.asList(CheckArityNode.create(getContext(), sourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final InternalMethod method = RubyArguments.getMethod(frame);
 
             return ProcNodes.createRubyProc(
                     coreLibrary().getProcFactory(),

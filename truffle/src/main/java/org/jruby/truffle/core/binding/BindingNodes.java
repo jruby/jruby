@@ -98,7 +98,7 @@ public abstract class BindingNodes {
                 return new FrameSlotAndDepth(frameSlot, depth);
             }
 
-            frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+            frame = RubyArguments.getDeclarationFrame(frame);
             depth++;
         }
         return null;
@@ -321,7 +321,7 @@ public abstract class BindingNodes {
                     }
                 }
 
-                frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+                frame = RubyArguments.getDeclarationFrame(frame);
             }
             final int size = names.size();
             return ArrayHelpers.createArray(context, names.toArray(new Object[size]), size);

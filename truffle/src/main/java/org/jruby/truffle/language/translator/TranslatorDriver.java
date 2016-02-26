@@ -79,7 +79,7 @@ public class TranslatorDriver {
                     }
                 }
 
-                frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+                frame = RubyArguments.getDeclarationFrame(frame);
             }
         }
 
@@ -209,7 +209,7 @@ public class TranslatorDriver {
         } else {
             SourceSection sourceSection = SourceSection.createUnavailable("Unknown source section", "(unknown)");
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false, false, false);
-            final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
+            final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), parseEnvironment,
                     parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frame.getFrameDescriptor());

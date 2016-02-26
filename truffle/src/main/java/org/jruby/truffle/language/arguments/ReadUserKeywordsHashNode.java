@@ -27,7 +27,7 @@ public class ReadUserKeywordsHashNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final int argumentCount = RubyArguments.getArgumentsCount(frame.getArguments());
+        final int argumentCount = RubyArguments.getArgumentsCount(frame);
 
         if (argumentCount <= minArgumentCount) {
             return null;

@@ -218,7 +218,7 @@ public abstract class RegexpNodes {
                 break;
             }
 
-            frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+            frame = RubyArguments.getDeclarationFrame(frame);
         }
     }
 

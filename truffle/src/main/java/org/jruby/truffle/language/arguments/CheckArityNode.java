@@ -46,7 +46,7 @@ public abstract class CheckArityNode {
 
         @Override
         public void executeVoid(VirtualFrame frame) {
-            final int given = RubyArguments.getArgumentsCount(frame.getArguments());
+            final int given = RubyArguments.getArgumentsCount(frame);
             if (!checkArity(given)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError(given, arity.getRequired(), this));
@@ -92,7 +92,7 @@ public abstract class CheckArityNode {
             final Object[] frameArguments = frame.getArguments();
             int given;
 
-            given = RubyArguments.getArgumentsCount(frame.getArguments());
+            given = RubyArguments.getArgumentsCount(frame);
 
             final DynamicObject keywordArguments = (DynamicObject) readUserKeywordsHashNode.execute(frame);
 

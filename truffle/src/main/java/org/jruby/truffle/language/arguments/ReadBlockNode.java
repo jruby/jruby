@@ -31,7 +31,7 @@ public class ReadBlockNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final DynamicObject block = RubyArguments.getBlock(frame.getArguments());
+        final DynamicObject block = RubyArguments.getBlock(frame);
 
         if (hasBlockProfile.profile(block != null)) {
             return block;

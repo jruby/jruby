@@ -37,7 +37,7 @@ public class ReadPreArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (index >= RubyArguments.getArgumentsCount(frame.getArguments())) {
+        if (index >= RubyArguments.getArgumentsCount(frame)) {
             outOfRangeProfile.enter();
 
             switch (missingArgumentBehaviour) {

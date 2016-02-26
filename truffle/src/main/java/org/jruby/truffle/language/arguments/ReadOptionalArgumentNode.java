@@ -57,7 +57,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
             }
         }
 
-        if (RubyArguments.getArgumentsCount(frame.getArguments()) < actualMinimum) {
+        if (RubyArguments.getArgumentsCount(frame) < actualMinimum) {
             defaultValueProfile.enter();
 
             if (considerRejectedKWArgs) {

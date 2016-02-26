@@ -44,7 +44,7 @@ public class ModuleBodyDefinitionNode extends RubyNode {
         final DynamicObject capturedBlock;
 
         if (captureBlock) {
-            capturedBlock = RubyArguments.getBlock(frame.getArguments());
+            capturedBlock = RubyArguments.getBlock(frame);
         } else {
             capturedBlock = null;
         }
