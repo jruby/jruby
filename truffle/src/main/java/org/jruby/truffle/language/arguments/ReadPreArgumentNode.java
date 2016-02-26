@@ -17,9 +17,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Read pre-optional argument.
- */
 public class ReadPreArgumentNode extends RubyNode {
 
     private final int index;
@@ -29,7 +26,8 @@ public class ReadPreArgumentNode extends RubyNode {
 
     private final ValueProfile argumentValueProfile = ValueProfile.createEqualityProfile();
 
-    public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index, MissingArgumentBehaviour missingArgumentBehaviour) {
+    public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index,
+                               MissingArgumentBehaviour missingArgumentBehaviour) {
         super(context, sourceSection);
         this.index = index;
         this.missingArgumentBehaviour = missingArgumentBehaviour;
@@ -37,22 +35,25 @@ public class ReadPreArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (index >= RubyArguments.getArgumentsCount(frame)) {
-            outOfRangeProfile.enter();
-
-            switch (missingArgumentBehaviour) {
-                case RUNTIME_ERROR:
-                    break;
-
-                case UNDEFINED:
-                    return NotProvided.INSTANCE;
-
-                case NIL:
-                    return nil();
-            }
+        if (index < RubyArguments.getArgumentsCount(frame)) {
+            return argumentValueProfile.profile(RubyArguments.getArgument(frame.getArguments(), index));
         }
 
-        return argumentValueProfile.profile(RubyArguments.getArgument(frame.getArguments(), index));
+        outOfRangeProfile.enter();
+
+        switch (missingArgumentBehaviour) {
+            case RUNTIME_ERROR:
+                throw new IndexOutOfBoundsException();
+
+            case UNDEFINED:
+                return NotProvided.INSTANCE;
+
+            case NIL:
+                return nil();
+
+            default:
+                throw new UnsupportedOperationException("unknown missing argument behaviour");
+        }
     }
 
 }
