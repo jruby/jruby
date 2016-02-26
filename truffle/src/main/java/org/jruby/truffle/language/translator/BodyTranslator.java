@@ -2275,7 +2275,7 @@ public class BodyTranslator extends Translator {
 
                 final RubyNode assignPost =
                         new IfElseNode(context, sourceSection,
-                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + node.getPostCount()),
+                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), environment.findLocalVarNode(tempName, sourceSection)),
                                 atLeastAsLarge,
                                 smaller);
 
@@ -2415,7 +2415,7 @@ public class BodyTranslator extends Translator {
 
             final RubyNode assignPost =
                     new IfElseNode(context, sourceSection,
-                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + node.getPostCount()),
+                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), environment.findLocalVarNode(tempName, sourceSection)),
                             atLeastAsLarge,
                             smaller);
 

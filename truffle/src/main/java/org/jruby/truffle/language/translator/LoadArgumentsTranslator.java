@@ -123,7 +123,7 @@ public class LoadArgumentsTranslator extends Translator {
             }
 
             sequence.add(new IfNode(context, sourceSection,
-                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
+                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), loadArray(sourceSection)),
                     new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil)));
         }
 
@@ -218,7 +218,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (useArray()) {
             if (node.getPreCount() == 0 || node.hasRestArg()) {
                 sequence.add(new IfElseNode(context, sourceSection,
-                        new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), node.getPreCount() + node.getPostCount()),
+                        new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), loadArray(sourceSection)),
                         notNilAtLeastAsLarge,
                         notNilSmaller));
             } else {
@@ -412,7 +412,7 @@ public class LoadArgumentsTranslator extends Translator {
                 if (useArray()) {
                     // TODO CS 10-Jan-16 we should really hoist this check, or see if Graal does it for us
                     readNode = new IfElseNode(context, sourceSection,
-                            new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, loadArray(sourceSection), minimum),
+                            new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, minimum, loadArray(sourceSection)),
                             PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index),
                             defaultValue);
                 } else {
@@ -588,7 +588,7 @@ public class LoadArgumentsTranslator extends Translator {
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
                         nil,
                         new IfElseNode(context, sourceSection,
-                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot), node.getPreCount() + node.getPostCount()),
+                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
                                 notNilAtLeastAsLarge,
                                 notNilSmaller))));
     }
