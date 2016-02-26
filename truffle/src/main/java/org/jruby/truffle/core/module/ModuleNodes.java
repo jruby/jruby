@@ -421,7 +421,7 @@ public abstract class ModuleNodes {
             final String accessorName = isGetter ? name : name + "=";
             final String indicativeName = name + "(attr_" + (isGetter ? "reader" : "writer") + ")";
 
-            final RubyNode checkArity = new CheckArityNode.CheckAritySimple(getContext(), sourceSection, arity);
+            final RubyNode checkArity = new CheckArityNode(getContext(), sourceSection, arity);
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false, false, false);
 
             final SelfNode self = new SelfNode(getContext(), sourceSection);

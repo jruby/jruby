@@ -29,8 +29,9 @@ import org.jruby.truffle.core.proc.ProcNodes.Type;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.core.IsNilNode;
+import org.jruby.truffle.language.arguments.CheckArityNode;
+import org.jruby.truffle.language.arguments.CheckKeywordArityNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
@@ -125,9 +126,9 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode checkArity;
 
         if (!arityForCheck.acceptsKeywords()) {
-            checkArity = new CheckArityNode.CheckAritySimple(context, sourceSection, arityForCheck);
+            checkArity = new CheckArityNode(context, sourceSection, arityForCheck);
         } else {
-            checkArity = new CheckArityNode.CheckArityKeywords(context, sourceSection, arityForCheck);
+            checkArity = new CheckKeywordArityNode(context, sourceSection, arityForCheck);
         }
 
         final RubyNode preludeLambda = sequence(context, sourceSection, Arrays.asList(checkArity, NodeUtil.cloneNode(loadArguments)));
@@ -245,9 +246,9 @@ public class MethodTranslator extends BodyTranslator {
             final RubyNode checkArity;
 
             if (!arity.acceptsKeywords()) {
-                checkArity = new CheckArityNode.CheckAritySimple(context, sourceSection, arity);
+                checkArity = new CheckArityNode(context, sourceSection, arity);
             } else {
-                checkArity = new CheckArityNode.CheckArityKeywords(context, sourceSection, arity);
+                checkArity = new CheckKeywordArityNode(context, sourceSection, arity);
             }
 
             prelude = sequence(context, sourceSection, Arrays.asList(checkArity, loadArguments));
