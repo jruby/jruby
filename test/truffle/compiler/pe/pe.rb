@@ -53,9 +53,6 @@ def tagged_counter_example(code)
   example(code, nil, false, true)
 end
 
-example "14", 14
-counter_example "rand"
-
 if ARGV.first
   require File.expand_path(ARGV.first)
 else
