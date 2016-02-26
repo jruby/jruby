@@ -2255,7 +2255,7 @@ public class RipperLexer extends LexingCommon {
                 default :
                     pushback(c);
                     numberBuffer.append('0');
-                    return setIntegerLiteral(numberBuffer.toString(), 10);
+                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
             }
         }
 
