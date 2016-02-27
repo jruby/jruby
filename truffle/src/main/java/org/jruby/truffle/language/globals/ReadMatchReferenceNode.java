@@ -9,11 +9,11 @@
  */
 package org.jruby.truffle.language.globals;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
@@ -27,6 +27,10 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     private final int index;
 
+    @Child private ReadThreadLocalGlobalVariableNode readMatchNode;
+
+    private final ConditionProfile matchNilProfile = ConditionProfile.createBinaryProfile();
+
     public ReadMatchReferenceNode(RubyContext context, SourceSection sourceSection, int index) {
         super(context, sourceSection);
         this.index = index;
@@ -34,55 +38,63 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return readMatchReference();
-    }
+        final Object match = getReadMatchNode().execute(frame);
 
-    @TruffleBoundary
-    private Object readMatchReference() {
-        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
-        final Object match = threadLocals.get("$~", nil());
-
-        if (match == nil()) {
+        if (matchNilProfile.profile(match == nil())) {
             return nil();
         }
 
         final DynamicObject matchData = (DynamicObject) match;
 
-        if (index > 0) {
-            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
+        switch (index) {
+            case PRE:
+                return Layouts.MATCH_DATA.getPre(matchData);
 
-            if (index >= values.length) {
+            case POST:
+                return Layouts.MATCH_DATA.getPost(matchData);
+
+            case GLOBAL:
+                return Layouts.MATCH_DATA.getGlobal(matchData);
+
+            case HIGHEST: {
+                final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
+
+                for (int n = values.length - 1; n >= 0; n--)
+                    if (values[n] != nil()) {
+                        return values[n];
+                    }
+
                 return nil();
-            } else {
-                return values[index];
-            }
-        } else if (index == PRE) {
-            return Layouts.MATCH_DATA.getPre(matchData);
-        } else if (index == POST) {
-            return Layouts.MATCH_DATA.getPost(matchData);
-        } else if (index == GLOBAL) {
-            return Layouts.MATCH_DATA.getGlobal(matchData);
-        } else if (index == HIGHEST) {
-            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
-
-            for (int n = values.length - 1; n >= 0; n--)
-                if (values[n] != nil()) {
-                    return values[n];
             }
 
-            return nil();
-        } else {
-            throw new UnsupportedOperationException();
+            default: {
+                final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
+
+                if (index >= values.length) {
+                    return nil();
+                } else {
+                    return values[index];
+                }
+            }
         }
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        if (execute(frame) != nil()) {
-            return create7BitString("global-variable", UTF8Encoding.INSTANCE);
-        } else {
+        if (isNil(execute(frame))) {
             return nil();
+        } else {
+            return coreStrings().GLOBAL_VARIABLE.createInstance();
         }
+    }
+
+    private ReadThreadLocalGlobalVariableNode getReadMatchNode() {
+        if (readMatchNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            readMatchNode = insert(new ReadThreadLocalGlobalVariableNode(getContext(), getSourceSection(), "$~"));
+        }
+
+        return readMatchNode;
     }
 
 }
