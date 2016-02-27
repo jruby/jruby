@@ -11,6 +11,7 @@ package org.jruby.truffle.language.globals;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
@@ -21,6 +22,8 @@ public class CheckOutputSeparatorVariableTypeNode extends RubyNode {
 
     @Child private RubyNode child;
 
+    private final BranchProfile unsuitableTypeProfile = BranchProfile.create();
+
     public CheckOutputSeparatorVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
@@ -29,8 +32,8 @@ public class CheckOutputSeparatorVariableTypeNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object childValue = child.execute(frame);
 
-        if (!(RubyGuards.isRubyString(childValue)) && childValue != nil()) {
-            CompilerDirectives.transferToInterpreter();
+        if (!RubyGuards.isRubyString(childValue) && !isNil(childValue)) {
+            unsuitableTypeProfile.enter();
             throw new RaiseException(coreLibrary().typeErrorMustBe("$,", "String", this));
         }
 
