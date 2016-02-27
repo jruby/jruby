@@ -15,15 +15,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Wrap a child value in a new {@link ThreadLocal} so that a value can be stored in a location such as a frame without
- * making that value visible to other threads.
- *
- * This is used in combination with nodes that read and writes from storage locations such as frames to make them
- * thread-local.
- *
- * Also see {@link GetFromThreadLocalNode}.
- */
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class WrapInThreadLocalNode extends RubyNode {
 

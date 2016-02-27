@@ -30,9 +30,10 @@ public abstract class ThreadLocalObjectNode extends RubyNode {
             guards = "cachedThread == getCurrentThread(frame)",
             limit = "getCacheLimit()"
     )
-    protected DynamicObject getThreadLocalObjectCached(VirtualFrame frame,
-                                                       @Cached("getCurrentThread(frame)") DynamicObject cachedThread,
-                                                       @Cached("getThreadLocals(cachedThread)") DynamicObject cachedThreadLocals) {
+    protected DynamicObject getThreadLocalObjectCached(
+            VirtualFrame frame,
+            @Cached("getCurrentThread(frame)") DynamicObject cachedThread,
+            @Cached("getThreadLocals(cachedThread)") DynamicObject cachedThreadLocals) {
         return cachedThreadLocals;
     }
 

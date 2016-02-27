@@ -16,15 +16,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * If a child node produces a {@link ThreadLocal}, get the value from it. If the value is not a {@code ThreadLocal},
- * return it unmodified.
- *
- * This is used in combination with nodes that read and writes from storage locations such as frames to make them
- * thread-local.
- *
- * Also see {@link WrapInThreadLocalNode}.
- */
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class GetFromThreadLocalNode extends RubyNode {
 
