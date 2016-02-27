@@ -22,15 +22,12 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 public class ReadGlobalVariableNode extends RubyNode {
 
     private final String name;
-    private final boolean isAlwaysDefined;
 
     @Child private ReadObjectFieldNode readNode;
 
-    public ReadGlobalVariableNode(RubyContext context, SourceSection sourceSection,
-                                  String name, boolean isAlwaysDefined) {
+    public ReadGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
         this.name = name;
-        this.isAlwaysDefined = isAlwaysDefined;
     }
 
     @Override
@@ -40,7 +37,7 @@ public class ReadGlobalVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        if (isAlwaysDefined || getReadNode().execute(coreLibrary().getGlobalVariablesObject()) != nil()) {
+        if (getReadNode().execute(coreLibrary().getGlobalVariablesObject()) != nil()) {
             return coreStrings().GLOBAL_VARIABLE.createInstance();
         } else {
             return nil();
