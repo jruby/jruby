@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.arguments;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -17,38 +18,34 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.RespondToNode;
 
-/**
- * Switches between loading arguments as normal and doing a destructure.
- */
 public class ShouldDestructureNode extends RubyNode {
 
+    @Child private RubyNode readArrayNode;
     @Child private RespondToNode respondToCheck;
 
-    private final BranchProfile checkRespondProfile = BranchProfile.create();
+    private final BranchProfile checkIsArrayProfile = BranchProfile.create();
 
-    public ShouldDestructureNode(RubyContext context, SourceSection sourceSection, RespondToNode respondToCheck) {
+    public ShouldDestructureNode(RubyContext context, SourceSection sourceSection, RubyNode readArrayNode) {
         super(context, sourceSection);
-        this.respondToCheck = respondToCheck;
+        this.readArrayNode = readArrayNode;
     }
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        // If the caller supplied no arguments, or more than one argument, there's no need to destructure this time
-
         if (RubyArguments.getArgumentsCount(frame) != 1) {
             return false;
         }
 
-        // If the single argument is a RubyArray, destructure
-        // TODO(CS): can we not just rely on the respondToCheck? Should experiment.
+        checkIsArrayProfile.enter();
 
         if (RubyGuards.isRubyArray(RubyArguments.getArgument(frame, 0))) {
             return true;
         }
 
-        // If the single argument responds to #to_ary, then destructure
-
-        checkRespondProfile.enter();
+        if (respondToCheck == null) {
+            CompilerDirectives.transferToInterpreter();
+            respondToCheck = insert(new RespondToNode(getContext(), getSourceSection(), readArrayNode, "to_ary"));
+        }
 
         return respondToCheck.executeBoolean(frame);
     }

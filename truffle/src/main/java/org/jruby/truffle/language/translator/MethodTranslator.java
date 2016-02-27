@@ -107,7 +107,7 @@ public class MethodTranslator extends BodyTranslator {
             destructureArgumentsTranslator.pushArraySlot(arraySlot);
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
-            final RubyNode shouldDestructure = new ShouldDestructureNode(context, sourceSection, new RespondToNode(context, sourceSection, readArrayNode, "to_ary"));
+            final RubyNode shouldDestructure = new ShouldDestructureNode(context, sourceSection, readArrayNode);
 
             final RubyNode arrayWasNotNil = sequence(context, sourceSection, Arrays.asList(writeArrayNode, new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
