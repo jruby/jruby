@@ -21,7 +21,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.objects.ThreadLocalObject;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class RubiniusLastStringWriteNode extends RubyNode {

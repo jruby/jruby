@@ -7,42 +7,33 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language.globals;
+package org.jruby.truffle.language.threadlocal;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.objects.ThreadLocalObject;
 
 /**
- * If a child node produces a {@link ThreadLocal}, get the value from it. If the value is not a {@code ThreadLocal},
- * return it unmodified.
+ * Wrap a child value in a new {@link ThreadLocal} so that a value can be stored in a location such as a frame without
+ * making that value visible to other threads.
  *
  * This is used in combination with nodes that read and writes from storage locations such as frames to make them
  * thread-local.
  *
- * Also see {@link WrapInThreadLocalNode}.
+ * Also see {@link GetFromThreadLocalNode}.
  */
 @NodeChild(value = "value", type = RubyNode.class)
-public abstract class GetFromThreadLocalNode extends RubyNode {
+public abstract class WrapInThreadLocalNode extends RubyNode {
 
-    public GetFromThreadLocalNode(RubyContext context, SourceSection sourceSection) {
+    public WrapInThreadLocalNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    @TruffleBoundary
     @Specialization
-    public Object get(ThreadLocalObject threadLocal) {
-        return threadLocal.get();
+    public ThreadLocalObject wrap(Object value) {
+        return ThreadLocalObject.wrap(getContext(), value);
     }
-
-    @Specialization(guards = "!isThreadLocal(value)")
-    public Object get(Object value) {
-        return value;
-    }
-
 
 }

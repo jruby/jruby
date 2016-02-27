@@ -18,7 +18,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
-import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNode;
 import org.jruby.truffle.language.objects.ThreadLocalObjectNodeGen;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;

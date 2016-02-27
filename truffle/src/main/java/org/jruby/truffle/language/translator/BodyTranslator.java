@@ -156,7 +156,7 @@ import org.jruby.truffle.language.objects.RunModuleDefinitionNode;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
-import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNode;
 import org.jruby.truffle.language.objects.ThreadLocalObjectNodeGen;
 import org.jruby.truffle.language.objects.WriteClassVariableNode;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;

@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language.objects;
+package org.jruby.truffle.language.threadlocal;
 
 import org.jruby.truffle.RubyContext;
 
