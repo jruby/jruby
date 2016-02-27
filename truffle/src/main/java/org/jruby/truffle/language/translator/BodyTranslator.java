@@ -1685,7 +1685,7 @@ public class BodyTranslator extends Translator {
 
             ret = readNode;
         } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-            ret = new ReadThreadLocalGlobalVariableNode(context, sourceSection, name);
+            ret = new ReadThreadLocalGlobalVariableNode(context, sourceSection, name, ALWAYS_DEFINED_GLOBALS.contains(name));
         } else if (name.equals("$@")) {
             // $@ is a special-case and doesn't read directly from an ivar field in the globals object.
             // Instead, it reads the backtrace field of the thread-local $! value.

@@ -28,7 +28,7 @@ public class UpdateLastBacktraceNode extends RubyNode {
     public UpdateLastBacktraceNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
-        getLastExceptionNode = new ReadThreadLocalGlobalVariableNode(context, sourceSection, "$!");
+        getLastExceptionNode = new ReadThreadLocalGlobalVariableNode(context, sourceSection, "$!", true);
         setBacktraceNode = DispatchHeadNodeFactory.createMethodCall(getContext());
     }
 

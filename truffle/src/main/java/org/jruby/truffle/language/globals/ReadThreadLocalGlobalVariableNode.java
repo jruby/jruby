@@ -23,11 +23,14 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNodeGen;
 
 public class ReadThreadLocalGlobalVariableNode extends RubyNode {
 
+    private final boolean alwaysDefined;
+
     @Child private ThreadLocalObjectNode threadLocalVariablesObjectNode;
     @Child private ReadObjectFieldNode readNode;
 
-    public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
+    public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name, boolean alwaysDefined) {
         super(context, sourceSection);
+        this.alwaysDefined = alwaysDefined;
         this.threadLocalVariablesObjectNode = ThreadLocalObjectNodeGen.create(context, sourceSection);
         readNode = ReadObjectFieldNodeGen.create(getContext(), name, nil());
     }
@@ -43,7 +46,7 @@ public class ReadThreadLocalGlobalVariableNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
         final DynamicObject threadLocalVariablesObject = threadLocalVariablesObjectNode.executeDynamicObject(frame);
 
-        if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(threadLocalVariablesObject) != nil()) {
+        if (alwaysDefined || readNode.execute(threadLocalVariablesObject) != nil()) {
             return create7BitString("global-variable", UTF8Encoding.INSTANCE);
         } else {
             return nil();

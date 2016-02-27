@@ -91,7 +91,7 @@ public class ReadMatchReferenceNode extends RubyNode {
     private ReadThreadLocalGlobalVariableNode getReadMatchNode() {
         if (readMatchNode == null) {
             CompilerDirectives.transferToInterpreter();
-            readMatchNode = insert(new ReadThreadLocalGlobalVariableNode(getContext(), getSourceSection(), "$~"));
+            readMatchNode = insert(new ReadThreadLocalGlobalVariableNode(getContext(), getSourceSection(), "$~", true));
         }
 
         return readMatchNode;
