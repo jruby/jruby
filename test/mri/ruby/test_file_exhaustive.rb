@@ -1,10 +1,13 @@
+# frozen_string_literal: false
 require "test/unit"
 require "fileutils"
 require "tmpdir"
-require_relative "envutil"
+require "socket"
 
 class TestFileExhaustive < Test::Unit::TestCase
   DRIVE = Dir.pwd[%r'\A(?:[a-z]:|//[^/]+/[^/]+)'i]
+  POSIX = /cygwin|mswin|bccwin|mingw|emx/ !~ RUBY_PLATFORM
+  NTFS = !(/cygwin|mingw|mswin|bccwin/ !~ RUBY_PLATFORM)
 
   def assert_incompatible_encoding
     d = "\u{3042}\u{3044}".encode("utf-16le")
@@ -15,26 +18,7 @@ class TestFileExhaustive < Test::Unit::TestCase
 
   def setup
     @dir = Dir.mktmpdir("rubytest-file")
-    @rootdir = "#{DRIVE}/"
     File.chown(-1, Process.gid, @dir)
-    @file = make_tmp_filename("file")
-    @zerofile = make_tmp_filename("zerofile")
-    @nofile = make_tmp_filename("nofile")
-    @symlinkfile = make_tmp_filename("symlinkfile")
-    @hardlinkfile = make_tmp_filename("hardlinkfile")
-    make_file("foo", @file)
-    make_file("", @zerofile)
-    @time = Time.now
-    begin
-      File.symlink(@file, @symlinkfile)
-    rescue NotImplementedError
-      @symlinkfile = nil
-    end
-    begin
-      File.link(@file, @hardlinkfile)
-    rescue NotImplementedError, Errno::EINVAL	# EINVAL for Windows Vista
-      @hardlinkfile = nil
-    end
   end
 
   def teardown
@@ -42,16 +26,149 @@ class TestFileExhaustive < Test::Unit::TestCase
     FileUtils.remove_entry_secure @dir
   end
 
-  def make_file(content, file = @file)
+  def make_tmp_filename(prefix)
+    "#{@dir}/#{prefix}.test"
+  end
+
+  def rootdir
+    return @rootdir if defined? @rootdir
+    @rootdir = "#{DRIVE}/"
+    @rootdir
+  end
+
+  def nofile
+    return @nofile if defined? @nofile
+    @nofile = make_tmp_filename("nofile")
+    @nofile
+  end
+
+  def make_file(content, file)
     open(file, "w") {|fh| fh << content }
   end
 
-  def make_tmp_filename(prefix)
-    @hardlinkfile = @dir + "/" + prefix + File.basename(__FILE__) + ".#{$$}.test"
+  def zerofile
+    return @zerofile if defined? @zerofile
+    @zerofile = make_tmp_filename("zerofile")
+    make_file("", @zerofile)
+    @zerofile
+  end
+
+  def regular_file
+    return @file if defined? @file
+    @file = make_tmp_filename("file")
+    make_file("foo", @file)
+    @file
+  end
+
+  def notownedfile
+    return @notownedfile if defined? @notownedfile
+    if Process.euid != 0
+      @notownedfile = '/'
+    else
+      @notownedfile = nil
+    end
+    @notownedfile
+  end
+
+  def suidfile
+    return @suidfile if defined? @suidfile
+    if POSIX
+      @suidfile = make_tmp_filename("suidfile")
+      make_file("", @suidfile)
+      File.chmod 04500, @suidfile
+      @suidfile
+    else
+      @suidfile = nil
+    end
+  end
+
+  def sgidfile
+    return @sgidfile if defined? @sgidfile
+    if POSIX
+      @sgidfile = make_tmp_filename("sgidfile")
+      make_file("", @sgidfile)
+      File.chmod 02500, @sgidfile
+      @sgidfile
+    else
+      @sgidfile = nil
+    end
+  end
+
+  def stickyfile
+    return @stickyfile if defined? @stickyfile
+    if POSIX
+      @stickyfile = make_tmp_filename("stickyfile")
+      Dir.mkdir(@stickyfile)
+      File.chmod 01500, @stickyfile
+      @stickyfile
+    else
+      @stickyfile = nil
+    end
+  end
+
+  def symlinkfile
+    return @symlinkfile if @symlinkfile
+    @symlinkfile = make_tmp_filename("symlinkfile")
+    begin
+      File.symlink(regular_file, @symlinkfile)
+    rescue NotImplementedError, Errno::EACCES
+      @symlinkfile = nil
+    end
+    @symlinkfile
+  end
+
+  def hardlinkfile
+    return @hardlinkfile if defined? @hardlinkfile
+    @hardlinkfile = make_tmp_filename("hardlinkfile")
+    begin
+      File.link(regular_file, @hardlinkfile)
+    rescue NotImplementedError, Errno::EINVAL	# EINVAL for Windows Vista
+      @hardlinkfile = nil
+    end
+    @hardlinkfile
+  end
+
+  def fifo
+    return @fifo if defined? @fifo
+    if POSIX
+      fn = make_tmp_filename("fifo")
+      File.mkfifo(fn)
+      @fifo = fn
+    else
+      @fifo = nil
+    end
+    @fifo
+  end
+
+  def socket
+    return @socket if defined? @socket
+    if defined? UNIXServer
+      socket = make_tmp_filename("s")
+      UNIXServer.open(socket).close
+      @socket = socket
+    else
+      @socket = nil
+    end
+  end
+
+  def chardev
+    return @chardev if defined? @chardev
+    @chardev = File::NULL == "/dev/null" ? "/dev/null" : nil
+    @chardev
+  end
+
+  def blockdev
+    return @blockdev if defined? @blockdev
+    if /linux/ =~ RUBY_PLATFORM
+      @blockdev = %w[/dev/loop0 /dev/sda /dev/vda /dev/xvda1].find {|f| File.exist? f }
+    else
+      @blockdev = nil
+    end
+    @blockdev
   end
 
   def test_path
-    file = @file
+    file = regular_file
 
     assert_equal(file, File.open(file) {|f| f.path})
     assert_equal(file, File.path(file))
@@ -76,9 +193,12 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_stat
-    sleep(@time - Time.now + 1.1)
-    make_file("foo", @file + "2")
-    fs1, fs2 = File.stat(@file), File.stat(@file + "2")
+    fn1 = regular_file
+    hardlinkfile
+    sleep(1.1)
+    fn2 = fn1 + "2"
+    make_file("foo", fn2)
+    fs1, fs2 = File.stat(fn1), File.stat(fn2)
     assert_nothing_raised do
       assert_equal(0, fs1 <=> fs1)
       assert_equal(-1, fs1 <=> fs2)
@@ -95,7 +215,7 @@ class TestFileExhaustive < Test::Unit::TestCase
       unless /emx|mswin|mingw/ =~ RUBY_PLATFORM
         # on Windows, nlink is always 1. but this behavior will be changed
         # in the future.
-        assert_equal(@hardlinkfile ? 2 : 1, fs1.nlink)
+        assert_equal(hardlinkfile ? 2 : 1, fs1.nlink)
       end
       assert_integer(fs1.uid)
       assert_integer(fs1.gid)
@@ -107,10 +227,10 @@ class TestFileExhaustive < Test::Unit::TestCase
       assert_kind_of(Time, fs1.ctime)
       assert_kind_of(String, fs1.inspect)
     end
-    assert_raise(Errno::ENOENT) { File.stat(@nofile) }
-    assert_kind_of(File::Stat, File.open(@file) {|f| f.stat})
-    assert_raise(Errno::ENOENT) { File.lstat(@nofile) }
-    assert_kind_of(File::Stat, File.open(@file) {|f| f.lstat})
+    assert_raise(Errno::ENOENT) { File.stat(nofile) }
+    assert_kind_of(File::Stat, File.open(fn1) {|f| f.stat})
+    assert_raise(Errno::ENOENT) { File.lstat(nofile) }
+    assert_kind_of(File::Stat, File.open(fn1) {|f| f.lstat})
   end
 
   def test_stat_drive_root
@@ -133,232 +253,255 @@ class TestFileExhaustive < Test::Unit::TestCase
         assert_nothing_raised { File.stat(File.basename(prefix)) }
       end
     end
-  end if /mswin|mingw|cygwin/ =~ RUBY_PLATFORM
+  end if NTFS
 
   def test_directory_p
     assert_file.directory?(@dir)
     assert_file.not_directory?(@dir+"/...")
-    assert_file.not_directory?(@file)
-    assert_file.not_directory?(@nofile)
+    assert_file.not_directory?(regular_file)
+    assert_file.not_directory?(nofile)
   end
 
-  def test_pipe_p ## xxx
+  def test_pipe_p
     assert_file.not_pipe?(@dir)
-    assert_file.not_pipe?(@file)
-    assert_file.not_pipe?(@nofile)
+    assert_file.not_pipe?(regular_file)
+    assert_file.not_pipe?(nofile)
+    assert_file.pipe?(fifo) if fifo
   end
 
   def test_symlink_p
     assert_file.not_symlink?(@dir)
-    assert_file.not_symlink?(@file)
-    assert_file.symlink?(@symlinkfile) if @symlinkfile
-    assert_file.not_symlink?(@hardlinkfile) if @hardlinkfile
-    assert_file.not_symlink?(@nofile)
+    assert_file.not_symlink?(regular_file)
+    assert_file.symlink?(symlinkfile) if symlinkfile
+    assert_file.not_symlink?(hardlinkfile) if hardlinkfile
+    assert_file.not_symlink?(nofile)
   end
 
-  def test_socket_p ## xxx
+  def test_socket_p
     assert_file.not_socket?(@dir)
-    assert_file.not_socket?(@file)
-    assert_file.not_socket?(@nofile)
+    assert_file.not_socket?(regular_file)
+    assert_file.not_socket?(nofile)
+    assert_file.socket?(socket) if socket
   end
 
-  def test_blockdev_p ## xxx
+  def test_blockdev_p
     assert_file.not_blockdev?(@dir)
-    assert_file.not_blockdev?(@file)
-    assert_file.not_blockdev?(@nofile)
+    assert_file.not_blockdev?(regular_file)
+    assert_file.not_blockdev?(nofile)
+    assert_file.blockdev?(blockdev) if blockdev
   end
 
-  def test_chardev_p ## xxx
+  def test_chardev_p
     assert_file.not_chardev?(@dir)
-    assert_file.not_chardev?(@file)
-    assert_file.not_chardev?(@nofile)
+    assert_file.not_chardev?(regular_file)
+    assert_file.not_chardev?(nofile)
+    assert_file.chardev?(chardev) if chardev
   end
 
   def test_exist_p
     assert_file.exist?(@dir)
-    assert_file.exist?(@file)
-    assert_file.not_exist?(@nofile)
+    assert_file.exist?(regular_file)
+    assert_file.not_exist?(nofile)
   end
 
   def test_readable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
     return if Process.euid == 0
-    File.chmod(0200, @file)
-    assert_file.not_readable?(@file)
-    File.chmod(0600, @file)
-    assert_file.readable?(@file)
-    assert_file.not_readable?(@nofile)
-  end
+    File.chmod(0200, regular_file)
+    assert_file.not_readable?(regular_file)
+    File.chmod(0600, regular_file)
+    assert_file.readable?(regular_file)
+    assert_file.not_readable?(nofile)
+  end if POSIX
 
   def test_readable_real_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
     return if Process.euid == 0
-    File.chmod(0200, @file)
-    assert_file.not_readable_real?(@file)
-    File.chmod(0600, @file)
-    assert_file.readable_real?(@file)
-    assert_file.not_readable_real?(@nofile)
-  end
+    File.chmod(0200, regular_file)
+    assert_file.not_readable_real?(regular_file)
+    File.chmod(0600, regular_file)
+    assert_file.readable_real?(regular_file)
+    assert_file.not_readable_real?(nofile)
+  end if POSIX
 
   def test_world_readable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    File.chmod(0006, @file)
-    assert_file.world_readable?(@file)
-    File.chmod(0060, @file)
-    assert_file.not_world_readable?(@file)
-    File.chmod(0600, @file)
-    assert_file.not_world_readable?(@file)
-    assert_file.not_world_readable?(@nofile)
-  end
+    File.chmod(0006, regular_file)
+    assert_file.world_readable?(regular_file)
+    File.chmod(0060, regular_file)
+    assert_file.not_world_readable?(regular_file)
+    File.chmod(0600, regular_file)
+    assert_file.not_world_readable?(regular_file)
+    assert_file.not_world_readable?(nofile)
+  end if POSIX
 
   def test_writable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
     return if Process.euid == 0
-    File.chmod(0400, @file)
-    assert_file.not_writable?(@file)
-    File.chmod(0600, @file)
-    assert_file.writable?(@file)
-    assert_file.not_writable?(@nofile)
-  end
+    File.chmod(0400, regular_file)
+    assert_file.not_writable?(regular_file)
+    File.chmod(0600, regular_file)
+    assert_file.writable?(regular_file)
+    assert_file.not_writable?(nofile)
+  end if POSIX
 
   def test_writable_real_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
     return if Process.euid == 0
-    File.chmod(0400, @file)
-    assert_file.not_writable_real?(@file)
-    File.chmod(0600, @file)
-    assert_file.writable_real?(@file)
-    assert_file.not_writable_real?(@nofile)
-  end
+    File.chmod(0400, regular_file)
+    assert_file.not_writable_real?(regular_file)
+    File.chmod(0600, regular_file)
+    assert_file.writable_real?(regular_file)
+    assert_file.not_writable_real?(nofile)
+  end if POSIX
 
   def test_world_writable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    File.chmod(0006, @file)
-    assert_file.world_writable?(@file)
-    File.chmod(0060, @file)
-    assert_file.not_world_writable?(@file)
-    File.chmod(0600, @file)
-    assert_file.not_world_writable?(@file)
-    assert_file.not_world_writable?(@nofile)
-  end
+    File.chmod(0006, regular_file)
+    assert_file.world_writable?(regular_file)
+    File.chmod(0060, regular_file)
+    assert_file.not_world_writable?(regular_file)
+    File.chmod(0600, regular_file)
+    assert_file.not_world_writable?(regular_file)
+    assert_file.not_world_writable?(nofile)
+  end if POSIX
 
   def test_executable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    File.chmod(0100, @file)
-    assert_file.executable?(@file)
-    File.chmod(0600, @file)
-    assert_file.not_executable?(@file)
-    assert_file.not_executable?(@nofile)
-  end
+    File.chmod(0100, regular_file)
+    assert_file.executable?(regular_file)
+    File.chmod(0600, regular_file)
+    assert_file.not_executable?(regular_file)
+    assert_file.not_executable?(nofile)
+  end if POSIX
 
   def test_executable_real_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    File.chmod(0100, @file)
-    assert_file.executable_real?(@file)
-    File.chmod(0600, @file)
-    assert_file.not_executable_real?(@file)
-    assert_file.not_executable_real?(@nofile)
-  end
+    File.chmod(0100, regular_file)
+    assert_file.executable_real?(regular_file)
+    File.chmod(0600, regular_file)
+    assert_file.not_executable_real?(regular_file)
+    assert_file.not_executable_real?(nofile)
+  end if POSIX
 
   def test_file_p
     assert_file.not_file?(@dir)
-    assert_file.file?(@file)
-    assert_file.not_file?(@nofile)
+    assert_file.file?(regular_file)
+    assert_file.not_file?(nofile)
   end
 
   def test_zero_p
     assert_nothing_raised { File.zero?(@dir) }
-    assert_file.not_zero?(@file)
-    assert_file.zero?(@zerofile)
-    assert_file.not_zero?(@nofile)
+    assert_file.not_zero?(regular_file)
+    assert_file.zero?(zerofile)
+    assert_file.not_zero?(nofile)
   end
 
   def test_size_p
     assert_nothing_raised { File.size?(@dir) }
-    assert_equal(3, File.size?(@file))
-    assert_file.not_size?(@zerofile)
-    assert_file.not_size?(@nofile)
+    assert_equal(3, File.size?(regular_file))
+    assert_file.not_size?(zerofile)
+    assert_file.not_size?(nofile)
   end
 
-  def test_owned_p ## xxx
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    assert_file.owned?(@file)
-    assert_file.grpowned?(@file)
+  def test_owned_p
+    assert_file.owned?(regular_file)
+    assert_file.not_owned?(notownedfile) if notownedfile
+  end if POSIX
+
+  def test_grpowned_p ## xxx
+    assert_file.grpowned?(regular_file)
+  end if POSIX
+
+  def test_suid
+    assert_file.not_setuid?(regular_file)
+    assert_file.setuid?(suidfile) if suidfile
   end
 
-  def test_suid_sgid_sticky ## xxx
-    assert_file.not_setuid?(@file)
-    assert_file.not_setgid?(@file)
-    assert_file.not_sticky?(@file)
+  def test_sgid
+    assert_file.not_setgid?(regular_file)
+    assert_file.setgid?(sgidfile) if sgidfile
   end
 
-  def test_identical_p
-    assert_file.identical?(@file, @file)
-    assert_file.not_identical?(@file, @zerofile)
-    assert_file.not_identical?(@file, @nofile)
-    assert_file.not_identical?(@nofile, @file)
+  def test_sticky
+    assert_file.not_sticky?(regular_file)
+    assert_file.sticky?(stickyfile) if stickyfile
+  end
+
+  def test_path_identical_p
+    assert_file.identical?(regular_file, regular_file)
+    assert_file.not_identical?(regular_file, zerofile)
+    assert_file.not_identical?(regular_file, nofile)
+    assert_file.not_identical?(nofile, regular_file)
+  end
+
+  def test_io_identical_p
+    open(regular_file) {|f|
+      assert_file.identical?(f, f)
+      assert_file.identical?(regular_file, f)
+      assert_file.identical?(f, regular_file)
+    }
+  end
+
+  def test_closed_io_identical_p
+    io = open(regular_file) {|f| f}
+    assert_raise(IOError) {
+      File.identical?(regular_file, io)
+    }
+    File.unlink(regular_file)
+    assert_file.not_exist?(regular_file)
   end
 
   def test_s_size
     assert_integer(File.size(@dir))
-    assert_equal(3, File.size(@file))
-    assert_equal(0, File.size(@zerofile))
-    assert_raise(Errno::ENOENT) { File.size(@nofile) }
+    assert_equal(3, File.size(regular_file))
+    assert_equal(0, File.size(zerofile))
+    assert_raise(Errno::ENOENT) { File.size(nofile) }
   end
 
   def test_ftype
     assert_equal("directory", File.ftype(@dir))
-    assert_equal("file", File.ftype(@file))
-    assert_equal("link", File.ftype(@symlinkfile)) if @symlinkfile
-    assert_equal("file", File.ftype(@hardlinkfile)) if @hardlinkfile
-    assert_raise(Errno::ENOENT) { File.ftype(@nofile) }
+    assert_equal("file", File.ftype(regular_file))
+    assert_equal("link", File.ftype(symlinkfile)) if symlinkfile
+    assert_equal("file", File.ftype(hardlinkfile)) if hardlinkfile
+    assert_raise(Errno::ENOENT) { File.ftype(nofile) }
   end
 
   def test_atime
-    t1 = File.atime(@file)
-    t2 = File.open(@file) {|f| f.atime}
+    t1 = File.atime(regular_file)
+    t2 = File.open(regular_file) {|f| f.atime}
     assert_kind_of(Time, t1)
     assert_kind_of(Time, t2)
     assert_equal(t1, t2)
-    assert_raise(Errno::ENOENT) { File.atime(@nofile) }
+    assert_raise(Errno::ENOENT) { File.atime(nofile) }
   end
 
   def test_mtime
-    t1 = File.mtime(@file)
-    t2 = File.open(@file) {|f| f.mtime}
+    t1 = File.mtime(regular_file)
+    t2 = File.open(regular_file) {|f| f.mtime}
     assert_kind_of(Time, t1)
     assert_kind_of(Time, t2)
     assert_equal(t1, t2)
-    assert_raise(Errno::ENOENT) { File.mtime(@nofile) }
+    assert_raise(Errno::ENOENT) { File.mtime(nofile) }
   end
 
   def test_ctime
-    t1 = File.ctime(@file)
-    t2 = File.open(@file) {|f| f.ctime}
+    t1 = File.ctime(regular_file)
+    t2 = File.open(regular_file) {|f| f.ctime}
     assert_kind_of(Time, t1)
     assert_kind_of(Time, t2)
     assert_equal(t1, t2)
-    assert_raise(Errno::ENOENT) { File.ctime(@nofile) }
+    assert_raise(Errno::ENOENT) { File.ctime(nofile) }
   end
 
   def test_chmod
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    assert_equal(1, File.chmod(0444, @file))
-    assert_equal(0444, File.stat(@file).mode % 01000)
-    assert_equal(0, File.open(@file) {|f| f.chmod(0222)})
-    assert_equal(0222, File.stat(@file).mode % 01000)
-    File.chmod(0600, @file)
-    assert_raise(Errno::ENOENT) { File.chmod(0600, @nofile) }
-  end
+    assert_equal(1, File.chmod(0444, regular_file))
+    assert_equal(0444, File.stat(regular_file).mode % 01000)
+    assert_equal(0, File.open(regular_file) {|f| f.chmod(0222)})
+    assert_equal(0222, File.stat(regular_file).mode % 01000)
+    File.chmod(0600, regular_file)
+    assert_raise(Errno::ENOENT) { File.chmod(0600, nofile) }
+  end if POSIX
 
   def test_lchmod
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    assert_equal(1, File.lchmod(0444, @file))
-    assert_equal(0444, File.stat(@file).mode % 01000)
-    File.lchmod(0600, @file)
-    assert_raise(Errno::ENOENT) { File.lchmod(0600, @nofile) }
+    assert_equal(1, File.lchmod(0444, regular_file))
+    assert_equal(0444, File.stat(regular_file).mode % 01000)
+    File.lchmod(0600, regular_file)
+    assert_raise(Errno::ENOENT) { File.lchmod(0600, nofile) }
   rescue NotImplementedError
-  end
+  end if POSIX
 
   def test_chown ## xxx
   end
@@ -367,39 +510,39 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_symlink
-    return unless @symlinkfile
-    assert_equal("link", File.ftype(@symlinkfile))
-    assert_raise(Errno::EEXIST) { File.symlink(@file, @file) }
+    return unless symlinkfile
+    assert_equal("link", File.ftype(symlinkfile))
+    assert_raise(Errno::EEXIST) { File.symlink(regular_file, regular_file) }
   end
 
   def test_utime
     t = Time.local(2000)
-    File.utime(t + 1, t + 2, @zerofile)
-    assert_equal(t + 1, File.atime(@zerofile))
-    assert_equal(t + 2, File.mtime(@zerofile))
+    File.utime(t + 1, t + 2, zerofile)
+    assert_equal(t + 1, File.atime(zerofile))
+    assert_equal(t + 2, File.mtime(zerofile))
   end
 
   def test_hardlink
-    return unless @hardlinkfile
-    assert_equal("file", File.ftype(@hardlinkfile))
-    assert_raise(Errno::EEXIST) { File.link(@file, @file) }
+    return unless hardlinkfile
+    assert_equal("file", File.ftype(hardlinkfile))
+    assert_raise(Errno::EEXIST) { File.link(regular_file, regular_file) }
   end
 
   def test_readlink
-    return unless @symlinkfile
-    assert_equal(@file, File.readlink(@symlinkfile))
-    assert_raise(Errno::EINVAL) { File.readlink(@file) }
-    assert_raise(Errno::ENOENT) { File.readlink(@nofile) }
+    return unless symlinkfile
+    assert_equal(regular_file, File.readlink(symlinkfile))
+    assert_raise(Errno::EINVAL) { File.readlink(regular_file) }
+    assert_raise(Errno::ENOENT) { File.readlink(nofile) }
     if fs = Encoding.find("filesystem")
-      assert_equal(fs, File.readlink(@symlinkfile).encoding)
+      assert_equal(fs, File.readlink(symlinkfile).encoding)
     end
   rescue NotImplementedError
   end
 
   def test_readlink_long_path
-    return unless @symlinkfile
+    return unless symlinkfile
     bug9157 = '[ruby-core:58592] [Bug #9157]'
-    assert_separately(["-", @symlinkfile, bug9157], <<-"end;")
+    assert_separately(["-", symlinkfile, bug9157], <<-"end;")
       symlinkfile, bug9157 = *ARGV
       100.step(1000, 100) do |n|
         File.unlink(symlinkfile)
@@ -415,39 +558,52 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_unlink
-    assert_equal(1, File.unlink(@file))
-    make_file("foo", @file)
-    assert_raise(Errno::ENOENT) { File.unlink(@nofile) }
+    assert_equal(1, File.unlink(regular_file))
+    make_file("foo", regular_file)
+    assert_raise(Errno::ENOENT) { File.unlink(nofile) }
   end
 
   def test_rename
-    assert_equal(0, File.rename(@file, @nofile))
-    assert_file.not_exist?(@file)
-    assert_file.exist?(@nofile)
-    assert_equal(0, File.rename(@nofile, @file))
-    assert_raise(Errno::ENOENT) { File.rename(@nofile, @file) }
+    assert_equal(0, File.rename(regular_file, nofile))
+    assert_file.not_exist?(regular_file)
+    assert_file.exist?(nofile)
+    assert_equal(0, File.rename(nofile, regular_file))
+    assert_raise(Errno::ENOENT) { File.rename(nofile, regular_file) }
   end
 
   def test_umask
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
     prev = File.umask(0777)
     assert_equal(0777, File.umask)
-    open(@nofile, "w") { }
-    assert_equal(0, File.stat(@nofile).mode % 01000)
-    File.unlink(@nofile)
+    open(nofile, "w") { }
+    assert_equal(0, File.stat(nofile).mode % 01000)
+    File.unlink(nofile)
     assert_equal(0777, File.umask(prev))
     assert_raise(ArgumentError) { File.umask(0, 1, 2) }
-  end
+  end if POSIX
 
   def test_expand_path
-    assert_equal(@file, File.expand_path(File.basename(@file), File.dirname(@file)))
-    if /cygwin|mingw|mswin|bccwin/ =~ RUBY_PLATFORM
-      assert_equal(@file, File.expand_path(@file + " "))
-      assert_equal(@file, File.expand_path(@file + "."))
-      assert_equal(@file, File.expand_path(@file + "::$DATA"))
+    assert_equal(regular_file, File.expand_path(File.basename(regular_file), File.dirname(regular_file)))
+    if NTFS
+      assert_equal(regular_file, File.expand_path(regular_file + " "))
+      assert_equal(regular_file, File.expand_path(regular_file + "."))
+      assert_equal(regular_file, File.expand_path(regular_file + "::$DATA"))
       assert_match(/\Ac:\//i, File.expand_path('c:'), '[ruby-core:31591]')
       assert_match(/\Ac:\//i, File.expand_path('c:foo', 'd:/bar'))
+      assert_match(/\Ae:\//i, File.expand_path('e:foo', 'd:/bar'))
       assert_match(%r'\Ac:/bar/foo\z'i, File.expand_path('c:foo', 'c:/bar'))
+    end
+    case RUBY_PLATFORM
+    when /darwin/
+      ["\u{feff}", *"\u{2000}"..."\u{2100}"].each do |c|
+        file = regular_file + c
+        begin
+          open(file) {}
+        rescue
+          assert_equal(file, File.expand_path(file), c.dump)
+        else
+          assert_equal(regular_file, File.expand_path(file), c.dump)
+        end
+      end
     end
     if DRIVE
       assert_match(%r"\Az:/foo\z"i, File.expand_path('/foo', "z:/bar"))
@@ -462,9 +618,9 @@ class TestFileExhaustive < Test::Unit::TestCase
     bug9934 = '[ruby-core:63114] [Bug #9934]'
     require "objspace"
     path = File.expand_path("/foo")
-    assert_operator(ObjectSpace.memsize_of(path), :<=, path.bytesize, bug9934)
+    assert_operator(ObjectSpace.memsize_of(path), :<=, path.bytesize + GC::INTERNAL_CONSTANTS[:RVALUE_SIZE], bug9934)
     path = File.expand_path("/a"*25)
-    assert_equal(path.bytesize+1, ObjectSpace.memsize_of(path), bug9934)
+    assert_equal(path.bytesize+1 + GC::INTERNAL_CONSTANTS[:RVALUE_SIZE], ObjectSpace.memsize_of(path), bug9934)
   end
 
   def test_expand_path_encoding
@@ -579,9 +735,9 @@ class TestFileExhaustive < Test::Unit::TestCase
 
 
   def test_expand_path_remove_trailing_alternative_data
-    assert_equal File.join(@rootdir, "aaa"), File.expand_path("#{@rootdir}/aaa::$DATA")
-    assert_equal File.join(@rootdir, "aa:a"), File.expand_path("#{@rootdir}/aa:a:$DATA")
-    assert_equal File.join(@rootdir, "aaa:$DATA"), File.expand_path("#{@rootdir}/aaa:$DATA")
+    assert_equal File.join(rootdir, "aaa"), File.expand_path("#{rootdir}/aaa::$DATA")
+    assert_equal File.join(rootdir, "aa:a"), File.expand_path("#{rootdir}/aa:a:$DATA")
+    assert_equal File.join(rootdir, "aaa:$DATA"), File.expand_path("#{rootdir}/aaa:$DATA")
   end if DRIVE
 
   def test_expand_path_resolve_empty_string_current_directory
@@ -625,20 +781,20 @@ class TestFileExhaustive < Test::Unit::TestCase
     assert_equal(@dir, File.expand_path("", "#{@dir}"))
     assert_equal(File.join(@dir, "a"), File.expand_path("a", "#{@dir}"))
     assert_equal(File.join(@dir, "a"), File.expand_path("../a", "#{@dir}/xxx"))
-    assert_equal(@rootdir, File.expand_path(".", "#{@rootdir}"))
+    assert_equal(rootdir, File.expand_path(".", "#{rootdir}"))
   end
 
   def test_expand_path_ignores_supplied_dir_if_path_contains_a_drive_letter
-    assert_equal(@rootdir, File.expand_path(@rootdir, "D:/"))
+    assert_equal(rootdir, File.expand_path(rootdir, "D:/"))
   end if DRIVE
 
   def test_expand_path_removes_trailing_slashes_from_absolute_path
-    assert_equal(File.join(@rootdir, "foo"), File.expand_path("#{@rootdir}foo/"))
-    assert_equal(File.join(@rootdir, "foo.rb"), File.expand_path("#{@rootdir}foo.rb/"))
+    assert_equal(File.join(rootdir, "foo"), File.expand_path("#{rootdir}foo/"))
+    assert_equal(File.join(rootdir, "foo.rb"), File.expand_path("#{rootdir}foo.rb/"))
   end
 
   def test_expand_path_removes_trailing_spaces_from_absolute_path
-    assert_equal(File.join(@rootdir, "a"), File.expand_path("#{@rootdir}a "))
+    assert_equal(File.join(rootdir, "a"), File.expand_path("#{rootdir}a "))
   end if DRIVE
 
   def test_expand_path_converts_a_pathname_which_starts_with_a_slash_using_dir_s_drive
@@ -784,27 +940,33 @@ class TestFileExhaustive < Test::Unit::TestCase
     assert_equal("#{Dir.pwd}/a/b/c", File.expand_path(obj))
   end
 
+  def test_expand_path_with_drive_letter
+    bug10858 = '[ruby-core:68130] [Bug #10858]'
+    assert_match(%r'/bar/foo\z'i, File.expand_path('z:foo', 'bar'), bug10858)
+    assert_equal('z:/bar/foo', File.expand_path('z:foo', '/bar'), bug10858)
+  end if DRIVE
+
   def test_basename
-    assert_equal(File.basename(@file).sub(/\.test$/, ""), File.basename(@file, ".test"))
+    assert_equal(File.basename(regular_file).sub(/\.test$/, ""), File.basename(regular_file, ".test"))
     assert_equal("", s = File.basename(""))
-    assert(!s.frozen?, '[ruby-core:24199]')
+    assert_not_predicate(s, :frozen?, '[ruby-core:24199]')
     assert_equal("foo", s = File.basename("foo"))
-    assert(!s.frozen?, '[ruby-core:24199]')
+    assert_not_predicate(s, :frozen?, '[ruby-core:24199]')
     assert_equal("foo", File.basename("foo", ".ext"))
     assert_equal("foo", File.basename("foo.ext", ".ext"))
     assert_equal("foo", File.basename("foo.ext", ".*"))
-    if /cygwin|mingw|mswin|bccwin/ =~ RUBY_PLATFORM
-      basename = File.basename(@file)
-      assert_equal(basename, File.basename(@file + " "))
-      assert_equal(basename, File.basename(@file + "."))
-      assert_equal(basename, File.basename(@file + "::$DATA"))
+    if NTFS
+      basename = File.basename(regular_file)
+      assert_equal(basename, File.basename(regular_file + " "))
+      assert_equal(basename, File.basename(regular_file + "."))
+      assert_equal(basename, File.basename(regular_file + "::$DATA"))
       basename.chomp!(".test")
-      assert_equal(basename, File.basename(@file + " ", ".test"))
-      assert_equal(basename, File.basename(@file + ".", ".test"))
-      assert_equal(basename, File.basename(@file + "::$DATA", ".test"))
-      assert_equal(basename, File.basename(@file + " ", ".*"))
-      assert_equal(basename, File.basename(@file + ".", ".*"))
-      assert_equal(basename, File.basename(@file + "::$DATA", ".*"))
+      assert_equal(basename, File.basename(regular_file + " ", ".test"))
+      assert_equal(basename, File.basename(regular_file + ".", ".test"))
+      assert_equal(basename, File.basename(regular_file + "::$DATA", ".test"))
+      assert_equal(basename, File.basename(regular_file + " ", ".*"))
+      assert_equal(basename, File.basename(regular_file + ".", ".*"))
+      assert_equal(basename, File.basename(regular_file + "::$DATA", ".*"))
     end
     if File::ALT_SEPARATOR == '\\'
       a = "foo/\225\\\\"
@@ -825,7 +987,7 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_dirname
-    assert(@file.start_with?(File.dirname(@file)))
+    assert(regular_file.start_with?(File.dirname(regular_file)))
     assert_equal(".", File.dirname(""))
     assert_incompatible_encoding {|d| File.dirname(d)}
     if File::ALT_SEPARATOR == '\\'
@@ -837,12 +999,12 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_extname
-    assert_equal(".test", File.extname(@file))
+    assert_equal(".test", File.extname(regular_file))
     prefixes = ["", "/", ".", "/.", "bar/.", "/bar/."]
     infixes = ["", " ", "."]
     infixes2 = infixes + [".ext "]
     appendixes = [""]
-    if /cygwin|mingw|mswin|bccwin/ =~ RUBY_PLATFORM
+    if NTFS
       appendixes << " " << "." << "::$DATA" << "::$DATA.bar"
     end
     prefixes.each do |prefix|
@@ -864,9 +1026,9 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_split
-    d, b = File.split(@file)
-    assert_equal(File.dirname(@file), d)
-    assert_equal(File.basename(@file), b)
+    d, b = File.split(regular_file)
+    assert_equal(File.dirname(regular_file), d)
+    assert_equal(File.basename(regular_file), b)
   end
 
   def test_join
@@ -909,31 +1071,31 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_truncate
-    assert_equal(0, File.truncate(@file, 1))
-    assert_file.exist?(@file)
-    assert_equal(1, File.size(@file))
-    assert_equal(0, File.truncate(@file, 0))
-    assert_file.exist?(@file)
-    assert_file.zero?(@file)
-    make_file("foo", @file)
-    assert_raise(Errno::ENOENT) { File.truncate(@nofile, 0) }
+    assert_equal(0, File.truncate(regular_file, 1))
+    assert_file.exist?(regular_file)
+    assert_equal(1, File.size(regular_file))
+    assert_equal(0, File.truncate(regular_file, 0))
+    assert_file.exist?(regular_file)
+    assert_file.zero?(regular_file)
+    make_file("foo", regular_file)
+    assert_raise(Errno::ENOENT) { File.truncate(nofile, 0) }
 
-    f = File.new(@file, "w")
+    f = File.new(regular_file, "w")
     assert_equal(0, f.truncate(2))
-    assert_file.exist?(@file)
-    assert_equal(2, File.size(@file))
+    assert_file.exist?(regular_file)
+    assert_equal(2, File.size(regular_file))
     assert_equal(0, f.truncate(0))
-    assert_file.exist?(@file)
-    assert_file.zero?(@file)
+    assert_file.exist?(regular_file)
+    assert_file.zero?(regular_file)
     f.close
-    make_file("foo", @file)
+    make_file("foo", regular_file)
 
-    assert_raise(IOError) { File.open(@file) {|ff| ff.truncate(0)} }
+    assert_raise(IOError) { File.open(regular_file) {|ff| ff.truncate(0)} }
   rescue NotImplementedError
   end
 
   def test_flock ## xxx
-    f = File.new(@file, "r+")
+    f = File.new(regular_file, "r+")
     f.flock(File::LOCK_EX)
     f.flock(File::LOCK_SH)
     f.flock(File::LOCK_UN)
@@ -942,9 +1104,26 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_test
-    sleep(@time - Time.now + 1.1)
-    make_file("foo", @file + "2")
-    [@dir, @file, @zerofile, @symlinkfile, @hardlinkfile].compact.each do |f|
+    fn1 = regular_file
+    hardlinkfile
+    sleep(1.1)
+    fn2 = fn1 + "2"
+    make_file("foo", fn2)
+    [
+      @dir,
+      fn1,
+      zerofile,
+      notownedfile,
+      suidfile,
+      sgidfile,
+      stickyfile,
+      symlinkfile,
+      hardlinkfile,
+      chardev,
+      blockdev,
+      fifo,
+      socket
+    ].compact.each do |f|
       assert_equal(File.atime(f), test(?A, f))
       assert_equal(File.ctime(f), test(?C, f))
       assert_equal(File.mtime(f), test(?M, f))
@@ -971,28 +1150,31 @@ class TestFileExhaustive < Test::Unit::TestCase
       assert_equal(File.executable_real?(f), test(?X, f))
       assert_equal(File.zero?(f), test(?z, f))
     end
-    assert_equal(false, test(?-, @dir, @file))
-    assert_equal(true, test(?-, @file, @file))
-    assert_equal(true, test(?=, @file, @file))
-    assert_equal(false, test(?>, @file, @file))
-    assert_equal(false, test(?<, @file, @file))
+    assert_equal(false, test(?-, @dir, fn1))
+    assert_equal(true, test(?-, fn1, fn1))
+    assert_equal(true, test(?=, fn1, fn1))
+    assert_equal(false, test(?>, fn1, fn1))
+    assert_equal(false, test(?<, fn1, fn1))
     unless /cygwin/ =~ RUBY_PLATFORM
-      assert_equal(false, test(?=, @file, @file + "2"))
-      assert_equal(false, test(?>, @file, @file + "2"))
-      assert_equal(true, test(?>, @file + "2", @file))
-      assert_equal(true, test(?<, @file, @file + "2"))
-      assert_equal(false, test(?<, @file + "2", @file))
+      assert_equal(false, test(?=, fn1, fn2))
+      assert_equal(false, test(?>, fn1, fn2))
+      assert_equal(true, test(?>, fn2, fn1))
+      assert_equal(true, test(?<, fn1, fn2))
+      assert_equal(false, test(?<, fn2, fn1))
     end
     assert_raise(ArgumentError) { test }
-    assert_raise(Errno::ENOENT) { test(?A, @nofile) }
+    assert_raise(Errno::ENOENT) { test(?A, nofile) }
     assert_raise(ArgumentError) { test(?a) }
     assert_raise(ArgumentError) { test("\0".ord) }
   end
 
   def test_stat_init
-    sleep(@time - Time.now + 1.1)
-    make_file("foo", @file + "2")
-    fs1, fs2 = File::Stat.new(@file), File::Stat.new(@file + "2")
+    fn1 = regular_file
+    hardlinkfile
+    sleep(1.1)
+    fn2 = fn1 + "2"
+    make_file("foo", fn2)
+    fs1, fs2 = File::Stat.new(fn1), File::Stat.new(fn2)
     assert_nothing_raised do
       assert_equal(0, fs1 <=> fs1)
       assert_equal(-1, fs1 <=> fs2)
@@ -1009,7 +1191,7 @@ class TestFileExhaustive < Test::Unit::TestCase
       unless /emx|mswin|mingw/ =~ RUBY_PLATFORM
         # on Windows, nlink is always 1. but this behavior will be changed
         # in the future.
-        assert_equal(@hardlinkfile ? 2 : 1, fs1.nlink)
+        assert_equal(hardlinkfile ? 2 : 1, fs1.nlink)
       end
       assert_integer(fs1.uid)
       assert_integer(fs1.gid)
@@ -1021,159 +1203,171 @@ class TestFileExhaustive < Test::Unit::TestCase
       assert_kind_of(Time, fs1.ctime)
       assert_kind_of(String, fs1.inspect)
     end
-    assert_raise(Errno::ENOENT) { File::Stat.new(@nofile) }
-    assert_kind_of(File::Stat, File::Stat.new(@file).dup)
+    assert_raise(Errno::ENOENT) { File::Stat.new(nofile) }
+    assert_kind_of(File::Stat, File::Stat.new(fn1).dup)
     assert_raise(TypeError) do
-      File::Stat.new(@file).instance_eval { initialize_copy(0) }
+      File::Stat.new(fn1).instance_eval { initialize_copy(0) }
     end
   end
 
   def test_stat_ftype
     assert_equal("directory", File::Stat.new(@dir).ftype)
-    assert_equal("file", File::Stat.new(@file).ftype)
+    assert_equal("file", File::Stat.new(regular_file).ftype)
     # File::Stat uses stat
-    assert_equal("file", File::Stat.new(@symlinkfile).ftype) if @symlinkfile
-    assert_equal("file", File::Stat.new(@hardlinkfile).ftype) if @hardlinkfile
+    assert_equal("file", File::Stat.new(symlinkfile).ftype) if symlinkfile
+    assert_equal("file", File::Stat.new(hardlinkfile).ftype) if hardlinkfile
   end
 
   def test_stat_directory_p
-    assert(File::Stat.new(@dir).directory?)
-    assert(!(File::Stat.new(@file).directory?))
+    assert_predicate(File::Stat.new(@dir), :directory?)
+    assert_not_predicate(File::Stat.new(regular_file), :directory?)
   end
 
-  def test_stat_pipe_p ## xxx
-    assert(!(File::Stat.new(@dir).pipe?))
-    assert(!(File::Stat.new(@file).pipe?))
+  def test_stat_pipe_p
+    assert_not_predicate(File::Stat.new(@dir), :pipe?)
+    assert_not_predicate(File::Stat.new(regular_file), :pipe?)
+    assert_predicate(File::Stat.new(fifo), :pipe?) if fifo
+    IO.pipe {|r, w|
+      assert_predicate(r.stat, :pipe?)
+      assert_predicate(w.stat, :pipe?)
+    }
   end
 
   def test_stat_symlink_p
-    assert(!(File::Stat.new(@dir).symlink?))
-    assert(!(File::Stat.new(@file).symlink?))
+    assert_not_predicate(File::Stat.new(@dir), :symlink?)
+    assert_not_predicate(File::Stat.new(regular_file), :symlink?)
     # File::Stat uses stat
-    assert(!(File::Stat.new(@symlinkfile).symlink?)) if @symlinkfile
-    assert(!(File::Stat.new(@hardlinkfile).symlink?)) if @hardlinkfile
+    assert_not_predicate(File::Stat.new(symlinkfile), :symlink?) if symlinkfile
+    assert_not_predicate(File::Stat.new(hardlinkfile), :symlink?) if hardlinkfile
   end
 
-  def test_stat_socket_p ## xxx
-    assert(!(File::Stat.new(@dir).socket?))
-    assert(!(File::Stat.new(@file).socket?))
+  def test_stat_socket_p
+    assert_not_predicate(File::Stat.new(@dir), :socket?)
+    assert_not_predicate(File::Stat.new(regular_file), :socket?)
+    assert_predicate(File::Stat.new(socket), :socket?) if socket
   end
 
-  def test_stat_blockdev_p ## xxx
-    assert(!(File::Stat.new(@dir).blockdev?))
-    assert(!(File::Stat.new(@file).blockdev?))
+  def test_stat_blockdev_p
+    assert_not_predicate(File::Stat.new(@dir), :blockdev?)
+    assert_not_predicate(File::Stat.new(regular_file), :blockdev?)
+    assert_predicate(File::Stat.new(blockdev), :blockdev?) if blockdev
   end
 
-  def test_stat_chardev_p ## xxx
-    assert(!(File::Stat.new(@dir).chardev?))
-    assert(!(File::Stat.new(@file).chardev?))
+  def test_stat_chardev_p
+    assert_not_predicate(File::Stat.new(@dir), :chardev?)
+    assert_not_predicate(File::Stat.new(regular_file), :chardev?)
+    assert_predicate(File::Stat.new(chardev), :chardev?) if chardev
   end
 
   def test_stat_readable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
     return if Process.euid == 0
-    File.chmod(0200, @file)
-    assert(!(File::Stat.new(@file).readable?))
-    File.chmod(0600, @file)
-    assert(File::Stat.new(@file).readable?)
-  end
+    File.chmod(0200, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :readable?)
+    File.chmod(0600, regular_file)
+    assert_predicate(File::Stat.new(regular_file), :readable?)
+  end if POSIX
 
   def test_stat_readable_real_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
     return if Process.euid == 0
-    File.chmod(0200, @file)
-    assert(!(File::Stat.new(@file).readable_real?))
-    File.chmod(0600, @file)
-    assert(File::Stat.new(@file).readable_real?)
-  end
+    File.chmod(0200, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :readable_real?)
+    File.chmod(0600, regular_file)
+    assert_predicate(File::Stat.new(regular_file), :readable_real?)
+  end if POSIX
 
   def test_stat_world_readable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    File.chmod(0006, @file)
-    assert(File::Stat.new(@file).world_readable?)
-    File.chmod(0060, @file)
-    assert(!(File::Stat.new(@file).world_readable?))
-    File.chmod(0600, @file)
-    assert(!(File::Stat.new(@file).world_readable?))
-  end
+    File.chmod(0006, regular_file)
+    assert_predicate(File::Stat.new(regular_file), :world_readable?)
+    File.chmod(0060, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :world_readable?)
+    File.chmod(0600, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :world_readable?)
+  end if POSIX
 
   def test_stat_writable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
     return if Process.euid == 0
-    File.chmod(0400, @file)
-    assert(!(File::Stat.new(@file).writable?))
-    File.chmod(0600, @file)
-    assert(File::Stat.new(@file).writable?)
-  end
+    File.chmod(0400, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :writable?)
+    File.chmod(0600, regular_file)
+    assert_predicate(File::Stat.new(regular_file), :writable?)
+  end if POSIX
 
   def test_stat_writable_real_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
     return if Process.euid == 0
-    File.chmod(0400, @file)
-    assert(!(File::Stat.new(@file).writable_real?))
-    File.chmod(0600, @file)
-    assert(File::Stat.new(@file).writable_real?)
-  end
+    File.chmod(0400, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :writable_real?)
+    File.chmod(0600, regular_file)
+    assert_predicate(File::Stat.new(regular_file), :writable_real?)
+  end if POSIX
 
   def test_stat_world_writable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    File.chmod(0006, @file)
-    assert(File::Stat.new(@file).world_writable?)
-    File.chmod(0060, @file)
-    assert(!(File::Stat.new(@file).world_writable?))
-    File.chmod(0600, @file)
-    assert(!(File::Stat.new(@file).world_writable?))
-  end
+    File.chmod(0006, regular_file)
+    assert_predicate(File::Stat.new(regular_file), :world_writable?)
+    File.chmod(0060, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :world_writable?)
+    File.chmod(0600, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :world_writable?)
+  end if POSIX
 
   def test_stat_executable_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    File.chmod(0100, @file)
-    assert(File::Stat.new(@file).executable?)
-    File.chmod(0600, @file)
-    assert(!(File::Stat.new(@file).executable?))
-  end
+    File.chmod(0100, regular_file)
+    assert_predicate(File::Stat.new(regular_file), :executable?)
+    File.chmod(0600, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :executable?)
+  end if POSIX
 
   def test_stat_executable_real_p
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    File.chmod(0100, @file)
-    assert(File::Stat.new(@file).executable_real?)
-    File.chmod(0600, @file)
-    assert(!(File::Stat.new(@file).executable_real?))
-  end
+    File.chmod(0100, regular_file)
+    assert_predicate(File::Stat.new(regular_file), :executable_real?)
+    File.chmod(0600, regular_file)
+    assert_not_predicate(File::Stat.new(regular_file), :executable_real?)
+  end if POSIX
 
   def test_stat_file_p
-    assert(!(File::Stat.new(@dir).file?))
-    assert(File::Stat.new(@file).file?)
+    assert_not_predicate(File::Stat.new(@dir), :file?)
+    assert_predicate(File::Stat.new(regular_file), :file?)
   end
 
   def test_stat_zero_p
     assert_nothing_raised { File::Stat.new(@dir).zero? }
-    assert(!(File::Stat.new(@file).zero?))
-    assert(File::Stat.new(@zerofile).zero?)
+    assert_not_predicate(File::Stat.new(regular_file), :zero?)
+    assert_predicate(File::Stat.new(zerofile), :zero?)
   end
 
   def test_stat_size_p
     assert_nothing_raised { File::Stat.new(@dir).size? }
-    assert_equal(3, File::Stat.new(@file).size?)
-    assert(!(File::Stat.new(@zerofile).size?))
+    assert_equal(3, File::Stat.new(regular_file).size?)
+    assert_not_predicate(File::Stat.new(zerofile), :size?)
   end
 
-  def test_stat_owned_p ## xxx
-    return if /cygwin|mswin|bccwin|mingw|emx/ =~ RUBY_PLATFORM
-    assert(File::Stat.new(@file).owned?)
-    assert(File::Stat.new(@file).grpowned?)
+  def test_stat_owned_p
+    assert_predicate(File::Stat.new(regular_file), :owned?)
+    assert_not_predicate(File::Stat.new(notownedfile), :owned?) if notownedfile
+  end if POSIX
+
+  def test_stat_grpowned_p ## xxx
+    assert_predicate(File::Stat.new(regular_file), :grpowned?)
+  end if POSIX
+
+  def test_stat_suid
+    assert_not_predicate(File::Stat.new(regular_file), :setuid?)
+    assert_predicate(File::Stat.new(suidfile), :setuid?) if suidfile
   end
 
-  def test_stat_suid_sgid_sticky ## xxx
-    assert(!(File::Stat.new(@file).setuid?))
-    assert(!(File::Stat.new(@file).setgid?))
-    assert(!(File::Stat.new(@file).sticky?))
+  def test_stat_sgid
+    assert_not_predicate(File::Stat.new(regular_file), :setgid?)
+    assert_predicate(File::Stat.new(sgidfile), :setgid?) if sgidfile
+  end
+
+  def test_stat_sticky
+    assert_not_predicate(File::Stat.new(regular_file), :sticky?)
+    assert_predicate(File::Stat.new(stickyfile), :sticky?) if stickyfile
   end
 
   def test_stat_size
     assert_integer(File::Stat.new(@dir).size)
-    assert_equal(3, File::Stat.new(@file).size)
-    assert_equal(0, File::Stat.new(@zerofile).size)
+    assert_equal(3, File::Stat.new(regular_file).size)
+    assert_equal(0, File::Stat.new(zerofile).size)
   end
 
   def test_stat_special_file
@@ -1188,8 +1382,8 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_size
-    assert_equal(3, File.open(@file) {|f| f.size })
-    File.open(@file, "a") do |f|
+    assert_equal(3, File.open(regular_file) {|f| f.size })
+    File.open(regular_file, "a") do |f|
       f.write("bar")
       assert_equal(6, f.size)
     end

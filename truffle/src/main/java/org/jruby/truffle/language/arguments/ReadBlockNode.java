@@ -16,13 +16,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Read the block as a {@code Proc}.
- */
 public class ReadBlockNode extends RubyNode {
 
-    private final ConditionProfile hasBlockProfile = ConditionProfile.createBinaryProfile();
     private final Object valueIfAbsent;
+
+    private final ConditionProfile hasBlockProfile = ConditionProfile.createBinaryProfile();
 
     public ReadBlockNode(RubyContext context, SourceSection sourceSection, Object valueIfAbsent) {
         super(context, sourceSection);
@@ -31,12 +29,12 @@ public class ReadBlockNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final DynamicObject block = RubyArguments.getBlock(frame.getArguments());
+        final DynamicObject block = RubyArguments.getBlock(frame);
 
-        if (hasBlockProfile.profile(block != null)) {
-            return block;
-        } else {
+        if (hasBlockProfile.profile(block == null)) {
             return valueIfAbsent;
+        } else {
+            return block;
         }
     }
 

@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'rdoc/test_case'
 
 class TestRDocGeneratorDarkfish < RDoc::TestCase
@@ -76,8 +77,8 @@ class TestRDocGeneratorDarkfish < RDoc::TestCase
     assert_file 'table_of_contents.html'
     assert_file 'js/search_index.js'
 
-    assert_hard_link 'rdoc.css'
-    assert_hard_link 'fonts.css'
+    assert_hard_link 'css/rdoc.css'
+    assert_hard_link 'css/fonts.css'
 
     assert_hard_link 'fonts/SourceCodePro-Bold.ttf'
     assert_hard_link 'fonts/SourceCodePro-Regular.ttf'

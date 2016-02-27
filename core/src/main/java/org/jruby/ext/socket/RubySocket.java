@@ -67,6 +67,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -190,9 +191,18 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod()
     public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg) {
+        return connect_nonblock(context, arg, context.nil);
+    }
+
+    @JRubyMethod()
+    public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg, IRubyObject opts) {
+        Ruby runtime = context.runtime;
+
         SocketAddress addr = addressForChannel(context, arg);
 
-        doConnectNonblock(context, getChannel(), addr);
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
+
+        doConnectNonblock(context, getChannel(), addr, exception);
 
         return RubyFixnum.zero(context.runtime);
     }
@@ -201,7 +211,7 @@ public class RubySocket extends RubyBasicSocket {
     public IRubyObject connect(ThreadContext context, IRubyObject arg) {
         SocketAddress addr = addressForChannel(context, arg);
 
-        doConnect(context, getChannel(), addr);
+        doConnect(context, getChannel(), addr, true);
 
         return RubyFixnum.zero(context.runtime);
     }
@@ -238,9 +248,9 @@ public class RubySocket extends RubyBasicSocket {
         return super.recv_nonblock(context, length);
     }
 
-    @JRubyMethod
-    public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject length, IRubyObject flags) {
-        return super.recv_nonblock(context, length, flags);
+    @JRubyMethod(required = 1, optional = 3)
+    public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject[] args) {
+        return super.recv_nonblock(context, args);
     }
 
     @JRubyMethod(notImplemented = true)
@@ -250,6 +260,11 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject accept(ThreadContext context) {
+        throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+    }
+
+    @JRubyMethod(notImplemented = true, optional = 1)
+    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject[] args) {
         throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
 
@@ -464,7 +479,7 @@ public class RubySocket extends RubyBasicSocket {
         soProtocolFamily = ProtocolFamily.valueOf("PF" + name.substring(2));
     }
 
-    private void doConnectNonblock(ThreadContext context, Channel channel, SocketAddress addr) {
+    private IRubyObject doConnectNonblock(ThreadContext context, Channel channel, SocketAddress addr, boolean ex) {
         if ( ! (channel instanceof SelectableChannel) ) {
             throw context.runtime.newErrnoENOPROTOOPTError();
         }
@@ -476,7 +491,7 @@ public class RubySocket extends RubyBasicSocket {
                 selectable.configureBlocking(false);
 
                 try {
-                    doConnect(context, channel, addr);
+                    return doConnect(context, channel, addr, ex);
 
                 } finally {
                     selectable.configureBlocking(oldBlocking);
@@ -492,13 +507,13 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    protected void doConnect(ThreadContext context, Channel channel, SocketAddress addr) {
+    protected IRubyObject doConnect(ThreadContext context, Channel channel, SocketAddress addr, boolean ex) {
         Ruby runtime = context.runtime;
 
         try {
+            boolean result = true;
             if (channel instanceof SocketChannel) {
                 SocketChannel socket = (SocketChannel) channel;
-                boolean result;
 
                 if (socket.isConnectionPending()) {
                     // connection initiated but not finished
@@ -506,13 +521,9 @@ public class RubySocket extends RubyBasicSocket {
                 } else {
                     result = socket.connect(addr);
                 }
-
-                if ( ! result ) {
-                    throw runtime.newErrnoEINPROGRESSWritableError();
-                }
             }
             else if (channel instanceof UnixSocketChannel) {
-                ((UnixSocketChannel) channel).connect((UnixSocketAddress) addr);
+                result = ((UnixSocketChannel) channel).connect((UnixSocketAddress) addr);
 
             }
             else if (channel instanceof DatagramChannel) {
@@ -521,8 +532,14 @@ public class RubySocket extends RubyBasicSocket {
             else {
                 throw runtime.newErrnoENOPROTOOPTError();
             }
+
+            if ( ! result ) {
+                if (!ex) return runtime.newSymbol("wait_readable");
+                throw runtime.newErrnoEINPROGRESSWritableError();
+            }
         }
         catch (AlreadyConnectedException e) {
+            if (!ex) return runtime.newFixnum(0);
             throw runtime.newErrnoEISCONNError();
         }
         catch (ConnectionPendingException e) {
@@ -540,6 +557,8 @@ public class RubySocket extends RubyBasicSocket {
         catch (IllegalArgumentException e) {
             throw sockerr(runtime, e.getMessage(), e);
         }
+
+        return runtime.newFixnum(0);
     }
 
     protected void doBind(ThreadContext context, Channel channel, InetSocketAddress iaddr) {

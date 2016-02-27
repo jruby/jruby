@@ -32,12 +32,12 @@ public class GetDefaultDefineeNode extends RubyNode {
     public DynamicObject execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final DynamicObject capturedDefaultDefinee = RubyArguments.getMethod(frame.getArguments()).getCapturedDefaultDefinee();
+        final DynamicObject capturedDefaultDefinee = RubyArguments.getMethod(frame).getCapturedDefaultDefinee();
 
         if (capturedDefaultDefinee != null) {
             return capturedDefaultDefinee;
         }
 
-        return RubyArguments.getDeclarationContext(frame.getArguments()).getModuleToDefineMethods(frame, getContext(), singletonClassNode);
+        return RubyArguments.getDeclarationContext(frame).getModuleToDefineMethods(frame, getContext(), singletonClassNode);
     }
 }

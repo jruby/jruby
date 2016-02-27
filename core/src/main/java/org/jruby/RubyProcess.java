@@ -29,16 +29,18 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.constants.platform.RLIM;
+import jnr.constants.platform.RLIMIT;
 import jnr.constants.platform.Signal;
 import jnr.constants.platform.Sysconf;
 import jnr.ffi.byref.IntByReference;
+import jnr.posix.RLimit;
 import jnr.posix.Times;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import jnr.posix.POSIX;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
@@ -48,13 +50,14 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.ShellLauncher;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.WindowsFFI.kernel32;
 import static org.jruby.util.WindowsFFI.Kernel32.*;
 
@@ -92,7 +95,10 @@ public class RubyProcess {
 
         runtime.loadConstantSet(process, jnr.constants.platform.PRIO.class);
         runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
-        runtime.loadConstantSet(process, jnr.constants.platform.RLIMIT.class);
+        for (RLIMIT r : RLIMIT.values()) {
+            if (!r.defined()) continue;
+            process.defineConstant(r.name(), runtime.newFixnum(r.intValue()));
+        }
 
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
         process.defineConstant("WUNTRACED", runtime.newFixnum(2));
@@ -595,9 +601,250 @@ public class RubyProcess {
         return ary;
     }
 
-    @JRubyMethod(name = "setrlimit", rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject setrlimit(IRubyObject recv, IRubyObject[] args) {
-        throw recv.getRuntime().newNotImplementedError("Process#setrlimit not yet implemented");
+    @JRubyMethod(name = "setrlimit", module = true, visibility = PRIVATE)
+    public static IRubyObject setrlimit(ThreadContext context, IRubyObject recv, IRubyObject resource, IRubyObject rlimCur) {
+        return setrlimit(context, recv, resource, rlimCur, context.nil);
+    }
+
+    @JRubyMethod(name = "setrlimit", module = true, visibility = PRIVATE)
+    public static IRubyObject setrlimit(ThreadContext context, IRubyObject recv, IRubyObject resource, IRubyObject rlimCur, IRubyObject rlimMax) {
+        Ruby runtime = context.runtime;
+
+        RLimit rlim = runtime.getPosix().getrlimit(0);
+
+        if (rlimMax == context.nil)
+            rlimMax = rlimCur;
+
+        rlim.init(rlimitResourceValue(runtime, rlimCur), rlimitResourceValue(runtime, rlimMax));
+
+        if (runtime.getPosix().setrlimit(rlimitResourceType(runtime, resource), rlim) < 0) {
+            throw runtime.newErrnoFromInt(runtime.getPosix().errno(), "setrlimit");
+        }
+        return context.nil;
+    }
+
+    private static int rlimitResourceValue(Ruby runtime, IRubyObject rval) {
+        String name;
+        IRubyObject v;
+
+        switch (((CoreObjectType) rval).getNativeClassIndex()) {
+            case SYMBOL:
+                name = rval.toString();
+                break;
+
+            case STRING:
+                name = rval.toString();
+                break;
+
+            default:
+                v = TypeConverter.checkStringType(runtime, rval);
+                if (!v.isNil()) {
+                    rval = v;
+                    name = rval.convertToString().toString();
+                    break;
+                }
+        /* fall through */
+
+            case FIXNUM:
+            case BIGNUM:
+                return rval.convertToInteger().getIntValue();
+        }
+
+        if (RLIM.RLIM_INFINITY.defined()) {
+            if (name.equals("INFINITY")) return RLIM.RLIM_INFINITY.intValue();
+        }
+        if (RLIM.RLIM_SAVED_MAX.defined()) {
+            if (name.equals("SAVED_MAX")) return RLIM.RLIM_SAVED_MAX.intValue();
+        }
+        if (RLIM.RLIM_SAVED_CUR.defined()) {
+            if (name.equals("SAVED_CUR")) return RLIM.RLIM_SAVED_CUR.intValue();
+        }
+
+        throw runtime.newArgumentError("invalid resource value: " + rval);
+    }
+
+    // MRI: rlimit_resource_type
+    private static int rlimitResourceType(Ruby runtime, IRubyObject rtype) {
+        String name;
+        IRubyObject v;
+        int r;
+
+        switch (((CoreObjectType) rtype).getNativeClassIndex()) {
+            case SYMBOL:
+                name = rtype.toString();
+                break;
+
+            case STRING:
+                name = rtype.toString();
+                break;
+
+            default:
+                v = TypeConverter.checkStringType(runtime, rtype);
+                if (!v.isNil()) {
+                    rtype = v;
+                    name = rtype.toString();
+                    break;
+                }
+        /* fall through */
+
+            case FIXNUM:
+            case BIGNUM:
+                return rtype.convertToInteger().getIntValue();
+        }
+
+        r = rlimitTypeByHname(name);
+        if (r != -1)
+            return r;
+
+        throw runtime.newArgumentError("invalid resource name: " + rtype);
+    }
+
+    // MRI: rlimit_resource_name2int
+    private static int rlimitResourceName2int(String name, int casetype) {
+        RLIMIT resource;
+            
+        OUTER: while (true) {
+            switch (Character.toUpperCase(name.charAt(0))) {
+                case 'A':
+                    if (RLIMIT.RLIMIT_AS.defined()) {
+                        if (name.equalsIgnoreCase("AS")) {
+                            resource = RLIMIT.RLIMIT_AS;
+                            break OUTER;
+                        }
+                    }
+                    break;
+
+                case 'C':
+                    if (RLIMIT.RLIMIT_CORE.defined()) {
+                        if (name.equalsIgnoreCase("CORE")) {
+                            resource = RLIMIT.RLIMIT_CORE;
+                            break OUTER;
+                        }
+                    }
+                    if (RLIMIT.RLIMIT_CPU.defined()) {
+                        if (name.equalsIgnoreCase("CPU")) {
+                            resource = RLIMIT.RLIMIT_CPU;
+                            break OUTER;
+                        }
+                    }
+                    break;
+
+                case 'D':
+                    if (RLIMIT.RLIMIT_DATA.defined()) {
+                        if (name.equalsIgnoreCase("DATA")) {
+                            resource = RLIMIT.RLIMIT_DATA;
+                            break OUTER;
+                        }
+                    }
+                    break;
+
+                case 'F':
+                    if (RLIMIT.RLIMIT_FSIZE.defined()) {
+                        if (name.equalsIgnoreCase("FSIZE")) {
+                            resource = RLIMIT.RLIMIT_FSIZE;
+                            break OUTER;
+                        }
+                    }
+                    break;
+
+                case 'M':
+                    if (RLIMIT.RLIMIT_MEMLOCK.defined()) {
+                        if (name.equalsIgnoreCase("MEMLOCK")) {
+                            resource = RLIMIT.RLIMIT_MEMLOCK;
+                            break OUTER;
+                        }
+                    }
+                    if (RLIMIT.RLIMIT_MSGQUEUE.defined()) {
+                        if (name.equalsIgnoreCase("MSGQUEUE")) {
+                            resource = RLIMIT.RLIMIT_MSGQUEUE;
+                            break OUTER;
+                        }
+                    }
+                    break;
+
+                case 'N':
+                    if (RLIMIT.RLIMIT_NOFILE.defined()) {
+                        if (name.equalsIgnoreCase("NOFILE")) {
+                            resource = RLIMIT.RLIMIT_NOFILE;
+                            break OUTER;
+                        }
+                    }
+                    if (RLIMIT.RLIMIT_NPROC.defined()) {
+                        if (name.equalsIgnoreCase("NPROC")) {
+                            resource = RLIMIT.RLIMIT_NPROC;
+                            break OUTER;
+                        }
+                    }
+                    if (RLIMIT.RLIMIT_NICE.defined()) {
+                        if (name.equalsIgnoreCase("NICE")) {
+                            resource = RLIMIT.RLIMIT_NICE;
+                            break OUTER;
+                        }
+                    }
+                    break;
+
+                case 'R':
+                    if (RLIMIT.RLIMIT_RSS.defined()) {
+                        if (name.equalsIgnoreCase("RSS")) {
+                            resource = RLIMIT.RLIMIT_RSS;
+                            break OUTER;
+                        }
+                    }
+                    if (RLIMIT.RLIMIT_RTPRIO.defined()) {
+                        if (name.equalsIgnoreCase("RTPRIO")) {
+                            resource = RLIMIT.RLIMIT_RTPRIO;
+                            break OUTER;
+                        }
+                    }
+                    if (RLIMIT.RLIMIT_RTTIME.defined()) {
+                        if (name.equalsIgnoreCase("RTTIME")) {
+                            resource = RLIMIT.RLIMIT_RTTIME;
+                            break OUTER;
+                        }
+                    }
+                    break;
+
+                case 'S':
+                    if (RLIMIT.RLIMIT_STACK.defined()) {
+                        if (name.equalsIgnoreCase("STACK")) {
+                            resource = RLIMIT.RLIMIT_STACK;
+                            break OUTER;
+                        }
+                    }
+                    // Not provided by jnr-constants
+//                    if (RLIMIT.RLIMIT_SBSIZE.defined()) {
+//                    if (name.equalsIgnoreCase("SBSIZE") { resource = RLIMIT.RLIMIT_SBSIZE; break OUTER; }
+//                    }
+                    if (RLIMIT.RLIMIT_SIGPENDING.defined()) {
+                        if (name.equalsIgnoreCase("SIGPENDING")) {
+                            resource = RLIMIT.RLIMIT_SIGPENDING;
+                            break OUTER;
+                        }
+                    }
+                    break;
+            }
+            return -1;
+        }
+
+        switch (casetype) {
+            case 0:
+                if (!name.equals(name.toUpperCase())) return -1;
+            break;
+
+            case 1:
+                if (!name.equals(name.toLowerCase())) return -1;
+            break;
+
+            default:
+                throw new RuntimeException("unexpected casetype");
+        }
+
+        return resource.intValue();
+    }
+
+    // MRI: rlimit_type_by_hname
+    private static int rlimitTypeByHname(String name) {
+        return rlimitResourceName2int(name, 0);
     }
 
     @Deprecated
@@ -956,7 +1203,14 @@ public class RubyProcess {
         return getrlimit(context.runtime, arg);
     }
     public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
-        throw runtime.newNotImplementedError("Process#getrlimit not yet implemented");
+        if (!runtime.getPosix().isNative() || Platform.IS_WINDOWS) {
+            runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
+            return runtime.newFixnum(Long.MAX_VALUE);
+        }
+
+        RLimit rlimit = runtime.getPosix().getrlimit(rlimitResourceType(runtime, arg));
+
+        return runtime.newArray(runtime.newFixnum(rlimit.rlimCur()), runtime.newFixnum(rlimit.rlimMax()));
     }
 
     @Deprecated
@@ -1179,6 +1433,11 @@ public class RubyProcess {
         return makeClockResult(runtime, getTimeForClock(_clock_id, runtime), _unit.toString());
     }
 
+    @JRubyMethod(rest = true, meta = true)
+    public static IRubyObject exec(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return RubyKernel.exec(context, self, args);
+    }
+
     /**
      * Get the time in nanoseconds corresponding to the requested clock.
      */
@@ -1302,6 +1561,14 @@ public class RubyProcess {
     @JRubyMethod(name = "exit", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.exit(recv, args);
+    }
+
+    @JRubyMethod(name = "setproctitle", module = true, visibility = PRIVATE)
+    public static IRubyObject setproctitle(IRubyObject recv, IRubyObject name) {
+        // Not possible for us to implement on most platforms, so we just noop.
+        name.convertToString();
+
+        return name;
     }
 
     // This isn't quite right, and should probably work with a new Process + pid aggregate object

@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.RestArgNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.control.SequenceNode;
 
@@ -95,7 +95,7 @@ public class ReloadArgumentsTranslator extends Translator {
     @Override
     public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        return new ReadPreArgumentNode(context, sourceSection, index, MissingArgumentBehaviour.NIL);
+        return new ReadPreArgumentNode(context, sourceSection, index, MissingArgumentBehavior.NIL);
     }
 
     @Override

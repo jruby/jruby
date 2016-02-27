@@ -44,7 +44,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
@@ -220,11 +220,11 @@ public abstract class ProcNodes {
     @CoreMethod(names = {"call", "[]", "yield"}, rest = true, needsBlock = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldDispatchHeadNode yieldNode;
+        @Child private YieldNode yieldNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yieldNode = new YieldDispatchHeadNode(context);
+            yieldNode = new YieldNode(context);
         }
 
         @Specialization

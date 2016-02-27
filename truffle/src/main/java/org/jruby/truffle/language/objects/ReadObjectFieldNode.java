@@ -22,6 +22,7 @@ import org.jruby.truffle.language.RubyGuards;
 
 @ImportStatic({ RubyGuards.class, ShapeCachingGuards.class })
 public abstract class ReadObjectFieldNode extends Node {
+
     private final RubyContext context;
     private final Object defaultValue;
     protected final Object name;

@@ -1,0 +1,3 @@
+fails:SizedQueue#close closes the queue and returns nil for further #pop
+fails:SizedQueue#close prevents further #push
+fails:SizedQueue#close may be called multiple times

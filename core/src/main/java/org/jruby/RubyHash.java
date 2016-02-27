@@ -38,8 +38,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
-
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -48,6 +46,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -234,7 +233,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private RubyHash(Ruby runtime, RubyClass klass, RubyHash other) {
         super(runtime, klass);
-        this.ifNone = runtime.getNil();
+        this.ifNone = UNDEF;
         threshold = INITIAL_THRESHOLD;
         table = other.internalCopyTable(head);
         size = other.size;
@@ -242,16 +241,16 @@ public class RubyHash extends RubyObject implements Map {
 
     public RubyHash(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
-        this.ifNone = runtime.getNil();
+        this.ifNone = UNDEF;
         allocFirst();
     }
 
     public RubyHash(Ruby runtime, int buckets) {
-        this(runtime, runtime.getNil(), buckets);
+        this(runtime, UNDEF, buckets);
     }
 
     public RubyHash(Ruby runtime) {
-        this(runtime, runtime.getNil());
+        this(runtime, UNDEF);
     }
 
     public RubyHash(Ruby runtime, IRubyObject defaultValue) {
@@ -708,7 +707,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             return context.nil;
         }
-        return ifNone;
+        return ifNone == UNDEF ? context.nil : ifNone;
     }
 
     @JRubyMethod(name = "default")
@@ -716,7 +715,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             return Helpers.invoke(context, ifNone, "call", this, arg);
         }
-        return ifNone;
+        return ifNone == UNDEF ? context.nil : ifNone;
     }
 
     /** rb_hash_set_default
@@ -897,6 +896,110 @@ public class RubyHash extends RubyObject implements Map {
         } catch (NegativeArraySizeException nase) {
             throw concurrentModification();
         }
+    }
+
+    @JRubyMethod(name = "to_proc")
+    public RubyProc to_proc(ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        return new RubyProc(runtime, runtime.getProc(), new HashBlock(), null, -1);
+    }
+
+    private class HashBlock extends Block {
+
+        HashBlock() {
+            super(BlockBody.NULL_BODY);
+            this.type = Block.Type.PROC;
+        }
+
+        private void checkArity(ThreadContext context, IRubyObject... args) {
+            // acts like a Proc but validate args like a lambda :
+            Signature.ONE_ARGUMENT.checkArity(context.runtime, args);
+        }
+
+        @Override
+        public Signature getSignature() {
+            return Signature.ONE_ARGUMENT;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+            checkArity(context, args);
+            return op_aref(context, args[0]);
+        }
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockArg) {
+            return call(context, args);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context) {
+            checkArity(context); // fails
+            throw new AssertionError();
+        }
+        @Override
+        public IRubyObject call(ThreadContext context, Block blockArg) {
+            return call(context);
+        }
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context) {
+            return call(context);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg0) {
+            return op_aref(context, arg0);
+        }
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockArg) {
+            return call(context, arg0);
+        }
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0) {
+            return call(context, arg0);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+            checkArity(context, arg0, arg1); // fails
+            throw new AssertionError();
+        }
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
+            return call(context, arg0, arg1);
+        }
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+            return call(context, arg0, arg1); // fails
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            checkArity(context, arg0, arg1, arg2); // fails
+            throw new AssertionError();
+        }
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
+            return call(context, arg0, arg1, arg2);
+        }
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            return call(context, arg0, arg1, arg2); // fails
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, IRubyObject value) {
+            return op_aref(context, value);
+        }
+        @Override
+        public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
+            return yield(context, value);
+        }
+
+        @Override
+        public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
+            throw new UnsupportedOperationException();
+        }
+
     }
 
     /** rb_hash_to_s & to_s_hash
@@ -1103,6 +1206,45 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
         return ((value = internalGet(key)) == null) ? invokedynamic(context, this, DEFAULT, key) : value;
+    }
+
+    /** hash_le_i
+     *
+     */
+    private boolean hash_le(RubyHash other) {
+        return other.directEntrySet().containsAll(directEntrySet());
+    }
+
+    @JRubyMethod(name = "<", required = 1)
+    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
+        final RubyHash otherHash = other.convertToHash();
+        if (size() >= otherHash.size()) {
+            return RubyBoolean.newBoolean(context.runtime, false);
+        }
+
+        return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
+    }
+
+    @JRubyMethod(name = "<=", required = 1)
+    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
+        final RubyHash otherHash = other.convertToHash();
+        if (size() > otherHash.size()) {
+            return RubyBoolean.newBoolean(context.runtime, false);
+        }
+
+        return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
+    }
+
+    @JRubyMethod(name = ">", required = 1)
+    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
+        final RubyHash otherHash = other.convertToHash();
+        return otherHash.op_lt(context, this);
+    }
+
+    @JRubyMethod(name = ">=", required = 1)
+    public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
+        final RubyHash otherHash = other.convertToHash();
+        return otherHash.op_le(context, this);
     }
 
     /** rb_hash_hash
@@ -1542,7 +1684,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             return this.callMethod(context, "default", context.nil);
         }
-        return ifNone;
+        return ifNone == UNDEF ? context.nil : ifNone;
     }
 
     public final boolean fastDelete(IRubyObject key) {
@@ -1780,9 +1922,19 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "values_at", rest = true)
     public RubyArray values_at(ThreadContext context, IRubyObject[] args) {
-        RubyArray result = RubyArray.newArray(getRuntime(), args.length);
+        RubyArray result = RubyArray.newArray(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
             result.append(op_aref(context, args[i]));
+        }
+        return result;
+    }
+
+    @JRubyMethod(name = "fetch_values", rest = true)
+    public RubyArray fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
+        RubyArray result = RubyArray.newArray(context.runtime, args.length);
+
+        for (int i = 0; i < args.length; i++) {
+            result.append(fetch(context, args[i], block));
         }
         return result;
     }
@@ -1932,6 +2084,16 @@ public class RubyHash extends RubyObject implements Map {
         return ifNone;
     }
 
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        return dig(context, args, 0);
+    }
+
+    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
+        final IRubyObject val = op_aref( context, args[idx++] );
+        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
+    }
+
     private static class VisitorIOException extends RuntimeException {
         VisitorIOException(Throwable cause) {
             super(cause);
@@ -1959,7 +2121,7 @@ public class RubyHash extends RubyObject implements Map {
             throw (IOException)e.getCause();
         }
 
-        if (!hash.ifNone.isNil()) output.dumpObject(hash.ifNone);
+        if (hash.ifNone != UNDEF) output.dumpObject(hash.ifNone);
     }
 
     public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {

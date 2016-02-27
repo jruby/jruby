@@ -1,7 +1,7 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'timeout'
 require 'tempfile'
-require_relative 'envutil'
 
 class TestSignal < Test::Unit::TestCase
   def test_signal
@@ -201,14 +201,33 @@ class TestSignal < Test::Unit::TestCase
   end if Signal.list.key?('QUIT')
 
   def test_reserved_signal
-    [:SEGV, :BUS, :ILL, :FPE, :VTALRM].each do |signal|
-      assert_raise_with_message(ArgumentError, /reserved signal/) {
-        Signal.trap(signal) {}
-      }
-    end
+    assert_raise(ArgumentError) {
+      Signal.trap(:SEGV) {}
+    }
+    assert_raise(ArgumentError) {
+      Signal.trap(:BUS) {}
+    }
+    assert_raise(ArgumentError) {
+      Signal.trap(:ILL) {}
+    }
+    assert_raise(ArgumentError) {
+      Signal.trap(:FPE) {}
+    }
+    assert_raise(ArgumentError) {
+      Signal.trap(:VTALRM) {}
+    }
   end
 
   def test_signame
+    Signal.list.each do |name, num|
+      assert_equal(num, Signal.list[Signal.signame(num)], name)
+    end
+    assert_nil(Signal.signame(-1))
+    signums = Signal.list.invert
+    assert_nil(Signal.signame((1..1000).find {|num| !signums[num]}))
+  end
+
+  def test_signame_delivered
     10.times do
       IO.popen([EnvUtil.rubybin, "-e", <<EOS, :err => File::NULL]) do |child|
         Signal.trap("INT") do |signo|

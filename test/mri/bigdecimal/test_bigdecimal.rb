@@ -1,5 +1,5 @@
+# frozen_string_literal: false
 require_relative "testbase"
-require_relative "../ruby/envutil"
 require 'bigdecimal/math'
 
 require 'thread'
@@ -692,6 +692,12 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_mult_with_rational
     assert_kind_of(BigDecimal, BigDecimal.new("3") * 1.quo(3))
+  end
+
+  def test_mult_with_nil
+    assert_raise(TypeError) {
+      BigDecimal('1.1') * nil
+    }
   end
 
   def test_div
@@ -1546,5 +1552,32 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_in_out_err(%w[-rbigdecimal --disable-gems], <<-EOS, [], [])
     Thread.current.keys.to_s
     EOS
+  end
+
+  def assert_no_memory_leak(code, *rest, **opt)
+    code = "8.times {20_000.times {begin #{code}; rescue NoMemoryError; end}; GC.start}"
+    super(["-rbigdecimal"],
+          "b = BigDecimal('10'); b.nil?; " \
+          "GC.add_stress_to_class(BigDecimal); "\
+          "#{code}", code, *rest, rss: true, limit: 1.1, **opt)
+  end
+
+  if EnvUtil.gc_stress_to_class?
+    def test_no_memory_leak_allocate
+      assert_no_memory_leak("BigDecimal.allocate")
+    end
+
+    def test_no_memory_leak_initialize
+      assert_no_memory_leak("BigDecimal.new")
+    end
+
+    def test_no_memory_leak_global_new
+      assert_no_memory_leak("BigDecimal('10')")
+      assert_no_memory_leak("BigDecimal(b)")
+    end
+
+    def test_no_memory_leak_create
+      assert_no_memory_leak("b + 10")
+    end
   end
 end

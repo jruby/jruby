@@ -1,4 +1,5 @@
 # coding: US-ASCII
+# frozen_string_literal: false
 require 'test/unit'
 require 'logger'
 require 'tempfile'
@@ -69,6 +70,50 @@ class TestLogger < Test::Unit::TestCase
     assert(!@logger.fatal?)
   end
 
+  def test_symbol_level
+    logger_symbol_levels = {
+      debug:   DEBUG,
+      info:    INFO,
+      warn:    WARN,
+      error:   ERROR,
+      fatal:   FATAL,
+      unknown: UNKNOWN,
+      DEBUG:   DEBUG,
+      INFO:    INFO,
+      WARN:    WARN,
+      ERROR:   ERROR,
+      FATAL:   FATAL,
+      UNKNOWN: UNKNOWN,
+    }
+    logger_symbol_levels.each do |symbol, level|
+      @logger.level = symbol
+      assert(@logger.level == level)
+    end
+    assert_raise(ArgumentError) { @logger.level = :something_wrong }
+  end
+
+  def test_string_level
+    logger_string_levels = {
+      'debug'   => DEBUG,
+      'info'    => INFO,
+      'warn'    => WARN,
+      'error'   => ERROR,
+      'fatal'   => FATAL,
+      'unknown' => UNKNOWN,
+      'DEBUG'   => DEBUG,
+      'INFO'    => INFO,
+      'WARN'    => WARN,
+      'ERROR'   => ERROR,
+      'FATAL'   => FATAL,
+      'UNKNOWN' => UNKNOWN,
+    }
+    logger_string_levels.each do |string, level|
+      @logger.level = string
+      assert(@logger.level == level)
+    end
+    assert_raise(ArgumentError) { @logger.level = 'something_wrong' }
+  end
+
   def test_progname
     assert_nil(@logger.progname)
     @logger.progname = "name"
@@ -119,6 +164,12 @@ class TestLogger < Test::Unit::TestCase
     assert_nil(logger.progname)
     assert_equal(DEBUG, logger.level)
     assert_nil(logger.datetime_format)
+  end
+
+  def test_reopen
+    logger = Logger.new(STDERR)
+    logger.reopen(STDOUT)
+    assert_equal(STDOUT, logger.instance_variable_get(:@logdev).dev)
   end
 
   def test_add

@@ -1275,13 +1275,21 @@ public final class Ruby implements Constantizable {
         // out of base boot mode
         bootingCore = false;
 
-        // init Ruby-based kernel
         if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+            // init Ruby-based kernel
             initRubyKernel();
-        }
 
-        // everything booted, so SizedQueue should be available; set up root fiber
-        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+            // Define blank modules for feature detection in preludes
+            if (!config.isDisableGems()) {
+                defineModule("Gem");
+            }
+            if (!config.isDisableDidYouMean()) {
+                defineModule("DidYouMean");
+            }
+
+            initRubyPreludes();
+
+            // everything booted, so SizedQueue should be available; set up root fiber
             ThreadFiber.initRootFiber(tc);
         }
 
@@ -1332,6 +1340,7 @@ public final class Ruby implements Constantizable {
     private void bootstrap() {
         initCore();
         initExceptions();
+        initLibraries();
     }
 
     private void initDefinedMessages() {
@@ -1414,7 +1423,9 @@ public final class Ruby implements Constantizable {
         singleNilArray = new IRubyObject[] {nilObject};
 
         falseObject = new RubyBoolean.False(this);
+        falseObject.setFrozen(true);
         trueObject = new RubyBoolean.True(this);
+        trueObject.setFrozen(true);
     }
 
     private void initCore() {
@@ -1570,11 +1581,6 @@ public final class Ruby implements Constantizable {
             RubyEnumerator.defineEnumerator(this);
         }
 
-        // Fiber depends on thread library, so we load it here
-        new ThreadLibrary().load(this, false);
-
-        new ThreadFiberLibrary().load(this, false);
-
         TracePoint.createTracePointClass(this);
     }
 
@@ -1616,6 +1622,9 @@ public final class Ruby implements Constantizable {
         interrupt = defineClassIfAllowed("Interrupt", signalException);
         typeError = defineClassIfAllowed("TypeError", standardError);
         argumentError = defineClassIfAllowed("ArgumentError", standardError);
+        if (profile.allowClass("UncaughtThrowError")) {
+            uncaughtThrowError = RubyUncaughtThrowError.createUncaughtThrowErrorClass(this, argumentError);
+        }
         indexError = defineClassIfAllowed("IndexError", standardError);
         if (profile.allowClass("StopIteration")) {
             stopIteration = RubyStopIteration.createStopIterationClass(this, indexError);
@@ -1653,6 +1662,11 @@ public final class Ruby implements Constantizable {
         inRecursiveListOperation.set(false);
 
         initErrno();
+    }
+
+    private void initLibraries() {
+        new ThreadLibrary().load(this, false);
+        new ThreadFiberLibrary().load(this, false);
     }
 
     private RubyClass defineClassIfAllowed(String name, RubyClass superClass) {
@@ -1784,6 +1798,14 @@ public final class Ruby implements Constantizable {
 
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
+    }
+
+    private void initRubyPreludes() {
+        // We cannot load any .rb and debug new parser features
+        if (RubyInstanceConfig.DEBUG_PARSER) return;
+
+        // load Ruby parts of core
+        loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
     }
 
     private void addLazyBuiltin(String name, String shortName, String className) {
@@ -2435,6 +2457,10 @@ public final class Ruby implements Constantizable {
         return argumentError;
     }
 
+    public RubyClass getUncaughtThrowError() {
+        return uncaughtThrowError;
+    }
+
     public RubyClass getIndexError() {
         return indexError;
     }
@@ -2902,7 +2928,11 @@ public final class Ruby implements Constantizable {
                 // toss an anonymous module into the search path
                 RubyModule wrapper = RubyModule.newModule(this);
                 ((RubyBasicObject)self).extend(new IRubyObject[] {wrapper});
-                ((RootNode) parseResult).getStaticScope().setModule(wrapper);
+                RootNode root = (RootNode) parseResult;
+                StaticScope top = root.getStaticScope();
+                StaticScope newTop = staticScopeFactory.newLocalScope(null);
+                top.setPreviousCRefScope(newTop);
+                top.setModule(wrapper);
             }
 
             runInterpreter(context, parseResult, self);
@@ -3859,12 +3889,14 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getNotImplementedError(), message);
     }
 
+    @Deprecated
     public RaiseException newInvalidEncoding(String message) {
-        return newRaiseException(fastGetClass("Iconv").getClass("InvalidEncoding"), message);
+        return newRaiseException(getClass("Iconv").getClass("InvalidEncoding"), message);
     }
 
+    @Deprecated
     public RaiseException newIllegalSequence(String message) {
-        return newRaiseException(fastGetClass("Iconv").getClass("IllegalSequence"), message);
+        return newRaiseException(getClass("Iconv").getClass("IllegalSequence"), message);
     }
 
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
@@ -3875,7 +3907,7 @@ public final class Ruby implements Constantizable {
         return newNameError(message, name, null);
     }
 
-    // This name sucks and should be replaced by newNameErrorfor 9k.
+    @Deprecated
     public RaiseException newNameErrorObject(String message, IRubyObject name) {
         RubyException error = new RubyNameError(this, getNameError(), message, name);
 
@@ -3884,6 +3916,26 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newNameError(String message, String name, Throwable origException) {
         return newNameError(message, name, origException, false);
+    }
+
+    public RaiseException newNameError(String message, IRubyObject recv, IRubyObject name) {
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
+        RubyException err = RubyNameError.newNameError(getNameError(), msg, name);
+
+        return new RaiseException(err);
+    }
+
+    public RaiseException newNameError(String message, IRubyObject recv, String name) {
+        RubySymbol nameSym = newSymbol(name);
+        return newNameError(message, recv, nameSym);
+    }
+
+    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args) {
+        RubySymbol nameStr = newSymbol(name);
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
+        RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args);
+
+        return new RaiseException(err);
     }
 
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
@@ -3895,8 +3947,7 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        return new RaiseException(new RubyNameError(
-                this, getNameError(), message, name), false);
+        return new RaiseException(new RubyNameError(this, getNameError(), message, name), false);
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
@@ -4926,7 +4977,7 @@ public final class Ruby implements Constantizable {
             groupStruct, procStatusClass, exceptionClass, runtimeError, ioError,
             scriptError, nameError, nameErrorMessage, noMethodError, signalException,
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
-            systemCallError, fatal, interrupt, typeError, argumentError, indexError, stopIteration,
+            systemCallError, fatal, interrupt, typeError, argumentError, uncaughtThrowError, indexError, stopIteration,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,

@@ -66,7 +66,7 @@ public class NullBlockBody extends BlockBody {
     }
 
     public String getFile() {
-        return "(null)";
+        return null;
     }
 
     public int getLine() {

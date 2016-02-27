@@ -122,9 +122,9 @@ import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.language.objects.ThreadLocalObject;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
@@ -581,7 +581,7 @@ public abstract class KernelNodes {
             final DynamicObject callerBinding = getCallerBinding(frame);
 
             final MaterializedFrame parentFrame = Layouts.BINDING.getFrame(callerBinding);
-            final Object callerSelf = RubyArguments.getSelf(frame.getArguments());
+            final Object callerSelf = RubyArguments.getSelf(frame);
 
             final InternalMethod method = new InternalMethod(
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
@@ -600,7 +600,7 @@ public abstract class KernelNodes {
                                             NotProvided filename, NotProvided lineNumber) {
             final DynamicObject binding = getCallerBinding(frame);
             final MaterializedFrame topFrame = Layouts.BINDING.getFrame(binding);
-            RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame.getArguments()));
+            RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame));
             return doEval(source, binding, "(eval)", true);
         }
 
@@ -1321,9 +1321,9 @@ public abstract class KernelNodes {
 
             @Override
             public Object execute(VirtualFrame frame) {
-                final Object[] originalUserArguments = RubyArguments.getArguments(frame.getArguments());
+                final Object[] originalUserArguments = RubyArguments.getArguments(frame);
                 final Object[] newUserArguments = ArrayUtils.unshift(originalUserArguments, methodName);
-                return methodMissing.call(frame, RubyArguments.getSelf(frame.getArguments()), "method_missing", RubyArguments.getBlock(frame.getArguments()), newUserArguments);
+                return methodMissing.call(frame, RubyArguments.getSelf(frame), "method_missing", RubyArguments.getBlock(frame), newUserArguments);
             }
         }
 

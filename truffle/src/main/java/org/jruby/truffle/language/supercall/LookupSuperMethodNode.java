@@ -74,7 +74,7 @@ public abstract class LookupSuperMethodNode extends RubyNode {
     }
 
     protected InternalMethod getCurrentMethod(VirtualFrame frame) {
-        return RubyArguments.getMethod(frame.getArguments());
+        return RubyArguments.getMethod(frame);
     }
 
     protected DynamicObject metaClass(Object object) {

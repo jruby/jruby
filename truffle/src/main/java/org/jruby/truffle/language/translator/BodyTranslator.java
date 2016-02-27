@@ -29,6 +29,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
 import org.jruby.truffle.core.array.ArrayConcatNode;
@@ -76,7 +77,6 @@ import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
-import org.jruby.truffle.language.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.language.constants.WriteConstantNode;
@@ -113,14 +113,12 @@ import org.jruby.truffle.language.globals.CheckOutputSeparatorVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckProgramNameVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckRecordSeparatorVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckStdoutVariableTypeNode;
-import org.jruby.truffle.language.globals.GetFromThreadLocalNodeGen;
 import org.jruby.truffle.language.globals.ReadGlobalVariableNode;
 import org.jruby.truffle.language.globals.ReadLastBacktraceNode;
 import org.jruby.truffle.language.globals.ReadMatchReferenceNode;
 import org.jruby.truffle.language.globals.ReadThreadLocalGlobalVariableNode;
 import org.jruby.truffle.language.globals.UpdateLastBacktraceNode;
 import org.jruby.truffle.language.globals.UpdateVerbosityNode;
-import org.jruby.truffle.language.globals.WrapInThreadLocalNodeGen;
 import org.jruby.truffle.language.globals.WriteGlobalVariableNode;
 import org.jruby.truffle.language.globals.WriteProgramNameNodeGen;
 import org.jruby.truffle.language.globals.WriteReadOnlyGlobalNode;
@@ -136,7 +134,7 @@ import org.jruby.truffle.language.locals.FlipFlopNode;
 import org.jruby.truffle.language.locals.FlipFlopStateNode;
 import org.jruby.truffle.language.locals.InitFlipFlopSlotNode;
 import org.jruby.truffle.language.locals.LocalFlipFlopStateNode;
-import org.jruby.truffle.language.locals.ReadLocalNode;
+import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
@@ -158,10 +156,13 @@ import org.jruby.truffle.language.objects.RunModuleDefinitionNode;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
-import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
 import org.jruby.truffle.language.objects.WriteClassVariableNode;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
-import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.language.threadlocal.GetFromThreadLocalNodeGen;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNode;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNodeGen;
+import org.jruby.truffle.language.threadlocal.WrapInThreadLocalNodeGen;
+import org.jruby.truffle.language.yield.YieldExpressionNode;
 import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
@@ -331,7 +332,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node valueNode = argChildNodes.remove(argChildNodes.size() - 1);
 
         // Evaluate the value and store it in a local variable
-        writeValue = new WriteLocalVariableNode(context, sourceSection, valueNode.accept(this), frameSlot);
+        writeValue = new WriteLocalVariableNode(context, sourceSection, frameSlot, valueNode.accept(this));
 
         // Recreate the arguments array, reading that local instead of including the RHS for the last argument
         argChildNodes.add(new ReadLocalDummyNode(node.getPosition(), sourceSection, frameSlot));
@@ -376,7 +377,7 @@ public class BodyTranslator extends Translator {
         boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
         final RubyNode actualCall = translateCallNode(callNode, isAccessorOnSelf, false);
 
-        final RubyNode ret = sequence(context, sourceSection, Arrays.asList(writeValue, actualCall, new ReadLocalVariableNode(context, sourceSection, frameSlot)));
+        final RubyNode ret = sequence(context, sourceSection, Arrays.asList(writeValue, actualCall, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, frameSlot)));
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -1418,9 +1419,9 @@ public class BodyTranslator extends Translator {
         environment.getFlipFlopStates().add(frameSlot);
 
         if (depth == 0) {
-            return new LocalFlipFlopStateNode(sourceSection, frameSlot);
+            return new LocalFlipFlopStateNode(frameSlot);
         } else {
-            return new DeclarationFlipFlopStateNode(sourceSection, depth, frameSlot);
+            return new DeclarationFlipFlopStateNode(depth, frameSlot);
         }
     }
 
@@ -1617,7 +1618,7 @@ public class BodyTranslator extends Translator {
         }
 
         if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-            final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
+            final ThreadLocalObjectNode threadLocalVariablesObjectNode = ThreadLocalObjectNodeGen.create(context, sourceSection);
             return addNewlineIfNeeded(node, new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs));
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             if (environment.getNeverAssignInParentScope()) {
@@ -1696,7 +1697,7 @@ public class BodyTranslator extends Translator {
 
             ret = readNode;
         } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-            ret = new ReadThreadLocalGlobalVariableNode(context, sourceSection, name);
+            ret = new ReadThreadLocalGlobalVariableNode(context, sourceSection, name, ALWAYS_DEFINED_GLOBALS.contains(name));
         } else if (name.equals("$@")) {
             // $@ is a special-case and doesn't read directly from an ivar field in the globals object.
             // Instead, it reads the backtrace field of the thread-local $! value.
@@ -2286,7 +2287,7 @@ public class BodyTranslator extends Translator {
 
                 final RubyNode assignPost =
                         new IfElseNode(context, sourceSection,
-                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + node.getPostCount()),
+                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), environment.findLocalVarNode(tempName, sourceSection)),
                                 atLeastAsLarge,
                                 smaller);
 
@@ -2426,7 +2427,7 @@ public class BodyTranslator extends Translator {
 
             final RubyNode assignPost =
                     new IfElseNode(context, sourceSection,
-                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), node.getPreCount() + node.getPostCount()),
+                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), environment.findLocalVarNode(tempName, sourceSection)),
                             atLeastAsLarge,
                             smaller);
 
@@ -2438,7 +2439,7 @@ public class BodyTranslator extends Translator {
             result = nilNode(sourceSection);
         }
 
-        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, result, "assignment");
+        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT, result);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2505,7 +2506,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, new AndNode(context, sourceSection, lhs.accept(this), rhs.accept(this)), "assignment");
+        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT, new AndNode(context, sourceSection, lhs.accept(this), rhs.accept(this)));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2527,9 +2528,8 @@ public class BodyTranslator extends Translator {
             RubyNode lhs = readMethod.accept(this);
             RubyNode rhs = writeMethod.accept(this);
 
-            final RubyNode ret = new DefinedWrapperNode(context, sourceSection,
-                    sequence(context, sourceSection, Arrays.asList(writeReceiverToTemp.accept(this), new OrNode(context, sourceSection, lhs, rhs))),
-                    "assignment");
+            final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT,
+                    sequence(context, sourceSection, Arrays.asList(writeReceiverToTemp.accept(this), new OrNode(context, sourceSection, lhs, rhs))));
 
             return addNewlineIfNeeded(node, ret);
         }
@@ -2578,9 +2578,8 @@ public class BodyTranslator extends Translator {
             lhs = new AndNode(context, lhs.getSourceSection(), defined, lhs);
         }
 
-        final RubyNode ret = new DefinedWrapperNode(context, sourceSection,
-                new OrNode(context, sourceSection, lhs, rhs),
-                "assignment");
+        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT,
+                new OrNode(context, sourceSection, lhs, rhs));
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -3047,7 +3046,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode[] argumentsTranslatedArray = argumentsTranslated.toArray(new RubyNode[argumentsTranslated.size()]);
 
-        final RubyNode ret = new YieldNode(context, translate(node.getPosition()), argumentsTranslatedArray, unsplat);
+        final RubyNode ret = new YieldExpressionNode(context, translate(node.getPosition()), unsplat, argumentsTranslatedArray);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -3138,7 +3137,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitOther(org.jruby.ast.Node node) {
         if (node instanceof ReadLocalDummyNode) {
             final ReadLocalDummyNode readLocal = (ReadLocalDummyNode) node;
-            final RubyNode ret = new ReadLocalVariableNode(context, readLocal.getSourceSection(), readLocal.getFrameSlot());
+            final RubyNode ret = new ReadLocalVariableNode(context, readLocal.getSourceSection(), LocalVariableType.FRAME_LOCAL, readLocal.getFrameSlot());
             return addNewlineIfNeeded(node, ret);
         } else {
             throw new UnsupportedOperationException();

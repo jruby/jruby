@@ -9,32 +9,42 @@
  */
 package org.jruby.truffle.language.locals;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public class WriteLocalVariableNode extends RubyNode {
 
+    private final FrameSlot frameSlot;
+
     @Child private RubyNode valueNode;
     @Child private WriteFrameSlotNode writeFrameSlotNode;
 
-    public WriteLocalVariableNode(RubyContext context, SourceSection sourceSection, RubyNode valueNode, FrameSlot frameSlot) {
+    public WriteLocalVariableNode(RubyContext context, SourceSection sourceSection,
+                                  FrameSlot frameSlot, RubyNode valueNode) {
         super(context, sourceSection);
+        this.frameSlot = frameSlot;
         this.valueNode = valueNode;
-        writeFrameSlotNode = WriteFrameSlotNodeGen.create(frameSlot);
+
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return writeFrameSlotNode.executeWrite(frame, valueNode.execute(frame));
+        if (writeFrameSlotNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            writeFrameSlotNode = insert(WriteFrameSlotNodeGen.create(frameSlot));
+        }
+
+        final Object value = valueNode.execute(frame);
+        return writeFrameSlotNode.executeWrite(frame, value);
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString("assignment", UTF8Encoding.INSTANCE);
+        return coreStrings().ASSIGNMENT.createInstance();
     }
 
 }

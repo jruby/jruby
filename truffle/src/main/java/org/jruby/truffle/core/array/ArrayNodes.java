@@ -69,13 +69,14 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
+import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -87,7 +88,7 @@ import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
 
 import java.util.Arrays;
@@ -435,7 +436,7 @@ public abstract class ArrayNodes {
                 fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            InternalMethod method = RubyArguments.getMethod(frame);
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
                     createString(StringOperations.encodeRope(method.getName(), UTF8Encoding.INSTANCE)), args);
         }
@@ -1898,7 +1899,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object insertBoxed(VirtualFrame frame, DynamicObject array, Object idxObject, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments(), 1);
+            final Object[] values = RubyArguments.getArguments(frame, 1);
             final int idx = toInt(frame, idxObject);
 
             CompilerDirectives.transferToInterpreter();
@@ -2165,7 +2166,7 @@ public abstract class ArrayNodes {
 
             final Memo<Object> maximum = new Memo<>();
 
-            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final InternalMethod method = RubyArguments.getMethod(frame);
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
                     RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
@@ -2243,8 +2244,8 @@ public abstract class ArrayNodes {
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
-                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                                        new ReadDeclarationVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
+                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR)
                                 }), false));
         }
 
@@ -2283,7 +2284,7 @@ public abstract class ArrayNodes {
 
             final Memo<Object> minimum = new Memo<>();
 
-            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final InternalMethod method = RubyArguments.getMethod(frame);
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
                     RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
@@ -2361,8 +2362,8 @@ public abstract class ArrayNodes {
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
-                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                                        new ReadDeclarationVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
+                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR)
                                 }), false));
         }
 
@@ -2914,7 +2915,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject pushNullEmptyObjects(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
             setStoreAndSize(array, values, values.length);
             return array;
         }
@@ -2922,7 +2923,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "!isNullArray(array)", "isEmptyArray(array)" })
         public DynamicObject pushEmptySingleIntegerFixnum(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
             // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
             setStoreAndSize(array, values, values.length);
             return array;
         }
@@ -2966,7 +2967,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isIntArray(array)", "wasProvided(value)", "rest.length != 0" })
         public DynamicObject pushIntegerFixnum(VirtualFrame frame, DynamicObject array, Object value, Object[] rest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
 
             final int oldSize = getSize(array);
             final int newSize = oldSize + values.length;
@@ -3030,14 +3031,14 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
 
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
             setStoreAndSize(array, values, values.length);
             return array;
         }
 
         @Specialization(guards = "isObjectArray(array)")
         public DynamicObject pushObject(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
 
             final int oldSize = getSize(array);
             final int newSize = oldSize + values.length;
@@ -4065,12 +4066,12 @@ public abstract class ArrayNodes {
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode compareDispatchNode;
-        @Child private YieldDispatchHeadNode yieldNode;
+        @Child private YieldNode yieldNode;
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
-            yieldNode = new YieldDispatchHeadNode(context);
+            yieldNode = new YieldNode(context);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -4292,7 +4293,7 @@ public abstract class ArrayNodes {
                 zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object[] others = RubyArguments.getArguments(frame.getArguments());
+            final Object[] others = RubyArguments.getArguments(frame);
 
             return zipInternalCall.call(frame, array, "zip_internal", block, others);
         }

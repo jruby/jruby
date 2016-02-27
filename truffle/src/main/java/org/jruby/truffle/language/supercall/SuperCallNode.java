@@ -50,7 +50,7 @@ public class SuperCallNode extends RubyNode {
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        final Object self = RubyArguments.getSelf(frame.getArguments());
+        final Object self = RubyArguments.getSelf(frame);
 
         // Execute the arguments
         final Object[] superArguments = (Object[]) arguments.execute(frame);
@@ -62,7 +62,7 @@ public class SuperCallNode extends RubyNode {
 
         if (superMethod == null) {
             CompilerDirectives.transferToInterpreter();
-            final String name = RubyArguments.getMethod(frame.getArguments()).getSharedMethodInfo().getName(); // use the original name
+            final String name = RubyArguments.getMethod(frame).getSharedMethodInfo().getName(); // use the original name
             final Object[] methodMissingArguments = ArrayUtils.unshift(superArguments, getContext().getSymbolTable().getSymbol(name));
             return callMethodMissing(frame, self, blockObject, methodMissingArguments);
         }
@@ -74,7 +74,7 @@ public class SuperCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final Object self = RubyArguments.getSelf(frame.getArguments());
+        final Object self = RubyArguments.getSelf(frame);
         final InternalMethod superMethod = lookupSuperMethodNode.executeLookupSuperMethod(frame, self);
 
         if (superMethod == null) {

@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -114,7 +115,7 @@ public class IOWaitLibrary implements Library {
             tv = -1;
         }
         else {
-            tv = timeout.convertToInteger().getLongValue() * 1000;
+            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
             if (tv < 0) throw runtime.newArgumentError("time interval must be positive");
         }
 
@@ -154,7 +155,7 @@ public class IOWaitLibrary implements Library {
             tv = -1;
         }
         else {
-            tv = timeout.convertToInteger().getLongValue() * 1000;
+            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
             if (tv < 0) throw runtime.newArgumentError("time interval must be positive");
         }
 

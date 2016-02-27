@@ -1,2 +1,3 @@
 slow:ARGF.close does not close STDIN
 fails:ARGF.close does not close STDIN
+fails:ARGF.close doesn't raise an IOError if called on a closed stream

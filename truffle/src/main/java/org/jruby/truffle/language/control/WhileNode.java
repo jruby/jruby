@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RepeatingNode;
 import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.LoopConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
@@ -53,6 +54,7 @@ public final class WhileNode extends RubyNode {
         @Child protected BooleanCastNode condition;
         @Child protected RubyNode body;
 
+        protected final LoopConditionProfile conditionProfile = LoopConditionProfile.createCountingProfile();
         protected final BranchProfile redoUsed = BranchProfile.create();
         protected final BranchProfile nextUsed = BranchProfile.create();
 
@@ -61,6 +63,12 @@ public final class WhileNode extends RubyNode {
             this.condition = BooleanCastNodeGen.create(context, condition.getSourceSection(), condition);
             this.body = body;
         }
+
+        @Override
+        public String toString() {
+            return condition.getEncapsulatingSourceSection().getShortDescription();
+        }
+
     }
 
     private static class WhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
@@ -71,7 +79,7 @@ public final class WhileNode extends RubyNode {
 
         @Override
         public boolean executeRepeating(VirtualFrame frame) {
-            if (!condition.executeBoolean(frame)) {
+            if (!conditionProfile.profile(condition.executeBoolean(frame))) {
                 return false;
             }
 
@@ -111,7 +119,7 @@ public final class WhileNode extends RubyNode {
                 return true;
             }
 
-            return condition.executeBoolean(frame);
+            return conditionProfile.profile(condition.executeBoolean(frame));
         }
 
     }

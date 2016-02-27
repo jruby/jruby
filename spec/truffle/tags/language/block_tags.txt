@@ -1,0 +1,1 @@
+fails:Block-local variables override shadowed variables from the outer scope

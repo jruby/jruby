@@ -2,6 +2,7 @@ package org.jruby.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import org.jruby.ast.DefNode;
 import org.jruby.ast.IterNode;
@@ -14,6 +15,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
@@ -104,6 +106,17 @@ public class IRClosure extends IRScope {
     @Override
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
         interpreterContext = new ClosureInterpreterContext(this, instructions);
+
+        return interpreterContext;
+    }
+
+    @Override
+    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+        try {
+            interpreterContext = new ClosureInterpreterContext(this, instructions);
+        } catch (Exception e) {
+            Helpers.throwException(e);
+        }
 
         return interpreterContext;
     }

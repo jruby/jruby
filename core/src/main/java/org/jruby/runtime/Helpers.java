@@ -274,6 +274,8 @@ public class Helpers {
                 return Errno.ECONNRESET;
             } else if (errorMessage.equals("No space left on device")) {
                 return Errno.ENOSPC;
+            } else if (errorMessage.equals("Too many open files")) {
+                return Errno.EMFILE;
             }
         }
         return null;

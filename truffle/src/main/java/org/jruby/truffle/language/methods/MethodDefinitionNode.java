@@ -44,7 +44,7 @@ public class MethodDefinitionNode extends RubyNode {
         final Visibility dummyVisibility = Visibility.PUBLIC;
 
         final DynamicObject capturedDefaultDefinee;
-        if (RubyArguments.getDeclarationContext(frame.getArguments()) == DeclarationContext.INSTANCE_EVAL) {
+        if (RubyArguments.getDeclarationContext(frame) == DeclarationContext.INSTANCE_EVAL) {
             if (getDefaultDefineeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 getDefaultDefineeNode = insert(new GetDefaultDefineeNode(getContext(), getSourceSection()));

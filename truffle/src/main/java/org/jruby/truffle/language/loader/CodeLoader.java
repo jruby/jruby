@@ -72,8 +72,8 @@ public class CodeLoader {
         assert RubyGuards.isRubyBinding(binding);
         final Source source = Source.fromText(code, filename);
         final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
-        final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame.getArguments());
-        return parseAndExecute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, declarationContext, currentNode);
+        final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame);
+        return parseAndExecute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame), frame, ownScopeForAssignments, declarationContext, currentNode);
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -156,7 +156,7 @@ public class CodeLoader {
     private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
         CompilerDirectives.transferToInterpreter();
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(null, null, RubyArguments.getMethod(frame.getArguments()), DeclarationContext.INSTANCE_EVAL, null, RubyArguments.getSelf(frame.getArguments()), null, new Object[]{}),
+                RubyArguments.pack(null, null, RubyArguments.getMethod(frame), DeclarationContext.INSTANCE_EVAL, null, RubyArguments.getSelf(frame), null, new Object[]{}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
 
         if (arguments.length % 2 == 1) {

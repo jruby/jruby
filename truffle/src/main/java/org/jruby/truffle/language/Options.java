@@ -47,6 +47,7 @@ public class Options {
     public final int EVAL_CACHE = TRUFFLE_EVAL_CACHE.load();
     public final int CLASS_CACHE = TRUFFLE_CLASS_CACHE.load();
     public final int ENCODING_COMPATIBILE_QUERY_CACHE = TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE.load();
+    public final int THREAD_CACHE = TRUFFLE_THREAD_CACHE.load();
 
     // Cloning and inlining
 

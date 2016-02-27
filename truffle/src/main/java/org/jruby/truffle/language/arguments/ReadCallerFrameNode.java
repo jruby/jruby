@@ -26,12 +26,12 @@ public class ReadCallerFrameNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object callerFrame = RubyArguments.getCallerFrame(frame.getArguments());
+        final Object callerFrame = RubyArguments.getCallerFrame(frame);
 
-        if (hasCallerFrameProfile.profile(callerFrame != null)) {
-            return callerFrame;
-        } else {
+        if (hasCallerFrameProfile.profile(callerFrame == null)) {
             return NotProvided.INSTANCE;
+        } else {
+            return callerFrame;
         }
     }
 

@@ -1,4 +1,5 @@
 # encoding: US-ASCII
+# frozen_string_literal: true
 # = csv.rb -- CSV Reading and Writing
 #
 #  Created by James Edward Gray II on 2005-10-31.
@@ -176,7 +177,7 @@ require "stringio"
 # support.  For example, <tt>:col_sep</tt>, <tt>:row_sep</tt>, and
 # <tt>:quote_char</tt> must be transcoded to match your data.  Hopefully this
 # makes the entire process feel transparent, since CSV's defaults should just
-# magically work for you data.  However, you can set these values manually in
+# magically work for your data.  However, you can set these values manually in
 # the target Encoding to avoid the translation.
 #
 # It's also important to note that while all of CSV's core parser is now
@@ -207,7 +208,7 @@ require "stringio"
 #
 class CSV
   # The version of the installed library.
-  VERSION = "2.4.8".freeze
+  VERSION = "2.4.8"
 
   #
   # A CSV::Row is part Array and part Hash.  It retains an order for the fields
@@ -284,11 +285,15 @@ class CSV
     #
     def field(header_or_index, minimum_index = 0)
       # locate the pair
-      finder = header_or_index.is_a?(Integer) ? :[] : :assoc
+      finder = (header_or_index.is_a?(Integer) || header_or_index.is_a?(Range)) ? :[] : :assoc
       pair   = @row[minimum_index..-1].send(finder, header_or_index)
 
       # return the field if we have a pair
-      pair.nil? ? nil : pair.last
+      if pair.nil?
+        nil
+      else
+        header_or_index.is_a?(Range) ? pair.map(&:last) : pair.last
+      end
     end
     alias_method :[], :field
 
@@ -517,7 +522,7 @@ class CSV
     end
 
     #
-    # Collapses the row into a simple Hash.  Be warning that this discards field
+    # Collapses the row into a simple Hash.  Be warned that this discards field
     # order and clobbers duplicate fields.
     #
     def to_hash
@@ -690,7 +695,7 @@ class CSV
     #
     def [](index_or_header)
       if @mode == :row or  # by index
-         (@mode == :col_or_row and index_or_header.is_a? Integer)
+         (@mode == :col_or_row and (index_or_header.is_a?(Integer) or index_or_header.is_a?(Range)))
         @table[index_or_header]
       else                 # by header
         @table.map { |row| row[index_or_header] }
@@ -944,30 +949,32 @@ class CSV
   # To add a combo field, the value should be an Array of names.  Combo fields
   # can be nested with other combo fields.
   #
-  Converters  = { integer:   lambda { |f|
-                    Integer(f.encode(ConverterEncoding)) rescue f
-                  },
-                  float:     lambda { |f|
-                    Float(f.encode(ConverterEncoding)) rescue f
-                  },
-                  numeric:   [:integer, :float],
-                  date:      lambda { |f|
-                    begin
-                      e = f.encode(ConverterEncoding)
-                      e =~ DateMatcher ? Date.parse(e) : f
-                    rescue  # encoding conversion or date parse errors
-                      f
-                    end
-                  },
-                  date_time: lambda { |f|
-                    begin
-                      e = f.encode(ConverterEncoding)
-                      e =~ DateTimeMatcher ? DateTime.parse(e) : f
-                    rescue  # encoding conversion or date parse errors
-                      f
-                    end
-                  },
-                  all:       [:date_time, :numeric] }
+  Converters  = {
+    integer:   lambda { |f|
+      Integer(f.encode(ConverterEncoding)) rescue f
+    },
+    float:     lambda { |f|
+      Float(f.encode(ConverterEncoding)) rescue f
+    },
+    numeric:   [:integer, :float],
+    date:      lambda { |f|
+      begin
+        e = f.encode(ConverterEncoding)
+        e =~ DateMatcher ? Date.parse(e) : f
+      rescue  # encoding conversion or date parse errors
+        f
+      end
+    },
+    date_time: lambda { |f|
+      begin
+        e = f.encode(ConverterEncoding)
+        e =~ DateTimeMatcher ? DateTime.parse(e) : f
+      rescue  # encoding conversion or date parse errors
+        f
+      end
+    },
+    all:       [:date_time, :numeric],
+  }
 
   #
   # This Hash holds the built-in header converters of CSV that can be accessed
@@ -1013,18 +1020,20 @@ class CSV
   # <b><tt>:force_quotes</tt></b>::       +false+
   # <b><tt>:skip_lines</tt></b>::         +nil+
   #
-  DEFAULT_OPTIONS = { col_sep:            ",",
-                      row_sep:            :auto,
-                      quote_char:         '"',
-                      field_size_limit:   nil,
-                      converters:         nil,
-                      unconverted_fields: nil,
-                      headers:            false,
-                      return_headers:     false,
-                      header_converters:  nil,
-                      skip_blanks:        false,
-                      force_quotes:       false,
-                      skip_lines:         nil }.freeze
+  DEFAULT_OPTIONS = {
+    col_sep:            ",",
+    row_sep:            :auto,
+    quote_char:         '"',
+    field_size_limit:   nil,
+    converters:         nil,
+    unconverted_fields: nil,
+    headers:            false,
+    return_headers:     false,
+    header_converters:  nil,
+    skip_blanks:        false,
+    force_quotes:       false,
+    skip_lines:         nil,
+  }.freeze
 
   #
   # This method will return a CSV instance, just like CSV::new(), but the
@@ -1149,7 +1158,7 @@ class CSV
       args.unshift(io)
     else
       encoding = args[-1][:encoding] if args.last.is_a?(Hash)
-      str      = ""
+      str      = String.new
       str.force_encoding(encoding) if encoding
       args.unshift(str)
     end
@@ -1174,7 +1183,7 @@ class CSV
   def self.generate_line(row, options = Hash.new)
     options  = {row_sep: $INPUT_RECORD_SEPARATOR}.merge(options)
     encoding = options.delete(:encoding)
-    str      = ""
+    str      = String.new
     if encoding
       str.force_encoding(encoding)
     elsif field = row.find { |f| not f.nil? }
@@ -1355,7 +1364,7 @@ class CSV
   # a String for +data+, you can later retrieve it (after writing to it, for
   # example) with CSV.string().
   #
-  # Note that a wrapped String will be positioned at at the beginning (for
+  # Note that a wrapped String will be positioned at the beginning (for
   # reading).  If you want it at the end (for writing), use CSV::generate().
   # If you want any other positioning, pass a preset StringIO object instead.
   #
@@ -1523,7 +1532,7 @@ class CSV
     # prepare for building safe regular expressions in the target encoding,
     # if we can transcode the needed characters
     #
-    @re_esc   =   "\\".encode(@encoding) rescue ""
+    @re_esc   =   "\\".encode(@encoding).freeze rescue ""
     @re_chars =   /#{%"[-\\]\\[\\.^$?*+{}()|# \r\n\t\f\v]".encode(@encoding)}/
 
     init_separators(options)
@@ -1850,7 +1859,7 @@ class CSV
             csv.last << @col_sep
           end
         elsif part[0] == @quote_char
-          # If we are staring a new quoted column
+          # If we are starting a new quoted column
           if part[-1] != @quote_char || part.count(@quote_char) % 2 != 0
             # start an extended column
             csv             << part[1..-1]
@@ -2094,7 +2103,7 @@ class CSV
   # are set.  When +field_name+ is <tt>:header_converters</tt> header converters
   # are added instead.
   #
-  # The <tt>:unconverted_fields</tt> option is also actived for
+  # The <tt>:unconverted_fields</tt> option is also activated for
   # <tt>:converters</tt> calls, if requested.
   #
   def init_converters(options, field_name = :converters)

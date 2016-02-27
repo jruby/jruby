@@ -14,6 +14,8 @@
 require 'fileutils'
 require 'digest/sha1'
 
+GRAALVM_VERSION = "0.10"
+
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 JDEBUG_PORT = 51819
@@ -39,9 +41,9 @@ module Utilities
     graal_locations = [
       ENV['GRAAL_BIN'],
       ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
-      "GraalVM-0.9/jre/bin/javao",
-      "../GraalVM-0.9/jre/bin/javao",
-      "../../GraalVM-0.9/jre/bin/javao",
+      "GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
+      "../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
+      "../../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
     ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
     not_found = -> {
@@ -62,6 +64,19 @@ module Utilities
   def self.jruby_eclipse?
     # tool/jruby_eclipse only works on release currently
     ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
+  end
+
+  def self.find_ruby
+    if ENV["RUBY_BIN"]
+      ENV["RUBY_BIN"]
+    else
+      version = `ruby -e 'print RUBY_VERSION' 2>/dev/null`
+      if version.start_with?("2.")
+        "ruby"
+      else
+        find_jruby
+      end
+    end
   end
 
   def self.find_jruby
@@ -220,7 +235,7 @@ module ShellUtils
       args.unshift "-ttool/jruby_eclipse"
     end
 
-    sh env_vars, Utilities.find_jruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
+    sh env_vars, Utilities.find_ruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
   end
 end
 

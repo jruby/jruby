@@ -64,7 +64,7 @@ public class Bootstrap {
     private static final Logger LOG = LoggerFactory.getLogger("Bootstrap");
     static final Lookup LOOKUP = MethodHandles.lookup();
 
-    public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
+    public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr, String file, int line) {
         Encoding encoding;
         EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
         if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
@@ -74,7 +74,7 @@ public class Bootstrap {
         MutableCallSite site = new MutableCallSite(type);
         Binder binder = Binder
                 .from(RubyString.class, ThreadContext.class)
-                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class), site, byteList, cr);
+                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class, String.class, int.class), site, byteList, cr, file, line);
         if (name.equals("frozen")) {
             site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "frozenString"));
         } else {
@@ -137,7 +137,7 @@ public class Bootstrap {
     }
 
     public static Handle string() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, int.class));
     }
 
     public static Handle bytelist() {
@@ -168,7 +168,7 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
-    public static RubyString string(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
+    public static RubyString string(MutableCallSite site, ByteList value, int cr, String file, int line, ThreadContext context) throws Throwable {
         MethodHandle handle = SmartBinder
                 .from(STRING_SIGNATURE)
                 .invoke(NEW_STRING_SHARED_HANDLE.apply("byteList", value))
@@ -179,8 +179,8 @@ public class Bootstrap {
         return RubyString.newStringShared(context.runtime, value, cr);
     }
 
-    public static RubyString frozenString(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
-        RubyString frozen = context.runtime.freezeAndDedupString(RubyString.newStringShared(context.runtime, value, cr));
+    public static RubyString frozenString(MutableCallSite site, ByteList value, int cr, String file, int line, ThreadContext context) throws Throwable {
+        RubyString frozen = IRRuntimeHelpers.newFrozenString(context, value, cr, file, line);
         MethodHandle handle = Binder.from(RubyString.class, ThreadContext.class)
                 .dropAll()
                 .constant(frozen);

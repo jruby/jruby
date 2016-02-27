@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 EnvUtil.suppress_warning {require 'continuation'}
 require 'stringio'
@@ -33,18 +34,16 @@ class TestEnumerable < Test::Unit::TestCase
     $VERBOSE = @verbose
   end
 
-  def assert_not_warn
-    begin
-      org_stderr = $stderr
-      v = $VERBOSE
-      $stderr = StringIO.new(warn = '')
-      $VERBOSE = true
-      yield
-    ensure
-      $stderr = org_stderr
-      $VERBOSE = v
-    end
-    assert_equal("", warn)
+  def test_grep_v
+    assert_equal([3], @obj.grep_v(1..2))
+    a = []
+    @obj.grep_v(2) {|x| a << x }
+    assert_equal([1, 3, 1], a)
+
+    a = []
+    lambda = ->(x, i) {a << [x, i]}
+    @obj.each_with_index.grep_v(proc{|x,i|x!=2}, &lambda)
+    assert_equal([[2, 1], [2, 4]], a)
   end
 
   def test_grep
@@ -115,6 +114,36 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal([1, 2, 3, 1, 2], @obj.to_a)
   end
 
+  def test_to_a_size_symbol
+    sym = Object.new
+    class << sym
+      include Enumerable
+      def each
+        self
+      end
+
+      def size
+        :size
+      end
+    end
+    assert_equal([], sym.to_a)
+  end
+
+  def test_to_a_size_infinity
+    inf = Object.new
+    class << inf
+      include Enumerable
+      def each
+        self
+      end
+
+      def size
+        Float::INFINITY
+      end
+    end
+    assert_equal([], inf.to_a)
+  end
+
   def test_to_h
     obj = Object.new
     def obj.each(*args)
@@ -174,6 +203,7 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal(1, @obj.first)
     assert_equal([1, 2, 3], @obj.first(3))
     assert_nil(@empty.first)
+    assert_equal([], @empty.first(10))
 
     bug5801 = '[ruby-dev:45041]'
     assert_in_out_err([], <<-'end;', [], /unexpected break/)
@@ -193,6 +223,7 @@ class TestEnumerable < Test::Unit::TestCase
 
   def test_sort
     assert_equal([1, 1, 2, 2, 3], @obj.sort)
+    assert_equal([3, 2, 2, 1, 1], @obj.sort {|x, y| y <=> x })
   end
 
   def test_sort_by
@@ -208,6 +239,8 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal(false, @obj.all? {|x| x < 3 })
     assert_equal(true, @obj.all?)
     assert_equal(false, [true, true, false].all?)
+    assert_equal(true, [].all?)
+    assert_equal(true, @empty.all?)
   end
 
   def test_any
@@ -215,6 +248,8 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal(false, @obj.any? {|x| x > 3 })
     assert_equal(true, @obj.any?)
     assert_equal(false, [false, false, false].any?)
+    assert_equal(false, [].any?)
+    assert_equal(false, @empty.any?)
   end
 
   def test_one
@@ -226,6 +261,8 @@ class TestEnumerable < Test::Unit::TestCase
     assert(!(%w{ant bear cat}.one? {|word| word.length < 4}))
     assert(!([ nil, true, 99 ].one?))
     assert([ nil, true, false ].one?)
+    assert(![].one?)
+    assert(!@empty.one?)
   end
 
   def test_none
@@ -237,6 +274,8 @@ class TestEnumerable < Test::Unit::TestCase
     assert([].none?)
     assert([nil].none?)
     assert([nil,false].none?)
+    assert(![nil,false,true].none?)
+    assert(@empty.none?)
   end
 
   def test_min
@@ -251,6 +290,8 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal(%w[albatross dog], ary.min(2))
     assert_equal(%w[dog horse],
                  ary.min(2) {|a,b| a.length <=> b.length })
+    assert_equal([13, 14], [20, 32, 32, 21, 30, 25, 29, 13, 14].min(2))
+    assert_equal([2, 4, 6, 7], [2, 4, 8, 6, 7].min(4))
   end
 
   def test_max
@@ -265,6 +306,7 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal(%w[horse dog], ary.max(2))
     assert_equal(%w[albatross horse],
                  ary.max(2) {|a,b| a.length <=> b.length })
+    assert_equal([3, 2], [0, 0, 0, 0, 0, 0, 1, 3, 2].max(2))
   end
 
   def test_minmax
@@ -276,6 +318,7 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal([1, 3], [2,3,1].minmax)
     assert_equal([3, 1], [2,3,1].minmax {|a,b| b <=> a })
     assert_equal([1, 3], [2,2,3,3,1,1].minmax)
+    assert_equal([nil, nil], [].minmax)
   end
 
   def test_min_by
@@ -286,6 +329,7 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal("dog", a.min_by {|x| x.length })
     assert_equal(3, [2,3,1].min_by {|x| -x })
     assert_equal(%w[dog horse], a.min_by(2) {|x| x.length })
+    assert_equal([13, 14], [20, 32, 32, 21, 30, 25, 29, 13, 14].min_by(2) {|x| x})
   end
 
   def test_max_by
@@ -296,6 +340,7 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal("albatross", a.max_by {|x| x.length })
     assert_equal(1, [2,3,1].max_by {|x| -x })
     assert_equal(%w[albatross horse], a.max_by(2) {|x| x.length })
+    assert_equal([3, 2], [0, 0, 0, 0, 0, 0, 1, 3, 2].max_by(2) {|x| x})
   end
 
   def test_minmax_by
@@ -364,6 +409,14 @@ class TestEnumerable < Test::Unit::TestCase
     ary.clear
     (1..10).each_slice(3, &lambda {|a, *| ary << a})
     assert_equal([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]], ary, bug9749)
+
+    ary.clear
+    (1..10).each_slice(10) {|a| ary << a}
+    assert_equal([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]], ary)
+
+    ary.clear
+    (1..10).each_slice(11) {|a| ary << a}
+    assert_equal([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]], ary)
   end
 
   def test_each_cons
@@ -375,12 +428,23 @@ class TestEnumerable < Test::Unit::TestCase
     ary.clear
     (1..5).each_cons(3, &lambda {|a, *| ary << a})
     assert_equal([[1, 2, 3], [2, 3, 4], [3, 4, 5]], ary, bug9749)
+
+    ary.clear
+    (1..5).each_cons(5) {|a| ary << a}
+    assert_equal([[1, 2, 3, 4, 5]], ary)
+
+    ary.clear
+    (1..5).each_cons(6) {|a| ary << a}
+    assert_empty(ary)
   end
 
   def test_zip
     assert_equal([[1,1],[2,2],[3,3],[1,1],[2,2]], @obj.zip(@obj))
+    assert_equal([["a",1],["b",2],["c",3]], ["a", "b", "c"].zip(@obj))
+
     a = []
-    @obj.zip([:a, :b, :c]) {|x,y| a << [x, y] }
+    result = @obj.zip([:a, :b, :c]) {|x,y| a << [x, y] }
+    assert_nil result
     assert_equal([[1,:a],[2,:b],[3,:c],[1,nil],[2,nil]], a)
 
     a = []
@@ -399,6 +463,8 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal([[1, 3], [2, 4], [3, nil], [1, nil], [2, nil]], @obj.zip(ary))
     def ary.to_ary; [5, 6]; end
     assert_equal([[1, 5], [2, 6], [3, nil], [1, nil], [2, nil]], @obj.zip(ary))
+    obj = eval("class C\u{1f5ff}; self; end").new
+    assert_raise_with_message(TypeError, /C\u{1f5ff}/) {(1..1).zip(obj)}
   end
 
   def test_take
@@ -482,22 +548,6 @@ class TestEnumerable < Test::Unit::TestCase
     e = @obj.chunk {|elt| elt & 2 == 0 ? false : true }
     assert_equal([[false, [1]], [true, [2, 3]], [false, [1]], [true, [2]]], e.to_a)
 
-    e = @obj.chunk(acc: 0) {|elt, h| h[:acc] += elt; h[:acc].even? }
-    assert_equal([[false, [1,2]], [true, [3]], [false, [1,2]]], e.to_a)
-    assert_equal([[false, [1,2]], [true, [3]], [false, [1,2]]], e.to_a) # this tests h is duplicated.
-
-    hs = [{}]
-    e = [:foo].chunk(hs[0]) {|elt, h|
-      hs << h
-      true
-    }
-    assert_equal([[true, [:foo]]], e.to_a)
-    assert_equal([[true, [:foo]]], e.to_a)
-    assert_equal([{}, {}, {}], hs)
-    assert_not_same(hs[0], hs[1])
-    assert_not_same(hs[0], hs[2])
-    assert_not_same(hs[1], hs[2])
-
     e = @obj.chunk {|elt| elt < 3 ? :_alone : true }
     assert_equal([[:_alone, [1]],
                   [:_alone, [2]],
@@ -527,26 +577,10 @@ class TestEnumerable < Test::Unit::TestCase
     e = @obj.slice_before {|elt| elt.odd? }
     assert_equal([[1,2], [3], [1,2]], e.to_a)
 
-    e = @obj.slice_before(acc: 0) {|elt, h| h[:acc] += elt; h[:acc].even? }
-    assert_equal([[1,2], [3,1,2]], e.to_a)
-    assert_equal([[1,2], [3,1,2]], e.to_a) # this tests h is duplicated.
-
-    hs = [{}]
-    e = [:foo].slice_before(hs[0]) {|elt, h|
-      hs << h
-      true
-    }
-    assert_equal([[:foo]], e.to_a)
-    assert_equal([[:foo]], e.to_a)
-    assert_equal([{}, {}, {}], hs)
-    assert_not_same(hs[0], hs[1])
-    assert_not_same(hs[0], hs[2])
-    assert_not_same(hs[1], hs[2])
-
     ss = %w[abc defg h ijk l mno pqr st u vw xy z]
     assert_equal([%w[abc defg h], %w[ijk l], %w[mno], %w[pqr st u vw xy z]],
                  ss.slice_before(/\A...\z/).to_a)
-    assert_not_warn{ss.slice_before(/\A...\z/).to_a}
+    assert_warning("") {ss.slice_before(/\A...\z/).to_a}
   end
 
   def test_slice_after0
@@ -644,6 +678,11 @@ class TestEnumerable < Test::Unit::TestCase
 
   def test_slice_when_contiguously_increasing_integers
     e = [1,4,9,10,11,12,15,16,19,20,21].slice_when {|i, j| i+1 != j }
+    assert_equal([[1], [4], [9,10,11,12], [15,16], [19,20,21]], e.to_a)
+  end
+
+  def test_chunk_while_contiguously_increasing_integers
+    e = [1,4,9,10,11,12,15,16,19,20,21].chunk_while {|i, j| i+1 == j }
     assert_equal([[1], [4], [9,10,11,12], [15,16], [19,20,21]], e.to_a)
   end
 

@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'win32/importer'
 require 'Win32API'
 
@@ -63,7 +64,7 @@ It uses importer to call Win32 Registry APIs.
     Win32::Registry object whose key is predefined key.
 For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/predefined_keys.asp] article.
 
-=end
+=end rdoc
 
   WCHAR = Encoding::UTF_16LE
   WCHAR_NUL = "\0".encode(WCHAR).freeze
@@ -326,7 +327,7 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
         case type
         when REG_SZ, REG_EXPAND_SZ, REG_MULTI_SZ
           data = data.encode(WCHAR)
-          size ||= data.size + 1
+          size ||= data.bytesize + WCHAR_SIZE
         end
         check RegSetValueExW.call(hkey, make_wstr(name), 0, type, data, size)
       end
@@ -377,15 +378,16 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
       }
     end
 
-    @@type2name = { }
-    %w[
+    @@type2name = %w[
       REG_NONE REG_SZ REG_EXPAND_SZ REG_BINARY REG_DWORD
       REG_DWORD_BIG_ENDIAN REG_LINK REG_MULTI_SZ
       REG_RESOURCE_LIST REG_FULL_RESOURCE_DESCRIPTOR
       REG_RESOURCE_REQUIREMENTS_LIST REG_QWORD
-    ].each do |type|
-      @@type2name[Constants.const_get(type)] = type
-    end
+    ].inject([]) do |ary, type|
+      type.freeze
+      ary[Constants.const_get(type)] = type
+      ary
+    end.freeze
 
     #
     # Convert registry type value to readable string.

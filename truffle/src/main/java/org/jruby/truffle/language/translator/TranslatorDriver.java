@@ -25,7 +25,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -79,7 +79,7 @@ public class TranslatorDriver {
                     }
                 }
 
-                frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+                frame = RubyArguments.getDeclarationFrame(frame);
             }
         }
 
@@ -169,9 +169,9 @@ public class TranslatorDriver {
 
             for (int n = 0; n < argumentNames.length; n++) {
                 final String name = argumentNames[n];
-                final RubyNode readNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.NIL);
+                final RubyNode readNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehavior.NIL);
                 final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(name);
-                sequence.add(new WriteLocalVariableNode(context, sourceSection, readNode, slot));
+                sequence.add(new WriteLocalVariableNode(context, sourceSection, slot, readNode));
             }
 
             sequence.add(truffleNode);
@@ -209,7 +209,7 @@ public class TranslatorDriver {
         } else {
             SourceSection sourceSection = SourceSection.createUnavailable("Unknown source section", "(unknown)");
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false, false, false);
-            final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
+            final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), parseEnvironment,
                     parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frame.getFrameDescriptor());

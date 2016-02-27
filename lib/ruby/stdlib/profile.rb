@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'profiler'
 
 # Commented out since JRuby doesn't have RubyVM namespace.

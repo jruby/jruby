@@ -171,6 +171,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             /* disable line code conversion */
             constants.setConstant("BINARY", runtime.newFixnum(OpenFlags.O_BINARY.intValue()));
         }
+        // FIXME: Need Windows value for this
+        constants.setConstant("SHARE_DELETE", runtime.newFixnum(0));
         if (OpenFlags.O_SYNC.defined()) {
             /* any write operation perform synchronously */
             constants.setConstant("SYNC", runtime.newFixnum(OpenFlags.O_SYNC.intValue()));
@@ -222,6 +224,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // readlink is not available on Windows. See below and jruby/jruby#3287.
             // TODO: MRI does not implement readlink on Windows, but perhaps we could?
             fileClass.searchMethod("readlink").setNotImplemented(true);
+
+            fileClass.searchMethod("mkfifo").setNotImplemented(true);
         }
 
         return fileClass;
@@ -1217,6 +1221,30 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return RubyFixnum.newFixnum(runtime, size);
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject mkfifo(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        if (Platform.IS_WINDOWS) throw context.runtime.newNotImplementedError("mkfifo");
+
+        return mkfifo(context, get_path(context, path), 0666);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject mkfifo(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject mode) {
+        if (Platform.IS_WINDOWS) throw context.runtime.newNotImplementedError("mkfifo");
+
+        return mkfifo(context, get_path(context, path), RubyNumeric.num2int(mode));
+    }
+
+    public static IRubyObject mkfifo(ThreadContext context, RubyString path, int mode) {
+        Ruby runtime = context.runtime;
+        String decodedPath = JRubyFile.createResource(runtime, path.toString()).absolutePath();
+
+        if (runtime.getPosix().mkfifo(decodedPath, mode) != 0) {
+            throw runtime.newErrnoFromInt(runtime.getPosix().errno(), decodedPath);
+        }
+        return RubyFixnum.zero(runtime);
+    }
+
     public String getPath() {
         if (openFile == null) return null;
         return openFile.getPath();
@@ -1371,10 +1399,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static FileResource fileResource(IRubyObject pathOrFile) {
         Ruby runtime = pathOrFile.getRuntime();
 
-        if (pathOrFile instanceof RubyFile) {
-            return JRubyFile.createResource(runtime, ((RubyFile) pathOrFile).getPath());
-        } else if (pathOrFile instanceof RubyIO) {
-            return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).openFile.getPath());
+        if (pathOrFile instanceof RubyIO) {
+            return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).getOpenFileChecked().getPath());
         }
 
         ThreadContext context = runtime.getCurrentContext();

@@ -91,7 +91,6 @@ public final class ThreadContext {
     private boolean isWithinTrace;
 
     private RubyThread thread;
-    private RubyThread rootThread; // thread for fiber purposes
     private static final WeakReference<ThreadFiber> NULL_FIBER_REF = new WeakReference<ThreadFiber>(null);
     private WeakReference<ThreadFiber> fiber = NULL_FIBER_REF;
     private ThreadFiber rootFiber; // hard anchor for root threads' fibers
@@ -308,8 +307,7 @@ public final class ThreadContext {
     }
 
     public RubyThread getFiberCurrentThread() {
-        if (rootThread != null) return rootThread;
-        return thread;
+        return thread.getFiberCurrentThread();
     }
 
     public RubyDateFormatter getRubyDateFormatter() {
@@ -320,7 +318,6 @@ public final class ThreadContext {
 
     public void setThread(RubyThread thread) {
         this.thread = thread;
-        this.rootThread = thread; // may be reset by fiber
 
         // associate the thread with this context, unless we're clearing the reference
         if (thread != null) {
@@ -337,15 +334,11 @@ public final class ThreadContext {
     }
 
     public void setFiber(ThreadFiber fiber) {
-        this.fiber = new WeakReference(fiber);
+        this.fiber = new WeakReference<ThreadFiber>(fiber);
     }
 
     public void setRootFiber(ThreadFiber rootFiber) {
         this.rootFiber = rootFiber;
-    }
-
-    public void setRootThread(RubyThread rootThread) {
-        this.rootThread = rootThread;
     }
 
     //////////////////// CATCH MANAGEMENT ////////////////////////
@@ -667,16 +660,18 @@ public final class ThreadContext {
 
         if (trace == null) return nil;
 
-        RubyArray newTrace = runtime.newArray(trace.length);
+        final RubyClass stringClass = runtime.getString();
+        final IRubyObject[] traceArray = new IRubyObject[trace.length];
 
-        for (int i = level; i - level < trace.length; i++) {
-            RubyString str = RubyString.newString(runtime, trace[i - level].mriStyleString());
-            newTrace.append(str);
+        for (int i = 0; i < trace.length; i++) {
+            traceArray[i] = new RubyString(runtime, stringClass, trace[i].mriStyleString());
         }
 
-        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(newTrace);
+        RubyArray backTrace = RubyArray.newArrayNoCopy(runtime, traceArray);
 
-        return newTrace;
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
+
+        return backTrace;
     }
 
     /**
@@ -765,7 +760,7 @@ public final class ThreadContext {
         if (javaStackTrace == null || javaStackTrace.length == 0) return "";
 
         return TraceType.printBacktraceJRuby(
-                new BacktraceData(javaStackTrace, new BacktraceElement[0], true, false, false).getBacktraceWithoutRuby(),
+                new BacktraceData(javaStackTrace, BacktraceElement.EMPTY_ARRAY, true, false, false).getBacktraceWithoutRuby(),
                 ex.getClass().getName(),
                 ex.getLocalizedMessage(),
                 color);

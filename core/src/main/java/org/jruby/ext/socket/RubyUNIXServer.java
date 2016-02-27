@@ -34,6 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -102,8 +103,19 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod
     public IRubyObject accept_nonblock(ThreadContext context) {
+        return accept_nonblock(context, context.runtime, true);
+    }
+
+    @JRubyMethod
+    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject _opts) {
         Ruby runtime = context.runtime;
 
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", _opts) != runtime.getFalse();
+
+        return accept_nonblock(context, runtime, exception);
+    }
+
+    public IRubyObject accept_nonblock(ThreadContext context, Ruby runtime, boolean ex) {
         SelectableChannel selectable = (SelectableChannel)getChannel();
 
         synchronized (selectable.blockingLock()) {
@@ -127,6 +139,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
             } catch (IOException ioe) {
                 if (ioe.getMessage().equals("accept failed: Resource temporarily unavailable")) {
+                    if (!ex) return runtime.newSymbol("wait_readable");
                     throw runtime.newErrnoEAGAINReadableError("accept");
                 }
 

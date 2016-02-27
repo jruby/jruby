@@ -9,43 +9,35 @@
  */
 package org.jruby.truffle.language.exceptions;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Rescues any of a set of classes.
- */
 public class RescueClassesNode extends RescueNode {
 
     @Children final RubyNode[] handlingClassNodes;
 
-    public RescueClassesNode(RubyContext context, SourceSection sourceSection, RubyNode[] handlingClassNodes, RubyNode body) {
+    public RescueClassesNode(RubyContext context, SourceSection sourceSection,
+                             RubyNode[] handlingClassNodes, RubyNode body) {
         super(context, sourceSection, body);
         this.handlingClassNodes = handlingClassNodes;
     }
 
+    @ExplodeLoop
     @Override
     public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
-        CompilerDirectives.transferToInterpreter();
-
-        final DynamicObject exceptionRubyClass = Layouts.BASIC_OBJECT.getLogicalClass(exception);
-
         for (RubyNode handlingClassNode : handlingClassNodes) {
-            // TODO(CS): what if we don't get a class?
-
             final DynamicObject handlingClass = (DynamicObject) handlingClassNode.execute(frame);
 
-            if (ModuleOperations.assignableTo(exceptionRubyClass, handlingClass)) {
+            if (getIsANode().executeIsA(exception, handlingClass)) {
                 return true;
             }
         }
 
         return false;
     }
+
 }

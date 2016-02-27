@@ -1,4 +1,5 @@
 # coding: utf-8
+# frozen_string_literal: false
 
 require 'test/unit'
 require 'webrick'
@@ -11,19 +12,19 @@ module TestXMLRPC
 class Test_Webrick < Test::Unit::TestCase
   include WEBrick_Testing
 
-  @@basic_auth = WEBrick::HTTPAuth::BasicAuth.new(
-    :Realm => 'auth',
-    :UserDB => WEBrick::HTTPAuth::Htpasswd.new(File.expand_path('./htpasswd', File.dirname(__FILE__))),
-    :Logger => Logger.new(File::NULL),
-  )
-
-  def create_servlet
+  def create_servlet(server)
     s = XMLRPC::WEBrickServlet.new
 
-    def s.service(req, res)
-      @@basic_auth.authenticate(req, res)
+    basic_auth = WEBrick::HTTPAuth::BasicAuth.new(
+      :Realm => 'auth',
+      :UserDB => WEBrick::HTTPAuth::Htpasswd.new(File.expand_path('./htpasswd', File.dirname(__FILE__))),
+      :Logger => server.logger,
+    )
+
+    class << s; self end.send(:define_method, :service) {|req, res|
+      basic_auth.authenticate(req, res)
       super(req, res)
-    end
+    }
 
     s.add_handler("test.add") do |a,b|
       a + b
@@ -47,7 +48,7 @@ class Test_Webrick < Test::Unit::TestCase
     return s
   end
 
-  def setup_http_server(use_ssl)
+  def setup_http_server_option(use_ssl)
     option = {
       :BindAddress => "localhost",
       :Port => 0,
@@ -61,14 +62,14 @@ class Test_Webrick < Test::Unit::TestCase
       )
     end
 
-    start_server(option) {|w| w.mount('/RPC2', create_servlet) }
+    option
   end
 
   def test_client_server
     # NOTE: I don't enable SSL testing as this hangs
     [false].each do |use_ssl|
-      begin
-        addr = setup_http_server(use_ssl)
+      option = setup_http_server_option(use_ssl)
+      with_server(option, method(:create_servlet)) {|addr|
         @s = XMLRPC::Client.new3(:host => addr.ip_address, :port => addr.ip_port, :use_ssl => use_ssl)
         @s.user = 'admin'
         @s.password = 'admin'
@@ -83,9 +84,7 @@ class Test_Webrick < Test::Unit::TestCase
           do_test
         end
         @s.http.finish
-      ensure
-        stop_server
-      end
+      }
     end
   end
 

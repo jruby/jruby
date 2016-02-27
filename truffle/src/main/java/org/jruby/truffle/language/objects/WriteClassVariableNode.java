@@ -38,7 +38,7 @@ public class WriteClassVariableNode extends RubyNode {
 
         // TODO CS 21-Feb-16 these two operations are uncached and use loops
 
-        final DynamicObject module = lexicalScope.resolveTargetModule();
+        final DynamicObject module = lexicalScope.resolveTargetModuleForClassVariables();
 
         ModuleOperations.setClassVariable(getContext(), module, name, rhsValue, this);
 

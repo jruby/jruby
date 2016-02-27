@@ -34,11 +34,11 @@ import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
-import org.jruby.util.func.Function2;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -186,12 +186,11 @@ public abstract class ThreadNodes {
 
             final DynamicObject[] result = new DynamicObject[1];
 
-            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new Function2<Void, DynamicObject, Node>() {
+            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new SafepointAction() {
                 @Override
-                public Void apply(DynamicObject thread, Node currentNode) {
+                public void run(DynamicObject thread, Node currentNode) {
                     final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
                     result[0] = ExceptionNodes.backtraceAsRubyStringArray(getContext(), null, backtrace);
-                    return null;
                 }
             });
 
@@ -230,11 +229,10 @@ public abstract class ThreadNodes {
                 return rubyThread;
             }
 
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new Function2<Void, DynamicObject, Node>() {
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
                 @Override
-                public Void apply(DynamicObject currentThread, Node currentNode) {
+                public void run(DynamicObject currentThread, Node currentNode) {
                     shutdown(getContext(), currentThread, currentNode);
-                    return null;
                 }
             });
 

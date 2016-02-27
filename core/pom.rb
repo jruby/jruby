@@ -51,7 +51,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.9'
+  jar 'org.jruby.joni:joni:2.1.10-SNAPSHOT'
   jar 'org.jruby.extras:bytelist:1.0.13'
   jar 'org.jruby.jcodings:jcodings:1.0.17'
   jar 'org.jruby:dirgra:0.3'
@@ -218,7 +218,6 @@ project 'JRuby Core' do
           'forkCount' =>  '1',
           'reuseForks' =>  'false',
           'systemProperties' => {
-            'jruby.compat.version' =>  '1.9',
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',

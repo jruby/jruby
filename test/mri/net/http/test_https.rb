@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require "test/unit"
 begin
   require 'net/https'
@@ -73,12 +74,44 @@ class TestNetHTTPS < Test::Unit::TestCase
     http.get("/")
     http.finish # three times due to possible bug in OpenSSL 0.9.8
 
+    sid = http.instance_variable_get(:@ssl_session).id
+
     http.start
     http.get("/")
 
     socket = http.instance_variable_get(:@socket).io
 
     assert socket.session_reused?
+
+    assert_equal sid, http.instance_variable_get(:@ssl_session).id
+
+    http.finish
+  rescue SystemCallError
+    skip $!
+  end
+
+  def test_session_reuse_but_expire
+    http = Net::HTTP.new("localhost", config("port"))
+    http.use_ssl = true
+    http.verify_callback = Proc.new do |preverify_ok, store_ctx|
+      store_ctx.current_cert.to_der == config('ssl_certificate').to_der
+    end
+
+    http.ssl_timeout = -1
+    http.start
+    http.get("/")
+    http.finish
+
+    sid = http.instance_variable_get(:@ssl_session).id
+
+    http.start
+    http.get("/")
+
+    socket = http.instance_variable_get(:@socket).io
+    assert_equal false, socket.session_reused?
+
+    assert_not_equal sid, http.instance_variable_get(:@ssl_session).id
+
     http.finish
   rescue SystemCallError
     skip $!
@@ -117,6 +150,14 @@ class TestNetHTTPS < Test::Unit::TestCase
       end
     }
     assert_match(/certificate verify failed/, ex.message)
+    unless /mswin|mingw/ =~ RUBY_PLATFORM
+      # on Windows, Errno::ECONNRESET will be raised, and it'll be eaten by
+      # WEBrick
+      @log_tester = lambda {|log|
+        assert_equal(1, log.length)
+        assert_match(/ERROR OpenSSL::SSL::SSLError:/, log[0])
+      }
+    end
   end
 
   def test_identity_verify_failure
@@ -151,4 +192,4 @@ class TestNetHTTPS < Test::Unit::TestCase
       assert th.join(10), bug4246
     }
   end
-end if defined?(OpenSSL)
+end if defined?(OpenSSL::TestUtils)

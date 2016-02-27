@@ -35,11 +35,11 @@ public class BreakNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (!ignoreMarker) {
-            final FrameOnStackMarker marker = RubyArguments.getFrameOnStackMarker(frame.getArguments());
+            final FrameOnStackMarker marker = RubyArguments.getFrameOnStackMarker(frame);
 
             if (marker != null && !marker.isOnStack()) {
                 breakFromProcClosureProfile.enter();
-                throw new RaiseException(coreLibrary().localJumpError("break from proc-closure", this));
+                throw new RaiseException(coreLibrary().breakFromProcClosure(this));
             }
         }
 

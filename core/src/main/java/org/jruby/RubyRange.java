@@ -288,6 +288,7 @@ public class RubyRange extends RubyObject {
         i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);
         i1.infectBy(i2);
+        i1.infectBy(this);
         return i1;
     }
 
@@ -298,6 +299,7 @@ public class RubyRange extends RubyObject {
         i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);
         i1.infectBy(i2);
+        i1.infectBy(this);
         return i1;
     }
 

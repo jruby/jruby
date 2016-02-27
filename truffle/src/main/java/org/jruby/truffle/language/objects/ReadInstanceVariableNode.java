@@ -38,12 +38,7 @@ public class ReadInstanceVariableNode extends RubyNode {
         final Object receiverObject = receiver.execute(frame);
 
         if (objectProfile.profile(receiverObject instanceof DynamicObject)) {
-            if (readNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readNode = insert(ReadObjectFieldNodeGen.create(getContext(), name, nil()));
-            }
-
-            return readNode.execute((DynamicObject) receiverObject);
+            return getReadNode().execute((DynamicObject) receiverObject);
         } else {
             return nil();
         }
@@ -54,12 +49,7 @@ public class ReadInstanceVariableNode extends RubyNode {
         final Object receiverObject = receiver.execute(frame);
 
         if (objectProfile.profile(receiverObject instanceof DynamicObject)) {
-            if (readNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readOrNullNode = insert(ReadObjectFieldNodeGen.create(getContext(), name, null));
-            }
-
-            if (readOrNullNode.execute((DynamicObject) receiverObject) == null) {
+            if (getReadOrNullNode().execute((DynamicObject) receiverObject) == null) {
                 return nil();
             } else {
                 return coreStrings().INSTANCE_VARIABLE.createInstance();
@@ -67,6 +57,24 @@ public class ReadInstanceVariableNode extends RubyNode {
         } else {
             return false;
         }
+    }
+
+    private ReadObjectFieldNode getReadNode() {
+        if (readNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            readNode = insert(ReadObjectFieldNodeGen.create(getContext(), name, nil()));
+        }
+
+        return readNode;
+    }
+
+    private ReadObjectFieldNode getReadOrNullNode() {
+        if (readOrNullNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            readOrNullNode = insert(ReadObjectFieldNodeGen.create(getContext(), name, null));
+        }
+
+        return readOrNullNode;
     }
 
 }

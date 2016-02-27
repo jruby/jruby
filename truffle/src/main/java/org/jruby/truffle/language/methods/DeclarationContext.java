@@ -43,11 +43,11 @@ public class DeclarationContext {
 
     private static Frame lookupVisibility(Frame frame) {
         while (frame != null) {
-            final Visibility visibility = RubyArguments.getDeclarationContext(frame.getArguments()).visibility;
+            final Visibility visibility = RubyArguments.getDeclarationContext(frame).visibility;
             if (visibility != null) {
                 return frame;
             }
-            frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+            frame = RubyArguments.getDeclarationFrame(frame);
         }
         throw new UnsupportedOperationException("No declaration frame with visibility found");
     }
@@ -73,12 +73,12 @@ public class DeclarationContext {
     public DynamicObject getModuleToDefineMethods(VirtualFrame frame, RubyContext context, SingletonClassNode singletonClassNode) {
         switch (defaultDefinee) {
         case LEXICAL_SCOPE:
-            return RubyArguments.getMethod(frame.getArguments()).getSharedMethodInfo().getLexicalScope().getLiveModule();
+            return RubyArguments.getMethod(frame).getSharedMethodInfo().getLexicalScope().getLiveModule();
         case SINGLETON_CLASS:
-            final Object self = RubyArguments.getSelf(frame.getArguments());
+            final Object self = RubyArguments.getSelf(frame);
             return singletonClassNode.executeSingletonClass(self);
         case SELF:
-            return (DynamicObject) RubyArguments.getSelf(frame.getArguments());
+            return (DynamicObject) RubyArguments.getSelf(frame);
         default:
             throw new UnsupportedOperationException();
         }

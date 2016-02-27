@@ -1,8 +1,9 @@
 # encoding: utf-8
+# frozen_string_literal: false
 
 require "optparse"
 require "rbconfig"
-# require "leakchecker"
+#require "leakchecker"
 
 ##
 # Minimal (mostly drop-in) replacement for test-unit.
@@ -73,12 +74,6 @@ module MiniTest
   # printed if the assertion fails.
 
   module Assertions
-    UNDEFINED = Object.new # :nodoc:
-
-    def UNDEFINED.inspect # :nodoc:
-      "UNDEFINED" # again with the rdoc bugs... :(
-    end
-
     ##
     # Returns the diff command to use in #diff. Tries to intelligently
     # figure out what diff to use.
@@ -311,8 +306,8 @@ module MiniTest
     #
     #   assert_operator 5, :<=, 4
 
-    def assert_operator o1, op, o2 = UNDEFINED, msg = nil
-      return assert_predicate o1, op, msg if UNDEFINED == o2
+    def assert_operator o1, op, o2 = (predicate = true; nil), msg = nil
+      return assert_predicate o1, op, msg if predicate
       msg = message(msg) { "Expected #{mu_pp(o1)} to be #{op} #{mu_pp(o2)}" }
       assert o1.__send__(op, o2), msg
     end
@@ -676,8 +671,8 @@ module MiniTest
     #   refute_operator 1, :>, 2 #=> pass
     #   refute_operator 1, :<, 2 #=> fail
 
-    def refute_operator o1, op, o2 = UNDEFINED, msg = nil
-      return refute_predicate o1, op, msg if UNDEFINED == o2
+    def refute_operator o1, op, o2 = (predicate = true; nil), msg = nil
+      return refute_predicate o1, op, msg if predicate
       msg = message(msg) { "Expected #{mu_pp(o1)} to not be #{op} #{mu_pp(o2)}"}
       refute o1.__send__(op, o2), msg
     end
@@ -1335,18 +1330,6 @@ module MiniTest
       reset
 
       ##
-      # Call this at the top of your tests when you absolutely
-      # positively need to have ordered tests. In doing so, you're
-      # admitting that you suck and your tests are weak.
-
-      def self.i_suck_and_my_tests_are_order_dependent!
-        class << self
-          undef_method :test_order if method_defined? :test_order
-          define_method :test_order do :alpha end
-        end
-      end
-
-      ##
       # Make diffs for this TestCase use #pretty_inspect so that diff
       # in assert_equal can be more details. NOTE: this is much slower
       # than the regular inspect but much more usable for complex
@@ -1362,37 +1345,7 @@ module MiniTest
 
       def self.inherited klass # :nodoc:
         @@test_suites[klass] = true
-        result = super
-
-        if ENV["EXCLUDES"]
-          begin
-            exclude_src = File.read File.join(ENV["EXCLUDES"], klass.inspect.gsub("::", "/") + ".rb")
-            excludes = {}
-            klass.send :instance_variable_set, :@excludes, excludes
-
-            def klass.exclude(name, reason)
-              @excludes[name] = reason
-            end
-
-            klass.class_eval exclude_src
-          rescue Errno::ENOENT
-            # no excludes for this class
-          end
-        end
-
-        result
-      end
-
-      class << self
-        alias method_added_without_excludes method_added
-      end
-      def self.method_added(name)
-        if @excludes && @excludes[name]
-          remove_method name
-          return false
-        end
-
-        method_added_without_excludes(name)
+        super
       end
 
       def self.test_order # :nodoc:
@@ -1442,6 +1395,8 @@ module MiniTest
       include MiniTest::Assertions
     end # class TestCase
   end # class Unit
+
+  Test = Unit::TestCase
 end # module MiniTest
 
 Minitest = MiniTest # :nodoc: because ugh... I typo this all the time

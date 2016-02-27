@@ -73,7 +73,7 @@ public class RubyStruct extends RubyObject {
     private RubyStruct(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
 
-        int size = RubyNumeric.fix2int(getInternalVariable((RubyClass)rubyClass, "__size__"));
+        int size = RubyNumeric.fix2int(getInternalVariable(rubyClass, "__size__"));
 
         values = new IRubyObject[size];
 
@@ -119,37 +119,50 @@ public class RubyStruct extends RubyObject {
     }
 
     @JRubyMethod
-    public RubyFixnum hash(ThreadContext context) {
+    public RubyFixnum hash(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
         int h = getMetaClass().getRealClass().hashCode();
+
 
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            h ^= RubyNumeric.num2long(invokedynamic(context, values[i], HASH));
+            IRubyObject hash = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+                @Override
+                public IRubyObject call(IRubyObject obj, boolean recur) {
+                    if (recur) return RubyFixnum.zero(runtime);
+                    return invokedynamic(context, obj, HASH);
+                }
+            }, values[i]);
+            h ^= RubyNumeric.num2long(hash);
         }
 
         return context.runtime.newFixnum(h);
     }
 
     private IRubyObject setByName(String name, IRubyObject value) {
-        RubyArray member = __member__();
+        final RubyArray member = __member__();
 
         modify();
 
-        for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (member.eltInternal(i).asJavaString().equals(name)) return values[i] = value;
+        for ( int i = 0; i < member.getLength(); i++ ) {
+            if ( member.eltInternal(i).asJavaString().equals(name) ) {
+                return values[i] = value;
+            }
         }
 
-        throw notStructMemberError(name);
+        return null;
     }
 
     private IRubyObject getByName(String name) {
-        RubyArray member = __member__();
+        final RubyArray member = __member__();
 
-        for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (member.eltInternal(i).asJavaString().equals(name)) return values[i];
+        for ( int i = 0; i < member.getLength(); i++ ) {
+            if ( member.eltInternal(i).asJavaString().equals(name) ) {
+                return values[i];
+            }
         }
 
-        throw notStructMemberError(name);
+        return null;
     }
 
     // Struct methods
@@ -397,7 +410,7 @@ public class RubyStruct extends RubyObject {
             Helpers.fillNil(values, provided, values.length, context.runtime);
         }
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     // NOTE: no longer used ... should it get deleted?
@@ -488,7 +501,7 @@ public class RubyStruct extends RubyObject {
         return getRuntime().newNameError("no member '" + name + "' in struct", name);
     }
 
-    public IRubyObject get(int index) {
+    public final IRubyObject get(int index) {
         return values[index];
     }
 
@@ -666,76 +679,102 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject aref(IRubyObject key) {
+        return arefImpl( key, false );
+    }
+
+    private IRubyObject arefImpl(IRubyObject key, final boolean nilOnNoMember) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
-            return getByName(key.asJavaString());
+            final String name = key.asJavaString();
+            final IRubyObject value = getByName(name);
+            if ( value == null ) {
+                if ( nilOnNoMember ) return getRuntime().getNil();
+                throw notStructMemberError(name);
+            }
+            return value;
         }
+        return aref( RubyNumeric.fix2int(key) );
+    }
 
-        int idx = RubyNumeric.fix2int(key);
+    final IRubyObject aref(int idx) {
+        int newIdx = idx < 0 ? values.length + idx : idx;
 
-        idx = idx < 0 ? values.length + idx : idx;
-
-        if (idx < 0) {
+        if (newIdx < 0) {
             throw getRuntime().newIndexError("offset " + idx + " too small for struct(size:" + values.length + ")");
-        } else if (idx >= values.length) {
+        }
+        if (newIdx >= values.length) {
             throw getRuntime().newIndexError("offset " + idx + " too large for struct(size:" + values.length + ")");
         }
 
-        return values[idx];
+        return values[newIdx];
     }
 
     @JRubyMethod(name = "[]=", required = 2)
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
-            return setByName(key.asJavaString(), value);
+            final String name = key.asJavaString();
+            final IRubyObject val = setByName(name, value);
+            if ( val == null ) throw notStructMemberError(name);
+            return value;
         }
 
         return aset(RubyNumeric.fix2int(key), value);
     }
 
     private IRubyObject aset(int idx, IRubyObject value) {
-        idx = idx < 0 ? values.length + idx : idx;
+        int newIdx = idx < 0 ? values.length + idx : idx;
 
-        if (idx < 0) {
+        if (newIdx < 0) {
             throw getRuntime().newIndexError("offset " + idx + " too small for struct(size:" + values.length + ")");
-        } else if (idx >= values.length) {
+        } else if (newIdx >= values.length) {
             throw getRuntime().newIndexError("offset " + idx + " too large for struct(size:" + values.length + ")");
         }
 
         modify();
-        return values[idx] = value;
+        return values[newIdx] = value;
     }
 
     // FIXME: This is copied code from RubyArray.  Both RE, Struct, and Array should share one impl
-    // This is also hacky since I construct ruby objects to access ruby arrays through aref instead
-    // of something lower.
     @JRubyMethod(rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
-        int olen = values.length;
-        RubyArray result = getRuntime().newArray(args.length);
+        final Ruby runtime = getRuntime();
+        final int olen = values.length;
+        RubyArray result = runtime.newArray(args.length);
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof RubyFixnum) {
-                result.append(aref(args[i]));
+            final IRubyObject arg = args[i];
+            if ( arg instanceof RubyFixnum ) {
+                result.append( aref(arg) );
                 continue;
             }
 
-            int beglen[];
-            if (!(args[i] instanceof RubyRange)) {
-            } else if ((beglen = ((RubyRange) args[i]).begLenInt(olen, 0)) == null) {
+            final int[] beglen;
+            if ( ! ( arg instanceof RubyRange ) ) {
+            }
+            else if ( ( beglen = ((RubyRange) args[i]).begLenInt(olen, 0) ) == null ) {
                 continue;
-            } else {
-                int beg = beglen[0];
-                int len = beglen[1];
-                int end = len;
-                for (int j = 0; j < end; j++) {
-                    result.append(aref(getRuntime().newFixnum(j + beg)));
+            }
+            else {
+                final int beg = beglen[0];
+                final int len = beglen[1];
+                for (int j = 0; j < len; j++) {
+                    result.append( aref(j + beg) );
                 }
                 continue;
             }
-            result.append(aref(getRuntime().newFixnum(RubyNumeric.num2long(args[i]))));
+            result.append( aref(RubyNumeric.num2int(arg)) );
         }
 
         return result;
+    }
+
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        return dig(context, args, 0);
+    }
+
+    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
+        final IRubyObject val = arefImpl( args[idx++], true );
+        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
     }
 
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {

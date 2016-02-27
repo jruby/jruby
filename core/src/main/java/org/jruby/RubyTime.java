@@ -870,7 +870,11 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     public IRubyObject zone() {
         if (isTzRelative) return getRuntime().getNil();
-        return getRuntime().newString(RubyTime.getRubyTimeZoneName(getRuntime(), dt));
+        RubyString zone = getRuntime().newString(RubyTime.getRubyTimeZoneName(getRuntime(), dt));
+
+        if (zone.isAsciiOnly()) zone.setEncoding(USASCIIEncoding.INSTANCE);
+
+        return zone;
     }
 
 	public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {

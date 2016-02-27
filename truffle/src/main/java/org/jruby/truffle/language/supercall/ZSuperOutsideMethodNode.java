@@ -48,7 +48,7 @@ public class ZSuperOutsideMethodNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final Object self = RubyArguments.getSelf(frame.getArguments());
+        final Object self = RubyArguments.getSelf(frame);
         final InternalMethod superMethod = lookupSuperMethodNode.executeLookupSuperMethod(frame, self);
 
         if (superMethod == null) {

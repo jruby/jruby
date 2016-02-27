@@ -58,6 +58,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
 
@@ -130,7 +131,7 @@ public class JavaMethod extends JavaCallable {
             return create(runtime, javaClass.getMethod(methodName, argumentTypes));
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'", methodName);
+            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass.getName(), false), methodName);
         }
     }
 
@@ -140,7 +141,7 @@ public class JavaMethod extends JavaCallable {
             return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'", methodName);
+            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass.getName(), false), methodName);
         }
     }
 

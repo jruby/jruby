@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 begin
   require "readline"
 rescue LoadError
@@ -9,8 +10,10 @@ end
 
 class TestReadline < Test::Unit::TestCase
   INPUTRC = "INPUTRC"
+  SAVED_ENV = %w[COLUMNS LINES]
 
   def setup
+    @saved_env = ENV.values_at(*SAVED_ENV)
     @inputrc, ENV[INPUTRC] = ENV[INPUTRC], IO::NULL
   end
 
@@ -24,6 +27,7 @@ class TestReadline < Test::Unit::TestCase
     end
     Readline.input = nil
     Readline.output = nil
+    SAVED_ENV.each_with_index {|k, i| ENV[k] = @saved_env[i] }
   end
 
   if !/EditLine/n.match(Readline::VERSION)
@@ -448,6 +452,18 @@ class TestReadline < Test::Unit::TestCase
     Readline::HISTORY.clear
   end if !/EditLine/n.match(Readline::VERSION)
 
+  def test_refresh_line
+    bug6232 = '[ruby-core:43957] [Bug #6232] refresh_line after set_screen_size'
+    with_temp_stdio do |stdin, stdout|
+      replace_stdio(stdin.path, stdout.path) do
+        assert_ruby_status(%w[-rreadline -], <<-'end;', bug6232)
+          Readline.set_screen_size(40, 80)
+          Readline.refresh_line
+        end;
+      end
+    end
+  end if Readline.respond_to?(:refresh_line)
+
   private
 
   def replace_stdio(stdin_path, stdout_path)
@@ -509,7 +525,6 @@ class TestReadline < Test::Unit::TestCase
   def assert_under_utf8
     return false if ENV['LC_ALL'] == 'UTF-8'
     loc = caller_locations(1, 1)[0].base_label.to_s
-    require_relative "../ruby/envutil"
     assert_separately([{"LC_ALL"=>"UTF-8"}, "-r", __FILE__], <<SRC)
 #skip "test \#{ENV['LC_ALL']}"
 #{self.class.name}.new(#{loc.dump}).run(Test::Unit::Runner.new)

@@ -1,6 +1,6 @@
 %{
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -20,11 +20,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
@@ -32,7 +32,12 @@ import org.jruby.RubyArray;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ext.ripper.RipperLexer.LexState;
+import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
+import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
+import static org.jruby.lexer.LexingCommon.EXPR_END;
+import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 
 public class RipperParser extends RipperParserBase {
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
@@ -66,6 +71,7 @@ public class RipperParser extends RipperParserBase {
 %token <IRubyObject> tDOT2 tDOT3    /* .. and ... */
 %token <IRubyObject> tAREF tASET    /* [] and []= */
 %token <IRubyObject> tLSHFT tRSHFT  /* << and >> */
+%token <String> tANDDOT	            /* &. */
 %token <IRubyObject> tCOLON2        /* :: */
 %token <IRubyObject> tCOLON3        /* :: at EXPR_BEG */
 %token <IRubyObject> tOP_ASGN       /* +=, -=  etc. */
@@ -169,6 +175,7 @@ public class RipperParser extends RipperParserBase {
 %token <IRubyObject> tSTRING_DEND
 %type <IRubyObject> kwrest_mark, f_kwrest, f_label
 %type <IRubyObject> fcall
+%type <IRubyObject> call_op call_op2
 %token <IRubyObject> tLABEL_END, tSTRING_DEND
 
 %type <IRubyObject> do then
@@ -207,7 +214,7 @@ public class RipperParser extends RipperParserBase {
 
 %%
 program       : {
-                  p.setState(LexState.EXPR_BEG);
+                  p.setState(EXPR_BEG);
                   p.pushLocalScope();
               } top_compstmt {
                   $$ = p.dispatch("on_program", $2);
@@ -261,7 +268,7 @@ compstmt        : stmts opt_terms {
                     $$ = $2;
                 }
 
- stmt_or_begin   : stmt {
+stmt_or_begin   : stmt {
                     $$ = $1;
                 }
 // FIXME: How can this new begin ever work?  is yyerror conditional in MRI?
@@ -272,7 +279,7 @@ compstmt        : stmts opt_terms {
                 }
 
 stmt            : kALIAS fitem {
-                    p.setState(LexState.EXPR_FNAME);
+                    p.setState(EXPR_FNAME);
                 } fitem {
                     $$ = p.dispatch("on_alias", $2, $4);
                 }
@@ -322,21 +329,21 @@ stmt            : kALIAS fitem {
                                     p.dispatch("on_aref_field", $1, $3),
                                     $5, $6);
                 }
-                | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
+                | primary_value call_op tIDENTIFIER tOP_ASGN command_call {
                     $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field", $1, p.intern("."), $3), 
+                                    p.dispatch("on_field", $1, $2, $3), 
                                     $4, $5);
                 }
-                | primary_value tDOT tCONSTANT tOP_ASGN command_call {
+                | primary_value call_op tCONSTANT tOP_ASGN command_call {
                     $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field",$1, p.intern("."), $3),
+                                    p.dispatch("on_field",$1, $2, $3),
                                     $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    $$ = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_opassign", 
+                    $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_const_path_field", $1, $3), 
-                                    $4, $5));
+                                    $4,
+                                    $5);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
                     $$ = p.dispatch("on_opassign", 
@@ -392,7 +399,7 @@ command_call    : command
 
 // Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command   : block_call
-                | block_call dot_or_colon operation2 command_args {
+                | block_call call_op2 operation2 command_args {
                     $$ = p.dispatch("on_method_add_arg", 
                                     p.dispatch("on_call", $1, $2, $3),
                                     $4);
@@ -418,12 +425,12 @@ command        : fcall command_args %prec tLOWEST {
                                     p.dispatch("on_command", $1, $2),
                                     $3);
                 }
-                | primary_value tDOT operation2 command_args %prec tLOWEST {
-                    $$ = p.dispatch("on_command_call", $1, p.intern("."), $3, $4);
+                | primary_value call_op operation2 command_args %prec tLOWEST {
+                    $$ = p.dispatch("on_command_call", $1, $2, $3, $4);
                 }
-                | primary_value tDOT operation2 command_args cmd_brace_block {
+                | primary_value call_op operation2 command_args cmd_brace_block {
                     $$ = p.dispatch("on_method_add_block",
-                                    p.dispatch("on_command_call", $1, p.intern("."), $3, $4),
+                                    p.dispatch("on_command_call", $1, $2, $3, $4),
                                     $5); 
                 }
                 | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
@@ -570,15 +577,15 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 | primary_value '[' opt_call_args rbracket {
                     $$ = p.dispatch("on_aref_field", $1, $3);
                 }
-                | primary_value tDOT tIDENTIFIER {
-                    $$ = p.dispatch("on_field", $1, p.intern("."), $3);
+                | primary_value call_op tIDENTIFIER {
+                    $$ = p.dispatch("on_field", $1, $2, $3);
                     
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
                     $$ = p.dispatch("on_const_path_field", $1, $3);
                 }
-                | primary_value tDOT tCONSTANT {
-		    $$ = p.dispatch("on_field", $1, p.intern("."), $3);
+                | primary_value call_op tCONSTANT {
+		    $$ = p.dispatch("on_field", $1, $2, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     $$ = p.dispatch("on_const_path_field", $1, $3);
@@ -640,14 +647,14 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 | primary_value '[' opt_call_args rbracket {
                     $$ = p.dispatch("on_aref_field", $1, $3);
                 }
-                | primary_value tDOT tIDENTIFIER {
-                    $$ = p.dispatch("on_field", $1, p.intern("."), $3);
+                | primary_value call_op tIDENTIFIER {
+                    $$ = p.dispatch("on_field", $1, $2, $3);
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
                     $$ = p.dispatch("on_field", $1, p.intern("::"), $3);
                 }
-                | primary_value tDOT tCONSTANT {
-                    $$ = p.dispatch("on_field", $1, p.intern("."), $3);
+                | primary_value call_op tCONSTANT {
+                    $$ = p.dispatch("on_field", $1, $2, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     IRubyObject val = p.dispatch("on_const_path_field", $1, $3);
@@ -693,11 +700,11 @@ cpath           : tCOLON3 cname {
 // Token:fname - A function name [!null]
 fname          : tIDENTIFIER | tCONSTANT | tFID 
                | op {
-                   p.setState(LexState.EXPR_ENDFN);
+                   p.setState(EXPR_ENDFN);
                    $$ = $1;
                }
                | reswords {
-                   p.setState(LexState.EXPR_ENDFN);
+                   p.setState(EXPR_ENDFN);
                    $$ = $1;
                }
 
@@ -721,7 +728,7 @@ undef_list      : fitem {
                     $$ = p.new_array($1);
                 }
                 | undef_list ',' {
-                    p.setState(LexState.EXPR_FNAME);
+                    p.setState(EXPR_FNAME);
                 } fitem {
                     $$ = $1.append($4);
                 }
@@ -758,14 +765,14 @@ arg             : lhs '=' arg {
                                     p.dispatch("on_aref_field", $1, $3),
                                     $5, $6);
                 }
-                | primary_value tDOT tIDENTIFIER tOP_ASGN arg {
+                | primary_value call_op tIDENTIFIER tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field", $1, p.intern("."), $3),
+                                    p.dispatch("on_field", $1, $2, $3),
                                     $4, $5);
                 }
-                | primary_value tDOT tCONSTANT tOP_ASGN arg {
+                | primary_value call_op tCONSTANT tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field", $1, p.intern("."), $3),
+                                    p.dispatch("on_field", $1, $2, $3),
                                     $4, $5);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg {
@@ -887,12 +894,8 @@ arg             : lhs '=' arg {
                 | kDEFINED opt_nl arg {
                     $$ = p.dispatch("on_defined", $3);
                 }
-                | arg '?' {
-                    p.getConditionState().begin();
-                } arg opt_nl ':' {
-                    p.getConditionState().end();
-                } arg {
-                    $$ = p.dispatch("on_ifop", $1, $4, $8);
+                | arg '?' arg opt_nl ':' arg {
+                    $$ = p.dispatch("on_ifop", $1, $3, $6);
                 }
                 | primary {
                     $$ = $1;
@@ -1036,7 +1039,7 @@ primary         : literal
                     $$ = p.dispatch("on_begin", $3);
                 }
                 | tLPAREN_ARG {
-                    p.setState(LexState.EXPR_ENDARG);
+                    p.setState(EXPR_ENDARG);
                 } rparen {
                     $$ = p.dispatch("on_paren", null);
                 }
@@ -1044,7 +1047,7 @@ primary         : literal
                     $$ = p.getCmdArgumentState().getStack();
                     p.getCmdArgumentState().reset();
                 } expr {
-                    p.setState(LexState.EXPR_ENDARG); 
+                    p.setState(EXPR_ENDARG); 
                 } rparen {
                     p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.warning("(...) interpreted as grouped expression");
@@ -1175,11 +1178,11 @@ primary         : literal
                     p.setInDef(false);
                 }
                 | kDEF singleton dot_or_colon {
-                    p.setState(LexState.EXPR_FNAME);
+                    p.setState(EXPR_FNAME);
                 } fname {
                     p.setInSingle(p.getInSingle() + 1);
                     p.pushLocalScope();
-                    p.setState(LexState.EXPR_ENDFN); /* force for args */
+                    p.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
                 } f_arglist bodystmt kEND {
                     $$ = p.dispatch("on_defs", $2, $3, $5, $7, $8);
 
@@ -1417,13 +1420,13 @@ do_block        : kDO_BLOCK {
 block_call      : command do_block {
                     $$ = p.dispatch("on_method_add_block", $1, $2);
                 }
-                | block_call dot_or_colon operation2 opt_paren_args {
+                | block_call call_op2 operation2 opt_paren_args {
                     $$ = p.method_optarg(p.dispatch("on_call", $1, $2, $3), $4);
                 }
-                | block_call dot_or_colon operation2 opt_paren_args brace_block {
+                | block_call call_op2 operation2 opt_paren_args brace_block {
                     $$ = p.method_add_block(p.dispatch("on_command_call", $1, $2, $3, $4), $5);
                 }
-                | block_call dot_or_colon operation2 opt_paren_args do_block {
+                | block_call call_op2 operation2 opt_paren_args do_block {
                     $$ = p.method_add_block(p.dispatch("on_command_call", $1, $2, $3, $4), $5);
                 }
 
@@ -1431,8 +1434,8 @@ block_call      : command do_block {
 method_call     : fcall paren_args {
                     $$ = p.dispatch("on_method_add_arg", p.dispatch("on_fcall", $1), $2);
                 }
-                | primary_value tDOT operation2 opt_paren_args {
-                    $$ = p.method_optarg(p.dispatch("on_call", $1, p.intern("."), $3), $4);
+                | primary_value call_op operation2 opt_paren_args {
+                    $$ = p.method_optarg(p.dispatch("on_call", $1, $2, $3), $4);
                 }
                 | primary_value tCOLON2 operation2 paren_args {
                     $$ = p.method_optarg(p.dispatch("on_call", $1, p.intern("::"), $3), $4);
@@ -1440,8 +1443,8 @@ method_call     : fcall paren_args {
                 | primary_value tCOLON2 operation3 {
                     $$ = p.dispatch("on_call", $1, p.intern("::"), $3);
                 }
-                | primary_value tDOT paren_args {
-                    $$ = p.method_optarg(p.dispatch("on_call", $1, p.intern("."), p.intern("call")), $3);
+                | primary_value call_op paren_args {
+                    $$ = p.method_optarg(p.dispatch("on_call", $1, $2, p.intern("call")), $3);
                 }
                 | primary_value tCOLON2 paren_args {
                     $$ = p.method_optarg(p.dispatch("on_call", $1, p.intern("::"), p.intern("call")), $3);
@@ -1517,10 +1520,14 @@ string          : tCHAR
                 }
 
 string1         : tSTRING_BEG string_contents tSTRING_END {
+                    p.heredoc_dedent($2);
+                    p.setHeredocIndent(0);
                     $$ = p.dispatch("on_string_literal", $2);
                 }
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
+                    p.heredoc_dedent($2);
+                    p.setHeredocIndent(0);
                     $$ = p.dispatch("on_xstring_literal", $2);
                 }
 
@@ -1616,7 +1623,7 @@ string_content  : tSTRING_CONTENT
                 | tSTRING_DVAR {
                     $$ = p.getStrTerm();
                     p.setStrTerm(null);
-                    p.setState(LexState.EXPR_BEG);
+                    p.setState(EXPR_BEG);
                 } string_dvar {
                     p.setStrTerm($<StrTerm>2);
                     $$ = p.dispatch("on_string_dvar", $3);
@@ -1630,17 +1637,21 @@ string_content  : tSTRING_CONTENT
                    p.getCmdArgumentState().reset();
                 } {
                    $$ = p.getState();
-                   p.setState(LexState.EXPR_BEG);
+                   p.setState(EXPR_BEG);
                 } {
                    $$ = p.getBraceNest();
                    p.setBraceNest(0);
+                } {
+                   $$ = p.getHeredocIndent();
+                   p.setHeredocIndent(0);
                 } compstmt tSTRING_DEND {
                    p.getConditionState().restart();
                    p.setStrTerm($<StrTerm>2);
                    p.getCmdArgumentState().reset($<Long>3.longValue());
-                   p.setState($<LexState>4);
+                   p.setState($<Integer>4);
                    p.setBraceNest($<Integer>5);
-                   $$ = p.dispatch("on_string_embexpr", $6);
+                   p.setHeredocIndent($<Integer>6);
+                   $$ = p.dispatch("on_string_embexpr", $7);
                 }
 
 string_dvar     : tGVAR {
@@ -1656,7 +1667,7 @@ string_dvar     : tGVAR {
 
 // Token:symbol
 symbol          : tSYMBEG sym {
-                     p.setState(LexState.EXPR_END);
+                     p.setState(EXPR_END);
                      $$ = p.dispatch("on_symbol", $2);
                 }
 
@@ -1664,7 +1675,7 @@ symbol          : tSYMBEG sym {
 sym             : fname | tIVAR | tGVAR | tCVAR
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
-                     p.setState(LexState.EXPR_END);
+                     p.setState(EXPR_END);
                      $$ = p.dispatch("on_dyna_symbol", $2);
                 }
 
@@ -1789,22 +1800,19 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
 backref         : tNTH_REF
                 | tBACK_REF
 
-superclass      : term {
-                    $$ = null;
-                }
-                | tLT {
-                   p.setState(LexState.EXPR_BEG);
+superclass      : tLT {
+                   p.setState(EXPR_BEG);
                 } expr_value term {
                     $$ = $3;
                 }
-                | error term {
+                | /* none */ {
                    $$ = null;
                 }
 
 // [!null]
 // ENEBO: Look at command_start stuff I am ripping out
 f_arglist       : tLPAREN2 f_args rparen {
-                    p.setState(LexState.EXPR_BEG);
+                    p.setState(EXPR_BEG);
                     $$ = p.dispatch("on_paren", $2);
                 }
                 | f_args term {
@@ -1925,14 +1933,14 @@ f_kw            : f_label arg_value {
                     $$ = p.keyword_arg($1, $2);
                 }
                 | f_label {
-                    $$ = p.keyword_arg($1, null);
+                    $$ = p.keyword_arg($1, p.getContext().getRuntime().getFalse());
                 }
 
 f_block_kw      : f_label primary_value {
                     $$ = p.keyword_arg($1, $2);
                 }
                 | f_label {
-                    $$ = p.keyword_arg($1, null);
+                    $$ = p.keyword_arg($1, p.getContext().getRuntime().getFalse());
                 }
 
 f_block_kwarg   : f_block_kw {
@@ -2020,7 +2028,7 @@ singleton       : var_ref {
                     $$ = $1;
                 }
                 | tLPAREN2 {
-                    p.setState(LexState.EXPR_BEG);
+                    p.setState(EXPR_BEG);
                 } expr rparen {
                     $$ = p.dispatch("on_paren", $3);
                 }
@@ -2063,6 +2071,22 @@ dot_or_colon    : tDOT {
                 | tCOLON2 {
                     $$ = $1;
                 }
+
+call_op 	: tDOT {
+                    $$ = p.intern(".");
+                }
+                | tANDDOT {
+                    $$ = p.intern("&.");
+                }
+
+call_op2        : call_op {
+                    $$ = $1;
+                }
+                | tCOLON2 {
+                   $$ = p.intern("::");
+                }
+
+ 
 opt_terms       : /* none */ | terms
 opt_nl          : /* none */ | '\n'
 rparen          : opt_nl tRPAREN {

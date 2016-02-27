@@ -1,6 +1,6 @@
 # coding: US-ASCII
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestRegexp < Test::Unit::TestCase
   def setup
@@ -119,13 +119,19 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal(nil, Regexp.last_match(1))
     assert_equal(nil, Regexp.last_match(:foo))
 
+    bug11825_name = "\u{5b9d 77f3}"
+    bug11825_str = "\u{30eb 30d3 30fc}"
+    bug11825_re = /(?<#{bug11825_name}>)#{bug11825_str}/
+
     assert_equal(["foo", "bar"], /(?<foo>.)(?<bar>.)/.names)
     assert_equal(["foo"], /(?<foo>.)(?<foo>.)/.names)
     assert_equal([], /(.)(.)/.names)
+    assert_equal([bug11825_name], bug11825_re.names)
 
     assert_equal(["foo", "bar"], /(?<foo>.)(?<bar>.)/.match("ab").names)
     assert_equal(["foo"], /(?<foo>.)(?<foo>.)/.match("ab").names)
     assert_equal([], /(.)(.)/.match("ab").names)
+    assert_equal([bug11825_name], bug11825_re.match(bug11825_str).names)
 
     assert_equal({"foo"=>[1], "bar"=>[2]},
                  /(?<foo>.)(?<bar>.)/.named_captures)
@@ -538,12 +544,35 @@ class TestRegexp < Test::Unit::TestCase
     assert_nothing_raised { $= = nil }
   end
 
+  def test_KCODE_warning
+    assert_warning(/variable \$KCODE is no longer effective; ignored/) { $KCODE = nil }
+    assert_warning(/variable \$KCODE is no longer effective/) { $KCODE = nil }
+  end
+
+  def test_ignorecase_warning
+    assert_warning(/variable \$= is no longer effective; ignored/) { $= = nil }
+    assert_warning(/variable \$= is no longer effective/) { $= }
+  end
+
   def test_match_setter
     /foo/ =~ "foo"
     m = $~
     /bar/ =~ "bar"
     $~ = m
     assert_equal("foo", $&)
+  end
+
+  def test_match_without_regexp
+    bug10877 = '[ruby-core:68209] [Bug #10877]'
+    "abc".sub("a", "")
+    assert_raise_with_message(IndexError, /foo/, bug10877) {$~["foo"]}
+    key = "\u{3042}"
+    [Encoding::UTF_8, Encoding::Shift_JIS, Encoding::EUC_JP].each do |enc|
+      idx = key.encode(enc)
+      EnvUtil.with_default_external(enc) do
+        assert_raise_with_message(IndexError, /#{idx}/, bug10877) {$~[idx]}
+      end
+    end
   end
 
   def test_last_match
@@ -571,19 +600,6 @@ class TestRegexp < Test::Unit::TestCase
 
   def test_rindex_regexp
     assert_equal(3, "foobarbaz\u3042".rindex(/b../n, 5))
-  end
-
-  def test_taint
-    m = Thread.new do
-      "foo"[/foo/]
-      $SAFE = 3
-      /foo/.match("foo")
-    end.value
-    assert_predicate(m, :tainted?)
-    assert_nothing_raised('[ruby-core:26137]') {
-      m = proc {$SAFE = 3; %r"#{ }"o}.call
-    }
-    assert_predicate(m, :tainted?)
   end
 
   def assert_regexp(re, ss, fs = [], msg = nil)

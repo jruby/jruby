@@ -103,7 +103,7 @@ public final class IdUtil {
         int len;
         if ((len = id.length()) > 1 && '@' == id.charAt(0)) {
             if (isInitialCharacter(id.charAt(1))) {
-                return isNameString(id, 2, len);
+                return isNameString19(id, 2, len);
             }
         }
         return false;
@@ -113,14 +113,14 @@ public final class IdUtil {
         int len;
         if ((len = id.length()) > 2 && '@' == id.charAt(0) && '@' == id.charAt(1)) {
             if (isInitialCharacter(id.charAt(2))) {
-                return isNameString(id, 3, len);
+                return isNameString19(id, 3, len);
             }
         }
         return false;
     }
-    
+
     public static boolean isInitialCharacter(int c) {
-        return ((c &= ~0x20) <= 'Z' && c >= 'A') || c == '_';
+        return Character.isAlphabetic(c) || c == '_';
     }
     
     public static boolean isNameCharacter(char c) {

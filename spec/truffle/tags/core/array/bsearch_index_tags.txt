@@ -1,0 +1,14 @@
+fails:Array#bsearch_index raises a TypeError when block returns a String
+fails:Array#bsearch_index returns nil when block is empty
+fails:Array#bsearch_index when not passed a block returns an Enumerator
+fails:Array#bsearch_index when not passed a block returns an Enumerator with unknown size
+fails:Array#bsearch_index when not passed a block returns index of element when block condition is satisfied
+fails:Array#bsearch_index minimum mode returns index of first element which satisfies the block
+fails:Array#bsearch_index minimum mode returns nil when block condition is never satisfied
+fails:Array#bsearch_index find any mode returns the index of any matched elements where element is between 4 <= x < 8
+fails:Array#bsearch_index find any mode returns the index of any matched elements where element is between 8 <= x < 10
+fails:Array#bsearch_index find any mode returns nil when block never returns 0
+fails:Array#bsearch_index find any mode returns the middle element when block always returns zero
+fails:Array#bsearch_index find any mode magnitude does not effect the result returns the index of any matched elements where element is between 4n <= xn < 8n
+fails:Array#bsearch_index find any mode magnitude does not effect the result returns nil when block never returns 0
+fails:Array#bsearch_index find any mode magnitude does not effect the result handles values from Bignum#coerce

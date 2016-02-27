@@ -75,7 +75,6 @@ import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
@@ -86,10 +85,8 @@ import org.jruby.ir.IRMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
@@ -1563,6 +1560,10 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz) {
+        return defineOrGetClassUnder(name, superClazz, null);
+    }
+
+    public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator) {
         // This method is intended only for defining new classes in Ruby code,
         // so it uses the allocator of the specified superclass or default to
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
@@ -1587,17 +1588,18 @@ public class RubyModule extends RubyObject {
         } else {
             if (superClazz == null) superClazz = runtime.getObject();
 
-            ObjectAllocator allocator;
-            if (superClazz == runtime.getObject()) {
-                if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
-                    allocator = REIFYING_OBJECT_ALLOCATOR;
-                } else if (Options.REIFY_VARIABLES.load()) {
-                    allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
+            if (allocator == null) {
+                if (superClazz == runtime.getObject()) {
+                    if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
+                        allocator = REIFYING_OBJECT_ALLOCATOR;
+                    } else if (Options.REIFY_VARIABLES.load()) {
+                        allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
+                    } else {
+                        allocator = OBJECT_ALLOCATOR;
+                    }
                 } else {
-                    allocator = OBJECT_ALLOCATOR;
+                    allocator = superClazz.getAllocator();
                 }
-            } else {
-                allocator = superClazz.getAllocator();
             }
 
             clazz = RubyClass.newClass(runtime, superClazz, name, allocator, this, true);
@@ -1706,10 +1708,13 @@ public class RubyModule extends RubyObject {
         }
 
         if (method.isUndefined()) {
-            throw runtime.newNameError("undefined method '" + name + "' for " +
-                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
+            throw runtime.newNameError(undefinedMethodMessage(name, getName(), isModule()), name);
         }
         return method;
+    }
+
+    public static String undefinedMethodMessage(final String name, final String modName, final boolean isModule) {
+        return "undefined method `" + name + "' for " + (isModule ? "module" : "class") + " `" + modName + "'";
     }
 
     /**
@@ -1807,14 +1812,18 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
-        Ruby runtime = context.runtime;
+        Visibility visibility = context.getCurrentVisibility();
+        return defineMethodFromBlock(context, arg0, block, visibility);
+    }
+
+    public IRubyObject defineMethodFromBlock(ThreadContext context, IRubyObject arg0, Block block, Visibility visibility) {
+        final Ruby runtime = context.runtime;
         RubySymbol nameSym = TypeConverter.checkID(arg0);
         String name = nameSym.toString();
-        DynamicMethod newMethod = null;
-        Visibility visibility = PUBLIC;
+        DynamicMethod newMethod;
 
         if (!block.isGiven()) {
-            throw getRuntime().newArgumentError("tried to create Proc object without a block");
+            throw runtime.newArgumentError("tried to create Proc object without a block");
         }
 
         // If we know it comes from IR we can convert this directly to a method and
@@ -1848,11 +1857,15 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        Ruby runtime = context.runtime;
+        Visibility visibility = context.getCurrentVisibility();
+        return defineMethodFromCallable(context, arg0, arg1, visibility);
+    }
+
+    public IRubyObject defineMethodFromCallable(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Visibility visibility) {
+        final Ruby runtime = context.runtime;
         RubySymbol nameSym = TypeConverter.checkID(arg0);
         String name = nameSym.toString();
-        DynamicMethod newMethod = null;
-        Visibility visibility = PUBLIC;
+        DynamicMethod newMethod;
 
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
@@ -1873,6 +1886,7 @@ public class RubyModule extends RubyObject {
 
         return nameSym;
     }
+
     @Deprecated
     public IRubyObject define_method(ThreadContext context, IRubyObject[] args, Block block) {
         switch (args.length) {
@@ -2568,6 +2582,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "public", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbPublic(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
         setVisibility(context, args, PUBLIC);
         return this;
     }
@@ -2577,6 +2592,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "protected", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbProtected(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
         setVisibility(context, args, PROTECTED);
         return this;
     }
@@ -2586,6 +2602,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "private", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbPrivate(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
         setVisibility(context, args, PRIVATE);
         return this;
     }
@@ -2655,12 +2672,14 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_class_method", rest = true)
     public RubyModule public_class_method(IRubyObject[] args) {
+        checkFrozen();
         getSingletonClass().setMethodVisibility(args, PUBLIC);
         return this;
     }
 
     @JRubyMethod(name = "private_class_method", rest = true)
     public RubyModule private_class_method(IRubyObject[] args) {
+        checkFrozen();
         getSingletonClass().setMethodVisibility(args, PRIVATE);
         return this;
     }
@@ -2740,7 +2759,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "remove_method", rest = true, visibility = PRIVATE)
     public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
-            removeMethod(context, args[i].asJavaString());
+            removeMethod(context, TypeConverter.checkID(args[i]).toString());
         }
         return this;
     }
@@ -2955,7 +2974,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "class_variable_defined?", required = 1)
     public IRubyObject class_variable_defined_p(ThreadContext context, IRubyObject var) {
-        String internedName = validateClassVariable(var.asJavaString().intern());
+        String internedName = validateClassVariable(var, var.asJavaString().intern());
         RubyModule module = this;
         do {
             if (module.hasClassVariable(internedName)) {
@@ -2970,7 +2989,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject class_variable_get(IRubyObject var) {
-        return getClassVar(validateClassVariable(var.asJavaString()).intern());
+        return getClassVar(var, validateClassVariable(var, var.asJavaString()).intern());
     }
 
     @JRubyMethod(name = "class_variable_get")
@@ -2982,7 +3001,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
-        return setClassVar(validateClassVariable(var.asJavaString()).intern(), value);
+        return setClassVar(validateClassVariable(var, var.asJavaString()).intern(), value);
     }
 
     @JRubyMethod(name = "class_variable_set")
@@ -3209,7 +3228,7 @@ public class RubyModule extends RubyObject {
             longName = shortName;
         }
 
-        throw runtime.newNameErrorObject("uninitialized constant " + longName, runtime.newSymbol(shortName));
+        throw runtime.newNameError("uninitialized constant " + longName, this, rubyName);
     }
 
     public RubyArray constants(ThreadContext context) {
@@ -3270,8 +3289,36 @@ public class RubyModule extends RubyObject {
         return constantNames;
     }
 
+    public void deprecateConstant(Ruby runtime, String name) {
+        ConstantEntry entry = getConstantMap().get(name);
+        if (entry == null) {
+            throw runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
+        }
+
+        storeConstant(name, entry.value, entry.hidden, true);
+        invalidateConstantCache(name);
+    }
+
+    @JRubyMethod
+    public IRubyObject deprecate_constant(ThreadContext context, IRubyObject rname) {
+        checkFrozen();
+
+        deprecateConstant(context.runtime, validateConstant(rname));
+        return this;
+    }
+
+    @JRubyMethod(rest = true)
+    public IRubyObject deprecate_constant(ThreadContext context, IRubyObject[] names) {
+        for (IRubyObject rname : names) {
+            deprecate_constant(context, rname);
+        }
+        return this;
+    }
+
     @JRubyMethod
     public IRubyObject private_constant(ThreadContext context, IRubyObject rubyName) {
+        checkFrozen();
+
         String name = validateConstant(rubyName);
 
         setConstantVisibility(context, name, true);
@@ -3290,6 +3337,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject public_constant(ThreadContext context, IRubyObject rubyName) {
+        checkFrozen();
+
         String name = validateConstant(rubyName);
 
         setConstantVisibility(context, name, false);
@@ -3324,7 +3373,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "prepended", required = 1, visibility = PRIVATE)
     public IRubyObject prepended(ThreadContext context, IRubyObject other) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     private void setConstantVisibility(ThreadContext context, String name, boolean hidden) {
@@ -3374,6 +3423,26 @@ public class RubyModule extends RubyObject {
      * @return The variable's value, or throws NameError if not found
      */
     public IRubyObject getClassVar(String name) {
+        IRubyObject value = getClassVarQuiet(name);
+
+        if (value == null) {
+            throw getRuntime().newNameError("uninitialized class variable %s in %s", this, name);
+        }
+
+        return value;
+    }
+
+    public IRubyObject getClassVar(IRubyObject nameObject, String name) {
+        IRubyObject value = getClassVarQuiet(name);
+
+        if (value == null) {
+            throw getRuntime().newNameError("uninitialized class variable %s in %s", this, nameObject);
+        }
+
+        return value;
+    }
+
+    public IRubyObject getClassVarQuiet(String name) {
         assert IdUtil.isClassVariable(name);
         Object value;
         RubyModule module = this;
@@ -3382,7 +3451,7 @@ public class RubyModule extends RubyObject {
             if ((value = module.fetchClassVariable(name)) != null) return (IRubyObject)value;
         } while ((module = module.getSuperClass()) != null);
 
-        throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName(), name);
+        return null;
     }
 
     @Deprecated
@@ -3696,7 +3765,7 @@ public class RubyModule extends RubyObject {
     public void defineConstant(String name, IRubyObject value) {
         assert value != null;
 
-        if (!IdUtil.isValidConstantName(name)) {
+        if (!IdUtil.isValidConstantName19(name)) {
             throw getRuntime().newNameError("bad constant name " + name, name);
         }
 
@@ -3940,7 +4009,14 @@ public class RubyModule extends RubyObject {
         if (IdUtil.isValidClassVariableName(name)) {
             return name;
         }
-        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", name);
+        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", this, name);
+    }
+
+    protected final String validateClassVariable(IRubyObject nameObj, String name) {
+        if (IdUtil.isValidClassVariableName(name)) {
+            return name;
+        }
+        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", this, nameObj);
     }
 
     protected final void ensureClassVariablesSettable() {
@@ -3977,6 +4053,15 @@ public class RubyModule extends RubyObject {
         if (entry.hidden && !includePrivate) {
             throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", name);
         }
+        if (entry.deprecated) {
+            final Ruby runtime = getRuntime();
+            if ( "Object".equals( getName() ) ) {
+                runtime.getWarnings().warn(ID.CONSTANT_DEPRECATED, "constant ::"+ name +" is deprecated");
+            }
+            else {
+                runtime.getWarnings().warn(ID.CONSTANT_DEPRECATED, "constant "+ getName() +"::"+ name +" is deprecated");
+            }
+        }
 
         return entry.value;
     }
@@ -4000,6 +4085,15 @@ public class RubyModule extends RubyObject {
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden);
+    }
+
+    // NOTE: private for now - not sure about the API - maybe an int mask would be better?
+    private IRubyObject storeConstant(String name, IRubyObject value, boolean hidden, boolean deprecated) {
+        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
+        assert value != null : "value is null";
+
+        ensureConstantsSettable();
+        return constantTableStore(name, value, hidden, deprecated);
     }
 
     @Deprecated
@@ -4064,7 +4158,7 @@ public class RubyModule extends RubyObject {
 
         // MRI does strlen to check for \0 vs Ruby string length.
         if ((nameString.getEncoding() != resultEncoding && !nameString.isAsciiOnly()) ||
-                nameString.toString().contains("\0")) {
+                nameString.toString().indexOf('\0') > -1 ) {
             nameString = (RubyString) nameString.inspect();
         }
 
@@ -4087,6 +4181,13 @@ public class RubyModule extends RubyObject {
             }
             throw getRuntime().newFrozenError("Module");
         }
+    }
+
+    @Override
+    public final void checkFrozen() {
+       if ( isFrozen() ) {
+           throw getRuntime().newFrozenError(isClass() ? "class" : "module");
+       }
     }
 
     protected boolean constantTableContains(String name) {
@@ -4115,8 +4216,12 @@ public class RubyModule extends RubyObject {
     }
 
     protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
+        return constantTableStore(name, value, hidden, false);
+    }
+
+    protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden, boolean deprecated) {
         Map<String, ConstantEntry> constMap = getConstantMapForWrite();
-        constMap.put(name, new ConstantEntry(value, hidden));
+        constMap.put(name, new ConstantEntry(value, hidden, deprecated));
         return value;
     }
 
@@ -4306,6 +4411,7 @@ public class RubyModule extends RubyObject {
      */
     private String cachedName;
 
+    @SuppressWarnings("unchecked")
     private volatile Map<String, ConstantEntry> constants = Collections.EMPTY_MAP;
 
     /**
@@ -4314,14 +4420,22 @@ public class RubyModule extends RubyObject {
     public static class ConstantEntry {
         public final IRubyObject value;
         public final boolean hidden;
+        final boolean deprecated;
 
         public ConstantEntry(IRubyObject value, boolean hidden) {
             this.value = value;
             this.hidden = hidden;
+            this.deprecated = false;
+        }
+
+        ConstantEntry(IRubyObject value, boolean hidden, boolean deprecated) {
+            this.value = value;
+            this.hidden = hidden;
+            this.deprecated = deprecated;
         }
 
         public ConstantEntry dup() {
-            return new ConstantEntry(value, hidden);
+            return new ConstantEntry(value, hidden, deprecated);
         }
     }
 

@@ -706,6 +706,10 @@ public class OpenFile implements Finalizable {
         return (mode & WRITABLE) != 0;
     }
 
+    public boolean isDuplex() {
+        return (mode & DUPLEX) != 0;
+    }
+
     public boolean isReadBuffered() {
         return READ_DATA_BUFFERED();
     }

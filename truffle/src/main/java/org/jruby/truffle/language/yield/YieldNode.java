@@ -10,78 +10,71 @@
 package org.jruby.truffle.language.yield;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.methods.DeclarationContext;
 
-/**
- * Yield to the current block.
- */
-public class YieldNode extends RubyNode {
+public class YieldNode extends Node {
 
-    @Children private final RubyNode[] arguments;
-    @Child private YieldDispatchHeadNode dispatch;
-    private final boolean unsplat;
+    private final RubyContext context;
+    private final DeclarationContext declarationContext;
 
-    public YieldNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {
-        super(context, sourceSection);
-        this.arguments = arguments;
-        dispatch = new YieldDispatchHeadNode(getContext());
-        this.unsplat = unsplat;
+    @Child private CallBlockNode callBlockNode;
+
+    public YieldNode(RubyContext context) {
+        this(context, DeclarationContext.BLOCK);
     }
 
-    @ExplodeLoop
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        Object[] argumentsObjects = new Object[arguments.length];
+    public YieldNode(RubyContext context, DeclarationContext declarationContext) {
+        this.context = context;
+        this.declarationContext = declarationContext;
+    }
 
-        for (int i = 0; i < arguments.length; i++) {
-            argumentsObjects[i] = arguments[i].execute(frame);
-        }
+    public Object dispatch(VirtualFrame frame,
+                           DynamicObject block,
+                           Object... argumentsObjects) {
+        return getCallBlockNode().executeCallBlock(
+                frame,
+                block,
+                Layouts.PROC.getSelf(block),
+                Layouts.PROC.getBlock(block),
+                argumentsObjects);
+    }
 
-        DynamicObject block = RubyArguments.getBlock(frame.getArguments());
+    public Object dispatchWithModifiedBlock(VirtualFrame frame,
+                                            DynamicObject block,
+                                            DynamicObject modifiedBlock,
+                                            Object... argumentsObjects) {
+        return getCallBlockNode().executeCallBlock(
+                frame,
+                block,
+                Layouts.PROC.getSelf(block),
+                modifiedBlock,
+                argumentsObjects);
+    }
 
-        if (block == null) {
+    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame,
+                                           DynamicObject block,
+                                           Object self,
+                                           Object... argumentsObjects) {
+        return getCallBlockNode().executeCallBlock(
+                currentFrame,
+                block,
+                self,
+                Layouts.PROC.getBlock(block),
+                argumentsObjects);
+    }
+
+    private CallBlockNode getCallBlockNode() {
+        if (callBlockNode == null) {
             CompilerDirectives.transferToInterpreter();
-
-            block = RubyArguments.getMethod(frame.getArguments()).getCapturedBlock();
-
-            if (block == null) {
-                throw new RaiseException(coreLibrary().noBlockToYieldTo(this));
-            }
+            callBlockNode = insert(CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null));
         }
 
-        if (unsplat) {
-            argumentsObjects = unsplat(argumentsObjects);
-        }
-
-        return dispatch.dispatch(frame, block, argumentsObjects);
-    }
-
-    @TruffleBoundary
-    private Object[] unsplat(Object[] argumentsObjects) {
-        // TOOD(CS): what is the error behaviour here?
-        assert argumentsObjects.length == 1;
-        assert RubyGuards.isRubyArray(argumentsObjects[0]);
-        return ArrayOperations.toObjectArray(((DynamicObject) argumentsObjects[0]));
-    }
-
-    @Override
-    public Object isDefined(VirtualFrame frame) {
-        if (RubyArguments.getBlock(frame.getArguments()) == null) {
-            return nil();
-        } else {
-            return create7BitString("yield", UTF8Encoding.INSTANCE);
-        }
+        return callBlockNode;
     }
 
 }

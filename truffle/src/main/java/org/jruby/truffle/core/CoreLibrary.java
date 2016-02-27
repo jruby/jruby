@@ -765,8 +765,8 @@ public class CoreLibrary {
 
             Main.printTruffleTimeMetric("after-load-core");
         } catch (RaiseException e) {
-            final Object rubyException = e.getException();
-            BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace(context, (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
+            final DynamicObject rubyException = e.getException();
+            BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace(context, rubyException, Layouts.EXCEPTION.getBacktrace(rubyException));
             throw new TruffleFatalException("couldn't load the core library", e);
         } finally {
             state = State.LOADED;
@@ -935,8 +935,13 @@ public class CoreLibrary {
         return argumentError(message, currentNode, null);
     }
 
+    @TruffleBoundary
+    public DynamicObject argumentErrorUnknownKeyword(Object name, Node currentNode) {
+        return argumentError("unknown keyword: " + name, currentNode, null);
+    }
+
+    @TruffleBoundary
     public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(argumentErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
@@ -950,13 +955,13 @@ public class CoreLibrary {
         return argumentError(String.format("invalid radix %d", radix), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject argumentErrorMissingKeyword(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("missing keyword: %s", name), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject argumentError(int passed, int required, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
     }
 
@@ -1070,6 +1075,11 @@ public class CoreLibrary {
         return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject typeErrorMustHaveWriteMethod(Object object, Node currentNode) {
+        return typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(getLogicalClass(object)).getName()), currentNode);
+    }
+
     public DynamicObject typeErrorCantConvertTo(Object from, String toClass, String methodUsed, Object result, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         String fromClass = Layouts.MODULE.getFields(getLogicalClass(from)).getName();
@@ -1092,13 +1102,13 @@ public class CoreLibrary {
         return typeError(String.format("%s is not a %s", value, expectedType), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorNoImplicitConversion(Object from, String to, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("no implicit conversion of %s into %s", Layouts.MODULE.getFields(getLogicalClass(from)).getName(), to), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorMustBe(String variable, String type, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("value of %s must be %s", variable, type), currentNode);
     }
 
@@ -1119,8 +1129,8 @@ public class CoreLibrary {
         return typeError(String.format("can't dump %s", logicalClass), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         String badClassName = Layouts.MODULE.getFields(getLogicalClass(object)).getName();
         return typeError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
     }
@@ -1172,8 +1182,8 @@ public class CoreLibrary {
         return nameError(String.format("instance variable %s not defined", name), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorReadOnly(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("%s is a read-only variable", name), name, currentNode);
     }
 

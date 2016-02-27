@@ -11,6 +11,7 @@ package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
@@ -20,6 +21,9 @@ public class ReadUserKeywordsHashNode extends RubyNode {
 
     private final int minArgumentCount;
 
+    private final ConditionProfile notEnoughArgumentsProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile lastArgumentIsHashProfile = ConditionProfile.createBinaryProfile();
+
     public ReadUserKeywordsHashNode(RubyContext context, SourceSection sourceSection, int minArgumentCount) {
         super(context, sourceSection);
         this.minArgumentCount = minArgumentCount;
@@ -27,19 +31,19 @@ public class ReadUserKeywordsHashNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final int argumentCount = RubyArguments.getArgumentsCount(frame.getArguments());
+        final int argumentCount = RubyArguments.getArgumentsCount(frame);
 
-        if (argumentCount <= minArgumentCount) {
+        if (notEnoughArgumentsProfile.profile(argumentCount <= minArgumentCount)) {
             return null;
         }
 
-        final Object lastArgument = RubyArguments.getArgument(frame.getArguments(), argumentCount - 1);
+        final Object lastArgument = RubyArguments.getArgument(frame, argumentCount - 1);
 
-        if (RubyGuards.isRubyHash(lastArgument)) {
+        if (lastArgumentIsHashProfile.profile(RubyGuards.isRubyHash(lastArgument))) {
             return lastArgument;
         }
 
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.bailout("Ruby keyword arguments aren't optimized yet");
 
         if ((boolean) ruby("last_arg.respond_to?(:to_hash)", "last_arg", lastArgument)) {
             final Object converted = ruby("last_arg.to_hash", "last_arg", lastArgument);

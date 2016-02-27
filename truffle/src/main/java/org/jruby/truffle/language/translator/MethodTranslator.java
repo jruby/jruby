@@ -24,14 +24,15 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
 import org.jruby.truffle.core.proc.ProcNodes.Type;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.CheckArityNode;
-import org.jruby.truffle.language.arguments.IsNilNode;
-import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.CheckKeywordArityNode;
+import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ShouldDestructureNode;
@@ -39,8 +40,8 @@ import org.jruby.truffle.language.control.AndNode;
 import org.jruby.truffle.language.control.IfElseNode;
 import org.jruby.truffle.language.control.NotNode;
 import org.jruby.truffle.language.control.SequenceNode;
-import org.jruby.truffle.language.dispatch.RespondToNode;
 import org.jruby.truffle.language.locals.FlipFlopStateNode;
+import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
@@ -95,19 +96,19 @@ public class MethodTranslator extends BodyTranslator {
 
         final RubyNode preludeProc;
         if (shouldConsiderDestructuringArrayArg(arity)) {
-            final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
+            final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR);
             final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
 
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-            final RubyNode writeArrayNode = new WriteLocalVariableNode(context, sourceSection, castArrayNode, arraySlot);
+            final RubyNode writeArrayNode = new WriteLocalVariableNode(context, sourceSection, arraySlot, castArrayNode);
 
             final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isProc, this);
             destructureArgumentsTranslator.pushArraySlot(arraySlot);
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
-            final RubyNode shouldDestructure = new ShouldDestructureNode(context, sourceSection, new RespondToNode(context, sourceSection, readArrayNode, "to_ary"));
+            final RubyNode shouldDestructure = new ShouldDestructureNode(context, sourceSection, readArrayNode);
 
-            final RubyNode arrayWasNotNil = sequence(context, sourceSection, Arrays.asList(writeArrayNode, new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)))));
+            final RubyNode arrayWasNotNil = sequence(context, sourceSection, Arrays.asList(writeArrayNode, new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
             final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(context, sourceSection,
                     shouldDestructure,
@@ -121,7 +122,15 @@ public class MethodTranslator extends BodyTranslator {
             preludeProc = loadArguments;
         }
 
-        final RubyNode preludeLambda = sequence(context, sourceSection, Arrays.asList(CheckArityNode.create(context, sourceSection, arityForCheck), NodeUtil.cloneNode(loadArguments)));
+        final RubyNode checkArity;
+
+        if (!arityForCheck.acceptsKeywords()) {
+            checkArity = new CheckArityNode(context, sourceSection, arityForCheck);
+        } else {
+            checkArity = new CheckKeywordArityNode(context, sourceSection, arityForCheck);
+        }
+
+        final RubyNode preludeLambda = sequence(context, sourceSection, Arrays.asList(checkArity, NodeUtil.cloneNode(loadArguments)));
 
         RubyNode body;
 
@@ -233,7 +242,15 @@ public class MethodTranslator extends BodyTranslator {
             // Use Rubinius.primitive seems to turn off arity checking. See Time.from_array for example.
             prelude = loadArguments;
         } else {
-            prelude = sequence(context, sourceSection, Arrays.asList(CheckArityNode.create(context, sourceSection, arity), loadArguments));
+            final RubyNode checkArity;
+
+            if (!arity.acceptsKeywords()) {
+                checkArity = new CheckArityNode(context, sourceSection, arity);
+            } else {
+                checkArity = new CheckKeywordArityNode(context, sourceSection, arity);
+            }
+
+            prelude = sequence(context, sourceSection, Arrays.asList(checkArity, loadArguments));
         }
 
         body = sequence(context, body.getSourceSection(), Arrays.asList(prelude, body));

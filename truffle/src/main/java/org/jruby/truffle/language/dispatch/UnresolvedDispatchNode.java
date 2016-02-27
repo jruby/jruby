@@ -115,7 +115,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         if (ignoreVisibility) {
             callerClass = null;
         } else {
-            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
         }
 
         final String methodNameString = toString(methodName);
@@ -159,7 +159,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
             callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame.getArguments()));
         } else {
-            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
         }
 
         final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);

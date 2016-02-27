@@ -9,19 +9,20 @@
  */
 package org.jruby.truffle.language.exceptions;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.objects.IsANode;
+import org.jruby.truffle.language.objects.IsANodeGen;
 
-/**
- * Base node for all nodes which may be able to rescue an exception. They have a test method
- * {@link #canHandle} and a body to execute if that test passes.
- */
 public abstract class RescueNode extends RubyNode {
 
     @Child private RubyNode body;
+
+    @Child private IsANode isANode;
 
     public RescueNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
@@ -38,6 +39,15 @@ public abstract class RescueNode extends RubyNode {
     @Override
     public void executeVoid(VirtualFrame frame) {
         body.executeVoid(frame);
+    }
+
+    protected IsANode getIsANode() {
+        if (isANode == null) {
+            CompilerDirectives.transferToInterpreter();
+            isANode = insert(IsANodeGen.create(getContext(), getSourceSection(), null, null));
+        }
+
+        return isANode;
     }
 
 }

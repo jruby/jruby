@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'rubygems/package/tar_test_case'
 require 'rubygems/package/tar_writer'
 require 'minitest/mock'
@@ -28,6 +29,16 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
     end
     assert_equal "aaaaaaaaaa#{"\0" * 502}", @io.string[512, 512]
     assert_equal 1024, @io.pos
+  end
+
+  def test_add_symlink
+    Time.stub :now, Time.at(1458518157) do
+      @tar_writer.add_symlink 'x', 'y', 0644
+
+      assert_headers_equal(tar_symlink_header('x', '', 0644, Time.now, 'y'),
+                         @io.string[0, 512])
+    end
+    assert_equal 512, @io.pos
   end
 
   def test_add_file_digest
@@ -224,27 +235,30 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
     name = File.join 'a', 'b' * 100
     assert_equal ['b' * 100, 'a'], @tar_writer.split_name(name)
 
-    assert_raises Gem::Package::TooLongFileName do
-      name = File.join 'a', 'b' * 101
+    name = File.join 'a', 'b' * 101
+    exception = assert_raises Gem::Package::TooLongFileName do
       @tar_writer.split_name name
     end
+    assert_includes exception.message, name
   end
 
   def test_split_name_too_long_prefix
     name = File.join 'a' * 155, 'b'
     assert_equal ['b', 'a' * 155], @tar_writer.split_name(name)
 
-    assert_raises Gem::Package::TooLongFileName do
-      name = File.join 'a' * 156, 'b'
+    name = File.join 'a' * 156, 'b'
+    exception = assert_raises Gem::Package::TooLongFileName do
       @tar_writer.split_name name
     end
+    assert_includes exception.message, name
   end
 
   def test_split_name_too_long_total
-    assert_raises Gem::Package::TooLongFileName do
-      @tar_writer.split_name 'a' * 257
+    name = 'a' * 257
+    exception = assert_raises Gem::Package::TooLongFileName do
+      @tar_writer.split_name name
     end
+    assert_includes exception.message, name
   end
 
 end
-

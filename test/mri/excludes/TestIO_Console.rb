@@ -1,17 +1,17 @@
-exclude :test_cooked, "needs working PTY.open to test"
-exclude :test_echo, "needs working PTY.open to test"
-exclude :test_iflush, "needs working PTY.open to test"
-exclude :test_ioflush, "needs working PTY.open to test"
-exclude :test_ioflush2, "needs working PTY.open to test"
-exclude :test_noctty, "needs working PTY.open to test"
-exclude :test_noecho, "needs working PTY.open to test"
-exclude :test_noecho2, "needs working PTY.open to test"
-exclude :test_oflush, "needs working PTY.open to test"
-exclude :test_raw, "needs working PTY.open to test"
-exclude :test_raw_minchar, "needs working PTY.open to test"
-exclude :test_raw_timeout, "needs working PTY.open to test"
-exclude :test_setecho, "needs working PTY.open to test"
-exclude :test_setecho2, "needs working PTY.open to test"
-exclude :test_stringio_getch, "console and stringio define hidden module 'generic_readable' for getch to live in"
-exclude :test_sync, "needs working PTY.open to test"
-exclude :test_winsize, "needs working PTY.open to test"
+# frozen_string_literal: false
+exclude :test_cooked, 'depends on unimplemented PTY functionality'
+exclude :test_echo, 'depends on unimplemented PTY functionality'
+exclude :test_getpass, 'not portable'
+exclude :test_iflush, 'depends on unimplemented PTY functionality'
+exclude :test_ioflush, 'depends on unimplemented PTY functionality'
+exclude :test_ioflush2, 'depends on unimplemented PTY functionality'
+exclude :test_noecho, 'depends on unimplemented PTY functionality'
+exclude :test_noecho2, 'depends on unimplemented PTY functionality'
+exclude :test_oflush, 'depends on unimplemented PTY functionality'
+exclude :test_raw, 'depends on unimplemented PTY functionality'
+exclude :test_raw!, 'depends on unimplemented PTY functionality'
+exclude :test_raw_minchar, 'depends on unimplemented PTY functionality'
+exclude :test_raw_timeout, 'depends on unimplemented PTY functionality'
+exclude :test_setecho, 'depends on unimplemented PTY functionality'
+exclude :test_setecho2, 'depends on unimplemented PTY functionality'
+exclude :test_winsize, 'depends on unimplemented PTY functionality'
