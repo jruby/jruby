@@ -21,30 +21,39 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
 public class ReadGlobalVariableNode extends RubyNode {
 
-    private final DynamicObject globalVariablesObject;
+    private final String name;
+    private final boolean isAlwaysDefined;
 
     @Child private ReadObjectFieldNode readNode;
 
-    public ReadGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
+    public ReadGlobalVariableNode(RubyContext context, SourceSection sourceSection,
+                                  String name, boolean isAlwaysDefined) {
         super(context, sourceSection);
-        this.globalVariablesObject = context.getCoreLibrary().getGlobalVariablesObject();
-        readNode = ReadObjectFieldNodeGen.create(getContext(), name, nil());
+        this.name = name;
+        this.isAlwaysDefined = isAlwaysDefined;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return readNode.execute(globalVariablesObject);
+        return getReadNode().execute(coreLibrary().getGlobalVariablesObject());
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(globalVariablesObject) != nil()) {
-            return create7BitString("global-variable", UTF8Encoding.INSTANCE);
+        if (isAlwaysDefined || getReadNode().execute(coreLibrary().getGlobalVariablesObject()) != nil()) {
+            return coreStrings().GLOBAL_VARIABLE.createInstance();
         } else {
             return nil();
         }
+    }
+
+    private ReadObjectFieldNode getReadNode() {
+        if (readNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            readNode = insert(ReadObjectFieldNodeGen.create(getContext(), name, nil()));
+        }
+
+        return readNode;
     }
 
 }
