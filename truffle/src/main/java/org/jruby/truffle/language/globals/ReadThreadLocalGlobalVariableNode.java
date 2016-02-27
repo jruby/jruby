@@ -23,6 +23,7 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNodeGen;
 
 public class ReadThreadLocalGlobalVariableNode extends RubyNode {
 
+    private final String name;
     private final boolean alwaysDefined;
 
     @Child private ThreadLocalObjectNode threadLocalVariablesObjectNode;
@@ -30,27 +31,42 @@ public class ReadThreadLocalGlobalVariableNode extends RubyNode {
 
     public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name, boolean alwaysDefined) {
         super(context, sourceSection);
+        this.name = name;
         this.alwaysDefined = alwaysDefined;
-        this.threadLocalVariablesObjectNode = ThreadLocalObjectNodeGen.create(context, sourceSection);
-        readNode = ReadObjectFieldNodeGen.create(getContext(), name, nil());
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final DynamicObject threadLocalVariablesObject = threadLocalVariablesObjectNode.executeDynamicObject(frame);
-        return readNode.execute(threadLocalVariablesObject);
+        final DynamicObject threadLocalVariablesObject = getThreadLocalVariablesObjectNode().executeDynamicObject(frame);
+        return getReadNode().execute(threadLocalVariablesObject);
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-        final DynamicObject threadLocalVariablesObject = threadLocalVariablesObjectNode.executeDynamicObject(frame);
-
-        if (alwaysDefined || readNode.execute(threadLocalVariablesObject) != nil()) {
-            return create7BitString("global-variable", UTF8Encoding.INSTANCE);
+        if (alwaysDefined || execute(frame) != nil()) {
+            return coreStrings().GLOBAL_VARIABLE.createInstance();
         } else {
             return nil();
         }
     }
+
+    private ThreadLocalObjectNode getThreadLocalVariablesObjectNode() {
+        if (threadLocalVariablesObjectNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            threadLocalVariablesObjectNode = insert(ThreadLocalObjectNodeGen.create(getContext(), getSourceSection()));
+        }
+
+        return threadLocalVariablesObjectNode;
+    }
+
+    private ReadObjectFieldNode getReadNode() {
+        if (readNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            readNode = insert(ReadObjectFieldNodeGen.create(getContext(), name, nil()));
+        }
+
+        return readNode;
+    }
+
 
 }
