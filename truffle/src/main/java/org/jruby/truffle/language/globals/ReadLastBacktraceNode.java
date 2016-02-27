@@ -12,6 +12,7 @@ package org.jruby.truffle.language.globals;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
@@ -24,6 +25,8 @@ public class ReadLastBacktraceNode extends RubyNode {
     @Child private ReadThreadLocalGlobalVariableNode getLastExceptionNode;
     @Child private CallDispatchHeadNode getBacktraceNode;
 
+    private final ConditionProfile lastExceptionNilProfile = ConditionProfile.createBinaryProfile();
+
     public ReadLastBacktraceNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
@@ -32,7 +35,7 @@ public class ReadLastBacktraceNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object lastException = getGetLastExceptionNode().execute(frame);
 
-        if (lastException == nil()) {
+        if (lastExceptionNilProfile.profile(lastException == nil())) {
             return nil();
         }
 
