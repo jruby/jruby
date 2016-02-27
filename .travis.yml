@@ -47,7 +47,6 @@ env:
     - JT='test specs :library'
     - JT='test specs :truffle'
     - JT='test integration'
-    - JTR='ci --batch ../lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
 
 matrix:
   include:
@@ -80,6 +79,7 @@ matrix:
     - env: JT=check_ambiguous_arguments
       jdk: oraclejdk8
     - env: JT='test mri'
+    - env: JTR='ci --batch ../lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required
