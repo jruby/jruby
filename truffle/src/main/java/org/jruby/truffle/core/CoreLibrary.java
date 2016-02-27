@@ -1177,8 +1177,8 @@ public class CoreLibrary {
         return nameError(String.format("instance variable %s not defined", name), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorReadOnly(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("%s is a read-only variable", name), name, currentNode);
     }
 
