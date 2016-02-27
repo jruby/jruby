@@ -33,7 +33,7 @@ public class ReadUserKeywordsHashNode extends RubyNode {
             return null;
         }
 
-        final Object lastArgument = RubyArguments.getArgument(frame.getArguments(), argumentCount - 1);
+        final Object lastArgument = RubyArguments.getArgument(frame, argumentCount - 1);
 
         if (RubyGuards.isRubyHash(lastArgument)) {
             return lastArgument;

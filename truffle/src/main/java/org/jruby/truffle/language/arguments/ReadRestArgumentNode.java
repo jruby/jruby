@@ -51,7 +51,7 @@ public class ReadRestArgumentNode extends RubyNode {
         int endIndex = count + negativeEndIndex;
 
         if (keywordArguments) {
-            final Object lastArgument = RubyArguments.getArgument(frame.getArguments(), RubyArguments.getArgumentsCount(frame) - 1);
+            final Object lastArgument = RubyArguments.getArgument(frame, RubyArguments.getArgumentsCount(frame) - 1);
 
             if (RubyGuards.isRubyHash(lastArgument)) {
                 endIndex -= 1;

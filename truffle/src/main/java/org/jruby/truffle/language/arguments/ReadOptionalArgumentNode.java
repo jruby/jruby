@@ -60,7 +60,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
         }
 
         if (RubyArguments.getArgumentsCount(frame) >= effectiveMinimum) {
-            return RubyArguments.getArgument(frame.getArguments(), index);
+            return RubyArguments.getArgument(frame, index);
         }
 
         defaultValueProfile.enter();

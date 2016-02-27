@@ -45,7 +45,7 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
             return nil();
         } else {
             if (singleArgProfile.profile(userArgumentCount == 1)) {
-                return RubyArguments.getArgument(frame.getArguments(), 0);
+                return RubyArguments.getArgument(frame, 0);
 
             } else {
                 Object[] extractedArguments = RubyArguments.getArguments(frame);

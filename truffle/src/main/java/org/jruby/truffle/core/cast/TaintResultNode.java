@@ -84,7 +84,7 @@ public class TaintResultNode extends RubyNode {
             // scenario is that the argument at that position is a NotProvided argument, which doesn't take up
             // a space in the frame.
             if (taintFromParameter < RubyArguments.getArgumentsCount(frame)) {
-                final Object argument = RubyArguments.getArgument(frame.getArguments(), taintFromParameter);
+                final Object argument = RubyArguments.getArgument(frame, taintFromParameter);
 
                 if (argument instanceof DynamicObject) {
                     final DynamicObject taintSource = (DynamicObject) argument;

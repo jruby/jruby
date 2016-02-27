@@ -27,7 +27,7 @@ public class ReadPostArgumentNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final int count = RubyArguments.getArgumentsCount(frame);
         final int effectiveIndex = count - indexFromCount;
-        return RubyArguments.getArgument(frame.getArguments(), effectiveIndex);
+        return RubyArguments.getArgument(frame, effectiveIndex);
     }
 
 }
