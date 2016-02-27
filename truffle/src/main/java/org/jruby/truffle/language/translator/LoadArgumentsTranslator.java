@@ -335,7 +335,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (useArray()) {
             readNode = ArraySliceNodeGen.create(context, sourceSection, from, to, loadArray(sourceSection));
         } else {
-            readNode = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments, required);
+            readNode = new ReadRestArgumentNode(context, sourceSection, from, -to, hasKeywordArguments, required);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
@@ -427,7 +427,7 @@ public class LoadArgumentsTranslator extends Translator {
                         considerRejectedKWArgs = true;
                         int from = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
                         int to = -argsNode.getPostCount();
-                        readRest = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments, required);
+                        readRest = new ReadRestArgumentNode(context, sourceSection, from, -to, hasKeywordArguments, required);
                     } else {
                         considerRejectedKWArgs = false;
                         readRest = null;
