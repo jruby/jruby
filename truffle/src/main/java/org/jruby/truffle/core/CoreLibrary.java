@@ -940,8 +940,8 @@ public class CoreLibrary {
         return argumentError("unknown keyword: " + name, currentNode, null);
     }
 
+    @TruffleBoundary
     public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(argumentErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
