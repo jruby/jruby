@@ -334,7 +334,7 @@ class JRubyTruffleRunner
 
     if Array === a
       if Array === b
-        return a.replace a + b.map { |v| eval_yaml_strings v }
+        return a.concat b.map { |v| eval_yaml_strings v }
       else
         return a
       end
