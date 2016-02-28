@@ -102,14 +102,19 @@ public class CodeLoader {
     }
 
     public Object execute(final org.jruby.ast.RootNode rootNode) {
-        context.getCoreLibrary().getGlobalVariablesObject().define("$0", StringOperations.createString(context, ByteList.create(context.getJRubyInterop().getArg0())), 0);
+        context.getCoreLibrary().getGlobalVariablesObject().define(
+                "$0",
+                StringOperations.createString(context, ByteList.create(context.getJRubyInterop().getArg0())));
 
         String inputFile = rootNode.getPosition().getFile();
+
         final Source source;
+
         try {
             if (!inputFile.equals("-e")) {
                 inputFile = new File(inputFile).getCanonicalPath();
             }
+
             source = context.getSourceCache().getSource(inputFile);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -117,21 +122,41 @@ public class CodeLoader {
 
         context.getFeatureLoader().setMainScriptSource(source);
 
-        final RubyRootNode originalRootNode = parse(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null);
+        final RubyRootNode originalRootNode = parse(
+                source,
+                UTF8Encoding.INSTANCE,
+                ParserContext.TOP_LEVEL,
+                null,
+                true,
+                null);
 
         final SourceSection sourceSection = originalRootNode.getSourceSection();
+
         final RubyNode wrappedBody =
                 new TopLevelRaiseHandler(context, sourceSection,
-                        Translator.sequence(context, sourceSection, Arrays.asList(new SetTopLevelBindingNode(context, sourceSection), new LoadRequiredLibrariesNode(context, sourceSection), originalRootNode.getBody())));
+                        Translator.sequence(context, sourceSection, Arrays.asList(
+                                new SetTopLevelBindingNode(context, sourceSection),
+                                new LoadRequiredLibrariesNode(context, sourceSection),
+                                originalRootNode.getBody())));
 
         final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
 
         if (rootNode.hasEndPosition()) {
-            final Object data = context.getCodeLoader().inline(null, "Truffle::Primitive.get_data(file, offset)", "file", StringOperations.createString(context, ByteList.create(inputFile)), "offset", rootNode.getEndPosition());
+            final Object data = inline(
+                    null,
+                    "Truffle::Primitive.get_data(file, offset)",
+                    "file", StringOperations.createString(context, ByteList.create(inputFile)),
+                    "offset", rootNode.getEndPosition());
+
             Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, null, "DATA", data);
         }
 
-        return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, context.getCoreLibrary().getMainObject());
+        return execute(
+                ParserContext.TOP_LEVEL,
+                DeclarationContext.TOP_LEVEL,
+                newRootNode,
+                null,
+                context.getCoreLibrary().getMainObject());
     }
 
     @CompilerDirectives.TruffleBoundary
