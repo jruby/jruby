@@ -143,7 +143,6 @@ public class CodeLoader {
     }
 
     public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
-        CompilerDirectives.transferToInterpreter();
         final MaterializedFrame evalFrame1 = Truffle.getRuntime().createMaterializedFrame(
                 RubyArguments.pack(null, null, RubyArguments.getMethod(frame), DeclarationContext.INSTANCE_EVAL, null, RubyArguments.getSelf(frame), null, new Object[]{}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
@@ -164,14 +163,6 @@ public class CodeLoader {
         final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame1);
         final RubyRootNode rootNode = context.getCodeLoader().parse(source, code.getEncoding(), ParserContext.INLINE, frame1, true, currentNode);
         return context.getCodeLoader().execute(ParserContext.INLINE, declarationContext, rootNode, frame1, RubyArguments.getSelf(frame1));
-    }
-
-    /* For debugging in Java. */
-    public static Object debugEval(String code) {
-        CompilerAsserts.neverPartOfCompilation();
-        final FrameInstance currentFrameInstance = Truffle.getRuntime().getCurrentFrame();
-        final Frame currentFrame = currentFrameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true);
-        return RubyContext.getLatestInstance().getCodeLoader().inlineRubyHelper(null, currentFrame, code);
     }
 
 }
