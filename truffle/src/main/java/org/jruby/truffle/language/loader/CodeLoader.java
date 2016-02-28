@@ -111,7 +111,7 @@ public class CodeLoader {
         final RubyRootNode originalRootNode = parse(
                 source,
                 UTF8Encoding.INSTANCE,
-                ParserContext.TOP_LEVEL,
+                ParserContext.TOP_LEVEL_FIRST,
                 null,
                 true,
                 null);

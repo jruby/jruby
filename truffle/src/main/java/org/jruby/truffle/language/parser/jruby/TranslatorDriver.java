@@ -142,7 +142,7 @@ public class TranslatorDriver implements Parser {
 
         // Translate to Ruby Truffle nodes
 
-        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
+        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL_FIRST || parserContext == ParserContext.TOP_LEVEL);
 
         RubyNode truffleNode;
 

@@ -10,5 +10,5 @@
 package org.jruby.truffle.language.parser;
 
 public enum ParserContext {
-    TOP_LEVEL, SHELL, MODULE, EVAL, INLINE
+    TOP_LEVEL_FIRST, TOP_LEVEL, SHELL, MODULE, EVAL, INLINE
 }
