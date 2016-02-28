@@ -32,9 +32,6 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 
-import java.io.File;
-import java.io.IOException;
-
 public class CodeLoader {
 
     private final RubyContext context;
