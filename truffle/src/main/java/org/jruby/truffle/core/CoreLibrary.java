@@ -80,14 +80,17 @@ import org.jruby.truffle.extra.TrufflePrimitiveNodesFactory;
 import org.jruby.truffle.interop.TruffleInteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
+import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory;
@@ -758,7 +761,8 @@ public class CoreLibrary {
 
             state = State.LOADING_RUBY_CORE;
             try {
-                context.getCodeLoader().load(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), node);
+                final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, null, true, node);
+                context.getCodeLoader().execute(TranslatorDriver.ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

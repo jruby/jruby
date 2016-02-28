@@ -50,10 +50,13 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.translator.TranslatorDriver;
 import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.tools.SimpleShell;
 import org.jruby.util.ByteList;
@@ -837,7 +840,8 @@ public abstract class TrufflePrimitiveNodes {
             }
 
             try {
-                getContext().getCodeLoader().loadFile(StringOperations.getString(getContext(), file), this);
+                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(StringOperations.getString(getContext(), file)), UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, null, true, this);
+                getContext().getCodeLoader().execute(TranslatorDriver.ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().loadErrorCannotLoad(file.toString(), this));

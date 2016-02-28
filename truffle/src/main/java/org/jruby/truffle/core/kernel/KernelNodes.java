@@ -100,6 +100,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.loader.FeatureLoader;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.LookupMethodNode;
 import org.jruby.truffle.language.methods.LookupMethodNodeGen;
@@ -674,7 +675,12 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private Object doEval(DynamicObject source, DynamicObject binding, String filename, boolean ownScopeForAssignments) {
-            final Object result = getContext().getCodeLoader().eval(ParserContext.EVAL, StringOperations.getByteListReadOnly(source), binding, ownScopeForAssignments, filename, this);
+            ByteList code = StringOperations.getByteListReadOnly(source);
+            final Source source1 = Source.fromText(code, filename);
+            final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
+            final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame);
+            final RubyRootNode rootNode = getContext().getCodeLoader().parse(source1, code.getEncoding(), ParserContext.EVAL, frame, ownScopeForAssignments, this);
+            final Object result = getContext().getCodeLoader().execute(ParserContext.EVAL, declarationContext, rootNode, frame, RubyArguments.getSelf(frame));
             assert result != null;
             return result;
         }

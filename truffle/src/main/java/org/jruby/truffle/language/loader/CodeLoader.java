@@ -53,36 +53,6 @@ public class CodeLoader {
         this.context = context;
     }
 
-    public void loadFile(String fileName, Node currentNode) throws IOException {
-        load(context.getSourceCache().getSource(fileName), currentNode);
-    }
-
-    public void load(Source source, Node currentNode) {
-        parseAndExecute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, context.getCoreLibrary().getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
-        final Source source = Source.fromText(code, filename);
-        return parseAndExecute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public Object eval(TranslatorDriver.ParserContext parserContext, ByteList code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
-        assert RubyGuards.isRubyBinding(binding);
-        final Source source = Source.fromText(code, filename);
-        final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
-        final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame);
-        return parseAndExecute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame), frame, ownScopeForAssignments, declarationContext, currentNode);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public Object parseAndExecute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments,
-                                  DeclarationContext declarationContext, Node currentNode) {
-        final RubyRootNode rootNode = parse(source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode);
-        return execute(parserContext, declarationContext, rootNode, parentFrame, self);
-    }
-
     @CompilerDirectives.TruffleBoundary
     public RubyRootNode parse(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         final TranslatorDriver translator = new TranslatorDriver(context);
@@ -148,14 +118,8 @@ public class CodeLoader {
     }
 
     public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
-        final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
-        final DynamicObject binding = BindingNodes.createBinding(context, evalFrame);
-        return context.getCodeLoader().eval(TranslatorDriver.ParserContext.INLINE, StringOperations.createByteList(expression), binding, true, "inline-ruby", currentNode);
-    }
-
-    private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
         CompilerDirectives.transferToInterpreter();
-        final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
+        final MaterializedFrame evalFrame1 = Truffle.getRuntime().createMaterializedFrame(
                 RubyArguments.pack(null, null, RubyArguments.getMethod(frame), DeclarationContext.INSTANCE_EVAL, null, RubyArguments.getSelf(frame), null, new Object[]{}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
 
@@ -164,10 +128,17 @@ public class CodeLoader {
         }
 
         for (int n = 0; n < arguments.length; n += 2) {
-            evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
+            evalFrame1.setObject(evalFrame1.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
         }
 
-        return evalFrame;
+        final MaterializedFrame evalFrame = evalFrame1;
+        final DynamicObject binding = BindingNodes.createBinding(context, evalFrame);
+        ByteList code = StringOperations.createByteList(expression);
+        final Source source = Source.fromText(code, "inline-ruby");
+        final MaterializedFrame frame1 = Layouts.BINDING.getFrame(binding);
+        final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame1);
+        final RubyRootNode rootNode = context.getCodeLoader().parse(source, code.getEncoding(), TranslatorDriver.ParserContext.INLINE, frame1, true, currentNode);
+        return context.getCodeLoader().execute(TranslatorDriver.ParserContext.INLINE, declarationContext, rootNode, frame1, RubyArguments.getSelf(frame1));
     }
 
     /* For debugging in Java. */

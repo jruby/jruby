@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
@@ -69,7 +70,8 @@ public class SimpleShell {
 
                 default:
                     try {
-                        final Object result = context.getCodeLoader().parseAndExecute(Source.fromText(shellLine, "shell"), UTF8Encoding.INSTANCE, ParserContext.EVAL, RubyArguments.getSelf(currentFrame.getArguments()), currentFrame, false, RubyArguments.getDeclarationContext(currentFrame.getArguments()), currentNode);
+                        final RubyRootNode rootNode = context.getCodeLoader().parse(Source.fromText(shellLine, "shell"), UTF8Encoding.INSTANCE, ParserContext.EVAL, currentFrame, false, currentNode);
+                        final Object result = context.getCodeLoader().execute(ParserContext.EVAL, RubyArguments.getDeclarationContext(currentFrame.getArguments()), rootNode, currentFrame, RubyArguments.getSelf(currentFrame.getArguments()));
 
                         String inspected;
 
