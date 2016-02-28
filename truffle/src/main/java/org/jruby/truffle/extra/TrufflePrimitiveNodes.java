@@ -63,6 +63,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.unsafe.UnsafeHolder;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -870,7 +871,36 @@ public abstract class TrufflePrimitiveNodes {
                     StringOperations.createString(getContext(),
                             ByteList.create(getContext().getJRubyInterop().getArg0())));
 
-            return getContext().getCodeLoader().execute(getContext().getInitialJRubyRootNode());
+            String inputFile = getContext().getInitialJRubyRootNode().getPosition().getFile();
+
+            final Source source;
+
+            try {
+                if (!inputFile.equals("-e")) {
+                    inputFile = new File(inputFile).getCanonicalPath();
+                }
+
+                source = getContext().getSourceCache().getSource(inputFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            getContext().getFeatureLoader().setMainScriptSource(source);
+
+            final RubyRootNode rootNode = getContext().getCodeLoader().parse(
+                    source,
+                    UTF8Encoding.INSTANCE,
+                    ParserContext.TOP_LEVEL_FIRST,
+                    null,
+                    true,
+                    null);
+
+            return getContext().getCodeLoader().execute(
+                    ParserContext.TOP_LEVEL,
+                    DeclarationContext.TOP_LEVEL,
+                    rootNode,
+                    null,
+                    coreLibrary().getMainObject());
         }
     }
 

@@ -20,29 +20,20 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.LoadRequiredLibrariesNode;
-import org.jruby.truffle.core.SetTopLevelBindingNode;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.parser.ParserContext;
-import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
-import org.jruby.util.ByteList;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 public class CodeLoader {
 
@@ -99,43 +90,6 @@ public class CodeLoader {
                 self,
                 null,
                 new Object[]{}));
-    }
-
-    public Object parseAndExecuteFirstFile(Source source) {
-        context.getFeatureLoader().setMainScriptSource(source);
-
-        final RubyRootNode rootNode = parse(
-                source,
-                UTF8Encoding.INSTANCE,
-                ParserContext.TOP_LEVEL_FIRST,
-                null,
-                true,
-                null);
-
-        return execute(
-                ParserContext.TOP_LEVEL,
-                DeclarationContext.TOP_LEVEL,
-                rootNode,
-                null,
-                context.getCoreLibrary().getMainObject());
-    }
-
-    public Object execute(final org.jruby.ast.RootNode rootNode) {
-        String inputFile = rootNode.getPosition().getFile();
-
-        final Source source;
-
-        try {
-            if (!inputFile.equals("-e")) {
-                inputFile = new File(inputFile).getCanonicalPath();
-            }
-
-            source = context.getSourceCache().getSource(inputFile);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return parseAndExecuteFirstFile(source);
     }
 
     @CompilerDirectives.TruffleBoundary
