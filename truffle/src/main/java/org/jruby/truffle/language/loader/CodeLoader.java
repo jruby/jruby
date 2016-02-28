@@ -12,6 +12,7 @@ package org.jruby.truffle.language.loader;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -54,30 +55,53 @@ public class CodeLoader {
         this.context = context;
     }
 
-    @CompilerDirectives.TruffleBoundary
-    public RubyRootNode parse(Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
+    @TruffleBoundary
+    public RubyRootNode parse(Source source,
+                              Encoding defaultEncoding,
+                              ParserContext parserContext,
+                              MaterializedFrame parentFrame,
+                              boolean ownScopeForAssignments,
+                              Node currentNode) {
         final TranslatorDriver translator = new TranslatorDriver(context);
-        return translator.parse(context, source, defaultEncoding, parserContext, null, parentFrame, ownScopeForAssignments, currentNode);
+
+        return translator.parse(context, source, defaultEncoding, parserContext, null, parentFrame,
+                ownScopeForAssignments, currentNode);
     }
 
-    @CompilerDirectives.TruffleBoundary
-    public Object execute(ParserContext parserContext, DeclarationContext declarationContext, RubyRootNode rootNode, MaterializedFrame parentFrame, Object self) {
+    @TruffleBoundary
+    public Object execute(ParserContext parserContext,
+                          DeclarationContext declarationContext,
+                          RubyRootNode rootNode,
+                          MaterializedFrame parentFrame,
+                          Object self) {
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
         final DynamicObject declaringModule;
+
         if (parserContext == ParserContext.EVAL && parentFrame != null) {
-            declaringModule = RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule();
+            declaringModule = RubyArguments.getMethod(parentFrame).getDeclaringModule();
         } else if (parserContext == ParserContext.MODULE) {
-            assert RubyGuards.isRubyModule(self);
             declaringModule = (DynamicObject) self;
         } else {
             declaringModule = context.getCoreLibrary().getObjectClass();
         }
 
-        final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                declaringModule, Visibility.PUBLIC, callTarget);
+        final InternalMethod method = new InternalMethod(
+                rootNode.getSharedMethodInfo(),
+                rootNode.getSharedMethodInfo().getName(),
+                declaringModule,
+                Visibility.PUBLIC,
+                callTarget);
 
-        return callTarget.call(RubyArguments.pack(parentFrame, null, method, declarationContext, null, self, null, new Object[]{}));
+        return callTarget.call(RubyArguments.pack(
+                parentFrame,
+                null,
+                method,
+                declarationContext,
+                null,
+                self,
+                null,
+                new Object[]{}));
     }
 
     public Object execute(final org.jruby.ast.RootNode rootNode) {
