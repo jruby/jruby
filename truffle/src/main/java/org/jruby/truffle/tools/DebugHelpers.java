@@ -19,7 +19,7 @@ public abstract class DebugHelpers {
     public static Object eval(String code) {
         final FrameInstance currentFrameInstance = Truffle.getRuntime().getCurrentFrame();
         final Frame currentFrame = currentFrameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true);
-        return RubyContext.getLatestInstance().getCodeLoader().inlineRubyHelper(null, currentFrame, code);
+        return RubyContext.getLatestInstance().getCodeLoader().inline(null, currentFrame, code);
     }
 
 }

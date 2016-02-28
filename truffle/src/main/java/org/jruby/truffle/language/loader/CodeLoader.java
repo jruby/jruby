@@ -10,7 +10,6 @@
 package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
@@ -29,9 +28,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.core.SetTopLevelBindingNode;
-import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -130,7 +127,7 @@ public class CodeLoader {
         final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
 
         if (rootNode.hasEndPosition()) {
-            final Object data = context.getCodeLoader().inlineRubyHelper(null, "Truffle::Primitive.get_data(file, offset)", "file", StringOperations.createString(context, ByteList.create(inputFile)), "offset", rootNode.getEndPosition());
+            final Object data = context.getCodeLoader().inline(null, "Truffle::Primitive.get_data(file, offset)", "file", StringOperations.createString(context, ByteList.create(inputFile)), "offset", rootNode.getEndPosition());
             Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, null, "DATA", data);
         }
 
@@ -138,31 +135,52 @@ public class CodeLoader {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public Object inlineRubyHelper(Node currentNode, String expression, Object... arguments) {
-        return inlineRubyHelper(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true), expression, arguments);
+    public Object inline(Node currentNode, String expression, Object... arguments) {
+        final Frame frame = Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true);
+        return inline(currentNode, frame, expression, arguments);
     }
 
-    public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
-        final MaterializedFrame evalFrame1 = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(null, null, RubyArguments.getMethod(frame), DeclarationContext.INSTANCE_EVAL, null, RubyArguments.getSelf(frame), null, new Object[]{}),
-                new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
+    public Object inline(Node currentNode, Frame frame, String expression, Object... arguments) {
+        final Object[] packedArguments = RubyArguments.pack(
+                null,
+                null,
+                RubyArguments.getMethod(frame),
+                DeclarationContext.INSTANCE_EVAL,
+                null,
+                RubyArguments.getSelf(frame),
+                null,
+                new Object[]{});
+
+        final FrameDescriptor frameDescriptor = new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue());
+
+        final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
+                packedArguments,
+                frameDescriptor);
 
         if (arguments.length % 2 == 1) {
             throw new UnsupportedOperationException("odd number of name-value pairs for arguments");
         }
 
         for (int n = 0; n < arguments.length; n += 2) {
-            evalFrame1.setObject(evalFrame1.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
+            evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
         }
 
-        final MaterializedFrame evalFrame = evalFrame1;
-        final DynamicObject binding = BindingNodes.createBinding(context, evalFrame);
-        ByteList code = StringOperations.createByteList(expression);
-        final Source source = Source.fromText(code, "inline-ruby");
-        final MaterializedFrame frame1 = Layouts.BINDING.getFrame(binding);
-        final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame1);
-        final RubyRootNode rootNode = context.getCodeLoader().parse(source, code.getEncoding(), ParserContext.INLINE, frame1, true, currentNode);
-        return context.getCodeLoader().execute(ParserContext.INLINE, declarationContext, rootNode, frame1, RubyArguments.getSelf(frame1));
+        final Source source = Source.fromText(StringOperations.createByteList(expression), "inline-ruby");
+
+        final RubyRootNode rootNode = context.getCodeLoader().parse(
+                source,
+                UTF8Encoding.INSTANCE,
+                ParserContext.INLINE,
+                evalFrame,
+                true,
+                currentNode);
+
+        return context.getCodeLoader().execute(
+                ParserContext.INLINE,
+                DeclarationContext.INSTANCE_EVAL,
+                rootNode,
+                evalFrame,
+                RubyArguments.getSelf(evalFrame));
     }
 
 }
