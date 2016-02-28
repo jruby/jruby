@@ -102,10 +102,6 @@ public class CodeLoader {
     }
 
     public Object parseAndExecuteFirstFile(Source source) {
-        context.getCoreLibrary().getGlobalVariablesObject().define(
-                "$0",
-                StringOperations.createString(context, ByteList.create(context.getJRubyInterop().getArg0())));
-
         context.getFeatureLoader().setMainScriptSource(source);
 
         final RubyRootNode rootNode = parse(

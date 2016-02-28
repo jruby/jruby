@@ -865,6 +865,11 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public Object runJRubyRootNode() {
+            coreLibrary().getGlobalVariablesObject().define(
+                    "$0",
+                    StringOperations.createString(getContext(),
+                            ByteList.create(getContext().getJRubyInterop().getArg0())));
+
             return getContext().getCodeLoader().execute(getContext().getInitialJRubyRootNode());
         }
     }
