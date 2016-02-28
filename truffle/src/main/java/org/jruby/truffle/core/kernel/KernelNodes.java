@@ -100,6 +100,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.loader.FeatureLoader;
+import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.LookupMethodNode;
@@ -131,6 +132,7 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -1610,7 +1612,7 @@ public abstract class KernelNodes {
             final String featureString = feature.toString();
             final String featurePath;
 
-            if (featureLoader.isAbsolutePath(featureString)) {
+            if (featureString.startsWith(SourceLoader.TRUFFLE_SCHEME) || featureString.startsWith(SourceLoader.JRUBY_SCHEME) || new File(featureString).isAbsolute()) {
                 featurePath = featureString;
             } else {
                 final Source source = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode().getEncapsulatingSourceSection().getSource();

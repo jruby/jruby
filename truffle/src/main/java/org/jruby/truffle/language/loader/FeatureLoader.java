@@ -162,11 +162,11 @@ public class FeatureLoader {
         return RequireResult.REQUIRED;
     }
 
-    public boolean isAbsolutePath(String path) {
+    private boolean isAbsolutePath(String path) {
         return path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME) || new File(path).isAbsolute();
     }
 
-    public static String expandPath(RubyContext context, String fileName) {
+    private static String expandPath(RubyContext context, String fileName) {
         String dir = new File(fileName).isAbsolute() ? null : context.getJRubyRuntime().getCurrentDirectory();
         return expandPath(fileName, dir);
     }
