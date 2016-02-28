@@ -101,24 +101,10 @@ public class CodeLoader {
                 new Object[]{}));
     }
 
-    public Object execute(final org.jruby.ast.RootNode rootNode) {
+    public Object parseAndExecuteFirstFile(Source source, boolean hasEndPosition, int endPosition) {
         context.getCoreLibrary().getGlobalVariablesObject().define(
                 "$0",
                 StringOperations.createString(context, ByteList.create(context.getJRubyInterop().getArg0())));
-
-        String inputFile = rootNode.getPosition().getFile();
-
-        final Source source;
-
-        try {
-            if (!inputFile.equals("-e")) {
-                inputFile = new File(inputFile).getCanonicalPath();
-            }
-
-            source = context.getSourceCache().getSource(inputFile);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
         context.getFeatureLoader().setMainScriptSource(source);
 
@@ -141,12 +127,12 @@ public class CodeLoader {
 
         final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
 
-        if (rootNode.hasEndPosition()) {
+        if (hasEndPosition) {
             final Object data = inline(
                     null,
                     "Truffle::Primitive.get_data(file, offset)",
-                    "file", StringOperations.createString(context, ByteList.create(inputFile)),
-                    "offset", rootNode.getEndPosition());
+                    "file", StringOperations.createString(context, ByteList.create(source.getPath())),
+                    "offset", endPosition);
 
             Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, null, "DATA", data);
         }
@@ -157,6 +143,24 @@ public class CodeLoader {
                 newRootNode,
                 null,
                 context.getCoreLibrary().getMainObject());
+    }
+
+    public Object execute(final org.jruby.ast.RootNode rootNode) {
+        String inputFile = rootNode.getPosition().getFile();
+
+        final Source source;
+
+        try {
+            if (!inputFile.equals("-e")) {
+                inputFile = new File(inputFile).getCanonicalPath();
+            }
+
+            source = context.getSourceCache().getSource(inputFile);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return parseAndExecuteFirstFile(source, rootNode.hasEndPosition(), rootNode.getEndPosition());
     }
 
     @CompilerDirectives.TruffleBoundary
