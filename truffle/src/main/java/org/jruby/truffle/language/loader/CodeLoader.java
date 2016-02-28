@@ -101,7 +101,7 @@ public class CodeLoader {
                 new Object[]{}));
     }
 
-    public Object parseAndExecuteFirstFile(Source source, boolean hasEndPosition, int endPosition) {
+    public Object parseAndExecuteFirstFile(Source source) {
         context.getCoreLibrary().getGlobalVariablesObject().define(
                 "$0",
                 StringOperations.createString(context, ByteList.create(context.getJRubyInterop().getArg0())));
@@ -115,16 +115,6 @@ public class CodeLoader {
                 null,
                 true,
                 null);
-
-        if (hasEndPosition) {
-            final Object data = inline(
-                    null,
-                    "Truffle::Primitive.get_data(file, offset)",
-                    "file", StringOperations.createString(context, ByteList.create(source.getPath())),
-                    "offset", endPosition);
-
-            Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, null, "DATA", data);
-        }
 
         return execute(
                 ParserContext.TOP_LEVEL,
@@ -149,7 +139,7 @@ public class CodeLoader {
             throw new RuntimeException(e);
         }
 
-        return parseAndExecuteFirstFile(source, rootNode.hasEndPosition(), rootNode.getEndPosition());
+        return parseAndExecuteFirstFile(source);
     }
 
     @CompilerDirectives.TruffleBoundary

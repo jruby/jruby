@@ -24,6 +24,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.core.SetTopLevelBindingNode;
+import org.jruby.truffle.language.DataNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -202,6 +203,12 @@ public class TranslatorDriver implements Parser {
                             new SetTopLevelBindingNode(context, sourceSection),
                             new LoadRequiredLibrariesNode(context, sourceSection),
                             truffleNode)));
+
+            if (node.hasEndPosition()) {
+                truffleNode = translator.sequence(context, sourceSection, Arrays.asList(
+                        new DataNode(context, sourceSection, node.getEndPosition()),
+                        truffleNode));
+            }
         }
 
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
