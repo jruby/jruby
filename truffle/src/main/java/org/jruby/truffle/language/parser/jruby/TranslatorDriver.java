@@ -36,6 +36,7 @@ import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.parser.Parser;
 import org.jruby.truffle.language.parser.ParserContext;
 
 import java.nio.charset.StandardCharsets;
@@ -43,7 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class TranslatorDriver {
+public class TranslatorDriver implements Parser {
 
     private final ParseEnvironment parseEnvironment;
 
@@ -51,6 +52,7 @@ public class TranslatorDriver {
         parseEnvironment = new ParseEnvironment(context);
     }
 
+    @Override
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
