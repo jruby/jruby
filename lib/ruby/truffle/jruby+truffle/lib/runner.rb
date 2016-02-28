@@ -68,7 +68,7 @@ class JRubyTruffleRunner
   BRANDING          = EXECUTABLE.include?('jruby') ? 'JRuby+Truffle' : 'RubyTruffle'
   LOCAL_CONFIG_FILE = '.jruby+truffle.yaml'
   ROOT              = Pathname(__FILE__).dirname.parent.expand_path
-  JRUBY_PATH        = (ROOT + '../../../..').expand_path
+  JRUBY_PATH        = ROOT.join('../../../..').expand_path
 
   begin
     assign_new_value   = -> (new, old, _) { new }
@@ -100,7 +100,7 @@ class JRubyTruffleRunner
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
             truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, '.jruby+truffle_bundle'],
             interpreter_path:    ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", assign_new_value,
-                                  JRUBY_PATH + 'bin' + 'jruby'],
+                                  JRUBY_PATH.join('bin', 'jruby')],
             graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
             mock_load_path:      ['--mock-load-path PATH',
                                   'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
@@ -285,7 +285,7 @@ class JRubyTruffleRunner
 
     if candidates.size == 1
       gem_name, _ = candidates.first.split('.')
-      yaml_path   = ROOT + 'gem_configurations'+ "#{gem_name}.yaml"
+      yaml_path   = ROOT.join 'gem_configurations', "#{gem_name}.yaml"
     end
 
     apply_yaml_to_configuration(yaml_path)
@@ -459,7 +459,7 @@ class JRubyTruffleRunner
   end
 
   def subcommand_readme(rest)
-    puts File.read(ROOT + 'README.md')
+    puts File.read(ROOT.join('README.md'))
   end
 
   def subcommand_ci(rest)
@@ -520,8 +520,7 @@ class JRubyTruffleRunner
       @options  = options
       @gem_name = gem_name
 
-      ci_file = Dir.glob(ROOT + 'gem_ci' + "#{@gem_name}.rb").first ||
-          Dir.glob(ROOT + 'gem_ci' + 'default.rb').first
+      ci_file = Dir.glob(ROOT.join('gem_ci', "{#{@gem_name}|default}.rb")).first
 
       puts "Running #{ci_file}"
 
@@ -534,11 +533,11 @@ class JRubyTruffleRunner
     end
 
     def repository_dir
-      working_dir + repository_name
+      working_dir.join repository_name
     end
 
     def testing_dir
-      repository_dir + subdir
+      repository_dir.join subdir
     end
 
     def jruby_path
@@ -546,7 +545,7 @@ class JRubyTruffleRunner
     end
 
     def jruby_truffle_path
-      jruby_path + 'bin' + 'jruby+truffle'
+      jruby_path.join 'bin', 'jruby+truffle'
     end
 
     def option(key)
