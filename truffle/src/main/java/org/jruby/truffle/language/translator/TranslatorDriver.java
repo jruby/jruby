@@ -112,10 +112,6 @@ public class TranslatorDriver {
             throw new RaiseException(context.getCoreLibrary().syntaxError(message, currentNode));
         }
 
-        return parse(currentNode, context, source, parserContext, argumentNames, parentFrame, ownScopeForAssignments, node);
-    }
-
-    private RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, String[] argumentNames, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
 
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
@@ -151,7 +147,7 @@ public class TranslatorDriver {
 
         RubyNode truffleNode;
 
-        if (rootNode.getBodyNode() == null || rootNode.getBodyNode() instanceof org.jruby.ast.NilNode) {
+        if (node.getBodyNode() == null || node.getBodyNode() instanceof org.jruby.ast.NilNode) {
             translator.parentSourceSection.push(sourceSection);
             try {
                 truffleNode = translator.nilNode(sourceSection);
@@ -159,7 +155,7 @@ public class TranslatorDriver {
                 translator.parentSourceSection.pop();
             }
         } else {
-            truffleNode = rootNode.getBodyNode().accept(translator);
+            truffleNode = node.getBodyNode().accept(translator);
         }
 
         // Load arguments
