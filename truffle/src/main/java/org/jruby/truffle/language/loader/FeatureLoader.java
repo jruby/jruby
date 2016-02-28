@@ -23,7 +23,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
+import org.jruby.truffle.language.parser.ParserContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -145,8 +145,8 @@ public class FeatureLoader {
         final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
         ArrayOperations.append(loadedFeatures, pathString);
         try {
-            final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(expandedPath), UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, null, true, currentNode);
-            context.getCodeLoader().execute(TranslatorDriver.ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+            final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(expandedPath), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, currentNode);
+            context.getCodeLoader().execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
         } catch (RaiseException e) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
             final int length = Layouts.ARRAY.getSize(loadedFeatures);

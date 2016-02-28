@@ -21,7 +21,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.parser.jruby.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.parser.ParserContext;
 
 import java.util.Collections;
 import java.util.StringTokenizer;

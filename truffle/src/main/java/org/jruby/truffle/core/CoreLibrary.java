@@ -90,7 +90,7 @@ import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
-import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
+import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory;
@@ -761,8 +761,8 @@ public class CoreLibrary {
 
             state = State.LOADING_RUBY_CORE;
             try {
-                final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, null, true, node);
-                context.getCodeLoader().execute(TranslatorDriver.ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+                final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
+                context.getCodeLoader().execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

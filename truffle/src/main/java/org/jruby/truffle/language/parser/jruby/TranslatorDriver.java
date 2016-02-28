@@ -36,6 +36,7 @@ import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.parser.ParserContext;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -43,10 +44,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TranslatorDriver {
-
-    public enum ParserContext {
-        TOP_LEVEL, SHELL, MODULE, EVAL, INLINE
-    }
 
     private final ParseEnvironment parseEnvironment;
 

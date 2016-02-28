@@ -90,7 +90,7 @@ import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.parser.jruby.Translator;
-import org.jruby.truffle.language.parser.jruby.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.IdUtil;
 

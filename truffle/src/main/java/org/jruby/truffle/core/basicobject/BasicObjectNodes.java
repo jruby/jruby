@@ -44,8 +44,8 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
-import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.ByteList;
 
@@ -163,8 +163,8 @@ public abstract class BasicObjectNodes {
         public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
             ByteList code = StringOperations.getByteListReadOnly(string);
             final Source source = Source.fromText(code, "(eval)");
-            final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, null, true, this);
-            return getContext().getCodeLoader().execute(TranslatorDriver.ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
+            final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
+            return getContext().getCodeLoader().execute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
         }
 
         @Specialization

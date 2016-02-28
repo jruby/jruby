@@ -37,6 +37,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.util.ByteList;
@@ -54,19 +55,19 @@ public class CodeLoader {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubyRootNode parse(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
+    public RubyRootNode parse(Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         final TranslatorDriver translator = new TranslatorDriver(context);
         return translator.parse(context, source, defaultEncoding, parserContext, null, parentFrame, ownScopeForAssignments, currentNode);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public Object execute(TranslatorDriver.ParserContext parserContext, DeclarationContext declarationContext, RubyRootNode rootNode, MaterializedFrame parentFrame, Object self) {
+    public Object execute(ParserContext parserContext, DeclarationContext declarationContext, RubyRootNode rootNode, MaterializedFrame parentFrame, Object self) {
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
         final DynamicObject declaringModule;
-        if (parserContext == TranslatorDriver.ParserContext.EVAL && parentFrame != null) {
+        if (parserContext == ParserContext.EVAL && parentFrame != null) {
             declaringModule = RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule();
-        } else if (parserContext == TranslatorDriver.ParserContext.MODULE) {
+        } else if (parserContext == ParserContext.MODULE) {
             assert RubyGuards.isRubyModule(self);
             declaringModule = (DynamicObject) self;
         } else {
@@ -95,7 +96,7 @@ public class CodeLoader {
 
         context.getFeatureLoader().setMainScriptSource(source);
 
-        final RubyRootNode originalRootNode = parse(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, null, true, null);
+        final RubyRootNode originalRootNode = parse(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null);
 
         final SourceSection sourceSection = originalRootNode.getSourceSection();
         final RubyNode wrappedBody =
@@ -109,7 +110,7 @@ public class CodeLoader {
             Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, null, "DATA", data);
         }
 
-        return execute(TranslatorDriver.ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, context.getCoreLibrary().getMainObject());
+        return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, context.getCoreLibrary().getMainObject());
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -137,8 +138,8 @@ public class CodeLoader {
         final Source source = Source.fromText(code, "inline-ruby");
         final MaterializedFrame frame1 = Layouts.BINDING.getFrame(binding);
         final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame1);
-        final RubyRootNode rootNode = context.getCodeLoader().parse(source, code.getEncoding(), TranslatorDriver.ParserContext.INLINE, frame1, true, currentNode);
-        return context.getCodeLoader().execute(TranslatorDriver.ParserContext.INLINE, declarationContext, rootNode, frame1, RubyArguments.getSelf(frame1));
+        final RubyRootNode rootNode = context.getCodeLoader().parse(source, code.getEncoding(), ParserContext.INLINE, frame1, true, currentNode);
+        return context.getCodeLoader().execute(ParserContext.INLINE, declarationContext, rootNode, frame1, RubyArguments.getSelf(frame1));
     }
 
     /* For debugging in Java. */

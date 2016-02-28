@@ -127,7 +127,7 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
-import org.jruby.truffle.language.parser.jruby.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
