@@ -37,8 +37,8 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.translator.Translator;
-import org.jruby.truffle.language.translator.TranslatorDriver;
+import org.jruby.truffle.language.parser.jruby.Translator;
+import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.util.ByteList;
 
 import java.io.File;

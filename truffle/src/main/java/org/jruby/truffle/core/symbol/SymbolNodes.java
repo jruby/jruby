@@ -37,7 +37,7 @@ import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.SymbolProcNode;
-import org.jruby.truffle.language.translator.Translator;
+import org.jruby.truffle.language.parser.jruby.Translator;
 
 import java.util.Arrays;
 

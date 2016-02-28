@@ -23,7 +23,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.translator.TranslatorDriver;
+import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 
 import java.io.File;
 import java.io.IOException;

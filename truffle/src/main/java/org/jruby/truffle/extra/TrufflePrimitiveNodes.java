@@ -56,7 +56,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.translator.TranslatorDriver;
+import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.tools.SimpleShell;
 import org.jruby.util.ByteList;

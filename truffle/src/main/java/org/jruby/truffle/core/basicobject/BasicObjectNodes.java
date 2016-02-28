@@ -45,7 +45,7 @@ import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.supercall.SuperCallNode;
-import org.jruby.truffle.language.translator.TranslatorDriver;
+import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.ByteList;
 
