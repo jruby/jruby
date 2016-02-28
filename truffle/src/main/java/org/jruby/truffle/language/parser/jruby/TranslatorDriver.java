@@ -22,6 +22,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.LoadRequiredLibrariesNode;
+import org.jruby.truffle.core.SetTopLevelBindingNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -29,6 +31,7 @@ import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.CatchNextNode;
@@ -193,7 +196,13 @@ public class TranslatorDriver implements Parser {
 
         truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
 
-        // Shell result
+        if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
+            truffleNode = new TopLevelRaiseHandler(context, sourceSection,
+                    Translator.sequence(context, sourceSection, Arrays.asList(
+                            new SetTopLevelBindingNode(context, sourceSection),
+                            new LoadRequiredLibrariesNode(context, sourceSection),
+                            truffleNode)));
+        }
 
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }

@@ -108,24 +108,13 @@ public class CodeLoader {
 
         context.getFeatureLoader().setMainScriptSource(source);
 
-        final RubyRootNode originalRootNode = parse(
+        final RubyRootNode rootNode = parse(
                 source,
                 UTF8Encoding.INSTANCE,
                 ParserContext.TOP_LEVEL_FIRST,
                 null,
                 true,
                 null);
-
-        final SourceSection sourceSection = originalRootNode.getSourceSection();
-
-        final RubyNode wrappedBody =
-                new TopLevelRaiseHandler(context, sourceSection,
-                        Translator.sequence(context, sourceSection, Arrays.asList(
-                                new SetTopLevelBindingNode(context, sourceSection),
-                                new LoadRequiredLibrariesNode(context, sourceSection),
-                                originalRootNode.getBody())));
-
-        final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
 
         if (hasEndPosition) {
             final Object data = inline(
@@ -140,7 +129,7 @@ public class CodeLoader {
         return execute(
                 ParserContext.TOP_LEVEL,
                 DeclarationContext.TOP_LEVEL,
-                newRootNode,
+                rootNode,
                 null,
                 context.getCoreLibrary().getMainObject());
     }
