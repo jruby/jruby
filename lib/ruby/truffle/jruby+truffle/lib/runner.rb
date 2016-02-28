@@ -520,7 +520,7 @@ class JRubyTruffleRunner
       @options  = options
       @gem_name = gem_name
 
-      ci_file = Dir.glob(ROOT.join('gem_ci', "{#{@gem_name}|default}.rb")).first
+      ci_file = Dir.glob(ROOT.join('gem_ci', "{#{@gem_name},default}.rb")).first
 
       puts "Running #{ci_file}"
 
