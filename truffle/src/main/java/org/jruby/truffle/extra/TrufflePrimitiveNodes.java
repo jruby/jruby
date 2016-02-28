@@ -885,8 +885,6 @@ public abstract class TrufflePrimitiveNodes {
                 throw new RuntimeException(e);
             }
 
-            getContext().getFeatureLoader().setMainScriptSource(source);
-
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(
                     source,
                     UTF8Encoding.INSTANCE,

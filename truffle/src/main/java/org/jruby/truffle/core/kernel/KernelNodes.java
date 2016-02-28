@@ -1614,7 +1614,13 @@ public abstract class KernelNodes {
                 featurePath = featureString;
             } else {
                 final Source source = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode().getEncapsulatingSourceSection().getSource();
-                final String sourcePath = featureLoader.getSourcePath(source);
+                String result;
+                if (source.getPath() == null) {
+                    result = source.getShortName();
+                } else {
+                    result = source.getPath();
+                }
+                final String sourcePath = result;
 
                 if (sourcePath == null) {
                     CompilerDirectives.transferToInterpreter();

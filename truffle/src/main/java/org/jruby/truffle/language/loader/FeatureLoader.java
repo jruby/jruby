@@ -32,9 +32,6 @@ public class FeatureLoader {
 
     private final RubyContext context;
 
-    private Source mainScriptSource = null;
-    private String mainScriptFullPath = null;
-
     public FeatureLoader(RubyContext context) {
         this.context = context;
     }
@@ -163,25 +160,6 @@ public class FeatureLoader {
         }
 
         return RequireResult.REQUIRED;
-    }
-
-    public void setMainScriptSource(Source source) {
-        this.mainScriptSource = source;
-        if (source.getPath() != null && !source.getPath().equals("-e")) {
-            this.mainScriptFullPath = expandPath(context, source.getPath());
-        }
-    }
-
-    public String getSourcePath(Source source) {
-        if (source == mainScriptSource) {
-            return mainScriptFullPath;
-        } else {
-            if (source.getPath() == null) {
-                return source.getShortName();
-            } else {
-                return source.getPath();
-            }
-        }
     }
 
     public boolean isAbsolutePath(String path) {
