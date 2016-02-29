@@ -102,7 +102,7 @@ class JRubyTruffleRunner
             truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, '.jruby+truffle_bundle'],
             interpreter_path:    ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", assign_new_value,
                                   JRUBY_PATH.join('bin', 'jruby')],
-            graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
+            graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, (JRUBY_PATH + '../GraalVM-0.10/jre/bin/javao').to_s],
             mock_load_path:      ['--mock-load-path PATH',
                                   'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
                                   assign_new_value, 'mocks'],
