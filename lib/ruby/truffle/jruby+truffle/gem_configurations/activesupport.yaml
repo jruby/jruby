@@ -38,12 +38,6 @@
                 end
               end
 
-              # Work around a bug in ActiveSupport whereby it tries to pass an env hash with Symbol keys. This only
-              # works on JRuby 1.7. The following will allow the Symbol keys to coerce to Strings.
-              class Symbol
-                alias :to_str :to_s
-              end
-
     bundler.rb: "module Bundler; def self.setup; end; end"
     # mock method_source gem
     method_source.rb: nil
