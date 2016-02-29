@@ -71,10 +71,11 @@ class JRubyTruffleRunner
   JRUBY_PATH        = ROOT.join('../../../..').expand_path
 
   begin
-    assign_new_value   = -> (new, old, _) { new }
-    add_to_array       = -> (new, old, _) { old << new }
-    merge_hash         = -> ((k, v), old, _) { old.merge k => v }
-    apply_pattern      = -> (pattern, old, options) do
+    assign_new_value         = -> (new, old, _) { new }
+    assign_new_negated_value = -> (new, old, _) { !new }
+    add_to_array             = -> (new, old, _) { old << new }
+    merge_hash               = -> ((k, v), old, _) { old.merge k => v }
+    apply_pattern            = -> (pattern, old, options) do
       Dir.glob(pattern) do |file|
         if options[:exclude_pattern].any? { |p| /#{p}/ =~ file }
           puts "skipped: #{file}" if verbose?
@@ -91,7 +92,7 @@ class JRubyTruffleRunner
     #                                                     -> (new_value, old_value) { result_of_this_block_is_stored },
     #                                                     default_value]
     #   }
-    OPTION_DEFINITIONS = {
+    OPTION_DEFINITIONS       = {
         global: {
             verbose:             ['-v', '--verbose', 'Run verbosely (prints options)', assign_new_value, false],
             help:                ['-h', '--help', 'Show this message', assign_new_value, false],
@@ -119,7 +120,7 @@ class JRubyTruffleRunner
         },
         run:    {
             help:            ['-h', '--help', 'Show this message', assign_new_value, false],
-            no_truffle:      ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", assign_new_value, false],
+            no_truffle:      ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", assign_new_negated_value, false],
             graal:           ['-g', '--graal', 'Run on graal', assign_new_value, false],
             build:           ['-b', '--build', 'Run `jt build` using conventional JRuby', assign_new_value, false],
             rebuild:         ['--rebuild', 'Run `jt rebuild` using conventional JRuby', assign_new_value, false],
