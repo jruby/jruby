@@ -20,7 +20,7 @@ public class ReadBlockNode extends RubyNode {
 
     private final Object valueIfAbsent;
 
-    private final ConditionProfile hasBlockProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile blockProfile = ConditionProfile.createBinaryProfile();
 
     public ReadBlockNode(RubyContext context, SourceSection sourceSection, Object valueIfAbsent) {
         super(context, sourceSection);
@@ -31,7 +31,7 @@ public class ReadBlockNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final DynamicObject block = RubyArguments.getBlock(frame);
 
-        if (hasBlockProfile.profile(block == null)) {
+        if (blockProfile.profile(block == null)) {
             return valueIfAbsent;
         } else {
             return block;
