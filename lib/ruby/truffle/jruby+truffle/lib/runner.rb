@@ -367,9 +367,15 @@ class JRubyTruffleRunner
                 '--path', bundle_path,
                 *(['--without', @options[:setup][:without].join(' ')] unless @options[:setup][:without].empty?)])
 
-    link_path = "#{bundle_path}/jruby+truffle"
-    FileUtils.rm link_path if File.exist? link_path
-    execute_cmd "ln -s #{bundle_path}/#{RUBY_ENGINE} #{link_path}"
+    jruby_truffle_path = File.join(bundle_path, 'jruby+truffle')
+    FileUtils.ln_s File.join(bundle_path, RUBY_ENGINE),
+                   jruby_truffle_path,
+                   verbose: verbose? unless File.exists? jruby_truffle_path
+
+    jruby_truffle_22_path = File.join(bundle_path, 'jruby+truffle', '2.2.0')
+    FileUtils.ln_s File.join(bundle_path, 'jruby+truffle', '2.3.0'),
+                   jruby_truffle_22_path,
+                   verbose: verbose? unless File.exists? jruby_truffle_22_path
 
     mock_path = "#{bundle_path}/#{@options[:global][:mock_load_path]}"
     FileUtils.mkpath mock_path
