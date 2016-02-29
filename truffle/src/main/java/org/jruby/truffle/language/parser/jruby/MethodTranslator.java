@@ -50,6 +50,7 @@ import org.jruby.truffle.language.methods.CatchForProcNode;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.MethodDefinitionNode;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.supercall.ReadSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.SuperCallNode;
@@ -248,7 +249,7 @@ public class MethodTranslator extends BodyTranslator {
         body = new CatchForMethodNode(context, body.getSourceSection(), environment.getReturnID(), body);
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
-        body = new ExceptionTranslatingNode(context, body.getSourceSection(), body);
+        body = new ExceptionTranslatingNode(context, body.getSourceSection(), body, UnsupportedOperationBehavior.TYPE_ERROR);
         return body;
     }
 

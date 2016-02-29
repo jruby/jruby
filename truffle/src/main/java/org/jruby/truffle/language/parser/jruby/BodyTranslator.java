@@ -145,6 +145,7 @@ import org.jruby.truffle.language.methods.GetDefaultDefineeNode;
 import org.jruby.truffle.language.methods.MethodDefinitionNode;
 import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.DefineClassNode;
 import org.jruby.truffle.language.objects.DefineModuleNode;
 import org.jruby.truffle.language.objects.LexicalScopeNode;
@@ -2842,7 +2843,7 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode ret = new TryNode(context, sourceSection,
-                new ExceptionTranslatingNode(context, sourceSection, tryPart),
+                new ExceptionTranslatingNode(context, sourceSection, tryPart, UnsupportedOperationBehavior.TYPE_ERROR),
                 rescueNodes.toArray(new RescueNode[rescueNodes.size()]), elsePart);
 
         return addNewlineIfNeeded(node, ret);
