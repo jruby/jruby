@@ -48,7 +48,6 @@ import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
@@ -62,6 +61,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThrowException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -151,7 +151,7 @@ public abstract class VMPrimitiveNodes {
         @Specialization
         public Object vmExit(int status) {
             getContext().shutdown();
-            throw new MainExitException(status);
+            throw new ExitException(status);
         }
 
         @Fallback
