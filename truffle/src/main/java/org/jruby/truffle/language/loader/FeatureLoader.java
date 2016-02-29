@@ -11,8 +11,10 @@ package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -33,155 +35,151 @@ public class FeatureLoader {
         this.context = context;
     }
 
-    private enum RequireResult {
-        REQUIRED(true, true),
-        ALREADY_REQUIRED(true, false),
-        FAILED(false, false);
-
-        public final boolean success;
-        public final boolean firstRequire;
-
-        RequireResult(boolean success, boolean firstRequire) {
-            this.success = success;
-            this.firstRequire = firstRequire;
-        }
-    }
-
     public boolean require(String feature, Node currentNode) {
-        final String x = findFeature(feature);
+        final String featurePath = findFeature(feature);
 
-        if (x == null) {
+        if (featurePath == null) {
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         }
 
-        return doRequire(x, currentNode).firstRequire;
-    }
-
-    private RequireResult doRequire(String expandedPath, Node currentNode) {
-        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
-
-        for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
-            if (loaded.toString().equals(expandedPath)) {
-                return RequireResult.ALREADY_REQUIRED;
-            }
-        }
-
-        // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
-        final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
-        ArrayOperations.append(loadedFeatures, pathString);
-        try {
-            final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(expandedPath), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, currentNode);
-            context.getCodeLoader().execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
-        } catch (RaiseException e) {
-            final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
-            final int length = Layouts.ARRAY.getSize(loadedFeatures);
-            for (int i = length - 1; i >= 0; i--) {
-                if (store[i] == pathString) {
-                    ArrayUtils.arraycopy(store, i + 1, store, i, length - i - 1);
-                    Layouts.ARRAY.setSize(loadedFeatures, length - 1);
-                    break;
-                }
-            }
-            throw e;
-        } catch (IOException e) {
-            return RequireResult.FAILED;
-        }
-
-        return RequireResult.REQUIRED;
-    }
-
-    private boolean isAbsolutePath(String path) {
-        return path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME) || new File(path).isAbsolute();
-    }
-
-    private static String expandPath(RubyContext context, String fileName) {
-        String dir = new File(fileName).isAbsolute() ? null : context.getJRubyRuntime().getCurrentDirectory();
-        return expandPath(fileName, dir);
-    }
-
-    private static String expandPath(String fileName, String dir) {
-        /*
-         * TODO(cs): this isn't quite correct - I think we want to collapse .., but we don't want to
-         * resolve symlinks etc. This might be where we want to start borrowing JRuby's
-         * implementation, but it looks quite tied to their data structures.
-         */
-
-        return org.jruby.RubyFile.canonicalize(new File(dir, fileName).getAbsolutePath());
+        return doRequire(featurePath, currentNode);
     }
 
     private String findFeature(String feature) {
+        final String currentDirectory = context.getNativePlatform().getPosix().getcwd();
+
         if (feature.startsWith("./")) {
-            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
-            feature = cwd + "/" + feature.substring(2);
+            feature = currentDirectory + "/" + feature.substring(2);
         } else if (feature.startsWith("../")) {
-            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
-            feature = cwd.substring(0, cwd.lastIndexOf('/')) + "/" + feature.substring(3);
+            feature = currentDirectory.substring(0, currentDirectory.lastIndexOf('/')) + "/" + feature.substring(3);
+        }
+        
+        if (feature.startsWith(SourceLoader.TRUFFLE_SCHEME)
+                || feature.startsWith(SourceLoader.JRUBY_SCHEME)
+                || new File(feature).isAbsolute()) {
+            return findFeatureWithAndWithoutExtension(feature);
         }
 
-        if (isAbsolutePath(feature)) {
-            // Try as a full path
+        for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
+            final String fileWithinPath = new File(pathObject.toString(), feature).getPath();
+            final String result = findFeatureWithAndWithoutExtension(fileWithinPath);
 
-            return tryToRequireFileInPath(null, feature, null);
-        } else {
-            // Try each load path in turn
-
-            for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
-                String loadPath = pathObject.toString();
-                if (!isAbsolutePath(loadPath)) {
-                    loadPath = expandPath(context, loadPath);
-                }
-
-                final String result = tryToRequireFileInPath(loadPath, feature, null);
-
-                if (result != null) {
-                    return result;
-                }
+            if (result != null) {
+                return result;
             }
         }
 
         return null;
     }
 
-    private String tryToRequireFileInPath(String path, String feature, Node currentNode) {
-        String fullPath = new File(path, feature).getPath();
+    private String findFeatureWithAndWithoutExtension(String path) {
+        final String withExtension = findFeatureWithExactPath(path + RubyLanguage.EXTENSION);
 
-        final String x = tryToRequireFileInPath(fullPath + ".rb", currentNode);
-
-        if (x != null) {
-            return x;
+        if (withExtension != null) {
+            return withExtension;
         }
 
-        final String y = tryToRequireFileInPath(fullPath, currentNode);
+        final String withoutExtension = findFeatureWithExactPath(path);
 
-        if (y != null) {
-            return y;
+        if (withoutExtension != null) {
+            return withoutExtension;
         }
 
         return null;
     }
 
-    private String tryToRequireFileInPath(String path, Node currentNode) {
-        final String expandedPath;
-
-        if (!(path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME))) {
-            final File file = new File(path);
-
-            assert file.isAbsolute();
-
-            if (!file.isFile()) {
-                return null;
-            }
-
-            try {
-                expandedPath = new File(expandPath(context, path)).getCanonicalPath();
-            } catch (IOException e) {
-                return null;
-            }
-        } else {
-            expandedPath = path;
+    private String findFeatureWithExactPath(String path) {
+        if (path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME)) {
+            return path;
         }
 
-        return expandedPath;
+        final File file = new File(path);
+
+        if (!file.isFile()) {
+            return null;
+        }
+
+        try {
+            if (file.isAbsolute()) {
+                return file.getCanonicalPath();
+            } else {
+                return new File(context.getNativePlatform().getPosix().getcwd(), file.getPath()).getCanonicalPath();
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private boolean doRequire(String expandedPath, Node currentNode) {
+        if (isFeatureLoaded(expandedPath)) {
+            return false;
+        }
+
+        final DynamicObject pathString = StringOperations.createString(context,
+                StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
+
+        final Source source;
+
+        try {
+            source = context.getSourceCache().getSource(expandedPath);
+        } catch (IOException e) {
+            return false;
+        }
+
+        addToLoadedFeatures(pathString);
+
+        try {
+            final RubyRootNode rootNode = context.getCodeLoader().parse(
+                    source,
+                    UTF8Encoding.INSTANCE,
+                    ParserContext.TOP_LEVEL,
+                    null,
+                    true,
+                    currentNode);
+
+            context.getCodeLoader().execute(
+                    ParserContext.TOP_LEVEL,
+                    DeclarationContext.TOP_LEVEL,
+                    rootNode, null,
+                    context.getCoreLibrary().getMainObject());
+        } catch (RaiseException e) {
+            removeFromLoadedFeatures(pathString);
+            throw e;
+        }
+
+        return true;
+    }
+
+    private boolean isFeatureLoaded(String feature) {
+        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
+
+        for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
+            if (loaded.toString().equals(feature)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void addToLoadedFeatures(DynamicObject feature) {
+        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
+
+        ArrayOperations.append(loadedFeatures, feature);
+    }
+
+    private void removeFromLoadedFeatures(DynamicObject feature) {
+        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
+        final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
+        final int length = Layouts.ARRAY.getSize(loadedFeatures);
+
+        for (int i = length - 1; i >= 0; i--) {
+            if (store[i] == feature) {
+                ArrayUtils.arraycopy(store, i + 1, store, i, length - i - 1);
+                Layouts.ARRAY.setSize(loadedFeatures, length - 1);
+                break;
+            }
+        }
     }
 
 }
