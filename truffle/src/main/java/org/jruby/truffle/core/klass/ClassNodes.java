@@ -38,7 +38,9 @@ public abstract class ClassNodes {
 
     private final static com.oracle.truffle.api.object.Layout LAYOUT = com.oracle.truffle.api.object.Layout.createLayout();
 
-    /** Special constructor for class Class */
+    /**
+     * Special constructor for class Class
+     */
     @TruffleBoundary
     public static DynamicObject createClassClass(RubyContext context) {
         final ModuleFields model = new ModuleFields(context, null, "Class");
@@ -199,7 +201,6 @@ public abstract class ClassNodes {
         return Layouts.BASIC_OBJECT.getMetaClass(rubyClass);
     }
 
-
     public static DynamicObject getSuperClass(DynamicObject rubyClass) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -262,7 +263,7 @@ public abstract class ClassNodes {
         void moduleInitialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject block) {
             if (moduleInitializeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null}));
+                moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{ null, null }));
             }
             moduleInitializeNode.executeInitialize(frame, rubyClass, block);
         }

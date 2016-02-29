@@ -318,7 +318,7 @@ public abstract class ModuleOperations {
                 }
             }
         }
-        assert foundDeclaringModule : "Did not find the declaring module in "+ Layouts.MODULE.getFields(objectMetaClass).getName() +" ancestors";
+        assert foundDeclaringModule : "Did not find the declaring module in " + Layouts.MODULE.getFields(objectMetaClass).getName() + " ancestors";
 
         return null;
     }
