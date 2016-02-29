@@ -11,15 +11,12 @@ package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -51,86 +48,17 @@ public class FeatureLoader {
     }
 
     public boolean require(String feature, Node currentNode) {
-        final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, context.getCoreLibrary().getObjectClass(), "DATA");
+        final String x = findFeature(feature);
 
-        if (feature.startsWith("./")) {
-            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
-            feature = cwd + "/" + feature.substring(2);
-        } else if (feature.startsWith("../")) {
-            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
-            feature = cwd.substring(0, cwd.lastIndexOf('/')) + "/" + feature.substring(3);
-        }
-
-        try {
-            if (isAbsolutePath(feature)) {
-                // Try as a full path
-
-                final RequireResult result = tryToRequireFileInPath(null, feature, currentNode);
-
-                if (result.success) {
-                    return result.firstRequire;
-                }
-            } else {
-                // Try each load path in turn
-
-                for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
-                    String loadPath = pathObject.toString();
-                    if (!isAbsolutePath(loadPath)) {
-                        loadPath = expandPath(context, loadPath);
-                    }
-
-                    final RequireResult result = tryToRequireFileInPath(loadPath, feature, currentNode);
-
-                    if (result.success) {
-                        return result.firstRequire;
-                    }
-                }
-            }
-
+        if (x == null) {
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (dataConstantBefore == null) {
-                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(context, currentNode, "DATA");
-            } else {
-                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, currentNode, "DATA", dataConstantBefore.getValue());
-            }
-        }
-    }
-
-    private RequireResult tryToRequireFileInPath(String path, String feature, Node currentNode) throws IOException {
-        String fullPath = new File(path, feature).getPath();
-
-        final RequireResult firstAttempt = tryToRequireFile(fullPath + ".rb", currentNode);
-
-        if (firstAttempt.success) {
-            return firstAttempt;
         }
 
-        return tryToRequireFile(fullPath, currentNode);
+        return doRequire(x, currentNode).firstRequire;
     }
 
-    private RequireResult tryToRequireFile(String path, Node currentNode) throws IOException {
-        // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
-        path = path.replace('\\', '/');
+    private RequireResult doRequire(String expandedPath, Node currentNode) {
         final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
-
-        final String expandedPath;
-
-        if (!(path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME))) {
-            final File file = new File(path);
-
-            assert file.isAbsolute();
-
-            if (!file.isFile()) {
-                return RequireResult.FAILED;
-            }
-
-            expandedPath = new File(expandPath(context, path)).getCanonicalPath();
-        } else {
-            expandedPath = path;
-        }
 
         for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
             if (loaded.toString().equals(expandedPath)) {
@@ -179,6 +107,81 @@ public class FeatureLoader {
          */
 
         return org.jruby.RubyFile.canonicalize(new File(dir, fileName).getAbsolutePath());
+    }
+
+    private String findFeature(String feature) {
+        if (feature.startsWith("./")) {
+            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
+            feature = cwd + "/" + feature.substring(2);
+        } else if (feature.startsWith("../")) {
+            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
+            feature = cwd.substring(0, cwd.lastIndexOf('/')) + "/" + feature.substring(3);
+        }
+
+        if (isAbsolutePath(feature)) {
+            // Try as a full path
+
+            return tryToRequireFileInPath(null, feature, null);
+        } else {
+            // Try each load path in turn
+
+            for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
+                String loadPath = pathObject.toString();
+                if (!isAbsolutePath(loadPath)) {
+                    loadPath = expandPath(context, loadPath);
+                }
+
+                final String result = tryToRequireFileInPath(loadPath, feature, null);
+
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String tryToRequireFileInPath(String path, String feature, Node currentNode) {
+        String fullPath = new File(path, feature).getPath();
+
+        final String x = tryToRequireFileInPath(fullPath + ".rb", currentNode);
+
+        if (x != null) {
+            return x;
+        }
+
+        final String y = tryToRequireFileInPath(fullPath, currentNode);
+
+        if (y != null) {
+            return y;
+        }
+
+        return null;
+    }
+
+    private String tryToRequireFileInPath(String path, Node currentNode) {
+        final String expandedPath;
+
+        if (!(path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME))) {
+            final File file = new File(path);
+
+            assert file.isAbsolute();
+
+            if (!file.isFile()) {
+                return null;
+            }
+
+            try {
+                expandedPath = new File(expandPath(context, path)).getCanonicalPath();
+            } catch (IOException e) {
+                return null;
+            }
+        } else {
+            expandedPath = path;
+        }
+
+        return expandedPath;
     }
 
 }
