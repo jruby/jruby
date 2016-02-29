@@ -676,7 +676,7 @@ public class BodyTranslator extends Translator {
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
             translated = new FrameOnStackNode(context, translated.getSourceSection(), translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
-            translated = new CatchBreakNode(context, translated.getSourceSection(), translated, blockDef.getBreakID());
+            translated = new CatchBreakNode(context, translated.getSourceSection(), blockDef.getBreakID(), translated);
         }
 
         return addNewlineIfNeeded(node, translated);
@@ -2994,7 +2994,7 @@ public class BodyTranslator extends Translator {
             loop = WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
 
-        final RubyNode ret = new CatchBreakNode(context, sourceSection, loop, whileBreakID);
+        final RubyNode ret = new CatchBreakNode(context, sourceSection, whileBreakID, loop);
         return addNewlineIfNeeded(node, ret);
     }
 

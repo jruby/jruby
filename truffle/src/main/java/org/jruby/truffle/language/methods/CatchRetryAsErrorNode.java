@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.language.methods;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
@@ -20,6 +20,8 @@ import org.jruby.truffle.language.control.RetryException;
 public class CatchRetryAsErrorNode extends RubyNode {
 
     @Child private RubyNode body;
+
+    private final BranchProfile retryProfile = BranchProfile.create();
 
     public CatchRetryAsErrorNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
@@ -31,8 +33,8 @@ public class CatchRetryAsErrorNode extends RubyNode {
         try {
             return body.execute(frame);
         } catch (RetryException e) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().syntaxError("Invalid retry", this));
+            retryProfile.enter();
+            throw new RaiseException(coreLibrary().syntaxErrorInvalidRetry(this));
         }
     }
 

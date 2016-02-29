@@ -30,8 +30,6 @@ import org.jruby.truffle.core.proc.ProcNodes.Type;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.arguments.CheckArityNode;
-import org.jruby.truffle.language.arguments.CheckKeywordArityNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
@@ -149,7 +147,7 @@ public class MethodTranslator extends BodyTranslator {
 
         // Lambdas
         final RubyNode composed = composeBody(preludeLambda, body /* no copy, last usage */);
-        final RubyNode bodyLambda = new CatchForLambdaNode(context, composed.getEncapsulatingSourceSection(), composed, environment.getReturnID());
+        final RubyNode bodyLambda = new CatchForLambdaNode(context, composed.getEncapsulatingSourceSection(), environment.getReturnID(), composed);
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
                 context, considerExtendingMethodToCoverEnd(bodyLambda.getEncapsulatingSourceSection()),
@@ -247,7 +245,7 @@ public class MethodTranslator extends BodyTranslator {
             body = sequence(context, body.getSourceSection(), Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
 
-        body = new CatchForMethodNode(context, body.getSourceSection(), body, environment.getReturnID());
+        body = new CatchForMethodNode(context, body.getSourceSection(), environment.getReturnID(), body);
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
         body = new ExceptionTranslatingNode(context, body.getSourceSection(), body);
