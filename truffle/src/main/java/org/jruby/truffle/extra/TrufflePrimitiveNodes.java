@@ -50,10 +50,13 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.truffle.tools.SimpleShell;
@@ -61,6 +64,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.unsafe.UnsafeHolder;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -835,7 +839,8 @@ public abstract class TrufflePrimitiveNodes {
             }
 
             try {
-                getContext().getCodeLoader().loadFile(StringOperations.getString(getContext(), file), this);
+                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(StringOperations.getString(getContext(), file)), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
+                getContext().getCodeLoader().execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().loadErrorCannotLoad(file.toString(), this));
@@ -859,7 +864,39 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public Object runJRubyRootNode() {
-            return getContext().getCodeLoader().execute(getContext().getInitialJRubyRootNode());
+            coreLibrary().getGlobalVariablesObject().define(
+                    "$0",
+                    StringOperations.createString(getContext(),
+                            ByteList.create(getContext().getJRubyInterop().getArg0())));
+
+            String inputFile = getContext().getInitialJRubyRootNode().getPosition().getFile();
+
+            final Source source;
+
+            try {
+                if (!inputFile.equals("-e")) {
+                    inputFile = new File(inputFile).getCanonicalPath();
+                }
+
+                source = getContext().getSourceCache().getSource(inputFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            final RubyRootNode rootNode = getContext().getCodeLoader().parse(
+                    source,
+                    UTF8Encoding.INSTANCE,
+                    ParserContext.TOP_LEVEL_FIRST,
+                    null,
+                    true,
+                    null);
+
+            return getContext().getCodeLoader().execute(
+                    ParserContext.TOP_LEVEL,
+                    DeclarationContext.TOP_LEVEL,
+                    rootNode,
+                    null,
+                    coreLibrary().getMainObject());
         }
     }
 

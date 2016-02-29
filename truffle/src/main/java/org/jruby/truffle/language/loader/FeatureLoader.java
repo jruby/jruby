@@ -20,7 +20,10 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyConstant;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.parser.ParserContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,9 +31,6 @@ import java.io.IOException;
 public class FeatureLoader {
 
     private final RubyContext context;
-
-    private Source mainScriptSource = null;
-    private String mainScriptFullPath = null;
 
     public FeatureLoader(RubyContext context) {
         this.context = context;
@@ -142,7 +142,8 @@ public class FeatureLoader {
         final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
         ArrayOperations.append(loadedFeatures, pathString);
         try {
-            context.getCodeLoader().loadFile(expandedPath, currentNode);
+            final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(expandedPath), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, currentNode);
+            context.getCodeLoader().execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
         } catch (RaiseException e) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
             final int length = Layouts.ARRAY.getSize(loadedFeatures);
@@ -161,30 +162,11 @@ public class FeatureLoader {
         return RequireResult.REQUIRED;
     }
 
-    public void setMainScriptSource(Source source) {
-        this.mainScriptSource = source;
-        if (source.getPath() != null && !source.getPath().equals("-e")) {
-            this.mainScriptFullPath = expandPath(context, source.getPath());
-        }
-    }
-
-    public String getSourcePath(Source source) {
-        if (source == mainScriptSource) {
-            return mainScriptFullPath;
-        } else {
-            if (source.getPath() == null) {
-                return source.getShortName();
-            } else {
-                return source.getPath();
-            }
-        }
-    }
-
-    public boolean isAbsolutePath(String path) {
+    private boolean isAbsolutePath(String path) {
         return path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME) || new File(path).isAbsolute();
     }
 
-    public static String expandPath(RubyContext context, String fileName) {
+    private static String expandPath(RubyContext context, String fileName) {
         String dir = new File(fileName).isAbsolute() ? null : context.getJRubyRuntime().getCurrentDirectory();
         return expandPath(fileName, dir);
     }

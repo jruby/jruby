@@ -129,7 +129,7 @@ public class TraceManager {
 
             isInTraceFunc = true;
             try {
-                context.getCodeLoader().inlineRubyHelper(this, frame, "traceFunc.call(event, file, line, id, binding, classname)", "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
+                context.getCodeLoader().inline(this, frame, "traceFunc.call(event, file, line, id, binding, classname)", "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
             } finally {
                isInTraceFunc = false;
             }
@@ -194,7 +194,7 @@ public class TraceManager {
 
             isInTraceFunc = true;
             try {
-                context.getCodeLoader().inlineRubyHelper(this, frame, callTraceFuncCode, "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
+                context.getCodeLoader().inline(this, frame, callTraceFuncCode, "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
             } finally {
                 isInTraceFunc = false;
             }

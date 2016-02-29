@@ -40,7 +40,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
-import org.jruby.truffle.language.translator.Translator;
+import org.jruby.truffle.language.parser.jruby.Translator;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

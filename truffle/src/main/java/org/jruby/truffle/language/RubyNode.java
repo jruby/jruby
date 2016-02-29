@@ -197,7 +197,7 @@ public abstract class RubyNode extends Node {
     }
 
     protected Object ruby(String expression, Object... arguments) {
-        return getContext().getCodeLoader().inlineRubyHelper(this, expression, arguments);
+        return getContext().getCodeLoader().inline(this, expression, arguments);
     }
 
     // Accessors

@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language.translator;
+package org.jruby.truffle.language.parser.jruby;
 
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
@@ -22,6 +22,9 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.LoadRequiredLibrariesNode;
+import org.jruby.truffle.core.SetTopLevelBindingNode;
+import org.jruby.truffle.language.DataNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -29,6 +32,7 @@ import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.CatchNextNode;
@@ -36,17 +40,15 @@ import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.parser.Parser;
+import org.jruby.truffle.language.parser.ParserContext;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class TranslatorDriver {
-
-    public enum ParserContext {
-        TOP_LEVEL, SHELL, MODULE, EVAL, INLINE
-    }
+public class TranslatorDriver implements Parser {
 
     private final ParseEnvironment parseEnvironment;
 
@@ -54,6 +56,7 @@ public class TranslatorDriver {
         parseEnvironment = new ParseEnvironment(context);
     }
 
+    @Override
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
@@ -112,10 +115,6 @@ public class TranslatorDriver {
             throw new RaiseException(context.getCoreLibrary().syntaxError(message, currentNode));
         }
 
-        return parse(currentNode, context, source, parserContext, argumentNames, parentFrame, ownScopeForAssignments, node);
-    }
-
-    private RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, String[] argumentNames, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
 
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
@@ -147,11 +146,11 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
+        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL_FIRST || parserContext == ParserContext.TOP_LEVEL);
 
         RubyNode truffleNode;
 
-        if (rootNode.getBodyNode() == null || rootNode.getBodyNode() instanceof org.jruby.ast.NilNode) {
+        if (node.getBodyNode() == null || node.getBodyNode() instanceof org.jruby.ast.NilNode) {
             translator.parentSourceSection.push(sourceSection);
             try {
                 truffleNode = translator.nilNode(sourceSection);
@@ -159,7 +158,7 @@ public class TranslatorDriver {
                 translator.parentSourceSection.pop();
             }
         } else {
-            truffleNode = rootNode.getBodyNode().accept(translator);
+            truffleNode = node.getBodyNode().accept(translator);
         }
 
         // Load arguments
@@ -198,7 +197,19 @@ public class TranslatorDriver {
 
         truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
 
-        // Shell result
+        if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
+            truffleNode = new TopLevelRaiseHandler(context, sourceSection,
+                    Translator.sequence(context, sourceSection, Arrays.asList(
+                            new SetTopLevelBindingNode(context, sourceSection),
+                            new LoadRequiredLibrariesNode(context, sourceSection),
+                            truffleNode)));
+
+            if (node.hasEndPosition()) {
+                truffleNode = translator.sequence(context, sourceSection, Arrays.asList(
+                        new DataNode(context, sourceSection, node.getEndPosition()),
+                        truffleNode));
+            }
+        }
 
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }

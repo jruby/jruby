@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
@@ -32,6 +33,7 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -42,8 +44,10 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -157,7 +161,10 @@ public abstract class BasicObjectNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
-            return getContext().getCodeLoader().instanceEval(StringOperations.getByteListReadOnly(string), receiver, "(eval)", this);
+            ByteList code = StringOperations.getByteListReadOnly(string);
+            final Source source = Source.fromText(code, "(eval)");
+            final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
+            return getContext().getCodeLoader().execute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
         }
 
         @Specialization

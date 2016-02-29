@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language.translator;
+package org.jruby.truffle.language.parser.jruby;
 
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;

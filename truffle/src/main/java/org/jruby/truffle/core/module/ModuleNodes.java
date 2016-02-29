@@ -89,8 +89,8 @@ import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
-import org.jruby.truffle.language.translator.Translator;
-import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.IdUtil;
 
@@ -675,7 +675,8 @@ public abstract class ModuleNodes {
             final String space = new String(new char[line-1]).replace("\0", "\n");
             Source source = Source.fromText(space + code.toString(), file);
 
-            return getContext().getCodeLoader().parseAndExecute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this);
+            final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, encoding, ParserContext.MODULE, callerFrame, true, this);
+            return getContext().getCodeLoader().execute(ParserContext.MODULE, DeclarationContext.CLASS_EVAL, rootNode, callerFrame, module);
         }
 
         @Specialization
