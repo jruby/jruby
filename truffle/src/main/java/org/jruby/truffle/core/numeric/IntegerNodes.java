@@ -26,6 +26,7 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+
 import java.math.BigInteger;
 
 @CoreClass(name = "Integer")
