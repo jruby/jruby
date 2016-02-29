@@ -435,12 +435,12 @@ class JRubyTruffleRunner
     truffle_options = [
         ('-X+T'),
         ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core]),
-        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
-        (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug])
+        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
     ]
 
     cmd_options = [
         *(truffle_options unless @options[:run][:no_truffle]),
+        (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
         *ruby_options,
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
         *@options[:run][:load_path].flat_map { |v| ['-I', v] },
