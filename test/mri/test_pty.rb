@@ -209,8 +209,7 @@ class TestPTY < Test::Unit::TestCase
       assert_nothing_raised(PTY::ChildExited, bug2642) {st1 = PTY.check(pid, true)}
       w.close
       r.close
-      sleep(0.1)
-      st2 = assert_raise(PTY::ChildExited, bug2642) {PTY.check(pid, true)}.status
+      st2 = assert_raise(PTY::ChildExited, bug2642) { loop { sleep(0.1);PTY.check(pid, true) } }.status
     end
   rescue RuntimeError
     skip $!
