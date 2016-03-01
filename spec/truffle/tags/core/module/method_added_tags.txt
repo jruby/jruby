@@ -1,0 +1,1 @@
+fails:Module#method_added is not called when a singleton method is added
