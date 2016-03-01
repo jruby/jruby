@@ -26,7 +26,15 @@ class JRubyTruffleRunner
     def execute_cmd(cmd, dir: nil, raise: true, print: false)
       result      = nil
       system_call = proc do
-        result = system(*print_cmd(cmd, dir, print))
+        begin
+          pid = Process.spawn(*print_cmd(cmd, dir, print))
+          Process.wait pid
+          result = $?.success?
+        rescue SignalException => e
+          # terminate the child process on signal received
+          Process.kill 'TERM', pid
+          raise e
+        end
       end
 
       if dir
