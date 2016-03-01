@@ -1,1 +1,0 @@
-fails:BasicObject#singleton_method_added is a private method
