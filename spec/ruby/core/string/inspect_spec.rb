@@ -313,10 +313,8 @@ describe "String#inspect" do
     ].should be_computed_by(:inspect)
   end
 
-  ruby_version_is "".."2.1" do
-    it "returns a string with a NUL character replaced by \\x notation" do
-      0.chr.inspect.should == '"\\x00"'
-    end
+  it "returns a string with a NUL character replaced by \\x notation" do
+    0.chr.inspect.should == '"\\x00"'
   end
 
   describe "when default external is UTF-8" do
@@ -387,10 +385,8 @@ describe "String#inspect" do
       ].should be_computed_by(:inspect)
     end
 
-    ruby_version_is "".."2.1" do
-      it "returns a string with a NUL character replaced by \\u notation" do
-        0.chr('utf-8').inspect.should == '"\\u0000"'
-      end
+    it "returns a string with a NUL character replaced by \\u notation" do
+      0.chr('utf-8').inspect.should == '"\\u0000"'
     end
 
     it "returns a string with extended characters for Unicode strings" do

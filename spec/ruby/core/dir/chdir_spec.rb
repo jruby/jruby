@@ -20,11 +20,12 @@ describe "Dir.chdir" do
 
   it "defaults to $HOME with no arguments" do
     if ENV['HOME']
-    Dir.chdir(ENV['HOME'])
-    home = Dir.pwd
+      Dir.chdir
+      current_dir = Dir.pwd
 
-    Dir.chdir
-    Dir.pwd.should == home
+      Dir.chdir(ENV['HOME'])
+      home = Dir.pwd
+      current_dir.should == home
     end
   end
 
@@ -75,7 +76,8 @@ describe "Dir.chdir" do
     Dir.chdir { current_dir = Dir.pwd }
 
     Dir.chdir(ENV['HOME'])
-    current_dir.should == Dir.pwd
+    home = Dir.pwd
+    current_dir.should == home
   end
 
   it "changes to the specified directory for the duration of the block" do

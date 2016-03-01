@@ -11,7 +11,7 @@ describe "Module#ancestors" do
       [ModuleSpecs::Parent, Object, Kernel, BasicObject]
     ModuleSpecs.without_test_modules(ModuleSpecs::Child.ancestors).should ==
       [ModuleSpecs::Child, ModuleSpecs::Super, ModuleSpecs::Basic, ModuleSpecs::Parent, Object, Kernel, BasicObject]
-  end  
+  end
 
   it "returns only modules and classes" do
     class << ModuleSpecs::Child; self; end.ancestors.should include(ModuleSpecs::Internal, Class, Module, Object, Kernel)

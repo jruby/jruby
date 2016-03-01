@@ -46,7 +46,7 @@ describe "Enumerable#grep" do
     end
 
     it "raises an ArgumentError when not given a pattern" do
-      -> { @numerous.grep_v { |e| e } }.should raise_error(ArgumentError)
+      -> { @numerous.grep { |e| e } }.should raise_error(ArgumentError)
     end
   end
 end
