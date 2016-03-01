@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.platform.java;
 
-import org.jruby.truffle.core.ffi.TimeSpec;
+import org.jruby.truffle.platform.TimeSpec;
 import org.jruby.truffle.platform.ClockGetTime;
 
 public class JavaClockGetTime implements ClockGetTime {
