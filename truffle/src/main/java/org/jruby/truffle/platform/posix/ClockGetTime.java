@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.platform;
+package org.jruby.truffle.platform.posix;
 
 public interface ClockGetTime {
     int clock_gettime(int clock_id, TimeSpec timeSpec);

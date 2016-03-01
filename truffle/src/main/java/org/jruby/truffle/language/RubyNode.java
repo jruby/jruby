@@ -27,7 +27,7 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.platform.Sockets;
+import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)

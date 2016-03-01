@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.platform.java;
 
-import org.jruby.truffle.platform.TimeSpec;
-import org.jruby.truffle.platform.ClockGetTime;
+import org.jruby.truffle.platform.posix.TimeSpec;
+import org.jruby.truffle.platform.posix.ClockGetTime;
 
 public class JavaClockGetTime implements ClockGetTime {
 
