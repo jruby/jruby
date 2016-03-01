@@ -10,5 +10,7 @@
 package org.jruby.truffle.platform.posix;
 
 public interface ClockGetTime {
+
     int clock_gettime(int clock_id, TimeSpec timeSpec);
+
 }

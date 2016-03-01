@@ -12,6 +12,7 @@ package org.jruby.truffle.platform.posix;
 import jnr.ffi.Struct;
 
 public final class TimeSpec extends Struct {
+
     public final time_t tv_sec = new time_t();
     public final SignedLong tv_nsec = new SignedLong();
 
@@ -26,4 +27,5 @@ public final class TimeSpec extends Struct {
     public long getTVnsec() {
         return tv_nsec.get();
     }
+
 }

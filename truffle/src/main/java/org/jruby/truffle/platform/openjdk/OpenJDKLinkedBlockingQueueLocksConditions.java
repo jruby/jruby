@@ -17,10 +17,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class OpenJDKLinkedBlockingQueueLocksConditions<T> extends DelegatingBlockingQueue<T> implements LinkedBlockingQueueLocksConditions<T> {
+public class OpenJDKLinkedBlockingQueueLocksConditions<T>
+        extends DelegatingBlockingQueue<T> implements LinkedBlockingQueueLocksConditions<T> {
 
-    private static final MethodHandle TAKE_LOCK_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "takeLock");
-    private static final MethodHandle NOT_EMPTY_CONDITION_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "notEmpty");
+    private static final MethodHandle TAKE_LOCK_FIELD_GETTER
+            = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "takeLock");
+
+    private static final MethodHandle NOT_EMPTY_CONDITION_FIELD_GETTER
+            = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "notEmpty");
 
     private final ReentrantLock lock;
     private final Condition notEmptyCondition;

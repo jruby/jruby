@@ -21,15 +21,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class SunMiscSignalManager implements SignalManager {
 
-    public final Map<String, Integer> SIGNALS_LIST = Collections.unmodifiableMap(RubySignal.list());
-
-    public final SignalHandler IGNORE_HANDLER = new SignalHandler() {
-        @Override
-        public void handle(Signal arg0) {
-            // Just ignore the signal.
-        }
-    };
-    private final ConcurrentMap<sun.misc.Signal, sun.misc.SignalHandler> DEFAULT_HANDLERS = new ConcurrentHashMap<sun.misc.Signal, sun.misc.SignalHandler>();
+    private final ConcurrentMap<sun.misc.Signal, sun.misc.SignalHandler> DEFAULT_HANDLERS = new ConcurrentHashMap<>();
 
     @Override
     public Signal createSignal(String name) {
@@ -38,18 +30,21 @@ public class SunMiscSignalManager implements SignalManager {
 
     @Override
     public void watchSignal(Signal signal, SignalHandler newHandler) throws IllegalArgumentException {
-        handle((SunMiscSignal) signal, newHandler);
+        handle(signal, newHandler);
     }
 
     @Override
     public void watchDefaultForSignal(Signal signal) throws IllegalArgumentException {
-        handleDefault((SunMiscSignal) signal);
+        handleDefault(signal);
     }
 
     @Override
     public void handle(final Signal signal, final SignalHandler newHandler) throws IllegalArgumentException {
         final SunMiscSignal smSignal = (SunMiscSignal) signal;
-        final sun.misc.SignalHandler oldSunHandler = sun.misc.Signal.handle(smSignal.getSunMiscSignal(), wrapHandler(signal, newHandler));
+
+        final sun.misc.SignalHandler oldSunHandler = sun.misc.Signal.handle(
+                smSignal.getSunMiscSignal(), wrapHandler(signal, newHandler));
+
         DEFAULT_HANDLERS.putIfAbsent(smSignal.getSunMiscSignal(), oldSunHandler);
     }
 
