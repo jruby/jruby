@@ -98,7 +98,7 @@ class String
       raise ArgumentError, "unable to multiple negative times (#{num})"
     end
 
-    str = self.class.pattern num * @num_bytes, self
+    str = self.class.pattern num * bytesize, self
     return str
   end
 
@@ -119,15 +119,15 @@ class String
       return false
     end
 
-    return false unless @num_bytes == other.bytesize
+    return false unless bytesize == other.bytesize
     return false unless Encoding.compatible?(self, other)
-    return @data.compare_bytes(other.__data__, @num_bytes, other.bytesize) == 0
+    return @data.compare_bytes(other.__data__, bytesize, other.bytesize) == 0
   end
 
   def =~(pattern)
     case pattern
     when Regexp
-      match_data = pattern.search_region(self, 0, @num_bytes, true)
+      match_data = pattern.search_region(self, 0, bytesize, true)
       Regexp.last_match = match_data
       return match_data.begin(0) if match_data
     when String
@@ -156,7 +156,7 @@ class String
 
     case index
     when Regexp
-      match_data = index.search_region(self, 0, @num_bytes, true)
+      match_data = index.search_region(self, 0, bytesize, true)
       Regexp.last_match = match_data
       if match_data
         result = match_data.to_s
@@ -190,7 +190,7 @@ class String
   alias_method :slice, :[]
 
   def capitalize
-    return dup if @num_bytes == 0
+    return dup if bytesize == 0
 
     str = transform(Rubinius::CType::Lowered)
 
@@ -215,8 +215,8 @@ class String
 
   def casecmp(to)
     to = StringValue(to)
-    order = @num_bytes - to.num_bytes
-    size = order < 0 ? @num_bytes : to.num_bytes
+    order = bytesize - to.num_bytes
+    size = order < 0 ? bytesize : to.num_bytes
 
     ctype = Rubinius::CType
 
@@ -251,12 +251,12 @@ class String
   def count(*strings)
     raise ArgumentError, "wrong number of Arguments" if strings.empty?
 
-    return 0 if @num_bytes == 0
+    return 0 if bytesize == 0
 
     table = count_table(*strings).__data__
 
     count = bytes = 0
-    while bytes < @num_bytes
+    while bytes < bytesize
       count += 1 if table[@data[bytes]] == 1
       bytes += find_character(bytes).num_bytes
     end
@@ -291,7 +291,7 @@ class String
     i = 0
     j = -1
 
-    while i < @num_bytes
+    while i < bytesize
       c = @data[i]
       unless table[c] == 1
         @data[j+=1] = c
@@ -299,7 +299,7 @@ class String
       i += 1
     end
 
-    if (j += 1) < @num_bytes
+    if (j += 1) < bytesize
       self.num_bytes = j
       self
     else
@@ -308,14 +308,14 @@ class String
   end
 
   def downcase
-    return dup if @num_bytes == 0
+    return dup if bytesize == 0
     transform(Rubinius::CType::Lowered)
   end
 
   def downcase!
     Rubinius.check_frozen
 
-    return if @num_bytes == 0
+    return if bytesize == 0
 
     str = transform(Rubinius::CType::Lowered)
 
@@ -330,7 +330,7 @@ class String
     return to_enum(:each_char) { size } unless block_given?
 
     bytes = 0
-    while bytes < @num_bytes
+    while bytes < bytesize
       char = find_character(bytes)
       yield char
       bytes += char.num_bytes
@@ -342,7 +342,7 @@ class String
   def each_byte
     return to_enum(:each_byte) { bytesize } unless block_given?
     i = 0
-    while i < @num_bytes do
+    while i < bytesize do
       yield @data.get_byte(i)
       i += 1
     end
@@ -350,7 +350,7 @@ class String
   end
 
   def empty?
-    @num_bytes == 0
+    bytesize == 0
   end
 
   def end_with?(*suffixes)
@@ -366,9 +366,9 @@ class String
   def eql?(other)
     Rubinius.primitive :string_equal
 
-    return false unless other.kind_of?(String) && other.bytesize == @num_bytes
+    return false unless other.kind_of?(String) && other.bytesize == bytesize
     return false unless Encoding.compatible?(self, other)
-    return @data.compare_bytes(other.__data__, @num_bytes, other.bytesize) == 0
+    return @data.compare_bytes(other.__data__, bytesize, other.bytesize) == 0
   end
 
   # This method is specifically part of 1.9 but we enable it in 1.8 also
@@ -534,7 +534,7 @@ class String
   end
 
   def squeeze!(*strings)
-    return if @num_bytes == 0
+    return if bytesize == 0
 
     table = count_table(*strings).__data__
     self.modify!
@@ -543,7 +543,7 @@ class String
     j = 0
     last = @data[0]
 
-    while i < @num_bytes
+    while i < bytesize
       c = @data[i]
       unless c == last and table[c] == 1
         @data[j+=1] = last = c
@@ -551,7 +551,7 @@ class String
       i += 1
     end
 
-    if (j += 1) < @num_bytes
+    if (j += 1) < bytesize
       self.num_bytes = j
       self
     else
@@ -588,7 +588,7 @@ class String
     i = -1
     sum = 0
 
-    sum += @data[i] while (i += 1) < @num_bytes
+    sum += @data[i] while (i += 1) < bytesize
     if bits > 0
       sum & ((1 << bits) - 1)
     else
@@ -603,14 +603,14 @@ class String
 
   def swapcase!
     self.modify!
-    return if @num_bytes == 0
+    return if bytesize == 0
 
     modified = false
 
     ctype = Rubinius::CType
 
     i = 0
-    while i < @num_bytes
+    while i < bytesize
       c = @data[i]
       if ctype.islower(c)
         @data[i] = ctype.toupper!(c)
@@ -676,7 +676,7 @@ class String
   end
 
   def upcase!
-    return if @num_bytes == 0
+    return if bytesize == 0
     self.modify!
 
     modified = false
@@ -684,7 +684,7 @@ class String
     ctype = Rubinius::CType
 
     i = 0
-    while i < @num_bytes
+    while i < bytesize
       c = @data[i]
       if ctype.islower(c)
         @data[i] = ctype.toupper!(c)
@@ -698,16 +698,16 @@ class String
 
   def to_sub_replacement(result, match)
     index = 0
-    while index < @num_bytes
+    while index < bytesize
       current = index
-      while current < @num_bytes && @data[current] != 92  # ?\\
+      while current < bytesize && @data[current] != 92  # ?\\
         current += 1
       end
       result.append(byteslice(index, current - index))
-      break if current == @num_bytes
+      break if current == bytesize
 
       # found backslash escape, looking next
-      if current == @num_bytes - 1
+      if current == bytesize - 1
         result.append("\\") # backslash at end of string
         break
       end
@@ -768,7 +768,7 @@ class String
   def compare_substring(other, start, size)
     Rubinius.primitive :string_compare_substring
 
-    if start > @num_bytes || start + @num_bytes < 0
+    if start > bytesize || start + bytesize < 0
       raise IndexError, "index #{start} out of string"
     end
     raise PrimitiveFailure, "String#compare_substring primitive failed"
@@ -840,19 +840,19 @@ class String
 
   def prefix?(other)
     size = other.size
-    return false if size > @num_bytes
+    return false if size > bytesize
     other.compare_substring(self, 0, size) == 0
   end
 
   def suffix?(other)
     size = other.size
-    return false if size > @num_bytes
+    return false if size > bytesize
     other.compare_substring(self, -size, size) == 0
   end
 
   def shorten!(size)
     self.modify!
-    return if @num_bytes == 0
+    return if bytesize == 0
     self.num_bytes -= size
   end
 
@@ -1360,11 +1360,11 @@ class String
   def succ!
     self.modify!
 
-    return self if @num_bytes == 0
+    return self if bytesize == 0
 
     carry = nil
     last_alnum = 0
-    start = @num_bytes - 1
+    start = bytesize - 1
 
     ctype = Rubinius::CType
 
@@ -1429,9 +1429,9 @@ class String
 
   def rstrip!
     Rubinius.check_frozen
-    return if @num_bytes == 0
+    return if bytesize == 0
 
-    stop = @num_bytes - 1
+    stop = bytesize - 1
 
     ctype = Rubinius::CType
 
@@ -1439,7 +1439,7 @@ class String
       stop -= 1
     end
 
-    return if (stop += 1) == @num_bytes
+    return if (stop += 1) == bytesize
 
     modify!
     self.num_bytes = stop
@@ -1448,13 +1448,13 @@ class String
 
   def lstrip!
     Rubinius.check_frozen
-    return if @num_bytes == 0
+    return if bytesize == 0
 
     start = 0
 
     ctype = Rubinius::CType
 
-    while start < @num_bytes && ctype.isspace(@data[start])
+    while start < bytesize && ctype.isspace(@data[start])
       start += 1
     end
 
@@ -1462,7 +1462,7 @@ class String
 
     modify!
     self.num_bytes -= start
-    @data.move_bytes start, @num_bytes, 0
+    @data.move_bytes start, bytesize, 0
     self
   end
 
@@ -1471,7 +1471,7 @@ class String
 
     m = Rubinius::Mirror.reflect self
 
-    bytes = m.previous_byte_index @num_bytes
+    bytes = m.previous_byte_index bytesize
     return unless bytes
 
     chr = chr_at bytes
@@ -1505,7 +1505,7 @@ class String
     m = Rubinius::Mirror.reflect self
 
     if sep == DEFAULT_RECORD_SEPARATOR
-      return unless bytes = m.previous_byte_index(@num_bytes)
+      return unless bytes = m.previous_byte_index(bytesize)
 
       chr = chr_at bytes
       return unless chr.ascii?
@@ -1525,8 +1525,8 @@ class String
         return
       end
     elsif sep.size == 0
-      return if @num_bytes == 0
-      bytes = @num_bytes
+      return if bytesize == 0
+      bytes = bytesize
 
       while i = m.previous_byte_index(bytes)
         chr = chr_at i
@@ -1542,14 +1542,14 @@ class String
         end
       end
 
-      return if bytes == @num_bytes
+      return if bytes == bytesize
     else
       size = sep.size
-      return if size > @num_bytes
+      return if size > bytesize
 
       # TODO: Move #compare_substring to mirror.
       return unless sep.compare_substring(self, -size, size) == 0
-      bytes = @num_bytes - size
+      bytes = bytesize - size
     end
 
     # We do not need to dup the data, so don't use #modify!
@@ -1625,7 +1625,7 @@ class String
 
     pos = 0
 
-    size = @num_bytes
+    size = bytesize
     orig_data = @data
 
     # If the separator is empty, we're actually in paragraph mode. This
@@ -1639,20 +1639,20 @@ class String
         nxt = find_string(sep, pos)
         break unless nxt
 
-        while @data[nxt] == 10 and nxt < @num_bytes
+        while @data[nxt] == 10 and nxt < bytesize
           nxt += 1
         end
 
         match_size = nxt - pos
 
         # string ends with \n's
-        break if pos == @num_bytes
+        break if pos == bytesize
 
         str = byteslice pos, match_size
         yield str unless str.empty?
 
         # detect mutation within the block
-        if !@data.equal?(orig_data) or @num_bytes != size
+        if !@data.equal?(orig_data) or bytesize != size
           raise RuntimeError, "string modified while iterating"
         end
 
@@ -1660,7 +1660,7 @@ class String
       end
 
       # No more separates, but we need to grab the last part still.
-      fin = byteslice pos, @num_bytes - pos
+      fin = byteslice pos, bytesize - pos
       yield fin if fin and !fin.empty?
 
     else
@@ -1681,7 +1681,7 @@ class String
       end
 
       # No more separates, but we need to grab the last part still.
-      fin = unmodified_self.byteslice pos, @num_bytes - pos
+      fin = unmodified_self.byteslice pos, bytesize - pos
       yield fin unless fin.empty?
     end
 
@@ -1727,13 +1727,13 @@ class String
     end
 
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
-    match = pattern.search_region(self, 0, @num_bytes, true)
+    match = pattern.search_region(self, 0, bytesize, true)
 
     unless match
       Regexp.last_match = nil
     end
 
-    orig_len = @num_bytes
+    orig_len = bytesize
     orig_data = @data
 
     last_end = 0
@@ -1764,7 +1764,7 @@ class String
 
         ret.append val
 
-        if !@data.equal?(orig_data) or @num_bytes != orig_len
+        if !@data.equal?(orig_data) or bytesize != orig_len
           raise RuntimeError, "string modified"
         end
       else
@@ -1795,7 +1795,7 @@ class String
 
     Regexp.last_match = last_match
 
-    str = byteslice(last_end, @num_bytes-last_end+1)
+    str = byteslice(last_end, bytesize-last_end+1)
     if str
       ret.append str
     end
@@ -1836,14 +1836,14 @@ class String
     end
 
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
-    match = pattern.search_region(self, 0, @num_bytes, true)
+    match = pattern.search_region(self, 0, bytesize, true)
 
     unless match
       Regexp.last_match = nil
       return nil
     end
 
-    orig_len = @num_bytes
+    orig_len = bytesize
     orig_data = @data
 
     last_end = 0
@@ -1874,7 +1874,7 @@ class String
 
         ret.append val
 
-        if !@data.equal?(orig_data) or @num_bytes != orig_len
+        if !@data.equal?(orig_data) or bytesize != orig_len
           raise RuntimeError, "string modified"
         end
       else
@@ -1905,7 +1905,7 @@ class String
 
     Regexp.last_match = last_match
 
-    str = byteslice(last_end, @num_bytes-last_end+1)
+    str = byteslice(last_end, bytesize-last_end+1)
     if str
       ret.append str
     end
@@ -2371,7 +2371,7 @@ class String
     end
 
     osize = other.bytesize
-    size = @num_bytes + osize
+    size = bytesize + osize
     str = self.class.pattern size, "\0"
 
     self_m = Rubinius::Mirror.reflect self
@@ -2381,13 +2381,13 @@ class String
     @hash_value = nil
 
     m = Rubinius::Mirror.reflect str
-    if index == @num_bytes
-      m.copy_from self, 0, @num_bytes, 0
-      m.copy_from other, 0, osize, @num_bytes
+    if index == bytesize
+      m.copy_from self, 0, bytesize, 0
+      m.copy_from other, 0, osize, bytesize
     else
       m.copy_from self, 0, index, 0 if index > 0
       m.copy_from other, 0, osize, index
-      m.copy_from self, index, @num_bytes - index, index + osize
+      m.copy_from self, index, bytesize - index, index + osize
     end
 
     self.num_bytes = size
@@ -2403,7 +2403,7 @@ class String
     replacement = StringValue(replacement).dup
 
     return delete!(source) if replacement.empty?
-    return if @num_bytes == 0
+    return if bytesize == 0
 
     invert = source[0] == ?^ && source.length > 1
 
@@ -2478,7 +2478,7 @@ class String
         i += 1
       end
 
-      destination.num_bytes = byte_size if byte_size < @num_bytes
+      destination.num_bytes = byte_size if byte_size < bytesize
     else
       i = 0
       each_char do |chr|
@@ -2506,7 +2506,7 @@ class String
 
   def <=>(other)
     if other.kind_of?(String)
-      result = @data.compare_bytes(other.__data__, @num_bytes, other.bytesize)
+      result = @data.compare_bytes(other.__data__, bytesize, other.bytesize)
 
       if result == 0
         if Encoding.compatible?(self, other)

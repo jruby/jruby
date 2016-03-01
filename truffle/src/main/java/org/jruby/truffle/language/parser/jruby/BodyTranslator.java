@@ -1862,10 +1862,7 @@ public class BodyTranslator extends Translator {
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "rubinius/bootstrap/string.rb") || path.equals(corePath + "rubinius/common/string.rb")) {
-            if (name.equals("@num_bytes")) {
-                ret = StringNodesFactory.ByteSizeNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@data")) {
+            if (name.equals("@data")) {
                 ret = StringNodesFactory.DataNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
                 return addNewlineIfNeeded(node, ret);
             }
