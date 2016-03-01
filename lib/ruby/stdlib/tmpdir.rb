@@ -126,7 +126,9 @@ class Dir
     end
     n = nil
     begin
-      path = File.join(tmpdir, make_tmpname(basename, n))
+      # We use the second form here because chdir + ./ files won't open right (http://bugs.jruby.org/3698)
+      # path = File.join(tmpdir, make_tmpname(basename, n))
+      path = File.expand_path(make_tmpname(basename, n), tmpdir)
       yield(path, n, opts)
     rescue Errno::EEXIST
       n ||= 0
