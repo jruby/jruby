@@ -189,7 +189,7 @@ fileutils/test_verbose.rb
 
 io/wait/test_io_wait.rb
 io/nonblock/test_flush.rb
-io/console/test_io_console.rb
+#io/console/test_io_console.rb
 
 json/test_json.rb
 json/test_json_addition.rb
