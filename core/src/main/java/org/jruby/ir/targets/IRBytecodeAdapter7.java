@@ -66,7 +66,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
     public void pushFrozenString(ByteList bl, int cr, String file, int line) {
         loadContext();
-        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr, file, line);
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr, file, line);
     }
 
     public void pushByteList(ByteList bl) {

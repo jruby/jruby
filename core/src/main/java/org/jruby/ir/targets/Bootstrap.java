@@ -64,34 +64,38 @@ public class Bootstrap {
     private static final Logger LOG = LoggerFactory.getLogger("Bootstrap");
     static final Lookup LOOKUP = MethodHandles.lookup();
 
-    public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr, String file, int line) {
-        Encoding encoding;
-        EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
-        if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
-        if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
-        encoding = entry.getEncoding();
-        ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
+    public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
         MutableCallSite site = new MutableCallSite(type);
         Binder binder = Binder
                 .from(RubyString.class, ThreadContext.class)
-                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class, String.class, int.class), site, byteList, cr, file, line);
-        if (name.equals("frozen")) {
-            site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "frozenString"));
-        } else {
-            site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "string"));
-        }
+                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class), site, bytelist(value, encodingName), cr);
+        site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "string"));
+
+        return site;
+    }
+
+    public static CallSite fstring(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr, String file, int line) {
+        MutableCallSite site = new MutableCallSite(type);
+        Binder binder = Binder
+                .from(RubyString.class, ThreadContext.class)
+                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class, String.class, int.class), site, bytelist(value, encodingName), cr, file, line);
+        site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "frozenString"));
 
         return site;
     }
 
     public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, String encodingName) {
+        return new ConstantCallSite(constant(ByteList.class, bytelist(value, encodingName)));
+    }
+
+    private static ByteList bytelist(String value, String encodingName) {
         Encoding encoding;
         EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
         if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
         if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
         encoding = entry.getEncoding();
         ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
-        return new ConstantCallSite(constant(ByteList.class, byteList));
+        return byteList;
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {
@@ -137,7 +141,11 @@ public class Bootstrap {
     }
 
     public static Handle string() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, int.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class));
+    }
+
+    public static Handle fstring() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "fstring", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, int.class));
     }
 
     public static Handle bytelist() {
@@ -168,7 +176,7 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
-    public static RubyString string(MutableCallSite site, ByteList value, int cr, String file, int line, ThreadContext context) throws Throwable {
+    public static RubyString string(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
         MethodHandle handle = SmartBinder
                 .from(STRING_SIGNATURE)
                 .invoke(NEW_STRING_SHARED_HANDLE.apply("byteList", value))
