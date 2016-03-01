@@ -29,54 +29,54 @@ public abstract class WriteFrameSlotNode extends Node {
 
     public abstract Object executeWrite(Frame frame, Object value);
 
-    @Specialization(guards = "checkBooleanKind(frame)")
+    @Specialization(guards = "checkBooleanKind()")
     public boolean writeBoolean(Frame frame, boolean value) {
         frame.setBoolean(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "checkIntegerKind(frame)")
+    @Specialization(guards = "checkIntegerKind()")
     public int writeInteger(Frame frame, int value) {
         frame.setInt(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "checkLongKind(frame)")
+    @Specialization(guards = "checkLongKind()")
     public long writeLong(Frame frame, long value) {
         frame.setLong(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "checkDoubleKind(frame)")
+    @Specialization(guards = "checkDoubleKind()")
     public double writeDouble(Frame frame, double value) {
         frame.setDouble(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "checkObjectKind(frame)")
+    @Specialization(guards = "checkObjectKind()")
     public Object writeObject(Frame frame, Object value) {
         assert RubyGuards.wasProvided(value); // Useful debug aid to catch a running-away NotProvided
         frame.setObject(frameSlot, value);
         return value;
     }
 
-    protected boolean checkBooleanKind(Frame frame) {
+    protected boolean checkBooleanKind() {
         return checkKind(FrameSlotKind.Boolean);
     }
 
-    protected boolean checkIntegerKind(Frame frame) {
+    protected boolean checkIntegerKind() {
         return checkKind(FrameSlotKind.Int);
     }
 
-    protected boolean checkLongKind(Frame frame) {
+    protected boolean checkLongKind() {
         return checkKind(FrameSlotKind.Long);
     }
 
-    protected boolean checkDoubleKind(Frame frame) {
+    protected boolean checkDoubleKind() {
         return checkKind(FrameSlotKind.Double);
     }
 
-    protected boolean checkObjectKind(Frame frame) {
+    protected boolean checkObjectKind() {
         if (frameSlot.getKind() != FrameSlotKind.Object) {
             CompilerDirectives.transferToInterpreter();
             frameSlot.setKind(FrameSlotKind.Object);
