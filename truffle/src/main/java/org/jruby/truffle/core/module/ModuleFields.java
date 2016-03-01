@@ -22,6 +22,7 @@ import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.method.MethodFilter;
+import org.jruby.truffle.core.module.ModuleNodes.IsSingletonClassNode;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -31,7 +32,6 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -348,7 +348,12 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         newVersion();
 
         if (context.getCoreLibrary().isLoaded() && !method.isUndefined()) {
-            context.send(rubyModuleObject, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+            if (Layouts.CLASS.isClass(rubyModuleObject) && Layouts.CLASS.getIsSingleton(rubyModuleObject)) {
+                DynamicObject receiver = Layouts.CLASS.getAttached(rubyModuleObject);
+                context.send(receiver, "singleton_method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+            } else {
+                context.send(rubyModuleObject, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+            }
         }
     }
 

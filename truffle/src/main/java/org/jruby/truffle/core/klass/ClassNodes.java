@@ -108,7 +108,7 @@ public abstract class ClassNodes {
         // See rb_singleton_class() documentation in MRI.
         // Allocator is null here, we cannot create instances of singleton classes.
         assert RubyGuards.isRubyClass(superclass);
-        assert attached == null || RubyGuards.isRubyModule(attached);
+        assert attached != null;
         return ensureSingletonConsistency(context, createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached));
     }
 
