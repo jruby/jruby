@@ -167,7 +167,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       end
 
       # TODO: Windows version uses "conin$" and "conout$" instead of /dev/tty
-      def self.console(sym = nil)
+      def self.console(sym = nil, *args)
         raise TypeError, "expected Symbol, got #{sym.class}" unless sym.nil? || sym.kind_of?(Symbol)
 
         # klass = self == IO ? File : self
@@ -196,6 +196,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
           @console = con
         end
 
+        return con.send(sym, *args) if sym
         return con
       end
     end
