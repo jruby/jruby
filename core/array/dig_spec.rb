@@ -15,8 +15,16 @@ ruby_version_is '2.3' do
       a.dig(0, -1, 0).should == 2
     end
 
+    it "raises a TypeError for a non-numeric index" do
+      lambda {
+        ['a'].dig(:first)
+      }.should raise_error(TypeError)
+    end
+
     it "raises without any args" do
-      lambda { [10].dig() }.should raise_error(ArgumentError)
+      lambda {
+        [10].dig()
+      }.should raise_error(ArgumentError)
     end
 
     it "calls #dig on the result of #at with the remaining arguments" do

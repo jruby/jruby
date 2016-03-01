@@ -30,6 +30,13 @@ describe "Time.at" do
       t2.usec.should == t.usec
       t2.nsec.should == t.nsec
     end
+
+    describe "passed BigDecimal" do
+      it "doesn't round input value" do
+        require 'bigdecimal'
+        Time.at(BigDecimal.new('1.1')).to_f.should == 1.1
+      end
+    end
   end
 
   describe "passed Time" do

@@ -6,7 +6,7 @@ describe "Module#instance_methods" do
     methods = ModuleSpecs::Parent.instance_methods(false)
     methods.should_not include(:undefed_method)
   end
-  
+
   it "only includes module methods on an included module" do
     methods = ModuleSpecs::Basic.instance_methods(false)
     methods.should include(:public_module)

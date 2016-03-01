@@ -78,11 +78,22 @@ describe "Numeric#step" do
       1.step(5, "foo").should be_an_instance_of(enumerator_class)
     end
 
-    it "raises an ArgumentError if given a block" do
-      lambda { 1.step(5, "1") {} }.should raise_error(ArgumentError)
-      lambda { 1.step(5, "0.1") {} }.should raise_error(ArgumentError)
-      lambda { 1.step(5, "1/3") {} }.should raise_error(ArgumentError)
-      lambda { 1.step(5, "foo") {} }.should raise_error(ArgumentError)
+    ruby_version_is "2.0"..."2.4" do
+      it "raises an ArgumentError if given a block" do
+        lambda { 1.step(5, "1") {} }.should raise_error(ArgumentError)
+        lambda { 1.step(5, "0.1") {} }.should raise_error(ArgumentError)
+        lambda { 1.step(5, "1/3") {} }.should raise_error(ArgumentError)
+        lambda { 1.step(5, "foo") {} }.should raise_error(ArgumentError)
+      end
+    end
+
+    ruby_version_is "2.4" do
+      it "raises an TypeError if given a block" do
+        lambda { 1.step(5, "1") {} }.should raise_error(TypeError)
+        lambda { 1.step(5, "0.1") {} }.should raise_error(TypeError)
+        lambda { 1.step(5, "1/3") {} }.should raise_error(TypeError)
+        lambda { 1.step(5, "foo") {} }.should raise_error(TypeError)
+      end
     end
   end
 

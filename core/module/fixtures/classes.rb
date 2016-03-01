@@ -3,7 +3,7 @@ module ModuleSpecs
     ignore = %w[MSpecRSpecAdapter PP::ObjectMixin ModuleSpecs::IncludedInObject MainSpecs::Module ConstantSpecs::ModuleA]
     modules.reject { |k| ignore.include?(k.name) }
   end
-  
+
   CONST = :plain_constant
 
   module PrivConstModule
