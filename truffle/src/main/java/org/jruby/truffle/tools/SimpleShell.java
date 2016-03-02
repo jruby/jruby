@@ -23,6 +23,11 @@ import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.parser.ParserContext;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
 import java.util.Collections;
 import java.util.StringTokenizer;
 
@@ -33,8 +38,19 @@ public class SimpleShell {
 
     private final RubyContext context;
 
+    final PrintWriter writer;
+    final BufferedReader reader;
+
     public SimpleShell(RubyContext context) {
         this.context = context;
+
+        if (System.console() == null) {
+            writer = new PrintWriter(System.out);
+            reader = new BufferedReader(new InputStreamReader(System.in));
+        } else {
+            writer = System.console().writer();
+            reader = null;
+        }
     }
 
     public void run(MaterializedFrame frame, Node currentNode) {
@@ -42,7 +58,18 @@ public class SimpleShell {
         currentFrame = frame;
 
         while (true) {
-            final String shellLine = System.console().readLine("> ");
+            final String shellLine;
+
+            if (System.console() == null) {
+                try {
+                    shellLine = reader.readLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    continue;
+                }
+            } else {
+                shellLine = System.console().readLine("> ");
+            }
 
             final StringTokenizer tokenizer = new StringTokenizer(shellLine);
 
@@ -81,12 +108,14 @@ public class SimpleShell {
                             inspected = String.format("(error inspecting %s@%x %s)", result.getClass().getSimpleName(), result.hashCode(), e.toString());
                         }
 
-                        System.console().writer().println(inspected);
+                        writer.println(inspected);
                     } catch (RaiseException e) {
                         final DynamicObject rubyException = e.getException();
-                        BacktraceFormatter.createDefaultFormatter(context).printBacktrace(context, rubyException, Layouts.EXCEPTION.getBacktrace(rubyException), System.console().writer());
+                        BacktraceFormatter.createDefaultFormatter(context).printBacktrace(context, rubyException, Layouts.EXCEPTION.getBacktrace(rubyException), writer);
                     }
             }
+
+            writer.flush();
         }
     }
 
@@ -95,12 +124,12 @@ public class SimpleShell {
 
         for (Activation activation : context.getCallStack().getBacktrace(currentNode).getActivations()) {
             if (n == currentFrameIndex) {
-                System.console().writer().print("  ▶");
+                writer.print("  ▶");
             } else {
-                System.console().writer().printf("%3d", n);
+                writer.printf("%3d", n);
             }
 
-            System.console().writer().println(BacktraceFormatter.createDefaultFormatter(context).formatLine(Collections.singletonList(activation), 0));
+            writer.println(BacktraceFormatter.createDefaultFormatter(context).formatLine(Collections.singletonList(activation), 0));
             n++;
         }
     }
