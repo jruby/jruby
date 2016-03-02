@@ -112,7 +112,7 @@ module DirSpecs
   end
 
   def self.delete_mock_dirs
-    rm_r mock_dir
+    rm_r SPEC_TEMP_DIR
   end
 
   def self.mock_rmdir(*dirs)

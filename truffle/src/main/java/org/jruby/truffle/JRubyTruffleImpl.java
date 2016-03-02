@@ -13,7 +13,9 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.interop.JRubyContextWrapper;
+import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.platform.Graal;
 import org.jruby.util.cli.Options;
 
@@ -53,8 +55,9 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
             return engine.eval(Source.fromText("Truffle::Primitive.run_jruby_root", "run_jruby_root")
                     .withMimeType(RubyLanguage.MIME_TYPE)).get();
         } catch (IOException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
+            if (e.getCause() instanceof ExitException) {
+                final ExitException exit = (ExitException) e.getCause();
+                throw new org.jruby.exceptions.MainExitException(exit.getCode());
             }
 
             throw new RuntimeException(e);
