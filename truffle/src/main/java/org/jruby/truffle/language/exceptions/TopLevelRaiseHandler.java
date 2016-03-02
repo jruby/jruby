@@ -48,6 +48,8 @@ public class TopLevelRaiseHandler extends RubyNode {
                 lastException = atExitException;
             }
 
+            getContext().shutdown();
+
             throw new ExitException(statusFromException(lastException));
         }
     }
