@@ -922,30 +922,6 @@ public abstract class StringNodes {
 
     }
 
-    @RubiniusOnly
-    @CoreMethod(names = "data")
-    public abstract static class DataNode extends CoreMethodArrayArgumentsNode {
-
-        public DataNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object data(DynamicObject string) {
-            final DynamicObject ret = Layouts.STRING.getRubiniusDataArray(string);
-
-            if (ret == null) {
-                // TODO (nirvdrum 08-Jan-16) ByteArrays might be better served if backed by a byte[] instead of a ByteList.
-                final DynamicObject rubiniusDataArray = ByteArrayNodes.createByteArray(coreLibrary().getByteArrayFactory(), StringOperations.getByteListReadOnly(string));
-                Layouts.STRING.setRubiniusDataArray(string, rubiniusDataArray);
-
-                return rubiniusDataArray;
-            }
-
-            return ret;
-        }
-    }
-
     @CoreMethod(names = "delete!", rest = true, raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class DeleteBangNode extends CoreMethodArrayArgumentsNode {

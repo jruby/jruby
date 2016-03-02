@@ -697,10 +697,11 @@ class String
   end
 
   def to_sub_replacement(result, match)
+    data = bytes
     index = 0
     while index < bytesize
       current = index
-      while current < bytesize && @data[current] != 92  # ?\\
+      while current < bytesize && data[current] != 92  # ?\\
         current += 1
       end
       result.append(byteslice(index, current - index))
@@ -713,7 +714,7 @@ class String
       end
       index = current + 1
 
-      cap = @data[index]
+      cap = data[index]
 
       additional = case cap
                 when 38   # ?&
@@ -729,14 +730,14 @@ class String
                 when 92 # ?\\ escaped backslash
                   '\\'
                 when 107 # \k named capture
-                  if @data[index + 1] == 60
+                  if data[index + 1] == 60
                     name = ""
                     i = index + 2
-                    while i < @data.size && @data[i] != 62
-                      name << @data[i]
+                    while i < bytesize && data[i] != 62
+                      name << data[i]
                       i += 1
                     end
-                    if i >= @data.size
+                    if i >= bytesize
                       '\\'.append(cap.chr)
                       index += 1
                       next
@@ -1625,8 +1626,7 @@ class String
 
     pos = 0
 
-    size = bytesize
-    orig_data = @data
+    duped = dup
 
     # If the separator is empty, we're actually in paragraph mode. This
     # is used so infrequently, we'll handle it completely separately from
@@ -1634,12 +1634,13 @@ class String
     if sep.empty?
       sep = "\n\n"
       pat_size = 2
+      data = bytes
 
       while pos < size
         nxt = find_string(sep, pos)
         break unless nxt
 
-        while @data[nxt] == 10 and nxt < bytesize
+        while data[nxt] == 10 and nxt < bytesize
           nxt += 1
         end
 
@@ -1652,7 +1653,7 @@ class String
         yield str unless str.empty?
 
         # detect mutation within the block
-        if !@data.equal?(orig_data) or bytesize != size
+        if duped != self
           raise RuntimeError, "string modified while iterating"
         end
 
@@ -1733,8 +1734,7 @@ class String
       Regexp.last_match = nil
     end
 
-    orig_len = bytesize
-    orig_data = @data
+    duped = dup
 
     last_end = 0
     offset = nil
@@ -1764,7 +1764,7 @@ class String
 
         ret.append val
 
-        if !@data.equal?(orig_data) or bytesize != orig_len
+        if duped != self
           raise RuntimeError, "string modified"
         end
       else
@@ -1843,8 +1843,7 @@ class String
       return nil
     end
 
-    orig_len = bytesize
-    orig_data = @data
+    duped = dup
 
     last_end = 0
     offset = nil
@@ -1874,7 +1873,7 @@ class String
 
         ret.append val
 
-        if !@data.equal?(orig_data) or bytesize != orig_len
+        if duped != dup
           raise RuntimeError, "string modified"
         end
       else

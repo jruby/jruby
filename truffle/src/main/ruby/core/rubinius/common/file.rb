@@ -150,7 +150,7 @@ class File < IO
       if pos == path.bytesize - 1
 
         # Find the first non-/ from the right
-        data = path.data
+        data = path.bytes
         found = false
         pos.downto(0) do |i|
           if data[i] != 47  # ?/
@@ -357,8 +357,7 @@ class File < IO
 
   def self.last_nonslash(path, start=nil)
     # Find the first non-/ from the right
-    data = path.data
-    idx = nil
+    data = path.bytes
     start ||= (path.size - 1)
 
     start.downto(0) do |i|

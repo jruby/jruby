@@ -258,7 +258,6 @@ public abstract class StringOperations {
         assert RubyGuards.isRubyString(string);
 
         Layouts.STRING.setRope(string, rope);
-        Layouts.STRING.setRubiniusDataArray(string, null);
     }
 
     public static Encoding encoding(DynamicObject string) {
