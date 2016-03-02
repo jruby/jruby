@@ -370,6 +370,7 @@ module Net   #:nodoc:
   #   HTTPPreconditionRequired::            428
   #   HTTPTooManyRequests::                 429
   #   HTTPRequestHeaderFieldsTooLarge::     431
+  #   HTTPUnavailableForLegalReasons::      451
   # HTTPServerError::                    5xx
   #   HTTPInternalServerError::             500
   #   HTTPNotImplemented::                  501
@@ -609,9 +610,9 @@ module Net   #:nodoc:
     #
     # In JRuby, this will default to the JSE proxy settings provided in the
     # 'http.proxyHost' and 'http.proxyPort' Java system properties, if they
-    # are set and no alternative proxy has been provided.
+    # are set, falling back on environment variables otherwise.
     #
-    def HTTP.new(address, port = nil, p_addr = ENV_JAVA['http.proxyHost'], p_port = ENV_JAVA['http.proxyPort'], p_user = nil, p_pass = nil)
+    def HTTP.new(address, port = nil, p_addr = :ENV, p_port = nil, p_user = nil, p_pass = nil)
       http = super address, port
 
       if proxy_class? then # from Net::HTTP::Proxy()
@@ -999,13 +1000,9 @@ module Net   #:nodoc:
     #
     # In JRuby, this will default to the JSE proxy settings provided in the
     # 'http.proxyHost' and 'http.proxyPort' Java system properties, if they
-    # are set and no alternative proxy has been provided.
+    # are set, falling back on environment variables otherwise.
     #
-    def HTTP.Proxy(p_addr = :ENV, p_port = ENV_JAVA['http.proxyHost'], p_user = ENV_JAVA['http.proxyPort'], p_pass = nil)
-      j_addr = ENV_JAVA['http.proxyHost']
-      j_port = ENV_JAVA['http.proxyPort']
-      p_addr = p_addr || j_addr
-      p_port = p_port || j_port
+    def HTTP.Proxy(p_addr = :ENV, p_port = nil, p_user = nil, p_pass = nil)
       return self unless p_addr
 
       Class.new(self) {
