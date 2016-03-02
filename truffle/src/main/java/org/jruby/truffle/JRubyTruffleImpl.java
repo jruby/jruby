@@ -13,7 +13,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.platform.Graal;
