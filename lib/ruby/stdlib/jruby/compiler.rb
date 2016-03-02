@@ -252,9 +252,13 @@ module JRuby::Compiler
 
           # prepare target
           class_filename = filename.sub(/(\.rb)?$/, '.class')
-          target_file = File.join(options[:target], class_filename)
-          target_dir = File.dirname(target_file)
-          FileUtils.mkdir_p(target_dir)
+          if class_filename.start_with?(options[:target]) # full-path
+            target_file = class_filename
+          else
+            target_file = File.join(options[:target], class_filename)
+          end
+
+          FileUtils.mkdir_p File.dirname(target_file)
 
           # write class
           File.open(target_file, 'wb') do |f|
@@ -281,11 +285,11 @@ module JRuby::Compiler
         next
       end
 
-      if (File.directory?(filename))
-        puts "Compiling all in '#{File.expand_path(filename)}'..." if options[:verbose]
-        Dir.glob(filename + "/**/*.rb").each { |filename|
+      if File.directory?(filename)
+        puts "Compiling **/*.rb in '#{File.expand_path(filename)}'..." if options[:verbose]
+        Dir.glob(File.join(filename, "/**/*.rb")).each do |filename|
           errors += compile_proc[filename]
-	}
+        end
       else
         if filename.end_with?('.java')
           files << filename
