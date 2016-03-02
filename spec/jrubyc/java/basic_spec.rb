@@ -9,7 +9,7 @@ describe "A Ruby class generating a Java stub" do
     # we use __FILE__ so there's something for it to read
     JRuby::Compiler::JavaGenerator.generate_java node, __FILE__
   end
-    
+
   it "generates Java source" do
     script = generate("class Foo; end")
     script.should_not == nil
@@ -35,9 +35,9 @@ describe "A Ruby class generating a Java stub" do
       :javac_options => [],
       :classpath => ENV_JAVA['java.class.path'].split(File::PATH_SEPARATOR),
       :target => '/tmp')
-    
+
     javac.should match /javac/
-    javac.should match /jruby\w*\.jar#{File::PATH_SEPARATOR}/
+    javac.should match /\".*?jruby\w*\.jar\"#{File::PATH_SEPARATOR}/
     javac.should match /Foo\.java/
     javac.should match /Bar\.java/
   end
