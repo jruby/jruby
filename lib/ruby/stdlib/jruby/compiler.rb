@@ -32,7 +32,7 @@ module JRuby::Compiler
     }
   end
   module_function :default_options
-  
+
   def compile_argv(argv)
     options = default_options
 
@@ -52,13 +52,13 @@ module JRuby::Compiler
         options[:target] = tgt
       end
 
-      opts.on("-J OPTION", "Pass OPTION to javac for javac compiles") do |tgt|
-        options[:javac_options] << tgt
+      opts.on("-J OPTION", "Pass OPTION to javac for javac compiles") do |opts|
+        options[:javac_options] << opts
       end
 
-      opts.on("-5"," --jdk5", "Generate JDK 5 classes (version 49)") do |x|
-        options[:jdk5] = true
-      end
+      #opts.on("-5"," --jdk5", "Generate JDK 5 classes (version 49)") do |x|
+      #  options[:jdk5] = true
+      #end
 
       opts.on("--java", "Generate Java classes (.java) for a script containing Ruby class definitions") do
         options[:java] = true
@@ -79,7 +79,7 @@ module JRuby::Compiler
       opts.on("--handles", "Also generate all direct handle classes for the source file") do
         options[:handles] = true
       end
-      
+
       opts.on("--verbose", "Log verbose output while compile") do
         options[:verbose] = true
       end
@@ -112,7 +112,7 @@ module JRuby::Compiler
     )
   end
   module_function :compile_files
-  
+
   def compile_files_with_options(filenames, options = default_options)
     runtime = JRuby.runtime
 
@@ -149,7 +149,7 @@ module JRuby::Compiler
 
             java_src = File.join(java_dir, cls.name + ".java")
             puts "Generating Java class #{cls.name} to #{java_src}" if options[:verbose]
-            
+
             files << java_src
 
             File.open(java_src, 'w') do |f|
@@ -208,7 +208,7 @@ module JRuby::Compiler
           static.putstatic(pathname, "script_ir", "Ljava/lang/String;")
           static.voidreturn
           static.end
-          
+
           main = SkinnyMethodAdapter.new(
               cls,
               Opcodes::ACC_PUBLIC | Opcodes::ACC_STATIC,
