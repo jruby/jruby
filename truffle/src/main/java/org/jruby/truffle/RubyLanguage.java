@@ -33,6 +33,7 @@ import java.io.IOException;
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     public static final String MIME_TYPE = "application/x-ruby";
+    public static final String EXTENSION = ".rb";
 
     private RubyLanguage() {
     }

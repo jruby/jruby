@@ -15,8 +15,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.arguments.CheckArityNode;
+import org.jruby.truffle.language.arguments.CheckKeywordArityNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.literal.NilLiteralNode;
+import org.jruby.truffle.language.methods.Arity;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -163,5 +166,13 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     protected abstract String getIdentifier();
+
+    public static RubyNode createCheckArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
+        if (!arity.acceptsKeywords()) {
+            return new CheckArityNode(context, sourceSection, arity);
+        } else {
+            return new CheckKeywordArityNode(context, sourceSection, arity);
+        }
+    }
 
 }

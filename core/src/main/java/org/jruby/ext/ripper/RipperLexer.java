@@ -1585,14 +1585,20 @@ public class RipperLexer extends LexingCommon {
             return Tokens.tGT;
         }
     }
-    
+
     private int identifier(int c, boolean commandState) throws IOException {
         if (!isIdentifierChar(c)) {
             String badChar = "\\" + Integer.toOctalString(c & 0xff);
             compile_error("Invalid char `" + badChar + "' ('" + (char) c + "') in expression");
         }
+        // FIXME: on_kw: will return BOM as part of the ident string "\xfeffclass" on MRI and Yard also seems
+        // to need this to properly parse.  So I record where token should really start so I can extract as
+        // a proper ident for keyword check but createTempValue below will end up creating the bom + kw.  This feels like
+        // an MRI bug but it is well baked into libraries at this point???  newtok+tokadd is still different from MRI
+        // and does not construct a temp buf.  Once I convert that to be the same I think I can do exactly what MRI does
+        // and this hack can disappear.
+        int whereKeywordShouldStart = lex_p - 1;
 
-        //newtok(true);  MRI does this but we don't so BOM + keyword will return goofy offset instead of logical one (yard seems to rely on this too).
         int first = c;
         do {
             if (!tokadd_mbchar(c)) return EOF;
@@ -1653,14 +1659,14 @@ public class RipperLexer extends LexingCommon {
         }
 
         if (lex_state != EXPR_DOT) {
-            Keyword keyword = getKeyword(tempVal); // Is it is a keyword?
+            Keyword keyword = getKeyword(createTokenString(whereKeywordShouldStart)); // Is it is a keyword?
 
             if (keyword != null) {
                 int state = lex_state; // Save state at time keyword is encountered
                 setState(keyword.state);
 
                 if (isLexState(state, EXPR_FNAME)) {
-                    identValue = keyword.name;
+                    identValue = tempVal;
                     return keyword.id0;
                 }
 
@@ -2255,7 +2261,7 @@ public class RipperLexer extends LexingCommon {
                 default :
                     pushback(c);
                     numberBuffer.append('0');
-                    return setIntegerLiteral(numberBuffer.toString(), 10);
+                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
             }
         }
 

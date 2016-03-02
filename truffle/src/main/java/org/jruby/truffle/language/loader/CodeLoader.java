@@ -89,7 +89,7 @@ public class CodeLoader {
                 new Object[]{}));
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Object inline(Node currentNode, String expression, Object... arguments) {
         final Frame frame = Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true);
         return inline(currentNode, frame, expression, arguments);

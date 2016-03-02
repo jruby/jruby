@@ -98,7 +98,7 @@ public abstract class LexingCommon {
         return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), false);
     }
 
-    public String createTokenString() {
+    public String createTokenString(int start) {
         byte[] bytes = lexb.getUnsafeBytes();
         int begin = lexb.begin();
         Charset charset;
@@ -108,15 +108,19 @@ public abstract class LexingCommon {
             charset = getEncoding().getCharset();
             if (charset != null) {
                 if (charset == RubyEncoding.UTF8) {
-                    return RubyEncoding.decodeUTF8(bytes, begin + tokp, lex_p - tokp);
+                    return RubyEncoding.decodeUTF8(bytes, begin + start, lex_p - start);
                 } else {
-                    return new String(bytes, begin + tokp, lex_p - tokp, charset);
+                    return new String(bytes, begin + start, lex_p - start, charset);
                 }
             }
         } catch (UnsupportedCharsetException e) {}
 
 
-        return new String(bytes, begin + tokp, lex_p - tokp);
+        return new String(bytes, begin + start, lex_p - start);
+    }
+
+    public String createTokenString() {
+        return createTokenString(tokp);
     }
 
     protected int dedent_string(ByteList string, int width) {
