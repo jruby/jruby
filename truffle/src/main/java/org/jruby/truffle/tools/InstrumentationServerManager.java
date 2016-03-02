@@ -61,9 +61,15 @@ public class InstrumentationServerManager {
                 try {
                     final StringBuilder builder = new StringBuilder();
 
+                    final Thread serverThread = Thread.currentThread();
+
                     context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
                         @Override
                         public void run(DynamicObject thread, Node currentNode) {
+                            if (Thread.currentThread() == serverThread) {
+                                return;
+                            }
+
                             try {
                                 Backtrace backtrace = context.getCallStack().getBacktrace(null);
 
