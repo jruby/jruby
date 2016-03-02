@@ -842,9 +842,10 @@ public final class Ruby implements Constantizable {
             final JRubyTruffleInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
             try {
-              truffleContext.execute((RootNode) rootNode);
+                truffleContext.execute((RootNode) rootNode);
             } finally {
-              Main.printTruffleTimeMetric("after-run");
+                Main.printTruffleTimeMetric("after-run");
+                shutdownTruffleContextIfRunning();
             }
             return getNil();
         } else {
