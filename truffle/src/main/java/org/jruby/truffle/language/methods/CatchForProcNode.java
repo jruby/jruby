@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language.methods;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -26,6 +25,7 @@ public class CatchForProcNode extends RubyNode {
 
     private final BranchProfile redoProfile = BranchProfile.create();
     private final BranchProfile nextProfile = BranchProfile.create();
+    private final BranchProfile retryProfile = BranchProfile.create();
 
     public CatchForProcNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
@@ -45,8 +45,8 @@ public class CatchForProcNode extends RubyNode {
                 nextProfile.enter();
                 return e.getResult();
             } catch (RetryException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().syntaxError("Invalid retry", this));
+                retryProfile.enter();
+                throw new RaiseException(coreLibrary().syntaxErrorInvalidRetry(this));
             }
         }
     }

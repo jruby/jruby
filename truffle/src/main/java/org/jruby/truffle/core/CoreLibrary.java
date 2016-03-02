@@ -925,9 +925,9 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(runtimeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
-    public DynamicObject systemStackError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(systemStackErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+    @TruffleBoundary
+    public DynamicObject systemStackErrorStackLevelTooDeep(Node currentNode, Throwable javaThrowable) {
+        return ExceptionNodes.createRubyException(systemStackErrorClass, StringOperations.createString(context, StringOperations.encodeRope("stack level too deep", UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
     @TruffleBoundary
@@ -1033,8 +1033,8 @@ public class CoreLibrary {
         return localJumpError("break from proc-closure", currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject unexpectedReturn(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return localJumpError("unexpected return", currentNode);
     }
 
@@ -1289,8 +1289,13 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(notImplementedErrorClass, StringOperations.createString(context, StringOperations.encodeRope(String.format("Method %s not implemented", message), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
+    public DynamicObject syntaxErrorInvalidRetry(Node currentNode) {
+        return syntaxError("Invalid retry", currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject syntaxError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(syntaxErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
