@@ -6,7 +6,9 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# This is shimmed specifically for RubySpec's marshal specs
+# This is shimmed specifically for RubySpec's marshal specs, Rails, and ActiveSupport tests
+
+require 'digest'
 
 module OpenSSL
   module X509
@@ -26,20 +28,30 @@ module OpenSSL
       attr_accessor :key, :iv
 
       def initialize(cipher)
+        @encrypt = nil
+        @iv      = nil
       end
 
       def encrypt
+        @encrypt = true
       end
 
       def decrypt
+        @encrypt = false
       end
 
       def random_iv
-        "0123456789abcdefc633eebd46199f0255c9f49d"
+        @iv = (format('%10s', rand(16**10).to_s(16))*4).gsub(' ', '0')
       end
 
       def update(data)
-        data
+        raise CipherError if @iv.nil?
+
+        data.each_byte.each_with_index.map do |byte, i|
+          iv_i    = i % 20
+          iv_byte = @iv[(iv_i*2)..(iv_i*2+1)].to_i(16)
+          (byte ^ iv_byte).chr
+        end.join
       end
 
       def final
@@ -51,19 +63,19 @@ module OpenSSL
 
   module PKCS5
     def self.pbkdf2_hmac_sha1(secret, salt, iterations, key_size)
-      "\xE4\xFF\xC3\xF0\xAE\x8F\x9Db\xCD\x9B\f_\x93o\xFD*\xFB\x0F\xE3\x935\xD5h7\xC0a\xA8\xA1\x9B\xB0\x03wj\xF5\xFA\xD6\x19:J \x80\x1A\xDF\xD0e\xAE1i\xFE\x10\xE6\xAFN\r\xD8`7\xA0\xA7\b\xDBk\x8C\xEF"
+      (salt * (key_size / salt.size + 1))[0...key_size]
     end
   end
 
-  module Digest
-    %i[SHA SHA1 SHA224 SHA256 SHA384 SHA512].each do |name|
-      const_set name, Class.new
-    end
-  end
+  Digest = ::Digest
 
   module HMAC
     def self.hexdigest(digest, key, data)
-      "0123456789abcdefc633eebd46199f0255c9f49d"
+      # AS test data
+      if data == "BAh7BjoIZm9vbzonTWVzc2FnZVZlcmlmaWVyVGVzdDo6QXV0b2xvYWRDbGFzcwY6CUBmb29JIghmb28GOgZFVA=="
+        return "f3ef39a5241c365083770566dc7a9eb5d6ace914"
+      end
+      Digest::SHA1.hexdigest(data)
     end
   end
 end
