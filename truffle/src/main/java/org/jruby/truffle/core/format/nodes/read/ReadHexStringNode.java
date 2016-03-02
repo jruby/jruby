@@ -9,11 +9,14 @@
  */
 package org.jruby.truffle.core.format.nodes.read;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.nodes.PackNode;
@@ -81,8 +84,7 @@ public abstract class ReadHexStringNode extends PackNode {
             }
         }
 
-        final Encoding encoding = Encoding.load("ASCII");
-        final ByteList result = new ByteList(lElem, encoding, false);
+        final ByteList result = new ByteList(lElem, ASCIIEncoding.INSTANCE, false);
         setSourcePosition(frame, encode.position());
 
         return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN), null);

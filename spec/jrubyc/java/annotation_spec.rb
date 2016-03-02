@@ -1,6 +1,4 @@
-require_relative "../../java_integration/spec_helper"
-require 'jruby'
-require 'jruby/compiler'
+require_relative '../spec_helper'
 
 describe "A Ruby class generating a Java stub" do
   def generate(script)
@@ -13,12 +11,11 @@ describe "A Ruby class generating a Java stub" do
     it "generates an annotation in the Java source" do
       cls = generate("java_annotation 'java.lang.SuppressWarnings(name = \"blah\")'; class Foo; end").classes[0]
 
-      cls.annotations.length.should == 1
+      expect( cls.annotations.length ).to eql 1
       anno = cls.annotations[0]
-      anno.should == 'java.lang.SuppressWarnings(name = "blah")'
+      expect( anno ).to eql 'java.lang.SuppressWarnings(name = "blah")'
 
-      java = cls.to_s
-      java.should match /@java\.lang\.SuppressWarnings\(name = "blah"\)\s+public class Foo/
+      expect( cls.to_s ).to match /@java\.lang\.SuppressWarnings\(name = "blah"\)\s+public class Foo/n
     end
   end
 
@@ -26,14 +23,13 @@ describe "A Ruby class generating a Java stub" do
     it "generates an annotation in the Java source" do
       cls = generate("class Foo; java_annotation 'java.lang.SuppressWarnings(name = \"blah\")'; def bar; end; end").classes[0]
 
-      cls.annotations.length.should == 0
+      expect( cls.annotations.length ).to eql 0
       method = cls.methods[0]
-      method.annotations.length.should == 1
+      expect( method.annotations.length ).to eql 1
       anno = method.annotations[0]
-      anno.should == 'java.lang.SuppressWarnings(name = "blah")'
+      expect( anno ).to eql 'java.lang.SuppressWarnings(name = "blah")'
 
-      java = method.to_s
-      java.should match /@java\.lang\.SuppressWarnings\(name = "blah"\)\s+public Object bar/
+      expect( method.to_s ).to match /@java\.lang\.SuppressWarnings\(name = "blah"\)\s+public Object bar/n
     end
   end
 end

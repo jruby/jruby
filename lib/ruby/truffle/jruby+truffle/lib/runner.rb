@@ -26,7 +26,15 @@ class JRubyTruffleRunner
     def execute_cmd(cmd, dir: nil, raise: true, print: false)
       result      = nil
       system_call = proc do
-        result = system(*print_cmd(cmd, dir, print))
+        begin
+          pid = Process.spawn(*print_cmd(cmd, dir, print))
+          Process.wait pid
+          result = $?.success?
+        rescue SignalException => e
+          # terminate the child process on signal received
+          Process.kill 'TERM', pid
+          raise e
+        end
       end
 
       if dir
@@ -68,13 +76,14 @@ class JRubyTruffleRunner
   BRANDING          = EXECUTABLE.include?('jruby') ? 'JRuby+Truffle' : 'RubyTruffle'
   LOCAL_CONFIG_FILE = '.jruby+truffle.yaml'
   ROOT              = Pathname(__FILE__).dirname.parent.expand_path
-  JRUBY_PATH        = (ROOT + '../../../..').expand_path
+  JRUBY_PATH        = ROOT.join('../../../..').expand_path
 
   begin
-    assign_new_value   = -> (new, old, _) { new }
-    add_to_array       = -> (new, old, _) { old << new }
-    merge_hash         = -> ((k, v), old, _) { old.merge k => v }
-    apply_pattern      = -> (pattern, old, options) do
+    assign_new_value         = -> (new, old, _) { new }
+    assign_new_negated_value = -> (new, old, _) { !new }
+    add_to_array             = -> (new, old, _) { old << new }
+    merge_hash               = -> ((k, v), old, _) { old.merge k => v }
+    apply_pattern            = -> (pattern, old, options) do
       Dir.glob(pattern) do |file|
         if options[:exclude_pattern].any? { |p| /#{p}/ =~ file }
           puts "skipped: #{file}" if verbose?
@@ -91,7 +100,7 @@ class JRubyTruffleRunner
     #                                                     -> (new_value, old_value) { result_of_this_block_is_stored },
     #                                                     default_value]
     #   }
-    OPTION_DEFINITIONS = {
+    OPTION_DEFINITIONS       = {
         global: {
             verbose:             ['-v', '--verbose', 'Run verbosely (prints options)', assign_new_value, false],
             help:                ['-h', '--help', 'Show this message', assign_new_value, false],
@@ -100,8 +109,8 @@ class JRubyTruffleRunner
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
             truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, '.jruby+truffle_bundle'],
             interpreter_path:    ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", assign_new_value,
-                                  JRUBY_PATH + 'bin' + 'jruby'],
-            graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
+                                  JRUBY_PATH.join('bin', 'jruby')],
+            graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, (JRUBY_PATH + '../GraalVM-0.10/jre/bin/javao').to_s],
             mock_load_path:      ['--mock-load-path PATH',
                                   'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
                                   assign_new_value, 'mocks'],
@@ -119,7 +128,7 @@ class JRubyTruffleRunner
         },
         run:    {
             help:            ['-h', '--help', 'Show this message', assign_new_value, false],
-            no_truffle:      ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", assign_new_value, false],
+            no_truffle:      ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", assign_new_negated_value, false],
             graal:           ['-g', '--graal', 'Run on graal', assign_new_value, false],
             build:           ['-b', '--build', 'Run `jt build` using conventional JRuby', assign_new_value, false],
             rebuild:         ['--rebuild', 'Run `jt rebuild` using conventional JRuby', assign_new_value, false],
@@ -285,7 +294,7 @@ class JRubyTruffleRunner
 
     if candidates.size == 1
       gem_name, _ = candidates.first.split('.')
-      yaml_path   = ROOT + 'gem_configurations'+ "#{gem_name}.yaml"
+      yaml_path   = ROOT.join 'gem_configurations', "#{gem_name}.yaml"
     end
 
     apply_yaml_to_configuration(yaml_path)
@@ -334,7 +343,7 @@ class JRubyTruffleRunner
 
     if Array === a
       if Array === b
-        return a.replace a + b.map { |v| eval_yaml_strings v }
+        return a.concat b.map { |v| eval_yaml_strings v }
       else
         return a
       end
@@ -366,9 +375,15 @@ class JRubyTruffleRunner
                 '--path', bundle_path,
                 *(['--without', @options[:setup][:without].join(' ')] unless @options[:setup][:without].empty?)])
 
-    link_path = "#{bundle_path}/jruby+truffle"
-    FileUtils.rm link_path if File.exist? link_path
-    execute_cmd "ln -s #{bundle_path}/#{RUBY_ENGINE} #{link_path}"
+    jruby_truffle_path = File.join(bundle_path, 'jruby+truffle')
+    FileUtils.ln_s File.join(bundle_path, RUBY_ENGINE),
+                   jruby_truffle_path,
+                   verbose: verbose? unless File.exists? jruby_truffle_path
+
+    jruby_truffle_22_path = File.join(bundle_path, 'jruby+truffle', '2.2.0')
+    FileUtils.ln_s File.join(bundle_path, 'jruby+truffle', '2.3.0'),
+                   jruby_truffle_22_path,
+                   verbose: verbose? unless File.exists? jruby_truffle_22_path
 
     mock_path = "#{bundle_path}/#{@options[:global][:mock_load_path]}"
     FileUtils.mkpath mock_path
@@ -428,12 +443,12 @@ class JRubyTruffleRunner
     truffle_options = [
         ('-X+T'),
         ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core]),
-        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
-        (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug])
+        ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
     ]
 
     cmd_options = [
         *(truffle_options unless @options[:run][:no_truffle]),
+        (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
         *ruby_options,
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
         *@options[:run][:load_path].flat_map { |v| ['-I', v] },
@@ -459,7 +474,7 @@ class JRubyTruffleRunner
   end
 
   def subcommand_readme(rest)
-    puts File.read(ROOT + 'README.md')
+    puts File.read(ROOT.join('README.md'))
   end
 
   def subcommand_ci(rest)
@@ -520,8 +535,7 @@ class JRubyTruffleRunner
       @options  = options
       @gem_name = gem_name
 
-      ci_file = Dir.glob(ROOT + 'gem_ci' + "#{@gem_name}.rb").first ||
-          Dir.glob(ROOT + 'gem_ci' + 'default.rb').first
+      ci_file = Dir.glob(ROOT.join('gem_ci', "{#{@gem_name},default}.rb")).first
 
       puts "Running #{ci_file}"
 
@@ -534,11 +548,11 @@ class JRubyTruffleRunner
     end
 
     def repository_dir
-      working_dir + repository_name
+      working_dir.join repository_name
     end
 
     def testing_dir
-      repository_dir + subdir
+      repository_dir.join subdir
     end
 
     def jruby_path
@@ -546,7 +560,7 @@ class JRubyTruffleRunner
     end
 
     def jruby_truffle_path
-      jruby_path + 'bin' + 'jruby+truffle'
+      jruby_path.join 'bin', 'jruby+truffle'
     end
 
     def option(key)

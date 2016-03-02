@@ -361,11 +361,29 @@ module Super
       def a
         yield
       end
+
+      def b(&block)
+        block.call
+      end
+
+      def c
+        yield
+      end
     end
 
     class B < A
       def a
         super { 14 }
+      end
+
+      def b
+        block_ref = lambda { 15 }
+        [super { 14 }, super(&block_ref)]
+      end
+
+      def c
+        block_ref = lambda { 16 }
+        super &block_ref
       end
     end
   end

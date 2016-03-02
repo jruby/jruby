@@ -1522,9 +1522,19 @@ module URI
           proxy_uri = ENV["CGI_#{name.upcase}"]
         end
       elsif name == 'http_proxy'
-        unless proxy_uri = ENV[name]
-          if proxy_uri = ENV[name.upcase]
-            warn 'The environment variable HTTP_PROXY is discouraged.  Use http_proxy.'
+        if p_addr = ENV_JAVA['http.proxyHost']
+          p_port = ENV_JAVA['http.proxyPort']
+          if p_user = ENV_JAVA['http.proxyUser']
+            p_pass = ENV_JAVA['http.proxyPass']
+            proxy_uri = "http://#{p_user}:#{p_pass}@#{p_addr}:#{p_port}"
+          else
+            proxy_uri = "http://#{p_addr}:#{p_port}"
+          end
+        else
+          unless proxy_uri = ENV[name]
+            if proxy_uri = ENV[name.upcase]
+              warn 'The environment variable HTTP_PROXY is discouraged.  Use http_proxy.'
+            end
           end
         end
       else

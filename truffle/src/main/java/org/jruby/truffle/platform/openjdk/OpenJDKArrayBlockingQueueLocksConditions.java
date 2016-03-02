@@ -17,11 +17,17 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class OpenJDKArrayBlockingQueueLocksConditions<T> extends DelegatingBlockingQueue<T> implements ArrayBlockingQueueLocksConditions<T> {
+public class OpenJDKArrayBlockingQueueLocksConditions<T>
+        extends DelegatingBlockingQueue<T> implements ArrayBlockingQueueLocksConditions<T> {
 
-    private static final MethodHandle LOCK_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(ArrayBlockingQueue.class, "lock");
-    private static final MethodHandle NOT_EMPTY_CONDITION_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(ArrayBlockingQueue.class, "notEmpty");
-    private static final MethodHandle NOT_FULL_CONDITION_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(ArrayBlockingQueue.class, "notFull");
+    private static final MethodHandle LOCK_FIELD_GETTER
+            = MethodHandleUtils.getPrivateGetter(ArrayBlockingQueue.class, "lock");
+
+    private static final MethodHandle NOT_EMPTY_CONDITION_FIELD_GETTER
+            = MethodHandleUtils.getPrivateGetter(ArrayBlockingQueue.class, "notEmpty");
+
+    private static final MethodHandle NOT_FULL_CONDITION_FIELD_GETTER
+            = MethodHandleUtils.getPrivateGetter(ArrayBlockingQueue.class, "notFull");
 
     private final ReentrantLock lock;
     private final Condition notEmptyCondition;

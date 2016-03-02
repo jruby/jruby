@@ -22,10 +22,10 @@ then
   ruby tool/jt.rb $JT
 fi
 
-if [[ -v JTR ]]
+if [[ -v JTRCI ]]
 then
   gem install bundler
   mkdir gem-testing
   cd gem-testing
-  jruby+truffle $JTR
+  jruby+truffle ci --batch ../$JTRCI
 fi

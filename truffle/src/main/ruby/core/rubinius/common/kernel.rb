@@ -889,18 +889,6 @@ module Kernel
   end
   module_function :trap
 
-  def singleton_method_added(name)
-  end
-  private :singleton_method_added
-
-  def singleton_method_removed(name)
-  end
-  private :singleton_method_removed
-
-  def singleton_method_undefined(name)
-  end
-  private :singleton_method_undefined
-
   def singleton_methods(all=true)
     m = Rubinius::Type.object_singleton_class self
     mt = m.method_table

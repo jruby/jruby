@@ -11,6 +11,7 @@ package org.jruby.truffle.core.module;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -21,6 +22,7 @@ import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.method.MethodFilter;
+import org.jruby.truffle.core.module.ModuleNodes.IsSingletonClassNode;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -30,7 +32,6 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -65,8 +66,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     private final RubyContext context;
 
     public final ModuleChain start;
-    @CompilerDirectives.CompilationFinal
-    public ModuleChain parentModule;
+    @CompilationFinal public ModuleChain parentModule;
 
     public final DynamicObject lexicalParent;
     public final String givenBaseName;
@@ -134,7 +134,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void initCopy(DynamicObject from) {
         assert RubyGuards.isRubyModule(from);
 
@@ -177,7 +177,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         parentModule = new IncludedModule(module, parentModule);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void include(RubyContext context, Node currentNode, DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
 
@@ -237,7 +237,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return false;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void prepend(RubyContext context, Node currentNode, DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
 
@@ -267,7 +267,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     /**
      * Set the value of a constant, possibly redefining it.
      */
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void setConstant(RubyContext context, Node currentNode, String name, Object value) {
         if (context.getCoreLibrary().isLoadingRubyCore()) {
             final RubyConstant currentConstant = constants.get(name);
@@ -284,7 +284,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void setAutoloadConstant(RubyContext context, Node currentNode, String name, DynamicObject filename) {
         assert RubyGuards.isRubyString(filename);
         setConstantInternal(context, currentNode, name, filename, true);
@@ -303,7 +303,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         newLexicalVersion();
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubyConstant removeConstant(RubyContext context, Node currentNode, String name) {
         checkFrozen(context, currentNode);
         RubyConstant oldConstant = constants.remove(name);
@@ -311,14 +311,14 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return oldConstant;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void setClassVariable(RubyContext context, Node currentNode, String variableName, Object value) {
         checkFrozen(context, currentNode);
 
         classVariables.put(variableName, value);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Object removeClassVariable(RubyContext context, Node currentNode, String name) {
         checkFrozen(context, currentNode);
 
@@ -330,7 +330,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return found;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void addMethod(RubyContext context, Node currentNode, InternalMethod method) {
         assert ModuleOperations.canBindMethodTo(method.getDeclaringModule(), rubyModuleObject) ||
                 ModuleOperations.assignableTo(context.getCoreLibrary().getObjectClass(), method.getDeclaringModule());
@@ -348,17 +348,22 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         newVersion();
 
         if (context.getCoreLibrary().isLoaded() && !method.isUndefined()) {
-            context.send(rubyModuleObject, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+            if (Layouts.CLASS.isClass(rubyModuleObject) && Layouts.CLASS.getIsSingleton(rubyModuleObject)) {
+                DynamicObject receiver = Layouts.CLASS.getAttached(rubyModuleObject);
+                context.send(receiver, "singleton_method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+            } else {
+                context.send(rubyModuleObject, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+            }
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void removeMethod(String methodName) {
         methods.remove(methodName);
         newVersion();
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void undefMethod(RubyContext context, Node currentNode, String methodName) {
         final InternalMethod method = ModuleOperations.lookupMethod(rubyModuleObject, methodName);
         if (method == null) {
@@ -372,7 +377,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
      * Also searches on Object for modules.
      * Used for alias_method, visibility changes, etc.
      */
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public InternalMethod deepMethodSearch(RubyContext context, String name) {
         InternalMethod method = ModuleOperations.lookupMethod(rubyModuleObject, name);
         if (method != null && !method.isUndefined()) {
@@ -391,7 +396,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return null;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void alias(RubyContext context, Node currentNode, String newName, String oldName) {
         InternalMethod method = deepMethodSearch(context, oldName);
 
@@ -409,7 +414,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         addMethod(context, currentNode, aliasMethod);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void changeConstantVisibility(RubyContext context, Node currentNode, String name, boolean isPrivate) {
         checkFrozen(context, currentNode);
         RubyConstant rubyConstant = constants.get(name);

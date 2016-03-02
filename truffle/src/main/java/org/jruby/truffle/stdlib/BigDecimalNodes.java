@@ -97,7 +97,7 @@ public abstract class BigDecimalNodes {
             case 7:
                 return RoundingMode.HALF_EVEN;
             default:
-                throw new UnsupportedOperationException();
+                throw new UnsupportedOperationException("unknown value: " + constValue);
         }
     }
 
@@ -728,7 +728,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return value;
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + value);
             }
         }
 
@@ -796,7 +796,7 @@ public abstract class BigDecimalNodes {
                             return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                     }
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch");
             }
         }
 
@@ -823,7 +823,7 @@ public abstract class BigDecimalNodes {
                 return bType == Type.POSITIVE_INFINITY ? a : createBigDecimal(frame, (Type.POSITIVE_INFINITY));
             }
 
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("unreachable code branch");
         }
     }
 
@@ -920,7 +920,7 @@ public abstract class BigDecimalNodes {
                     case -1:
                         return Type.NEGATIVE_INFINITY;
                     default:
-                        throw new UnsupportedOperationException();
+                        throw new UnsupportedOperationException("unreachable code branch for value: " + aBigDecimal.signum());
                 }
             } else {
                 return divBigDecimal(aBigDecimal, bBigDecimal, mathContext);
@@ -966,7 +966,7 @@ public abstract class BigDecimalNodes {
                             return createBigDecimal(frame, BigDecimal.ZERO);
                     }
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(b));
             }
         }
 
@@ -1000,7 +1000,7 @@ public abstract class BigDecimalNodes {
                             return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                     }
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
             }
         }
 
@@ -1294,7 +1294,7 @@ public abstract class BigDecimalNodes {
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
             }
 
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("unreachable code branch");
         }
     }
 
@@ -1404,7 +1404,7 @@ public abstract class BigDecimalNodes {
                 return createBigDecimal(frame, a);
             }
 
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("unreachable code branch");
         }
     }
 
@@ -1482,7 +1482,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, Integer.signum(exponent) == 1 ? BigDecimal.ZERO : Type.NAN);
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
             }
         }
     }
@@ -1543,7 +1543,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, sqrt(BigDecimal.ZERO, new MathContext(precision, getRoundMode(frame))));
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
             }
         }
     }
@@ -1748,7 +1748,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NaN");
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
             }
         }
 
@@ -1832,7 +1832,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return createBigDecimal(frame, type);
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + type);
             }
         }
 
@@ -1905,7 +1905,7 @@ public abstract class BigDecimalNodes {
                     throw new RaiseException(coreLibrary().
                             floatDomainError("Computation results to 'NaN'(Not a Number)", this));
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
 
             }
         }
@@ -2016,7 +2016,7 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return Double.NaN;
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
             }
         }
 
@@ -2080,7 +2080,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return 0;
                 default:
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
             }
         }
     }

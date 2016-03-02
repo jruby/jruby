@@ -59,7 +59,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.stdlib.CoverageManager;
-import org.jruby.truffle.tools.SimpleShell;
+import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.unsafe.UnsafeHolder;
