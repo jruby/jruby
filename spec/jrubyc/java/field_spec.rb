@@ -14,45 +14,45 @@ describe "A Ruby class generating a Java stub" do
       script = generate("class Foo; java_field 'String abc'; end")
 
       cls = script.classes[0]
-      cls.fields.length.should == 1
-      cls.fields.first.first.should == "String abc"
-      cls.fields.first.last.should be_empty
+      expect( cls.fields.length ).to eql 1
+      expect( cls.fields.first.first ).to eql "String abc"
+      expect( cls.fields.first.last ).to be_empty
 
       java = script.to_s
-      java.should match /String abc;/
+      expect( java ).to match /String abc;/n
     end
 
     it "generates fields into the java source" do
       script = generate("class Foo; java_field 'String abc'; java_field 'Integer xyz'; end")
 
       cls = script.classes[0]
-      cls.fields.length.should == 2
-      cls.fields.first.first.should == "String abc"
-      cls.fields.first.last.should be_empty
-      cls.fields.last.first.should == "Integer xyz"
-      cls.fields.last.last.should be_empty
+      expect( cls.fields.length ).to eql 2
+      expect( cls.fields.first.first ).to eql "String abc"
+      expect( cls.fields.first.last ).to be_empty
+      expect( cls.fields.last.first ).to eql "Integer xyz"
+      expect( cls.fields.last.last ).to be_empty
 
       java = script.to_s
-      java.should match /String abc;/
-      java.should match /Integer xyz;/
+      expect( java ).to match /String abc;/n
+      expect( java ).to match /Integer xyz;/n
     end
 
     it "generates fields with annotations into the java source" do
       script = generate("class Foo; java_annotation 'Deprecated'; java_field 'String abc'; java_field 'String xyx'; end")
 
       cls = script.classes[0]
-      cls.fields.length.should == 2
-      cls.fields.first.first.should == "String abc"
-      cls.fields.first.last.should include "Deprecated"
+      expect( cls.fields.length ).to eql 2
+      expect( cls.fields.first.first ).to eql "String abc"
+      expect( cls.fields.first.last ).to include "Deprecated"
 
       java = script.to_s
-      java.should match /@Deprecated\s+String abc;/
+      expect( java ).to match /@Deprecated\s+String abc;/n
 
       cls = script.classes[0]
-      cls.fields.last.last.should be_empty
+      expect( cls.fields.last.last ).to be_empty
 
       java = script.to_s
-      java.should_not match /String abc;\s+@Deprecated\s+String xyz;/
+      expect( java ).to_not match /String abc;\s+@Deprecated\s+String xyz;/n
     end
   end
 end
