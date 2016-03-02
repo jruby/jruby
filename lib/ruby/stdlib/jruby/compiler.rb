@@ -126,21 +126,20 @@ module JRuby::Compiler
     compile_proc = proc do |filename|
       begin
         file = File.open(filename, "r:ASCII-8BIT")
+        source = file.read
 
         if options[:sha1]
-          pathname = "ruby.jit.FILE_" + Digest::SHA1.hexdigest(File.read(filename)).upcase
+          pathname = "ruby.jit.FILE_" + Digest::SHA1.hexdigest(source).upcase
         else
           pathname = Mangler.mangle_filename_for_classpath(filename, options[:basedir], options[:prefix], true, false)
         end
-
-        source = file.read
 
         if options[:java] || options[:javac]
           node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
 
           ruby_script = JavaGenerator.generate_java(node, filename)
 
-          raise("No classes found in target script: " + filename) if ruby_script.classes.empty?
+          raise "No classes found in target script: #{filename}" if ruby_script.classes.empty?
 
           ruby_script.classes.each do |cls|
             java_dir = File.join(options[:target], cls.package.gsub('.', '/'))
@@ -288,7 +287,7 @@ module JRuby::Compiler
           errors += compile_proc[filename]
 	}
       else
-        if filename =~ /\.java$/
+        if filename.end_with?('.java')
           files << filename
         else
           errors += compile_proc[filename]
