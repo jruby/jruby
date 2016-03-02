@@ -27,30 +27,25 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-@SuppressWarnings("restriction")
 public class InstrumentationServerManager {
 
     private final RubyContext context;
-    private final int port;
-    private final HttpServer server; // not final as we want a gentler failure
+    private final HttpServer server;
 
     private volatile boolean shuttingDown = false;
 
     public InstrumentationServerManager(RubyContext context, int port) {
         this.context = context;
-        this.port = port;
 
         HttpServer server = null;
+
         try {
             server = HttpServer.create(new InetSocketAddress(port), 0);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        this.server = server;
-    }
 
-    public int getPort() {
-        return port;
+        this.server = server;
     }
 
     public void start() {
@@ -66,27 +61,32 @@ public class InstrumentationServerManager {
                     context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
                         @Override
                         public void run(DynamicObject thread, Node currentNode) {
-                            if (Thread.currentThread() == serverThread) {
-                                return;
-                            }
+                            synchronized (this) {
+                                if (Thread.currentThread() == serverThread) {
+                                    return;
+                                }
 
-                            try {
-                                Backtrace backtrace = context.getCallStack().getBacktrace(null);
+                                try {
+                                    final Backtrace backtrace = context.getCallStack().getBacktrace(null);
 
-                                synchronized (this) {
-                                    // Not thread-safe so keep the formatting synchronized for now.
-                                    final List<String> lines = BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, backtrace);
+                                    final List<String> lines = BacktraceFormatter.createDefaultFormatter(context)
+                                            .formatBacktrace(context, null, backtrace);
 
-                                    builder.append(String.format("#%d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
+                                    builder.append(String.format("#%d %s",
+                                            Thread.currentThread().getId(),
+                                            Thread.currentThread().getName()));
+
                                     builder.append("\n");
+
                                     for (String line : lines) {
                                         builder.append(line);
                                         builder.append("\n");
                                     }
+
                                     builder.append("\n");
+                                } catch (Throwable e) {
+                                    e.printStackTrace();
                                 }
-                            } catch (Throwable e) {
-                                e.printStackTrace();
                             }
                         }
                     });
@@ -103,6 +103,7 @@ public class InstrumentationServerManager {
                     if (shuttingDown) {
                         return;
                     }
+
                     e.printStackTrace();
                 }
             }
@@ -114,13 +115,18 @@ public class InstrumentationServerManager {
             @Override
             public void handle(HttpExchange httpExchange) {
                 try {
-                    Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
+                    final Thread mainThread = Layouts.FIBER.getThread(
+                            Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread())
+                                    .getCurrentFiber());
+
                     context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
+
                         @Override
                         public void run(DynamicObject thread, final Node currentNode) {
                             new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
                                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
                         }
+
                     });
 
                     httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
@@ -130,6 +136,7 @@ public class InstrumentationServerManager {
                     if (shuttingDown) {
                         return;
                     }
+
                     e.printStackTrace();
                 }
             }
