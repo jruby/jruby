@@ -26,6 +26,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -218,6 +219,26 @@ public class EncodingUtils {
                 ecflags = SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(ioEncodable.getEnc2(), ecflags);
                 ecopts_p[0] = context.nil;
             } else {
+                if (!hasVmode) {
+                    IRubyObject v = ((RubyHash) options).op_aref(context, runtime.newSymbol("mode"));
+                    if (!v.isNil()) {
+                        if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
+                            throw runtime.newArgumentError("mode specified twice");
+                        }
+                        hasVmode = true;
+                        vmode(vmodeAndVperm_p, v);
+                        continue vmode_handle;
+                    }
+                }
+
+                IRubyObject v = ((RubyHash) options).op_aref(context, runtime.newSymbol("flags"));
+                if (!v.isNil()) {
+                    v = v.convertToInteger();
+                    oflags_p[0] |= RubyNumeric.num2int(v);
+                    vmode(vmodeAndVperm_p, runtime.newFixnum(oflags_p[0]));
+                    fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
+                }
+
                 extractBinmode(runtime, options, fmode_p);
                 // Differs from MRI but we open with ModeFlags
                 if ((fmode_p[0] & OpenFile.BINMODE) != 0) {
@@ -229,21 +250,8 @@ public class EncodingUtils {
                 } else if (DEFAULT_TEXTMODE != 0 && (vmode(vmodeAndVperm_p) == null || vmode(vmodeAndVperm_p).isNil())) {
                     fmode_p[0] |= DEFAULT_TEXTMODE;
                 }
-
-                if (!hasVmode) {
-                    IRubyObject v = hashARef(runtime, options, "mode");
-
-                    if (!v.isNil()) {
-                        if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
-                            throw runtime.newArgumentError("mode specified twice");
-                        }
-                        hasVmode = true;
-                        vmode(vmodeAndVperm_p, v);
-
-                        continue vmode_handle;
-                    }
-                }
-                IRubyObject v = hashARef(runtime, options, "perm");
+                
+                v = hashARef(runtime, options, "perm");
                 if (!v.isNil()) {
                     if (vperm(vmodeAndVperm_p) != null) {
                         if (!vperm(vmodeAndVperm_p).isNil()) throw runtime.newArgumentError("perm specified twice");
