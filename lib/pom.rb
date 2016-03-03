@@ -46,7 +46,7 @@ project 'JRuby Lib Setup' do
 
   extension 'org.torquebox.mojo:mavengem-wagon:0.2.0'
 
-  repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
+  repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
@@ -67,7 +67,7 @@ project 'JRuby Lib Setup' do
   plugin :dependency,
     :useRepositoryLayout => true,
     :outputDirectory => 'ruby/stdlib',
-    :excludeGroupIds => 'rubygems', # TODO no hardcoded group-ids
+    :excludeGroupIds => 'rubygems',
     :includeScope => :provided do
     execute_goal 'copy-dependencies', :phase => 'generate-resources'
   end
