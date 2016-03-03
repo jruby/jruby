@@ -120,7 +120,7 @@ public class IOWaitLibrary implements Library {
         }
 
         if (fptr.readPending() != 0) return runtime.getTrue();
-        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_READ, tv);
+        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_READ | SelectionKey.OP_ACCEPT, tv);
         fptr.checkClosed();
         if (ready) return io;
         return context.nil;
