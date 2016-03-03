@@ -79,7 +79,7 @@ public class TrufflePOSIXHandler implements POSIXHandler {
 
     @Override
     public int getPID() {
-        throw new UnsupportedOperationException();
+        return context.hashCode();
     }
 
     @Override

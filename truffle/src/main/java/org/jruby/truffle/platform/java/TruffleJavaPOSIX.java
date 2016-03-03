@@ -83,11 +83,6 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     }
 
     @Override
-    public int getpid() {
-        return context.hashCode();
-    }
-
-    @Override
     public LibC libc() {
         return JavaLibC.INSTANCE;
     }
