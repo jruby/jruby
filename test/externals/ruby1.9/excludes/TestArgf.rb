@@ -1,3 +1,4 @@
+exclude :test_codepoints, "is not implemented"
 exclude :test_each_line_limit_0, "needs investigation"
 exclude :test_each_line_paragraph, "needs investigation"
 exclude :test_inplace2, "needs investigation"

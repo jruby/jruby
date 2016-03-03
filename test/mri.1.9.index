@@ -2,7 +2,7 @@
 
 externals/ruby1.9/ruby/test_alias
 # Everything in here seems to fail or hang
-#externals/ruby1.9/ruby/test_argf
+externals/ruby1.9/ruby/test_argf
 externals/ruby1.9/ruby/test_array
 externals/ruby1.9/ruby/test_assignment
 externals/ruby1.9/ruby/test_autoload
