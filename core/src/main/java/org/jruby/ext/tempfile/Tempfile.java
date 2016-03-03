@@ -130,10 +130,10 @@ public class Tempfile extends RubyFile implements Finalizable {
             }
 
             try {
-                File tmp = new File(tmpname.convertToString().toString());
+                path = tmpname.convertToString().toString();
+                File tmp = new File(path);
                 if (tmp.createNewFile()) {
                     tmpFile = tmp;
-                    path = tmp.getPath();
                     initializeOpen(ioOptions);
                 } else {
                     throw context.runtime.newErrnoEEXISTError(path);
