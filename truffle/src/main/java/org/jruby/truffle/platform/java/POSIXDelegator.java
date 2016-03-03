@@ -285,6 +285,11 @@ public abstract class POSIXDelegator implements POSIX {
     }
 
     @Override
+    public int kill(long pid, int signal) {
+        return delegateTo.kill(pid, signal);
+    }
+
+    @Override
     public SignalHandler signal(Signal sig, SignalHandler handler) {
         return delegateTo.signal(sig, handler);
     }
