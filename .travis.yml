@@ -37,6 +37,7 @@ env:
     - PHASE='-Prake -Dtask=test:tracing'
     - PHASE='-Prake -Dtask=spec:ji'
     - PHASE='-Prake -Dtask=spec:compiler'
+    - PHASE='-Prake -Dtask=spec:compiler' JRUBY_OPTS=-Xcompile.invokedynamic
     - PHASE='-Prake -Dtask=spec:ffi'
     - PHASE='-Prake -Dtask=spec:regression'
     - PHASE='-Prake -Dtask=spec:ruby:fast'
