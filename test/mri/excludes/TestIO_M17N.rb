@@ -1,6 +1,5 @@
 exclude :test_both_textmode_binmode, "needs investigation"
 exclude :test_cbuf, "needs investigation"
-exclude :test_each_codepoint_need_more, "times out, but doesn't pass even with longer timeout"
 exclude :test_error_nonascii, "needs investigation"
 exclude :test_getc_newlineconv_invalid, "needs investigation"
 exclude :test_inspect_nonascii, "needs investigation"

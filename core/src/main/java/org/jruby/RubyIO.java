@@ -3142,6 +3142,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             fptr.READ_CHECK(context);
             if (fptr.needsReadConversion()) {
                 fptr.SET_BINARY_MODE();
+                r = 1;		/* no invalid char yet */
                 for (;;) {
                     fptr.makeReadConversion(context);
                     for (;;) {
@@ -3158,12 +3159,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         }
                         if (fptr.moreChar(context) == OpenFile.MORE_CHAR_FINISHED) {
                             fptr.clearReadConversion();
-                            /* ignore an incomplete character before EOF */
+                            if (!StringSupport.MBCLEN_CHARFOUND_P(r)) {
+                                enc = fptr.encs.enc;
+                                throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                            }
                             return this;
                         }
                     }
                     if (StringSupport.MBCLEN_INVALID_P(r)) {
-                        throw runtime.newArgumentError("invalid byte sequence in " + fptr.encs.enc.toString());
+                        enc = fptr.encs.enc;
+                        throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
                     }
                     n = StringSupport.MBCLEN_CHARFOUND_LEN(r);
                     if (fptr.encs.enc != null) {
