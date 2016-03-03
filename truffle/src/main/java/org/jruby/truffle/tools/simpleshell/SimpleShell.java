@@ -21,6 +21,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.parser.ParserContext;
 
 import java.io.IOException;
@@ -113,11 +114,13 @@ public class SimpleShell {
                                 false,
                                 currentNode);
 
-                        final Object result = context.getCodeLoader().execute(
+                        final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
                                 ParserContext.EVAL,
                                 RubyArguments.getDeclarationContext(currentFrame.getArguments()),
                                 rootNode, currentFrame,
                                 RubyArguments.getSelf(currentFrame.getArguments()));
+
+                        final Object result = deferredCall.getCallTarget().call(deferredCall.getArguments());
 
                         String inspected;
 

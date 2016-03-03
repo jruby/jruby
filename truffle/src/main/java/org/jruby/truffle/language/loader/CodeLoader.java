@@ -53,7 +53,7 @@ public class CodeLoader {
     }
 
     @TruffleBoundary
-    public Object execute(ParserContext parserContext,
+    public DeferredCall prepareExecute(ParserContext parserContext,
                           DeclarationContext declarationContext,
                           RubyRootNode rootNode,
                           MaterializedFrame parentFrame,
@@ -77,7 +77,7 @@ public class CodeLoader {
                 Visibility.PUBLIC,
                 callTarget);
 
-        return callTarget.call(RubyArguments.pack(
+        return new DeferredCall(callTarget, RubyArguments.pack(
                 parentFrame,
                 null,
                 method,
@@ -129,12 +129,33 @@ public class CodeLoader {
                 true,
                 currentNode);
 
-        return context.getCodeLoader().execute(
+        final DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
                 ParserContext.INLINE,
                 DeclarationContext.INSTANCE_EVAL,
                 rootNode,
                 evalFrame,
                 RubyArguments.getSelf(evalFrame));
+
+        return deferredCall.getCallTarget().call(deferredCall.getArguments());
+    }
+
+    public static class DeferredCall {
+
+        private final CallTarget callTarget;
+        private final Object[] arguments;
+
+        public DeferredCall(CallTarget callTarget, Object[] arguments) {
+            this.callTarget = callTarget;
+            this.arguments = arguments;
+        }
+
+        public CallTarget getCallTarget() {
+            return callTarget;
+        }
+
+        public Object[] getArguments() {
+            return arguments;
+        }
     }
 
 }

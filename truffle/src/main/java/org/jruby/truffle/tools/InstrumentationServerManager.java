@@ -22,12 +22,12 @@ import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
 
+@SuppressWarnings("restriction")
 public class InstrumentationServerManager {
 
     private final RubyContext context;
@@ -57,16 +57,10 @@ public class InstrumentationServerManager {
                 try {
                     final StringBuilder builder = new StringBuilder();
 
-                    final Thread serverThread = Thread.currentThread();
-
                     context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
                         @Override
                         public void run(DynamicObject thread, Node currentNode) {
                             synchronized (this) {
-                                if (Thread.currentThread() == serverThread) {
-                                    return;
-                                }
-
                                 try {
                                     final Backtrace backtrace = context.getCallStack().getBacktrace(null);
 

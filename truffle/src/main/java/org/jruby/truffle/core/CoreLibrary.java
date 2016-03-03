@@ -84,6 +84,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
+import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.FreezeNode;
@@ -766,7 +767,8 @@ public class CoreLibrary {
             state = State.LOADING_RUBY_CORE;
             try {
                 final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
-                context.getCodeLoader().execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+                final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+                deferredCall.getCallTarget().call(deferredCall.getArguments());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

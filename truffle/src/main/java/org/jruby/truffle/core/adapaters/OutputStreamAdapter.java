@@ -35,8 +35,7 @@ public class OutputStreamAdapter extends OutputStream {
     @Override
     public void write(int bite) throws IOException {
         context.send(object, "write", null, Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(),
-                StringOperations.ropeFromByteList(new ByteList(new byte[]{(byte) bite}, encoding), StringSupport.CR_VALID),
-                null));
+                StringOperations.ropeFromByteList(new ByteList(new byte[]{(byte) bite}, encoding), StringSupport.CR_VALID)));
     }
 
 }

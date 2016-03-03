@@ -24,6 +24,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -72,6 +73,7 @@ import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.AddMethodNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
 import org.jruby.truffle.language.methods.Arity;
@@ -633,36 +635,38 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubyString(code)")
-        public Object classEval(DynamicObject module, DynamicObject code, NotProvided file, NotProvided line, NotProvided block) {
-            return classEvalSource(module, code, "(eval)");
+        public Object classEval(VirtualFrame frame, DynamicObject module, DynamicObject code, NotProvided file, NotProvided line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            return classEvalSource(frame, module, code, "(eval)", callNode);
         }
 
         @Specialization(guards = {"isRubyString(code)", "isRubyString(file)"})
-        public Object classEval(DynamicObject module, DynamicObject code, DynamicObject file, NotProvided line, NotProvided block) {
-            return classEvalSource(module, code, file.toString());
+        public Object classEval(VirtualFrame frame, DynamicObject module, DynamicObject code, DynamicObject file, NotProvided line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            return classEvalSource(frame, module, code, file.toString(), callNode);
         }
 
         @Specialization(guards = {"isRubyString(code)", "isRubyString(file)"})
-        public Object classEval(DynamicObject module, DynamicObject code, DynamicObject file, int line, NotProvided block) {
-            return classEvalSource(module, code, file.toString(), line);
+        public Object classEval(VirtualFrame frame, DynamicObject module, DynamicObject code, DynamicObject file, int line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            final CodeLoader.DeferredCall deferredCall = classEvalSource(module, code, file.toString(), line);
+            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         }
 
         @Specialization(guards = "wasProvided(code)")
-        public Object classEval(VirtualFrame frame, DynamicObject module, Object code, NotProvided file, NotProvided line, NotProvided block) {
-            return classEvalSource(module, toStr(frame, code), file.toString());
+        public Object classEval(VirtualFrame frame, DynamicObject module, Object code, NotProvided file, NotProvided line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            return classEvalSource(frame, module, toStr(frame, code), file.toString(), callNode);
         }
 
         @Specialization(guards = {"isRubyString(code)", "wasProvided(file)"})
-        public Object classEval(VirtualFrame frame, DynamicObject module, DynamicObject code, Object file, NotProvided line, NotProvided block) {
-            return classEvalSource(module, code, toStr(frame, file).toString());
+        public Object classEval(VirtualFrame frame, DynamicObject module, DynamicObject code, Object file, NotProvided line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            return classEvalSource(frame, module, code, toStr(frame, file).toString(), callNode);
         }
 
-        private Object classEvalSource(DynamicObject module, DynamicObject code, String file) {
-            return classEvalSource(module, code, file, 1);
+        private Object classEvalSource(VirtualFrame frame, DynamicObject module, DynamicObject code, String file, @Cached("create()") IndirectCallNode callNode) {
+            final CodeLoader.DeferredCall deferredCall = classEvalSource(module, code, file, 1);
+            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         }
 
         @TruffleBoundary
-        private Object classEvalSource(DynamicObject module, DynamicObject code, String file, int line) {
+        private CodeLoader.DeferredCall classEvalSource(DynamicObject module, DynamicObject code, String file, int line) {
             assert RubyGuards.isRubyString(code);
 
             final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
@@ -675,7 +679,7 @@ public abstract class ModuleNodes {
             Source source = Source.fromText(space + code.toString(), file);
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, encoding, ParserContext.MODULE, callerFrame, true, this);
-            return getContext().getCodeLoader().execute(ParserContext.MODULE, DeclarationContext.CLASS_EVAL, rootNode, callerFrame, module);
+            return getContext().getCodeLoader().prepareExecute(ParserContext.MODULE, DeclarationContext.CLASS_EVAL, rootNode, callerFrame, module);
         }
 
         @Specialization
@@ -915,6 +919,7 @@ public abstract class ModuleNodes {
 
         @Child private ReadConstantNode readConstantNode;
         @Child private KernelNodes.RequireNode requireNode;
+        @Child private IndirectCallNode indirectCallNode;
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -938,8 +943,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = { "!inherit", "isRubySymbol(name)" })
-        public Object getConstantNoInherit(DynamicObject module, DynamicObject name, boolean inherit) {
-            return getConstantNoInherit(module, Layouts.SYMBOL.getString(name), this);
+        public Object getConstantNoInherit(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
+            return getConstantNoInherit(frame, module, Layouts.SYMBOL.getString(name), this);
         }
 
         // String
@@ -949,8 +954,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = { "!inherit", "isRubyString(name)", "!isScoped(name)" })
-        public Object getConstantNoInheritString(DynamicObject module, DynamicObject name, boolean inherit) {
-            return getConstantNoInherit(module, name.toString(), this);
+        public Object getConstantNoInheritString(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
+            return getConstantNoInherit(frame, module, name.toString(), this);
         }
 
         // Scoped String
@@ -959,8 +964,7 @@ public abstract class ModuleNodes {
             return getConstantScoped(module, fullName.toString(), inherit);
         }
 
-        @TruffleBoundary
-        private Object getConstantNoInherit(DynamicObject module, String name, Node currentNode) {
+        private Object getConstantNoInherit(VirtualFrame frame, DynamicObject module, String name, Node currentNode) {
             RubyConstant constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
 
             if (constant == null) {
@@ -968,7 +972,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(coreLibrary().nameErrorUninitializedConstant(module, name, this));
             } else {
                 if (constant.isAutoload()) {
-                    loadAutoloadedConstant(module, name, constant);
+                    loadAutoloadedConstant(frame, constant);
                     constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
                 }
 
@@ -994,13 +998,18 @@ public abstract class ModuleNodes {
             return name.toString().contains("::");
         }
 
-        private void loadAutoloadedConstant(DynamicObject module, String name, RubyConstant constant) {
+        private void loadAutoloadedConstant(VirtualFrame frame, RubyConstant constant) {
             if (requireNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            requireNode.require((DynamicObject) constant.getValue());
+            if (indirectCallNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                indirectCallNode = insert(IndirectCallNode.create());
+            }
+
+            requireNode.require(frame, (DynamicObject) constant.getValue(), indirectCallNode);
         }
 
     }

@@ -57,16 +57,16 @@ public abstract class StringOperations {
 
     /** Creates a String from the ByteList, with unknown CR */
     public static DynamicObject createString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_UNKNOWN), null);
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_UNKNOWN));
     }
 
     /** Creates a String from the ByteList, with 7-bit CR */
     public static DynamicObject create7BitString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_7BIT), null);
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_7BIT));
     }
 
     public static DynamicObject createString(RubyContext context, Rope rope) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), rope, null);
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), rope);
     }
 
     // Since ByteList.toString does not decode properly
@@ -258,7 +258,6 @@ public abstract class StringOperations {
         assert RubyGuards.isRubyString(string);
 
         Layouts.STRING.setRope(string, rope);
-        Layouts.STRING.setRubiniusDataArray(string, null);
     }
 
     public static Encoding encoding(DynamicObject string) {

@@ -155,9 +155,7 @@ public abstract class StringNodes {
 
             final Rope concatRope = makeConcatNode.executeMake(left, right, enc);
 
-            final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(),
-                    concatRope,
-                    null);
+            final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(), concatRope);
 
             taintResultNode.maybeTaint(string, ret);
             taintResultNode.maybeTaint(other, ret);
@@ -920,30 +918,6 @@ public abstract class StringNodes {
             return ret;
         }
 
-    }
-
-    @RubiniusOnly
-    @CoreMethod(names = "data")
-    public abstract static class DataNode extends CoreMethodArrayArgumentsNode {
-
-        public DataNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object data(DynamicObject string) {
-            final DynamicObject ret = Layouts.STRING.getRubiniusDataArray(string);
-
-            if (ret == null) {
-                // TODO (nirvdrum 08-Jan-16) ByteArrays might be better served if backed by a byte[] instead of a ByteList.
-                final DynamicObject rubiniusDataArray = ByteArrayNodes.createByteArray(coreLibrary().getByteArrayFactory(), StringOperations.getByteListReadOnly(string));
-                Layouts.STRING.setRubiniusDataArray(string, rubiniusDataArray);
-
-                return rubiniusDataArray;
-            }
-
-            return ret;
-        }
     }
 
     @CoreMethod(names = "delete!", rest = true, raiseIfFrozenSelf = true)

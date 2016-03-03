@@ -1873,11 +1873,6 @@ public class BodyTranslator extends Translator {
                 ret = RegexpNodesFactory.RubiniusNamesNodeGen.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/bootstrap/string.rb") || path.equals(corePath + "rubinius/common/string.rb")) {
-            if (name.equals("@data")) {
-                ret = StringNodesFactory.DataNodeFactory.create(context, sourceSection, new RubyNode[]{ self });
-                return addNewlineIfNeeded(node, ret);
-            }
         } else if (path.equals(corePath + "rubinius/common/time.rb")) {
             if (name.equals("@is_gmt")) {
                 ret = TimeNodesFactory.InternalGMTNodeFactory.create(context, sourceSection, self);
