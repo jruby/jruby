@@ -109,6 +109,11 @@ public final class StringSupport {
         return -1 - n;
     }
 
+    // MBCLEN_NEEDMORE_LEN, ONIGENC_MBCLEN_NEEDMORE_LEN
+    public static int MBCLEN_NEEDMORE_LEN(int r) {
+        return -1 - r;
+    }
+
     // MBCLEN_INVALID_P, ONIGENC_MBCLEN_INVALID_P
     public static boolean MBCLEN_INVALID_P(int r) {
         return r == -1;

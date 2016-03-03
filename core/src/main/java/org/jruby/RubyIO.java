@@ -3189,6 +3189,24 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     block.yield(context, runtime.newFixnum(c & 0xFFFFFFFF));
                 } else if (StringSupport.MBCLEN_INVALID_P(r)) {
                     throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                } else if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
+                    byte[] cbuf = new byte[8];
+                    int p = 0;
+                    int more = StringSupport.MBCLEN_NEEDMORE_LEN(r);
+                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    more += n = fptr.rbuf.len;
+                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    while ((n = (int)fptr.readBufferedData(cbuf, p, more)) > 0) {
+                        p += n;
+                        if ((more -= n) <= 0) break;
+
+                        if (fptr.fillbuf(context) < 0) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                        if ((n = fptr.rbuf.len) > more) n = more;
+                    }
+                    r = enc.length(cbuf, 0, p);
+                    if (!StringSupport.MBCLEN_CHARFOUND_P(r)) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    c = enc.mbcToCode(cbuf, 0, p);
+                    block.yield(context, runtime.newFixnum(c));
                 } else {
                     continue;
                 }
