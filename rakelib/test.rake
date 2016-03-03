@@ -109,7 +109,8 @@ namespace :test do
     t.verbose = true
     t.test_files = files_in_file 'test/mri.1.9.index'
     ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
-    t.ruby_opts << '-J-ea' << '--1.9'
+    t.ruby_opts << '-J-Dfile.encoding=UTF-8' if RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
+    t.ruby_opts << '-J-ea' << '--1.9' 
     t.ruby_opts << '-I test/externals/ruby1.9'
     t.ruby_opts << '-I test/externals/ruby1.9/ruby'
     t.ruby_opts << '-r ./test/ruby19_env.rb'
