@@ -369,7 +369,7 @@ module Commands
     end
 
     if args.delete('--server')
-      jruby_args += %w[-Xtruffle.instrumentation_server_port=8080 -Xtruffle.passalot=1]
+      jruby_args += %w[-Xtruffle.instrumentation_server_port=8080]
     end
 
     if args.delete('--igv')
