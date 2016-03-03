@@ -155,9 +155,7 @@ public abstract class StringNodes {
 
             final Rope concatRope = makeConcatNode.executeMake(left, right, enc);
 
-            final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(),
-                    concatRope,
-                    null);
+            final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(), concatRope);
 
             taintResultNode.maybeTaint(string, ret);
             taintResultNode.maybeTaint(other, ret);

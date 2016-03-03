@@ -261,7 +261,7 @@ public abstract class StringPrimitiveNodes {
 
             final Rope rope = makeSubstringNode.executeMake(rope(source), index, length);
 
-            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), rope, null);
+            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), rope);
             taintResultNode.maybeTaint(source, ret);
 
             return ret;

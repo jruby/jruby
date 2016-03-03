@@ -389,7 +389,7 @@ public abstract class TruffleInteropNodes {
         public DynamicObject executeForeign(VirtualFrame frame, CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
-            return Layouts.STRING.createString(coreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(receiver)), null);
+            return Layouts.STRING.createString(coreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(receiver)));
         }
 
         @Specialization
@@ -565,7 +565,7 @@ public abstract class TruffleInteropNodes {
         @Specialization
         @TruffleBoundary
         public DynamicObject javaStringToRuby(String string) {
-            return Layouts.STRING.createString(coreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(string), StringSupport.CR_UNKNOWN), null);
+            return Layouts.STRING.createString(coreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(string), StringSupport.CR_UNKNOWN));
         }
 
     }

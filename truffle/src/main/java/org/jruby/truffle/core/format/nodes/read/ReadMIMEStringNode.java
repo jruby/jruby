@@ -75,7 +75,7 @@ public abstract class ReadMIMEStringNode extends PackNode {
         final ByteList result = new ByteList(lElem, 0, index, ASCIIEncoding.INSTANCE, false);
         setSourcePosition(frame, encode.position());
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN), null);
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
     }
 
 }
