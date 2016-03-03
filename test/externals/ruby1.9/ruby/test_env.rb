@@ -1,7 +1,7 @@
 require 'test/unit'
 
 class TestEnv < Test::Unit::TestCase
-  IGNORE_CASE = /bccwin|mswin|mingw/ =~ RUBY_PLATFORM
+  IGNORE_CASE = RbConfig::CONFIG['host_os'] =~ /bccwin|mswin|mingw/
   PATH_ENV = "PATH"
 
   def setup
