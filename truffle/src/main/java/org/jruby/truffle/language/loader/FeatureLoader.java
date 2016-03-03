@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.language.loader;
 
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -35,14 +37,14 @@ public class FeatureLoader {
         this.context = context;
     }
 
-    public boolean require(String feature, Node currentNode) {
+    public boolean require(VirtualFrame frame, String feature, IndirectCallNode callNode) {
         final String featurePath = findFeature(feature);
 
         if (featurePath == null) {
-            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
+            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, callNode));
         }
 
-        return doRequire(featurePath, currentNode);
+        return doRequire(frame, featurePath, callNode);
     }
 
     private String findFeature(String feature) {
@@ -110,7 +112,7 @@ public class FeatureLoader {
         }
     }
 
-    private boolean doRequire(String expandedPath, Node currentNode) {
+    private boolean doRequire(VirtualFrame frame, String expandedPath, IndirectCallNode calNode) {
         if (isFeatureLoaded(expandedPath)) {
             return false;
         }
@@ -135,13 +137,15 @@ public class FeatureLoader {
                     ParserContext.TOP_LEVEL,
                     null,
                     true,
-                    currentNode);
+                    calNode);
 
-            context.getCodeLoader().execute(
+            final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
                     ParserContext.TOP_LEVEL,
                     DeclarationContext.TOP_LEVEL,
                     rootNode, null,
                     context.getCoreLibrary().getMainObject());
+
+            calNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         } catch (RaiseException e) {
             removeFromLoadedFeatures(pathString);
             throw e;

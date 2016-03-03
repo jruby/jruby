@@ -45,6 +45,8 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.yield.CallBlockNode;
+import org.jruby.truffle.language.yield.CallBlockNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.Arrays;
@@ -1196,6 +1198,8 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private YieldNode yieldNode;
+
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1211,8 +1215,13 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "hasDefaultBlock(hash)"})
-        public Object shiftEmptyDefaultProc(DynamicObject hash) {
-            return ProcNodes.rootCall(Layouts.HASH.getDefaultBlock(hash), hash, nil());
+        public Object shiftEmptyDefaultProc(VirtualFrame frame, DynamicObject hash) {
+            if (yieldNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                yieldNode = insert(new YieldNode(getContext()));
+            }
+
+            return yieldNode.dispatch(frame, Layouts.HASH.getDefaultBlock(hash), hash, nil());
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isPackedHash(hash)"})

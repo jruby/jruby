@@ -14,12 +14,14 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleOptions;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Instrument;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -53,6 +55,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -833,16 +836,16 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
-        public boolean load(DynamicObject file, boolean wrap) {
+        public boolean load(VirtualFrame frame, DynamicObject file, boolean wrap, @Cached("create()") IndirectCallNode callNode) {
             if (wrap) {
                 throw new UnsupportedOperationException();
             }
 
             try {
                 final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(StringOperations.getString(getContext(), file)), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
-                getContext().getCodeLoader().execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
+                final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
+                callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().loadErrorCannotLoad(file.toString(), this));
@@ -852,8 +855,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(file)")
-        public boolean load(DynamicObject file, NotProvided wrap) {
-            return load(file, false);
+        public boolean load(VirtualFrame frame, DynamicObject file, NotProvided wrap, @Cached("create()") IndirectCallNode callNode) {
+            return load(frame, file, false, callNode);
         }
     }
 
@@ -865,7 +868,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public Object runJRubyRootNode() {
+        public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()")IndirectCallNode callNode) {
             coreLibrary().getGlobalVariablesObject().define(
                     "$0",
                     StringOperations.createString(getContext(),
@@ -893,12 +896,14 @@ public abstract class TrufflePrimitiveNodes {
                     true,
                     null);
 
-            return getContext().getCodeLoader().execute(
+            final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(
                     ParserContext.TOP_LEVEL,
                     DeclarationContext.TOP_LEVEL,
                     rootNode,
                     null,
                     coreLibrary().getMainObject());
+
+            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         }
     }
 

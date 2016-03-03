@@ -12,9 +12,11 @@ package org.jruby.truffle.core.basicobject;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -39,6 +41,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.dispatch.RubyCallNode;
+import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
@@ -158,13 +161,13 @@ public abstract class BasicObjectNodes {
             yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
-        public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
+        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, NotProvided block, @Cached("create()")IndirectCallNode callNode) {
             ByteList code = StringOperations.getByteListReadOnly(string);
             final Source source = Source.fromText(code, "(eval)");
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
-            return getContext().getCodeLoader().execute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
+            final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
+            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         }
 
         @Specialization
