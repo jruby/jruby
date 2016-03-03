@@ -125,14 +125,12 @@ public abstract class ThreadNodes {
         }
     }
 
-    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public static void start(RubyContext context, DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
         Layouts.THREAD.setThread(thread, Thread.currentThread());
         context.getThreadManager().registerThread(thread);
     }
 
-    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public static void cleanup(RubyContext context, DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
 
