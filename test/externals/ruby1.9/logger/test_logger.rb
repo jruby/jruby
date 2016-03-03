@@ -45,6 +45,7 @@ class TestLogger < Test::Unit::TestCase
     logger.__send__(msg_id, *arg, &block)
     logdev.open
     msg = logdev.read
+    msg.gsub!(/\r\n/, "\n") # tempfile writes with crlf logic on...fix for tests    msg
     logdev.close
     msg
   end
