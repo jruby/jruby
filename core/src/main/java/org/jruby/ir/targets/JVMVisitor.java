@@ -445,6 +445,16 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelf();
+        visit(arrayderefinstr.getReceiver());
+        visit(arrayderefinstr.getKey());
+        jvmMethod().invokeArrayDeref();
+        jvmStoreLocal(arrayderefinstr.getResult());
+    }
+
+    @Override
     public void BEQInstr(BEQInstr beqInstr) {
         jvmMethod().loadContext();
         visit(beqInstr.getArg1());

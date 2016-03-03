@@ -1797,4 +1797,15 @@ public class IRRuntimeHelpers {
 
         return string;
     }
+
+    @JIT
+    public static IRubyObject callOptimizedAref(ThreadContext context, IRubyObject caller, IRubyObject target, RubyString keyStr, CallSite site) {
+        // FIXME: optimized builtin check for Hash#[]
+        if (target instanceof RubyHash) {
+            // call directly with cached frozen string
+            return ((RubyHash) target).op_aref(context, keyStr);
+        }
+
+        return site.call(context, caller, target, keyStr.strDup(context.runtime));
+    }
 }

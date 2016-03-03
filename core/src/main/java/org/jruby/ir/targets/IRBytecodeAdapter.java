@@ -369,6 +369,15 @@ public abstract class IRBytecodeAdapter {
     public abstract void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined);
 
     /**
+     * Invoke the array dereferencing method ([]) on an object other than self.
+     *
+     * If this invokes against a Hash with a frozen string, it will follow an optimized path.
+     *
+     * Stack required: context, self, target, arg0
+     */
+    public abstract void invokeArrayDeref();
+
+    /**
      * Invoke a fixnum-receiving method on an object other than self.
      *
      * Stack required: context, self, receiver (fixnum will be handled separately)
