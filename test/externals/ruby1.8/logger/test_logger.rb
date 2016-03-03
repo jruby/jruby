@@ -50,6 +50,7 @@ class TestLogger < Test::Unit::TestCase
     logdev.open
     msg = logdev.read
     logdev.close
+    msg.gsub!(/\r\n/, "\n") # tempfile writes with crlf logic on...fix for tests
     msg
   end
 
