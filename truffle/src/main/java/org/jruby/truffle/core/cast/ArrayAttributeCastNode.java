@@ -52,7 +52,7 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
     @Specialization(guards = "!inBounds(value)")
     public int doLongFixnumOutOfBounds(long value) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().argumentError(String.format("%s out of int range", indexName), this));
+        throw new RaiseException(coreLibrary().argumentError(String.format("%s out of int range", indexName), this));
     }
 
     @Specialization(guards = "inBounds(value)")
@@ -63,13 +63,13 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
     @Specialization(guards = "!inBounds(value)")
     public int doDoubleOutOfBounds(double value) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().argumentError(String.format("%s out of int range", indexName), this));
+        throw new RaiseException(coreLibrary().argumentError(String.format("%s out of int range", indexName), this));
     }
 
     @Specialization(guards = "isRubyBignum(value)")
     public DynamicObject doBignum(DynamicObject value) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().argumentError(String.format("%s out of int range", indexName), this));
+        throw new RaiseException(coreLibrary().argumentError(String.format("%s out of int range", indexName), this));
     }
 
 
@@ -91,7 +91,7 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
     @Fallback
     public int doBasicObject(Object object) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().
+        throw new RaiseException(coreLibrary().
                 typeErrorIsNotA(object.toString(), "Fixnum (fitting in int)", this));
     }
 

@@ -15,7 +15,6 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 
 @Layout
 public interface StringLayout extends BasicObjectLayout {
@@ -24,17 +23,13 @@ public interface StringLayout extends BasicObjectLayout {
                                            DynamicObject metaClass);
 
     DynamicObject createString(DynamicObjectFactory factory,
-                               Rope rope,
-                               @Nullable DynamicObject rubiniusDataArray);
+                               Rope rope);
 
     boolean isString(ObjectType objectType);
-    boolean isString(DynamicObject dynamicObject);
-    boolean isString(Object dynamicObject);
+    boolean isString(DynamicObject object);
+    boolean isString(Object object);
 
     Rope getRope(DynamicObject object);
-    void setRope(DynamicObject object, Rope rope);
-
-    DynamicObject getRubiniusDataArray(DynamicObject object);
-    void setRubiniusDataArray(DynamicObject object, DynamicObject rubiniusDataArray);
+    void setRope(DynamicObject object, Rope value);
 
 }

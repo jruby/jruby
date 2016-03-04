@@ -49,9 +49,9 @@ public abstract class ToAryNode extends RubyNode {
         try {
             coerced = toAryNode.call(frame, object, "to_ary", null);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Array", this));
+                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "Array", this));
             } else {
                 throw e;
             }
@@ -61,7 +61,7 @@ public abstract class ToAryNode extends RubyNode {
             return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "Array", "to_ary", coerced, this));
+            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "Array", "to_ary", coerced, this));
         }
     }
 }

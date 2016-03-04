@@ -9,28 +9,25 @@
  */
 package org.jruby.truffle.language.exceptions;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.RetryException;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 
-/**
- * Represents a block of code run with exception handlers. There's no {@code try} keyword in Ruby -
- * it's implicit - but it's similar to a try statement in any other language.
- */
 public class TryNode extends RubyNode {
 
     @Child private ExceptionTranslatingNode tryPart;
-    @Children final RescueNode[] rescueParts;
+    @Children private final RescueNode[] rescueParts;
     @Child private RubyNode elsePart;
+
+    @Child private SetExceptionVariableNode setExceptionVariableNode;
 
     private final BranchProfile elseProfile = BranchProfile.create();
     private final BranchProfile controlFlowProfile = BranchProfile.create();
@@ -77,25 +74,21 @@ public class TryNode extends RubyNode {
     @ExplodeLoop
     private Object handleException(VirtualFrame frame, RaiseException exception) {
         for (RescueNode rescue : rescueParts) {
-            if (rescue.canHandle(frame, exception.getRubyException())) {
+            if (rescue.canHandle(frame, exception.getException())) {
                 return setLastExceptionAndRunRescue(frame, exception, rescue);
             }
         }
 
-        // Not handled by any of the rescue
         throw exception;
     }
 
-    private Object setLastExceptionAndRunRescue(VirtualFrame frame, RaiseException exception, RescueNode rescue) {
-        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
-
-        final Object lastException = threadLocals.get("$!", nil());
-        threadLocals.set("$!", exception.getRubyException());
-        try {
-            return rescue.execute(frame);
-        } finally {
-            threadLocals.set("$!", lastException);
+    private Object setLastExceptionAndRunRescue(VirtualFrame frame, RaiseException exception, RubyNode rescue) {
+        if (setExceptionVariableNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            setExceptionVariableNode = insert(new SetExceptionVariableNode(getContext()));
         }
+
+        return setExceptionVariableNode.setLastExceptionAndRun(frame, exception, rescue);
     }
 
 }

@@ -425,7 +425,6 @@ public class ArgumentProcessor {
                         disallowedInRubyOpts(argument);
                         Options.DEBUG_FULLTRACE.force("true");
                         RubyInstanceConfig.FULL_TRACE_ENABLED = true;
-                        config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                         config.setDebuggingFrozenStringLiteral(true);
                         break FOR;
                     } else if (argument.startsWith("--debug=")) {
@@ -512,7 +511,7 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--disable")) {
                         errorMissingEquals("disable");
                     } else if (argument.equals("--disable-frozen-string-literal")) {
-                        config.setFrozenStringLiteral(true);
+                        config.setFrozenStringLiteral(false);
                         break FOR;
                     } else if (argument.startsWith("--disable=")) {
                         for (String disable : valueListFor(argument, "disable")) {

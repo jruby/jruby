@@ -54,8 +54,12 @@ public class StringTerm extends StrTerm {
         this.nest  = 0;
     }
 
+    public int getFlags() {
+        return flags;
+    }
+
     protected ByteList createByteList(RipperLexer lexer) {
-        return new ByteList(new byte[]{}, lexer.getEncoding());
+        return new ByteList(ByteList.NULL_ARRAY, lexer.getEncoding());
     }
 
     private int endFound(RipperLexer lexer, LexerSource src, ByteList buffer) throws IOException {
@@ -180,6 +184,10 @@ public class StringTerm extends StrTerm {
         int c;
 
         while ((c = lexer.nextc()) != EOF) {
+            if (lexer.getHeredocIndent() > 0) {
+                lexer.update_heredoc_indent(c);
+            }
+
             if (begin != '\0' && c == begin) {
                 nest++;
             } else if (c == end) {

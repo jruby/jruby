@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -50,7 +51,8 @@ public abstract class GetConstantNode extends RubyNode {
     @Specialization(guards = { "constant != null", "constant.isAutoload()" })
     protected Object autoloadConstant(VirtualFrame frame, DynamicObject module, String name, RubyConstant constant,
                                       @Cached("createRequireNode()") RequireNode requireNode,
-                                      @Cached("deepCopyReadConstantNode()") RestartableReadConstantNode readConstantNode) {
+                                      @Cached("deepCopyReadConstantNode()") RestartableReadConstantNode readConstantNode,
+                                      @Cached("create()")IndirectCallNode callNode) {
 
         final DynamicObject path = (DynamicObject) constant.getValue();
 
@@ -58,7 +60,7 @@ public abstract class GetConstantNode extends RubyNode {
         // We remove it first to allow lookup to ignore it and add it back if there was a failure.
         Layouts.MODULE.getFields(constant.getDeclaringModule()).removeConstant(getContext(), this, name);
         try {
-            requireNode.require(path);
+            requireNode.require(frame, path, callNode);
             return readConstantNode.readConstant(frame, module, name);
         } catch (RaiseException e) {
             Layouts.MODULE.getFields(constant.getDeclaringModule()).setAutoloadConstant(getContext(), this, name, path);
@@ -87,7 +89,7 @@ public abstract class GetConstantNode extends RubyNode {
     private Object doMissingConstant(VirtualFrame frame, DynamicObject module, String name, boolean isValidConstantName, DynamicObject symbolName) {
         if (!isValidConstantName) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
+            throw new RaiseException(coreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
         }
 
         if (constMissingNode == null) {

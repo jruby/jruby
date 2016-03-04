@@ -33,6 +33,7 @@ import com.oracle.truffle.api.interop.UnknownIdentifierException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -389,7 +390,7 @@ public abstract class TruffleInteropNodes {
         public DynamicObject executeForeign(VirtualFrame frame, CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(receiver)), null);
+            return Layouts.STRING.createString(coreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(receiver)));
         }
 
         @Specialization
@@ -529,12 +530,12 @@ public abstract class TruffleInteropNodes {
             return callNode.call(frame, new Object[]{});
         }
 
-        @TruffleBoundary
         @Specialization(guards = {"isRubyString(mimeType)", "isRubyString(source)"}, contains = "evalCached")
-        public Object evalUncached(DynamicObject mimeType, DynamicObject source) {
-            return parse(mimeType, source).call();
+        public Object evalUncached(VirtualFrame frame, DynamicObject mimeType, DynamicObject source, @Cached("create()")IndirectCallNode callNode) {
+            return callNode.call(frame, parse(mimeType, source), new Object[]{});
         }
 
+        @TruffleBoundary
         protected CallTarget parse(DynamicObject mimeType, DynamicObject source) {
             final String mimeTypeString = mimeType.toString();
             final Source sourceObject = Source.fromText(source.toString(), "(eval)").withMimeType(mimeTypeString);
@@ -565,7 +566,7 @@ public abstract class TruffleInteropNodes {
         @Specialization
         @TruffleBoundary
         public DynamicObject javaStringToRuby(String string) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(string), StringSupport.CR_UNKNOWN), null);
+            return Layouts.STRING.createString(coreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(string), StringSupport.CR_UNKNOWN));
         }
 
     }

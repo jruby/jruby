@@ -9,22 +9,20 @@
  */
 package org.jruby.truffle.language.exceptions;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-/**
- * Represents an ensure clause in exception handling. Represented separately to the try part.
- */
 public class EnsureNode extends RubyNode {
 
     @Child private RubyNode tryPart;
     @Child private RubyNode ensurePart;
+
+    @Child private SetExceptionVariableNode setExceptionVariableNode;
 
     private final BranchProfile rubyExceptionPath = BranchProfile.create();
     private final BranchProfile javaExceptionPath = BranchProfile.create();
@@ -38,11 +36,13 @@ public class EnsureNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object value;
+
         try {
             value = tryPart.execute(frame);
         } catch (RaiseException exception) {
             rubyExceptionPath.enter();
-            throw setLastExceptionAndRunEnsure(frame, exception);
+            setLastExceptionAndRunEnsure(frame, exception);
+            throw exception;
         } catch (Throwable throwable) {
             javaExceptionPath.enter();
             ensurePart.executeVoid(frame);
@@ -50,6 +50,7 @@ public class EnsureNode extends RubyNode {
         }
 
         ensurePart.executeVoid(frame);
+
         return value;
     }
 
@@ -59,7 +60,8 @@ public class EnsureNode extends RubyNode {
             tryPart.executeVoid(frame);
         } catch (RaiseException exception) {
             rubyExceptionPath.enter();
-            throw setLastExceptionAndRunEnsure(frame, exception);
+            setLastExceptionAndRunEnsure(frame, exception);
+            throw exception;
         } catch (Throwable throwable) {
             javaExceptionPath.enter();
             ensurePart.executeVoid(frame);
@@ -69,17 +71,13 @@ public class EnsureNode extends RubyNode {
         ensurePart.executeVoid(frame);
     }
 
-    private RaiseException setLastExceptionAndRunEnsure(VirtualFrame frame, RaiseException exception) {
-        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
-
-        final Object lastException = threadLocals.get("$!", nil());
-        threadLocals.set("$!", exception.getRubyException());
-        try {
-            ensurePart.executeVoid(frame);
-            return exception;
-        } finally {
-            threadLocals.set("$!", lastException);
+    private void setLastExceptionAndRunEnsure(VirtualFrame frame, RaiseException exception) {
+        if (setExceptionVariableNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            setExceptionVariableNode = insert(new SetExceptionVariableNode(getContext()));
         }
+
+        setExceptionVariableNode.setLastExceptionAndRun(frame, exception, ensurePart);
     }
 
 }

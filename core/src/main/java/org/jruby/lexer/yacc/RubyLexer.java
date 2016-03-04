@@ -821,7 +821,7 @@ public class RubyLexer extends LexingCommon {
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this);
 
-            if (tok == Tokens.tSTRING_END && (yaccValue.equals("\"") || yaccValue.equals("'"))) {
+            if (tok == Tokens.tSTRING_END && (lex_strterm.getFlags() & STR_FUNC_LABEL) != 0) {
                 if ((isLexState(lex_state, EXPR_BEG|EXPR_ENDFN) && !conditionState.isInState() ||
                         isARG()) && isLabelSuffix()) {
                     nextc();

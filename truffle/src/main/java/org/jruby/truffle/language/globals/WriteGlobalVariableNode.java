@@ -9,39 +9,46 @@
  */
 package org.jruby.truffle.language.globals;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.WriteHeadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.WriteObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 
 public class WriteGlobalVariableNode extends RubyNode {
 
-    private final DynamicObject globalVariablesObject;
+    private final String name;
 
     @Child private RubyNode rhs;
-    @Child private WriteHeadObjectFieldNode writeNode;
+    @Child private WriteObjectFieldNode writeNode;
 
     public WriteGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode rhs) {
         super(context, sourceSection);
-        this.globalVariablesObject = context.getCoreLibrary().getGlobalVariablesObject();
+        this.name = name;
         this.rhs = rhs;
-        writeNode = WriteHeadObjectFieldNodeGen.create(getContext(), name);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final Object value = rhs.execute(frame);
-        writeNode.execute(globalVariablesObject, value);
+        getWriteNode().execute(coreLibrary().getGlobalVariablesObject(), value);
         return value;
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return create7BitString("assignment", UTF8Encoding.INSTANCE);
+        return coreStrings().ASSIGNMENT.createInstance();
+    }
+
+    private WriteObjectFieldNode getWriteNode() {
+        if (writeNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            writeNode = insert(WriteObjectFieldNodeGen.create(getContext(), name));
+        }
+
+        return writeNode;
     }
 
 }

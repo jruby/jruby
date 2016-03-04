@@ -513,19 +513,7 @@ public class RubyObject extends RubyBasicObject {
      * Prefered over callMethod(context, "inspect")
      */
     public static RubyString inspect(ThreadContext context, IRubyObject object) {
-        Ruby runtime = context.runtime;
-        RubyString str = RubyString.objAsString(context, object.callMethod(context, "inspect"));
-        Encoding ext = runtime.getDefaultExternalEncoding();
-        if (!ext.isAsciiCompatible()) {
-            if (!str.isAsciiOnly()) {
-                return EncodingUtils.rbStrEscape(runtime, str);
-            }
-            return str;
-        }
-        if (str.getEncoding() != ext && !str.isAsciiOnly()) {
-            return EncodingUtils.rbStrEscape(runtime, str);
-        }
-        return str;
+        return (RubyString)rbInspect(context, object);
     }
 
     // MRI: rb_obj_dig

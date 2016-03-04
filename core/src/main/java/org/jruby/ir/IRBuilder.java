@@ -1013,7 +1013,7 @@ public class IRBuilder {
         // Frozen string optimization: check for "string".freeze
         if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
             StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange());
+            return new FrozenString(asString.getValue(), asString.getCodeRange(), asString.getPosition().getFile(), asString.getPosition().getLine());
         }
 
         // Though you might be tempted to move this build into the CallInstr as:
@@ -1023,13 +1023,26 @@ public class IRBuilder {
         Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
         Variable  callResult = createTemporaryVariable();
 
+        ArrayNode argsAry;
+        if (
+                callNode.getName().equals("[]") &&
+                callNode.getArgsNode() instanceof ArrayNode &&
+                (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
+                argsAry.get(0) instanceof StrNode &&
+                !scope.maybeUsingRefinements()) {
+            StrNode keyNode = (StrNode) argsAry.get(0);
+            addInstr(ArrayDerefInstr.create(callResult, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), keyNode.getPosition().getFile(), keyNode.getLine())));
+            return callResult;
+        }
+
+        Operand[] args       = setupCallArgs(callArgsNode);
+
         Label lazyLabel = getNewLabel();
         Label endLabel = getNewLabel();
         if (callNode.isLazy()) {
             addInstr(new BNilInstr(lazyLabel, receiver));
         }
 
-        Operand[] args       = setupCallArgs(callArgsNode);
         Operand block      = setupCallClosure(callNode.getIterNode());
 
         CallInstr callInstr  = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
@@ -1720,7 +1733,12 @@ public class IRBuilder {
         int depth = dasgnNode.getDepth();
         Variable arg = getLocalVariable(dasgnNode.getName(), depth);
         Operand  value = build(dasgnNode.getValueNode());
+
+        // no use copying a variable to itself
+        if (arg == value) return value;
+
         addInstr(new CopyInstr(arg, value));
+
         return value;
 
         // IMPORTANT: The return value of this method is value, not arg!
@@ -1896,6 +1914,7 @@ public class IRBuilder {
         // Now for opt args
         if (opt > 0) {
             int optIndex = argsNode.getOptArgIndex();
+            Variable temp = createTemporaryVariable();
             for (int j = 0; j < opt; j++, argIndex++) {
                 // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = getNewLabel();
@@ -1904,10 +1923,12 @@ public class IRBuilder {
                 Variable av = getNewLocalVariable(argName, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                addInstr(new ReceiveOptArgInstr(av, signature.required(), signature.pre(), j));
-                addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
-                build(n.getValue());
+                addInstr(new ReceiveOptArgInstr(temp, signature.required(), signature.pre(), j));
+                addInstr(BNEInstr.create(l, temp, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
+                Operand defaultResult = build(n.getValue());
+                addInstr(new CopyInstr(temp, defaultResult));
                 addInstr(new LabelInstr(l));
+                addInstr(new CopyInstr(av, temp));
             }
         }
 
@@ -2208,7 +2229,7 @@ public class IRBuilder {
         }
 
         Variable res = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding()));
+        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding(), node.isFrozen(), getFileName(), node.getLine()));
         return res;
     }
 
@@ -2220,7 +2241,7 @@ public class IRBuilder {
         }
 
         Variable res = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding()));
+        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding(), false, getFileName(), node.getLine()));
         return copyAndReturnValue(new DynamicSymbol(res));
     }
 
@@ -2739,7 +2760,12 @@ public class IRBuilder {
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
         Variable var  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
         Operand value = build(localAsgnNode.getValueNode());
+
+        // no use copying a variable to itself
+        if (var == value) return value;
+
         addInstr(new CopyInstr(var, value));
+
         return value;
 
         // IMPORTANT: The return value of this method is value, not var!
@@ -3437,27 +3463,11 @@ public class IRBuilder {
     public Operand buildStr(StrNode strNode) {
         if (strNode instanceof FileNode) return new Filename();
 
-        Operand literal = strNode.isFrozen() && !manager.getInstanceConfig().isDebuggingFrozenStringLiteral() ?
-                new FrozenString(strNode.getValue(), strNode.getCodeRange()) :
-                new StringLiteral(strNode.getValue(), strNode.getCodeRange());
+        Operand literal = strNode.isFrozen() ?
+                new FrozenString(strNode.getValue(), strNode.getCodeRange(), strNode.getPosition().getFile(), strNode.getPosition().getLine()) :
+                new StringLiteral(strNode.getValue(), strNode.getCodeRange(), strNode.getPosition().getFile(), strNode.getPosition().getLine());
 
-        Operand result;
-
-        // This logic might be slightly different than MRI in cases.  This is defined as any frozen string literal
-        // we be able to be debugged.  In MRI, they only do this is the iseq mode is set to frozen-string-literal.
-        // So we might actually debug more instances of frozen string but this way seems more logical.
-        if (strNode.isFrozen() && manager.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            Variable stringReference = createTemporaryVariable();
-            addInstr(new CopyInstr(stringReference, literal));
-            // FIXME: I think we want to hide this and not make user accessible?  Seems like it could have utility to be user-exposed though.
-            // FIXME: Also we are manually dyn-dispatching to freeze and not calling it internally. Maybe also ok?
-            Operand[] pair = new Operand[] { new FrozenString(strNode.getPosition().getFile()), new Fixnum(strNode.getPosition().getLine()) };
-            addInstr(new PutFieldInstr(stringReference, RubyString.DEBUG_INFO_FIELD, new Array(pair)));
-            result = createTemporaryVariable();
-            addInstr(CallInstr.create(scope, (Variable) result, "freeze", stringReference, NO_ARGS, null));
-        } else {
-            result = copyAndReturnValue(literal);
-        }
+        Operand result = copyAndReturnValue(literal);
 
         return result;
     }
@@ -3590,7 +3600,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new FrozenString(node.getValue(), node.getCodeRange())}));
+        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), node.getPosition().getFile(), node.getPosition().getLine())}));
     }
 
     public Operand buildYield(YieldNode node) {

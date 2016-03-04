@@ -14,6 +14,8 @@
 require 'fileutils'
 require 'digest/sha1'
 
+GRAALVM_VERSION = "0.10"
+
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 JDEBUG_PORT = 51819
@@ -39,9 +41,9 @@ module Utilities
     graal_locations = [
       ENV['GRAAL_BIN'],
       ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
-      "GraalVM-0.9/jre/bin/javao",
-      "../GraalVM-0.9/jre/bin/javao",
-      "../../GraalVM-0.9/jre/bin/javao",
+      "GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
+      "../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
+      "../../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
     ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
     not_found = -> {
@@ -59,8 +61,26 @@ module Utilities
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
   end
 
+  def self.jruby_eclipse?
+    # tool/jruby_eclipse only works on release currently
+    ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
+  end
+
+  def self.find_ruby
+    if ENV["RUBY_BIN"]
+      ENV["RUBY_BIN"]
+    else
+      version = `ruby -e 'print RUBY_VERSION' 2>/dev/null`
+      if version.start_with?("2.")
+        "ruby"
+      else
+        find_jruby
+      end
+    end
+  end
+
   def self.find_jruby
-    if USE_JRUBY_ECLIPSE
+    if jruby_eclipse?
       "#{JRUBY_DIR}/tool/jruby_eclipse"
     elsif ENV['RUBY_BIN']
       ENV['RUBY_BIN']
@@ -69,7 +89,7 @@ module Utilities
     end
   end
 
-  def self.find_jruby_dir
+  def self.find_jruby_bin_dir
     File.dirname(find_jruby)
   end
 
@@ -161,7 +181,11 @@ module ShellUtils
         false
       else
         $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
-        exit $?.exitstatus
+        if $? and $?.exitstatus
+          exit $?.exitstatus
+        else
+          exit 1
+        end
       end
     end
   end
@@ -207,11 +231,11 @@ module ShellUtils
       command, *args = args
     end
 
-    if USE_JRUBY_ECLIPSE
+    if Utilities.jruby_eclipse?
       args.unshift "-ttool/jruby_eclipse"
     end
 
-    sh env_vars, Utilities.find_jruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
+    sh env_vars, Utilities.find_ruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
   end
 end
 
@@ -345,7 +369,7 @@ module Commands
     end
 
     if args.delete('--server')
-      jruby_args += %w[-Xtruffle.instrumentation_server_port=8080 -Xtruffle.passalot=1]
+      jruby_args += %w[-Xtruffle.instrumentation_server_port=8080]
     end
 
     if args.delete('--igv')
@@ -420,7 +444,7 @@ module Commands
   def test_compiler(*args)
     env_vars = {}
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
-    env_vars["PATH"] = "#{Utilities.find_jruby_dir}:#{ENV["PATH"]}"
+    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
     end
@@ -430,7 +454,7 @@ module Commands
   def test_integration(*args)
     no_gems = args.delete('--no-gems')
     env_vars = {}
-    env_vars["PATH"] = "#{Utilities.find_jruby_dir}:#{ENV["PATH"]}"
+    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
 
     test_names = if args.empty?
                    '*'
@@ -735,6 +759,8 @@ module Commands
 
   def check_ambiguous_arguments
     ENV.delete "JRUBY_ECLIPSE" # never run from the Eclipse launcher here
+    clean
+    # modify pom
     pom = "#{JRUBY_DIR}/truffle/pom.rb"
     contents = File.read(pom)
     contents.gsub!(/^(\s+)'source'\s*=>.+'1.7'.+,\n\s+'target'\s*=>.+\s*'1.7.+,\n/) do
@@ -745,8 +771,8 @@ module Commands
       "#{$1}#{$2},\n#{$1}'-parameters'#{$3}"
     end
     File.write pom, contents
-    FileUtils::Verbose.rm_r "#{JRUBY_DIR}/truffle/target/classes"
-    build('truffle')
+
+    build
     run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
   end
 
@@ -820,8 +846,5 @@ class JT
     end
   end
 end
-
-# tool/jruby_eclipse only works on release currently
-USE_JRUBY_ECLIPSE = ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
 
 JT.new.main(ARGV)

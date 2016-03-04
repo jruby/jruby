@@ -31,7 +31,7 @@ public abstract class RandomizerPrimitiveNodes {
 
         @Specialization
         public DynamicObject randomizerAllocate() {
-            return Layouts.RANDOMIZER.createRandomizer(getContext().getCoreLibrary().getRandomizerFactory(), new Random());
+            return Layouts.RANDOMIZER.createRandomizer(coreLibrary().getRandomizerFactory(), new Random());
         }
 
     }
@@ -122,7 +122,7 @@ public abstract class RandomizerPrimitiveNodes {
         @Specialization
         public DynamicObject randomizerGenSeed(DynamicObject randomizerClass) {
             final BigInteger seed = RubyRandom.randomSeedBigInteger(getContext().getJRubyRuntime().getRandom());
-            return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), seed);
+            return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), seed);
         }
     }
 

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.methods;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -39,7 +40,6 @@ public abstract class AddMethodNode extends RubyNode {
         super(context, sourceSection);
         this.ignoreNameVisibility = ignoreNameVisibility;
         this.isLiteralDef = isLiteralDef;
-        this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
     }
 
     public abstract DynamicObject executeAddMethod(DynamicObject module, InternalMethod method, Visibility visibility);
@@ -59,7 +59,7 @@ public abstract class AddMethodNode extends RubyNode {
 
         if (visibility == Visibility.MODULE_FUNCTION) {
             addMethodToModule(module, method.withVisibility(Visibility.PRIVATE));
-            final DynamicObject singletonClass = singletonClassNode.executeSingletonClass(module);
+            final DynamicObject singletonClass = getSingletonClass(module);
             addMethodToModule(singletonClass, method.withDeclaringModule(singletonClass).withVisibility(Visibility.PUBLIC));
         } else {
             addMethodToModule(module, method);
@@ -70,6 +70,15 @@ public abstract class AddMethodNode extends RubyNode {
 
     public void addMethodToModule(final DynamicObject module, InternalMethod method) {
         Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
+    }
+
+    protected DynamicObject getSingletonClass(DynamicObject object) {
+        if (singletonClassNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
+        }
+
+        return singletonClassNode.executeSingletonClass(object);
     }
 
 }

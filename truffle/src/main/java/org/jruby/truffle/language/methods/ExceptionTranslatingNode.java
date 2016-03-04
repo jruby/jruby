@@ -16,13 +16,11 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.ThreadExitException;
 import org.jruby.truffle.language.control.TruffleFatalException;
 
 public class ExceptionTranslatingNode extends RubyNode {
@@ -32,13 +30,10 @@ public class ExceptionTranslatingNode extends RubyNode {
     @Child private RubyNode child;
 
     private final BranchProfile controlProfile = BranchProfile.create();
-    private final BranchProfile rethrowProfile = BranchProfile.create();
+    private final BranchProfile arithmeticProfile = BranchProfile.create();
 
-    public ExceptionTranslatingNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
-        this(context, sourceSection, child, UnsupportedOperationBehavior.TYPE_ERROR);
-    }
-
-    public ExceptionTranslatingNode(RubyContext context, SourceSection sourceSection, RubyNode child, UnsupportedOperationBehavior unsupportedOperationBehavior) {
+    public ExceptionTranslatingNode(RubyContext context, SourceSection sourceSection, RubyNode child,
+                                    UnsupportedOperationBehavior unsupportedOperationBehavior) {
         super(context, sourceSection);
         this.child = child;
         this.unsupportedOperationBehavior = unsupportedOperationBehavior;
@@ -48,31 +43,24 @@ public class ExceptionTranslatingNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         try {
             return child.execute(frame);
-        } catch (StackOverflowError error) {
-            // TODO: we might want to do sth smarter here to avoid consuming frames when we are almost out of it.
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().systemStackError("stack level too deep", this));
-        } catch (TruffleFatalException | ThreadExitException exception) {
-            CompilerDirectives.transferToInterpreter();
-            throw exception;
-        } catch (RaiseException exception) {
-            rethrowProfile.enter();
-            throw exception;
         } catch (ControlFlowException exception) {
             controlProfile.enter();
             throw exception;
-        } catch (MainExitException exception) {
-            CompilerDirectives.transferToInterpreter();
-            throw exception;
         } catch (ArithmeticException exception) {
-            CompilerDirectives.transferToInterpreter();
+            arithmeticProfile.enter();
             throw new RaiseException(translate(exception));
         } catch (UnsupportedSpecializationException exception) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));
+        } catch (TruffleFatalException exception) {
+            CompilerDirectives.transferToInterpreter();
+            throw exception;
         } catch (org.jruby.exceptions.RaiseException e) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
+        } catch (StackOverflowError error) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(translate(error));
         } catch (Throwable exception) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));
@@ -84,7 +72,15 @@ public class ExceptionTranslatingNode extends RubyNode {
             exception.printStackTrace();
         }
 
-        return getContext().getCoreLibrary().zeroDivisionError(this);
+        return coreLibrary().zeroDivisionError(this, exception);
+    }
+
+    private DynamicObject translate(StackOverflowError error) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
+            error.printStackTrace();
+        }
+
+        return coreLibrary().systemStackErrorStackLevelTooDeep(this, error);
     }
 
     private DynamicObject translate(UnsupportedSpecializationException exception) {
@@ -103,7 +99,9 @@ public class ExceptionTranslatingNode extends RubyNode {
             if (value == null) {
                 builder.append("null");
             } else if (value instanceof DynamicObject) {
-                builder.append(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) value))).getName());
+                final DynamicObject dynamicObject = (DynamicObject) value;
+
+                builder.append(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(dynamicObject)).getName());
                 builder.append("(");
                 builder.append(value.getClass().getName());
                 builder.append(")");
@@ -144,24 +142,31 @@ public class ExceptionTranslatingNode extends RubyNode {
 
         switch (unsupportedOperationBehavior) {
             case TYPE_ERROR:
-                return getContext().getCoreLibrary().typeError(builder.toString(), this);
+                return coreLibrary().typeError(builder.toString(), this, exception);
             case ARGUMENT_ERROR:
-                return getContext().getCoreLibrary().argumentError(builder.toString(), this);
+                return coreLibrary().argumentError(builder.toString(), this, exception);
             default:
                 throw new UnsupportedOperationException();
         }
     }
 
     public DynamicObject translate(Throwable throwable) {
-        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA || getContext().getOptions().EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA
+                || getContext().getOptions().EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
             throwable.printStackTrace();
         }
 
+        final StringBuilder message = new StringBuilder();
+        message.append(throwable.getClass().getSimpleName());
+        message.append(" ");
+        message.append(throwable.getMessage());
+
         if (throwable.getStackTrace().length > 0) {
-            return getContext().getCoreLibrary().internalError(String.format("%s %s %s", throwable.getClass().getSimpleName(), throwable.getMessage(), throwable.getStackTrace()[0].toString()), this);
-        } else {
-            return getContext().getCoreLibrary().internalError(String.format("%s %s ???", throwable.getClass().getSimpleName(), throwable.getMessage()), this);
+            message.append(" ");
+            message.append(throwable.getStackTrace()[0].toString());
         }
+
+        return coreLibrary().internalError(message.toString(), this, throwable);
     }
 
 }

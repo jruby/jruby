@@ -47,6 +47,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 import java.io.File;
 
@@ -55,13 +57,16 @@ public abstract class DirPrimitiveNodes {
     @RubiniusPrimitive(name = "dir_allocate")
     public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateNode;
+
         public DirAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject dirClass) {
-            return Layouts.DIR.createDir(Layouts.CLASS.getInstanceFactory(dirClass), null, 0);
+            return allocateNode.allocate(dirClass, null, 0);
         }
 
     }
@@ -81,7 +86,7 @@ public abstract class DirPrimitiveNodes {
             final File file = new File(path.toString());
 
             if (!file.isDirectory()) {
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(Errno.ENOTDIR.intValue(), this));
+                throw new RaiseException(coreLibrary().errnoError(Errno.ENOTDIR.intValue(), this));
             }
 
             final String[] contents = file.list();

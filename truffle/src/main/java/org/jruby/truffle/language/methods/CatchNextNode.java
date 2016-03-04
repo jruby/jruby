@@ -16,9 +16,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.NextException;
 
-/**
- * Catch a {@code next} jump at the root of a method.
- */
 public class CatchNextNode extends RubyNode {
 
     @Child private RubyNode body;

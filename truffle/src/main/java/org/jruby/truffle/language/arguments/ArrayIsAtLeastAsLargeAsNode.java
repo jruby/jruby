@@ -18,19 +18,21 @@ import org.jruby.truffle.language.RubyNode;
 
 public class ArrayIsAtLeastAsLargeAsNode extends RubyNode {
 
-    @Child private RubyNode child;
-
     private final int requiredSize;
 
-    public ArrayIsAtLeastAsLargeAsNode(RubyContext context, SourceSection sourceSection, RubyNode child, int requiredSize) {
+    @Child private RubyNode child;
+
+    public ArrayIsAtLeastAsLargeAsNode(RubyContext context, SourceSection sourceSection,
+                                       int requiredSize, RubyNode child) {
         super(context, sourceSection);
-        this.child = child;
         this.requiredSize = requiredSize;
+        this.child = child;
     }
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        return Layouts.ARRAY.getSize((DynamicObject) child.execute(frame)) >= requiredSize;
+        final int actualSize = Layouts.ARRAY.getSize((DynamicObject) child.execute(frame));
+        return actualSize >= requiredSize;
     }
 
     @Override

@@ -64,9 +64,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
     }
 
-    public void pushFrozenString(ByteList bl, int cr) {
+    public void pushFrozenString(ByteList bl, int cr, String file, int line) {
         loadContext();
-        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr, file, line);
     }
 
     public void pushByteList(ByteList bl) {
@@ -146,6 +146,11 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP);
             }
         }
+    }
+
+    @Override
+    public void invokeArrayDeref() {
+        adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP);
     }
 
     public void invokeOtherOneFixnum(String name, long fixnum) {

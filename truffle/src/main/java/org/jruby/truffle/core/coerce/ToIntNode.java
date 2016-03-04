@@ -64,7 +64,7 @@ public abstract class ToIntNode extends RubyNode {
 
         CompilerDirectives.transferToInterpreter();
         if (RubyGuards.isRubyBignum(object)) {
-            throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
+            throw new RaiseException(coreLibrary().rangeError("bignum too big to convert into `long'", this));
         } else {
             throw new UnsupportedOperationException(object.getClass().toString());
         }
@@ -85,7 +85,7 @@ public abstract class ToIntNode extends RubyNode {
     @Specialization(guards = "isRubyBignum(value)")
     public DynamicObject coerceRubyBignum(DynamicObject value) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
+        throw new RaiseException(coreLibrary().rangeError("bignum too big to convert into `long'", this));
     }
 
     @Specialization
@@ -117,19 +117,19 @@ public abstract class ToIntNode extends RubyNode {
         try {
             coerced = toIntNode.call(frame, object, "to_int", null);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Integer", this));
+                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "Integer", this));
             } else {
                 throw e;
             }
         }
 
-        if (getContext().getCoreLibrary().getLogicalClass(coerced) == getContext().getCoreLibrary().getFixnumClass()) {
+        if (coreLibrary().getLogicalClass(coerced) == coreLibrary().getFixnumClass()) {
             return coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "Integer", "to_int", coerced, this));
+            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "Integer", "to_int", coerced, this));
         }
     }
 

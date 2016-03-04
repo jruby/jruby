@@ -247,7 +247,9 @@ public class Options {
     public static final Option<Integer> TRUFFLE_PACK_CACHE = integer(TRUFFLE, "truffle.pack.cache", TRUFFLE_DEFAULT_CACHE.load(), "Array#pack cache size");
     public static final Option<Integer> TRUFFLE_UNPACK_CACHE = integer(TRUFFLE, "truffle.unpack.cache", TRUFFLE_DEFAULT_CACHE.load(), "String#unpack cache size");
     public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", TRUFFLE_DEFAULT_CACHE.load(), "eval lookup cache size");
+    public static final Option<Integer> TRUFFLE_CLASS_CACHE = integer(TRUFFLE, "truffle.class.cache", TRUFFLE_DEFAULT_CACHE.load(), ".class and .metaclass cache size");
     public static final Option<Integer> TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE = integer(TRUFFLE, "truffle.encoding_compatible_query.cache", TRUFFLE_DEFAULT_CACHE.load(), "Encoding.compatible? cache size");
+    public static final Option<Integer> TRUFFLE_THREAD_CACHE = integer(TRUFFLE, "truffle.thread.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size of operations that depend on a particular thread");
 
     public static final Option<Boolean> TRUFFLE_CLONE_DEFAULT = bool(TRUFFLE, "truffle.clone.default", true, "Default option for cloning.");
     public static final Option<Boolean> TRUFFLE_INLINE_DEFAULT = bool(TRUFFLE, "truffle.inline.default", true, "Default option for inlining.");
@@ -262,9 +264,11 @@ public class Options {
     public static final Option<Integer> TRUFFLE_PACK_RECOVER_LOOP_MIN = integer(TRUFFLE, "truffle.pack.recover", 32, "If a pack or unpack expression is longer than this, attempt to recover loops.");
 
     public static final Option<Integer> TRUFFLE_INSTRUMENTATION_SERVER_PORT = integer(TRUFFLE, "truffle.instrumentation_server_port", 0, "Port number to run an HTTP server on that provides instrumentation services");
+    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_STORE_JAVA = bool(TRUFFLE, "truffle.exceptions.store_java", false, "Store the Java exception with the Ruby backtrace");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_uncaught_java", false, "Print uncaught Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_BACKTRACES_HIDE_CORE_FILES = bool(TRUFFLE, "truffle.backtraces.hide_core_files", true, "Hide core source files in backtraces, like MRI does.");
+    public static final Option<Boolean> TRUFFLE_BACKTRACES_INTERLEAVE_JAVA = bool(TRUFFLE, "truffle.backtraces.interleave_java", false, "Interleave Java stacktraces into the Ruby backtrace.");
     public static final Option<Integer> TRUFFLE_BACKTRACES_LIMIT = integer(TRUFFLE, "truffle.backtraces.limit", 9999, "Limit the size of Ruby backtraces.");
     public static final Option<Boolean> TRUFFLE_BACKTRACES_OMIT_UNUSED = bool(TRUFFLE, "truffle.backtraces.omit_unused", true, "Omit backtraces that should be unused as they have pure rescue expressions.");
     public static final Option<Boolean> TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = bool(TRUFFLE, "truffle.set_trace_func.include_core_file_callers", false, "Include internal core library calls in set_trace_func output.");

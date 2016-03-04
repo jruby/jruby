@@ -340,10 +340,10 @@ stmt            : kALIAS fitem {
                                     $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    $$ = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_opassign", 
+                    $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_const_path_field", $1, $3), 
-                                    $4, $5));
+                                    $4,
+                                    $5);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
                     $$ = p.dispatch("on_opassign", 
@@ -1520,10 +1520,14 @@ string          : tCHAR
                 }
 
 string1         : tSTRING_BEG string_contents tSTRING_END {
+                    p.heredoc_dedent($2);
+                    p.setHeredocIndent(0);
                     $$ = p.dispatch("on_string_literal", $2);
                 }
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
+                    p.heredoc_dedent($2);
+                    p.setHeredocIndent(0);
                     $$ = p.dispatch("on_xstring_literal", $2);
                 }
 
@@ -1637,13 +1641,17 @@ string_content  : tSTRING_CONTENT
                 } {
                    $$ = p.getBraceNest();
                    p.setBraceNest(0);
+                } {
+                   $$ = p.getHeredocIndent();
+                   p.setHeredocIndent(0);
                 } compstmt tSTRING_DEND {
                    p.getConditionState().restart();
                    p.setStrTerm($<StrTerm>2);
                    p.getCmdArgumentState().reset($<Long>3.longValue());
                    p.setState($<Integer>4);
                    p.setBraceNest($<Integer>5);
-                   $$ = p.dispatch("on_string_embexpr", $6);
+                   p.setHeredocIndent($<Integer>6);
+                   $$ = p.dispatch("on_string_embexpr", $7);
                 }
 
 string_dvar     : tGVAR {

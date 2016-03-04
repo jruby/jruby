@@ -123,7 +123,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
                 if (outBytes.getRealSize() < offset) {
                     throw new RaiseException(
-                            getContext().getCoreLibrary().argumentError("output offset too big", this)
+                            coreLibrary().argumentError("output offset too big", this)
                     );
                 }
 
@@ -132,7 +132,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 if (outputByteEnd > Integer.MAX_VALUE) {
                     // overflow check
                     throw new RaiseException(
-                            getContext().getCoreLibrary().argumentError("output offset + bytesize too big", this)
+                            coreLibrary().argumentError("output offset + bytesize too big", this)
                     );
                 }
 
@@ -153,7 +153,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
                     if (Integer.MAX_VALUE / 2 < size) {
                         throw new RaiseException(
-                                getContext().getCoreLibrary().argumentError("too long conversion result", this)
+                                coreLibrary().argumentError("too long conversion result", this)
                         );
                     }
                     size *= 2;
@@ -242,7 +242,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 return nil();
             }
 
-            Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
+            Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
 
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
@@ -300,7 +300,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 ret[4] = createString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()));
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ret, ret.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ret, ret.length);
         }
 
     }

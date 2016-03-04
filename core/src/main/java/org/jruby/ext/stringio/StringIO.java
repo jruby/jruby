@@ -38,6 +38,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
@@ -98,6 +99,14 @@ public class StringIO extends RubyObject implements EncodingCapable {
         if (runtime.getObject().isConstantDefined("Java")) {
             stringIOClass.defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
         }
+
+        RubyModule genericReadable = runtime.getIO().defineOrGetModuleUnder("GenericReadable");
+        genericReadable.defineAnnotatedMethods(GenericReadable.class);
+        stringIOClass.includeModule(genericReadable);
+
+        RubyModule genericWritable = runtime.getIO().defineOrGetModuleUnder("GenericWritable");
+        genericWritable.defineAnnotatedMethods(GenericWritable.class);
+        stringIOClass.includeModule(genericWritable);
 
         return stringIOClass;
     }
@@ -234,14 +243,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = {"pid", "fileno"})
     public IRubyObject strioNil(ThreadContext context) {
         return context.nil;
-    }
-
-    @JRubyMethod(name = "<<", required = 1)
-    public IRubyObject append(ThreadContext context, IRubyObject arg) {
-        // Claims conversion is done via 'to_s' in docs.
-        callMethod(context, "write", arg);
-
-        return this;
     }
 
     @JRubyMethod
@@ -690,17 +691,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return arg;
     }
 
-    @JRubyMethod(name = "print", rest = true)
-    public IRubyObject print(ThreadContext context, IRubyObject[] args) {
-        return RubyIO.print(context, this, args);
-    }
-
-    @JRubyMethod(name = "printf", required = 1, rest = true)
-    public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
-        callMethod(context, "write", RubyKernel.sprintf(context, this, args));
-        return getRuntime().getNil();
-    }
-
     private void strioExtend(int pos, int len) {
         checkModifiable();
 
@@ -740,63 +730,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
     }
 
     public static final ByteList NEWLINE = ByteList.create("\n");
-
-    @JRubyMethod(name = "puts", rest = true)
-    public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
-        checkModifiable();
-        return puts(context, this, args);
-    }
-
-    private static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
-        // TODO: This should defer to RubyIO logic, but we don't have puts right there for 1.9
-        Ruby runtime = context.runtime;
-        if (args.length == 0) {
-            RubyIO.write(context, maybeIO, RubyString.newStringShared(runtime, NEWLINE));
-            return runtime.getNil();
-        }
-
-        for (int i = 0; i < args.length; i++) {
-            RubyString line = null;
-
-            if (!args[i].isNil()) {
-                IRubyObject tmp = args[i].checkArrayType();
-                if (!tmp.isNil()) {
-                    RubyArray arr = (RubyArray) tmp;
-                    if (runtime.isInspecting(arr)) {
-                        line = runtime.newString("[...]");
-                    } else {
-                        inspectPuts(context, maybeIO, arr);
-                        continue;
-                    }
-                } else {
-                    if (args[i] instanceof RubyString) {
-                        line = (RubyString) args[i];
-                    } else {
-                        line = args[i].asString();
-                    }
-                }
-            }
-
-            if (line != null) RubyIO.write(context, maybeIO, line);
-
-            if (line == null || !line.getByteList().endsWith(NEWLINE)) {
-                RubyIO.write(context, maybeIO, RubyString.newStringShared(runtime, NEWLINE));
-            }
-        }
-
-        return runtime.getNil();
-    }
-
-    private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray array) {
-        Ruby runtime = context.runtime;
-        try {
-            runtime.registerInspecting(array);
-            return puts(context, maybeIO, array.toJavaArray());
-        }
-        finally {
-            runtime.unregisterInspecting(array);
-        }
-    }
 
     @JRubyMethod(name = "read", optional = 2)
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {
@@ -868,52 +801,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
         ptr.pos += string.size();
         return string;
-    }
-
-    @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
-    public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
-
-        if (!opts.isNil()) args = Arrays.copyOf(args, args.length - 1);
-
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
-
-        IRubyObject val = read(context, args);
-        if (val.isNil()) {
-            if (!exception) return context.nil;
-            throw context.runtime.newEOFError();
-        }
-
-        return val;
-    }
-
-    @JRubyMethod(name = "readchar")
-    public IRubyObject readchar(ThreadContext context) {
-        IRubyObject c = callMethod(context, "getc");
-
-        if (c.isNil()) throw context.runtime.newEOFError();
-
-        return c;
-    }
-
-    @JRubyMethod(name = "readbyte")
-    public IRubyObject readbyte(ThreadContext context) {
-        IRubyObject b = callMethod(context, "getbyte");
-
-        if (b.isNil()) throw context.runtime.newEOFError();
-
-        return b;
-    }
-
-    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
-    public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
-        IRubyObject line = callMethod(context, "gets", args);
-
-        if (line.isNil()) throw context.runtime.newEOFError();
-
-        return line;
     }
 
     @JRubyMethod(name = "readlines", optional = 2)
@@ -1016,18 +903,9 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return context.runtime.getTrue();
     }
 
-    @JRubyMethod(name = {"sysread", "readpartial"}, optional = 2)
-    public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
-        IRubyObject val = callMethod(context, "read", args);
-
-        if (val.isNil()) throw getRuntime().newEOFError();
-
-        return val;
-    }
-
     // only here for the fake-out class in org.jruby
     public IRubyObject sysread(IRubyObject[] args) {
-        return sysread(getRuntime().getCurrentContext(), args);
+        return GenericReadable.sysread(getRuntime().getCurrentContext(), this, args);
     }
 
     @JRubyMethod(name = "truncate", required = 1)
@@ -1111,20 +989,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
 
         return context.nil;
-    }
-
-    @JRubyMethod(name = "syswrite", required = 1)
-    public IRubyObject syswrite(ThreadContext context, IRubyObject arg) {
-        return RubyIO.write(context, this, arg);
-    }
-
-    @JRubyMethod(name = "write_nonblock", required = 1, optional = 1)
-    public IRubyObject syswrite_nonblock(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        ArgsUtil.getOptionsArg(runtime, args); // ignored as in MRI
-
-        return syswrite(context, args[0]);
     }
 
     // MRI: strio_write
@@ -1234,6 +1098,154 @@ public class StringIO extends RubyObject implements EncodingCapable {
         if (!block.isGiven()) return enumeratorize(runtime, this, "each_codepoint");
 
         return each_codepoint(context, block);
+    }
+
+    public static class GenericReadable {
+        @JRubyMethod(name = "readchar")
+        public static IRubyObject readchar(ThreadContext context, IRubyObject self) {
+            IRubyObject c = self.callMethod(context, "getc");
+
+            if (c.isNil()) throw context.runtime.newEOFError();
+
+            return c;
+        }
+
+        @JRubyMethod(name = "readbyte")
+        public static IRubyObject readbyte(ThreadContext context, IRubyObject self) {
+            IRubyObject b = self.callMethod(context, "getbyte");
+
+            if (b.isNil()) throw context.runtime.newEOFError();
+
+            return b;
+        }
+
+        @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
+        public static IRubyObject readline(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            IRubyObject line = self.callMethod(context, "gets", args);
+
+            if (line.isNil()) throw context.runtime.newEOFError();
+
+            return line;
+        }
+
+        @JRubyMethod(name = {"sysread", "readpartial"}, optional = 2)
+        public static IRubyObject sysread(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            IRubyObject val = self.callMethod(context, "read", args);
+
+            if (val.isNil()) throw context.runtime.newEOFError();
+
+            return val;
+        }
+
+        @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
+        public static IRubyObject read_nonblock(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            Ruby runtime = context.runtime;
+
+            IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
+
+            if (!opts.isNil()) args = Arrays.copyOf(args, args.length - 1);
+
+            boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
+
+            IRubyObject val = self.callMethod(context, "read", args);
+            if (val.isNil()) {
+                if (!exception) return context.nil;
+                throw context.runtime.newEOFError();
+            }
+
+            return val;
+        }
+    }
+
+    public static class GenericWritable {
+        @JRubyMethod(name = "<<", required = 1)
+        public static IRubyObject append(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            // Claims conversion is done via 'to_s' in docs.
+            self.callMethod(context, "write", arg);
+
+            return self;
+        }
+
+        @JRubyMethod(name = "print", rest = true)
+        public static IRubyObject print(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return RubyIO.print(context, self, args);
+        }
+
+        @JRubyMethod(name = "printf", required = 1, rest = true)
+        public static IRubyObject printf(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            self.callMethod(context, "write", RubyKernel.sprintf(context, self, args));
+            return context.nil;
+        }
+
+        @JRubyMethod(name = "puts", rest = true)
+        public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
+            // TODO: This should defer to RubyIO logic, but we don't have puts right there for 1.9
+            Ruby runtime = context.runtime;
+            if (args.length == 0) {
+                RubyIO.write(context, maybeIO, RubyString.newStringShared(runtime, NEWLINE));
+                return runtime.getNil();
+            }
+
+            for (int i = 0; i < args.length; i++) {
+                RubyString line = null;
+
+                if (!args[i].isNil()) {
+                    IRubyObject tmp = args[i].checkArrayType();
+                    if (!tmp.isNil()) {
+                        RubyArray arr = (RubyArray) tmp;
+                        if (runtime.isInspecting(arr)) {
+                            line = runtime.newString("[...]");
+                        } else {
+                            inspectPuts(context, maybeIO, arr);
+                            continue;
+                        }
+                    } else {
+                        if (args[i] instanceof RubyString) {
+                            line = (RubyString) args[i];
+                        } else {
+                            line = args[i].asString();
+                        }
+                    }
+                }
+
+                if (line != null) RubyIO.write(context, maybeIO, line);
+
+                if (line == null || !line.getByteList().endsWith(NEWLINE)) {
+                    RubyIO.write(context, maybeIO, RubyString.newStringShared(runtime, NEWLINE));
+                }
+            }
+
+            return runtime.getNil();
+        }
+
+        private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray array) {
+            Ruby runtime = context.runtime;
+            try {
+                runtime.registerInspecting(array);
+                return puts(context, maybeIO, array.toJavaArray());
+            }
+            finally {
+                runtime.unregisterInspecting(array);
+            }
+        }
+
+        @JRubyMethod(name = "syswrite", required = 1)
+        public static IRubyObject syswrite(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            return RubyIO.write(context, self, arg);
+        }
+
+        @JRubyMethod(name = "write_nonblock", required = 1, optional = 1)
+        public static IRubyObject syswrite_nonblock(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            Ruby runtime = context.runtime;
+
+            ArgsUtil.getOptionsArg(runtime, args); // ignored as in MRI
+
+            return syswrite(context, self, args[0]);
+        }
+    }
+
+    public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
+        return GenericWritable.puts(context, this, args);
     }
 
     /* rb: check_modifiable */

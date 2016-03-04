@@ -85,15 +85,6 @@ public class JVMVisitor extends IRVisitor {
 
     public byte[] compileToBytecode(IRScope scope, JVMVisitorMethodContext context) {
         codegenScope(scope, context);
-
-//        try {
-//            FileOutputStream fos = new FileOutputStream("tmp.class");
-//            fos.write(target.code());
-//            fos.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
         return code();
     }
 
@@ -142,7 +133,7 @@ public class JVMVisitor extends IRVisitor {
             LOG.info("Printing JIT IR for " + scope.getName(), "\n" + new String(baos.toByteArray()));
         }
 
-        Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
+        Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
         emitClosures(scope, print);
 
@@ -451,6 +442,16 @@ public class JVMVisitor extends IRVisitor {
                 attrAssignInstr.getReceiver() instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL,
                 null,
                 attrAssignInstr.isPotentiallyRefined());
+    }
+
+    @Override
+    public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelf();
+        visit(arrayderefinstr.getReceiver());
+        visit(arrayderefinstr.getKey());
+        jvmMethod().invokeArrayDeref();
+        jvmStoreLocal(arrayderefinstr.getResult());
     }
 
     @Override
@@ -803,6 +804,13 @@ public class JVMVisitor extends IRVisitor {
                 visit(p);
                 jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
 //            }
+        }
+        if (compoundstring.isFrozen()) {
+            jvmMethod().loadContext();
+            jvmAdapter().swap();
+            jvmAdapter().ldc(compoundstring.getFile());
+            jvmAdapter().ldc(compoundstring.getLine());
+            jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, ThreadContext.class, RubyString.class, String.class, int.class));
         }
         jvmStoreLocal(compoundstring.getResult());
     }
@@ -2181,7 +2189,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void FrozenString(FrozenString frozen) {
-        jvmMethod().pushFrozenString(frozen.getByteList(), frozen.getCodeRange());
+        jvmMethod().pushFrozenString(frozen.getByteList(), frozen.getCodeRange(), frozen.getFile(), frozen.getLine());
     }
 
     @Override

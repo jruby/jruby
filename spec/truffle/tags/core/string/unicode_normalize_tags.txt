@@ -12,3 +12,6 @@ fails:String#unicode_normalize! modifies self in place (nfkc)
 fails:String#unicode_normalize! modifies self in place (nfkd)
 fails:String#unicode_normalize! raises an Encoding::CompatibilityError if the string is not in an unicode encoding
 fails:String#unicode_normalize! raises an ArgumentError if the specified form is invalid
+fails:String#unicode_normalize returns normalized form of string by default 03D3 (ϓ) GREEK UPSILON WITH ACUTE AND HOOK SYMBOL
+fails:String#unicode_normalize returns normalized form of string by default 03D4 (ϔ) GREEK UPSILON WITH DIAERESIS AND HOOK SYMBOL
+fails:String#unicode_normalize returns normalized form of string by default 1E9B (ẛ) LATIN SMALL LETTER LONG S WITH DOT ABOVE

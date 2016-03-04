@@ -38,13 +38,13 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
-        final DynamicObject dummyModule = getContext().getCoreLibrary().getObjectClass();
+        final DynamicObject dummyModule = coreLibrary().getObjectClass();
         final Visibility dummyVisibility = Visibility.PUBLIC;
 
         final DynamicObject capturedBlock;
 
         if (captureBlock) {
-            capturedBlock = RubyArguments.getBlock(frame.getArguments());
+            capturedBlock = RubyArguments.getBlock(frame);
         } else {
             capturedBlock = null;
         }

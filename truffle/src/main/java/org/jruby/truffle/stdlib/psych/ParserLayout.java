@@ -30,9 +30,9 @@ public interface ParserLayout extends BasicObjectLayout {
     boolean isParser(DynamicObject object);
 
     Parser getParser(DynamicObject object);
-    void setParser(DynamicObject object, Parser parser);
+    void setParser(DynamicObject object, Parser value);
 
     Event getEvent(DynamicObject object);
-    void setEvent(DynamicObject object, Event event);
+    void setEvent(DynamicObject object, Event value);
 
 }

@@ -233,7 +233,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private RubyHash(Ruby runtime, RubyClass klass, RubyHash other) {
         super(runtime, klass);
-        this.ifNone = runtime.getNil();
+        this.ifNone = UNDEF;
         threshold = INITIAL_THRESHOLD;
         table = other.internalCopyTable(head);
         size = other.size;
@@ -241,16 +241,16 @@ public class RubyHash extends RubyObject implements Map {
 
     public RubyHash(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
-        this.ifNone = runtime.getNil();
+        this.ifNone = UNDEF;
         allocFirst();
     }
 
     public RubyHash(Ruby runtime, int buckets) {
-        this(runtime, runtime.getNil(), buckets);
+        this(runtime, UNDEF, buckets);
     }
 
     public RubyHash(Ruby runtime) {
-        this(runtime, runtime.getNil());
+        this(runtime, UNDEF);
     }
 
     public RubyHash(Ruby runtime, IRubyObject defaultValue) {
@@ -484,6 +484,11 @@ public class RubyHash extends RubyObject implements Map {
         return MRI_HASH ? MRIHashValue(h) : JavaSoftHashValue(h);
     }
 
+    protected final int hashValue(final IRubyObject key) {
+        final int h = isComparedByIdentity() ? System.identityHashCode(key) : key.hashCode();
+        return MRI_HASH ? MRIHashValue(h) : JavaSoftHashValue(h);
+    }
+
     private static int bucketIndex(final int h, final int length) {
         return MRI_HASH ? MRIBucketIndex(h, length) : JavaSoftBucketIndex(h, length);
     }
@@ -517,7 +522,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     protected void internalPutSmall(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-        final int hash = hashValue(key.hashCode());
+        final int hash = hashValue(key);
         final int i = bucketIndex(hash, table.length);
 
         // if (table[i] != null) collisions++;
@@ -546,7 +551,7 @@ public class RubyHash extends RubyObject implements Map {
     protected RubyHashEntry internalGetEntry(IRubyObject key) {
         if (size == 0) return NO_ENTRY;
 
-        final int hash = hashValue(key.hashCode());
+        final int hash = hashValue(key);
         for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
             if (internalKeyExist(entry, hash, key)) {
                 return entry;
@@ -566,12 +571,12 @@ public class RubyHash extends RubyObject implements Map {
     protected RubyHashEntry internalDelete(final IRubyObject key) {
         if (size == 0) return NO_ENTRY;
 
-        return internalDelete(hashValue(key.hashCode()), MATCH_KEY, key);
+        return internalDelete(hashValue(key), MATCH_KEY, key);
     }
 
     protected RubyHashEntry internalDeleteEntry(final RubyHashEntry entry) {
         // n.b. we need to recompute the hash in case the key object was modified
-        return internalDelete(hashValue(entry.key.hashCode()), MATCH_ENTRY, entry);
+        return internalDelete(hashValue(entry.key), MATCH_ENTRY, entry);
     }
 
     private final RubyHashEntry internalDelete(final int hash, final EntryMatchType matchType, final Object obj) {
@@ -702,7 +707,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             return context.nil;
         }
-        return ifNone;
+        return ifNone == UNDEF ? context.nil : ifNone;
     }
 
     @JRubyMethod(name = "default")
@@ -710,7 +715,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             return Helpers.invoke(context, ifNone, "call", this, arg);
         }
-        return ifNone;
+        return ifNone == UNDEF ? context.nil : ifNone;
     }
 
     /** rb_hash_set_default
@@ -1026,7 +1031,7 @@ public class RubyHash extends RubyObject implements Map {
             oldTable[j] = null;
             while (entry != null) {
                 RubyHashEntry next = entry.next;
-                entry.hash = hashValue(entry.key.hashCode()); // update the hash value
+                entry.hash = hashValue(entry.key); // update the hash value
                 int i = bucketIndex(entry.hash, newTable.length);
                 entry.next = newTable[i];
                 newTable[i] = entry;
@@ -1679,7 +1684,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
             return this.callMethod(context, "default", context.nil);
         }
-        return ifNone;
+        return ifNone == UNDEF ? context.nil : ifNone;
     }
 
     public final boolean fastDelete(IRubyObject key) {
@@ -2116,7 +2121,7 @@ public class RubyHash extends RubyObject implements Map {
             throw (IOException)e.getCause();
         }
 
-        if (!hash.ifNone.isNil()) output.dumpObject(hash.ifNone);
+        if (hash.ifNone != UNDEF) output.dumpObject(hash.ifNone);
     }
 
     public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {

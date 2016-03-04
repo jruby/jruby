@@ -32,7 +32,7 @@ public interface EncodingLayout extends BasicObjectLayout {
     boolean isEncoding(Object object);
 
     Encoding getEncoding(DynamicObject object);
-    void setEncoding(DynamicObject object, Encoding encoding);
+    void setEncoding(DynamicObject object, Encoding value);
 
     ByteList getName(DynamicObject object);
 

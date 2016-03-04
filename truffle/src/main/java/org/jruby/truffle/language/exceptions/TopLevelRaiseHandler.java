@@ -13,13 +13,13 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class TopLevelRaiseHandler extends RubyNode {
@@ -43,20 +43,19 @@ public class TopLevelRaiseHandler extends RubyNode {
             lastException = AtExitManager.handleAtExitException(getContext(), e);
         } finally {
             final DynamicObject atExitException = getContext().getAtExitManager().runAtExitHooks();
+
             if (atExitException != null) {
                 lastException = atExitException;
             }
 
-            getContext().shutdown();
-
-            throw new MainExitException(statusFromException(lastException));
+            throw new ExitException(statusFromException(lastException));
         }
     }
 
     private int statusFromException(DynamicObject exception) {
         if (exception == null) {
             return 0;
-        } else if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == getContext().getCoreLibrary().getSystemExitClass()) {
+        } else if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == coreLibrary().getSystemExitClass()) {
             return castToInt(exception.get("@status", null));
         } else {
             return 1;
@@ -68,6 +67,7 @@ public class TopLevelRaiseHandler extends RubyNode {
             CompilerDirectives.transferToInterpreter();
             integerCastNode = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
         }
+
         return integerCastNode.executeCastInt(value);
     }
 

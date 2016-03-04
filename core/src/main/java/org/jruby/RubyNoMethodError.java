@@ -71,7 +71,7 @@ public class RubyNoMethodError extends RubyNameError {
         return newError;
     }
 
-    @JRubyMethod(required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 2) {

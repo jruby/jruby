@@ -62,6 +62,8 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
@@ -201,7 +203,7 @@ public abstract class RegexpNodes {
         final Rope sourceRope = StringOperations.rope(source);
         final Rope substringRope = makeSubstringNode.executeMake(sourceRope, start, length);
 
-        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), substringRope, null);
+        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), substringRope);
 
         return ret;
     }
@@ -216,7 +218,7 @@ public abstract class RegexpNodes {
                 break;
             }
 
-            frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+            frame = RubyArguments.getDeclarationFrame(frame);
         }
     }
 
@@ -580,14 +582,14 @@ public abstract class RegexpNodes {
                 lookupTableWriteNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object namesLookupTable = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
+            final Object namesLookupTable = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
 
             for (final Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
                 final DynamicObject name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
 
                 final int[] backrefs = e.getBackRefs();
-                final DynamicObject backrefsRubyArray = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), backrefs, backrefs.length);
+                final DynamicObject backrefsRubyArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), backrefs, backrefs.length);
 
                 lookupTableWriteNode.call(frame, namesLookupTable, "[]=", null, name, backrefsRubyArray);
             }
@@ -605,13 +607,16 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateNode;
+
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(rubyClass), null, null, RegexpOptions.NULL_OPTIONS, null);
+            return allocateNode.allocate(rubyClass, null, null, RegexpOptions.NULL_OPTIONS, null);
         }
 
     }

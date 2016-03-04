@@ -12,12 +12,26 @@ package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.core.Layouts;
 
 public abstract class ShapeCachingGuards {
 
     public static boolean updateShape(DynamicObject object) {
         CompilerDirectives.transferToInterpreter();
         return object.updateShape();
+    }
+
+    public static boolean isArrayShape(Shape shape) {
+        return Layouts.ARRAY.isArray(shape.getObjectType());
+    }
+
+    public static boolean isQueueShape(Shape shape) {
+        return Layouts.QUEUE.isQueue(shape.getObjectType());
+    }
+
+    public static boolean isBasicObjectShape(Shape shape) {
+        return shape.getObjectType().getClass().getName().endsWith(".BasicObjectType"); // FIXME
     }
 
 }

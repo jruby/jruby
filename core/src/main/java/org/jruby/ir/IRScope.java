@@ -728,7 +728,7 @@ public abstract class IRScope implements ParseResult {
 
     @Override
     public String toString() {
-        return getScopeType() + " " + getName() + "[" + getFileName() + ":" + getLineNumber() + "]";
+        return String.valueOf(getScopeType()) + ' ' + getName() + '[' + getFileName() + ':' + getLineNumber() + ']';
     }
 
     public String debugOutput() {

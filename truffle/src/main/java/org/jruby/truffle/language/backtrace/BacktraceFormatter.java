@@ -35,7 +35,8 @@ public class BacktraceFormatter {
     public enum FormattingFlags {
         OMIT_EXCEPTION,
         OMIT_FROM_PREFIX,
-        INCLUDE_CORE_FILES
+        INCLUDE_CORE_FILES,
+        INTERLEAVE_JAVA
     }
 
     private final RubyContext context;
@@ -48,15 +49,19 @@ public class BacktraceFormatter {
             flags.add(FormattingFlags.INCLUDE_CORE_FILES);
         }
 
+        if (context.getOptions().BACKTRACES_INTERLEAVE_JAVA) {
+            flags.add(FormattingFlags.INTERLEAVE_JAVA);
+        }
+
         return new BacktraceFormatter(context, flags);
     }
 
-    // for debugging
+    // For debugging
     public static List<String> rubyBacktrace(RubyContext context) {
         return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, context.getCallStack().getBacktrace(null));
     }
 
-    // for debugging
+    // For debugging
     public static String printableRubyBacktrace(RubyContext context) {
         final StringBuilder builder = new StringBuilder();
         for (String line : rubyBacktrace(context)) {
@@ -87,6 +92,7 @@ public class BacktraceFormatter {
         if (backtrace == null) {
             backtrace = context.getCallStack().getBacktrace(null);
         }
+
         final List<Activation> activations = backtrace.getActivations();
         final ArrayList<String> lines = new ArrayList<>();
 
@@ -112,11 +118,19 @@ public class BacktraceFormatter {
             }
         }
 
+        if (backtrace.getJavaThrowable() != null && flags.contains(FormattingFlags.INTERLEAVE_JAVA)) {
+            return BacktraceInterleaver.interleave(lines, backtrace.getJavaThrowable().getStackTrace());
+        }
+
         return lines;
     }
 
     private String formatInLine(List<Activation> activations, DynamicObject exception) {
         final StringBuilder builder = new StringBuilder();
+
+        if (activations.isEmpty()) {
+            throw new UnsupportedOperationException("At least one activation is required.");
+        }
 
         final Activation activation = activations.get(0);
 

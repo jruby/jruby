@@ -34,7 +34,6 @@ import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
-import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -45,7 +44,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -128,7 +127,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isSmallArrayOfPairs(args)")
         public Object constructFallback(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
-            return ruby("_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length));
+            return ruby("_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
         }
 
         public boolean isSmallArrayOfPairs(Object[] args) {
@@ -439,14 +438,14 @@ public abstract class HashNodes {
         @Child private HashNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
         @Child private LookupEntryNode lookupEntryNode;
-        @Child private YieldDispatchHeadNode yieldNode;
+        @Child private YieldNode yieldNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
-            yieldNode = new YieldDispatchHeadNode(context);
+            yieldNode = new YieldNode(context);
         }
 
         @Specialization(guards = "isNullHash(hash)")
@@ -605,12 +604,12 @@ public abstract class HashNodes {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
-            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            InternalMethod method = RubyArguments.getMethod(frame);
             return toEnumNode.call(frame, hash, "to_enum", null, getSymbol(method.getName()));
         }
 
         private Object yieldPair(VirtualFrame frame, DynamicObject block, Object key, Object value) {
-            return yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] { key, value }, 2));
+            return yield(frame, block, Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] { key, value }, 2));
         }
 
     }
@@ -685,7 +684,7 @@ public abstract class HashNodes {
         @Specialization(guards = "wasProvided(defaultValue)")
         public Object initialize(DynamicObject hash, Object defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("wrong number of arguments (1 for 0)", this));
+            throw new RaiseException(coreLibrary().argumentError("wrong number of arguments (1 for 0)", this));
         }
 
     }
@@ -777,7 +776,7 @@ public abstract class HashNodes {
         public DynamicObject mapNull(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         }
 
         @ExplodeLoop
@@ -805,7 +804,7 @@ public abstract class HashNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilderNode.finish(resultStore, length), length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayBuilderNode.finish(resultStore, length), length);
         }
 
         @Specialization(guards = "isBucketHash(hash)")
@@ -829,11 +828,11 @@ public abstract class HashNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilderNode.finish(store, length), length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayBuilderNode.finish(store, length), length);
         }
 
         private Object yieldPair(VirtualFrame frame, DynamicObject block, Object key, Object value) {
-            return yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] { key, value }, 2));
+            return yield(frame, block, Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] { key, value }, 2));
         }
 
     }
@@ -1196,6 +1195,8 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private YieldNode yieldNode;
+
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1211,8 +1212,13 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "hasDefaultBlock(hash)"})
-        public Object shiftEmptyDefaultProc(DynamicObject hash) {
-            return ProcNodes.rootCall(Layouts.HASH.getDefaultBlock(hash), hash, nil());
+        public Object shiftEmptyDefaultProc(VirtualFrame frame, DynamicObject hash) {
+            if (yieldNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                yieldNode = insert(new YieldNode(getContext()));
+            }
+
+            return yieldNode.dispatch(frame, Layouts.HASH.getDefaultBlock(hash), hash, nil());
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isPackedHash(hash)"})
@@ -1231,7 +1237,7 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(getContext(), hash);
 
             Object[] objects = new Object[]{key, value};
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isBucketHash(hash)"})
@@ -1291,7 +1297,7 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(getContext(), hash);
 
             Object[] objects = new Object[]{key, value};
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }

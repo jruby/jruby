@@ -13,7 +13,7 @@ if ( !log.contains( expected ) )
 //{
 //    throw new RuntimeException( "log file does not contain '" + expected + "'" );
 //}
-expected = "json (1.8.1 java)";
+expected = "json (1.8.3 java)";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );

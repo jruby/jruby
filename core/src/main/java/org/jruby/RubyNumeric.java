@@ -51,6 +51,7 @@ import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
+import org.jruby.util.TypeConverter;
 
 import java.math.BigInteger;
 
@@ -61,6 +62,7 @@ import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.f_to_f;
 
 /**
  * Base class for all numerical types in ruby.
@@ -248,14 +250,34 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public static double num2dbl(IRubyObject arg) {
+        Ruby runtime = arg.getRuntime();
+
+        if (arg instanceof RubyBoolean || arg instanceof RubyNil) {
+            throw runtime.newTypeError("can't convert " + arg.inspect() + " into Float");
+        }
+
         if (arg instanceof RubyFloat) {
             return ((RubyFloat) arg).getDoubleValue();
-        } else if (arg instanceof RubyString) {
-            throw arg.getRuntime().newTypeError("no implicit conversion to float from string");
-        } else if (arg == arg.getRuntime().getNil()) {
-            throw arg.getRuntime().newTypeError("no implicit conversion to float from nil");
+        } else if (arg instanceof RubyBignum) {
+            if (runtime.getBignum().searchMethod("to_f").isBuiltin()) {
+                return ((RubyBignum) arg).getDoubleValue();
+            }
+        } else if (arg instanceof RubyRational) {
+            if (runtime.getRational().searchMethod("to_f").isBuiltin()) {
+                return ((RubyRational) arg).getDoubleValue();
+            }
         }
-        return RubyKernel.new_float(arg, arg).getDoubleValue();
+
+        IRubyObject val = numericToFloat(runtime, arg);
+        return ((RubyFloat) val).getDoubleValue();
+    }
+
+    private static IRubyObject numericToFloat(Ruby runtime, IRubyObject num) {
+        if (!(num instanceof RubyNumeric)) {
+            throw runtime.newTypeError("can't convert " + num.getType() + " into Float");
+        }
+
+        return TypeConverter.convertToType(num, runtime.getFloat(), "to_f");
     }
 
     /** rb_dbl_cmp (numeric.c)

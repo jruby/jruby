@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language.arguments;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -27,8 +26,7 @@ public class MissingKeywordArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().argumentErrorMissingKeyword(name, this));
+        throw new RaiseException(coreLibrary().argumentErrorMissingKeyword(name, this));
     }
 
 }

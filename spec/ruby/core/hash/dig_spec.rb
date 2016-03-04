@@ -37,7 +37,7 @@ ruby_version_is '2.3' do
 
     it "raises TypeError if an intermediate element does not respond to #dig" do
       h = {}
-      h[:foo] = [ { :bar => [ 1 ] }, [ nil, 'str' ] ]
+      h[:foo] = [ { bar: [ 1 ] }, [ nil, 'str' ] ]
       lambda { h.dig(:foo, 0, :bar, 0, 0) }.should raise_error(TypeError)
       lambda { h.dig(:foo, 1, 1, 0) }.should raise_error(TypeError)
     end

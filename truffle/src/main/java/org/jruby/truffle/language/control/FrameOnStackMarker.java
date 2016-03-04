@@ -13,9 +13,6 @@ public final class FrameOnStackMarker {
 
     private boolean onStack = true;
 
-    public FrameOnStackMarker() {
-    }
-
     public boolean isOnStack() {
         return onStack;
     }

@@ -65,6 +65,7 @@ public enum Operation {
     CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ATTR_ASSIGN(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    ARRAY_DEREF(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     INSTANCE_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     UNRESOLVED_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),

@@ -41,7 +41,7 @@ public abstract class SingleValueCastNode extends RubyNode {
     @TruffleBoundary
     @Specialization(guards = { "!noArguments(args)", "!singleArgument(args)" })
     protected DynamicObject castMany(Object[] args) {
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length);
+        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length);
     }
 
     protected boolean noArguments(Object[] args) {

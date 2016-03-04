@@ -11,11 +11,6 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 
-/**
- * Controls re-doing an iteration in a control structure or method.
- */
 public final class RedoException extends ControlFlowException {
-
-    private static final long serialVersionUID = -4717868827111714052L;
 
 }

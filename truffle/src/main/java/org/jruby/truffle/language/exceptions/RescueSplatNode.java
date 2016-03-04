@@ -9,24 +9,16 @@
  */
 package org.jruby.truffle.language.exceptions;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Rescue any of several classes, that we get from an expression that evaluates to an array of
- * classes.
- * 
- */
 public class RescueSplatNode extends RescueNode {
 
-    @Child RubyNode handlingClassesArray;
+    @Child private RubyNode handlingClassesArray;
 
     public RescueSplatNode(RubyContext context, SourceSection sourceSection, RubyNode handlingClassesArray, RubyNode body) {
         super(context, sourceSection, body);
@@ -35,14 +27,10 @@ public class RescueSplatNode extends RescueNode {
 
     @Override
     public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
-        CompilerDirectives.transferToInterpreter();
-
         final DynamicObject handlingClasses = (DynamicObject) handlingClassesArray.execute(frame);
 
-        final DynamicObject exceptionRubyClass = Layouts.BASIC_OBJECT.getLogicalClass(exception);
-
         for (Object handlingClass : ArrayOperations.toIterable(handlingClasses)) {
-            if (ModuleOperations.assignableTo(exceptionRubyClass, (DynamicObject) handlingClass)) {
+            if (getIsANode().executeIsA(exception, (DynamicObject) handlingClass)) {
                 return true;
             }
         }

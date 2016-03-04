@@ -23,20 +23,6 @@ class Dir
       @@systmpdir.dup
     else
       tmp = nil
-      # Search a directory which isn't world-writable first. In JRuby,
-      # FileUtils.remove_entry_secure(dir) crashes when a dir is under
-      # a world-writable directory because it tries to open directory.
-      # Opening directory is not allowed in Java.
-      dirs = [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp', '.']
-      for dir in dirs
-        if dir and stat = File.stat(dir) and stat.directory? and stat.writable? and !stat.world_writable?
-          return File.expand_path(dir)
-        end
-      end
-     
-      # Some OS sets the environment variables to '/tmp', which we may reject.
-      warn "Unable to find a non world-writable directory for #{__method__}. Consider setting ENV['TMPDIR'], ENV['TMP'] or ENV['TEMP'] to a non world-writable directory."
-
       [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp', '.'].each do |dir|
         next if !dir
         dir = File.expand_path(dir)
@@ -122,9 +108,9 @@ class Dir
 
     def make_tmpname((prefix, suffix), n)
       prefix = (String.try_convert(prefix) or
-                raise ArgumentError, "unexpected prefix: #{prefix.inspect}")
+          raise ArgumentError, "unexpected prefix: #{prefix.inspect}")
       suffix &&= (String.try_convert(suffix) or
-                  raise ArgumentError, "unexpected suffix: #{suffix.inspect}")
+          raise ArgumentError, "unexpected suffix: #{suffix.inspect}")
       t = Time.now.strftime("%Y%m%d")
       path = "#{prefix}#{t}-#{$$}-#{rand(0x100000000).to_s(36)}".dup
       path << "-#{n}" if n
@@ -133,22 +119,24 @@ class Dir
     end
 
     def create(basename, tmpdir=nil, max_try: nil, **opts)
-      if $SAFE > 0 and tmpdir.tainted?
-        tmpdir = '/tmp'
-      else
-        tmpdir ||= tmpdir()
-      end
-      n = nil
-      begin
-        path = File.join(tmpdir, make_tmpname(basename, n))
-        yield(path, n, opts)
-      rescue Errno::EEXIST
-        n ||= 0
-        n += 1
-        retry if !max_try or n < max_try
-        raise "cannot generate temporary name using `#{basename}' under `#{tmpdir}'"
-      end
-      path
+    if $SAFE > 0 and tmpdir.tainted?
+      tmpdir = '/tmp'
+    else
+      tmpdir ||= tmpdir()
+    end
+    n = nil
+    begin
+      # We use the second form here because chdir + ./ files won't open right (http://bugs.jruby.org/3698)
+      # path = File.join(tmpdir, make_tmpname(basename, n))
+      path = File.expand_path(make_tmpname(basename, n), tmpdir)
+      yield(path, n, opts)
+    rescue Errno::EEXIST
+      n ||= 0
+      n += 1
+      retry if !max_try or n < max_try
+      raise "cannot generate temporary name using `#{basename}' under `#{tmpdir}'"
+    end
+    path
     end
   end
 end

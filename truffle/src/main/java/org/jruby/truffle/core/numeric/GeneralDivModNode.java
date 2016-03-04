@@ -111,13 +111,13 @@ public class GeneralDivModNode extends RubyNode {
 
         if (integerDiv instanceof Long && ((long) integerDiv) >= Integer.MIN_VALUE && ((long) integerDiv) <= Integer.MAX_VALUE && mod >= Integer.MIN_VALUE && mod <= Integer.MAX_VALUE) {
             useFixnumPairProfile.enter();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{(int) (long) integerDiv, (int) mod}, 2);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new int[]{(int) (long) integerDiv, (int) mod}, 2);
         } else if (integerDiv instanceof Long) {
             useObjectPairProfile.enter();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{integerDiv, mod}, 2);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{integerDiv, mod}, 2);
         } else {
             useObjectPairProfile.enter();
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
                         fixnumOrBignumQuotient.fixnumOrBignum((BigInteger) integerDiv),
                         mod}, 2);
         }
@@ -134,7 +134,7 @@ public class GeneralDivModNode extends RubyNode {
 
         if (Double.isNaN(mod)) {
             nanProfile.enter();
-            throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
+            throw new RaiseException(coreLibrary().floatDomainError("NaN", this));
         }
 
         final double div = Math.floor(a / b);
@@ -143,7 +143,7 @@ public class GeneralDivModNode extends RubyNode {
             mod += b;
         }
 
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
                 fixnumOrBignumQuotient.fixnumOrBignum(div),
                 mod}, 2);
     }
@@ -163,13 +163,13 @@ public class GeneralDivModNode extends RubyNode {
             bigIntegerResults[1] = b.add(bigIntegerResults[1]);
         }
 
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
                 fixnumOrBignumQuotient.fixnumOrBignum(bigIntegerResults[0]),
                 fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
     public DynamicObject create(BigInteger value) {
-        return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
+        return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), value);
     }
 
     @Override

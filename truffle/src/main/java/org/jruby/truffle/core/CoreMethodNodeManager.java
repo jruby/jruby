@@ -28,19 +28,18 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.arguments.CheckArityNode;
-import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.arguments.ReadCallerFrameNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadRemainingArgumentsNode;
-import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.language.parser.jruby.Translator;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -189,7 +188,7 @@ public class CoreMethodNodeManager {
         }
 
         for (int n = 0; n < arity.getPreRequired() + arity.getOptional(); n++) {
-            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
+            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehavior.UNDEFINED);
 
             if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
                 readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
@@ -231,8 +230,8 @@ public class CoreMethodNodeManager {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
-        final RubyNode checkArity = CheckArityNode.create(context, sourceSection, arity);
-        RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
+        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection, arity);
+        RubyNode sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
 
         if (method.returnsEnumeratorIfNoBlock()) {
             // TODO BF 3-18-2015 Handle multiple method names correctly

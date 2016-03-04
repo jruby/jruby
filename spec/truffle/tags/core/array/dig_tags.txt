@@ -1,3 +1,5 @@
 fails:Array#dig returns #at with one arg
 fails:Array#dig recurses array elements
 fails:Array#dig raises without any args
+fails:Array#dig calls #dig on the result of #at with the remaining arguments
+fails:Array#dig raises a TypeError for a non-numeric index

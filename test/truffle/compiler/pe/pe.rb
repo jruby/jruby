@@ -53,9 +53,6 @@ def tagged_counter_example(code)
   example(code, nil, false, true)
 end
 
-example "14", 14
-counter_example "rand"
-
 if ARGV.first
   require File.expand_path(ARGV.first)
 else
@@ -65,6 +62,7 @@ else
   require_relative 'language/ivar_pe.rb'
   require_relative 'language/metaprogramming_pe.rb'
   require_relative 'language/super_pe.rb'
+  require_relative 'language/defined_pe.rb'
   require_relative 'core/truefalse_pe.rb'
   require_relative 'core/fixnum_pe.rb'
   require_relative 'core/float_pe.rb'
@@ -79,6 +77,7 @@ else
   require_relative 'core/frozen_pe.rb'
   require_relative 'core/block_given_pe.rb'
   require_relative 'core/string_pe.rb'
+  require_relative 'core/class_pe'
   require_relative 'macro/pushing_pixels_pe.rb'
 end
 

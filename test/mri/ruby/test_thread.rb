@@ -420,7 +420,7 @@ class TestThread < Test::Unit::TestCase
     assert_equal(false, t.key?(:qux))
     assert_equal(false, t.key?("qux"))
 
-    assert_equal([:foo, :bar, :baz], t.keys)
+    assert_equal([:foo, :bar, :baz].sort, t.keys.sort)
 
   ensure
     t.kill if t
@@ -728,7 +728,7 @@ class TestThread < Test::Unit::TestCase
   end
 
   def test_thread_timer_and_ensure
-    assert_normal_exit(<<_eom, 'r36492', timeout: 3)
+    assert_normal_exit(<<_eom, 'r36492', timeout: 10)
     flag = false
     t = Thread.new do
       begin

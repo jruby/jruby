@@ -110,7 +110,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public DynamicObject environ() {
-            return allocateObjectNode.allocate(getContext().getCoreLibrary().getRubiniusFFIPointerClass(), posix().environ());
+            return allocateObjectNode.allocate(coreLibrary().getRubiniusFFIPointerClass(), posix().environ());
         }
     }
 
@@ -264,7 +264,7 @@ public abstract class PosixNodes {
 
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             return result;
@@ -334,7 +334,7 @@ public abstract class PosixNodes {
             final int result = posix().readlink(decodeUTF8(path), Layouts.POINTER.getPointer(pointer), bufsize);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             return result;
@@ -429,7 +429,7 @@ public abstract class PosixNodes {
             final int result = posix().utimes(decodeUTF8(path), Layouts.POINTER.getPointer(pointer));
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             return result;
@@ -527,7 +527,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public int setresuid(int uid, int id, int priority) {
-            throw new RaiseException(getContext().getCoreLibrary().notImplementedError("setresuid", this));
+            throw new RaiseException(coreLibrary().notImplementedError("setresuid", this));
         }
 
     }
@@ -556,7 +556,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public int setreuid(int uid, int id) {
-            throw new RaiseException(getContext().getCoreLibrary().notImplementedError("setreuid", this));
+            throw new RaiseException(coreLibrary().notImplementedError("setreuid", this));
         }
 
     }
@@ -574,7 +574,7 @@ public abstract class PosixNodes {
 
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             return result;
@@ -592,7 +592,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public int setruid(int uid) {
-            throw new RaiseException(getContext().getCoreLibrary().notImplementedError("setruid", this));
+            throw new RaiseException(coreLibrary().notImplementedError("setruid", this));
         }
 
     }
@@ -806,7 +806,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int isATTY(int fd) {
-            return posix().libc().isatty(fd);
+            return posix().isatty(fd);
         }
 
     }

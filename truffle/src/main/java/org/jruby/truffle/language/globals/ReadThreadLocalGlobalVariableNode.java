@@ -13,40 +13,59 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNode;
-import org.jruby.truffle.language.objects.ReadHeadObjectFieldNodeGen;
-import org.jruby.truffle.language.objects.ThreadLocalObjectNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNode;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNodeGen;
 
 public class ReadThreadLocalGlobalVariableNode extends RubyNode {
 
-    @Child private ThreadLocalObjectNode threadLocalVariablesObjectNode;
-    @Child private ReadHeadObjectFieldNode readNode;
+    private final String name;
+    private final boolean alwaysDefined;
 
-    public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
+    @Child private ThreadLocalObjectNode threadLocalVariablesObjectNode;
+    @Child private ReadObjectFieldNode readNode;
+
+    public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name, boolean alwaysDefined) {
         super(context, sourceSection);
-        this.threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
-        readNode = ReadHeadObjectFieldNodeGen.create(getContext(), name, nil());
+        this.name = name;
+        this.alwaysDefined = alwaysDefined;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final DynamicObject threadLocalVariablesObject = threadLocalVariablesObjectNode.executeDynamicObject(frame);
-        return readNode.execute(threadLocalVariablesObject);
+        final DynamicObject threadLocalVariablesObject = getThreadLocalVariablesObjectNode().executeDynamicObject(frame);
+        return getReadNode().execute(threadLocalVariablesObject);
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-        final DynamicObject threadLocalVariablesObject = threadLocalVariablesObjectNode.executeDynamicObject(frame);
-
-        if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(threadLocalVariablesObject) != nil()) {
-            return create7BitString("global-variable", UTF8Encoding.INSTANCE);
+        if (alwaysDefined || execute(frame) != nil()) {
+            return coreStrings().GLOBAL_VARIABLE.createInstance();
         } else {
             return nil();
         }
     }
+
+    private ThreadLocalObjectNode getThreadLocalVariablesObjectNode() {
+        if (threadLocalVariablesObjectNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            threadLocalVariablesObjectNode = insert(ThreadLocalObjectNodeGen.create(getContext(), getSourceSection()));
+        }
+
+        return threadLocalVariablesObjectNode;
+    }
+
+    private ReadObjectFieldNode getReadNode() {
+        if (readNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            readNode = insert(ReadObjectFieldNodeGen.create(getContext(), name, nil()));
+        }
+
+        return readNode;
+    }
+
 
 }

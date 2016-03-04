@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'rubygems'
 
 ##
@@ -70,4 +71,3 @@ module Gem::Text
     return x
   end
 end
-

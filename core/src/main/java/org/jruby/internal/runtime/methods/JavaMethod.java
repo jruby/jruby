@@ -302,7 +302,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             return call(context, self, clazz, name, Block.NULL_BLOCK);
         }
 
@@ -320,7 +320,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
             return call(context, self, clazz, name, arg0, Block.NULL_BLOCK);
         }
 
@@ -338,7 +338,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
             return call(context, self, clazz, name, arg0, arg1, Block.NULL_BLOCK);
         }
 
@@ -356,7 +356,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
             return call(context, self, clazz, name, arg0, arg1, arg2, Block.NULL_BLOCK);
         }
 
@@ -376,7 +376,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
             return call(context, self, clazz, name, arg0, Block.NULL_BLOCK);
         }
 
@@ -394,7 +394,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
             return call(context, self, clazz, name, arg0, arg1, Block.NULL_BLOCK);
         }
 
@@ -412,7 +412,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
             return call(context, self, clazz, name, arg0, arg1, arg2, Block.NULL_BLOCK);
         }
 
@@ -432,7 +432,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
             return call(context, self, clazz, name, arg0, arg1, Block.NULL_BLOCK);
         }
 
@@ -450,7 +450,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
             return call(context, self, clazz, name, arg0, arg1, arg2, Block.NULL_BLOCK);
         }
 
@@ -470,7 +470,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
             return call(context, self, clazz, name, arg0, arg1, arg2, Block.NULL_BLOCK);
         }
 
@@ -725,9 +725,21 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            return call(context, self, clazz, name, args);
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+                // still delegate to different arity calls as they might get overriden e.g. for native
+                // JRuby methods that use overloading for different kind arity of received arguments !
+                case 0:
+                    return call(context, self, clazz, name);
+                case 1:
+                    return call(context, self, clazz, name, args[0]);
+                case 2:
+                    return call(context, self, clazz, name, args[0], args[1]);
+                default:
+                    return call(context, self, clazz, name, args);
+            }
         }
+
     }
 
 
@@ -749,7 +761,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
             return call(context, self, clazz, name);
         }
 
@@ -767,7 +779,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
             return call(context, self, clazz, name, arg0);
         }
 
@@ -785,7 +797,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
             return call(context, self, clazz, name, arg0, arg1);
         }
 
@@ -803,7 +815,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return call(context, self, clazz, name, arg0, arg1, arg2);
         }
 
@@ -830,7 +842,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
             return call(context, self, clazz, name, arg0);
         }
 
@@ -848,7 +860,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
             return call(context, self, clazz, name, arg0, arg1);
         }
 
@@ -866,7 +878,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return call(context, self, clazz, name, arg0, arg1, arg2);
         }
 
@@ -886,7 +898,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
             return call(context, self, clazz, name, arg0, arg1);
         }
 
@@ -904,7 +916,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return call(context, self, clazz, name, arg0, arg1, arg2);
         }
 
@@ -924,7 +936,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return call(context, self, clazz, name, arg0, arg1, arg2);
         }
 
@@ -950,7 +962,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             super(implementationClass, visibility, name);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
             return call(context, self, clazz, name);
         }
@@ -970,7 +982,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             switch (args.length) {
             case 0:
                 return call(context, self, clazz, name);
@@ -992,7 +1004,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             switch (args.length) {
             case 0:
                 return call(context, self, clazz, name);
@@ -1015,7 +1027,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             super(implementationClass, visibility);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             switch (args.length) {
             case 0:
                 return call(context, self, clazz, name);
@@ -1053,7 +1065,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             setParameterList(ONE_REQ);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             if (args.length != 1) return raiseArgumentError(this, context, name, args.length, 1, 1);
             return call(context, self, clazz, name, args[0]);
         }
@@ -1073,7 +1085,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             super(implementationClass, visibility);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             switch (args.length) {
             case 1:
                 return call(context, self, clazz, name, args[0]);
@@ -1094,7 +1106,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             super(implementationClass, visibility);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             switch (args.length) {
             case 1:
                 return call(context, self, clazz, name, args[0]);
@@ -1121,7 +1133,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             setParameterList(TWO_REQ);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             if (args.length != 2) return raiseArgumentError(this, context, name, args.length, 2, 2);
             return call(context, self, clazz, name, args[0], args[1]);
         }
@@ -1141,7 +1153,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             super(implementationClass, visibility);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             switch (args.length) {
             case 2:
                 return call(context, self, clazz, name, args[0], args[1]);
@@ -1165,7 +1177,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             super(implementationClass, visibility);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             if (args.length != 3) return raiseArgumentError(this, context, name, args.length, 3, 3);
             return call(context, self, clazz, name, args[0], args[1], args[2]);
         }

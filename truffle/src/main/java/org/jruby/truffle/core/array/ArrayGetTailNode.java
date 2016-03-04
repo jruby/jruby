@@ -35,7 +35,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
     }
 
     @Specialization(guards = "isIntArray(array)")
@@ -43,9 +43,9 @@ public abstract class ArrayGetTailNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= Layouts.ARRAY.getSize(array)) {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 
@@ -54,9 +54,9 @@ public abstract class ArrayGetTailNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= Layouts.ARRAY.getSize(array)) {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 
@@ -65,9 +65,9 @@ public abstract class ArrayGetTailNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= Layouts.ARRAY.getSize(array)) {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 
@@ -76,9 +76,9 @@ public abstract class ArrayGetTailNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= Layouts.ARRAY.getSize(array)) {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 

@@ -2626,7 +2626,7 @@ EOT
         begin
           assert_in_out_err(args, "", out, err,
                             "#{bug11444}: #{test} in #{mode} mode",
-                            timeout: 1)
+                            timeout: 10)
         rescue Exception => e
           failure << e
         end

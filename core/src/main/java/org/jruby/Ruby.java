@@ -58,6 +58,7 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -164,6 +165,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -197,6 +199,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
+import static java.lang.invoke.MethodHandles.explicitCastArguments;
+import static java.lang.invoke.MethodHandles.insertArguments;
+import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 
 /**
@@ -842,9 +847,10 @@ public final class Ruby implements Constantizable {
             final JRubyTruffleInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
             try {
-              truffleContext.execute((RootNode) rootNode);
+                truffleContext.execute((RootNode) rootNode);
             } finally {
-              Main.printTruffleTimeMetric("after-run");
+                Main.printTruffleTimeMetric("after-run");
+                shutdownTruffleContextIfRunning();
             }
             return getNil();
         } else {
@@ -2928,7 +2934,11 @@ public final class Ruby implements Constantizable {
                 // toss an anonymous module into the search path
                 RubyModule wrapper = RubyModule.newModule(this);
                 ((RubyBasicObject)self).extend(new IRubyObject[] {wrapper});
-                ((RootNode) parseResult).getStaticScope().setModule(wrapper);
+                RootNode root = (RootNode) parseResult;
+                StaticScope top = root.getStaticScope();
+                StaticScope newTop = staticScopeFactory.newLocalScope(null);
+                top.setPreviousCRefScope(newTop);
+                top.setModule(wrapper);
             }
 
             runInterpreter(context, parseResult, self);
@@ -4881,6 +4891,23 @@ public final class Ruby implements Constantizable {
         return baseNewMethod;
     }
 
+    /**
+     * Get the "nullToNil" method handle filter for this runtime.
+     *
+     * @return a method handle suitable for filtering a single IRubyObject value from null to nil
+     */
+    public MethodHandle getNullToNilHandle() {
+        MethodHandle nullToNil = this.nullToNil;
+
+        if (nullToNil != null) return nullToNil;
+
+        nullToNil = InvokeDynamicSupport.findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        nullToNil = insertArguments(nullToNil, 1, nilObject);
+        nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
+
+        return this.nullToNil = nullToNil;
+    }
+
     @Deprecated
     public int getSafeLevel() {
         return 0;
@@ -5239,4 +5266,9 @@ public final class Ruby implements Constantizable {
      * The built-in Class#new method, so we can bind more directly to allocate and initialize.
      */
     private DynamicMethod baseNewMethod;
+
+    /**
+     * The nullToNil filter for this runtime.
+     */
+    private MethodHandle nullToNil;
 }

@@ -10,14 +10,16 @@
 package org.jruby.truffle.platform;
 
 import jnr.ffi.provider.MemoryManager;
-import jnr.posix.POSIX;
 import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
+import org.jruby.truffle.platform.posix.ClockGetTime;
+import org.jruby.truffle.platform.posix.Sockets;
+import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.platform.signal.SignalManager;
 
 public interface NativePlatform {
 
-    POSIX getPosix();
+    TrufflePosix getPosix();
 
     MemoryManager getMemoryManager();
 

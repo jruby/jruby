@@ -431,8 +431,16 @@ public final class EncodingService {
         return findEncodingCommon(str, false);
     }
 
+    public Encoding findEncodingNoError(ByteList str) {
+        return findEncodingCommon(str, false);
+    }
+
     private Encoding findEncodingCommon(IRubyObject str, boolean error) {
         ByteList name = str.convertToString().getByteList();
+        return findEncodingCommon(name, error);
+    }
+
+    private Encoding findEncodingCommon(ByteList name, boolean error) {
         checkAsciiEncodingName(name);
 
         SpecialEncoding special = SpecialEncoding.valueOf(name);

@@ -55,7 +55,7 @@ public abstract class DispatchNode extends RubyNode {
             boolean ignoreVisibility) {
         assert ignoreVisibility || RubyGuards.isRubyClass(callerClass);
 
-        final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
+        final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
         if (method == null) {

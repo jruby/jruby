@@ -9,27 +9,24 @@
  */
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-/**
- * Reads the singleton (meta, eigen) class of an object.
- */
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class SingletonClassNode extends RubyNode {
 
-    @Child IsFrozenNode isFrozenNode;
-    @Child FreezeNode freezeNode;
+    @Child private IsFrozenNode isFrozenNode;
+    @Child private FreezeNode freezeNode;
 
     public SingletonClassNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -39,17 +36,17 @@ public abstract class SingletonClassNode extends RubyNode {
 
     @Specialization(guards = "value")
     protected DynamicObject singletonClassTrue(boolean value) {
-        return getContext().getCoreLibrary().getTrueClass();
+        return coreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
     protected DynamicObject singletonClassFalse(boolean value) {
-        return getContext().getCoreLibrary().getFalseClass();
+        return coreLibrary().getFalseClass();
     }
 
     @Specialization(guards = "isNil(value)")
     protected DynamicObject singletonClassNil(DynamicObject value) {
-        return getContext().getCoreLibrary().getNilClass();
+        return coreLibrary().getNilClass();
     }
 
     @Specialization
@@ -77,61 +74,101 @@ public abstract class SingletonClassNode extends RubyNode {
         return noSingletonClass();
     }
 
-    @Specialization(guards = "isRubyClass(rubyClass)")
-    protected DynamicObject singletonClassClass(DynamicObject rubyClass) {
+    @Specialization(
+            guards = {
+                    "isRubyClass(rubyClass)",
+                    "rubyClass.getShape() == cachedShape"
+            },
+            limit = "getCacheLimit()"
+    )
+    protected DynamicObject singletonClassClassCached(
+            DynamicObject rubyClass,
+            @Cached("rubyClass.getShape()") Shape cachedShape,
+            @Cached("getSingletonClassForClass(rubyClass)") DynamicObject cachedSingletonClass) {
+        return cachedSingletonClass;
+    }
+
+    @Specialization(
+            guards = "isRubyClass(rubyClass)",
+            contains = "singletonClassClassCached"
+    )
+    protected DynamicObject singletonClassClassUncached(DynamicObject rubyClass) {
+        return getSingletonClassForClass(rubyClass);
+    }
+
+    @Specialization(
+            guards = {
+                    "object == cachedObject",
+                    "!isNil(cachedObject)",
+                    "!isRubyBignum(cachedObject)",
+                    "!isRubySymbol(cachedObject)",
+                    "!isRubyClass(cachedObject)",
+                    "object.getShape() == cachedShape"
+            },
+            limit = "getCacheLimit()")
+    protected DynamicObject singletonClassInstanceCached(
+            DynamicObject object,
+            @Cached("object") DynamicObject cachedObject,
+            @Cached("object.getShape()") Shape cachedShape,
+            @Cached("getSingletonClassForInstance(object)") DynamicObject cachedSingletonClass) {
+        return cachedSingletonClass;
+    }
+
+    @Specialization(
+            guards = {
+                "!isNil(object)",
+                "!isRubyBignum(object)",
+                "!isRubySymbol(object)",
+                "!isRubyClass(object)"
+            },
+            contains = "singletonClassInstanceCached"
+    )
+    protected DynamicObject singletonClassInstanceUncached(DynamicObject object) {
+        return getSingletonClassForInstance(object);
+    }
+
+    private DynamicObject noSingletonClass() {
+        throw new RaiseException(coreLibrary().typeErrorCantDefineSingleton(this));
+    }
+
+    @TruffleBoundary
+    protected DynamicObject getSingletonClassForClass(DynamicObject rubyClass) {
         return ClassNodes.getSingletonClass(getContext(), rubyClass);
     }
 
-    @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)", "!isRubyClass(object)" })
-    protected DynamicObject singletonClass(DynamicObject object) {
-        return getNormalObjectSingletonClass(object);
-    }
-
-    public DynamicObject getNormalObjectSingletonClass(DynamicObject object) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        if (RubyGuards.isRubyClass(object)) { // For the direct caller
-            return ClassNodes.getSingletonClass(getContext(), object);
-        }
-
+    @TruffleBoundary
+    protected DynamicObject getSingletonClassForInstance(DynamicObject object) {
         if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(object))) {
             return Layouts.BASIC_OBJECT.getMetaClass(object);
         }
 
-        CompilerDirectives.transferToInterpreter();
         final DynamicObject logicalClass = Layouts.BASIC_OBJECT.getLogicalClass(object);
 
-        DynamicObject attached = null;
-        if (RubyGuards.isRubyModule(object)) {
-            attached = object;
+        final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(),
+                ObjectIDOperations.verySlowGetObjectID(getContext(), object));
+
+        final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(
+                getContext(), logicalClass, object, name);
+
+        if (isFrozenNode == null) {
+            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
         }
 
-        final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(), ObjectIDOperations.verySlowGetObjectID(getContext(), object));
-        final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
-        propagateFrozen(object, singletonClass);
+        if (isFrozenNode.executeIsFrozen(object)) {
+            if (freezeNode == null) {
+                freezeNode = insert(FreezeNodeGen.create(getContext(), getSourceSection(), null));
+            }
+
+            freezeNode.executeFreeze(singletonClass);
+        }
 
         Layouts.BASIC_OBJECT.setMetaClass(object, singletonClass);
 
         return singletonClass;
     }
 
-    private void propagateFrozen(Object object, DynamicObject singletonClass) {
-        assert RubyGuards.isRubyClass(singletonClass);
-
-        if (isFrozenNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-            freezeNode = insert(FreezeNodeGen.create(getContext(), getSourceSection(), null));
-        }
-
-        if (isFrozenNode.executeIsFrozen(object)) {
-            freezeNode.executeFreeze(singletonClass);
-        }
-    }
-
-    private DynamicObject noSingletonClass() {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+    protected int getCacheLimit() {
+        return getContext().getOptions().CLASS_CACHE;
     }
 
 }

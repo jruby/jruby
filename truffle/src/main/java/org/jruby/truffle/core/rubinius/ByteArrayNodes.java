@@ -78,7 +78,7 @@ public abstract class ByteArrayNodes {
             final byte[] prependedBytes = new byte[newLength];
             System.arraycopy(rope.getBytes(), 0, prependedBytes, 0, prependLength);
             System.arraycopy(Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
-            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayFactory(), new ByteList(prependedBytes));
+            return ByteArrayNodes.createByteArray(coreLibrary().getByteArrayFactory(), new ByteList(prependedBytes));
         }
 
     }
@@ -94,7 +94,7 @@ public abstract class ByteArrayNodes {
         public Object setByte(DynamicObject bytes, int index, int value) {
             if (index < 0 || index >= Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexError("index out of bounds", this));
+                throw new RaiseException(coreLibrary().indexError("index out of bounds", this));
             }
 
             Layouts.BYTE_ARRAY.getBytes(bytes).set(index, value);
@@ -147,7 +147,7 @@ public abstract class ByteArrayNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

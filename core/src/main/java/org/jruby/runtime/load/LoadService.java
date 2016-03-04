@@ -401,7 +401,7 @@ public class LoadService {
 
     private enum RequireState {
         LOADED, ALREADY_LOADED, CIRCULAR
-    };
+    }
 
     private RequireState requireCommon(String file, boolean circularRequireWarning) {
         checkEmptyLoad(file);
@@ -434,11 +434,11 @@ public class LoadService {
     private static final class RequireLocks {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
-        private final ReentrantLock globalLock;
+        //private final ReentrantLock globalLock;
 
         private RequireLocks() {
             this.pool = new ConcurrentHashMap<>(8, 0.75f, 2);
-            this.globalLock = new ReentrantLock(true);
+            //this.globalLock = new ReentrantLock(true);
         }
 
         /**
@@ -462,9 +462,7 @@ public class LoadService {
 
             if (lock.isHeldByCurrentThread()) return false;
 
-            lock.lock();
-
-            return true;
+            return lock.tryLock();
         }
 
         /**
@@ -557,22 +555,25 @@ public class LoadService {
         public void endLoad(String file, long startTime) {}
     }
 
-    private static class TracingLoadTimer extends LoadTimer {
+    private static final class TracingLoadTimer extends LoadTimer {
         private final AtomicInteger indent = new AtomicInteger(0);
-        private String getIndentString() {
-            StringBuilder buf = new StringBuilder();
-            int i = indent.get();
+
+        private StringBuilder getIndentString() {
+            final int i = indent.get();
+            StringBuilder buf = new StringBuilder(i * 2);
             for (int j = 0; j < i; j++) {
-                buf.append("  ");
+                buf.append(' ').append(' ');
             }
-            return buf.toString();
+            return buf;
         }
+
         @Override
         public long startLoad(String file) {
             indent.incrementAndGet();
             LOG.info(getIndentString() + "-> " + file);
             return System.currentTimeMillis();
         }
+
         @Override
         public void endLoad(String file, long startTime) {
             LOG.info(getIndentString() + "<- " + file + " - "
@@ -800,9 +801,9 @@ public class LoadService {
             int lastSlashIndex = className.lastIndexOf('/');
             if (lastSlashIndex > -1 && lastSlashIndex < className.length() - 1 && !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
                 if (lastSlashIndex == -1) {
-                    className = "_" + className;
+                    className = '_' + className;
                 } else {
-                    className = className.substring(0, lastSlashIndex + 1) + "_" + className.substring(lastSlashIndex + 1);
+                    className = className.substring(0, lastSlashIndex + 1) + '_' + className.substring(lastSlashIndex + 1);
                 }
             }
             className = className.replace('/', '.');
@@ -936,18 +937,7 @@ public class LoadService {
         return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()), file);
     }
 
-    // Using the BailoutSearch twice, once only for source files and once for state suffixes,
-    // in order to adhere to Rubyspec
-    protected final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
-    {
-        searchers.add(new SourceBailoutSearcher());
-        searchers.add(new NormalSearcher());
-        searchers.add(new ClassLoaderSearcher());
-        searchers.add(new BailoutSearcher());
-        searchers.add(new ExtensionSearcher());
-        searchers.add(new ScriptClassSearcher());
-    }
-
+    @Deprecated // no longer used
     protected String buildClassName(String className) {
         // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
         className = className.replaceFirst("^\\.\\/", "");

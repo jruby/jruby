@@ -235,12 +235,22 @@ public abstract class BaseLibC implements LibC {
     }
 
     @Override
+    public int kill(long pid, int signal) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int dup(int fd) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public int dup2(int oldFd, int newFd) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int fcntl(int fd, int fnctl, Pointer arg) {
         throw new UnsupportedOperationException();
     }
 
@@ -542,6 +552,26 @@ public abstract class BaseLibC implements LibC {
 
     @Override
     public Variable<Long> environ() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int syscall(int number) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int syscall(int number, int arg1) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int syscall(int number, int arg1, int arg2) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int syscall(int number, int arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException();
     }
     

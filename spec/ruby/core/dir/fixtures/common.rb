@@ -102,17 +102,15 @@ module DirSpecs
   end
 
   def self.create_mock_dirs
-    umask = File.umask 0
     mock_dir_files.each do |name|
       file = File.join mock_dir, name
       mkdir_p File.dirname(file)
       touch file
     end
-    File.umask umask
   end
 
   def self.delete_mock_dirs
-    rm_r mock_dir
+    rm_r SPEC_TEMP_DIR
   end
 
   def self.mock_rmdir(*dirs)

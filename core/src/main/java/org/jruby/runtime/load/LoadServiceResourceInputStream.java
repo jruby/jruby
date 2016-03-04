@@ -9,6 +9,9 @@ import java.io.InputStream;
  * @author nicksieger
  */
 public class LoadServiceResourceInputStream extends ByteArrayInputStream {
+
+    private static final byte[] NULL_BYTE_ARRAY = new byte[0];
+
     /**
      * Construct a LoadServiceResourceInputStream from the given bytes.
      *
@@ -29,7 +32,7 @@ public class LoadServiceResourceInputStream extends ByteArrayInputStream {
      * @throws IOException if the reading causes an IOException
      */
     public LoadServiceResourceInputStream(InputStream stream) throws IOException {
-        super(new byte[0]);
+        super(NULL_BYTE_ARRAY);
         bufferEntireStream(stream);
     }
 
@@ -38,18 +41,19 @@ public class LoadServiceResourceInputStream extends ByteArrayInputStream {
             byte[] b = new byte[count];
             System.arraycopy(buf, 0, b, 0, count);
             return b;
-        } else {
-            return buf;
         }
+        return buf;
     }
 
+    private static final int READ_CHUNK_SIZE = 16384;
+
     private void bufferEntireStream(InputStream stream) throws IOException {
-        byte[] b = new byte[16384];
-        int bytesRead = 0;
-        while ((bytesRead = stream.read(b)) != -1) {
+        byte[] chunk = new byte[READ_CHUNK_SIZE];
+        int bytesRead;
+        while ((bytesRead = stream.read(chunk)) != -1) {
             byte[] newbuf = new byte[buf.length + bytesRead];
             System.arraycopy(buf, 0, newbuf, 0, buf.length);
-            System.arraycopy(b, 0, newbuf, buf.length, bytesRead);
+            System.arraycopy(chunk, 0, newbuf, buf.length, bytesRead);
             buf = newbuf;
             count = buf.length;
         }

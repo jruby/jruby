@@ -44,7 +44,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
@@ -91,7 +91,7 @@ public abstract class ProcNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }
@@ -102,8 +102,8 @@ public abstract class ProcNodes {
         @Child private CallDispatchHeadNode initializeNode;
         @Child private AllocateObjectNode allocateObjectNode;
 
-        protected final DynamicObject PROC_CLASS = getContext().getCoreLibrary().getProcClass();
-        protected final Shape PROC_SHAPE = getContext().getCoreLibrary().getProcFactory().getShape();
+        protected final DynamicObject PROC_CLASS = coreLibrary().getProcClass();
+        protected final Shape PROC_SHAPE = coreLibrary().getProcFactory().getShape();
 
         public ProcNewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -120,7 +120,7 @@ public abstract class ProcNodes {
 
             if (parentBlock == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
+                throw new RaiseException(coreLibrary().argumentError("tried to create Proc object without a block", this));
             }
 
             return executeProcNew(frame, procClass, args, parentBlock);
@@ -220,11 +220,11 @@ public abstract class ProcNodes {
     @CoreMethod(names = {"call", "[]", "yield"}, rest = true, needsBlock = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldDispatchHeadNode yieldNode;
+        @Child private YieldNode yieldNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yieldNode = new YieldDispatchHeadNode(context);
+            yieldNode = new YieldNode(context);
         }
 
         @Specialization
@@ -287,7 +287,7 @@ public abstract class ProcNodes {
             } else {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             }
         }
 

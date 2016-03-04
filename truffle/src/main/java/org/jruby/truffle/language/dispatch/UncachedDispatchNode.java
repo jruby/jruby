@@ -65,7 +65,7 @@ public class UncachedDispatchNode extends DispatchNode {
             Object[] argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
-        final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(RubyArguments.getSelf(frame.getArguments()));
+        final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(RubyArguments.getSelf(frame));
 
         final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name), ignoreVisibility);
 
@@ -92,7 +92,7 @@ public class UncachedDispatchNode extends DispatchNode {
                 return false;
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().runtimeError(
+                throw new RaiseException(coreLibrary().runtimeError(
                         receiverObject.toString() + " didn't have a #method_missing", this));
             }
         }

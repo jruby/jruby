@@ -45,7 +45,7 @@ class Numeric
   end
 
   def eql?(other)
-    return false unless other.instance_of? self.class
+    return false unless other.class == self.class
     self == other
   end
 

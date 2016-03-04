@@ -924,7 +924,9 @@ public class ParserSupport {
     }
 
     public DStrNode createDStrNode(ISourcePosition position) {
-        return new DStrNode(position, lexer.getEncoding());
+        DStrNode dstr = new DStrNode(position, lexer.getEncoding());
+        if (getConfiguration().isFrozenStringLiteral()) dstr.setFrozen(true);
+        return dstr;
     }
 
     public KeyValuePair<Node, Node> createKeyValue(Node key, Node value) {
@@ -953,6 +955,7 @@ public class ParserSupport {
         if (lexer.getHeredocIndent() > 0) {
             if (head instanceof StrNode) {
                 head = createDStrNode(head.getPosition()).add(head);
+                return list_append(head, tail);
             } else if (head instanceof DStrNode) {
                 return list_append(head, tail);
             }
@@ -973,10 +976,11 @@ public class ParserSupport {
             return ((ListNode) head).add(tail);
         	
         } else if (tail instanceof DStrNode) {
-            if (head instanceof StrNode){
+            if (head instanceof StrNode) { // Str + oDStr -> Dstr(Str, oDStr.contents)
                 DStrNode newDStr = new DStrNode(head.getPosition(), ((DStrNode) tail).getEncoding());
                 newDStr.add(head);
                 newDStr.addAll(tail);
+                if (getConfiguration().isFrozenStringLiteral()) newDStr.setFrozen(true);
                 return newDStr;
             } 
 
@@ -1186,7 +1190,7 @@ public class ParserSupport {
     }
 
     public String formal_argument(String identifier) {
-        if (!is_local_id(identifier) || Character.isUpperCase(identifier.charAt(0))) yyerror("formal argument must be local variable");
+        lexer.validateFormalIdentifier(identifier);
 
         return shadowing_lvar(identifier);
     }
@@ -1406,7 +1410,7 @@ public class ParserSupport {
     private ByteList createMaster(RegexpOptions options) {
         Encoding encoding = options.setup(configuration.getRuntime());
 
-        return new ByteList(new byte[] {}, encoding);
+        return new ByteList(ByteList.NULL_ARRAY, encoding);
     }
     
     // FIXME:  This logic is used by many methods in MRI, but we are only using it in lexer

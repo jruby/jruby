@@ -1,0 +1,1 @@
+fails:Enumerable#grep with a block raises an ArgumentError when not given a pattern

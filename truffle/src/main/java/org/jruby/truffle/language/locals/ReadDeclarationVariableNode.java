@@ -11,58 +11,70 @@ package org.jruby.truffle.language.locals;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.translator.Translator;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import org.jruby.truffle.language.parser.jruby.ReadLocalNode;
 
 public class ReadDeclarationVariableNode extends ReadLocalNode {
 
+    private final LocalVariableType type;
     private final int frameDepth;
+    private final FrameSlot frameSlot;
 
     @Child private ReadFrameSlotNode readFrameSlotNode;
 
-    public ReadDeclarationVariableNode(RubyContext context, SourceSection sourceSection,
-                                       int frameDepth, FrameSlot slot) {
+    public ReadDeclarationVariableNode(RubyContext context, SourceSection sourceSection, LocalVariableType type,
+                                       int frameDepth, FrameSlot frameSlot) {
         super(context, sourceSection);
-        readFrameSlotNode = ReadFrameSlotNodeGen.create(slot);
+        this.type = type;
         this.frameDepth = frameDepth;
+        this.frameSlot = frameSlot;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return readFrameSlotNode.executeRead(RubyArguments.getDeclarationFrame(frame, frameDepth));
+        return readFrameSlot(frame);
+    }
+
+
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        switch (type) {
+            case FRAME_LOCAL:
+                return coreStrings().LOCAL_VARIABLE.createInstance();
+
+            case FRAME_LOCAL_GLOBAL:
+                if (readFrameSlot(frame) != nil()) {
+                    return coreStrings().GLOBAL_VARIABLE.createInstance();
+                } else {
+                    return nil();
+                }
+
+            case ALWAYS_DEFINED_GLOBAL:
+                return coreStrings().GLOBAL_VARIABLE.createInstance();
+
+            default:
+                throw new UnsupportedOperationException("didn't expect local type " + type);
+        }
+    }
+
+    private Object readFrameSlot(VirtualFrame frame) {
+        if (readFrameSlotNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            readFrameSlotNode = insert(ReadFrameSlotNodeGen.create(frameSlot));
+        }
+
+        final MaterializedFrame declarationFrame = RubyArguments.getDeclarationFrame(frame, frameDepth);
+        return readFrameSlotNode.executeRead(declarationFrame);
     }
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteDeclarationVariableNode(getContext(), getSourceSection(),
-                rhs, frameDepth, readFrameSlotNode.getFrameSlot());
-    }
-
-    public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Collections.singletonList("$~"));
-
-    @Override
-    public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(readFrameSlotNode.getFrameSlot().getIdentifier())) {
-            if (ALWAYS_DEFINED_GLOBALS.contains(readFrameSlotNode.getFrameSlot().getIdentifier())
-                    || readFrameSlotNode.executeRead(RubyArguments.getDeclarationFrame(frame, frameDepth)) != nil()) {
-                return create7BitString("global-variable", UTF8Encoding.INSTANCE);
-            } else {
-                return nil();
-            }
-        } else {
-            return create7BitString("local-variable", UTF8Encoding.INSTANCE);
-        }
+        return new WriteDeclarationVariableNode(getContext(), getSourceSection(), frameSlot, frameDepth, rhs);
     }
 
 }

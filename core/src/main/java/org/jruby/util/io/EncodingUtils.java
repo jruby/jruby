@@ -26,6 +26,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -53,7 +54,7 @@ public class EncodingUtils {
     public static final int DEFAULT_TEXTMODE = Platform.IS_WINDOWS ? OpenFile.TEXTMODE : 0;
     public static final int TEXTMODE_NEWLINE_DECORATOR_ON_WRITE = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
 
-    private static final byte[] NULL_BYTE_ARRAY = new byte[0];
+    private static final byte[] NULL_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // rb_to_encoding
     public static Encoding rbToEncoding(ThreadContext context, IRubyObject enc) {
@@ -218,6 +219,26 @@ public class EncodingUtils {
                 ecflags = SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(ioEncodable.getEnc2(), ecflags);
                 ecopts_p[0] = context.nil;
             } else {
+                if (!hasVmode) {
+                    IRubyObject v = ((RubyHash) options).op_aref(context, runtime.newSymbol("mode"));
+                    if (!v.isNil()) {
+                        if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
+                            throw runtime.newArgumentError("mode specified twice");
+                        }
+                        hasVmode = true;
+                        vmode(vmodeAndVperm_p, v);
+                        continue vmode_handle;
+                    }
+                }
+
+                IRubyObject v = ((RubyHash) options).op_aref(context, runtime.newSymbol("flags"));
+                if (!v.isNil()) {
+                    v = v.convertToInteger();
+                    oflags_p[0] |= RubyNumeric.num2int(v);
+                    vmode(vmodeAndVperm_p, runtime.newFixnum(oflags_p[0]));
+                    fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
+                }
+
                 extractBinmode(runtime, options, fmode_p);
                 // Differs from MRI but we open with ModeFlags
                 if ((fmode_p[0] & OpenFile.BINMODE) != 0) {
@@ -229,21 +250,8 @@ public class EncodingUtils {
                 } else if (DEFAULT_TEXTMODE != 0 && (vmode(vmodeAndVperm_p) == null || vmode(vmodeAndVperm_p).isNil())) {
                     fmode_p[0] |= DEFAULT_TEXTMODE;
                 }
-
-                if (!hasVmode) {
-                    IRubyObject v = hashARef(runtime, options, "mode");
-
-                    if (!v.isNil()) {
-                        if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
-                            throw runtime.newArgumentError("mode specified twice");
-                        }
-                        hasVmode = true;
-                        vmode(vmodeAndVperm_p, v);
-
-                        continue vmode_handle;
-                    }
-                }
-                IRubyObject v = hashARef(runtime, options, "perm");
+                
+                v = hashARef(runtime, options, "perm");
                 if (!v.isNil()) {
                     if (vperm(vmodeAndVperm_p) != null) {
                         if (!vperm(vmodeAndVperm_p).isNil()) throw runtime.newArgumentError("perm specified twice");
@@ -393,7 +401,7 @@ public class EncodingUtils {
 
         if (estr.toLowerCase().startsWith("bom|")) {
             estr = estr.substring(4);
-            if (estr.startsWith("utf-")) {
+            if (estr.toLowerCase().startsWith("utf-")) {
                 fmode_p[0] |= OpenFile.SETENC_BY_BOM;
                 ioEncodable.setBOM(true);
             } else {
@@ -402,13 +410,13 @@ public class EncodingUtils {
             }
         }
 
-        EncodingDB.Entry idx = service.findEncodingOrAliasEntry(estr.getBytes());
+        Encoding idx = service.findEncodingNoError(new ByteList(estr.getBytes()));
 
         if (idx == null) {
             runtime.getWarnings().warn("Unsupported encoding " + estr + " ignored");
             extEnc = null;
         } else {
-            extEnc = idx.getEncoding();
+            extEnc = idx;
         }
 
         intEnc = null;
@@ -1731,8 +1739,8 @@ public class EncodingUtils {
         if (first) {
             encs[0] = null;
             encs[1] = null;
-            encNames[0] = new byte[0];
-            encNames[1] = new byte[0];
+            encNames[0] = NULL_BYTE_ARRAY;
+            encNames[1] = NULL_BYTE_ARRAY;
         }
 
         ec.source = encNames[0];
@@ -1832,15 +1840,9 @@ public class EncodingUtils {
         if (cr == StringSupport.CR_BROKEN) {
             throw context.runtime.newArgumentError("replacement must be valid byte sequence '" + str + "'");
         }
-        else if (cr == StringSupport.CR_7BIT) {
+        else {
             Encoding e = STR_ENC_GET(str);
-            if (!enc.isAsciiCompatible()) {
-                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
-            }
-        }
-        else { /* ENC_CODERANGE_VALID */
-            Encoding e = STR_ENC_GET(str);
-            if (enc != e) {
+            if (cr == StringSupport.CR_7BIT ? enc.minLength() != 1 : enc != e) {
                 throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
             }
         }

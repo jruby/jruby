@@ -57,22 +57,15 @@ public final class StringSupport {
     public static final int CR_VALID     = RubyObject.USER1_F;
     public static final int CR_BROKEN    = RubyObject.USER0_F | RubyObject.USER1_F;
 
-    public static final Object UNSAFE = getUnsafe();
-    private static final int OFFSET = UNSAFE != null ? ((Unsafe)UNSAFE).arrayBaseOffset(byte[].class) : 0;
+    static final int ARRAY_BYTE_BASE_OFFSET;
+    static {
+        final Unsafe unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
+        ARRAY_BYTE_BASE_OFFSET = unsafe != null ? unsafe.arrayBaseOffset(byte[].class) : 0;
+    }
+
     public static final int TRANS_SIZE = 256;
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
-
-    private static Object getUnsafe() {
-        try {
-            Class sunUnsafe = Class.forName("sun.misc.Unsafe");
-            java.lang.reflect.Field f = sunUnsafe.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            return sun.misc.Unsafe.class.cast(f.get(sunUnsafe));
-        } catch (Exception ex) {
-            return null;
-        }
-    }
 
     public static String codeRangeAsString(int codeRange) {
         switch (codeRange) {
@@ -114,6 +107,11 @@ public final class StringSupport {
     // MBCLEN_NEEDMORE, ONIGENC_MBCLEN_NEEDMORE
     public static int MBCLEN_NEEDMORE(int n) {
         return -1 - n;
+    }
+
+    // MBCLEN_NEEDMORE_LEN, ONIGENC_MBCLEN_NEEDMORE_LEN
+    public static int MBCLEN_NEEDMORE_LEN(int r) {
+        return -1 - r;
     }
 
     // MBCLEN_INVALID_P, ONIGENC_MBCLEN_INVALID_P
@@ -234,18 +232,18 @@ public final class StringSupport {
     private static final int LONG_SIZE = 8;
     private static final int LOWBITS = LONG_SIZE - 1;
     @SuppressWarnings("deprecation")
-    public static int utf8Length(byte[]bytes, int p, int end) {
+    public static int utf8Length(byte[] bytes, int p, int end) {
         int len = 0;
-        if (UNSAFE != null) {
+        if (ARRAY_BYTE_BASE_OFFSET > 0) { // Unsafe
             if (end - p > LONG_SIZE * 2) {
                 int ep = ~LOWBITS & (p + LOWBITS);
                 while (p < ep) {
                     if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
                 }
-                Unsafe us = (Unsafe)UNSAFE;
+                final Unsafe unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
                 int eend = ~LOWBITS & end;
                 while (p < eend) {
-                    len += countUtf8LeadBytes(us.getLong(bytes, (long)(OFFSET + p)));
+                    len += countUtf8LeadBytes(unsafe.getLong(bytes, (long) (ARRAY_BYTE_BASE_OFFSET + p)));
                     p += LONG_SIZE;
                 }
             }

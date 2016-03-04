@@ -9,20 +9,19 @@
  */
 package org.jruby.truffle.language.methods;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 
-/**
- * Catch a {@code return} jump at the root of a method, and report it as an error.
- */
 public class CatchReturnAsErrorNode extends RubyNode {
 
     @Child private RubyNode body;
+
+    private final BranchProfile retryProfile = BranchProfile.create();
 
     public CatchReturnAsErrorNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
@@ -34,8 +33,8 @@ public class CatchReturnAsErrorNode extends RubyNode {
         try {
             return body.execute(frame);
         } catch (ReturnException e) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().unexpectedReturn(this));
+            retryProfile.enter();
+            throw new RaiseException(coreLibrary().unexpectedReturn(this));
         }
     }
 

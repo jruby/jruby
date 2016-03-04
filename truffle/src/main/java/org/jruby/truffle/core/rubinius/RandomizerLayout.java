@@ -25,6 +25,6 @@ public interface RandomizerLayout extends BasicObjectLayout {
                                    Random random);
 
     Random getRandom(DynamicObject object);
-    void setRandom(DynamicObject object, Random random);
+    void setRandom(DynamicObject object, Random value);
 
 }

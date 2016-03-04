@@ -112,7 +112,7 @@ public abstract class FiberNodes {
                 } catch (ReturnException e) {
                     Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(context.getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
-                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(e.getRubyException()));
+                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(e.getException()));
                 }
             }
         });
@@ -125,9 +125,9 @@ public abstract class FiberNodes {
         try {
             task.run();
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == context.getCoreLibrary().getSystemExitClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == context.getCoreLibrary().getSystemExitClass()) {
                 // SystemExit: send it to the main thread if it reached here
-                ThreadRaisePrimitiveNode.raiseInThread(context, context.getThreadManager().getRootThread(), e.getRubyException(), currentNode);
+                ThreadRaisePrimitiveNode.raiseInThread(context, context.getThreadManager().getRootThread(), e.getException(), currentNode);
             }
             throw e;
         } finally {
@@ -238,13 +238,13 @@ public abstract class FiberNodes {
             CompilerDirectives.transferToInterpreter();
 
             if (!Layouts.FIBER.getAlive(fiber)) {
-                throw new RaiseException(getContext().getCoreLibrary().deadFiberCalledError(this));
+                throw new RaiseException(coreLibrary().deadFiberCalledError(this));
             }
 
             DynamicObject currentThread = getContext().getThreadManager().getCurrentThread();
             if (Layouts.FIBER.getRubyThread(fiber) != currentThread) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
+                throw new RaiseException(coreLibrary().fiberError("fiber called across threads", this));
             }
 
             final DynamicObject sendingFiber = Layouts.THREAD.getFiberManager(currentThread).getCurrentFiber();
@@ -304,7 +304,7 @@ public abstract class FiberNodes {
             final DynamicObject fiberYieldedTo = Layouts.FIBER.getLastResumedByFiber(yieldingFiber);
 
             if (Layouts.FIBER.getRootFiber(yieldingFiber) || fiberYieldedTo == null) {
-                throw new RaiseException(getContext().getCoreLibrary().yieldFromRootFiberError(this));
+                throw new RaiseException(coreLibrary().yieldFromRootFiberError(this));
             }
 
             return fiberTransferNode.executeTransferControlTo(frame, fiberYieldedTo, true, args);

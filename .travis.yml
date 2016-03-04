@@ -25,6 +25,7 @@ env:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
     - MALLOC_ARENA_MAX=2
   matrix:
+    - JTRCI='lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
     - PHASE='-Prake -Dtask=test:jruby:fullint'
@@ -36,18 +37,18 @@ env:
     - PHASE='-Prake -Dtask=test:tracing'
     - PHASE='-Prake -Dtask=spec:ji'
     - PHASE='-Prake -Dtask=spec:compiler'
+    - PHASE='-Prake -Dtask=spec:compiler' JRUBY_OPTS=-Xcompile.invokedynamic
     - PHASE='-Prake -Dtask=spec:ffi'
     - PHASE='-Prake -Dtask=spec:regression'
     - PHASE='-Prake -Dtask=spec:ruby:fast'
     - PHASE='-Prake -Dtask=spec:jruby'
     - PHASE='-Prake -Dtask=spec:jrubyc'
     - PHASE='-Prake -Dtask=spec:profiler'
-    #- JT='test specs :language'
-    #- JT='test specs :core'
-    #- JT='test specs :library'
-    #- JT='test specs :truffle'
-    #- JT='test mri'
-    #- JT='test integration'
+    - JT='test specs :language'
+    - JT='test specs :core'
+    - JT='test specs :library'
+    - JT='test specs :truffle'
+    - JT='test integration'
 
 matrix:
   include:
@@ -77,6 +78,10 @@ matrix:
     #  jdk: oraclejdk8
   allow_failures:
     - env: PHASE='-Prake -Dtask=test:mri:fullint'
+    - env: JT=check_ambiguous_arguments
+      jdk: oraclejdk8
+    - env: JT='test mri'
+    - env: JTRCI='lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required

@@ -1,0 +1,6 @@
+fails:Enumerable#grep_v without block returns an Array of matched elements
+fails:Enumerable#grep_v without block compares pattern with gathered array when yielded with multiple arguments
+fails:Enumerable#grep_v without block raises an ArgumentError when not given a pattern
+fails:Enumerable#grep_v with block returns an Array of matched elements that mapped by the block
+fails:Enumerable#grep_v with block calls the block with gathered array when yielded with multiple arguments
+fails:Enumerable#grep_v with block raises an ArgumentError when not given a pattern

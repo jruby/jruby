@@ -195,6 +195,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private volatile Selector currentSelector;
 
+    private volatile RubyThread fiberCurrentThread;
+
     private static final AtomicIntegerFieldUpdater<RubyThread> INTERRUPT_FLAG_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(RubyThread.class, "interruptFlag");
 
@@ -360,9 +362,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return contextRef == null ? null : contextRef.get();
     }
 
-
     public Thread getNativeThread() {
         return threadImpl.nativeThread();
+    }
+
+    public void setFiberCurrentThread(RubyThread fiberCurrentThread) {
+        this.fiberCurrentThread = fiberCurrentThread;
+    }
+
+    public RubyThread getFiberCurrentThread() {
+        if (fiberCurrentThread == null) return this;
+        return fiberCurrentThread;
     }
 
     /**
@@ -875,8 +885,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return fiberLocalVariables;
     }
 
-    private synchronized Map<IRubyObject, IRubyObject> getThreadLocals(ThreadContext context) {
-        return context.getFiberCurrentThread().getThreadLocals0();
+    private synchronized Map<IRubyObject, IRubyObject> getThreadLocals() {
+        return getFiberCurrentThread().getThreadLocals0();
     }
 
     private synchronized Map<IRubyObject, IRubyObject> getThreadLocals0() {
@@ -916,14 +926,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "thread_variable?", required = 1)
     public synchronized IRubyObject thread_variable_p(ThreadContext context, IRubyObject key) {
-        IRubyObject value;
-        return context.runtime.newBoolean(getThreadLocals(context).containsKey(getSymbolKey(key)));
+        return context.runtime.newBoolean(getThreadLocals().containsKey(getSymbolKey(key)));
     }
 
     @JRubyMethod(name = "thread_variable_get", required = 1)
     public synchronized IRubyObject thread_variable_get(ThreadContext context, IRubyObject key) {
         IRubyObject value;
-        if ((value = getThreadLocals(context).get(getSymbolKey(key))) != null) {
+        if ((value = getThreadLocals().get(getSymbolKey(key))) != null) {
             return value;
         }
         return context.runtime.getNil();
@@ -935,14 +944,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         key = getSymbolKey(key);
 
-        getThreadLocals(context).put(key, value);
+        getThreadLocals().put(key, value);
 
         return value;
     }
 
     @JRubyMethod(name = "thread_variables")
     public synchronized IRubyObject thread_variables(ThreadContext context) {
-        Map<IRubyObject, IRubyObject> vars = getThreadLocals(context);
+        Map<IRubyObject, IRubyObject> vars = getThreadLocals();
         RubyArray ary = RubyArray.newArray(context.runtime, vars.size());
         for (Map.Entry<IRubyObject, IRubyObject> entry : vars.entrySet()) {
             ary.append(entry.getKey());
@@ -1120,6 +1129,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(meta = true)
     public static IRubyObject stop(ThreadContext context, IRubyObject receiver) {
         RubyThread rubyThread = context.getThread();
+
+        if (context.runtime.getThreadService().getActiveRubyThreads().length == 1) {
+            throw context.runtime.newThreadError("stopping only thread\n\tnote: use sleep to stop forever");
+        }
 
         synchronized (rubyThread) {
             rubyThread.pollThreadEvents(context);

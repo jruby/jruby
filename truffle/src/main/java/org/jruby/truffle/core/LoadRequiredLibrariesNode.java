@@ -34,7 +34,7 @@ public class LoadRequiredLibrariesNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        Object self = RubyArguments.getSelf(frame.getArguments());
+        Object self = RubyArguments.getSelf(frame);
 
         for (String requiredLibrary : getRequiredLibraries()) {
             requireNode.call(frame, self, "require", null, createString(StringOperations.encodeRope(requiredLibrary, UTF8Encoding.INSTANCE)));

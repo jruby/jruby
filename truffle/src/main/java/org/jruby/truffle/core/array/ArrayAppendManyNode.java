@@ -169,7 +169,7 @@ public abstract class ArrayAppendManyNode extends RubyNode {
         final int newSize = oldSize + otherSize;
 
         final int[] oldStore = (int[]) Layouts.ARRAY.getStore(array);
-        long[] newStore = ArrayUtils.longCopyOf(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
+        long[] newStore = ArrayUtils.longCopyOf(oldStore, newSize);
 
         System.arraycopy(other, 0, newStore, oldSize, otherSize);
 
@@ -232,7 +232,7 @@ public abstract class ArrayAppendManyNode extends RubyNode {
     public void appendManyGeneralizeGeneric(DynamicObject array, ArrayMirror storeMirror, int otherSize, ArrayMirror otherStoreMirror) {
         final int oldSize = Layouts.ARRAY.getSize(array);
         final int newSize = oldSize + otherSize;
-        Object[] newStore = storeMirror.getBoxedCopy(ArrayUtils.capacity(storeMirror.getLength(), newSize));
+        Object[] newStore = storeMirror.getBoxedCopy(newSize);
         otherStoreMirror.copyTo(newStore, 0, oldSize, otherSize);
         Layouts.ARRAY.setStore(array, newStore);
         Layouts.ARRAY.setSize(array, newSize);

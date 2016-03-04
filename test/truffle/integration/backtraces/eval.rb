@@ -6,9 +6,9 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative 'backtraces'
-
 # TODO CS 3-Feb-16 Not compliant with MRI - here as a regression test
+
+require_relative 'backtraces'
 
 def m1
   eval 'm2'

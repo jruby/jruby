@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.LoopConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
@@ -123,24 +124,21 @@ public abstract class IntegerNodes {
                 array[i] = i;
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, n);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array, n);
         }
 
         @Specialization
-        public Object times(VirtualFrame frame, int n, DynamicObject block) {
-            int count = 0;
-
+        public int times(VirtualFrame frame, int n, DynamicObject block,
+                @Cached("createCountingProfile()") LoopConditionProfile loopProfile) {
+            int i = 0;
+            loopProfile.profileCounted(n);
             try {
-                for (int i = 0; i < n; i++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
+                for (; loopProfile.inject(i < n); i++) {
                     yield(frame, block, i);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    getRootNode().reportLoopCount(i);
                 }
             }
 
@@ -148,20 +146,17 @@ public abstract class IntegerNodes {
         }
 
         @Specialization
-        public Object times(VirtualFrame frame, long n, DynamicObject block) {
-            int count = 0;
-
+        public long times(VirtualFrame frame, long n, DynamicObject block,
+                @Cached("createCountingProfile()") LoopConditionProfile loopProfile) {
+            long i = 0;
+            loopProfile.profileCounted(n);
             try {
-                for (long i = 0; i < n; i++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
+                for (; loopProfile.inject(i < n); i++) {
                     yield(frame, block, i);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    getRootNode().reportLoopCount(i < Integer.MAX_VALUE ? (int) i : Integer.MAX_VALUE);
                 }
             }
 

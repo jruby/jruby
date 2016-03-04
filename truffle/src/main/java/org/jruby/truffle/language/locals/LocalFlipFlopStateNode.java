@@ -12,14 +12,12 @@ package org.jruby.truffle.language.locals;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 
 public class LocalFlipFlopStateNode extends FlipFlopStateNode {
 
     private final FrameSlot frameSlot;
 
-    public LocalFlipFlopStateNode(SourceSection sourceSection, FrameSlot frameSlot) {
-        super(sourceSection);
+    public LocalFlipFlopStateNode(FrameSlot frameSlot) {
         this.frameSlot = frameSlot;
     }
 

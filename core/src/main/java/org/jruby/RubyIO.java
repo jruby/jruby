@@ -2412,8 +2412,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return runtime.newFixnum(0);
     }
 
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-
     @JRubyMethod(name = "puts")
     public IRubyObject puts(ThreadContext context) {
         return puts0(context, this);
@@ -3144,6 +3142,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             fptr.READ_CHECK(context);
             if (fptr.needsReadConversion()) {
                 fptr.SET_BINARY_MODE();
+                r = 1;		/* no invalid char yet */
                 for (;;) {
                     fptr.makeReadConversion(context);
                     for (;;) {
@@ -3160,12 +3159,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         }
                         if (fptr.moreChar(context) == OpenFile.MORE_CHAR_FINISHED) {
                             fptr.clearReadConversion();
-                            /* ignore an incomplete character before EOF */
+                            if (!StringSupport.MBCLEN_CHARFOUND_P(r)) {
+                                enc = fptr.encs.enc;
+                                throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                            }
                             return this;
                         }
                     }
                     if (StringSupport.MBCLEN_INVALID_P(r)) {
-                        throw runtime.newArgumentError("invalid byte sequence in " + fptr.encs.enc.toString());
+                        enc = fptr.encs.enc;
+                        throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
                     }
                     n = StringSupport.MBCLEN_CHARFOUND_LEN(r);
                     if (fptr.encs.enc != null) {
@@ -3191,6 +3194,24 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     block.yield(context, runtime.newFixnum(c & 0xFFFFFFFF));
                 } else if (StringSupport.MBCLEN_INVALID_P(r)) {
                     throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                } else if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
+                    byte[] cbuf = new byte[8];
+                    int p = 0;
+                    int more = StringSupport.MBCLEN_NEEDMORE_LEN(r);
+                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    more += n = fptr.rbuf.len;
+                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    while ((n = (int)fptr.readBufferedData(cbuf, p, more)) > 0) {
+                        p += n;
+                        if ((more -= n) <= 0) break;
+
+                        if (fptr.fillbuf(context) < 0) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                        if ((n = fptr.rbuf.len) > more) n = more;
+                    }
+                    r = enc.length(cbuf, 0, p);
+                    if (!StringSupport.MBCLEN_CHARFOUND_P(r)) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    c = enc.mbcToCode(cbuf, 0, p);
+                    block.yield(context, runtime.newFixnum(c));
                 } else {
                     continue;
                 }
@@ -4285,14 +4306,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * @author realjenius
      */
     private static class ByteListCache {
-        private byte[] buffer = EMPTY_BYTE_ARRAY;
-        public void release(ByteList l) {
-            buffer = l.getUnsafeBytes();
+
+        private byte[] buffer = ByteList.NULL_ARRAY;
+
+        final void release(ByteList bytes) {
+            buffer = bytes.getUnsafeBytes();
         }
 
-        public ByteList allocate(int size) {
-            ByteList l = new ByteList(buffer, 0, size, false);
-            return l;
+        final ByteList allocate(int size) {
+            return new ByteList(buffer, 0, size, false);
         }
     }
 

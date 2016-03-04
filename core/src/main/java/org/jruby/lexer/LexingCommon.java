@@ -98,7 +98,7 @@ public abstract class LexingCommon {
         return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), false);
     }
 
-    public String createTokenString() {
+    public String createTokenString(int start) {
         byte[] bytes = lexb.getUnsafeBytes();
         int begin = lexb.begin();
         Charset charset;
@@ -108,15 +108,19 @@ public abstract class LexingCommon {
             charset = getEncoding().getCharset();
             if (charset != null) {
                 if (charset == RubyEncoding.UTF8) {
-                    return RubyEncoding.decodeUTF8(bytes, begin + tokp, lex_p - tokp);
+                    return RubyEncoding.decodeUTF8(bytes, begin + start, lex_p - start);
                 } else {
-                    return new String(bytes, begin + tokp, lex_p - tokp, charset);
+                    return new String(bytes, begin + start, lex_p - start, charset);
                 }
             }
         } catch (UnsupportedCharsetException e) {}
 
 
-        return new String(bytes, begin + tokp, lex_p - tokp);
+        return new String(bytes, begin + start, lex_p - start);
+    }
+
+    public String createTokenString() {
+        return createTokenString(tokp);
     }
 
     protected int dedent_string(ByteList string, int width) {
@@ -240,17 +244,7 @@ public abstract class LexingCommon {
      * mri: is_identchar
      */
     public boolean isIdentifierChar(int c) {
-        return Character.isLetterOrDigit(c) || c == '_' || isMultiByteChar(c);
-    }
-
-    /**
-     * Is this a multibyte character from a multibyte encoding?
-     *
-     * @param c byte to check against
-     * @return whether c is an multibyte char or not
-     */
-    protected boolean isMultiByteChar(int c) {
-        return current_enc.codeToMbcLength(c) != 1;
+        return c != EOF && (Character.isLetterOrDigit(c) || c == '_' || !isASCII(c));
     }
 
     public void lex_goto_eol() {
@@ -541,7 +535,6 @@ public abstract class LexingCommon {
     public boolean tokadd_mbchar(int first_byte) {
         int length = precise_mbclen();
 
-
         if (length <= 0) {
             compile_error("invalid multibyte char (" + getEncoding() + ")");
         } else if (length > 1) {
@@ -604,6 +597,35 @@ public abstract class LexingCommon {
         }
 
         return false;
+    }
+
+    public void validateFormalIdentifier(String identifier) {
+        char first = identifier.charAt(0);
+
+        if (Character.isUpperCase(first)) {
+            compile_error("formal argument cannot be a constant");
+        }
+
+        switch(first) {
+            case '@':
+                if (identifier.charAt(1) == '@') {
+                    compile_error("formal argument cannot be a class variable");
+                } else {
+                    compile_error("formal argument cannot be an instance variable");
+                }
+                break;
+            case '$':
+                compile_error("formal argument cannot be a global variable");
+                break;
+            default:
+                // This mechanism feels a tad dicey but at this point we are dealing with a valid
+                // method name at least so we should not need to check the entire string...
+                char last = identifier.charAt(identifier.length() - 1);
+
+                if (last == '=' || last == '?' || last == '!') {
+                    compile_error("formal argument must be local variable");
+                }
+        }
     }
 
     /**

@@ -45,12 +45,12 @@ public interface FiberLayout extends BasicObjectLayout {
     DynamicObject getRubyThread(DynamicObject object);
 
     DynamicObject getLastResumedByFiber(DynamicObject object);
-    void setLastResumedByFiber(DynamicObject object, DynamicObject lastResumedByFiber);
+    void setLastResumedByFiber(DynamicObject object, DynamicObject value);
 
     boolean getAlive(DynamicObject object);
-    void setAlive(DynamicObject object, boolean alive);
+    void setAlive(DynamicObject object, boolean value);
 
     Thread getThread(DynamicObject object);
-    void setThread(DynamicObject object, Thread thread);
+    void setThread(DynamicObject object, Thread value);
 
 }

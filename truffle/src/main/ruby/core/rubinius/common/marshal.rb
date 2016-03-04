@@ -1162,7 +1162,7 @@ module Marshal
       super stream, depth, prc
 
       if @stream
-        @byte_array = stream.data
+        @byte_array = stream.bytes
       end
 
     end
@@ -1176,7 +1176,7 @@ module Marshal
 
     def consume_byte
       raise ArgumentError, "marshal data too short" if @consumed >= @stream.bytesize
-      data = @byte_array.get_byte @consumed
+      data = @byte_array[@consumed]
       @consumed += 1
       return data
     end

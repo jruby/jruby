@@ -11,11 +11,6 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 
-/**
- * Controls re-trying an iteration in a control structure or method.
- */
 public final class RetryException extends ControlFlowException {
-
-    private static final long serialVersionUID = -1675586631300635765L;
 
 }

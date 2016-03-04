@@ -91,7 +91,6 @@ public final class ThreadContext {
     private boolean isWithinTrace;
 
     private RubyThread thread;
-    private RubyThread rootThread; // thread for fiber purposes
     private static final WeakReference<ThreadFiber> NULL_FIBER_REF = new WeakReference<ThreadFiber>(null);
     private WeakReference<ThreadFiber> fiber = NULL_FIBER_REF;
     private ThreadFiber rootFiber; // hard anchor for root threads' fibers
@@ -308,8 +307,7 @@ public final class ThreadContext {
     }
 
     public RubyThread getFiberCurrentThread() {
-        if (rootThread != null) return rootThread;
-        return thread;
+        return thread.getFiberCurrentThread();
     }
 
     public RubyDateFormatter getRubyDateFormatter() {
@@ -320,7 +318,6 @@ public final class ThreadContext {
 
     public void setThread(RubyThread thread) {
         this.thread = thread;
-        this.rootThread = thread; // may be reset by fiber
 
         // associate the thread with this context, unless we're clearing the reference
         if (thread != null) {
@@ -342,10 +339,6 @@ public final class ThreadContext {
 
     public void setRootFiber(ThreadFiber rootFiber) {
         this.rootFiber = rootFiber;
-    }
-
-    public void setRootThread(RubyThread rootThread) {
-        this.rootThread = rootThread;
     }
 
     //////////////////// CATCH MANAGEMENT ////////////////////////

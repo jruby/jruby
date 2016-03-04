@@ -1,0 +1,2 @@
+fails:URI#+ replaces the end of the path of the URI when added to a string that looks like a relative path
+fails:URI#+ conforms to the merge specifications from rfc 2396

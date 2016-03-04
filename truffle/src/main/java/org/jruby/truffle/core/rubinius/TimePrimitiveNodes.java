@@ -117,20 +117,20 @@ public abstract class TimePrimitiveNodes {
         @Specialization(guards = { "isUTC" })
         public DynamicObject timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
+            return Layouts.TIME.createTime(coreLibrary().getTimeFactory(), utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
         public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(),
+            return Layouts.TIME.createTime(coreLibrary().getTimeFactory(),
                     localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), nanoseconds % 1_000_000, nil(), offset, false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC" })
         public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, long offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(),
+            return Layouts.TIME.createTime(coreLibrary().getTimeFactory(),
                     offsetTime(milliseconds, offset), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
@@ -140,7 +140,7 @@ public abstract class TimePrimitiveNodes {
             } catch (ArithmeticException e) {
                 CompilerDirectives.transferToInterpreter();
                 String message = String.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
-                throw new RaiseException(getContext().getCoreLibrary().rangeError(message, this));
+                throw new RaiseException(coreLibrary().rangeError(message, this));
             }
         }
 
@@ -236,7 +236,7 @@ public abstract class TimePrimitiveNodes {
             }
 
             final Object[] decomposed = new Object[]{ sec, min, hour, day, month, year, wday, yday, isdst, zone };
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), decomposed, decomposed.length);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), decomposed, decomposed.length);
         }
 
     }
@@ -295,7 +295,7 @@ public abstract class TimePrimitiveNodes {
                     hour < 0 || hour > 23 ||
                     mday < 1 || mday > 31 ||
                     month < 1 || month > 12) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentErrorOutOfRange(this));
+                throw new RaiseException(coreLibrary().argumentErrorOutOfRange(this));
             }
 
             DateTime dt = new DateTime(year, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC);

@@ -292,7 +292,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param bl ByteList for the String to push
      */
-    public abstract void pushFrozenString(ByteList bl, int cr);
+    public abstract void pushFrozenString(ByteList bl, int cr, String path, int line);
 
     /**
      * Stack required: none
@@ -367,6 +367,15 @@ public abstract class IRBytecodeAdapter {
      * @param hasClosure whether a closure will be on the stack for passing
      */
     public abstract void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined);
+
+    /**
+     * Invoke the array dereferencing method ([]) on an object other than self.
+     *
+     * If this invokes against a Hash with a frozen string, it will follow an optimized path.
+     *
+     * Stack required: context, self, target, arg0
+     */
+    public abstract void invokeArrayDeref();
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.

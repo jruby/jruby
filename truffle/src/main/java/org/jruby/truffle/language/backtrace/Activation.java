@@ -32,4 +32,5 @@ public class Activation {
     public MaterializedFrame getMaterializedFrame() {
         return materializedFrame;
     }
+
 }

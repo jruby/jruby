@@ -17,11 +17,11 @@ import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.arguments.NodeArrayToObjectArrayNode;
+import org.jruby.truffle.language.arguments.ObjectArrayNode;
 import org.jruby.truffle.language.arguments.ReadAllArgumentsNode;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.control.ReturnID;
-import org.jruby.truffle.language.literal.LiteralNode;
+import org.jruby.truffle.language.literal.ObjectLiteralNode;
 
 public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstructor {
 
@@ -41,7 +41,7 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
         return new CallRubiniusPrimitiveNode(context, sourceSection,
                 MethodNodesFactory.CallNodeFactory.create(context, sourceSection, new RubyNode[] {
-                    new LiteralNode(context, sourceSection, method),
+                    new ObjectLiteralNode(context, sourceSection, method),
                     new ReadAllArgumentsNode(context, sourceSection),
                     new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
         }), returnID);
@@ -50,8 +50,8 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
     @Override
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
         return MethodNodesFactory.CallNodeFactory.create(context, sourceSection, new RubyNode[] {
-                new LiteralNode(context, sourceSection, method),
-                new NodeArrayToObjectArrayNode(context, sourceSection, arguments),
+                new ObjectLiteralNode(context, sourceSection, method),
+                new ObjectArrayNode(context, sourceSection, arguments),
                 new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
         });
     }

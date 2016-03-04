@@ -14,13 +14,10 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Represents an explicit return. The return ID indicates where we should be returning to - this can
- * be non-trivial if you have blocks.
- */
 public class ReturnNode extends RubyNode {
 
     private final ReturnID returnID;
+
     @Child private RubyNode value;
 
     public ReturnNode(RubyContext context, SourceSection sourceSection, ReturnID returnID, RubyNode value) {

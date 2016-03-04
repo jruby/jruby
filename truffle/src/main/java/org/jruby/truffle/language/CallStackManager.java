@@ -83,20 +83,34 @@ public class CallStackManager {
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }
 
+    public Backtrace getBacktrace(Node currentNode, Throwable javaThrowable) {
+        return getBacktrace(currentNode, 0, false, null, javaThrowable);
+    }
+
     public Backtrace getBacktrace(Node currentNode) {
-        return getBacktrace(currentNode, 0);
+        return getBacktrace(currentNode, 0, false, null, null);
     }
 
     public Backtrace getBacktrace(Node currentNode, int omit) {
-        return getBacktrace(currentNode, omit, null);
+        return getBacktrace(currentNode, omit, false, null, null);
     }
 
     public Backtrace getBacktrace(Node currentNode, int omit, DynamicObject exception) {
-        return getBacktrace(currentNode, omit, false, exception);
+        return getBacktrace(currentNode, omit, false, exception, null);
     }
 
-    public Backtrace getBacktrace(Node currentNode, final int omit,
-                                  final boolean filterNullSourceSection, DynamicObject exception) {
+    public Backtrace getBacktrace(Node currentNode,
+                                  final int omit,
+                                  final boolean filterNullSourceSection,
+                                  DynamicObject exception) {
+        return getBacktrace(currentNode, omit, filterNullSourceSection, exception, null);
+    }
+
+    public Backtrace getBacktrace(Node currentNode,
+                                  final int omit,
+                                  final boolean filterNullSourceSection,
+                                  DynamicObject exception,
+                                  Throwable javaThrowable) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (exception != null
@@ -104,7 +118,7 @@ public class CallStackManager {
                 && DisablingBacktracesNode.areBacktracesDisabled()
                 && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(exception),
                     context.getCoreLibrary().getStandardErrorClass())) {
-            return new Backtrace(new Activation[]{Activation.OMITTED_UNUSED});
+            return new Backtrace(new Activation[]{Activation.OMITTED_UNUSED}, null);
         }
 
         final int limit = context.getOptions().BACKTRACES_LIMIT;
@@ -150,7 +164,21 @@ public class CallStackManager {
 
         });
 
-        return new Backtrace(activations.toArray(new Activation[activations.size()]));
+        // TODO CS 3-Mar-16 The last activation is I think what calls jruby_root_node, and I can't seem to remove it any other way
+
+        if (!activations.isEmpty()) {
+            activations.remove(activations.size() - 1);
+        }
+
+        if (context.getOptions().EXCEPTIONS_STORE_JAVA || context.getOptions().BACKTRACES_INTERLEAVE_JAVA) {
+            if (javaThrowable == null) {
+                javaThrowable = new Exception();
+            }
+        } else {
+            javaThrowable = null;
+        }
+
+        return new Backtrace(activations.toArray(new Activation[activations.size()]), javaThrowable);
     }
 
     private boolean ignoreFrame(FrameInstance frameInstance) {
@@ -168,8 +196,7 @@ public class CallStackManager {
 
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
-        if (sourceSection != null && sourceSection.getSource() != null
-                && sourceSection.getSource().getName().equals("run_jruby_root")) {
+        if (sourceSection != null && sourceSection.getShortDescription().endsWith("#run_jruby_root")) {
             return true;
         }
 

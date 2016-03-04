@@ -13,6 +13,4 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 
 public final class ThreadExitException extends ControlFlowException {
 
-    private static final long serialVersionUID = -8652323224851156143L;
-
 }

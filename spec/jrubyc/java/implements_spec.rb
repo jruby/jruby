@@ -1,6 +1,4 @@
-require_relative "../../java_integration/spec_helper"
-require 'jruby'
-require 'jruby/compiler'
+require_relative '../spec_helper'
 
 describe "A Ruby class generating a Java stub" do
   def generate(script)

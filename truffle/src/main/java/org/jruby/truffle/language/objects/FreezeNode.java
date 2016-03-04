@@ -10,7 +10,7 @@
 
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -21,8 +21,6 @@ import org.jruby.truffle.language.RubyNode;
 
 @NodeChild(value = "child")
 public abstract class FreezeNode extends RubyNode {
-
-    @Child private WriteHeadObjectFieldNode writeFrozenNode;
 
     public FreezeNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -66,14 +64,15 @@ public abstract class FreezeNode extends RubyNode {
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
-    public Object freeze(DynamicObject object) {
-        if (writeFrozenNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            writeFrozenNode = insert(WriteHeadObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER));
-        }
-
+    public Object freeze(
+            DynamicObject object,
+            @Cached("createWriteFrozenNode()") WriteObjectFieldNode writeFrozenNode) {
         writeFrozenNode.execute(object, true);
-
         return object;
     }
+
+    protected WriteObjectFieldNode createWriteFrozenNode() {
+        return WriteObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER);
+    }
+
 }

@@ -24,6 +24,7 @@ public class DisablingBacktracesNode extends RubyNode {
         protected Boolean initialValue() {
             return false;
         }
+
     };
 
     public DisablingBacktracesNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
@@ -37,7 +38,6 @@ public class DisablingBacktracesNode extends RubyNode {
 
         try {
             areBacktracesDisabledThreadLocal.set(true);
-
             return child.execute(frame);
         } finally {
             areBacktracesDisabledThreadLocal.set(backtracesPreviouslyDisabled);

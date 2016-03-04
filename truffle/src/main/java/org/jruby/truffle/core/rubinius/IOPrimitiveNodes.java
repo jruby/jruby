@@ -85,7 +85,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
-            final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, getContext().getCoreLibrary().getInternalBufferClass(), "new", null);
+            final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, coreLibrary().getInternalBufferClass(), "new", null);
             return allocateNode.allocate(classToAllocate, buffer, 0, 0, 0);
         }
 
@@ -109,7 +109,7 @@ public abstract class IOPrimitiveNodes {
 
             if (posix().pipe(fds) == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             newOpenFd(fds[0]);
@@ -133,14 +133,14 @@ public abstract class IOPrimitiveNodes {
 
                 if (flags == -1) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                    throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
                 }
 
                 flags = posix().fcntlInt(newFd, Fcntl.F_SETFD, flags | FD_CLOEXEC);
 
                 if (flags == -1) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                    throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
                 }
             }
         }
@@ -173,7 +173,7 @@ public abstract class IOPrimitiveNodes {
             final int result = posix().truncate(StringOperations.getString(getContext(), path), length);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
             return result;
         }
@@ -231,10 +231,10 @@ public abstract class IOPrimitiveNodes {
             final int fd = Layouts.IO.getDescriptor(file);
             if (fd == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().ioError("closed stream",this));
+                throw new RaiseException(coreLibrary().ioError("closed stream",this));
             } else if (fd == -2) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().ioError("shutdown stream",this));
+                throw new RaiseException(coreLibrary().ioError("shutdown stream",this));
             }
             return nil();
         }
@@ -275,7 +275,7 @@ public abstract class IOPrimitiveNodes {
                 ruby("raise IO::EAGAINWaitReadable");
             } else if (res < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             final byte[] bytes = new byte[numberOfBytes];
@@ -283,7 +283,7 @@ public abstract class IOPrimitiveNodes {
 
             if (bytesRead < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             } else if (bytesRead == 0) { // EOF
                 return nil();
             }
@@ -311,13 +311,13 @@ public abstract class IOPrimitiveNodes {
             final int result = posix().dup2(fd, fdOther);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             final int mode = posix().fcntl(fd, Fcntl.F_GETFL);
             if (mode < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
             Layouts.IO.setMode(file, mode);
         }
@@ -351,7 +351,7 @@ public abstract class IOPrimitiveNodes {
             int otherFd = posix().open(pathString, mode, 666);
             if (otherFd < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             final int result = posix().dup2(otherFd, fd);
@@ -365,7 +365,7 @@ public abstract class IOPrimitiveNodes {
                         posix().close(otherFd);
                     }
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().errnoError(errno, this));
+                    throw new RaiseException(coreLibrary().errnoError(errno, this));
                 }
 
             } else {
@@ -376,7 +376,7 @@ public abstract class IOPrimitiveNodes {
             final int newMode = posix().fcntl(fd, Fcntl.F_GETFL);
             if (newMode < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
             Layouts.IO.setMode(file, newMode);
         }
@@ -423,7 +423,7 @@ public abstract class IOPrimitiveNodes {
 
                 if (written < 0) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                    throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
                 }
 
                 buffer.position(buffer.position() + written);
@@ -468,7 +468,7 @@ public abstract class IOPrimitiveNodes {
             // TODO BJF 13-May-2015 Implement more error handling from Rubinius
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
             return 0;
         }
@@ -516,7 +516,7 @@ public abstract class IOPrimitiveNodes {
 
             if (newFd == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             return newFd;
@@ -546,7 +546,7 @@ public abstract class IOPrimitiveNodes {
 
                 if (bytesRead < 0) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                    throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
                 } else if (bytesRead == 0) { // EOF
                     if (toRead == length) { // if EOF at first iteration
                         return nil();
@@ -626,15 +626,15 @@ public abstract class IOPrimitiveNodes {
 
             if (resultCode == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             } else if (resultCode == 0) {
                 return nil();
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] {
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] {
                     getSetObjects(readableObjects, readableFds, readableSet),
-                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
-                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0) },
+                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
+                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
                     3);
         }
 
@@ -670,15 +670,15 @@ public abstract class IOPrimitiveNodes {
 
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             assert result != 0;
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
-                            Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
+                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
                             getSetObjects(writableObjects, writableFds, writableSet),
-                            Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0)},
+                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0)},
                     3);
         }
 
@@ -723,7 +723,7 @@ public abstract class IOPrimitiveNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), setObjects, setFdsCount);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), setObjects, setFdsCount);
         }
 
     }

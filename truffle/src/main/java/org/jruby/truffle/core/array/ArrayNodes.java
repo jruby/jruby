@@ -69,13 +69,14 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
+import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -87,7 +88,7 @@ import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
 
 import java.util.Arrays;
@@ -247,7 +248,7 @@ public abstract class ArrayNodes {
         public DynamicObject mulEmpty(DynamicObject array, int count) {
             if (count < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
             }
             return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
         }
@@ -256,7 +257,7 @@ public abstract class ArrayNodes {
         public DynamicObject mulIntegerFixnum(DynamicObject array, int count) {
             if (count < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
             }
             final int[] store = (int[]) getStore(array);
             final int storeLength = store.length;
@@ -274,7 +275,7 @@ public abstract class ArrayNodes {
         public DynamicObject mulLongFixnum(DynamicObject array, int count) {
             if (count < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
             }
             final long[] store = (long[]) getStore(array);
             final int storeLength = store.length;
@@ -292,7 +293,7 @@ public abstract class ArrayNodes {
         public DynamicObject mulFloat(DynamicObject array, int count) {
             if (count < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
             }
             final double[] store = (double[]) getStore(array);
             final int storeLength = store.length;
@@ -310,7 +311,7 @@ public abstract class ArrayNodes {
         public DynamicObject mulObject(DynamicObject array, int count) {
             if (count < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
             }
             final Object[] store = (Object[]) getStore(array);
             final int storeLength = getSize(array);
@@ -435,7 +436,7 @@ public abstract class ArrayNodes {
                 fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            InternalMethod method = RubyArguments.getMethod(frame);
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
                     createString(StringOperations.encodeRope(method.getName(), UTF8Encoding.INSTANCE)), args);
         }
@@ -461,7 +462,7 @@ public abstract class ArrayNodes {
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
                 String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-getSize(array));
-                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+                throw new RaiseException(coreLibrary().indexError(errMessage, this));
             }
             return write(array, normalizedIndex, value);
         }
@@ -487,7 +488,7 @@ public abstract class ArrayNodes {
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "negative length (" + length + ")";
-                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+                throw new RaiseException(coreLibrary().indexError(errMessage, this));
             }
 
             final int size = getSize(array);
@@ -495,7 +496,7 @@ public abstract class ArrayNodes {
             if (begin < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "index " + start + " too small for array; minimum: " + Integer.toString(-size);
-                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+                throw new RaiseException(coreLibrary().indexError(errMessage, this));
             }
 
             if (begin < size && length == 1) {
@@ -548,13 +549,13 @@ public abstract class ArrayNodes {
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "negative length (" + length + ")";
-                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+                throw new RaiseException(coreLibrary().indexError(errMessage, this));
             }
 
             final int normalizedIndex = ArrayOperations.normalizeIndex(getSize(array), start, negativeIndexProfile);
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", start, getSize(array), this));
+                throw new RaiseException(coreLibrary().indexTooSmallError("array", start, getSize(array), this));
             }
 
             final int replacementLength = getSize(replacement);
@@ -618,7 +619,7 @@ public abstract class ArrayNodes {
             final int normalizedStart = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
+                throw new RaiseException(coreLibrary().rangeError(range, this));
             }
             final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
             int inclusiveEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end - 1 : end;
@@ -638,7 +639,7 @@ public abstract class ArrayNodes {
             final int normalizedStart = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
+                throw new RaiseException(coreLibrary().rangeError(range, this));
             }
             final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
             int inclusiveEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end - 1 : end;
@@ -888,7 +889,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
+                            coreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
                     }
                     found = store[n];
                     continue;
@@ -925,7 +926,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
+                            coreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
                     }
                     found = store[n];
                     continue;
@@ -1462,13 +1463,13 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size < 0")
         public DynamicObject initializeNegative(DynamicObject array, int size, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            throw new RaiseException(coreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "size >= 0")
         public DynamicObject initialize(DynamicObject array, long size, NotProvided defaultValue, NotProvided block) {
             if (size > Integer.MAX_VALUE) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("array size too big", this));
+                throw new RaiseException(coreLibrary().argumentError("array size too big", this));
             }
             return initialize(array, (int) size, nil(), block);
         }
@@ -1476,7 +1477,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size < 0")
         public DynamicObject initializeNegative(DynamicObject array, long size, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            throw new RaiseException(coreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "size >= 0")
@@ -1492,7 +1493,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size < 0")
         public DynamicObject initializeNegative(DynamicObject array, int size, int defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            throw new RaiseException(coreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "size >= 0")
@@ -1508,7 +1509,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size < 0")
         public DynamicObject initializeNegative(DynamicObject array, int size, long defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            throw new RaiseException(coreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "size >= 0")
@@ -1524,7 +1525,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size < 0")
         public DynamicObject initializeNegative(DynamicObject array, int size, double defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            throw new RaiseException(coreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = { "wasProvided(defaultValue)", "size >= 0" })
@@ -1538,7 +1539,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "wasProvided(defaultValue)", "size < 0" })
         public DynamicObject initializeNegative(DynamicObject array, int size, Object defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            throw new RaiseException(coreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = { "wasProvided(sizeObject)", "!isInteger(sizeObject)", "wasProvided(defaultValue)" })
@@ -1565,7 +1566,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "wasProvided(defaultValue)", "size < 0" })
         public Object initializeNegative(VirtualFrame frame, DynamicObject array, int size, Object defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            throw new RaiseException(coreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "size >= 0")
@@ -1597,7 +1598,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "size < 0")
         public Object initializeNegative(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            throw new RaiseException(coreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "isRubyArray(copy)")
@@ -1898,7 +1899,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object insertBoxed(VirtualFrame frame, DynamicObject array, Object idxObject, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments(), 1);
+            final Object[] values = RubyArguments.getArguments(frame, 1);
             final int idx = toInt(frame, idxObject);
 
             CompilerDirectives.transferToInterpreter();
@@ -1928,7 +1929,7 @@ public abstract class ArrayNodes {
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
                 String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-getSize(array));
-                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+                throw new RaiseException(coreLibrary().indexError(errMessage, this));
             }
             return normalizedIndex;
         }
@@ -2165,12 +2166,12 @@ public abstract class ArrayNodes {
 
             final Memo<Object> maximum = new Memo<>();
 
-            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final InternalMethod method = RubyArguments.getMethod(frame);
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
                     RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
-            final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
+            final DynamicObject block = ProcNodes.createRubyProc(coreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
                     maximumClosureFrame.materialize(), method, array, null);
 
@@ -2218,7 +2219,7 @@ public abstract class ArrayNodes {
                 } else {
                     CompilerDirectives.transferToInterpreter();
                     // Should be the actual type and object in this string - but this method should go away soon
-                    throw new RaiseException(getContext().getCoreLibrary().argumentError("comparison of X with Y failed", this));
+                    throw new RaiseException(coreLibrary().argumentError("comparison of X with Y failed", this));
                 }
             }
 
@@ -2243,8 +2244,8 @@ public abstract class ArrayNodes {
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
-                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                                        new ReadDeclarationVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
+                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR)
                                 }), false));
         }
 
@@ -2283,12 +2284,12 @@ public abstract class ArrayNodes {
 
             final Memo<Object> minimum = new Memo<>();
 
-            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final InternalMethod method = RubyArguments.getMethod(frame);
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
                     RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
-            final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
+            final DynamicObject block = ProcNodes.createRubyProc(coreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
                     minimumClosureFrame.materialize(), method, array, null);
 
@@ -2336,7 +2337,7 @@ public abstract class ArrayNodes {
                 } else {
                     CompilerDirectives.transferToInterpreter();
                     // Should be the actual type and object in this string - but this method should go away soon
-                    throw new RaiseException(getContext().getCoreLibrary().argumentError("comparison of X with Y failed", this));
+                    throw new RaiseException(coreLibrary().argumentError("comparison of X with Y failed", this));
                 }
             }
 
@@ -2361,8 +2362,8 @@ public abstract class ArrayNodes {
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
-                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                                        new ReadDeclarationVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
+                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR)
                                 }), false));
         }
 
@@ -2437,17 +2438,17 @@ public abstract class ArrayNodes {
             try {
                 throw exception;
             } catch (TooFewArgumentsException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+                return new RaiseException(coreLibrary().argumentError("too few arguments", this));
             } catch (NoImplicitConversionException e) {
-                return new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+                return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
             } catch (OutsideOfStringException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+                return new RaiseException(coreLibrary().argumentError("X outside of string", this));
             } catch (CantCompressNegativeException e) {
-                return new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+                return new RaiseException(coreLibrary().argumentError("can't compress negative numbers", this));
             } catch (RangeException e) {
-                return new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+                return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
             } catch (CantConvertException e) {
-                return new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+                return new RaiseException(coreLibrary().typeError(e.getMessage(), this));
             }
         }
 
@@ -2561,7 +2562,7 @@ public abstract class ArrayNodes {
         public Object popNilWithNum(VirtualFrame frame, DynamicObject array, Object object) {
             if (object instanceof Integer && ((Integer) object) < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -2570,7 +2571,7 @@ public abstract class ArrayNodes {
                 final int n = toIntNode.doInt(frame, object);
                 if (n < 0) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                    throw new RaiseException(coreLibrary().argumentError("negative array size", this));
                 }
             }
             return createArray(getContext(), null, 0);
@@ -2580,7 +2581,7 @@ public abstract class ArrayNodes {
         public DynamicObject popIntegerFixnumInBoundsWithNum(VirtualFrame frame, DynamicObject array, int num) throws UnexpectedResultException {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -2599,7 +2600,7 @@ public abstract class ArrayNodes {
         public Object popIntegerFixnumWithNum(VirtualFrame frame, DynamicObject array, int num) {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -2618,7 +2619,7 @@ public abstract class ArrayNodes {
         public DynamicObject popLongFixnumInBoundsWithNum(VirtualFrame frame, DynamicObject array, int num) throws UnexpectedResultException {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -2637,7 +2638,7 @@ public abstract class ArrayNodes {
         public Object popLongFixnumWithNum(VirtualFrame frame, DynamicObject array, int num) {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -2655,7 +2656,7 @@ public abstract class ArrayNodes {
         public DynamicObject popFloatInBoundsWithNum(VirtualFrame frame, DynamicObject array, int num) throws UnexpectedResultException {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -2673,7 +2674,7 @@ public abstract class ArrayNodes {
         public Object popFloatWithNum(VirtualFrame frame, DynamicObject array, int num) {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -2691,7 +2692,7 @@ public abstract class ArrayNodes {
         public Object popObjectWithNum(VirtualFrame frame, DynamicObject array, int num) {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -2715,7 +2716,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -2739,7 +2740,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -2763,7 +2764,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -2787,7 +2788,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -2810,7 +2811,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -2833,7 +2834,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -2856,7 +2857,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -2914,7 +2915,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject pushNullEmptyObjects(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
             setStoreAndSize(array, values, values.length);
             return array;
         }
@@ -2922,7 +2923,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "!isNullArray(array)", "isEmptyArray(array)" })
         public DynamicObject pushEmptySingleIntegerFixnum(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
             // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
             setStoreAndSize(array, values, values.length);
             return array;
         }
@@ -2966,7 +2967,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isIntArray(array)", "wasProvided(value)", "rest.length != 0" })
         public DynamicObject pushIntegerFixnum(VirtualFrame frame, DynamicObject array, Object value, Object[] rest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
 
             final int oldSize = getSize(array);
             final int newSize = oldSize + values.length;
@@ -3030,14 +3031,14 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
 
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
             setStoreAndSize(array, values, values.length);
             return array;
         }
 
         @Specialization(guards = "isObjectArray(array)")
         public DynamicObject pushObject(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame.getArguments());
+            final Object[] values = RubyArguments.getArguments(frame);
 
             final int oldSize = getSize(array);
             final int newSize = oldSize + values.length;
@@ -3717,7 +3718,7 @@ public abstract class ArrayNodes {
         public Object shiftNilWithNum(VirtualFrame frame, DynamicObject array, Object object) {
             if (object instanceof Integer && ((Integer) object) < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -3726,7 +3727,7 @@ public abstract class ArrayNodes {
                 final int n = toIntNode.doInt(frame, object);
                 if (n < 0) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                    throw new RaiseException(coreLibrary().argumentError("negative array size", this));
                 }
             }
             return createArray(getContext(), null, 0);
@@ -3736,7 +3737,7 @@ public abstract class ArrayNodes {
         public DynamicObject popIntegerFixnumInBoundsWithNum(VirtualFrame frame, DynamicObject array, int num) throws UnexpectedResultException {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -3756,7 +3757,7 @@ public abstract class ArrayNodes {
         public Object popIntegerFixnumWithNum(VirtualFrame frame, DynamicObject array, int num) {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -3776,7 +3777,7 @@ public abstract class ArrayNodes {
         public DynamicObject shiftLongFixnumInBoundsWithNum(VirtualFrame frame, DynamicObject array, int num) throws UnexpectedResultException {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -3796,7 +3797,7 @@ public abstract class ArrayNodes {
         public Object shiftLongFixnumWithNum(VirtualFrame frame, DynamicObject array, int num) {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -3816,7 +3817,7 @@ public abstract class ArrayNodes {
         public DynamicObject shiftFloatInBoundsWithNum(VirtualFrame frame, DynamicObject array, int num) throws UnexpectedResultException {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -3836,7 +3837,7 @@ public abstract class ArrayNodes {
         public Object shiftFloatWithNum(VirtualFrame frame, DynamicObject array, int num) {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -3856,7 +3857,7 @@ public abstract class ArrayNodes {
         public Object shiftObjectWithNum(VirtualFrame frame, DynamicObject array, int num) {
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -3881,7 +3882,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -3906,7 +3907,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -3931,7 +3932,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -3956,7 +3957,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -3980,7 +3981,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
@@ -4005,7 +4006,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -4030,7 +4031,7 @@ public abstract class ArrayNodes {
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                throw new RaiseException(coreLibrary().argumentError("negative array size", this));
             }
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
@@ -4065,12 +4066,12 @@ public abstract class ArrayNodes {
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode compareDispatchNode;
-        @Child private YieldDispatchHeadNode yieldNode;
+        @Child private YieldNode yieldNode;
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
-            yieldNode = new YieldDispatchHeadNode(context);
+            yieldNode = new YieldNode(context);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -4175,7 +4176,7 @@ public abstract class ArrayNodes {
             CompilerDirectives.transferToInterpreter();
 
             // TODO CS 14-Mar-15 - what's the error message here?
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("expecting a Fixnum to sort", this));
+            throw new RaiseException(coreLibrary().argumentError("expecting a Fixnum to sort", this));
         }
 
         protected boolean isSmall(DynamicObject array) {
@@ -4292,7 +4293,7 @@ public abstract class ArrayNodes {
                 zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object[] others = RubyArguments.getArguments(frame.getArguments());
+            final Object[] others = RubyArguments.getArguments(frame);
 
             return zipInternalCall.call(frame, array, "zip_internal", block, others);
         }

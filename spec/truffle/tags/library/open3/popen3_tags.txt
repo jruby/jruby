@@ -2,3 +2,4 @@ fails:Open3.popen3 executes a process with a pipe to read stdout
 fails:Open3.popen3 executes a process with a pipe to read stderr
 fails:Open3.popen3 executes a process with a pipe to write stdin
 fails:Open3.popen3 returns in, out, err and a thread waiting the process
+fails:Open3.popen3 needs to be reviewed for spec completeness

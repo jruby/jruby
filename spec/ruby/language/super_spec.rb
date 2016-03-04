@@ -175,6 +175,14 @@ describe "The super keyword" do
     Super::ZSuperWithBlock::B.new.a.should == 14
   end
 
+  it "passes along block via reference to method expecting a reference" do
+    Super::ZSuperWithBlock::B.new.b.should == [14, 15]
+  end
+
+  it "passes along a block via reference to a method that yields" do
+    Super::ZSuperWithBlock::B.new.c.should == 16
+  end
+
   it "without explicit arguments passes optional arguments that have a default value" do
     Super::ZSuperWithOptional::B.new.m(1, 2).should == 14
   end

@@ -80,11 +80,11 @@ public class BlockDefinitionNode extends RubyNode {
             }
         }
 
-        return ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), type, sharedMethodInfo,
+        return ProcNodes.createRubyProc(coreLibrary().getProcFactory(), type, sharedMethodInfo,
                 callTargetForProcs, callTargetForLambdas, frame.materialize(),
-                RubyArguments.getMethod(frame.getArguments()),
-                RubyArguments.getSelf(frame.getArguments()),
-                RubyArguments.getBlock(frame.getArguments()),
+                RubyArguments.getMethod(frame),
+                RubyArguments.getSelf(frame),
+                RubyArguments.getBlock(frame),
                 frameOnStackMarker);
     }
 

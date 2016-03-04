@@ -6,7 +6,7 @@ describe "Struct#initialize" do
   it "is private" do
     StructClasses::Car.should have_private_instance_method(:initialize)
   end
-  
+
   it 'allows valid Ruby method names for members' do
     valid_method_names = [
       :method1,
@@ -24,7 +24,7 @@ describe "Struct#initialize" do
       result.should == :new_value
       instance.send(method_name).should == :new_value
     end
-  end  
+  end
 
   it "does nothing when passed a set of fields equal to self" do
     car = same_car = StructClasses::Car.new("Honda", "Accord", "1998")
