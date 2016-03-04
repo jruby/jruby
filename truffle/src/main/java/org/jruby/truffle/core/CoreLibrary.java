@@ -645,7 +645,7 @@ public class CoreLibrary {
         DynamicObject globals = globalVariablesObject;
 
         globals.define("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0), 0);
-        globals.define("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0), 0);
+        globals.define("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0), 0);
         globals.define("$:", globals.get("$LOAD_PATH", nilObject), 0);
         globals.define("$\"", globals.get("$LOADED_FEATURES", nilObject), 0);
         globals.define("$,", nilObject, 0);
