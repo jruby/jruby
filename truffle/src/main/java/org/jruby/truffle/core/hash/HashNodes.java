@@ -34,7 +34,6 @@ import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
-import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -45,8 +44,6 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.yield.CallBlockNode;
-import org.jruby.truffle.language.yield.CallBlockNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.Arrays;

@@ -18,7 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
-import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;

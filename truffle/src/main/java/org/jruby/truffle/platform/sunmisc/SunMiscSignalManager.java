@@ -9,13 +9,10 @@
  */
 package org.jruby.truffle.platform.sunmisc;
 
-import org.jruby.RubySignal;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 

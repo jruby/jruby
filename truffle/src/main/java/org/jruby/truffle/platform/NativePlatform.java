@@ -10,7 +10,6 @@
 package org.jruby.truffle.platform;
 
 import jnr.ffi.provider.MemoryManager;
-import jnr.posix.POSIX;
 import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.posix.ClockGetTime;

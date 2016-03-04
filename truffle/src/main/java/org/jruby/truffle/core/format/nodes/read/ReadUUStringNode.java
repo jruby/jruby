@@ -10,12 +10,10 @@
 package org.jruby.truffle.core.format.nodes.read;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
