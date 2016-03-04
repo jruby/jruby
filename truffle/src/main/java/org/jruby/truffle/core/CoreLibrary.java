@@ -550,8 +550,9 @@ public class CoreLibrary {
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
 
+        // No need for new version since it's null before which is not cached
+        assert Layouts.CLASS.getSuperclass(basicObjectClass) == null;
         Layouts.CLASS.setSuperclass(basicObjectClass, nilObject);
-        Layouts.MODULE.getFields(basicObjectClass).newVersion();
     }
 
     private static DynamicObjectFactory alwaysFrozen(DynamicObjectFactory factory) {
