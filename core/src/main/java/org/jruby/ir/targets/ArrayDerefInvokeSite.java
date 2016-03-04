@@ -62,7 +62,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
 
             updateInvocationTarget(mh, self, selfClass, method, switchPoint);
 
-            return ((RubyHash) self).fastARef(args[0]);
+            return ((RubyHash) self).op_aref(context, args[0]);
         } else {
             // slow path follows normal invoke logic with a strDup for the key
             SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
