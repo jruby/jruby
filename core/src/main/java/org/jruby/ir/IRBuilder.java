@@ -1733,7 +1733,12 @@ public class IRBuilder {
         int depth = dasgnNode.getDepth();
         Variable arg = getLocalVariable(dasgnNode.getName(), depth);
         Operand  value = build(dasgnNode.getValueNode());
+
+        // no use copying a variable to itself
+        if (arg == value) return value;
+
         addInstr(new CopyInstr(arg, value));
+
         return value;
 
         // IMPORTANT: The return value of this method is value, not arg!
@@ -1909,6 +1914,7 @@ public class IRBuilder {
         // Now for opt args
         if (opt > 0) {
             int optIndex = argsNode.getOptArgIndex();
+            Variable temp = createTemporaryVariable();
             for (int j = 0; j < opt; j++, argIndex++) {
                 // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = getNewLabel();
@@ -1917,10 +1923,12 @@ public class IRBuilder {
                 Variable av = getNewLocalVariable(argName, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                addInstr(new ReceiveOptArgInstr(av, signature.required(), signature.pre(), j));
-                addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
-                build(n.getValue());
+                addInstr(new ReceiveOptArgInstr(temp, signature.required(), signature.pre(), j));
+                addInstr(BNEInstr.create(l, temp, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
+                Operand defaultResult = build(n.getValue());
+                addInstr(new CopyInstr(temp, defaultResult));
                 addInstr(new LabelInstr(l));
+                addInstr(new CopyInstr(av, temp));
             }
         }
 
@@ -2752,7 +2760,12 @@ public class IRBuilder {
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
         Variable var  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
         Operand value = build(localAsgnNode.getValueNode());
+
+        // no use copying a variable to itself
+        if (var == value) return value;
+
         addInstr(new CopyInstr(var, value));
+
         return value;
 
         // IMPORTANT: The return value of this method is value, not var!

@@ -1068,5 +1068,21 @@ modes.each do |mode|
         expect(y).to eq(1)
       end
     end
+
+    it "handles circular optional argument assignment" do
+      begin
+        verbose = $VERBOSE
+        $VERBOSE = nil
+
+        run('def foo(a = a, b = b, c = c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
+          expect(x).to eq(["nil", "nil", "nil"])
+        end
+        run('def foo; yield; end; foo {|a = a, b = b, c = c|; [a.inspect, b.inspect, c.inspect]}') do |x|
+          expect(x).to eq(["nil", "nil", "nil"])
+        end
+      ensure
+        $VERBOSE = verbose
+      end
+    end
   end
 end
