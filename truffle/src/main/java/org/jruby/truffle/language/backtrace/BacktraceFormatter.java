@@ -149,7 +149,7 @@ public class BacktraceFormatter {
 
             if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
                 reportedSourceSection = nextUserSourceSection(activations, 1);
-                reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+                reportedName = activation.getMethod().getName();
             } else {
                 reportedSourceSection = sourceSection;
                 reportedName = reportedSourceSection.getIdentifier();
@@ -224,7 +224,7 @@ public class BacktraceFormatter {
                 reportedSourceSection = nextUserSourceSection(activations, n);
 
                 try {
-                    reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+                    reportedName = activation.getMethod().getName();
                 } catch (Exception e) {
                     reportedName = "???";
                 }

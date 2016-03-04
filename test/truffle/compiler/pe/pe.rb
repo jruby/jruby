@@ -56,6 +56,9 @@ end
 if ARGV.first
   require File.expand_path(ARGV.first)
 else
+  example "14", 14
+  counter_example "rand"
+
   require_relative 'language/controlflow_pe.rb'
   require_relative 'language/closures_pe.rb'
   require_relative 'language/constant_pe.rb'

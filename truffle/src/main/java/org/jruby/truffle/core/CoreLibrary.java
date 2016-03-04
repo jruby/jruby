@@ -550,8 +550,9 @@ public class CoreLibrary {
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
 
+        // No need for new version since it's null before which is not cached
+        assert Layouts.CLASS.getSuperclass(basicObjectClass) == null;
         Layouts.CLASS.setSuperclass(basicObjectClass, nilObject);
-        Layouts.MODULE.getFields(basicObjectClass).newVersion();
     }
 
     private static DynamicObjectFactory alwaysFrozen(DynamicObjectFactory factory) {
@@ -644,7 +645,7 @@ public class CoreLibrary {
         DynamicObject globals = globalVariablesObject;
 
         globals.define("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0), 0);
-        globals.define("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0), 0);
+        globals.define("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0), 0);
         globals.define("$:", globals.get("$LOAD_PATH", nilObject), 0);
         globals.define("$\"", globals.get("$LOADED_FEATURES", nilObject), 0);
         globals.define("$,", nilObject, 0);
