@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'rubygems/test_case'
 require 'rubygems/ext'
 require 'rubygems/installer'
@@ -146,6 +147,8 @@ install:
   def test_build_extensions_install_ext_only
     class << Gem
       alias orig_install_extension_in_lib install_extension_in_lib
+
+      remove_method :install_extension_in_lib
 
       def Gem.install_extension_in_lib
         false

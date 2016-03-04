@@ -270,7 +270,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public OpenFile getOpenFileChecked() {
+        checkInitialized();
         openFile.checkClosed();
+        return openFile;
+    }
+
+    // MRI: rb_io_get_fptr
+    public OpenFile getOpenFileInitialized() {
+        checkInitialized();
         return openFile;
     }
 
@@ -1330,18 +1337,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         IRubyObject str;
         IRubyObject opts = context.nil;
-        boolean no_exceptions = false;
 
-        int argc = Arity.checkArgumentCount(context, argv, 1, 2);
-        if (argc == 2) {
-            opts = argv[1].convertToHash();
-        }
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", argv) != runtime.getFalse();
+
         str = argv[0];
 
-        if (!opts.isNil() && runtime.getFalse() == ((RubyHash)opts).op_aref(context, runtime.newSymbol("exception")))
-            no_exceptions = true;
-
-        return ioWriteNonblock(context, runtime, str, no_exceptions);
+        return ioWriteNonblock(context, runtime, str, !exception);
     }
 
     // MRI: io_write_nonblock
@@ -1941,14 +1942,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * <p>Closes all open resources for the IO.  It also removes
      * it from our magical all open file descriptor pool.</p>
      *
-     * @return The IO.
+     * @return The IO. Returns nil if the IO was already closed.
      *
      * MRI: rb_io_close_m
      */
     @JRubyMethod
     public IRubyObject close() {
         Ruby runtime = getRuntime();
-
+        if (isClosed()) {
+            return runtime.getNil();
+        }
         openFile.checkClosed();
         return rbIoClose(runtime);
     }
@@ -2038,7 +2041,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO write_io;
 
         write_io = GetWriteIO();
-        fptr = write_io.getOpenFileChecked();
+        fptr = write_io.getOpenFileInitialized();
+        if (!fptr.isOpen()) return context.nil;
+
         boolean locked = fptr.lock();
         try {
             if (fptr.socketChannel() != null) {
@@ -2053,7 +2058,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 return context.nil;
             }
 
-            if (fptr.isReadable()) {
+            if (fptr.isReadable() && !fptr.isDuplex()) {
                 throw runtime.newIOError("closing non-duplex IO for writing");
             }
         } finally {
@@ -2062,12 +2067,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
 
         if (this != write_io) {
-            fptr = getOpenFileChecked();
+            fptr = getOpenFileInitialized();
 
             locked = fptr.lock();
             try {
                 fptr.tiedIOForWriting = null;
-                fptr.setMode(fptr.getMode() & ~OpenFile.DUPLEX);
             } finally {
                 if (locked) fptr.unlock();
             }
@@ -2083,7 +2087,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         OpenFile fptr;
         RubyIO write_io;
 
-        fptr = getOpenFileChecked();
+        fptr = getOpenFileInitialized();
+        if (!fptr.isOpen()) return context.nil;
 
         boolean locked = fptr.lock();
         try {
@@ -2102,7 +2107,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             write_io = GetWriteIO();
             if (this != write_io) {
                 OpenFile wfptr;
-                wfptr = write_io.getOpenFileChecked();
+                wfptr = write_io.getOpenFileInitialized();
 
                 boolean locked2 = wfptr.lock();
                 try {
@@ -2113,7 +2118,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     this.openFile = wfptr;
                     /* bind to write_io temporarily to get rid of memory/fd leak */
                     fptr.tiedIOForWriting = null;
-                    fptr.setMode(fptr.getMode() & ~OpenFile.DUPLEX);
                     write_io.openFile = fptr;
                     fptr.cleanup(runtime, false);
                     /* should not finalize fptr because another thread may be reading it */
@@ -2123,7 +2127,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 }
             }
 
-            if (fptr.isWritable()) {
+            if (fptr.isWritable() && !fptr.isDuplex()) {
                 throw runtime.newIOError("closing non-duplex IO for reading");
             }
         } finally {
@@ -2763,25 +2767,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // MRI: io_read_nonblock
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean useException) {
-        Ruby runtime = context.runtime;
-        IRubyObject ret;
-        IRubyObject opts;
-        boolean no_exception = !useException;
+        final Ruby runtime = context.runtime;
 
-        opts = ArgsUtil.getOptionsArg(runtime, args);
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", args) != runtime.getFalse();
 
-        if (!opts.isNil() && runtime.getFalse() == ((RubyHash)opts).op_aref(context, runtime.newSymbol("exception")))
-            no_exception = true;
+        IRubyObject ret = getPartial(context, args, true, !exception);
 
-        ret = getPartial(context, args, true, no_exception);
+        return ret.isNil() ? nonblockEOF(runtime, !exception) : ret;
+    }
 
-        if (ret.isNil()) {
-            if (no_exception)
-                return ret;
-            else
-                throw runtime.newEOFError();
-        }
-        return ret;
+    // MRI: io_nonblock_eof(VALUE opts)
+    static IRubyObject nonblockEOF(final Ruby runtime, final boolean noException) {
+        if ( noException ) return runtime.getNil();
+        throw runtime.newEOFError();
     }
 
     @JRubyMethod(name = "readpartial", required = 1, optional = 1)
@@ -2796,11 +2794,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // MRI: io_getpartial
-    private IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean nonblock, boolean noException) {
+    IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean nonblock, boolean noException) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         IRubyObject length, str;
-        int n, len;
 
         switch (args.length) {
             case 3:
@@ -2822,7 +2819,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 str = context.nil;
         }
 
-        if ((len = RubyNumeric.num2int(length)) < 0) {
+        final int len;
+        if ( ( len = RubyNumeric.num2int(length) ) < 0 ) {
             throw runtime.newArgumentError("negative length " + len + " given");
         }
 
@@ -2831,15 +2829,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = getOpenFileChecked();
 
-        boolean locked = fptr.lock();
+        final boolean locked = fptr.lock(); int n;
         try {
             fptr.checkByteReadable(context);
 
-            if (len == 0)
-                return str;
+            if ( len == 0 ) return str;
 
-            if (!nonblock)
-                fptr.READ_CHECK(context);
+            if ( ! nonblock ) fptr.READ_CHECK(context);
+
             ByteList strByteList = ((RubyString) str).getByteList();
             n = fptr.readBufferedData(strByteList.unsafeBytes(), strByteList.begin(), len);
             if (n <= 0) {
@@ -2860,26 +2857,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         if (!nonblock && fptr.waitReadable(context))
                             continue again;
                         if (nonblock && (fptr.errno() == Errno.EWOULDBLOCK || fptr.errno() == Errno.EAGAIN)) {
-                            if (noException)
-                                return runtime.newSymbol("wait_readable");
-                            else
-                                throw runtime.newErrnoEAGAINReadableError("read would block");
+                            if (noException) return runtime.newSymbol("wait_readable");
+                            throw runtime.newErrnoEAGAINReadableError("read would block");
                         }
                         throw runtime.newEOFError(fptr.getPath());
                     }
                     break;
                 }
             }
-        } finally {
-            if (locked) fptr.unlock();
+        }
+        finally {
+            if ( locked ) fptr.unlock();
         }
 
-        ((RubyString)str).setReadLength(n);
+        ((RubyString) str).setReadLength(n);
 
-        if (n == 0)
-            return context.nil;
-        else
-            return str;
+        return n == 0 ? context.nil : str;
     }
 
     // MRI: rb_io_sysread
@@ -3149,6 +3142,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             fptr.READ_CHECK(context);
             if (fptr.needsReadConversion()) {
                 fptr.SET_BINARY_MODE();
+                r = 1;		/* no invalid char yet */
                 for (;;) {
                     fptr.makeReadConversion(context);
                     for (;;) {
@@ -3165,12 +3159,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         }
                         if (fptr.moreChar(context) == OpenFile.MORE_CHAR_FINISHED) {
                             fptr.clearReadConversion();
-                            /* ignore an incomplete character before EOF */
+                            if (!StringSupport.MBCLEN_CHARFOUND_P(r)) {
+                                enc = fptr.encs.enc;
+                                throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                            }
                             return this;
                         }
                     }
                     if (StringSupport.MBCLEN_INVALID_P(r)) {
-                        throw runtime.newArgumentError("invalid byte sequence in " + fptr.encs.enc.toString());
+                        enc = fptr.encs.enc;
+                        throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
                     }
                     n = StringSupport.MBCLEN_CHARFOUND_LEN(r);
                     if (fptr.encs.enc != null) {
@@ -3196,6 +3194,24 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     block.yield(context, runtime.newFixnum(c & 0xFFFFFFFF));
                 } else if (StringSupport.MBCLEN_INVALID_P(r)) {
                     throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                } else if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
+                    byte[] cbuf = new byte[8];
+                    int p = 0;
+                    int more = StringSupport.MBCLEN_NEEDMORE_LEN(r);
+                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    more += n = fptr.rbuf.len;
+                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    while ((n = (int)fptr.readBufferedData(cbuf, p, more)) > 0) {
+                        p += n;
+                        if ((more -= n) <= 0) break;
+
+                        if (fptr.fillbuf(context) < 0) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                        if ((n = fptr.rbuf.len) > more) n = more;
+                    }
+                    r = enc.length(cbuf, 0, p);
+                    if (!StringSupport.MBCLEN_CHARFOUND_P(r)) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    c = enc.mbcToCode(cbuf, 0, p);
+                    block.yield(context, runtime.newFixnum(c));
                 } else {
                     continue;
                 }

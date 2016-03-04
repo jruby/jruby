@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require_relative 'drbtest'
 
 module DRbTests
@@ -211,7 +212,7 @@ class TestDRbMServer < Test::Unit::TestCase
     setup_service 'ut_drb.rb'
     super
     @server = (1..3).collect do |n|
-      DRb::DRbServer.new(nil, Onecky.new(n.to_s))
+      DRb::DRbServer.new("druby://localhost:0", Onecky.new(n.to_s))
     end
   end
 

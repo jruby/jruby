@@ -1,4 +1,5 @@
 # coding: US-ASCII
+# frozen_string_literal: false
 require 'test/unit'
 require 'stringio'
 
@@ -206,9 +207,9 @@ class TestParse < Test::Unit::TestCase
       END
     end
 
-    assert_raise(SyntaxError) do
+    assert_nothing_raised(SyntaxError) do
       eval <<-END, nil, __FILE__, __LINE__+1
-        class Foo Bar; end
+        class Foo 1; end
       END
     end
   end
@@ -362,7 +363,7 @@ class TestParse < Test::Unit::TestCase
 
   def test_dstr_disallowed_variable
     bug8375 = '[ruby-core:54885] [Bug #8375]'
-    %w[@ @1 @@. @@ @@1 @@. $ $%].each do |src|
+    %w[@ @1 @. @@ @@1 @@. $ $%].each do |src|
       src = '#'+src+' '
       str = assert_nothing_raised(SyntaxError, "#{bug8375} #{src.dump}") do
         break eval('"'+src+'"')
@@ -373,6 +374,25 @@ class TestParse < Test::Unit::TestCase
 
   def test_dsym
     assert_nothing_raised { eval(':""') }
+  end
+
+  def assert_disallowed_variable(type, noname, *invalid)
+    assert_syntax_error(noname, "`#{noname}' without identifiers is not allowed as #{type} variable name")
+    invalid.each do |name|
+      assert_syntax_error(name, "`#{name}' is not allowed as #{type} variable name")
+    end
+  end
+
+  def test_disallowed_instance_variable
+    assert_disallowed_variable("an instance", *%w[@ @1 @.])
+  end
+
+  def test_disallowed_class_variable
+    assert_disallowed_variable("a class", *%w[@@ @@1 @@.])
+  end
+
+  def test_disallowed_gloal_variable
+    assert_disallowed_variable("a global", *%w[$ $%])
   end
 
   def test_arg2
@@ -650,10 +670,12 @@ x = __ENCODING__
 
   def test_invalid_instance_variable
     assert_raise(SyntaxError) { eval('@#') }
+    assert_raise(SyntaxError) { eval('@') }
   end
 
   def test_invalid_class_variable
     assert_raise(SyntaxError) { eval('@@1') }
+    assert_raise(SyntaxError) { eval('@@') }
   end
 
   def test_invalid_char
@@ -818,26 +840,6 @@ x = __ENCODING__
     end
   end
 
-  def test_intern
-    assert_equal(':""', ''.intern.inspect)
-    assert_equal(':$foo', '$foo'.intern.inspect)
-    assert_equal(':"!foo"', '!foo'.intern.inspect)
-    assert_equal(':"foo=="', "foo==".intern.inspect)
-  end
-
-  def test_all_symbols
-    x = Symbol.all_symbols
-    assert_kind_of(Array, x)
-    assert_empty(x.reject {|s| s.is_a?(Symbol) })
-  end
-
-  def test_is_class_id
-    c = Class.new
-    assert_raise(NameError) do
-      c.instance_eval { remove_class_variable(:@var) }
-    end
-  end
-
   def test_method_block_location
     bug5614 = '[ruby-core:40936]'
     expected = nil
@@ -871,4 +873,10 @@ x = __ENCODING__
     a = "\u{3042}"
     assert_warning(/#{a}/) {eval("#{a} = 1; /(?<#{a}>)/ =~ ''")}
   end
+
+=begin
+  def test_past_scope_variable
+    assert_warning(/past scope/) {catch {|tag| eval("BEGIN{throw tag}; tap {a = 1}; a")}}
+  end
+=end
 end

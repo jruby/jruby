@@ -456,6 +456,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case STRING_LITERAL: return StringLiteral.decode(this);
             case SVALUE: return SValue.decode(this);
             case SYMBOL: return Symbol.decode(this);
+            case SYMBOL_PROC: return SymbolProc.decode(this);
             case TEMPORARY_VARIABLE: return TemporaryLocalVariable.decode(this);
             case UNBOXED_BOOLEAN: return new UnboxedBoolean(decodeBoolean());
             case UNBOXED_FIXNUM: return new UnboxedFixnum(decodeLong());

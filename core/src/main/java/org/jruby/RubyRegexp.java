@@ -1345,7 +1345,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyArray ary = runtime.newArray(pattern.numberOfNames());
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
-            RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
+            RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP, pattern.getEncoding());
             ary.append(name);
         }
         return ary;

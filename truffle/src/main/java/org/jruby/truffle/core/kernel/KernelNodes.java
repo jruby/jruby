@@ -99,7 +99,10 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
+import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.FeatureLoader;
+import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.LookupMethodNode;
 import org.jruby.truffle.language.methods.LookupMethodNodeGen;
@@ -122,14 +125,15 @@ import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.language.objects.ThreadLocalObject;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
-import org.jruby.truffle.language.translator.TranslatorDriver;
-import org.jruby.truffle.language.translator.TranslatorDriver.ParserContext;
+import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -581,7 +585,7 @@ public abstract class KernelNodes {
             final DynamicObject callerBinding = getCallerBinding(frame);
 
             final MaterializedFrame parentFrame = Layouts.BINDING.getFrame(callerBinding);
-            final Object callerSelf = RubyArguments.getSelf(frame.getArguments());
+            final Object callerSelf = RubyArguments.getSelf(frame);
 
             final InternalMethod method = new InternalMethod(
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
@@ -597,11 +601,13 @@ public abstract class KernelNodes {
                 "isRubyString(source)"
         }, contains = "evalNoBindingCached")
         public Object evalNoBindingUncached(VirtualFrame frame, DynamicObject source, NotProvided noBinding,
-                                            NotProvided filename, NotProvided lineNumber) {
+                                            NotProvided filename, NotProvided lineNumber, @Cached("create()") IndirectCallNode callNode) {
             final DynamicObject binding = getCallerBinding(frame);
             final MaterializedFrame topFrame = Layouts.BINDING.getFrame(binding);
-            RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame.getArguments()));
-            return doEval(source, binding, "(eval)", true);
+            RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame));
+            final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", true);
+            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+
         }
 
         @Specialization(guards = {
@@ -610,17 +616,18 @@ public abstract class KernelNodes {
                 "isRubyString(filename)"
         })
         public Object evalNilBinding(VirtualFrame frame, DynamicObject source, DynamicObject noBinding,
-                                     DynamicObject filename, int lineNumber) {
-            return evalNoBindingUncached(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
+                                     DynamicObject filename, int lineNumber, @Cached("create()") IndirectCallNode callNode) {
+            return evalNoBindingUncached(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE, callNode);
         }
 
         @Specialization(guards = {
                 "isRubyString(source)",
                 "isRubyBinding(binding)"
         })
-        public Object evalBinding(DynamicObject source, DynamicObject binding, NotProvided filename,
-                                  NotProvided lineNumber) {
-            return doEval(source, binding, "(eval)", false);
+        public Object evalBinding(VirtualFrame frame, DynamicObject source, DynamicObject binding, NotProvided filename,
+                                  NotProvided lineNumber, @Cached("create()") IndirectCallNode callNode) {
+            final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", false);
+            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         }
 
         @Specialization(guards = {
@@ -629,18 +636,17 @@ public abstract class KernelNodes {
                 "isNil(noFilename)",
                 "isNil(noLineNumber)"
         })
-        public Object evalBinding(DynamicObject source, DynamicObject binding, DynamicObject noFilename, DynamicObject noLineNumber) {
-            return evalBinding(source, binding, NotProvided.INSTANCE, NotProvided.INSTANCE);
+        public Object evalBinding(VirtualFrame frame, DynamicObject source, DynamicObject binding, DynamicObject noFilename, DynamicObject noLineNumber, @Cached("create()") IndirectCallNode callNode) {
+            return evalBinding(frame, source, binding, NotProvided.INSTANCE, NotProvided.INSTANCE, callNode);
         }
 
-        @TruffleBoundary
         @Specialization(guards = {
                 "isRubyString(source)",
                 "isRubyBinding(binding)",
                 "isRubyString(filename)" })
-        public Object evalBindingFilename(DynamicObject source, DynamicObject binding, DynamicObject filename,
-                                          NotProvided lineNumber) {
-            return evalBindingFilenameLine(source, binding, filename, 0);
+        public Object evalBindingFilename(VirtualFrame frame, DynamicObject source, DynamicObject binding, DynamicObject filename,
+                                          NotProvided lineNumber, @Cached("create()") IndirectCallNode callNode) {
+            return evalBindingFilenameLine(frame, source, binding, filename, 0, callNode);
         }
 
         @Specialization(guards = {
@@ -649,18 +655,18 @@ public abstract class KernelNodes {
                 "isRubyString(filename)",
                 "isNil(noLineNumber)"
         })
-        public Object evalBindingFilename(DynamicObject source, DynamicObject binding, DynamicObject filename, DynamicObject noLineNumber) {
-            return evalBindingFilename(source, binding, filename, NotProvided.INSTANCE);
+        public Object evalBindingFilename(VirtualFrame frame, DynamicObject source, DynamicObject binding, DynamicObject filename, DynamicObject noLineNumber, @Cached("create()") IndirectCallNode callNode) {
+            return evalBindingFilename(frame, source, binding, filename, NotProvided.INSTANCE, callNode);
         }
 
-        @TruffleBoundary
         @Specialization(guards = {
                 "isRubyString(source)",
                 "isRubyBinding(binding)",
                 "isRubyString(filename)" })
-        public Object evalBindingFilenameLine(DynamicObject source, DynamicObject binding, DynamicObject filename,
-                                              int lineNumber) {
-            return doEval(source, binding, filename.toString(), false);
+        public Object evalBindingFilenameLine(VirtualFrame frame, DynamicObject source, DynamicObject binding, DynamicObject filename,
+                                              int lineNumber, @Cached("create()") IndirectCallNode callNode) {
+            final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, filename.toString(), false);
+            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         }
 
         @TruffleBoundary
@@ -673,10 +679,13 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        private Object doEval(DynamicObject source, DynamicObject binding, String filename, boolean ownScopeForAssignments) {
-            final Object result = getContext().getCodeLoader().eval(ParserContext.EVAL, StringOperations.getByteListReadOnly(source), binding, ownScopeForAssignments, filename, this);
-            assert result != null;
-            return result;
+        private CodeLoader.DeferredCall doEvalX(DynamicObject source, DynamicObject binding, String filename, boolean ownScopeForAssignments) {
+            ByteList code = StringOperations.getByteListReadOnly(source);
+            final Source source1 = Source.fromText(code, filename);
+            final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
+            final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame);
+            final RubyRootNode rootNode = getContext().getCodeLoader().parse(source1, code.getEncoding(), ParserContext.EVAL, frame, ownScopeForAssignments, this);
+            return getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, declarationContext, rootNode, frame, RubyArguments.getSelf(frame));
         }
 
         protected RootNodeWrapper compileSource(VirtualFrame frame, DynamicObject sourceText) {
@@ -1321,9 +1330,9 @@ public abstract class KernelNodes {
 
             @Override
             public Object execute(VirtualFrame frame) {
-                final Object[] originalUserArguments = RubyArguments.getArguments(frame.getArguments());
+                final Object[] originalUserArguments = RubyArguments.getArguments(frame);
                 final Object[] newUserArguments = ArrayUtils.unshift(originalUserArguments, methodName);
-                return methodMissing.call(frame, RubyArguments.getSelf(frame.getArguments()), "method_missing", RubyArguments.getBlock(frame.getArguments()), newUserArguments);
+                return methodMissing.call(frame, RubyArguments.getSelf(frame), "method_missing", RubyArguments.getBlock(frame), newUserArguments);
             }
         }
 
@@ -1564,14 +1573,15 @@ public abstract class KernelNodes {
             return ToPathNodeGen.create(getContext(), getSourceSection(), feature);
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyString(featureString)")
-        public boolean require(DynamicObject featureString) {
+        public boolean require(VirtualFrame frame, DynamicObject featureString, @Cached("create()") IndirectCallNode callNode) {
+            CompilerDirectives.transferToInterpreter();
+
             final String feature = featureString.toString();
 
             // Pysch loads either the jar or the so - we need to intercept
             if (feature.equals("psych.so") && callerIs("psych.rb")) {
-                getContext().getFeatureLoader().require("truffle/psych.rb", this);
+                getContext().getFeatureLoader().require(frame, "truffle/psych.rb", callNode);
                 return true;
             }
 
@@ -1580,7 +1590,7 @@ public abstract class KernelNodes {
                 throw new RaiseException(coreLibrary().loadErrorCannotLoad(feature, this));
             }
 
-            return getContext().getFeatureLoader().require(feature, this);
+            return getContext().getFeatureLoader().require(frame, feature, callNode);
         }
 
         private boolean callerIs(String caller) {
@@ -1596,19 +1606,26 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyString(feature)")
-        public boolean requireRelative(DynamicObject feature) {
+        public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
+            CompilerDirectives.transferToInterpreter();
+
             final FeatureLoader featureLoader = getContext().getFeatureLoader();
 
             final String featureString = feature.toString();
             final String featurePath;
 
-            if (featureLoader.isAbsolutePath(featureString)) {
+            if (featureString.startsWith(SourceLoader.TRUFFLE_SCHEME) || featureString.startsWith(SourceLoader.JRUBY_SCHEME) || new File(featureString).isAbsolute()) {
                 featurePath = featureString;
             } else {
                 final Source source = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode().getEncapsulatingSourceSection().getSource();
-                final String sourcePath = featureLoader.getSourcePath(source);
+                String result;
+                if (source.getPath() == null) {
+                    result = source.getShortName();
+                } else {
+                    result = source.getPath();
+                }
+                final String sourcePath = result;
 
                 if (sourcePath == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -1618,7 +1635,7 @@ public abstract class KernelNodes {
                 featurePath = dirname(sourcePath) + "/" + featureString;
             }
 
-            featureLoader.require(featurePath, this);
+            featureLoader.require(frame, featurePath, callNode);
 
             return true;
         }

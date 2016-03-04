@@ -11,7 +11,7 @@ package org.jruby.truffle.platform.java;
 
 import jnr.ffi.Pointer;
 import jnr.posix.Timeval;
-import org.jruby.truffle.platform.Sockets;
+import org.jruby.truffle.platform.posix.Sockets;
 
 public class JavaSockets implements Sockets {
 

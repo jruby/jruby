@@ -34,7 +34,6 @@ import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
-import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -45,7 +44,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -439,14 +438,14 @@ public abstract class HashNodes {
         @Child private HashNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
         @Child private LookupEntryNode lookupEntryNode;
-        @Child private YieldDispatchHeadNode yieldNode;
+        @Child private YieldNode yieldNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
-            yieldNode = new YieldDispatchHeadNode(context);
+            yieldNode = new YieldNode(context);
         }
 
         @Specialization(guards = "isNullHash(hash)")
@@ -605,7 +604,7 @@ public abstract class HashNodes {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
-            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            InternalMethod method = RubyArguments.getMethod(frame);
             return toEnumNode.call(frame, hash, "to_enum", null, getSymbol(method.getName()));
         }
 
@@ -1196,6 +1195,8 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private YieldNode yieldNode;
+
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1211,8 +1212,13 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "hasDefaultBlock(hash)"})
-        public Object shiftEmptyDefaultProc(DynamicObject hash) {
-            return ProcNodes.rootCall(Layouts.HASH.getDefaultBlock(hash), hash, nil());
+        public Object shiftEmptyDefaultProc(VirtualFrame frame, DynamicObject hash) {
+            if (yieldNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                yieldNode = insert(new YieldNode(getContext()));
+            }
+
+            return yieldNode.dispatch(frame, Layouts.HASH.getDefaultBlock(hash), hash, nil());
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isPackedHash(hash)"})

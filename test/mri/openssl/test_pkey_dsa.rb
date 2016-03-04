@@ -1,7 +1,8 @@
+# frozen_string_literal: false
 require_relative 'utils'
 require 'base64'
 
-if defined?(OpenSSL)
+if defined?(OpenSSL::TestUtils)
 
 class OpenSSL::TestPKeyDSA < Test::Unit::TestCase
   def test_private

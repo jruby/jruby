@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language.globals;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -19,6 +18,7 @@ import org.jruby.truffle.language.control.RaiseException;
 public class WriteReadOnlyGlobalNode extends RubyNode {
 
     private final String name;
+
     @Child private RubyNode value;
 
     public WriteReadOnlyGlobalNode(RubyContext context, SourceSection sourceSection, String name, RubyNode value) {
@@ -27,9 +27,9 @@ public class WriteReadOnlyGlobalNode extends RubyNode {
         this.value = value;
     }
 
+    @Override
     public void executeVoid(VirtualFrame frame) {
         value.executeVoid(frame);
-        CompilerDirectives.transferToInterpreter();
         throw new RaiseException(coreLibrary().nameErrorReadOnly(name, this));
     }
 

@@ -28,18 +28,20 @@ env:
     - JT='test specs :core'
     - JT='test specs :library'
     - JT='test specs :truffle'
-    - JT='test mri'
     - JT='test integration'
-    - JTR='ci --batch ../lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
 
 matrix:
   include:
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
-    - env: JT=check_ambiguous_arguments
-      jdk: oraclejdk8
+    #- env: JT=check_ambiguous_arguments
+    #  jdk: oraclejdk8
   allow_failures:
     - env: PHASE='-Prake -Dtask=test:mri:fullint'
+    - env: JT=check_ambiguous_arguments
+      jdk: oraclejdk8
+    - env: JT='test mri'
+    - env: JTRCI='lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required
@@ -54,6 +56,7 @@ branches:
     - truffle-head
     - /^test-.*$/
     - /^ha-feature/
+    - ruby-2.3
 
 script: tool/travis_runner.sh
 install: travis_retry ./mvnw -Pbootstrap clean install -B -Dinvoker.skip -Dmaven.test.skip

@@ -1,6 +1,6 @@
 # -*- coding: us-ascii -*-
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 EnvUtil.suppress_warning {require 'continuation'}
 
 class TestHash < Test::Unit::TestCase
@@ -499,6 +499,21 @@ class TestHash < Test::Unit::TestCase
     assert_equal ['three', nil, 'one', 'nil'], res
   end
 
+  def test_fetch_values
+    res = @h.fetch_values
+    assert_equal(0, res.length)
+
+    res = @h.fetch_values(3, 2, 1, nil)
+    assert_equal(4, res.length)
+    assert_equal %w( three two one nil ), res
+
+    assert_raise KeyError do
+      @h.fetch_values(3, 'invalid')
+    end
+
+    res = @h.fetch_values(3, 'invalid') { |k| k.upcase }
+    assert_equal %w( three INVALID ), res
+  end
 
   def test_invert
     h = @h.invert
@@ -1218,7 +1233,7 @@ class TestHash < Test::Unit::TestCase
     end
   end
 
-  def test_exception_in_rehash
+  def test_exception_in_rehash_memory_leak
     return unless @cls == Hash
 
     bug9187 = '[ruby-core:58728] [Bug #9187]'
@@ -1268,6 +1283,7 @@ class TestHash < Test::Unit::TestCase
     bad = [
       5, true, false, nil,
       0.0, 1.72723e-77,
+      :foo, "dsym_#{self.object_id.to_s(16)}_#{Time.now.to_i.to_s(16)}".to_sym,
     ].select do |x|
       hash = {x => bug9381}
       hash[wrapper.new(x)] != bug9381
@@ -1280,10 +1296,84 @@ class TestHash < Test::Unit::TestCase
 
     feature4935 = '[ruby-core:37553] [Feature #4935]'
     x = 'world'
-    hash = assert_nothing_raised(SyntaxError) do
+    hash = assert_nothing_raised(SyntaxError, feature4935) do
       break eval(%q({foo: 1, "foo-bar": 2, "hello-#{x}": 3, 'hello-#{x}': 4, 'bar': {}}))
     end
-    assert_equal({:foo => 1, :'foo-bar' => 2, :'hello-world' => 3, :'hello-#{x}' => 4, :bar => {}}, hash)
+    assert_equal({:foo => 1, :'foo-bar' => 2, :'hello-world' => 3, :'hello-#{x}' => 4, :bar => {}}, hash, feature4935)
+    x = x
+  end
+
+  def test_dig
+    h = @cls[a: @cls[b: [1, 2, 3]], c: 4]
+    assert_equal(1, h.dig(:a, :b, 0))
+    assert_nil(h.dig(:b, 1))
+    assert_raise(TypeError) {h.dig(:c, 1)}
+    o = Object.new
+    def o.dig(*args)
+      {dug: args}
+    end
+    h[:d] = o
+    assert_equal({dug: [:foo, :bar]}, h.dig(:d, :foo, :bar))
+  end
+
+  def test_cmp
+    h1 = {a:1, b:2}
+    h2 = {a:1, b:2, c:3}
+
+    assert_operator(h1, :<=, h1)
+    assert_operator(h1, :<=, h2)
+    assert_not_operator(h2, :<=, h1)
+    assert_operator(h2, :<=, h2)
+
+    assert_operator(h1, :>=, h1)
+    assert_not_operator(h1, :>=, h2)
+    assert_operator(h2, :>=, h1)
+    assert_operator(h2, :>=, h2)
+
+    assert_not_operator(h1, :<, h1)
+    assert_operator(h1, :<, h2)
+    assert_not_operator(h2, :<, h1)
+    assert_not_operator(h2, :<, h2)
+
+    assert_not_operator(h1, :>, h1)
+    assert_not_operator(h1, :>, h2)
+    assert_operator(h2, :>, h1)
+    assert_not_operator(h2, :>, h2)
+  end
+
+  def test_cmp_samekeys
+    h1 = {a:1}
+    h2 = {a:2}
+
+    assert_operator(h1, :<=, h1)
+    assert_not_operator(h1, :<=, h2)
+    assert_not_operator(h2, :<=, h1)
+    assert_operator(h2, :<=, h2)
+
+    assert_operator(h1, :>=, h1)
+    assert_not_operator(h1, :>=, h2)
+    assert_not_operator(h2, :>=, h1)
+    assert_operator(h2, :>=, h2)
+
+    assert_not_operator(h1, :<, h1)
+    assert_not_operator(h1, :<, h2)
+    assert_not_operator(h2, :<, h1)
+    assert_not_operator(h2, :<, h2)
+
+    assert_not_operator(h1, :>, h1)
+    assert_not_operator(h1, :>, h2)
+    assert_not_operator(h2, :>, h1)
+    assert_not_operator(h2, :>, h2)
+  end
+
+  def test_to_proc
+    h = {
+      1 => 10,
+      2 => 20,
+      3 => 30,
+    }
+
+    assert_equal([10, 20, 30], [1, 2, 3].map(&h))
   end
 
   class TestSubHash < TestHash

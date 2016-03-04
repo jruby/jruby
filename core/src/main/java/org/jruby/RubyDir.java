@@ -37,15 +37,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
+import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
 
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -61,7 +57,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 import org.jruby.util.Dir;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
@@ -111,18 +106,18 @@ public class RubyDir extends RubyObject {
     }
 
     private final void checkDir() {
-        testFrozen("Dir");
-        update();
+        checkDirIgnoreClosed();
 
         if (!isOpen) throw getRuntime().newIOError("closed directory");
     }
 
-    private void update() {
+    private final void checkDirIgnoreClosed() {
+        testFrozen("Dir");
+        // update snapshot (if changed) :
         if (snapshot == null || dir.exists() && dir.lastModified() > lastModified) {
             lastModified = dir.lastModified();
-            List<String> snapshotList = new ArrayList<String>();
-            snapshotList.addAll(getContents(dir));
-            snapshot = snapshotList.toArray(new String[snapshotList.size()]);
+            final List<String> contents = getContents(dir);
+            snapshot = contents.toArray(new String[contents.size()]);
         }
     }
 
@@ -186,8 +181,9 @@ public class RubyDir extends RubyObject {
             return runtime.getCurrentDirectory();
         }
         try {
-            return new org.jruby.util.NormalizedFile(runtime.getCurrentDirectory()).getCanonicalPath();
-        } catch (Exception e) {
+            return new JRubyFile(runtime.getCurrentDirectory()).getCanonicalPath();
+        }
+        catch (Exception e) {
             return runtime.getCurrentDirectory();
         }
     }
@@ -309,8 +305,8 @@ public class RubyDir extends RubyObject {
             getHomeDirectoryPath(context);
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
-        String realPath = null;
-        String oldCwd = runtime.getCurrentDirectory();
+        final String realPath;
+        final String oldCwd = runtime.getCurrentDirectory();
         if (PROTOCOL_PATTERN.matcher(adjustedPath).matches()) {
             realPath = adjustedPath;
         }
@@ -515,7 +511,7 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = "close")
     public IRubyObject close() {
         // Make sure any read()s after close fail.
-        checkDir();
+        checkDirIgnoreClosed();
 
         isOpen = false;
 
@@ -735,13 +731,18 @@ public class RubyDir extends RubyObject {
      * <code>ArrayList</code> containing the names of the files as Java Strings.
      */
     protected static List<String> getContents(FileResource directory) {
-        String[] contents = directory.list();
-        List<String> result = new ArrayList<String>();
+        final String[] contents = directory.list();
 
+        final List<String> result;
         // If an IO exception occurs (something odd, but possible)
         // A directory may return null.
-        if (contents != null) result.addAll(Arrays.asList(contents));
-
+        if (contents != null) {
+            result = new ArrayList<String>(contents.length);
+            Collections.addAll(result, contents);
+        }
+        else {
+             result = Collections.emptyList();
+        }
         return result;
     }
 
@@ -750,12 +751,19 @@ public class RubyDir extends RubyObject {
      * <code>ArrayList</code> containing the names of the files as Ruby Strings.
      */
     protected static List<RubyString> getContents(FileResource directory, Ruby runtime) {
-        List<RubyString> result = new ArrayList<RubyString>();
-        String[] contents = directory.list();
+        final String[] contents = directory.list();
 
-        for (int i = 0; i < contents.length; i++) {
-            result.add(runtime.newString(contents[i]));
+        final List<RubyString> result;
+        if (contents != null) {
+            result = new ArrayList<RubyString>(contents.length);
+            for (int i = 0; i < contents.length; i++) {
+                result.add( runtime.newString(contents[i]) );
+            }
         }
+        else {
+            result = Collections.emptyList();
+        }
+
         return result;
     }
 

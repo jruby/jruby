@@ -9,7 +9,48 @@
  */
 package org.jruby.truffle.language;
 
-import static org.jruby.util.cli.Options.*;
+import static org.jruby.util.cli.Options.TRUFFLE_ALLOCATE_CLASS_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_ARRAY_SMALL;
+import static org.jruby.util.cli.Options.TRUFFLE_ARRAY_UNINITIALIZED_SIZE;
+import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_HIDE_CORE_FILES;
+import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_INTERLEAVE_JAVA;
+import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_LIMIT;
+import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_OMIT_UNUSED;
+import static org.jruby.util.cli.Options.TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_BIND_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH;
+import static org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH_WRITE;
+import static org.jruby.util.cli.Options.TRUFFLE_CLASS_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_CONSTANT_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_CORE_ALWAYS_CLONE;
+import static org.jruby.util.cli.Options.TRUFFLE_CORE_LOAD_PATH;
+import static org.jruby.util.cli.Options.TRUFFLE_COVERAGE_GLOBAL;
+import static org.jruby.util.cli.Options.TRUFFLE_DISPATCH_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_EVAL_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA;
+import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
+import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_STORE_JAVA;
+import static org.jruby.util.cli.Options.TRUFFLE_HASH_PACKED_ARRAY_MAX;
+import static org.jruby.util.cli.Options.TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC;
+import static org.jruby.util.cli.Options.TRUFFLE_INLINE_NEEDS_CALLER_FRAME;
+import static org.jruby.util.cli.Options.TRUFFLE_INSTANCE_VARIABLE_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT;
+import static org.jruby.util.cli.Options.TRUFFLE_IS_A_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_CLONE;
+import static org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_INLINE;
+import static org.jruby.util.cli.Options.TRUFFLE_METHOD_LOOKUP_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_METHOD_TO_PROC_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_PACK_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_PACK_RECOVER_LOOP_MIN;
+import static org.jruby.util.cli.Options.TRUFFLE_PACK_UNROLL_LIMIT;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_USE_JAVA;
+import static org.jruby.util.cli.Options.TRUFFLE_SYMBOL_TO_PROC_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_THREAD_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_UNPACK_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_CLONE;
+import static org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_INLINE;
+import static org.jruby.util.cli.Options.TRUFFLE_YIELD_CACHE;
 
 public class Options {
 
@@ -47,6 +88,7 @@ public class Options {
     public final int EVAL_CACHE = TRUFFLE_EVAL_CACHE.load();
     public final int CLASS_CACHE = TRUFFLE_CLASS_CACHE.load();
     public final int ENCODING_COMPATIBILE_QUERY_CACHE = TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE.load();
+    public final int THREAD_CACHE = TRUFFLE_THREAD_CACHE.load();
 
     // Cloning and inlining
 

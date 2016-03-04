@@ -19,7 +19,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -99,11 +98,11 @@ public abstract class SingletonClassNode extends RubyNode {
 
     @Specialization(
             guards = {
-                    "!isNil(object)",
-                    "!isRubyBignum(object)",
-                    "!isRubySymbol(object)",
-                    "!isRubyClass(object)",
                     "object == cachedObject",
+                    "!isNil(cachedObject)",
+                    "!isRubyBignum(cachedObject)",
+                    "!isRubySymbol(cachedObject)",
+                    "!isRubyClass(cachedObject)",
                     "object.getShape() == cachedShape"
             },
             limit = "getCacheLimit()")
@@ -145,17 +144,11 @@ public abstract class SingletonClassNode extends RubyNode {
 
         final DynamicObject logicalClass = Layouts.BASIC_OBJECT.getLogicalClass(object);
 
-        DynamicObject attached = null;
-
-        if (RubyGuards.isRubyModule(object)) {
-            attached = object;
-        }
-
         final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(),
                 ObjectIDOperations.verySlowGetObjectID(getContext(), object));
 
         final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(
-                getContext(), logicalClass, attached, name);
+                getContext(), logicalClass, object, name);
 
         if (isFrozenNode == null) {
             isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));

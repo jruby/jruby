@@ -33,10 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import org.jruby.util.FileResource;
-import org.jruby.util.collections.StringArraySet;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -58,18 +55,24 @@ import java.util.zip.ZipException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyContinuation;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -459,9 +462,7 @@ public class LoadService {
 
             if (lock.isHeldByCurrentThread()) return false;
 
-            lock.lock();
-
-            return true;
+            return lock.tryLock();
         }
 
         /**
@@ -902,19 +903,30 @@ public class LoadService {
         try {
             state.library.load(runtime, false);
             return true;
-        } catch (MainExitException mee) {
+        }
+        catch (MainExitException ex) {
             // allow MainExitException to propagate out for exec and friends
-            throw mee;
-        } catch (Throwable e) {
-            if (isJarfileLibrary(state, state.searchFile)) {
-                return true;
-            }
-            reraiseRaiseExceptions(e);
+            throw ex;
+        }
+        catch (RaiseException ex) {
+            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
+            if ( isJarfileLibrary(state, state.searchFile) ) return true;
+            throw ex;
+        }
+        catch (JumpException ex) {
+            throw ex;
+        }
+        catch (RubyContinuation.Continuation ex) {
+            throw ex;
+        }
+        catch (Throwable ex) {
+            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
+            if ( isJarfileLibrary(state, state.searchFile) ) return true;
 
-            debugLoadException(runtime, e);
+            debugLoadException(runtime, ex);
 
-            RaiseException re = newLoadErrorFromThrowable(runtime, state.searchFile, e);
-            re.initCause(e);
+            RaiseException re = newLoadErrorFromThrowable(runtime, state.searchFile, ex);
+            re.initCause(ex);
             throw re;
         }
     }

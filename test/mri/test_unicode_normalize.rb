@@ -1,20 +1,26 @@
 # coding: utf-8
+# frozen_string_literal: false
 
 # Copyright Ayumu Nojima (野島 歩) and Martin J. Dürst (duerst@it.aoyama.ac.jp)
 
 require 'test/unit'
+require 'unicode_normalize/normalize'
 
-NormTest = Struct.new :source, :NFC, :NFD, :NFKC, :NFKD, :line
+class TestUnicodeNormalize < Test::Unit::TestCase
 
-class TestNormalize < Test::Unit::TestCase
+  UNICODE_VERSION = UnicodeNormalize::UNICODE_VERSION
+
+  NormTest = Struct.new :source, :NFC, :NFD, :NFKC, :NFKD, :line
+
   def read_tests
-    IO.readlines(File.expand_path('../enc/unicode/data/NormalizationTest.txt', __dir__), encoding: 'utf-8')
+    IO.readlines(File.expand_path("../enc/unicode/data/#{UNICODE_VERSION}/NormalizationTest.txt", __dir__), encoding: 'utf-8')
+    .tap { |lines| assert_include(lines[0], "NormalizationTest-#{UNICODE_VERSION}.txt")}
     .collect.with_index { |linedata, linenumber| [linedata, linenumber]}
     .reject { |line| line[0] =~ /^[\#@]/ }
     .collect do |line|
-      NormTest.new *(line[0].split(';').take(5).collect do |code_string|
+      NormTest.new(*(line[0].split(';').take(5).collect do |code_string|
         code_string.split(/\s/).collect { |cp| cp.to_i(16) }.pack('U*')
-      end + [line[1]+1])
+      end + [line[1]+1]))
     end
   end
 
@@ -24,6 +30,9 @@ class TestNormalize < Test::Unit::TestCase
 
   def setup
     @@tests ||= read_tests
+  rescue Errno::ENOENT => e
+    @@tests ||= []
+    skip e.message
   end
 
   def self.generate_test_normalize(target, normalization, source, prechecked)

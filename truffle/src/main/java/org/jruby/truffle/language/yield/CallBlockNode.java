@@ -36,6 +36,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 public abstract class CallBlockNode extends RubyNode {
 
     // Allowing the child to be Node.replace()'d.
+
     static class CallNodeWrapperNode extends Node {
         @Child DirectCallNode child;
 
@@ -51,20 +52,31 @@ public abstract class CallBlockNode extends RubyNode {
         this.declarationContext = declarationContext;
     }
 
-    public abstract Object executeCallBlock(VirtualFrame frame, DynamicObject block, Object self, DynamicObject blockArgument, Object[] arguments);
+    public abstract Object executeCallBlock(VirtualFrame frame, DynamicObject block, Object self,
+                                            DynamicObject blockArgument, Object[] arguments);
 
     @Specialization(
             guards = "getBlockCallTarget(block) == cachedCallTarget",
             limit = "getCacheLimit()")
-    protected Object callBlock(VirtualFrame frame, DynamicObject block, Object self, Object blockArgument, Object[] arguments,
+    protected Object callBlockCached(
+            VirtualFrame frame,
+            DynamicObject block,
+            Object self,
+            Object blockArgument,
+            Object[] arguments,
             @Cached("getBlockCallTarget(block)") CallTarget cachedCallTarget,
             @Cached("createBlockCallNode(cachedCallTarget)") CallNodeWrapperNode callNode) {
         final Object[] frameArguments = packArguments(block, self, blockArgument, arguments);
         return callNode.child.call(frame, frameArguments);
     }
 
-    @Specialization
-    protected Object callBlockUncached(VirtualFrame frame, DynamicObject block, Object self, Object blockArgument, Object[] arguments,
+    @Specialization(contains = "callBlockCached")
+    protected Object callBlockUncached(
+            VirtualFrame frame,
+            DynamicObject block,
+            Object self,
+            Object blockArgument,
+            Object[] arguments,
             @Cached("create()") IndirectCallNode callNode) {
         final Object[] frameArguments = packArguments(block, self, blockArgument, arguments);
         return callNode.call(frame, getBlockCallTarget(block), frameArguments);
@@ -72,8 +84,12 @@ public abstract class CallBlockNode extends RubyNode {
 
     private Object[] packArguments(DynamicObject block, Object self, Object blockArgument, Object[] arguments) {
         return RubyArguments.pack(
-                Layouts.PROC.getDeclarationFrame(block), null, Layouts.PROC.getMethod(block),
-                declarationContext, Layouts.PROC.getFrameOnStackMarker(block), self,
+                Layouts.PROC.getDeclarationFrame(block),
+                null,
+                Layouts.PROC.getMethod(block),
+                declarationContext,
+                Layouts.PROC.getFrameOnStackMarker(block),
+                self,
                 (DynamicObject) blockArgument,
                 arguments);
     }
@@ -89,9 +105,11 @@ public abstract class CallBlockNode extends RubyNode {
         if (getContext().getOptions().YIELD_ALWAYS_CLONE && callNode.isCallTargetCloningAllowed()) {
             callNode.cloneCallTarget();
         }
+
         if (getContext().getOptions().YIELD_ALWAYS_INLINE && callNode.isInlinable()) {
             callNode.forceInlining();
         }
+
         return callNodeWrapperNode;
     }
 

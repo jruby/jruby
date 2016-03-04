@@ -1,6 +1,4 @@
-require_relative "../../java_integration/spec_helper"
-require 'jruby'
-require 'jruby/compiler'
+require_relative '../spec_helper'
 
 describe "A Ruby class generating a Java stub" do
   def generate(script)
@@ -8,7 +6,7 @@ describe "A Ruby class generating a Java stub" do
     # we use __FILE__ so there's something for it to read
     JRuby::Compiler::JavaGenerator.generate_java node, __FILE__
   end
-  
+
   OBJECT_VOID_BAR_PATTERN =
     /public *(.*) *Object bar\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar"\);\s+return \(Object\)ruby_result\.toJava\(Object\.class\);/
   OBJECT_OBJECT_BAR_PATTERN =
@@ -38,7 +36,7 @@ describe "A Ruby class generating a Java stub" do
   BAZ_ARY_VOID_BAR_PATTERN =
     /public *(.*) *baz\[\] bar_baz_ary\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_baz_ary"\);\s+return \(baz\[\]\)ruby_result\.toJava\(baz\[\]\.class\);/
   BAZ_GENERIC_VOID_BAR_PATTERN =
-    /public *(.*) *Baz\<Generic\> bar_generic_baz\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_generic_baz"\);\s+return \(Baz\)ruby_result\.toJava\(Baz\.class\);/  
+    /public *(.*) *Baz\<Generic\> bar_generic_baz\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_generic_baz"\);\s+return \(Baz\)ruby_result\.toJava\(Baz\.class\);/
 
   describe "with a method" do
     describe "with no java_signature" do
@@ -101,7 +99,7 @@ describe "A Ruby class generating a Java stub" do
           java.should match /static/
         end
       end
-      
+
       describe "and no arguments" do
         describe "and a byte return type" do
           it "generates a byte-returning method" do
@@ -264,14 +262,14 @@ describe "A Ruby class generating a Java stub" do
             java.should match DOUBLE_ARY_VOID_BAR_PATTERN
           end
         end
-        
+
         describe "and a baz[] return type" do
           it "generates a baz[]-returning method" do
             cls = generate("
           class Foo
             java_signature 'baz[] bar_baz_ary()'; def bar_baz_ary; end
           end").classes[0]
-          
+
             method = cls.methods[0]
             method.should_not be nil
             method.name.should == "bar_baz_ary"
@@ -282,14 +280,14 @@ describe "A Ruby class generating a Java stub" do
             java.should match BAZ_ARY_VOID_BAR_PATTERN
           end
         end
-        
+
         describe "and a Baz<Generic> return type" do
           it "generates a Baz<Generic>-returning method" do
             cls = generate("
           class Foo
             java_signature 'Baz<Generic> bar_generic_baz()'; def bar_generic_baz; end
           end").classes[0]
-            
+
             method = cls.methods[0]
             method.should_not be nil
             method.name.should == "bar_generic_baz"
@@ -300,7 +298,7 @@ describe "A Ruby class generating a Java stub" do
             java.should match BAZ_GENERIC_VOID_BAR_PATTERN
           end
         end
-      
+
       end
 
       describe "with a void return and String arg" do
@@ -400,8 +398,8 @@ describe "A Ruby class generating a Java stub" do
         cls = generate("class Foo; java_signature 'public void bar() throws FooBarException,QuxBazException'; def bar; end; end").classes[0]
 
         method = cls.methods[0]
-        method.java_signature.to_s.should == 'public void bar() throws FooBarException, QuxBazException'   
-      end        
+        method.java_signature.to_s.should == 'public void bar() throws FooBarException, QuxBazException'
+      end
     end
 
     describe "with a root method definition" do

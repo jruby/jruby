@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language.methods;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -23,16 +22,17 @@ import org.jruby.truffle.language.control.ReturnID;
 
 public class CatchForMethodNode extends RubyNode {
 
-    @Child private RubyNode body;
     private final ReturnID returnID;
 
-    private final BranchProfile returnProfile = BranchProfile.create();
-    private final ConditionProfile matchingReturnProfile = ConditionProfile.createBinaryProfile();
+    @Child private RubyNode body;
 
-    public CatchForMethodNode(RubyContext context, SourceSection sourceSection, RubyNode body, ReturnID returnID) {
+    private final ConditionProfile matchingReturnProfile = ConditionProfile.createBinaryProfile();
+    private final BranchProfile retryProfile = BranchProfile.create();
+
+    public CatchForMethodNode(RubyContext context, SourceSection sourceSection, ReturnID returnID, RubyNode body) {
         super(context, sourceSection);
-        this.body = body;
         this.returnID = returnID;
+        this.body = body;
     }
 
     @Override
@@ -40,15 +40,14 @@ public class CatchForMethodNode extends RubyNode {
         try {
             return body.execute(frame);
         } catch (ReturnException e) {
-            returnProfile.enter();
             if (matchingReturnProfile.profile(e.getReturnID() == returnID)) {
                 return e.getValue();
             } else {
                 throw e;
             }
         } catch (RetryException e) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().syntaxError("Invalid retry", this));
+            retryProfile.enter();
+            throw new RaiseException(coreLibrary().syntaxErrorInvalidRetry(this));
         }
     }
 

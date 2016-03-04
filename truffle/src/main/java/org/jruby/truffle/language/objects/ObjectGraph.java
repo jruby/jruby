@@ -20,8 +20,9 @@ import com.oracle.truffle.api.object.Property;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.hash.Entry;
+import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.util.func.Function2;
+import org.jruby.util.Memo;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -36,11 +37,9 @@ public abstract class ObjectGraph {
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false,
-                new Function2<Void, DynamicObject, Node>() {
-
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
             @Override
-            public Void apply(DynamicObject thread, Node currentNode) {
+            public void run(DynamicObject thread, Node currentNode) {
                 synchronized (visited) {
                     final Deque<DynamicObject> stack = new ArrayDeque<>();
 
@@ -48,13 +47,6 @@ public abstract class ObjectGraph {
 
                     if (Thread.currentThread() == stoppingThread) {
                         visitContextRoots(context, stack);
-                    }
-
-                    final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-
-                    if (currentFrame != null) {
-                        stack.addAll(getObjectsInFrame(currentFrame.getFrame(
-                                FrameInstance.FrameAccess.READ_ONLY, true)));
                     }
 
                     Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
@@ -75,8 +67,6 @@ public abstract class ObjectGraph {
                             stack.addAll(ObjectGraph.getAdjacentObjects(object));
                         }
                     }
-
-                    return null;
                 }
             }
         });
@@ -89,20 +79,15 @@ public abstract class ObjectGraph {
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false,
-                new Function2<Void, DynamicObject, Node>() {
-
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
             @Override
-            public Void apply(DynamicObject thread, Node currentNode) {
+            public void run(DynamicObject thread, Node currentNode) {
                 objects.add(thread);
 
                 if (Thread.currentThread() == stoppingThread) {
                     visitContextRoots(context, objects);
                 }
-
-                return null;
             }
-
         });
 
         return objects;

@@ -12,26 +12,38 @@ describe "Module#method_added" do
     end
   end
 
-  it "is called when a new method is defined in self" do
-    begin
-      $methods_added = []
+  it "is called when a new instance method is defined in self" do
+    ScratchPad.record []
 
-      m = Module.new do
-        def self.method_added(name)
-          $methods_added << name
-        end
-
-        def test() end
-        def test2() end
-        def test() end
-        alias_method :aliased_test, :test
-        alias aliased_test2 test
+    Module.new do
+      def self.method_added(name)
+        ScratchPad << name
       end
 
-      $methods_added.should == [:test, :test2, :test, :aliased_test, :aliased_test2]
-    ensure
-      $methods_added = nil
+      def test() end
+      def test2() end
+      def test() end
+      alias_method :aliased_test, :test
+      alias aliased_test2 test
     end
+
+    ScratchPad.recorded.should == [:test, :test2, :test, :aliased_test, :aliased_test2]
+  end
+
+  it "is not called when a singleton method is added" do
+    # obj.singleton_method_added is called instead
+    ScratchPad.record []
+
+    klass = Class.new
+    def klass.method_added(name)
+      ScratchPad << name
+    end
+
+    obj = klass.new
+    def obj.new_singleton_method
+    end
+
+    ScratchPad.recorded.should == []
   end
 
   it "is not called when a method is undefined in self" do

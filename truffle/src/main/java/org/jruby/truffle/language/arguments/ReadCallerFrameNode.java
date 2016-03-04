@@ -18,7 +18,7 @@ import org.jruby.truffle.language.RubyNode;
 
 public class ReadCallerFrameNode extends RubyNode {
 
-    private final ConditionProfile hasCallerFrameProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile callerFrameProfile = ConditionProfile.createBinaryProfile();
 
     public ReadCallerFrameNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -26,12 +26,12 @@ public class ReadCallerFrameNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object callerFrame = RubyArguments.getCallerFrame(frame.getArguments());
+        final Object callerFrame = RubyArguments.getCallerFrame(frame);
 
-        if (hasCallerFrameProfile.profile(callerFrame != null)) {
-            return callerFrame;
-        } else {
+        if (callerFrameProfile.profile(callerFrame == null)) {
             return NotProvided.INSTANCE;
+        } else {
+            return callerFrame;
         }
     }
 

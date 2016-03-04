@@ -16,7 +16,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -43,13 +43,13 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * 
+ *
  * @author jpetersen
  */
 public class GlobalVariables {
-    private Ruby runtime;
+    private final Ruby runtime;
     private final Map<String, GlobalVariable> globalVariables = new ConcurrentHashMap<String, GlobalVariable>();
-    
+
     public GlobalVariables(Ruby runtime) {
         this.runtime = runtime;
     }
@@ -61,7 +61,7 @@ public class GlobalVariables {
 
         globalVariables.put(name, new GlobalVariable(accessor, scope));
     }
-    
+
     public void defineReadonly(String name, IAccessor accessor, GlobalVariable.Scope scope) {
         assert name != null;
         assert accessor != null;
@@ -73,14 +73,14 @@ public class GlobalVariables {
     public boolean isDefined(String name) {
         assert name != null;
         assert name.startsWith("$");
-        
-        GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
+
+        GlobalVariable variable = globalVariables.get(name);
         return variable != null && !(variable.getAccessor() instanceof UndefinedAccessor);
     }
 
     /** Creates a new global variable which links to
      * the oldName global variable.
-     * 
+     *
      * <b>WANRING</b> we are already using the 1.7.1 behaviour.
      */
     public void alias(String name, String oldName) {
@@ -90,7 +90,7 @@ public class GlobalVariables {
         assert oldName.startsWith("$");
 
         GlobalVariable oldVariable = createIfNotDefined(oldName);
-        GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
+        GlobalVariable variable = globalVariables.get(name);
 
         if (variable != null && oldVariable != variable && variable.isTracing()) {
             throw new RaiseException(runtime, runtime.getRuntimeError(), "can't alias in tracer", false);
@@ -102,8 +102,8 @@ public class GlobalVariables {
     public IRubyObject get(String name) {
 	    assert name != null;
 	    assert name.startsWith("$");
-	
-	    GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
+
+	    GlobalVariable variable = globalVariables.get(name);
 	    if (variable != null) return variable.getAccessor().getValue();
 
 	    if (runtime.isVerbose()) {
@@ -111,14 +111,14 @@ public class GlobalVariables {
 	    }
 		return runtime.getNil();
 	}
-    
+
     public GlobalVariable getVariable(String name) {
 	    assert name != null;
 	    assert name.startsWith("$");
-	
+
 	    GlobalVariable variable = globalVariables.get(name);
         if (variable != null) return variable;
-        
+
         return createIfNotDefined(name);
     }
 
@@ -140,26 +140,26 @@ public class GlobalVariables {
     public void setTraceVar(String name, RubyProc proc) {
         assert name != null;
         assert name.startsWith("$");
-        
+
         GlobalVariable variable = createIfNotDefined(name);
         variable.addTrace(proc);
     }
-    
+
     public boolean untraceVar(String name, IRubyObject command) {
         assert name != null;
         assert name.startsWith("$");
-        
+
         if (isDefined(name)) {
-            GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
+            GlobalVariable variable = globalVariables.get(name);
             return variable.removeTrace(command);
         }
         return false;
     }
-    
+
     public void untraceVar(String name) {
         assert name != null;
         assert name.startsWith("$");
-        
+
         if (isDefined(name)) {
             GlobalVariable variable = globalVariables.get(name);
             variable.removeTraces();
@@ -186,6 +186,6 @@ public class GlobalVariables {
     }
 
     public void setDefaultSeparator(IRubyObject defaultSeparator) {
-        this.defaultSeparator = defaultSeparator;    
+        this.defaultSeparator = defaultSeparator;
     }
 }

@@ -28,6 +28,7 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.util.Memo;
 
 import java.util.ArrayList;
 
@@ -41,9 +42,16 @@ public class CallStackManager {
 
     @TruffleBoundary
     public FrameInstance getCallerFrameIgnoringSend() {
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
+        final Memo<Boolean> firstFrame = new Memo<>(true);
+
+        final FrameInstance fi = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
             @Override
             public FrameInstance visitFrame(FrameInstance frameInstance) {
+                if (firstFrame.get()) {
+                    firstFrame.set(false);
+                    return null;
+                }
+
                 final InternalMethod method = getMethod(frameInstance);
                 assert method != null;
 
@@ -54,6 +62,8 @@ public class CallStackManager {
                 }
             }
         });
+
+        return fi;
     }
 
     @TruffleBoundary
@@ -63,10 +73,17 @@ public class CallStackManager {
 
     @TruffleBoundary
     public Node getTopMostUserCallNode() {
+        final Memo<Boolean> firstFrame = new Memo<>(true);
+
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {
 
             @Override
             public Node visitFrame(FrameInstance frameInstance) {
+                if (firstFrame.get()) {
+                    firstFrame.set(false);
+                    return null;
+                }
+
                 final SourceSection sourceSection = frameInstance.getCallNode().getEncapsulatingSourceSection();
 
                 if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
@@ -125,24 +142,25 @@ public class CallStackManager {
 
         final ArrayList<Activation> activations = new ArrayList<>();
 
-            /*
-             * TODO(cs): if this materializing the frames proves really expensive
-             * we might want to make it optional - I think it's only used for some
-             * features beyond what MRI does like printing locals in backtraces.
-             */
-
         if (omit == 0 && currentNode != null && Truffle.getRuntime().getCurrentFrame() != null) {
-            final MaterializedFrame currentFrame = Truffle.getRuntime().getCurrentFrame()
-                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
+            final InternalMethod method = RubyArguments.getMethod(Truffle.getRuntime().getCurrentFrame()
+                    .getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
 
-            activations.add(new Activation(currentNode, currentFrame));
+            activations.add(new Activation(currentNode, method));
         }
+
+        final Memo<Boolean> firstFrame = new Memo<>(true);
 
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
             int depth = 1;
 
             @Override
             public Object visitFrame(FrameInstance frameInstance) {
+                if (firstFrame.get()) {
+                    firstFrame.set(false);
+                    return null;
+                }
+
                 if (depth > limit) {
                     activations.add(Activation.OMITTED_LIMIT);
                     return new Object();
@@ -152,8 +170,10 @@ public class CallStackManager {
                     if (!filterNullSourceSection
                             || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null
                             || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
-                        activations.add(new Activation(frameInstance.getCallNode(),
-                                frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+                        final InternalMethod method = RubyArguments.getMethod(frameInstance
+                                .getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
+
+                        activations.add(new Activation(frameInstance.getCallNode(), method));
                     }
                 }
 
@@ -163,6 +183,12 @@ public class CallStackManager {
             }
 
         });
+
+        // TODO CS 3-Mar-16 The last activation is I think what calls jruby_root_node, and I can't seem to remove it any other way
+
+        if (!activations.isEmpty()) {
+            activations.remove(activations.size() - 1);
+        }
 
         if (context.getOptions().EXCEPTIONS_STORE_JAVA || context.getOptions().BACKTRACES_INTERLEAVE_JAVA) {
             if (javaThrowable == null) {
@@ -190,8 +216,7 @@ public class CallStackManager {
 
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
-        if (sourceSection != null && sourceSection.getSource() != null
-                && sourceSection.getSource().getName().equals("run_jruby_root")) {
+        if (sourceSection != null && sourceSection.getShortDescription().endsWith("#run_jruby_root")) {
             return true;
         }
 

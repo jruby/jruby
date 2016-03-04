@@ -1,6 +1,6 @@
 # -*- coding: us-ascii -*-
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestObject < Test::Unit::TestCase
   def setup
@@ -233,28 +233,46 @@ class TestObject < Test::Unit::TestCase
   end
 
   def test_remove_instance_variable
-    o = Object.new
-    o.instance_eval { @foo = :foo }
-    o.remove_instance_variable(:@foo)
-    assert_equal(false, o.instance_variable_defined?(:@foo))
+    { 'T_OBJECT' => Object.new,
+      'T_CLASS,T_MODULE' => Class.new(Object),
+      'generic ivar' => '',
+    }.each do |desc, o|
+      e = assert_raise(NameError, "#{desc} iv removal raises before set") do
+        o.remove_instance_variable(:@foo)
+      end
+      assert_equal([o, :@foo], [e.receiver, e.name])
+      o.instance_eval { @foo = :foo }
+      assert_equal(:foo, o.remove_instance_variable(:@foo),
+                   "#{desc} iv removal returns original value")
+      assert_not_send([o, :instance_variable_defined?, :@foo],
+                      "#{desc} iv removed successfully")
+      e = assert_raise(NameError, "#{desc} iv removal raises after removal") do
+        o.remove_instance_variable(:@foo)
+      end
+      assert_equal([o, :@foo], [e.receiver, e.name])
+    end
   end
 
-  def test_convert_type
+  def test_convert_string
     o = Object.new
     def o.to_s; 1; end
     assert_raise(TypeError) { String(o) }
     def o.to_s; "o"; end
     assert_equal("o", String(o))
+    def o.to_str; "O"; end
+    assert_equal("O", String(o))
     def o.respond_to?(*) false; end
     assert_raise(TypeError) { String(o) }
   end
 
-  def test_check_convert_type
+  def test_convert_array
     o = Object.new
     def o.to_a; 1; end
     assert_raise(TypeError) { Array(o) }
     def o.to_a; [1]; end
     assert_equal([1], Array(o))
+    def o.to_ary; [2]; end
+    assert_equal([2], Array(o))
     def o.respond_to?(*) false; end
     assert_equal([o], Array(o))
   end
@@ -365,6 +383,23 @@ class TestObject < Test::Unit::TestCase
           p :ok
         end
       INPUT
+    end
+
+    m = "\u{30e1 30bd 30c3 30c9}"
+    c = Class.new
+    EnvUtil.with_default_external(Encoding::UTF_8) do
+      assert_raise_with_message(NameError, /#{m}/) do
+        c.class_eval {remove_method m}
+      end
+    end
+    c = Class.new {
+      define_method(m) {}
+      remove_method(m)
+    }
+    EnvUtil.with_default_external(Encoding::UTF_8) do
+      assert_raise_with_message(NameError, /#{m}/) do
+        c.class_eval {remove_method m}
+      end
     end
   end
 
@@ -591,7 +626,7 @@ class TestObject < Test::Unit::TestCase
     end
     begin
       nil.public_send(o) { x = :ng }
-    rescue
+    rescue TypeError
     end
     assert_equal(:ok, x)
   end
@@ -721,6 +756,16 @@ class TestObject < Test::Unit::TestCase
       end
     EOS
     assert_match(/\bToS\u{3042}:/, x)
+
+    name = "X".freeze
+    x = Object.new.taint
+    class<<x;self;end.class_eval {define_method(:to_s) {name}}
+    assert_same(name, x.to_s)
+    assert_not_predicate(name, :tainted?)
+    assert_raise(RuntimeError) {name.taint}
+    assert_equal("X", [x].join(""))
+    assert_not_predicate(name, :tainted?)
+    assert_not_predicate(eval('"X".freeze'), :tainted?)
   end
 
   def test_inspect
@@ -759,10 +804,12 @@ class TestObject < Test::Unit::TestCase
         def initialize
           @\u{3044} = 42
         end
-        new.inspect
+        new
       end
     EOS
-    assert_match(/\bInspect\u{3042}:.* @\u{3044}=42\b/, x)
+    assert_match(/\bInspect\u{3042}:.* @\u{3044}=42\b/, x.inspect)
+    x.instance_variable_set("@\u{3046}".encode(Encoding::EUC_JP), 6)
+    assert_match(/@\u{3046}=6\b/, x.inspect)
   end
 
   def test_singleton_class
@@ -789,18 +836,16 @@ class TestObject < Test::Unit::TestCase
   def test_redef_method_missing
     bug5473 = '[ruby-core:40287]'
     ['ArgumentError.new("bug5473")', 'ArgumentError, "bug5473"', '"bug5473"'].each do |code|
-      out, err, status = EnvUtil.invoke_ruby([], <<-SRC, true, true)
+      exc = code[/\A[A-Z]\w+/] || 'RuntimeError'
+      assert_separately([], <<-SRC)
       class ::Object
         def method_missing(m, *a, &b)
           raise #{code}
         end
       end
 
-      p((1.foo rescue $!))
+      assert_raise_with_message(#{exc}, "bug5473") {1.foo}
       SRC
-      assert_send([status, :success?], bug5473)
-      assert_equal("", err, bug5473)
-      assert_equal((eval("raise #{code}") rescue $!.inspect), out.chomp, bug5473)
     end
   end
 
@@ -837,7 +882,7 @@ class TestObject < Test::Unit::TestCase
 
   def test_copied_ivar_memory_leak
     bug10191 = '[ruby-core:64700] [Bug #10191]'
-    assert_no_memory_leak([], <<-"end;", <<-"end;", bug10191, rss: true, timeout: 60, limit: 1.8)
+    assert_no_memory_leak([], <<-"end;", <<-"end;", bug10191, timeout: 60, limit: 1.8)
       def (a = Object.new).set; @v = nil; end
       num = 500_000
     end;

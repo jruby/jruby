@@ -1,0 +1,2 @@
+fails:Socket::BasicSocket#getpeername returns the sockaddr of the other end of the connection
+fails:Socket::BasicSocket#getpeername raises an error if socket's not connected

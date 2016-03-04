@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'rubygems/test_case'
 require 'rubygems/source'
 require 'rubygems/indexer'
@@ -19,6 +20,20 @@ class TestGemSource < Gem::TestCase
     end
 
     @source = Gem::Source.new(@gem_repo)
+  end
+
+  def test_initialize_invalid_uri
+    assert_raises URI::InvalidURIError do
+      Gem::Source.new 'git@example:a.git'
+    end
+  end
+
+  def test_initialize_git
+    repository = 'git@example:a.git'
+
+    source = Gem::Source::Git.new 'a', repository, 'master', false
+
+    assert_equal repository, source.uri
   end
 
   def test_api_uri

@@ -9,194 +9,189 @@
  */
 package org.jruby.truffle.language.loader;
 
-import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.RubyConstant;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
-
+import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.parser.ParserContext;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class FeatureLoader {
 
     private final RubyContext context;
 
-    private Source mainScriptSource = null;
-    private String mainScriptFullPath = null;
-
     public FeatureLoader(RubyContext context) {
         this.context = context;
     }
 
-    private enum RequireResult {
-        REQUIRED(true, true),
-        ALREADY_REQUIRED(true, false),
-        FAILED(false, false);
+    public boolean require(VirtualFrame frame, String feature, IndirectCallNode callNode) {
+        final String featurePath = findFeature(feature);
 
-        public final boolean success;
-        public final boolean firstRequire;
-
-        RequireResult(boolean success, boolean firstRequire) {
-            this.success = success;
-            this.firstRequire = firstRequire;
+        if (featurePath == null) {
+            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, callNode));
         }
+
+        return doRequire(frame, featurePath, callNode);
     }
 
-    public boolean require(String feature, Node currentNode) {
-        final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, context.getCoreLibrary().getObjectClass(), "DATA");
+    private String findFeature(String feature) {
+        final String currentDirectory = context.getNativePlatform().getPosix().getcwd();
 
         if (feature.startsWith("./")) {
-            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
-            feature = cwd + "/" + feature.substring(2);
+            feature = currentDirectory + "/" + feature.substring(2);
         } else if (feature.startsWith("../")) {
-            final String cwd = context.getJRubyRuntime().getCurrentDirectory();
-            feature = cwd.substring(0, cwd.lastIndexOf('/')) + "/" + feature.substring(3);
+            feature = currentDirectory.substring(0, currentDirectory.lastIndexOf('/')) + "/" + feature.substring(3);
+        }
+        
+        if (feature.startsWith(SourceLoader.TRUFFLE_SCHEME)
+                || feature.startsWith(SourceLoader.JRUBY_SCHEME)
+                || new File(feature).isAbsolute()) {
+            return findFeatureWithAndWithoutExtension(feature);
+        }
+
+        for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
+            final String fileWithinPath = new File(pathObject.toString(), feature).getPath();
+            final String result = findFeatureWithAndWithoutExtension(fileWithinPath);
+
+            if (result != null) {
+                return result;
+            }
+        }
+
+        return null;
+    }
+
+    private String findFeatureWithAndWithoutExtension(String path) {
+        final String withExtension = findFeatureWithExactPath(path + RubyLanguage.EXTENSION);
+
+        if (withExtension != null) {
+            return withExtension;
+        }
+
+        final String withoutExtension = findFeatureWithExactPath(path);
+
+        if (withoutExtension != null) {
+            return withoutExtension;
+        }
+
+        return null;
+    }
+
+    private String findFeatureWithExactPath(String path) {
+        if (path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME)) {
+            return path;
+        }
+
+        final File file = new File(path);
+
+        if (!file.isFile()) {
+            return null;
         }
 
         try {
-            if (isAbsolutePath(feature)) {
-                // Try as a full path
-
-                final RequireResult result = tryToRequireFileInPath(null, feature, currentNode);
-
-                if (result.success) {
-                    return result.firstRequire;
-                }
+            if (file.isAbsolute()) {
+                return file.getCanonicalPath();
             } else {
-                // Try each load path in turn
-
-                for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
-                    String loadPath = pathObject.toString();
-                    if (!isAbsolutePath(loadPath)) {
-                        loadPath = expandPath(context, loadPath);
-                    }
-
-                    final RequireResult result = tryToRequireFileInPath(loadPath, feature, currentNode);
-
-                    if (result.success) {
-                        return result.firstRequire;
-                    }
-                }
+                return new File(context.getNativePlatform().getPosix().getcwd(), file.getPath()).getCanonicalPath();
             }
-
-            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (dataConstantBefore == null) {
-                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(context, currentNode, "DATA");
-            } else {
-                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, currentNode, "DATA", dataConstantBefore.getValue());
-            }
+            return null;
         }
     }
 
-    private RequireResult tryToRequireFileInPath(String path, String feature, Node currentNode) throws IOException {
-        String fullPath = new File(path, feature).getPath();
-
-        final RequireResult firstAttempt = tryToRequireFile(fullPath + ".rb", currentNode);
-
-        if (firstAttempt.success) {
-            return firstAttempt;
+    private boolean doRequire(VirtualFrame frame, String expandedPath, IndirectCallNode calNode) {
+        if (isFeatureLoaded(expandedPath)) {
+            return false;
         }
 
-        return tryToRequireFile(fullPath, currentNode);
+        final DynamicObject pathString = StringOperations.createString(context,
+                StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
+
+        final Source source;
+
+        try {
+            source = context.getSourceCache().getSource(expandedPath);
+        } catch (IOException e) {
+            return false;
+        }
+
+        addToLoadedFeatures(pathString);
+
+        try {
+            final RubyRootNode rootNode = context.getCodeLoader().parse(
+                    source,
+                    UTF8Encoding.INSTANCE,
+                    ParserContext.TOP_LEVEL,
+                    null,
+                    true,
+                    calNode);
+
+            final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                    ParserContext.TOP_LEVEL,
+                    DeclarationContext.TOP_LEVEL,
+                    rootNode, null,
+                    context.getCoreLibrary().getMainObject());
+
+            calNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+        } catch (RaiseException e) {
+            removeFromLoadedFeatures(pathString);
+            throw e;
+        }
+
+        return true;
     }
 
-    private RequireResult tryToRequireFile(String path, Node currentNode) throws IOException {
-        // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
-        path = path.replace('\\', '/');
+    private boolean isFeatureLoaded(String feature) {
         final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
 
-        final String expandedPath;
-
-        if (!(path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME))) {
-            final File file = new File(path);
-
-            assert file.isAbsolute();
-
-            if (!file.isFile()) {
-                return RequireResult.FAILED;
-            }
-
-            expandedPath = new File(expandPath(context, path)).getCanonicalPath();
-        } else {
-            expandedPath = path;
-        }
-
         for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
-            if (loaded.toString().equals(expandedPath)) {
-                return RequireResult.ALREADY_REQUIRED;
+            if (loaded.toString().equals(feature)) {
+                return true;
             }
         }
 
-        // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
-        final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
-        ArrayOperations.append(loadedFeatures, pathString);
-        try {
-            context.getCodeLoader().loadFile(expandedPath, currentNode);
-        } catch (RaiseException e) {
-            final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
-            final int length = Layouts.ARRAY.getSize(loadedFeatures);
-            for (int i = length - 1; i >= 0; i--) {
-                if (store[i] == pathString) {
-                    ArrayUtils.arraycopy(store, i + 1, store, i, length - i - 1);
-                    Layouts.ARRAY.setSize(loadedFeatures, length - 1);
-                    break;
-                }
-            }
-            throw e;
-        } catch (IOException e) {
-            return RequireResult.FAILED;
-        }
-
-        return RequireResult.REQUIRED;
+        return false;
     }
 
-    public void setMainScriptSource(Source source) {
-        this.mainScriptSource = source;
-        if (source.getPath() != null && !source.getPath().equals("-e")) {
-            this.mainScriptFullPath = expandPath(context, source.getPath());
-        }
-    }
+    private void addToLoadedFeatures(DynamicObject feature) {
+        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
+        final int size = Layouts.ARRAY.getSize(loadedFeatures);
+        final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
 
-    public String getSourcePath(Source source) {
-        if (source == mainScriptSource) {
-            return mainScriptFullPath;
+        if (size < store.length) {
+            store[size] = feature;
         } else {
-            if (source.getPath() == null) {
-                return source.getShortName();
-            } else {
-                return source.getPath();
+            final Object[] newStore = ArrayUtils.grow(store, ArrayUtils.capacityForOneMore(store.length));
+            newStore[size] = feature;
+            Layouts.ARRAY.setStore(loadedFeatures, newStore);
+        }
+        Layouts.ARRAY.setSize(loadedFeatures, size + 1);
+    }
+
+    private void removeFromLoadedFeatures(DynamicObject feature) {
+        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
+        final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
+        final int length = Layouts.ARRAY.getSize(loadedFeatures);
+
+        for (int i = length - 1; i >= 0; i--) {
+            if (store[i] == feature) {
+                ArrayUtils.arraycopy(store, i + 1, store, i, length - i - 1);
+                Layouts.ARRAY.setSize(loadedFeatures, length - 1);
+                break;
             }
         }
-    }
-
-    public boolean isAbsolutePath(String path) {
-        return path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME) || new File(path).isAbsolute();
-    }
-
-    public static String expandPath(RubyContext context, String fileName) {
-        String dir = new File(fileName).isAbsolute() ? null : context.getJRubyRuntime().getCurrentDirectory();
-        return expandPath(fileName, dir);
-    }
-
-    private static String expandPath(String fileName, String dir) {
-        /*
-         * TODO(cs): this isn't quite correct - I think we want to collapse .., but we don't want to
-         * resolve symlinks etc. This might be where we want to start borrowing JRuby's
-         * implementation, but it looks quite tied to their data structures.
-         */
-
-        return org.jruby.RubyFile.canonicalize(new File(dir, fileName).getAbsolutePath());
     }
 
 }

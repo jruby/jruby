@@ -19,3 +19,4 @@ exclude :test_constant_access_from_method_in_cloned_module, "needs investigation
 exclude :test_singleton_class_message, "needs investigation"
 exclude :test_singleton_class_of_frozen_object,  "needs investigation"
 exclude :test_singleton_class_p, "needs investigation"
+exclude :test_cloned_singleton_method_added, "needs investigation"

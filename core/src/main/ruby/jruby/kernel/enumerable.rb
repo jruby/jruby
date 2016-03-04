@@ -1,13 +1,8 @@
 module Enumerable
   def slice_before(filter = (no_filter = true; nil), &block)
-    raise ArgumentError.new("wrong number of arguments (0 for 1)") if no_filter && !block
+    raise ArgumentError.new("wrong number of arguments (0 for 1)") if (no_filter && !block) || (!no_filter && block)
 
     state = nil
-
-    if block && !no_filter
-      initial_state = filter.dup
-      state = initial_state
-    end
 
     Enumerator.new do |yielder|
       ary = nil
@@ -17,11 +12,7 @@ module Enumerable
         end
 
         if block
-          if no_filter
-            state = block.call elt
-          else
-            state = block.call elt, initial_state
-          end
+          state = block.call elt
         else
           state = (filter === elt)
         end
@@ -74,8 +65,37 @@ module Enumerable
 
   def slice_when(&block)
     raise ArgumentError.new("missing block") unless block
-    return Enumerator.new {|e| } if empty?
-    return Enumerator.new {|e| e.yield self } if length < 2
+
+    Enumerator.new do |enum|
+      ary = nil
+      last_after = nil
+      if size == 1
+        each {|x| enum.yield [x]}
+      else
+        each_cons(2) do |before, after|
+          last_after = after
+          match = block.call before, after
+
+          ary ||= []
+          if match
+            ary << before
+            enum.yield ary
+            ary = []
+          else
+            ary << before
+          end
+        end
+
+        unless ary.nil?
+          ary << last_after
+          enum.yield ary
+        end
+      end
+    end
+  end
+  
+  def chunk_while(&block)
+    raise ArgumentError.new("missing block") unless block
 
     Enumerator.new do |enum|
       ary = nil
@@ -87,10 +107,10 @@ module Enumerable
         ary ||= []
         if match
           ary << before
-          enum.yield ary
-          ary = []
         else
           ary << before
+          enum.yield ary
+          ary = []
         end
       end
 

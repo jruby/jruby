@@ -1,6 +1,4 @@
-require_relative "../../java_integration/spec_helper"
-require 'jruby'
-require 'jruby/compiler'
+require_relative '../spec_helper'
 
 describe "A Ruby class generating a Java stub" do
   def generate(script)
@@ -13,12 +11,11 @@ describe "A Ruby class generating a Java stub" do
     it "generates a package line into the Java source" do
       script = generate("java_package 'org.bar'; class Foo; end")
 
-      script.package.should == "org.bar"
+      expect( script.package ).to eql 'org.bar'
       cls = script.classes[0]
-      cls.package.should == 'org.bar'
+      expect( cls.package ).to eql 'org.bar'
 
-      java = cls.to_s
-      java.should match /package org\.bar;/
+      expect( cls.to_s ).to match /package org\.bar;/n
     end
   end
 end

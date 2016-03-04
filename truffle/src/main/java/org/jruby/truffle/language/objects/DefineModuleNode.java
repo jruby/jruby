@@ -9,8 +9,9 @@
  */
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -29,6 +30,7 @@ public class DefineModuleNode extends RubyNode {
     private final String name;
 
     @Child private RubyNode lexicalParentModule;
+    @Child private IndirectCallNode indirectCallNode;
 
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile errorProfile = BranchProfile.create();
@@ -37,6 +39,7 @@ public class DefineModuleNode extends RubyNode {
         super(context, sourceSection);
         this.name = name;
         this.lexicalParentModule = lexicalParent;
+        indirectCallNode = IndirectCallNode.create();
     }
 
     @Override
@@ -49,7 +52,7 @@ public class DefineModuleNode extends RubyNode {
         }
 
         final DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
-        final RubyConstant constant = lookupForExistingModule(getContext(), name, lexicalParentModule, this);
+        final RubyConstant constant = lookupForExistingModule(frame, getContext(), name, lexicalParentModule, indirectCallNode);
 
         final DynamicObject definingModule;
 
@@ -70,9 +73,10 @@ public class DefineModuleNode extends RubyNode {
         return definingModule;
     }
 
-    @TruffleBoundary
-    public static RubyConstant lookupForExistingModule(RubyContext context, String name,
-                                                       DynamicObject lexicalParent, RubyNode node) {
+    public static RubyConstant lookupForExistingModule(VirtualFrame frame, RubyContext context, String name,
+                                                       DynamicObject lexicalParent, IndirectCallNode callNode) {
+        CompilerDirectives.transferToInterpreter();
+
         RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstant(name);
 
         final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
@@ -88,7 +92,7 @@ public class DefineModuleNode extends RubyNode {
         }
 
         if (constant != null && !constant.isVisibleTo(context, LexicalScope.NONE, lexicalParent)) {
-            throw new RaiseException(context.getCoreLibrary().nameErrorPrivateConstant(lexicalParent, name, node));
+            throw new RaiseException(context.getCoreLibrary().nameErrorPrivateConstant(lexicalParent, name, callNode));
         }
 
         // If a constant already exists with this class/module name and it's an autoload module, we have to trigger
@@ -100,9 +104,9 @@ public class DefineModuleNode extends RubyNode {
             // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
             // call or the recursive execute call.
 
-            Layouts.MODULE.getFields(lexicalParent).removeConstant(context, node, name);
-            context.getFeatureLoader().require(constant.getValue().toString(), node);
-            return lookupForExistingModule(context, name, lexicalParent, node);
+            Layouts.MODULE.getFields(lexicalParent).removeConstant(context, callNode, name);
+            context.getFeatureLoader().require(frame, constant.getValue().toString(), callNode);
+            return lookupForExistingModule(frame, context, name, lexicalParent, callNode);
         }
 
         return constant;

@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 #
 # = ostruct.rb: OpenStruct implementation
 #
@@ -90,7 +91,6 @@ class OpenStruct
       hash.each_pair do |k, v|
         k = k.to_sym
         @table[k] = v
-        new_ostruct_member(k)
       end
     end
   end
@@ -99,7 +99,6 @@ class OpenStruct
   def initialize_copy(orig)
     super
     @table = @table.dup
-    @table.each_key{|key| new_ostruct_member(key)}
   end
 
   #
@@ -141,7 +140,6 @@ class OpenStruct
   #
   def marshal_load(x)
     @table = x
-    @table.each_key{|key| new_ostruct_member(key)}
   end
 
   #
@@ -173,16 +171,23 @@ class OpenStruct
   end
   protected :new_ostruct_member
 
+  def respond_to_missing?(mid, include_private = false)
+    mname = mid.to_s.chomp("=").to_sym
+    @table.key?(mname) || super
+  end
+
   def method_missing(mid, *args) # :nodoc:
-    mname = mid.id2name
     len = args.length
-    if mname.chomp!('=')
+    if mname = mid[/.*(?==\z)/m]
       if len != 1
         raise ArgumentError, "wrong number of arguments (#{len} for 1)", caller(1)
       end
       modifiable[new_ostruct_member(mname)] = args[0]
     elsif len == 0
-      @table[mid]
+      if @table.key?(mid)
+        new_ostruct_member(mid)
+        @table[mid]
+      end
     else
       err = NoMethodError.new "undefined method `#{mid}' for #{self}", mid, args
       err.set_backtrace caller(1)
@@ -211,6 +216,24 @@ class OpenStruct
   end
 
   #
+  # Retrieves the value object corresponding to the each +name+
+  # objects repeatedly.
+  #
+  #   address = OpenStruct.new('city' => "Anytown NC", 'zip' => 12345)
+  #   person = OpenStruct.new('name' => 'John Smith', 'address' => address)
+  #   person.dig(:address, 'zip') # => 12345
+  #   person.dig(:business_address, 'zip') # => nil
+  #
+  def dig(name, *names)
+    begin
+      name = name.to_sym
+    rescue NoMethodError
+      raise TypeError, "#{name} is not a symbol nor a string"
+    end
+    @table.dig(name, *names)
+  end
+
+  #
   # Remove the named field from the object. Returns the value that the field
   # contained if it was defined.
   #
@@ -222,8 +245,13 @@ class OpenStruct
   #
   def delete_field(name)
     sym = name.to_sym
-    singleton_class.__send__(:remove_method, sym, "#{sym}=")
-    @table.delete sym
+    begin
+      singleton_class.__send__(:remove_method, sym, "#{sym}=")
+    rescue NameError
+    end
+    @table.delete(sym) do
+      raise NameError.new("no field `#{sym}' in #{self}", sym)
+    end
   end
 
   InspectKey = :__inspect_key__ # :nodoc:

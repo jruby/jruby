@@ -37,7 +37,6 @@ import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyObject;
@@ -45,7 +44,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
+import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.io.EncodingUtils;
 import sun.misc.Unsafe;
 
@@ -108,6 +107,11 @@ public final class StringSupport {
     // MBCLEN_NEEDMORE, ONIGENC_MBCLEN_NEEDMORE
     public static int MBCLEN_NEEDMORE(int n) {
         return -1 - n;
+    }
+
+    // MBCLEN_NEEDMORE_LEN, ONIGENC_MBCLEN_NEEDMORE_LEN
+    public static int MBCLEN_NEEDMORE_LEN(int r) {
+        return -1 - r;
     }
 
     // MBCLEN_INVALID_P, ONIGENC_MBCLEN_INVALID_P
@@ -370,7 +374,7 @@ public final class StringSupport {
         return (int)(cr >>> 31);
     }
 
-    public static int codePoint(Ruby runtime, Encoding enc, byte[]bytes, int p, int end) {
+    public static int codePoint(Ruby runtime, Encoding enc, byte[] bytes, int p, int end) {
         if (p >= end) throw runtime.newArgumentError("empty string");
         int cl = preciseLength(enc, bytes, p, end);
         if (cl <= 0) throw runtime.newArgumentError("invalid byte sequence in " + enc);
@@ -644,42 +648,40 @@ public final class StringSupport {
         return 0;
     }
 
-    public static int memchr(byte[] ptr, int start, int find, int len) {
+    public static int memchr(byte[] ptr, int start, final int find, int len) {
         for (int i = start; i < start + len; i++) {
-            if (ptr[i] == find) return i;
+            if ( ptr[i] == find ) return i;
         }
         return -1;
     }
 
-    // StringValueCstr, rb_string_value_cstr without trailing null addition
+    // StringValueCStr, rb_string_value_cstr without trailing null addition
     public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
-        RubyString str = ptr.convertToString();
-        ByteList strByteList = str.getByteList();
-        byte[] sBytes = strByteList.unsafeBytes();
-        int s = strByteList.begin();
-        int len = strByteList.length();
-        Encoding enc = str.getEncoding();
+        final RubyString s = ptr.convertToString();
+        ByteList sByteList = s.getByteList();
+        byte[] sBytes = sByteList.unsafeBytes();
+        int beg = sByteList.begin();
+        int len = sByteList.length();
+        final Encoding enc = s.getEncoding();
         final int minlen = enc.minLength();
 
         if (minlen > 1) {
-            if (strNullChar(sBytes, s, len, minlen, enc) != -1) {
+            if (strNullChar(sBytes, beg, len, minlen, enc) != -1) {
                 throw runtime.newArgumentError("string contains null char");
             }
-            return strFillTerm(str, sBytes, s, len, minlen, minlen);
+            return strFillTerm(s, sBytes, beg, len, minlen);
         }
-        if (memchr(sBytes, s, 0, len) != -1) {
+        if (memchr(sBytes, beg, '\0', len) != -1) {
             throw runtime.newArgumentError("string contains null byte");
         }
-//        if (s[len]) {
-//            rb_str_modify(str);
-//            s = RSTRING_PTR(str);
-//            s[RSTRING_LEN(str)] = 0;
-//        }
-        return str;
+        //if (s[len]) {
+        //    s = str_fill_term(str, s, len, minlen);
+        //}
+        return s;
     }
 
     // MRI: str_null_char
-    public static int strNullChar(byte[] sBytes, int s, int len, final int minlen, Encoding enc) {
+    private static int strNullChar(byte[] sBytes, int s, int len, final int minlen, Encoding enc) {
         int e = s + len;
 
         for (; s + minlen <= e; s += enc.length(sBytes, s, e)) {
@@ -688,35 +690,38 @@ public final class StringSupport {
         return -1;
     }
 
-    public static boolean zeroFilled(byte[] sBytes, int s, int n) {
+    // MRI: zero_filled
+    private static boolean zeroFilled(byte[] sBytes, int s, int n) {
         for (; n > 0; --n) {
             if (sBytes[s++] != 0) return false;
         }
         return true;
     }
 
-    public static RubyString strFillTerm(RubyString str, byte[] sBytes, int s, int len, int oldtermlen, int termlen) {
-        int capa = str.getByteList().getUnsafeBytes().length - str.getByteList().begin();
+    // MRI: str_fill_term
+    private static RubyString strFillTerm(RubyString str, byte[] sBytes, int beg, int len, int termlen) {
+        int capa = sBytes.length - beg;
 
         if (capa < len + termlen) {
-            str.modify(len + termlen);
+            // rb_check_lockedtmp(str);
+            str = str.makeIndependent(len + termlen);
+            sBytes = str.getByteList().unsafeBytes();
+            beg = str.getByteList().begin();
         }
-        else if (!str.independent()) {
-            if (zeroFilled(sBytes, s + len, termlen)) return str;
-            str.makeIndependent();
+        else if ( ! str.independent() ) {
+            if ( ! zeroFilled(sBytes, beg + len, termlen) ) {
+                str = str.makeIndependent(len + termlen);
+                sBytes = str.getByteList().unsafeBytes();
+                beg = str.getByteList().begin();
+            }
         }
-        sBytes = str.getByteList().getUnsafeBytes();
-        s = str.getByteList().begin();
-        TERM_FILL(sBytes, s + len, termlen);
+
+        TERM_FILL(sBytes, beg, len, termlen);
         return str;
     }
 
-    public static void TERM_FILL(byte[] ptrBytes, int ptr, int termlen) {
-        int term_fill_ptr = ptr;
-        int term_fill_len = termlen;
-        ptrBytes[term_fill_ptr] = '\0';
-        if (term_fill_len > 1)
-        Arrays.fill(ptrBytes, term_fill_ptr, term_fill_len, (byte)0);
+    private static void TERM_FILL(byte[] ptr, final int beg, final int len, final int termlen) {
+        final int p = beg + len; Arrays.fill(ptr, p, p + termlen, (byte) '\0');
     }
 
     /**
@@ -852,7 +857,7 @@ public final class StringSupport {
         return outBytes;
     }
 
-    public static boolean isEVStr(byte[]bytes, int p, int end) {
+    public static boolean isEVStr(byte[] bytes, int p, int end) {
         return p < end ? isEVStr(bytes[p] & 0xff) : false;
     }
 
@@ -864,26 +869,26 @@ public final class StringSupport {
      * rb_str_count
      */
 
-    public static int countCommon19(ByteList value, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
-        int i = 0;
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
+    public static int countCommon19(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
+        final byte[] bytes = str.getUnsafeBytes();
+        int p = str.getBegin();
+        final int end = p + str.getRealSize();
 
-        int c;
+        int count = 0;
         while (p < end) {
+            int c;
             if (enc.isAsciiCompatible() && (c = bytes[p] & 0xff) < 0x80) {
-                if (table[c]) i++;
+                if (table[c]) count++;
                 p++;
             } else {
                 c = codePoint(runtime, enc, bytes, p, end);
                 int cl = codeLength(enc, c);
-                if (trFind(c, table, tables)) i++;
+                if (trFind(c, table, tables)) count++;
                 p += cl;
             }
         }
 
-        return i;
+        return count;
     }
 
     // MRI: rb_str_rindex
@@ -963,8 +968,6 @@ public final class StringSupport {
     /**
      * rb_str_tr / rb_str_tr_bang
      */
-
-    // TODO (nirvdrum Dec. 19, 2014): Neither the constructor nor the fields should be public. I temporarily escalated visibility during a refactoring that moved the inner class to a new parent class, while the old parent class still needs access.
     public static final class TR {
         public TR(ByteList bytes) {
             p = bytes.getBegin();
@@ -974,151 +977,170 @@ public final class StringSupport {
             gen = false;
         }
 
-        public int p, pend, now, max;
-        public boolean gen;
-        public byte[]buf;
+        final byte[] buf;
+        int p, pend, now, max;
+        boolean gen;
     }
 
     /**
      * tr_setup_table
      */
     public static final class TrTables {
-        private IntHash<IRubyObject> del, noDel;
+        IntHashMap<Object> del, noDel; // used as ~ Set
     }
 
-    public static TrTables trSetupTable(ByteList str, Ruby runtime, boolean[] stable, TrTables tables, boolean first, Encoding enc) {
-        int errc = -1;
-        byte[] buf = new byte[256];
-        final TR tr = new TR(str);
-        int c;
-        IntHash<IRubyObject> table = null, ptable = null;
-        int i, l[] = {0};
-        boolean cflag = false;
+    private static final Object DUMMY_VALUE = "";
 
-        tr.buf = str.unsafeBytes(); tr.p = str.begin(); tr.pend = tr.p + str.realSize();
-        tr.gen = false;
-        tr.now = tr.max = 0;
+    public static TrTables trSetupTable(final ByteList str, final Ruby runtime,
+        final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
+
+        int i, l[] = {0};
+        final boolean cflag;
+
+        final TR tr = new TR(str);
 
         if (str.realSize() > 1 && EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, l, enc) == '^') {
             cflag = true;
             tr.p += l[0];
         }
+        else {
+            cflag = false;
+        }
+
         if (first) {
-            for (i=0; i<TRANS_SIZE; i++) {
-                stable[i] = true;
-            }
+            for ( i = 0; i < TRANS_SIZE; i++) stable[i] = true;
             stable[TRANS_SIZE] = cflag;
         }
         else if (stable[TRANS_SIZE] && !cflag) {
             stable[TRANS_SIZE] = false;
         }
-        for (i=0; i<TRANS_SIZE; i++) {
-            buf[i] = (byte)(cflag ? 1 : 0);
-        }
 
         if (tables == null) tables = new TrTables();
 
-        while ((c = trNext(tr, runtime, enc)) != errc) {
+        byte[] buf = null; // lazy initialized
+        IntHashMap<Object> table = null, ptable = null;
+
+        int c;
+        while ((c = trNext(tr, runtime, enc)) != -1) {
             if (c < TRANS_SIZE) {
-                buf[c & 0xff] = (byte)(cflag ? 0 : 1);
+                if ( buf == null ) { // initialize buf
+                    buf = new byte[TRANS_SIZE];
+                    for ( i = 0; i < TRANS_SIZE; i++ ) {
+                        buf[i] = (byte) (cflag ? 1 : 0);
+                    }
+                }
+                // update the buff at [c] :
+                buf[c & 0xff] = (byte) (cflag ? 0 : 1);
             }
             else {
-                int key = c;
-
-                if (table == null && (first || tables.del != null || stable[TRANS_SIZE])) {
-                    if (cflag) {
+                if ( table == null && (first || tables.del != null || stable[TRANS_SIZE]) ) {
+                    if ( cflag ) {
                         ptable = tables.noDel;
-                        table = ptable != null ? ptable : new IntHash<IRubyObject>();
+                        table = ptable != null ? ptable : new IntHashMap<>(8);
                         tables.noDel = table;
                     }
                     else {
-                        table = new IntHash<IRubyObject>();
+                        table = new IntHashMap<>(8);
                         ptable = tables.del;
                         tables.del = table;
                     }
                 }
-                if (table != null && (ptable == null || (cflag ^ ptable.get(key) == null))) {
-                    table.put(key, RubyBasicObject.NEVER);
+
+                if ( table != null ) {
+                    final int key = c;
+                    if ( ptable == null ) table.put(key, DUMMY_VALUE);
+                    else {
+                        if ( cflag ) table.put(key, DUMMY_VALUE);
+                        else {
+                            final boolean val = ptable.get(key) != null;
+                            table.put(key, val ? DUMMY_VALUE : null);
+                        }
+                    }
                 }
             }
         }
-        for (i=0; i<TRANS_SIZE; i++) {
-            stable[i] = stable[i] && buf[i] != 0;
+        if ( buf != null ) {
+            for ( i = 0; i < TRANS_SIZE; i++ ) {
+                stable[i] = stable[i] && buf[i] != 0;
+            }
         }
-        if (table == null && !cflag) {
-            tables.del = null;
+        else {
+            for ( i = 0; i < TRANS_SIZE; i++ ) {
+                stable[i] = stable[i] && cflag;
+            }
         }
+
+        if ( table == null && ! cflag ) tables.del = null;
 
         return tables;
     }
 
-    public static boolean trFind(int c, boolean[] table, TrTables tables) {
-        if (c < TRANS_SIZE) {
-            return table[c];
-        } else {
-            int v = c;
+    public static boolean trFind(final int c, final boolean[] table, final TrTables tables) {
+        if (c < TRANS_SIZE) return table[c];
 
-            if (tables.del != null) {
-                if (tables.del.get(v) != null &&
-                        (tables.noDel == null || tables.noDel.get(v) == null)) {
-                    return true;
-                }
+        final IntHashMap<Object> del = tables.del, noDel = tables.noDel;
+
+        if (del != null) {
+            if (del.get(c) != null &&
+                (noDel == null || noDel.get(c) == null)) {
+                return true;
             }
-            else if (tables.noDel != null && tables.noDel.get(v) != null) {
-                return false;
-            }
-            return table[TRANS_SIZE] ? true : false;
         }
+        else if (noDel != null && noDel.get(c) != null) {
+            return false;
+        }
+
+        return table[TRANS_SIZE];
     }
 
-    public static int trNext(TR t, Ruby runtime, Encoding enc) {
+    public static int trNext(final TR tr, Ruby runtime, Encoding enc) {
         for (;;) {
-            if (!t.gen) {
-                return trNext_nextpart(t, runtime, enc);
+            if ( ! tr.gen ) {
+                return trNext_nextpart(tr, runtime, enc);
+            }
+
+            while (enc.codeToMbcLength( ++tr.now ) <= 0) {
+                if (tr.now == tr.max) {
+                    tr.gen = false;
+                    return trNext_nextpart(tr, runtime, enc);
+                }
+            }
+            if (tr.now < tr.max) {
+                return tr.now;
             } else {
-                while (enc.codeToMbcLength(++t.now) <= 0) {
-                    if (t.now == t.max) {
-                        t.gen = false;
-                        return trNext_nextpart(t, runtime, enc);
-                    }
-                }
-                if (t.now < t.max) {
-                    return t.now;
-                } else {
-                    t.gen = false;
-                    return t.max;
-                }
+                tr.gen = false;
+                return tr.max;
             }
         }
     }
 
-    private static int trNext_nextpart(TR t, Ruby runtime, Encoding enc) {
-        int[] n = {0};
+    private static int trNext_nextpart(final TR tr, Ruby runtime, Encoding enc) {
+        final int[] n = {0};
 
-        if (t.p == t.pend) return -1;
-        if (EncodingUtils.encAscget(t.buf, t.p, t.pend, n, enc) == '\\' && t.p + n[0] < t.pend) {
-            t.p += n[0];
+        if (tr.p == tr.pend) return -1;
+        if (EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, n, enc) == '\\' && tr.p + n[0] < tr.pend) {
+            tr.p += n[0];
         }
-        t.now = EncodingUtils.encCodepointLength(runtime, t.buf, t.p, t.pend, n, enc);
-        t.p += n[0];
-        if (EncodingUtils.encAscget(t.buf, t.p, t.pend, n, enc) == '-' && t.p + n[0] < t.pend) {
-            t.p += n[0];
-            if (t.p < t.pend) {
-                int c = EncodingUtils.encCodepointLength(runtime, t.buf, t.p, t.pend, n, enc);
-                t.p += n[0];
-                if (t.now > c) {
-                    if (t.now < 0x80 && c < 0x80) {
+        tr.now = EncodingUtils.encCodepointLength(runtime, tr.buf, tr.p, tr.pend, n, enc);
+        tr.p += n[0];
+        if (EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, n, enc) == '-' && tr.p + n[0] < tr.pend) {
+            tr.p += n[0];
+            if (tr.p < tr.pend) {
+                int c = EncodingUtils.encCodepointLength(runtime, tr.buf, tr.p, tr.pend, n, enc);
+                tr.p += n[0];
+                if (tr.now > c) {
+                    if (tr.now < 0x80 && c < 0x80) {
                         throw runtime.newArgumentError("invalid range \""
-                                + (char) t.now + "-" + (char) c + "\" in string transliteration");
+                                + (char) tr.now + '-' + (char) c + "\" in string transliteration");
                     }
 
                     throw runtime.newArgumentError("invalid range in string transliteration");
                 }
-                t.gen = true;
-                t.max = c;
+                tr.gen = true;
+                tr.max = c;
             }
         }
-        return t.now;
+        return tr.now;
     }
 
     public static enum NeighborChar {NOT_CHAR, FOUND, WRAPPED}
@@ -1681,7 +1703,7 @@ public final class StringSupport {
         }
 
         if (subptr != pend) {
-            line = str.substr(subptr - ptr, pend - subptr);
+            line = str.substr(runtime, subptr - ptr, pend - subptr);
             if (wantarray) {
                 ((RubyArray) ary).push(line);
             } else {
@@ -2001,7 +2023,7 @@ public final class StringSupport {
         int s = value.getBegin();
         int t = s;
         int send = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        final byte[] bytes = value.getUnsafeBytes();
         int save = -1;
 
         while (s < send) {

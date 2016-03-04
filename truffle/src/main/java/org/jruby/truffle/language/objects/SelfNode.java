@@ -26,7 +26,7 @@ public class SelfNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return valueProfile.profile(RubyArguments.getSelf(frame.getArguments()));
+        return valueProfile.profile(RubyArguments.getSelf(frame));
     }
 
     @Override

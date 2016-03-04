@@ -68,7 +68,7 @@ describe "The alias keyword" do
     @obj.__value.should == 5
     lambda { AliasObject.new.__value }.should raise_error(NoMethodError)
   end
-  
+
   it "operates on the class/module metaclass when used in instance_eval" do
     AliasObject.instance_eval do
       alias __klass_method klass_method
@@ -77,7 +77,7 @@ describe "The alias keyword" do
     AliasObject.__klass_method.should == 7
     lambda { Object.__klass_method }.should raise_error(NoMethodError)
   end
-  
+
   it "operates on the class/module metaclass when used in instance_exec" do
     AliasObject.instance_exec do
       alias __klass_method2 klass_method

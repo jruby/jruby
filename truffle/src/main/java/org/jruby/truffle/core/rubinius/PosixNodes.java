@@ -806,7 +806,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int isATTY(int fd) {
-            return posix().libc().isatty(fd);
+            return posix().isatty(fd);
         }
 
     }

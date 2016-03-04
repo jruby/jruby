@@ -11,6 +11,7 @@ package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -32,6 +33,7 @@ public class DefineClassNode extends RubyNode {
     @Child private RubyNode superClass;
     @Child private CallDispatchHeadNode inheritedNode;
     @Child private RubyNode lexicalParentModule;
+    @Child private IndirectCallNode indirectCallNode;
 
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile errorProfile = BranchProfile.create();
@@ -42,6 +44,7 @@ public class DefineClassNode extends RubyNode {
         this.name = name;
         this.lexicalParentModule = lexicalParent;
         this.superClass = superClass;
+        indirectCallNode = IndirectCallNode.create();
     }
 
     @Override
@@ -56,7 +59,7 @@ public class DefineClassNode extends RubyNode {
         DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
 
         final RubyConstant constant = DefineModuleNode.lookupForExistingModule(
-                getContext(), name, lexicalParentModule, this);
+                frame, getContext(), name, lexicalParentModule, indirectCallNode);
 
         final DynamicObject definingClass;
         final Object superClassObject = superClass.execute(frame);
@@ -74,7 +77,7 @@ public class DefineClassNode extends RubyNode {
         }
 
         if (needToDefineProfile.profile(constant == null)) {
-            definingClass = ClassNodes.createRubyClass(getContext(), lexicalParentModule, superClassModule, name);
+            definingClass = ClassNodes.createInitializedRubyClass(getContext(), lexicalParentModule, superClassModule, name);
 
             if (inheritedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();

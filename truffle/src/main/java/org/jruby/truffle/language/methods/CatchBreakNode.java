@@ -10,7 +10,6 @@
 package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -18,23 +17,18 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.BreakID;
 
-/**
- * Catch a {@code break} from a call with a block containing a break
- * or inside a while/until loop.
- */
 public class CatchBreakNode extends RubyNode {
-
-    @Child private RubyNode body;
 
     private final BreakID breakID;
 
-    private final BranchProfile breakProfile = BranchProfile.create();
+    @Child private RubyNode body;
+
     private final ConditionProfile matchingBreakProfile = ConditionProfile.createCountingProfile();
 
-    public CatchBreakNode(RubyContext context, SourceSection sourceSection, RubyNode body, BreakID breakID) {
+    public CatchBreakNode(RubyContext context, SourceSection sourceSection, BreakID breakID, RubyNode body) {
         super(context, sourceSection);
-        this.body = body;
         this.breakID = breakID;
+        this.body = body;
     }
 
     @Override
@@ -42,8 +36,6 @@ public class CatchBreakNode extends RubyNode {
         try {
             return body.execute(frame);
         } catch (BreakException e) {
-            breakProfile.enter();
-
             if (matchingBreakProfile.profile(e.getBreakID() == breakID)) {
                 return e.getResult();
             } else {

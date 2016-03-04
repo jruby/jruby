@@ -38,18 +38,16 @@ import org.jruby.runtime.Visibility;
 public class RubyNoMethodError extends RubyNameError {
     private IRubyObject args;
 
-    private static final ObjectAllocator NOMETHODERROR_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNoMethodError(runtime, klass);
         }
     };
 
-    public static RubyClass createNoMethodErrorClass(Ruby runtime, RubyClass nameErrorClass) {
-        RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, NOMETHODERROR_ALLOCATOR);
-        
+    static RubyClass createNoMethodErrorClass(Ruby runtime, RubyClass nameErrorClass) {
+        RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, ALLOCATOR);
         noMethodErrorClass.defineAnnotatedMethods(RubyNoMethodError.class);
-
         return noMethodErrorClass;
     }
 
@@ -61,9 +59,19 @@ public class RubyNoMethodError extends RubyNameError {
     public RubyNoMethodError(Ruby runtime, RubyClass exceptionClass, String message, String name, IRubyObject args) {
         super(runtime, exceptionClass, message,  name);
         this.args = args;
-    }    
+    }
 
-    @JRubyMethod(optional = 3, visibility = Visibility.PRIVATE)
+    public static RubyException newNoMethodError(IRubyObject recv, IRubyObject message, IRubyObject name, IRubyObject args) {
+        RubyClass klass = (RubyClass)recv;
+
+        RubyException newError = (RubyException) klass.allocate();
+
+        newError.callInit(message, name, args, Block.NULL_BLOCK);
+
+        return newError;
+    }
+
+    @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 2) {

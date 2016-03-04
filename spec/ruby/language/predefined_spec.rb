@@ -625,6 +625,10 @@ describe "Predefined global $-0" do
 end
 
 describe "Predefined global $," do
+  after :each do
+    $, = nil
+  end
+
   it "defaults to nil" do
     $,.should be_nil
   end

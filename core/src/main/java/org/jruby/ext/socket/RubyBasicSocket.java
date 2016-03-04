@@ -54,6 +54,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -65,6 +66,8 @@ import org.jruby.util.Pack;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
+
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
 import static jnr.constants.platform.IPProto.IPPROTO_TCP;
@@ -142,47 +145,109 @@ public class RubyBasicSocket extends RubyIO {
         return send(context, _mesg, _flags);
     }
 
-    @Deprecated
-    public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 1:
-                return recv(context, args[0]);
-            case 2:
-                return recv(context, args[0], args[1]);
-            default:
-                Arity.raiseArgumentError(context.runtime, args, 1, 2);
-                return null; // not reached
-        }
-    }
-
     @JRubyMethod
     public IRubyObject recv(ThreadContext context, IRubyObject length) {
-        ByteList bytes = doReceive(context, RubyNumeric.fix2int(length), false);
-        if ( bytes == null ) return context.nil;
-
-        return RubyString.newString(context.runtime, bytes);
+        return recv(context, length, null, null);
     }
 
-    @JRubyMethod
-    public IRubyObject recv(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
+    @JRubyMethod(required = 2, optional = 1) // (length) required = 1 handled above
+    public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
+        IRubyObject length; RubyString str; IRubyObject flags;
+
+        switch (args.length) {
+            case 3:
+                length = args[0];
+                str = (RubyString) args[1];
+                flags = args[2].convertToHash();
+                break;
+            case 2:
+                length = args[0];
+                flags = TypeConverter.checkHashType(context.runtime, args[1]);
+                str = flags.isNil() ? (RubyString) args[1] : null;
+                break;
+            case 1:
+                length = args[0];
+                str = null; flags = null;
+                break;
+            default:
+                length = context.nil;
+                str = null; flags = null;
+        }
+
+        return recv(context, length, str, flags);
+    }
+
+    @Deprecated
+    public IRubyObject recv(ThreadContext context, IRubyObject length, IRubyObject flags) {
+        return recv(context, new IRubyObject[] { length, flags });
+    }
+
+    private IRubyObject recv(ThreadContext context, IRubyObject length,
+        RubyString str, IRubyObject flags) {
         // TODO: implement flags
-        return recv(context, _length);
+        final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
+
+        ByteList bytes = doReceive(context, buffer);
+
+        if (bytes == null) return context.nil;
+
+        if (str != null) {
+            str.setValue(bytes);
+            return str;
+        }
+        return RubyString.newString(context.runtime, bytes);
     }
 
     @JRubyMethod
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject length) {
-        ByteList bytes = doReceiveNonblock(context, RubyNumeric.fix2int(length));
+        return recv_nonblock(context, length, context.nil, context.nil, false);
+    }
+
+    @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
+    public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        int argc = args.length;
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
+        if (!opts.isNil()) argc--;
+
+        IRubyObject length = context.nil;
+        IRubyObject flags = length;
+        IRubyObject str = length;
+
+        switch (argc) {
+            case 3:
+                str = args[3];
+            case 2:
+                flags = args[2];
+            case 1:
+                length = args[1];
+        }
+
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
+
+        return recv_nonblock(context, length, flags, str, exception);
+    }
+
+    protected IRubyObject recv_nonblock(ThreadContext context, IRubyObject length,
+        IRubyObject flags, IRubyObject str, boolean ex) {
+        Ruby runtime = context.runtime;
+
+        // TODO: implement flags
+        final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
+
+        ByteList bytes = doReceiveNonblock(context, buffer);
+
         if (bytes == null) {
+            if (!ex) return runtime.newSymbol("wait_readable");
             throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
         }
 
+        if (str != null && !str.isNil()) {
+            str = str.convertToString();
+            ((RubyString)str).setValue(bytes);
+            return str;
+        }
         return RubyString.newString(context.runtime, bytes);
-    }
-
-    @JRubyMethod
-    public IRubyObject recv_nonblock(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
-        // TODO: implement flags
-        return recv_nonblock(context, _length);
     }
 
     @JRubyMethod
@@ -438,13 +503,12 @@ public class RubyBasicSocket extends RubyIO {
         throw context.runtime.newNotImplementedError("readmsg_nonblock is not implemented");
     }
 
-    private ByteList doReceive(ThreadContext context, int length, final boolean nonBlock) {
-        final OpenFile fptr;
+    private ByteList doReceive(ThreadContext context, final ByteBuffer buffer) {
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
 
         fptr = getOpenFile();
         fptr.checkReadable(context);
-
-        final ByteBuffer buffer = ByteBuffer.allocate(length);
 
         try {
             context.getThread().beforeBlockingCall();
@@ -470,8 +534,9 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    public ByteList doReceiveNonblock(ThreadContext context, int length) {
-        final Channel channel = getChannel();
+    public ByteList doReceiveNonblock(ThreadContext context, final ByteBuffer buffer) {
+        Ruby runtime = context.runtime;
+        Channel channel = getChannel();
 
         if ( ! (channel instanceof SelectableChannel) ) {
             throw context.runtime.newErrnoEAGAINReadableError(channel.getClass().getName() + " does not support nonblocking");
@@ -486,14 +551,14 @@ public class RubyBasicSocket extends RubyIO {
                 selectable.configureBlocking(false);
 
                 try {
-                    return doReceive(context, length, true);
+                    return doReceive(context, buffer);
                 }
                 finally {
                     selectable.configureBlocking(oldBlocking);
                 }
             }
-            catch (IOException e) {
-                throw context.runtime.newIOErrorFromException(e);
+            catch(IOException e) {
+                throw runtime.newIOErrorFromException(e);
             }
         }
     }

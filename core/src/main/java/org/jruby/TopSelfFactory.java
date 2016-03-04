@@ -95,13 +95,13 @@ public final class TopSelfFactory {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
                 if (klass == singletonClass) warnWrapper(context);
-                return klass.define_method(context, arg0, block);
+                return klass.defineMethodFromBlock(context, arg0, block, Visibility.PUBLIC);
             }
 
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
                 if (klass == singletonClass) warnWrapper(context);
-                return klass.define_method(context, arg0, arg1, block);
+                return klass.defineMethodFromCallable(context, arg0, arg1, Visibility.PUBLIC);
             }
         });
 

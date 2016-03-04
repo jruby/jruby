@@ -129,7 +129,7 @@ public class TraceManager {
 
             isInTraceFunc = true;
             try {
-                context.getCodeLoader().inlineRubyHelper(this, frame, "traceFunc.call(event, file, line, id, binding, classname)", "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
+                context.getCodeLoader().inline(this, frame, "traceFunc.call(event, file, line, id, binding, classname)", "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
             } finally {
                isInTraceFunc = false;
             }
@@ -186,15 +186,15 @@ public class TraceManager {
                 return;
             }
 
-            final Object self = RubyArguments.getSelf(frame.getArguments());
+            final Object self = RubyArguments.getSelf(frame);
             final Object classname = context.getCoreLibrary().getLogicalClass(self);
-            final Object id = context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
+            final Object id = context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame).getName());
 
             final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize());
 
             isInTraceFunc = true;
             try {
-                context.getCodeLoader().inlineRubyHelper(this, frame, callTraceFuncCode, "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
+                context.getCodeLoader().inline(this, frame, callTraceFuncCode, "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
             } finally {
                 isInTraceFunc = false;
             }

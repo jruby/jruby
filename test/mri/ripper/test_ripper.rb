@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 begin
   require 'ripper'
   require 'test/unit'
@@ -19,6 +20,9 @@ class TestRipper::Ripper < Test::Unit::TestCase
   def test_encoding
     assert_equal Encoding::UTF_8, @ripper.encoding
     ripper = Ripper.new('# coding: iso-8859-15')
+    ripper.parse
+    assert_equal Encoding::ISO_8859_15, ripper.encoding
+    ripper = Ripper.new('# -*- coding: iso-8859-15 -*-')
     ripper.parse
     assert_equal Encoding::ISO_8859_15, ripper.encoding
   end

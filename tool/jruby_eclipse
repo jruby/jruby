@@ -14,7 +14,7 @@ TRUFFLEJARS = %W[
 SNAKEYAMLJAR = "#{M2REPO}/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
 ANTLR4JAR = "#{M2REPO}/org/antlr/antlr4-runtime/4.5/antlr4-runtime-4.5.jar"
 
-GRAAL_OPTIONS_PREFIX = "jvmci.option."
+GRAAL_OPTIONS_PREFIX = "graal."
 
 JRUBY = File.expand_path('../..', __FILE__)
 
@@ -30,7 +30,7 @@ ARGV.each { |arg|
   case arg
   when /^-Xmx/, "-ea"
     java_flags << arg
-  when /^-J-G:+/
+  when /^-J-G:\+/
     java_flags << "-D#{GRAAL_OPTIONS_PREFIX}#{$'}=true"
   when /^-J-G:-/
     java_flags << "-D#{GRAAL_OPTIONS_PREFIX}#{$'}=false"

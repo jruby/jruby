@@ -26,6 +26,10 @@ class MSpecScript
 
   set :library, [
     "spec/ruby/library",
+    
+    # Since 2.3
+    "^spec/ruby/library/resolv",
+    "^spec/ruby/library/drb",
 
     # Not yet explored
     "^spec/ruby/library/continuation",
@@ -40,8 +44,7 @@ class MSpecScript
     "^spec/ruby/library/etc",
 
     # Hangs
-    "^spec/ruby/library/net/http",
-    "^spec/ruby/library/net/ftp",
+    "^spec/ruby/library/net",
 
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",

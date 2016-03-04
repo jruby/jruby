@@ -20,38 +20,35 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
-/**
- * Read the rest of arguments after a certain point into an array.
- */
 public class ReadRestArgumentNode extends RubyNode {
 
     private final int startIndex;
-    private final int negativeEndIndex;
+    private final int indexFromCount;
     private final boolean keywordArguments;
-    private final int minimumForKWargs;
 
     private final BranchProfile noArgumentsLeftProfile = BranchProfile.create();
     private final BranchProfile subsetOfArgumentsProfile = BranchProfile.create();
 
     @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
-    public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int negativeEndIndex, boolean keywordArguments, int minimumForKWargs) {
+    public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int indexFromCount,
+                                boolean keywordArguments, int minimumForKWargs) {
         super(context, sourceSection);
         this.startIndex = startIndex;
-        this.negativeEndIndex = negativeEndIndex;
+        this.indexFromCount = indexFromCount;
         this.keywordArguments = keywordArguments;
-        this.minimumForKWargs = minimumForKWargs;
-        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimumForKWargs);
+
+        if (keywordArguments) {
+            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimumForKWargs);
+        }
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        int count = RubyArguments.getArgumentsCount(frame.getArguments());
-
-        int endIndex = count + negativeEndIndex;
+        int endIndex = RubyArguments.getArgumentsCount(frame) - indexFromCount;
 
         if (keywordArguments) {
-            final Object lastArgument = RubyArguments.getArgument(frame.getArguments(), RubyArguments.getArgumentsCount(frame.getArguments()) - 1);
+            final Object lastArgument = RubyArguments.getArgument(frame, RubyArguments.getArgumentsCount(frame) - 1);
 
             if (RubyGuards.isRubyHash(lastArgument)) {
                 endIndex -= 1;
@@ -64,7 +61,7 @@ public class ReadRestArgumentNode extends RubyNode {
         final int resultLength;
 
         if (startIndex == 0) {
-            final Object[] arguments = RubyArguments.getArguments(frame.getArguments());
+            final Object[] arguments = RubyArguments.getArguments(frame);
             resultStore = arguments;
             resultLength = length;
         } else {
@@ -74,16 +71,17 @@ public class ReadRestArgumentNode extends RubyNode {
                 resultLength = 0;
             } else {
                 subsetOfArgumentsProfile.enter();
-                final Object[] arguments = RubyArguments.getArguments(frame.getArguments());
+                final Object[] arguments = RubyArguments.getArguments(frame);
                 resultStore = ArrayUtils.extractRange(arguments, startIndex, endIndex);
                 resultLength = length;
             }
         }
 
-        final DynamicObject rest = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), resultStore, resultLength);
+        final DynamicObject rest = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(),
+                resultStore, resultLength);
 
         if (keywordArguments) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.bailout("Ruby keyword arguments not optimized yet");
 
             Object kwargsHash = readUserKeywordsHashNode.execute(frame);
 
@@ -91,7 +89,10 @@ public class ReadRestArgumentNode extends RubyNode {
                 kwargsHash = nil();
             }
 
-            getContext().getCodeLoader().inlineRubyHelper(this, "Truffle::Primitive.add_rejected_kwargs_to_rest(rest, kwargs)", "rest", rest, "kwargs", kwargsHash);
+            getContext().getCodeLoader().inline(this,
+                    "Truffle::Primitive.add_rejected_kwargs_to_rest(rest, kwargs)",
+                    "rest", rest,
+                    "kwargs", kwargsHash);
         }
 
         return rest;

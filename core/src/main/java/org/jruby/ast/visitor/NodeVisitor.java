@@ -112,6 +112,7 @@ public interface NodeVisitor<T> {
     T visitOpElementAsgnNode(OpElementAsgnNode iVisited);
     T visitOpAsgnNode(OpAsgnNode iVisited);
     T visitOpAsgnAndNode(OpAsgnAndNode iVisited);
+    T visitOpAsgnConstDeclNode(OpAsgnConstDeclNode iVisited);
     T visitOpAsgnOrNode(OpAsgnOrNode iVisited);
     T visitOptArgNode(OptArgNode iVisited);
     T visitOrNode(OrNode iVisited);

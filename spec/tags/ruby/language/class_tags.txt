@@ -1,1 +1,2 @@
 fails:A class definition extending an object (sclass) can use return to cause the enclosing method to return
+fails:The class keyword does not raise a SyntaxError when opening a class without a semicolon

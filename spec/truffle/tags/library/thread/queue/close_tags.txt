@@ -1,0 +1,3 @@
+fails:Queue#close closes the queue and returns nil for further #pop
+fails:Queue#close prevents further #push
+fails:Queue#close may be called multiple times

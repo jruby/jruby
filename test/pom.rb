@@ -137,7 +137,7 @@ project 'JRuby Integration Tests' do
     jar 'org.jruby:jruby-complete', '${project.version}', :scope => :provided
 
     plugin :antrun do
-      [ 'mri', 'jruby','objectspace', 'slow' ].each do |index|
+      [ 'jruby','objectspace', 'slow' ].each do |index|
         files = ""
         File.open(File.join(basedir, index + '.index')) do |f|
           f.each_line.each do |line|

@@ -12,11 +12,14 @@ package org.jruby.truffle.core.basicobject;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
@@ -32,18 +35,22 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.dispatch.RubyCallNode;
+import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
-import org.jruby.truffle.language.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,17 +154,20 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldDispatchHeadNode yield;
+        @Child private YieldNode yield;
 
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
+            yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
-        public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
-            return getContext().getCodeLoader().instanceEval(StringOperations.getByteListReadOnly(string), receiver, "(eval)", this);
+        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, NotProvided block, @Cached("create()")IndirectCallNode callNode) {
+            ByteList code = StringOperations.getByteListReadOnly(string);
+            final Source source = Source.fromText(code, "(eval)");
+            final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
+            final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
+            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         }
 
         @Specialization
@@ -170,11 +180,11 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_exec", needsBlock = true, rest = true)
     public abstract static class InstanceExecNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldDispatchHeadNode yield;
+        @Child private YieldNode yield;
 
         public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
+            yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
         @Specialization

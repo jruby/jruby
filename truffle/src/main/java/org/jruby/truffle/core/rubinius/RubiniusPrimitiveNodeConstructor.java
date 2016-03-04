@@ -15,7 +15,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.objects.SelfNode;
@@ -53,7 +53,7 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
         }
 
         for (int n = 0; n < argumentsCount; n++) {
-            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
+            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehavior.UNDEFINED);
             arguments.add(transformArgument(readArgumentNode, n));
         }
 

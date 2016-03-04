@@ -128,6 +128,10 @@ public class BacktraceFormatter {
     private String formatInLine(List<Activation> activations, DynamicObject exception) {
         final StringBuilder builder = new StringBuilder();
 
+        if (activations.isEmpty()) {
+            throw new UnsupportedOperationException("At least one activation is required.");
+        }
+
         final Activation activation = activations.get(0);
 
         if (activation == Activation.OMITTED_LIMIT) {
@@ -145,7 +149,7 @@ public class BacktraceFormatter {
 
             if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
                 reportedSourceSection = nextUserSourceSection(activations, 1);
-                reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+                reportedName = activation.getMethod().getName();
             } else {
                 reportedSourceSection = sourceSection;
                 reportedName = reportedSourceSection.getIdentifier();
@@ -220,7 +224,7 @@ public class BacktraceFormatter {
                 reportedSourceSection = nextUserSourceSection(activations, n);
 
                 try {
-                    reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+                    reportedName = activation.getMethod().getName();
                 } catch (Exception e) {
                     reportedName = "???";
                 }

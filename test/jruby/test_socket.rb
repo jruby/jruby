@@ -231,12 +231,17 @@ class SocketTest < Test::Unit::TestCase
     else; fail 'not raised'
     end
 
-    socket = TCPSocket.new('127.0.0.1', 22)
+    server = TCPServer.new('127.0.0.1', 10022)
+    Thread.new { server.accept }
+    socket = TCPSocket.new('127.0.0.1', 10022)
     begin
       socket.read_nonblock 100
     rescue IO::EAGAINWaitReadable
       # Resource temporarily unavailable - read would block
     else; fail 'not raised'
+    ensure
+      server.close rescue nil
+      socket.close rescue nil
     end
   end
 

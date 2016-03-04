@@ -445,6 +445,16 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelf();
+        visit(arrayderefinstr.getReceiver());
+        visit(arrayderefinstr.getKey());
+        jvmMethod().invokeArrayDeref();
+        jvmStoreLocal(arrayderefinstr.getResult());
+    }
+
+    @Override
     public void BEQInstr(BEQInstr beqInstr) {
         jvmMethod().loadContext();
         visit(beqInstr.getArg1());
@@ -794,6 +804,13 @@ public class JVMVisitor extends IRVisitor {
                 visit(p);
                 jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
 //            }
+        }
+        if (compoundstring.isFrozen()) {
+            jvmMethod().loadContext();
+            jvmAdapter().swap();
+            jvmAdapter().ldc(compoundstring.getFile());
+            jvmAdapter().ldc(compoundstring.getLine());
+            jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, ThreadContext.class, RubyString.class, String.class, int.class));
         }
         jvmStoreLocal(compoundstring.getResult());
     }
@@ -2172,7 +2189,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void FrozenString(FrozenString frozen) {
-        jvmMethod().pushFrozenString(frozen.getByteList(), frozen.getCodeRange());
+        jvmMethod().pushFrozenString(frozen.getByteList(), frozen.getCodeRange(), frozen.getFile(), frozen.getLine());
     }
 
     @Override

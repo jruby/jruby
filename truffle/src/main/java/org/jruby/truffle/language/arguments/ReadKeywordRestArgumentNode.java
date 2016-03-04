@@ -12,6 +12,7 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
@@ -30,7 +31,10 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
 
     @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
-    public ReadKeywordRestArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String[] excludedKeywords) {
+    private final ConditionProfile noHash = ConditionProfile.createBinaryProfile();
+
+    public ReadKeywordRestArgumentNode(RubyContext context, SourceSection sourceSection,
+                                       int minimum, String[] excludedKeywords) {
         super(context, sourceSection);
         this.excludedKeywords = excludedKeywords;
         readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimum);
@@ -42,17 +46,19 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
     }
 
     private Object lookupRestKeywordArgumentHash(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        final Object hash = readUserKeywordsHashNode.execute(frame);
 
-        final DynamicObject hash = (DynamicObject) readUserKeywordsHashNode.execute(frame);
-
-        if (hash == null) {
+        if (noHash.profile(hash == null)) {
             return Layouts.HASH.createHash(coreLibrary().getHashFactory(), null, 0, null, null, null, null, false);
         }
 
+        CompilerDirectives.bailout("Ruby keyword arguments aren't optimized");
+
+        final DynamicObject hashObject = (DynamicObject) hash;
+
         final List<Map.Entry<Object, Object>> entries = new ArrayList<>();
 
-        outer: for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
+        outer: for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hashObject)) {
             if (!RubyGuards.isRubySymbol(keyValue.getKey())) {
                 continue;
             }
@@ -66,7 +72,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             entries.add(keyValue);
         }
 
-        return BucketsStrategy.create(getContext(), entries, Layouts.HASH.getCompareByIdentity(hash));
+        return BucketsStrategy.create(getContext(), entries, Layouts.HASH.getCompareByIdentity(hashObject));
     }
 
 }

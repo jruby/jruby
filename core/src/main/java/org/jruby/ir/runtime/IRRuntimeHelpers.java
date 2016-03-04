@@ -679,10 +679,17 @@ public class IRRuntimeHelpers {
     public static IRubyObject isDefinedMethod(ThreadContext context, IRubyObject receiver, String name, boolean checkIfPublic) {
         DynamicMethod method = receiver.getMetaClass().searchMethod(name);
 
-        // If we find the method we optionally check if it is public before returning "method".
-        if (!method.isUndefined() &&  (!checkIfPublic || method.getVisibility() == Visibility.PUBLIC)) {
-            return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
+        boolean defined = !method.isUndefined();
+
+        if (defined) {
+            // If we find the method we optionally check if it is public before returning "method".
+            defined = !checkIfPublic || method.getVisibility() == Visibility.PUBLIC;
+        } else {
+            // If we did not find the method, check respond_to_missing?
+            defined = receiver.respondsToMissing(name, checkIfPublic);
         }
+
+        if (defined) return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
 
         return context.nil;
     }
@@ -1071,8 +1078,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RubyString newFrozenStringFromRaw(Ruby runtime, String str, String encoding, int cr) {
-        return runtime.freezeAndDedupString(RubyString.newString(runtime, newByteListFromRaw(runtime, str, encoding), cr));
+    public static RubyString newFrozenStringFromRaw(ThreadContext context, String str, String encoding, int cr, String file, int line) {
+        return newFrozenString(context, newByteListFromRaw(context.runtime, str, encoding), cr, file, line);
     }
 
     @JIT
@@ -1758,5 +1765,47 @@ public class IRRuntimeHelpers {
         Block block = new Block(body, context.currentBinding(self, scope));
 
         return block;
+    }
+
+    public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
+        Ruby runtime = context.runtime;
+
+        RubyString string = RubyString.newString(runtime, bytelist, coderange);
+
+        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
+            // stuff location info into the string and then freeze it
+            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line)).freeze(context);
+            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
+            string.setFrozen(true);
+        } else {
+            string = runtime.freezeAndDedupString(string);
+        }
+
+        return string;
+    }
+
+    public static RubyString freezeLiteralString(ThreadContext context, RubyString string, String file, int line) {
+        Ruby runtime = context.runtime;
+
+        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
+            // stuff location info into the string and then freeze it
+            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line)).freeze(context);
+            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
+        }
+
+        string.setFrozen(true);
+
+        return string;
+    }
+
+    @JIT
+    public static IRubyObject callOptimizedAref(ThreadContext context, IRubyObject caller, IRubyObject target, RubyString keyStr, CallSite site) {
+        // FIXME: optimized builtin check for Hash#[]
+        if (target instanceof RubyHash) {
+            // call directly with cached frozen string
+            return ((RubyHash) target).op_aref(context, keyStr);
+        }
+
+        return site.call(context, caller, target, keyStr.strDup(context.runtime));
     }
 }

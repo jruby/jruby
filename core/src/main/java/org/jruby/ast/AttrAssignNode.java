@@ -41,8 +41,9 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     protected final Node receiverNode;
     private String name;
     private Node argsNode;
+    private final boolean isLazy;
 
-    public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
+    public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, boolean isLazy) {
         super(position, receiverNode != null && receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
@@ -54,6 +55,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         this.receiverNode = receiverNode;
         this.name = name;
         this.argsNode = argsNode;
+        this.isLazy = isLazy;
     }
 
     public NodeType getNodeType() {
@@ -104,6 +106,10 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         this.argsNode = argsNode;
 
         return this;
+    }
+
+    public boolean isLazy() {
+        return isLazy;
     }
 
     public List<Node> childNodes() {

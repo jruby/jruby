@@ -10,7 +10,6 @@
 package org.jruby.truffle.language.supercall;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -20,8 +19,6 @@ import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-
-import java.util.Arrays;
 
 /**
  * Get the arguments of a super call with implicit arguments (using the ones of the surrounding method).
@@ -50,13 +47,12 @@ public class ReadZSuperArgumentsNode extends RubyNode {
         }
 
         if (hasRestParameter) {
-            CompilerDirectives.transferToInterpreter();
             // TODO (eregon, 22 July 2015): Assumes rest arg is last, not true if post or keyword args.
-            final Object restArg = superArguments[superArguments.length - 1];
+            final int restArgIndex = reloadNodes.length - 1;
+            final Object restArg = superArguments[restArgIndex];
             assert RubyGuards.isRubyArray(restArg);
             final Object[] restArgs = ArrayOperations.toObjectArray((DynamicObject) restArg);
-            final int restArgIndex = reloadNodes.length - 1;
-            superArguments = Arrays.copyOf(superArguments, restArgIndex + restArgs.length);
+            superArguments = ArrayUtils.copyOf(superArguments, restArgIndex + restArgs.length);
             ArrayUtils.arraycopy(restArgs, 0, superArguments, restArgIndex, restArgs.length);
         }
 

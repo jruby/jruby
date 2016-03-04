@@ -48,10 +48,6 @@ public class Arity {
         return preRequired;
     }
 
-    public int getPostRequired() {
-        return postRequired;
-    }
-
     public int getRequired() {
         return preRequired + postRequired;
     }
@@ -64,20 +60,12 @@ public class Arity {
         return hasRest;
     }
 
-    public int getRestPosition() {
-        return preRequired + optional;
-    }
-
     public boolean acceptsKeywords() {
         return hasKeywords() || hasKeywordsRest();
     }
 
     public boolean hasKeywords() {
         return keywordArguments.length != 0;
-    }
-
-    public int getKeywordsCount() {
-        return keywordArguments.length;
     }
 
     public boolean hasKeywordsRest() {

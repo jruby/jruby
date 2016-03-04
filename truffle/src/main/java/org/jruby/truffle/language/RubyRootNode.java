@@ -78,11 +78,6 @@ public class RubyRootNode extends RootNode {
         return sharedMethodInfo.toString();
     }
 
-    public RubyRootNode withBody(RubyNode body) {
-        return new RubyRootNode(context, getSourceSection(), getFrameDescriptor(), sharedMethodInfo, body,
-                needsDeclarationFrame);
-    }
-
     public SharedMethodInfo getSharedMethodInfo() {
         return sharedMethodInfo;
     }

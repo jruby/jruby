@@ -45,8 +45,9 @@ public class OpAsgnNode extends Node {
     private final String variableName;
     private final String operatorName;
     private final String variableNameAsgn;
+    private final boolean isLazy;
 
-    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName) {
+    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
@@ -57,6 +58,7 @@ public class OpAsgnNode extends Node {
         this.variableName = variableName;
         this.operatorName = operatorName;
         this.variableNameAsgn = (variableName + "=").intern();
+        this.isLazy = isLazy;
     }
 
     public NodeType getNodeType() {
@@ -109,6 +111,10 @@ public class OpAsgnNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(receiverNode, valueNode);
+    }
+
+    public boolean isLazy() {
+        return isLazy;
     }
 
     @Override

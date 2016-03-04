@@ -1,19 +1,18 @@
-
-class IoLikeObject
-  attr_reader :body
-
-  def initialize
-    @body = []
-  end
-
-  def write(str)
-    @body << str
-  end
-end
-
 describe 'Zlib::GzipWriter' do
 
   before(:all) { require 'zlib' }
+
+  class IoLikeObject
+    attr_reader :body
+
+    def initialize
+      @body = []
+    end
+
+    def write(str)
+      @body << str
+    end
+  end
 
   it "doesn't corrupt the output" do
     io_like_object = IoLikeObject.new

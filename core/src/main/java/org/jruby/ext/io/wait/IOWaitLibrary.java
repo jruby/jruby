@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -114,17 +115,13 @@ public class IOWaitLibrary implements Library {
             tv = -1;
         }
         else {
-            tv = timeout.convertToInteger().getLongValue() * 1000;
+            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
             if (tv < 0) throw runtime.newArgumentError("time interval must be positive");
         }
 
         if (fptr.readPending() != 0) return runtime.getTrue();
-        // TODO: better effort to get available bytes from our channel
-//        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return Qfalse;
-        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_READ, tv);
+        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_READ | SelectionKey.OP_ACCEPT, tv);
         fptr.checkClosed();
-//        if (ioctl(fptr->fd, FIONREAD, &n)) rb_sys_fail(0);
-//        if (n > 0) return io;
         if (ready) return io;
         return context.nil;
     }
@@ -154,7 +151,7 @@ public class IOWaitLibrary implements Library {
             tv = -1;
         }
         else {
-            tv = timeout.convertToInteger().getLongValue() * 1000;
+            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
             if (tv < 0) throw runtime.newArgumentError("time interval must be positive");
         }
 

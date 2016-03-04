@@ -9,13 +9,8 @@ import org.jruby.ir.*;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.PositionAware;
-import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -107,11 +102,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, null, self, ic, implClass, name, args, block);
+                return ic.getEngine().interpret(context, null, self, ic, implClass, name, args, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, null, self, ic, implClass, name, args, block);
+                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, args, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -142,11 +137,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, null, self, ic, implClass, name, block);
+                return ic.getEngine().interpret(context, null, self, ic, implClass, name, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, null, self, ic, implClass, name, block);
+                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -177,11 +172,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, block);
+                return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, block);
+                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -212,11 +207,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
+                return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
+                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -247,11 +242,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
+                return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block, implClass);
-                    return ic.engine.interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
+                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
                 } finally {
                     this.post(ic, context);
                 }

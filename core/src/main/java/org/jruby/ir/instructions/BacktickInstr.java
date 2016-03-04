@@ -45,16 +45,21 @@ public class BacktickInstr extends NOperandResultBaseInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        RubyString newString = context.runtime.newString();
+        RubyString xstr;
 
-        for (Operand p: getOperands()) {
-            RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currScope, currDynScope, temp);
-            newString.append19((piece instanceof RubyString) ? (RubyString) piece : piece.to_s());
+        if (getOperands().length == 1) {
+            xstr = (RubyString) getPieces()[0].retrieve(context, self, currScope, currDynScope, temp);
+        } else {
+            xstr = context.runtime.newString();
+            for (Operand p : getOperands()) {
+                RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currScope, currDynScope, temp);
+                xstr.append19((piece instanceof RubyString) ? (RubyString) piece : piece.to_s());
+            }
+
+            xstr.setFrozen(true);
         }
 
-        newString.setFrozen(true);
-
-        return self.callMethod(context, "`", newString);
+        return self.callMethod(context, "`", xstr);
     }
 
     @Override

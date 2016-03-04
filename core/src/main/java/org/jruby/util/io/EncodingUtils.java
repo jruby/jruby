@@ -4,6 +4,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -25,6 +26,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -41,6 +43,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.CodeRangeable;
+import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
@@ -182,7 +185,7 @@ public class EncodingUtils {
                 fmode_p[0] = OpenFile.READABLE;
                 oflags_p[0] = ModeFlags.RDONLY;
             } else {
-                intmode = TypeConverter.checkIntegerType(context.runtime, vmode(vmodeAndVperm_p), "to_int");
+                intmode = TypeConverter.checkIntegerType(runtime, vmode(vmodeAndVperm_p), "to_int");
 
                 if (!intmode.isNil()) {
                     vmode(vmodeAndVperm_p, intmode);
@@ -198,7 +201,7 @@ public class EncodingUtils {
                         hasEnc = true;
                         parseModeEncoding(context, ioEncodable, p.substring(colonSplit + 1), fmode_p);
                     } else {
-                        Encoding e = (fmode_p[0] & OpenFile.BINMODE) != 0 ? ascii8bitEncoding(context.runtime) : null;
+                        Encoding e = (fmode_p[0] & OpenFile.BINMODE) != 0 ? ascii8bitEncoding(runtime) : null;
                         ioExtIntToEncs(context, ioEncodable, e, null, fmode_p[0]);
                     }
                 }
@@ -216,38 +219,50 @@ public class EncodingUtils {
                 ecflags = SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(ioEncodable.getEnc2(), ecflags);
                 ecopts_p[0] = context.nil;
             } else {
-                extractBinmode(context.runtime, options, fmode_p);
+                if (!hasVmode) {
+                    IRubyObject v = ((RubyHash) options).op_aref(context, runtime.newSymbol("mode"));
+                    if (!v.isNil()) {
+                        if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
+                            throw runtime.newArgumentError("mode specified twice");
+                        }
+                        hasVmode = true;
+                        vmode(vmodeAndVperm_p, v);
+                        continue vmode_handle;
+                    }
+                }
+
+                IRubyObject v = ((RubyHash) options).op_aref(context, runtime.newSymbol("flags"));
+                if (!v.isNil()) {
+                    v = v.convertToInteger();
+                    oflags_p[0] |= RubyNumeric.num2int(v);
+                    vmode(vmodeAndVperm_p, runtime.newFixnum(oflags_p[0]));
+                    fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
+                }
+
+                extractBinmode(runtime, options, fmode_p);
                 // Differs from MRI but we open with ModeFlags
                 if ((fmode_p[0] & OpenFile.BINMODE) != 0) {
                     oflags_p[0] |= ModeFlags.BINARY;
 
                     if (!hasEnc) {
-                        ioExtIntToEncs(context, ioEncodable, ascii8bitEncoding(context.runtime), null, fmode_p[0]);
+                        ioExtIntToEncs(context, ioEncodable, ascii8bitEncoding(runtime), null, fmode_p[0]);
                     }
                 } else if (DEFAULT_TEXTMODE != 0 && (vmode(vmodeAndVperm_p) == null || vmode(vmodeAndVperm_p).isNil())) {
                     fmode_p[0] |= DEFAULT_TEXTMODE;
                 }
-
-                if (!hasVmode) {
-                    IRubyObject v = hashARef(context.runtime, options, "mode");
-
-                    if (!v.isNil()) {
-                        if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
-                            throw context.runtime.newArgumentError("mode specified twice");
-                        }
-                        hasVmode = true;
-                        vmode(vmodeAndVperm_p, v);
-
-                        continue vmode_handle;
-                    }
-                }
-                IRubyObject v = hashARef(context.runtime, options, "perm");
+                
+                v = hashARef(runtime, options, "perm");
                 if (!v.isNil()) {
                     if (vperm(vmodeAndVperm_p) != null) {
-                        if (!vperm(vmodeAndVperm_p).isNil()) throw context.runtime.newArgumentError("perm specified twice");
+                        if (!vperm(vmodeAndVperm_p).isNil()) throw runtime.newArgumentError("perm specified twice");
 
                         vperm(vmodeAndVperm_p, v);
                     }
+                }
+
+                IRubyObject extraFlags = hashARef(runtime, options, "flags");
+                if (!extraFlags.isNil()) {
+                    oflags_p[0] |= extraFlags.convertToInteger().getIntValue();
                 }
 
                 ecflags = (fmode_p[0] & OpenFile.READABLE) != 0 ?
@@ -258,7 +273,7 @@ public class EncodingUtils {
                 }
 
                 if (ioExtractEncodingOption(context, ioEncodable, options, fmode_p)) {
-                    if (hasEnc) throw context.runtime.newArgumentError("encoding specified twice");
+                    if (hasEnc) throw runtime.newArgumentError("encoding specified twice");
                 }
 
                 ecflags = SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(ioEncodable.getEnc2(), ecflags);
@@ -358,7 +373,7 @@ public class EncodingUtils {
         }
 
         if (internal == null ||
-                ((fmode & OpenFile.SETENC_BY_BOM) == 0) && internal == external) {
+                ((fmode & OpenFile.SETENC_BY_BOM) == 0 && internal == external)) {
             encodable.setEnc((defaultExternal && internal != external) ? null : external);
             encodable.setEnc2(null);
         } else {
@@ -371,7 +386,7 @@ public class EncodingUtils {
     public static void parseModeEncoding(ThreadContext context, IOEncodable ioEncodable, String option, int[] fmode_p) {
         Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
-        Encoding idx, idx2 = null;
+        Encoding idx2;
         Encoding intEnc, extEnc;
         if (fmode_p == null) fmode_p = new int[]{0};
         String estr;
@@ -380,23 +395,29 @@ public class EncodingUtils {
 
         if (encs.length == 2) {
             estr = encs[0];
-            if (estr.toLowerCase().startsWith("bom|utf-")) {
-                fmode_p[0] |= OpenFile.SETENC_BY_BOM;
-                ioEncodable.setBOM(true);
-                estr = estr.substring(4);
-            }
-            idx = service.getEncodingFromString(estr);
         } else {
             estr = option;
-            if (estr.toLowerCase().startsWith("bom|utf-")) {
-                fmode_p[0] |= OpenFile.SETENC_BY_BOM;
-                ioEncodable.setBOM(true);
-                estr = estr.substring(4);
-            }
-            idx = service.getEncodingFromString(estr);
         }
 
-        extEnc = idx;
+        if (estr.toLowerCase().startsWith("bom|")) {
+            estr = estr.substring(4);
+            if (estr.toLowerCase().startsWith("utf-")) {
+                fmode_p[0] |= OpenFile.SETENC_BY_BOM;
+                ioEncodable.setBOM(true);
+            } else {
+                runtime.getWarnings().warn("BOM with non-UTF encoding " + estr + " is nonsense");
+                fmode_p[0] &= ~OpenFile.SETENC_BY_BOM;
+            }
+        }
+
+        Encoding idx = service.findEncodingNoError(new ByteList(estr.getBytes()));
+
+        if (idx == null) {
+            runtime.getWarnings().warn("Unsupported encoding " + estr + " ignored");
+            extEnc = null;
+        } else {
+            extEnc = idx;
+        }
 
         intEnc = null;
         if (encs.length == 2) {
@@ -1323,7 +1344,7 @@ public class EncodingUtils {
     // io_set_encoding_by_bom
     public static void ioSetEncodingByBOM(ThreadContext context, RubyIO io) {
         Ruby runtime = context.runtime;
-        Encoding bomEncoding = ioStripBOM(io);
+        Encoding bomEncoding = ioStripBOM(context, io);
 
         if (bomEncoding != null) {
             // FIXME: Wonky that we acquire RubyEncoding to pass these encodings through
@@ -1331,6 +1352,8 @@ public class EncodingUtils {
             IRubyObject theInternal = io.internal_encoding(context);
 
             io.setEncoding(runtime.getCurrentContext(), theBom, theInternal, context.nil);
+        } else {
+            io.setEnc2(null);
         }
     }
 
@@ -1817,15 +1840,9 @@ public class EncodingUtils {
         if (cr == StringSupport.CR_BROKEN) {
             throw context.runtime.newArgumentError("replacement must be valid byte sequence '" + str + "'");
         }
-        else if (cr == StringSupport.CR_7BIT) {
+        else {
             Encoding e = STR_ENC_GET(str);
-            if (!enc.isAsciiCompatible()) {
-                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
-            }
-        }
-        else { /* ENC_CODERANGE_VALID */
-            Encoding e = STR_ENC_GET(str);
-            if (enc != e) {
+            if (cr == StringSupport.CR_7BIT ? enc.minLength() != 1 : enc != e) {
                 throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
             }
         }
@@ -1878,4 +1895,113 @@ public class EncodingUtils {
     public static Encoding STR_ENC_GET(ByteListHolder str) {
         return getEncoding(str.getByteList());
     }
+
+    public static RubyString rbStrEscape(Ruby runtime, RubyString str) {
+        Encoding enc = str.getEncoding();
+        ByteList pByteList = str.getByteList();
+        byte[] pBytes = pByteList.unsafeBytes();
+        int p = pByteList.begin();
+        int pend = p + pByteList.realSize();
+        int prev = p;
+        byte[] buf;
+        RubyString result = RubyString.newEmptyString(runtime);
+        boolean unicode_p = enc.isUnicode();
+        boolean asciicompat = enc.isAsciiCompatible();
+
+        while (p < pend) {
+            long c, cc;
+            int n = StringSupport.preciseLength(enc, pBytes, p, pend);
+            if (!StringSupport.MBCLEN_CHARFOUND_P(n)) {
+                if (p > prev) result.cat(pBytes, prev, p - prev);
+                n = enc.minLength();
+                if (pend < p + n)
+                    n = (int) (pend - p);
+                while ((n--) != 0) {
+                    buf = String.format("x%02X", pBytes[p] & 0377).getBytes();
+                    result.cat(buf, 0, buf.length);
+                    prev = ++p;
+                }
+                continue;
+            }
+            n = StringSupport.MBCLEN_CHARFOUND_LEN(n);
+            c = enc.mbcToCode(pBytes, p, pend);
+            p += n;
+            switch ((int)c) {
+                case '\n':
+                    cc = 'n';
+                    break;
+                case '\r':
+                    cc = 'r';
+                    break;
+                case '\t':
+                    cc = 't';
+                    break;
+                case '\f':
+                    cc = 'f';
+                    break;
+                case '\013':
+                    cc = 'v';
+                    break;
+                case '\010':
+                    cc = 'b';
+                    break;
+                case '\007':
+                    cc = 'a';
+                    break;
+                case 033:
+                    cc = 'e';
+                    break;
+                default:
+                    cc = 0;
+                    break;
+            }
+            if (cc != 0) {
+                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
+                buf = new byte[] {(byte)'\\', (byte)cc};
+                result.cat(buf, 0, 2);
+                prev = p;
+            } else if (asciicompat && Encoding.isAscii((byte)c) && c > 31 /*ISPRINT(c)*/) {
+            } else {
+                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
+                rbStrBufCatEscapedChar(result, c, unicode_p);
+                prev = p;
+            }
+        }
+        if (p > prev) result.cat(pBytes, prev, p - prev);
+        result.setEncodingAndCodeRange(USASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
+
+        result.setTaint(str.isTaint());
+        return result;
+    }
+
+    public static int rbStrBufCatEscapedChar(RubyString result, long c, boolean unicode_p) {
+        // FIXME: inefficient
+        byte[] buf;
+        int l;
+
+        c &= 0xffffffff;
+
+        if (unicode_p) {
+            if (c < 0x7F && c > 31 /*ISPRINT(c)*/) {
+                buf = String.format("%c", (char)c).getBytes();
+            }
+            else if (c < 0x10000) {
+                buf = String.format("\\u%04X", c).getBytes();
+            }
+            else {
+                buf = String.format("\\u{%X}", c).getBytes();
+            }
+        }
+        else {
+            if (c < 0x100) {
+                buf = String.format("\\x{%02X}", c).getBytes();
+            }
+            else {
+                buf = String.format("\\x{%X}", c).getBytes();
+            }
+        }
+        result.cat(buf);
+        return buf.length;
+    }
+
 }

@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
-
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
@@ -387,6 +386,12 @@ public abstract class ArrayUtils {
 
     public static void arraycopy(Object[] src, int srcPos, Object[] dest, int destPos, int length) {
         System.arraycopy(src, srcPos, dest, destPos, length);
+    }
+
+    public static Object[] copyOf(Object[] array, int newLength) {
+        final Object[] copy = new Object[newLength];
+        System.arraycopy(array, 0, copy, 0, Math.min(array.length, newLength));
+        return copy;
     }
 
     public static Object[] grow(Object[] array, int newLength) {

@@ -99,7 +99,7 @@ public class StringArraySet extends RubyArray {
     @Override
     public synchronized IRubyObject unshift(IRubyObject[] items) {
         IRubyObject result = super.unshift(items);
-        putAll(toJavaArray());
+        putAll(toJavaArrayUnsafe());
         return result;
     }
 
@@ -360,5 +360,5 @@ public class StringArraySet extends RubyArray {
             set.add(string);
         }
     }
-    
+
 }

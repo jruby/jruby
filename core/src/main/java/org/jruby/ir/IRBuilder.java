@@ -4,6 +4,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyString;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
@@ -435,6 +436,7 @@ public class IRBuilder {
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
             case NILNODE: return buildNil();
             case OPASGNANDNODE: return buildOpAsgnAnd((OpAsgnAndNode) node);
+            case OPASGNCONSTDECLNODE: return buildOpAsgnConstDeclNode((OpAsgnConstDeclNode) node);
             case OPASGNNODE: return buildOpAsgn((OpAsgnNode) node);
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node);
             case OPELEMENTASGNNODE: return buildOpElementAsgn((OpElementAsgnNode) node);
@@ -842,11 +844,28 @@ public class IRBuilder {
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode) {
         boolean containsAssignment = attrAssignNode.containsVariableAssignment();
         Operand obj = buildWithOrder(attrAssignNode.getReceiverNode(), containsAssignment);
+
+        Label lazyLabel = getNewLabel();
+        Label endLabel = getNewLabel();
+        Variable result = createTemporaryVariable();
+        if (attrAssignNode.isLazy()) {
+            addInstr(new BNilInstr(lazyLabel, obj));
+        }
+
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
         addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
-        return lastArg;
+        addInstr(new CopyInstr(result, lastArg));
+
+        if (attrAssignNode.isLazy()) {
+            addInstr(new JumpInstr(endLabel));
+            addInstr(new LabelInstr(lazyLabel));
+            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new LabelInstr(endLabel));
+        }
+
+        return result;
     }
 
     public Operand buildAttrAssignAssignment(Node node, Operand value) {
@@ -994,7 +1013,7 @@ public class IRBuilder {
         // Frozen string optimization: check for "string".freeze
         if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
             StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange());
+            return new FrozenString(asString.getValue(), asString.getCodeRange(), asString.getPosition().getFile(), asString.getPosition().getLine());
         }
 
         // Though you might be tempted to move this build into the CallInstr as:
@@ -1002,9 +1021,30 @@ public class IRBuilder {
         // that is incorrect IR because the receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
         Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
-        Operand[] args       = setupCallArgs(callArgsNode);
-        Operand   block      = setupCallClosure(callNode.getIterNode());
         Variable  callResult = createTemporaryVariable();
+
+        ArrayNode argsAry;
+        if (
+                callNode.getName().equals("[]") &&
+                callNode.getArgsNode() instanceof ArrayNode &&
+                (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
+                argsAry.get(0) instanceof StrNode &&
+                !scope.maybeUsingRefinements()) {
+            StrNode keyNode = (StrNode) argsAry.get(0);
+            addInstr(ArrayDerefInstr.create(callResult, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), keyNode.getPosition().getFile(), keyNode.getLine())));
+            return callResult;
+        }
+
+        Operand[] args       = setupCallArgs(callArgsNode);
+
+        Label lazyLabel = getNewLabel();
+        Label endLabel = getNewLabel();
+        if (callNode.isLazy()) {
+            addInstr(new BNilInstr(lazyLabel, receiver));
+        }
+
+        Operand block      = setupCallClosure(callNode.getIterNode());
+
         CallInstr callInstr  = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
@@ -1015,6 +1055,14 @@ public class IRBuilder {
         }
 
         receiveBreakException(block, callInstr);
+
+        if (callNode.isLazy()) {
+            addInstr(new JumpInstr(endLabel));
+            addInstr(new LabelInstr(lazyLabel));
+            addInstr(new CopyInstr(callResult, manager.getNil()));
+            addInstr(new LabelInstr(endLabel));
+        }
+
         return callResult;
     }
 
@@ -1071,7 +1119,14 @@ public class IRBuilder {
                     v2 = build(whenNode.getExpressionNodes());
                 }
             } else {
-                addInstr(new EQQInstr(eqqResult, build(whenNode.getExpressionNodes()), value));
+                Operand expression = build(whenNode.getExpressionNodes());
+
+                // use frozen string for direct literal strings in `when`
+                if (expression instanceof StringLiteral) {
+                    expression = ((StringLiteral) expression).frozenString;
+                }
+
+                addInstr(new EQQInstr(eqqResult, expression, value));
                 v1 = eqqResult;
                 v2 = manager.getTrue();
             }
@@ -1238,19 +1293,42 @@ public class IRBuilder {
         return nearestModuleBodyDepth == -1 ? scope.getCurrentScopeVariable() : CurrentScope.ScopeFor(nearestModuleBodyDepth);
     }
 
-    public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand val) {
+    public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            addInstr(new PutConstInstr(findContainerModule(), constDeclNode.getName(), val));
+            return putConstant(constDeclNode.getName(), value);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
-            Operand module = build(((Colon2Node) constNode).getLeftNode());
-            addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
+            return putConstant((Colon2Node) constNode, value);
         } else { // colon3, assign in Object
-            addInstr(new PutConstInstr(new ObjectClass(), constDeclNode.getName(), val));
+            return putConstant((Colon3Node) constNode, value);
         }
+    }
 
-        return val;
+    private Operand putConstant(String name, Operand value) {
+        addInstr(new PutConstInstr(findContainerModule(), name, value));
+
+        return value;
+    }
+
+    private Operand putConstant(Colon3Node node, Operand value) {
+        addInstr(new PutConstInstr(new ObjectClass(), node.getName(), value));
+
+        return value;
+    }
+
+    private Operand putConstant(Colon2Node node, Operand value) {
+        addInstr(new PutConstInstr(build(node.getLeftNode()), node.getName(), value));
+
+        return value;
+    }
+
+    private Operand putConstantAssignment(OpAsgnConstDeclNode node, Operand value) {
+        Node constNode = node.getFirstNode();
+
+        if (constNode instanceof Colon2Node) return putConstant((Colon2Node) constNode, value);
+
+        return putConstant((Colon3Node) constNode, value);
     }
 
     private void genInheritanceSearchInstrs(Operand startingModule, Variable constVal, Label foundLabel, boolean noPrivateConstants, String name) {
@@ -1655,7 +1733,12 @@ public class IRBuilder {
         int depth = dasgnNode.getDepth();
         Variable arg = getLocalVariable(dasgnNode.getName(), depth);
         Operand  value = build(dasgnNode.getValueNode());
+
+        // no use copying a variable to itself
+        if (arg == value) return value;
+
         addInstr(new CopyInstr(arg, value));
+
         return value;
 
         // IMPORTANT: The return value of this method is value, not arg!
@@ -1831,6 +1914,7 @@ public class IRBuilder {
         // Now for opt args
         if (opt > 0) {
             int optIndex = argsNode.getOptArgIndex();
+            Variable temp = createTemporaryVariable();
             for (int j = 0; j < opt; j++, argIndex++) {
                 // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = getNewLabel();
@@ -1839,10 +1923,12 @@ public class IRBuilder {
                 Variable av = getNewLocalVariable(argName, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                addInstr(new ReceiveOptArgInstr(av, signature.required(), signature.pre(), j));
-                addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
-                build(n.getValue());
+                addInstr(new ReceiveOptArgInstr(temp, signature.required(), signature.pre(), j));
+                addInstr(BNEInstr.create(l, temp, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
+                Operand defaultResult = build(n.getValue());
+                addInstr(new CopyInstr(temp, defaultResult));
                 addInstr(new LabelInstr(l));
+                addInstr(new CopyInstr(av, temp));
             }
         }
 
@@ -2116,6 +2202,10 @@ public class IRBuilder {
     private Operand dynamicPiece(Node pieceNode) {
         Operand piece = build(pieceNode);
 
+        if (piece instanceof StringLiteral) {
+            piece = ((StringLiteral)piece).frozenString;
+        }
+
         return piece == null ? manager.getNil() : piece;
     }
 
@@ -2139,7 +2229,7 @@ public class IRBuilder {
         }
 
         Variable res = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding()));
+        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding(), node.isFrozen(), getFileName(), node.getLine()));
         return res;
     }
 
@@ -2151,7 +2241,7 @@ public class IRBuilder {
         }
 
         Variable res = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding()));
+        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding(), false, getFileName(), node.getLine()));
         return copyAndReturnValue(new DynamicSymbol(res));
     }
 
@@ -2670,7 +2760,12 @@ public class IRBuilder {
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
         Variable var  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
         Operand value = build(localAsgnNode.getValueNode());
+
+        // no use copying a variable to itself
+        if (var == value) return value;
+
         addInstr(new CopyInstr(var, value));
+
         return value;
 
         // IMPORTANT: The return value of this method is value, not var!
@@ -2806,6 +2901,7 @@ public class IRBuilder {
         return manager.getNil();
     }
 
+    // FIXME: The logic for lazy and non-lazy building is pretty icky...clean up
     public Operand buildOpAsgn(OpAsgnNode opAsgnNode) {
         Label l;
         Variable readerValue = createTemporaryVariable();
@@ -2814,7 +2910,15 @@ public class IRBuilder {
         CallType callType = receiver instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
 
         // get attr
-        Operand  v1 = build(receiver);
+        Operand  v1 = build(opAsgnNode.getReceiverNode());
+
+        Label lazyLabel = getNewLabel();
+        Label endLabel = getNewLabel();
+        Variable result = createTemporaryVariable();
+        if (opAsgnNode.isLazy()) {
+            addInstr(new BNilInstr(lazyLabel, v1));
+        }
+
         addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
@@ -2833,10 +2937,10 @@ public class IRBuilder {
             addInstr(new CopyInstr(readerValue, v2));
             addInstr(new LabelInstr(l));
 
-            return readerValue;
-        }
-        // Ex: e.val = e.val.f(n)
-        else {
+            if (!opAsgnNode.isLazy()) return readerValue;
+
+            addInstr(new CopyInstr(result, readerValue));
+        } else {  // Ex: e.val = e.val.f(n)
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode());
             Variable setValue = createTemporaryVariable();
@@ -2846,8 +2950,50 @@ public class IRBuilder {
             addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
             // Returning writerValue is incorrect becuase the assignment method
             // might return something else other than the value being set!
-            return setValue;
+            if (!opAsgnNode.isLazy()) return setValue;
+
+            addInstr(new CopyInstr(result, setValue));
         }
+
+        addInstr(new JumpInstr(endLabel));
+        addInstr(new LabelInstr(lazyLabel));
+        addInstr(new CopyInstr(result, manager.getNil()));
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
+    }
+
+    // FIXME: All three paths feel a bit inefficient.  They all interact with the constant first to know
+    // if it exists or whether it should raise if it doesn't...then it will access it against for the put
+    // logic.  I could avoid that work but then there would be quite a bit more logic in Java.   This is a
+    // pretty esoteric corner of Ruby so I am not inclined to put anything more than a comment that it can be
+    // improved.
+    public Operand buildOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
+        String op = node.getOperator();
+
+        if ("||".equals(op)) {
+            Variable result = createTemporaryVariable();
+            Label isDefined = getNewLabel();
+            Label done = getNewLabel();
+            Variable defined = createTemporaryVariable();
+            addInstr(new CopyInstr(defined, buildGetDefinition(node.getFirstNode())));
+            addInstr(BNEInstr.create(isDefined, defined, manager.getNil()));
+            addInstr(new CopyInstr(result, putConstantAssignment(node, build(node.getSecondNode()))));
+            addInstr(new JumpInstr(done));
+            addInstr(new LabelInstr(isDefined));
+            addInstr(new CopyInstr(result, build(node.getFirstNode())));
+            addInstr(new LabelInstr(done));
+            return result;
+        } else if ("&&".equals(op)) {
+            build(node.getFirstNode()); // Get once to make sure it is there or will throw if not
+            return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, build(node.getSecondNode()))));
+        }
+
+        Variable result = createTemporaryVariable();
+        Operand lhs = build(node.getFirstNode());
+        Operand rhs = build(node.getSecondNode());
+        addInstr(CallInstr.create(scope, result, node.getOperator(), lhs, new Operand[] { rhs }, null));
+        return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, result)));
     }
 
     // Translate "x &&= y" --> "x = y if is_true(x)" -->
@@ -3318,10 +3464,12 @@ public class IRBuilder {
         if (strNode instanceof FileNode) return new Filename();
 
         Operand literal = strNode.isFrozen() ?
-                new FrozenString(strNode.getValue(), strNode.getCodeRange()) :
-                new StringLiteral(strNode.getValue(), strNode.getCodeRange());
+                new FrozenString(strNode.getValue(), strNode.getCodeRange(), strNode.getPosition().getFile(), strNode.getPosition().getLine()) :
+                new StringLiteral(strNode.getValue(), strNode.getCodeRange(), strNode.getPosition().getFile(), strNode.getPosition().getLine());
 
-        return copyAndReturnValue(literal);
+        Operand result = copyAndReturnValue(literal);
+
+        return result;
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {
@@ -3452,7 +3600,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new StringLiteral(node.getValue(), node.getCodeRange())}));
+        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), node.getPosition().getFile(), node.getPosition().getLine())}));
     }
 
     public Operand buildYield(YieldNode node) {

@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -79,7 +80,8 @@ public class TemporaryLocalVariable extends TemporaryVariable {
             case CURRENT_SCOPE: return TemporaryCurrentScopeVariable.decode(d);
             case FLOAT: return TemporaryFloatVariable.decode(d);
             case FIXNUM: return TemporaryFixnumVariable.decode(d);
-            case LOCAL: return new TemporaryLocalVariable(d.decodeInt());
+            case BOOLEAN: return TemporaryBooleanVariable.decode(d);
+            case LOCAL: return d.getCurrentScope().getManager().newTemporaryLocalVariable(d.decodeInt());
         }
         return null; // Should not reach here.
     }

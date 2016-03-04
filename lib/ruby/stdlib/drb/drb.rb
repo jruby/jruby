@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 #
 # = drb/drb.rb
 #
@@ -47,7 +48,7 @@
 
 require 'socket'
 require 'thread'
-require 'fcntl'
+require 'io/wait'
 require 'weakref'
 require 'drb/eq'
 
@@ -786,7 +787,7 @@ module DRb
         end
       end
       if first && (config[:auto_load] != false)
-        auto_load(uri, config)
+        auto_load(uri)
         return open(uri, config, false)
       end
       raise DRbBadURI, 'can\'t parse uri:' + uri
@@ -810,7 +811,7 @@ module DRb
         end
       end
       if first && (config[:auto_load] != false)
-        auto_load(uri, config)
+        auto_load(uri)
         return open_server(uri, config, false)
       end
       raise DRbBadURI, 'can\'t parse uri:' + uri
@@ -833,14 +834,14 @@ module DRb
         end
       end
       if first && (config[:auto_load] != false)
-        auto_load(uri, config)
+        auto_load(uri)
         return uri_option(uri, config, false)
       end
       raise DRbBadURI, 'can\'t parse uri:' + uri
     end
     module_function :uri_option
 
-    def auto_load(uri, config)  # :nodoc:
+    def auto_load(uri)  # :nodoc:
       if uri =~ /^drb([a-z0-9]+):/
         require("drb/#{$1}") rescue nil
       end
@@ -1044,7 +1045,7 @@ module DRb
     # Check to see if this connection is alive.
     def alive?
       return false unless @socket
-      if IO.select([@socket], nil, nil, 0)
+      if @socket.to_io.wait_readable(0)
         close
         return false
       end
@@ -1053,7 +1054,6 @@ module DRb
 
     def set_sockopt(soc) # :nodoc:
       soc.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-      soc.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC) if defined? Fcntl::FD_CLOEXEC
     end
   end
 
@@ -1511,7 +1511,7 @@ module DRb
         if @protocol.respond_to? :shutdown
           @protocol.shutdown
         else
-          @thread.kill # xxx: Thread#kill
+          [@thread, *@grp.list].each {|thread| thread.kill} # xxx: Thread#kill
         end
         @thread.join
       end

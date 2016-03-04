@@ -20,39 +20,38 @@ public abstract class ReadFrameSlotNode extends Node {
     protected final FrameSlot frameSlot;
 
     public ReadFrameSlotNode(FrameSlot slot) {
-        assert slot != null;
         this.frameSlot = slot;
     }
 
     public abstract Object executeRead(Frame frame);
 
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
+    @Specialization(rewriteOn = FrameSlotTypeException.class)
     public boolean readBoolean(Frame frame) throws FrameSlotTypeException {
         return frame.getBoolean(frameSlot);
     }
 
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public int readInteger(Frame frame) throws FrameSlotTypeException {
+    @Specialization(rewriteOn = FrameSlotTypeException.class)
+    public int readInt(Frame frame) throws FrameSlotTypeException {
         return frame.getInt(frameSlot);
     }
 
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
+    @Specialization(rewriteOn = FrameSlotTypeException.class)
     public long readLong(Frame frame) throws FrameSlotTypeException {
         return frame.getLong(frameSlot);
     }
 
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
+    @Specialization(rewriteOn = FrameSlotTypeException.class)
     public double readDouble(Frame frame) throws FrameSlotTypeException {
         return frame.getDouble(frameSlot);
     }
 
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
+    @Specialization(rewriteOn = FrameSlotTypeException.class)
     public Object readObject(Frame frame) throws FrameSlotTypeException {
         return frame.getObject(frameSlot);
     }
 
     @Specialization
-    public Object doValue(Frame frame) {
+    public Object readAny(Frame frame) {
         return frame.getValue(frameSlot);
     }
 

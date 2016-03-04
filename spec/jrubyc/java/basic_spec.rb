@@ -1,7 +1,4 @@
-require_relative "../../java_integration/spec_helper"
-require 'rbconfig'
-require 'jruby'
-require 'jruby/compiler'
+require_relative '../spec_helper'
 
 describe "A Ruby class generating a Java stub" do
   def generate(script)
@@ -9,23 +6,23 @@ describe "A Ruby class generating a Java stub" do
     # we use __FILE__ so there's something for it to read
     JRuby::Compiler::JavaGenerator.generate_java node, __FILE__
   end
-    
+
   it "generates Java source" do
     script = generate("class Foo; end")
-    script.should_not == nil
-    script.classes[0].name.should == "Foo"
+    expect( script ).to_not be nil
+    expect( script.classes[0].name ).to eql "Foo"
     java = script.classes[0].to_s
 
     # a few sanity checks for default behaviors
-    java.should match /import org\.jruby\.Ruby;/
-    java.should match /public class Foo {/
-    java.should match /private static final Ruby __ruby__ = Ruby\.getGlobalRuntime\(\);/
-    java.should match /private static final RubyClass __metaclass__;/
-    java.should match /static {/
-    java.should match /metaclass = __ruby__\.getClass\("Foo"\);/
-    java.should match /__ruby__\.executeScript\(source, "#{__FILE__}"\)/
-    java.should match /private Foo\(Ruby \w+, RubyClass \w+\)/
-    java.should match /public static IRubyObject __allocate__\(Ruby \w+, RubyClass \w+\)/
+    expect( java ).to match /import org\.jruby\.Ruby;/n
+    expect( java ).to match /public class Foo extends RubyObject\s+{/n
+    expect( java ).to match /private static final Ruby __ruby__ = Ruby\.getGlobalRuntime\(\);/n
+    expect( java ).to match /private static final RubyClass __metaclass__;/n
+    expect( java ).to match /static {/n
+    expect( java ).to match /metaclass = __ruby__\.getClass\("Foo"\);/n
+    expect( java ).to match /__ruby__\.executeScript\(source, "#{__FILE__}"\)/n
+    expect( java ).to match /private Foo\(Ruby \w+, RubyClass \w+\)/n
+    expect( java ).to match /public static IRubyObject __allocate__\(Ruby \w+, RubyClass \w+\)/n
   end
 
   it "generates a javac command" do
@@ -35,10 +32,10 @@ describe "A Ruby class generating a Java stub" do
       :javac_options => [],
       :classpath => ENV_JAVA['java.class.path'].split(File::PATH_SEPARATOR),
       :target => '/tmp')
-    
-    javac.should match /javac/
-    javac.should match /jruby\w*\.jar#{File::PATH_SEPARATOR}/
-    javac.should match /Foo\.java/
-    javac.should match /Bar\.java/
+
+    expect( javac ).to match /javac/
+    expect( javac ).to match /\".*?jruby\w*\.jar\"#{File::PATH_SEPARATOR}/
+    expect( javac ).to match /Foo\.java/
+    expect( javac ).to match /Bar\.java/
   end
 end

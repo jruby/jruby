@@ -1,4 +1,5 @@
 # -*- coding: us-ascii -*-
+# frozen_string_literal: false
 require 'test/unit'
 require 'erb'
 
@@ -39,6 +40,25 @@ class TestERB < Test::Unit::TestCase
     assert_match(/\Atest filename:1\b/, e.backtrace[0])
   end
 
+  def test_with_filename_lineno
+    erb = ERB.new("<% raise ::TestERB::MyError %>")
+    erb.filename = "test filename"
+    erb.lineno = 100
+    e = assert_raise(MyError) {
+      erb.result
+    }
+    assert_match(/\Atest filename:101\b/, e.backtrace[0])
+  end
+
+  def test_with_location
+    erb = ERB.new("<% raise ::TestERB::MyError %>")
+    erb.location = ["test filename", 200]
+    e = assert_raise(MyError) {
+      erb.result
+    }
+    assert_match(/\Atest filename:201\b/, e.backtrace[0])
+  end
+
   def test_html_escape
     assert_equal(" !&quot;\#$%&amp;&#39;()*+,-./0123456789:;&lt;=&gt;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
                  ERB::Util.html_escape(" !\"\#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"))
@@ -70,14 +90,6 @@ class TestERBCore < Test::Unit::TestCase
     _test_core(nil)
     _test_core(0)
     _test_core(1)
-    _test_core(2)
-    orig = $VERBOSE
-    begin
-      $VERBOSE = false
-      _test_core(3)
-    ensure
-      $VERBOSE = orig
-    end
   end
 
   def _test_core(safe)

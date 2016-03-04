@@ -10,27 +10,27 @@
 package org.jruby.truffle.platform.java;
 
 import jnr.ffi.provider.MemoryManager;
-import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
-import org.jruby.truffle.platform.ClockGetTime;
 import org.jruby.truffle.platform.DefaultRubiniusConfiguration;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.ProcessName;
 import org.jruby.truffle.platform.RubiniusConfiguration;
-import org.jruby.truffle.platform.Sockets;
-import org.jruby.truffle.platform.TrufflePOSIXHandler;
 import org.jruby.truffle.platform.linux.LinuxRubiniusConfiguration;
 import org.jruby.truffle.platform.openjdk.OpenJDKArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.openjdk.OpenJDKLinkedBlockingQueueLocksConditions;
+import org.jruby.truffle.platform.posix.ClockGetTime;
+import org.jruby.truffle.platform.posix.Sockets;
+import org.jruby.truffle.platform.posix.TrufflePosixHandler;
+import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 
 public class JavaPlatform implements NativePlatform {
 
-    private final POSIX posix;
+    private final TrufflePosix posix;
     private final MemoryManager memoryManager;
     private final SignalManager signalManager;
     private final ProcessName processName;
@@ -39,7 +39,7 @@ public class JavaPlatform implements NativePlatform {
     private final RubiniusConfiguration rubiniusConfiguration;
 
     public JavaPlatform(RubyContext context) {
-        posix = new TruffleJavaPOSIX(context, POSIXFactory.getJavaPOSIX(new TrufflePOSIXHandler(context)));
+        posix = new TruffleJavaPosix(POSIXFactory.getJavaPOSIX(new TrufflePosixHandler(context)));
         memoryManager = new JavaMemoryManager();
         signalManager = new SunMiscSignalManager();
         processName = new JavaProcessName();
@@ -51,7 +51,7 @@ public class JavaPlatform implements NativePlatform {
     }
 
     @Override
-    public POSIX getPosix() {
+    public TrufflePosix getPosix() {
         return posix;
     }
 

@@ -11,16 +11,20 @@ package org.jruby.truffle.language.globals;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 
 public class CheckStdoutVariableTypeNode extends RubyNode {
 
     @Child private RubyNode child;
+
+    @Child private DoesRespondDispatchHeadNode respondToWriteNode;
+
+    private final BranchProfile unsuitableTypeProfile = BranchProfile.create();
 
     public CheckStdoutVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
@@ -28,15 +32,23 @@ public class CheckStdoutVariableTypeNode extends RubyNode {
     }
 
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
         final Object childValue = child.execute(frame);
 
-        if (childValue == nil() || ModuleOperations.lookupMethod(coreLibrary().getMetaClass(childValue), "write") == null) {
-            throw new RaiseException(coreLibrary().typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(coreLibrary().getLogicalClass(childValue)).getName()), this));
+        if (childValue == nil() || !getRespondToWriteNode().doesRespondTo(frame, "write", childValue)) {
+            unsuitableTypeProfile.enter();
+            throw new RaiseException(coreLibrary().typeErrorMustHaveWriteMethod(childValue, this));
         }
 
         return childValue;
+    }
+
+    private DoesRespondDispatchHeadNode getRespondToWriteNode() {
+        if (respondToWriteNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            respondToWriteNode = insert(new DoesRespondDispatchHeadNode(getContext(), false));
+        }
+
+        return respondToWriteNode;
     }
 
 }

@@ -1,10 +1,11 @@
+# frozen_string_literal: false
 require 'test/unit'
 
 class TestSyntax < Test::Unit::TestCase
   def assert_syntax_files(test)
     srcdir = File.expand_path("../../..", __FILE__)
     srcdir = File.join(srcdir, test)
-    assert_separately(%W[--disable-gem - #{srcdir}],
+    assert_separately(%W[--disable-gems - #{srcdir}],
                       __FILE__, __LINE__, <<-'eom', timeout: Float::INFINITY)
       dir = ARGV.shift
       for script in Dir["#{dir}/**/*.rb"].sort
@@ -102,24 +103,33 @@ class TestSyntax < Test::Unit::TestCase
     assert_nothing_raised(ArgumentError, bug7922) {o.bug7922(foo: 42)}
   end
 
+  class KW2
+    def kw(k1: 1, k2: 2) [k1, k2] end
+  end
+
   def test_keyword_splat
     assert_valid_syntax("foo(**h)", __FILE__)
-    o = Object.new
-    def o.kw(k1: 1, k2: 2) [k1, k2] end
+    o = KW2.new
     h = {k1: 11, k2: 12}
     assert_equal([11, 12], o.kw(**h))
     assert_equal([11, 12], o.kw(k2: 22, **h))
     assert_equal([11, 22], o.kw(**h, **{k2: 22}))
     assert_equal([11, 12], o.kw(**{k2: 22}, **h))
+  end
 
+  def test_keyword_duplicated_splat
     bug10315 = '[ruby-core:65368] [Bug #10315]'
+
+    o = KW2.new
     assert_equal([23, 2], o.kw(**{k1: 22}, **{k1: 23}), bug10315)
 
     h = {k3: 31}
     assert_raise(ArgumentError) {o.kw(**h)}
     h = {"k1"=>11, k2: 12}
     assert_raise(TypeError) {o.kw(**h)}
+  end
 
+  def test_keyword_duplicated
     bug10315 = '[ruby-core:65625] [Bug #10315]'
     a = []
     def a.add(x) push(x); x; end
@@ -182,6 +192,16 @@ class TestSyntax < Test::Unit::TestCase
     assert_warn("") do
       o.instance_eval("proc {|var: 1| var}")
     end
+  end
+
+  def test_keyword_invalid_name
+    bug11663 = '[ruby-core:71356] [Bug #11663]'
+
+    o = Object.new
+    assert_syntax_error('def o.foo(arg1?:) end', /arg1\?/, bug11663)
+    assert_syntax_error('def o.foo(arg1?:, arg2:) end', /arg1\?/, bug11663)
+    assert_syntax_error('proc {|arg1?:|}', /arg1\?/, bug11663)
+    assert_syntax_error('proc {|arg1?:, arg2:|}', /arg1\?/, bug11663)
   end
 
   def test_optional_self_reference
@@ -293,6 +313,43 @@ WARN
     bug6347 = '[ruby-dev:45563]'
     @not_label = Object
     assert_not_label(:foo, 'class Foo < not_label:foo; end', bug6347)
+  end
+
+  def test_no_label_with_percent
+    assert_syntax_error('{%"a": 1}', /unexpected ':'/)
+    assert_syntax_error("{%'a': 1}", /unexpected ':'/)
+    assert_syntax_error('{%Q"a": 1}', /unexpected ':'/)
+    assert_syntax_error("{%Q'a': 1}", /unexpected ':'/)
+    assert_syntax_error('{%q"a": 1}', /unexpected ':'/)
+    assert_syntax_error("{%q'a': 1}", /unexpected ':'/)
+  end
+
+  def test_block_after_cond
+    bug10653 = '[ruby-dev:48790] [Bug #10653]'
+    assert_valid_syntax("false ? raise {} : tap {}", bug10653)
+    assert_valid_syntax("false ? raise do end : tap do end", bug10653)
+  end
+
+  def test_paren_after_label
+    bug11456 = '[ruby-dev:49221] [Bug #11456]'
+    assert_valid_syntax("{foo: (1 rescue 0)}", bug11456)
+    assert_valid_syntax("{foo: /=/}", bug11456)
+  end
+
+  def test_percent_string_after_label
+    bug11812 = '[ruby-core:72084]'
+    assert_valid_syntax('{label:%w(*)}', bug11812)
+    assert_valid_syntax('{label: %w(*)}', bug11812)
+  end
+
+  def test_heredoc_after_label
+    bug11849 = '[ruby-core:72396] [Bug #11849]'
+    assert_valid_syntax("{label:<<DOC\n""DOC\n""}", bug11849)
+    assert_valid_syntax("{label:<<-DOC\n""DOC\n""}", bug11849)
+    assert_valid_syntax("{label:<<~DOC\n""DOC\n""}", bug11849)
+    assert_valid_syntax("{label: <<DOC\n""DOC\n""}", bug11849)
+    assert_valid_syntax("{label: <<-DOC\n""DOC\n""}", bug11849)
+    assert_valid_syntax("{label: <<~DOC\n""DOC\n""}", bug11849)
   end
 
   def test_duplicated_arg
@@ -433,6 +490,94 @@ c
 d
 e"
     assert_equal(expected, actual, "#{Bug7559}: ")
+  end
+
+  def test_dedented_heredoc_without_indentation
+    assert_equal(" y\nz\n", <<~eos)
+ y
+z
+    eos
+  end
+
+  def test_dedented_heredoc_with_indentation
+    assert_equal(" a\nb\n", <<~eos)
+     a
+    b
+    eos
+  end
+
+  def test_dedented_heredoc_with_blank_less_indented_line
+    # the blank line has two leading spaces
+    result = eval("<<~eos\n" \
+                  "    a\n" \
+                  "  \n" \
+                  "    b\n" \
+                  "    eos\n")
+    assert_equal("a\n\nb\n", result)
+  end
+
+  def test_dedented_heredoc_with_blank_less_indented_line_escaped
+    result = eval("<<~eos\n" \
+                  "    a\n" \
+                  "\\ \\ \n" \
+                  "    b\n" \
+                  "    eos\n")
+    assert_equal("    a\n  \n    b\n", result)
+  end
+
+  def test_dedented_heredoc_with_blank_more_indented_line
+    # the blank line has six leading spaces
+    result = eval("<<~eos\n" \
+                  "    a\n" \
+                  "      \n" \
+                  "    b\n" \
+                  "    eos\n")
+    assert_equal("a\n  \nb\n", result)
+  end
+
+  def test_dedented_heredoc_with_blank_more_indented_line_escaped
+    result = eval("<<~eos\n" \
+                  "    a\n" \
+                  "\\ \\ \\ \\ \\ \\ \n" \
+                  "    b\n" \
+                  "    eos\n")
+    assert_equal("    a\n      \n    b\n", result)
+  end
+
+  def test_dedented_heredoc_with_empty_line
+result = eval("<<~eos\n" \
+              "      This would contain specially formatted text.\n" \
+              "\n" \
+              "      That might span many lines\n" \
+              "    eos\n")
+    assert_equal(<<-eos, result)
+This would contain specially formatted text.
+
+That might span many lines
+    eos
+  end
+
+  def test_dedented_heredoc_with_interpolated_expression
+    result = eval(" <<~eos\n" \
+                  "  #{1}a\n" \
+                  " zy\n" \
+                  "      eos\n")
+      assert_equal(<<-eos, result)
+ #{1}a
+zy
+      eos
+  end
+
+  def test_dedented_heredoc_with_interpolated_string
+    w = ""
+    result = eval("<<~eos\n" \
+                  " \#{w} a\n" \
+                  "  zy\n" \
+                  "    eos\n")
+    assert_equal(<<-eos, result)
+#{w} a
+ zy
+    eos
   end
 
   def test_lineno_after_heredoc
@@ -579,6 +724,29 @@ eom
     bug11192 = '[ruby-core:69393] [Bug #11192]'
     assert_warn(/too big/, bug11192) do
       eval('$99999999999999999')
+    end
+  end
+
+  def test_invalid_symbol_space
+    assert_syntax_error(": foo", /unexpected ':'/)
+    assert_syntax_error(": #\n foo", /unexpected ':'/)
+    assert_syntax_error(":#\n foo", /unexpected ':'/)
+  end
+
+  def test_fluent_dot
+    assert_valid_syntax("a\n.foo")
+    assert_valid_syntax("a\n&.foo")
+  end
+
+  def test_no_warning_logop_literal
+    assert_warning("") do
+      eval("true||raise;nil")
+    end
+    assert_warning("") do
+      eval("false&&raise;nil")
+    end
+    assert_warning("") do
+      eval("''||raise;nil")
     end
   end
 

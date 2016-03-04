@@ -70,14 +70,13 @@ public class RubyException extends RubyObject {
         super(runtime, rubyClass);
 
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
+        this.cause = RubyBasicObject.UNDEF;
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length == 1) message = args[0];
-
-        IRubyObject errinfo = getRuntime().getCurrentContext().getErrorInfo();
-        if (!errinfo.isNil()) cause = errinfo;
+        if ( args.length == 1 ) message = args[0];
+        // cause filled in at RubyKernel#raise ... Exception.new does not fill-in cause!
         return this;
     }
 
@@ -100,7 +99,7 @@ public class RubyException extends RubyObject {
         } else if (obj instanceof RubyString) {
             backtrace = RubyArray.newArray(getRuntime(), obj);
         } else {
-            throw getRuntime().newTypeError("backtrace must be Array of String or a single String");
+            throw getRuntime().newTypeError("backtrace must be Array of String");
         }
     }
 
@@ -123,10 +122,8 @@ public class RubyException extends RubyObject {
             case 0 :
                 return this;
             case 1 :
-                if(args[0] == this) {
-                    return this;
-                }
-                RubyException ret = (RubyException)rbClone();
+                if (args[0] == this) return this;
+                RubyException ret = (RubyException) rbClone();
                 ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
                 return ret;
             default :
@@ -136,11 +133,14 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        if (message.isNil()) return context.runtime.newString(getMetaClass().getRealClass().getName());
-
-        message.setTaint(isTaint());
+        if (message.isNil()) {
+            return context.runtime.newString(getMetaClass().getRealClass().getName());
+        }
         return message.asString();
     }
+
+    @Deprecated
+    public IRubyObject to_s19(ThreadContext context) { return to_s(context); }
 
     @JRubyMethod(name = "message")
     public IRubyObject message(ThreadContext context) {
@@ -195,13 +195,20 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "cause")
     public IRubyObject cause(ThreadContext context) {
-        IRubyObject nil = context.nil;
-        if (cause != nil) return cause;
-        return nil;
+        assert cause != null;
+
+        if (cause == RubyBasicObject.UNDEF) return context.nil;
+
+        return cause;
     }
 
     public void setCause(IRubyObject cause) {
         this.cause = cause;
+    }
+
+    // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
+    public Object getCause() {
+        return cause;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {
@@ -380,14 +387,6 @@ public class RubyException extends RubyObject {
         return exceptionClass.callMethod(context, "new", message.convertToString());
     }
 
-    @Deprecated
-    public IRubyObject to_s19(ThreadContext context) {
-        if (message.isNil()) return context.runtime.newString(getMetaClass().getRealClass().getName());
-
-        message.setTaint(isTaint());
-        return message.asString();
-    }
-
     public IRubyObject getMessage() {
         return message;
     }
@@ -395,7 +394,7 @@ public class RubyException extends RubyObject {
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
     public IRubyObject message;
-    private IRubyObject cause = getRuntime().getNil();
+    IRubyObject cause;
 
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;

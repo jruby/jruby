@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 # $Id$
 
 require 'fileutils'
@@ -16,11 +17,12 @@ class TestFileUtils < Test::Unit::TestCase
     IO.pipe {|read, write|
       fu.instance_variable_set(:@fileutils_output, write)
       th = Thread.new { read.read }
-
-      yield
-
-      write.close
-      lines = th.value.lines.map {|l| l.chomp }
+      th2 = Thread.new {
+        yield
+        write.close
+      }
+      th_value, _ = assert_join_threads([th, th2])
+      lines = th_value.lines.map {|l| l.chomp }
       assert_equal(expected, lines)
     }
   ensure
@@ -46,8 +48,8 @@ class TestFileUtils < Test::Unit::TestCase
     end
 
     def check_have_symlink?
-      File.symlink nil, nil
-    rescue NotImplementedError
+      File.symlink "", ""
+    rescue NotImplementedError, Errno::EACCES
       return false
     rescue
       return true
@@ -108,7 +110,12 @@ class TestFileUtils < Test::Unit::TestCase
         false
       end
     ensure
-      Dir.rmdir tmproot
+      begin
+        Dir.rmdir tmproot
+      rescue
+        STDERR.puts $!.inspect
+        STDERR.puts Dir.entries(tmproot).inspect
+      end
     end
   end
   include m
@@ -122,7 +129,9 @@ class TestFileUtils < Test::Unit::TestCase
 
   def my_rm_rf(path)
     if File.exist?('/bin/rm')
-      system %Q[/bin/rm -rf "#{path}"]
+      system "/bin/rm", "-rf", path
+    elsif /mswin|mingw/ =~ RUBY_PLATFORM
+      system "rmdir", "/q/s", path.gsub('/', '\\'), err: IO::NULL
     else
       FileUtils.rm_rf path
     end
@@ -415,7 +424,8 @@ class TestFileUtils < Test::Unit::TestCase
 
     mkdir 'tmp/tmpdir'
     mkdir_p 'tmp/dest2/tmpdir'
-    assert_raise(Errno::EEXIST) {
+    assert_raise_with_message(Errno::EEXIST, %r' - tmp/dest2/tmpdir\z',
+                              '[ruby-core:68706] [Bug #11021]') {
       mv 'tmp/tmpdir', 'tmp/dest2'
     }
     mkdir 'tmp/dest2/tmpdir/junk'
@@ -1460,7 +1470,7 @@ class TestFileUtils < Test::Unit::TestCase
       uptodate? Pathname.new('tmp/a'), [Pathname.new('tmp/b'), Pathname.new('tmp/c')]
     }
     # [Bug #6708] [ruby-core:46256]
-    assert_raise_with_message(ArgumentError, "wrong number of arguments (3 for 2)") {
+    assert_raise_with_message(ArgumentError, /wrong number of arguments \(.*\b3\b.* 2\)/) {
       uptodate?('new',['old', 'oldest'], {})
     }
   end

@@ -16,7 +16,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class OneOperandArgNoBlockCallInstr extends CallInstr {
     public OneOperandArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver,
                                          Operand[] args, boolean isPotentiallyRefined) {
-        super(Operation.CALL_1O, callType, result, name, receiver, args, null, isPotentiallyRefined);
+        this(Operation.CALL_1O, callType, result, name, receiver, args, isPotentiallyRefined);
+    }
+
+    public OneOperandArgNoBlockCallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver,
+                                         Operand[] args, boolean isPotentiallyRefined) {
+        super(op, callType, result, name, receiver, args, null, isPotentiallyRefined);
     }
 
     @Override

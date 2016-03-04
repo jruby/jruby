@@ -55,24 +55,28 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
+import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
+import static org.jruby.util.StringSupport.codeRangeScan;
 
 /**
  * Represents a Ruby symbol (e.g. :bar)
  */
 @JRubyClass(name="Symbol")
-public class RubySymbol extends RubyObject implements MarshalEncoding, Constantizable {
+public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable {
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
     private final String symbol;
@@ -94,6 +98,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         //        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
         this.symbol = internedSymbol;
+        if (codeRangeScan(symbolBytes.getEncoding(), symbolBytes) == CR_7BIT) {
+            symbolBytes = symbolBytes.dup();
+            symbolBytes.setEncoding(USASCIIEncoding.INSTANCE);
+        }
         this.symbolBytes = symbolBytes;
         this.id = runtime.allocSymbolId();
 
@@ -626,6 +634,16 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
     public static ByteList symbolBytesFromString(Ruby runtime, String internedSymbol) {
         return new ByteList(ByteList.plain(internedSymbol), USASCIIEncoding.INSTANCE, false);
+    }
+
+    @Override
+    public Encoding getEncoding() {
+        return symbolBytes.getEncoding();
+    }
+
+    @Override
+    public void setEncoding(Encoding e) {
+        symbolBytes.setEncoding(e);
     }
 
     public static final class SymbolTable {

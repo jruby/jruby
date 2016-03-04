@@ -1,0 +1,4 @@
+fails:Enumerable#chunk_while when given a block returns an enumerator
+fails:Enumerable#chunk_while when given a block splits chunks between adjacent elements i and j where the block returns false
+fails:Enumerable#chunk_while when given a block calls the block for length of the receiver enumerable minus one times
+fails:Enumerable#chunk_while when not given a block raises an ArgumentError

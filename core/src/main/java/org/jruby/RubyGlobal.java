@@ -750,7 +750,7 @@ public class RubyGlobal {
         @Override
         public IRubyObject set(IRubyObject value) {
             if (runtime.getGlobalVariables().get("$!").isNil()) {
-                throw runtime.newArgumentError("$! not set.");
+                throw runtime.newArgumentError("$! not set");
             }
             runtime.getGlobalVariables().get("$!").callMethod(value.getRuntime().getCurrentContext(), "set_backtrace", value);
             return value;

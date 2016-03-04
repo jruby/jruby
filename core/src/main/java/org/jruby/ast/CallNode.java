@@ -46,9 +46,15 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     private Node argsNode;
     protected Node iterNode;
     private String name;
+    private final boolean isLazy;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
             Node iterNode) {
+        this(position, receiverNode, name, argsNode, iterNode, false);
+    }
+
+    public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode,
+                    Node iterNode, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment() ||
                 argsNode != null && argsNode.containsVariableAssignment() ||
                 iterNode != null && iterNode.containsVariableAssignment());
@@ -59,6 +65,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         this.receiverNode = receiverNode;
         this.argsNode = argsNode;
         this.iterNode = iterNode;
+        this.isLazy = isLazy;
     }
 
     public NodeType getNodeType() {
@@ -119,8 +126,17 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     public Node getReceiverNode() {
         return receiverNode;
     }
+
+    public boolean isLazy() {
+        return isLazy;
+    }
     
     public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode, iterNode);
+    }
+
+    @Override
+    protected String toStringInternal() {
+        return isLazy ? "lazy" : null;
     }
 }

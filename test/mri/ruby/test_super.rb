@@ -1,5 +1,5 @@
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestSuper < Test::Unit::TestCase
   class Base
@@ -229,11 +229,8 @@ class TestSuper < Test::Unit::TestCase
     A.send(:include, Override)
   end
 
-  # [Bug #3351]
   def test_double_include
-    assert_equal([:Base, :Override], DoubleInclude::B.new.foo)
-    # should be changed as follows?
-    # assert_equal([:Base, :Override, :Override], DoubleInclude::B.new.foo)
+    assert_equal([:Base, :Override, :Override], DoubleInclude::B.new.foo, "[Bug #3351]")
   end
 
   module DoubleInclude2
@@ -405,6 +402,13 @@ class TestSuper < Test::Unit::TestCase
     assert_equal([false, true], y.foo(false, true))
     assert_equal([false, false], y.foo(false, false))
     assert_equal([1, 2, 3, false, 5], y.foo(1, 2, 3, false, 5))
+  end
+
+  def test_missing_super
+    o = Class.new {def foo; super; end}.new
+    e = assert_raise(NoMethodError) {o.foo}
+    assert_same(o, e.receiver)
+    assert_equal(:foo, e.name)
   end
 
   def test_missing_super_in_method_module

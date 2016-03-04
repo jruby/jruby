@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'timeout'
 require 'thread'
@@ -6,7 +7,7 @@ class TestTimeout < Test::Unit::TestCase
   def test_queue
     q = Queue.new
     assert_raise(Timeout::Error, "[ruby-dev:32935]") {
-      timeout(0.01) { q.pop }
+      Timeout.timeout(0.01) { q.pop }
     }
   end
 
@@ -28,7 +29,7 @@ class TestTimeout < Test::Unit::TestCase
     bug8730 = '[Bug #8730]'
     e = nil
     assert_raise_with_message(Timeout::Error, /execution expired/, bug8730) do
-      timeout 0.01 do
+      Timeout.timeout 0.01 do
         begin
           sleep 3
         rescue Exception => e
@@ -42,14 +43,14 @@ class TestTimeout < Test::Unit::TestCase
     exc = Class.new(RuntimeError)
     e = nil
     assert_nothing_raised(exc) do
-      timeout 0.01, exc do
+      Timeout.timeout 0.01, exc do
         begin
           sleep 3
         rescue exc => e
         end
       end
     end
-    assert_raise_with_message(exc, /execution expired/) {raise e if e}
+    assert_raise_with_message(exc, 'execution expired') {raise e if e}
   end
 
   def test_custom_exception
@@ -58,7 +59,12 @@ class TestTimeout < Test::Unit::TestCase
       def initialize(msg) super end
     end
     assert_nothing_raised(ArgumentError, bug9354) do
-      assert_equal(:ok, timeout(100, err) {:ok})
+      assert_equal(:ok, Timeout.timeout(100, err) {:ok})
+    end
+    assert_raise_with_message(err, 'execution expired') do
+      Timeout.timeout 0.01, err do
+        sleep 3
+      end
     end
   end
 

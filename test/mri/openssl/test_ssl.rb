@@ -1,6 +1,7 @@
+# frozen_string_literal: false
 require_relative "utils"
 
-if defined?(OpenSSL)
+if defined?(OpenSSL::TestUtils)
 
 class OpenSSL::TestSSL < OpenSSL::SSLTestCase
 
@@ -8,6 +9,44 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     ctx = OpenSSL::SSL::SSLContext.new
     assert_equal(ctx.setup, true)
     assert_equal(ctx.setup, nil)
+  end
+
+  def test_ctx_setup_invalid
+    m = OpenSSL::SSL::SSLContext::METHODS.first
+    assert_raise_with_message(ArgumentError, /null/) {
+      OpenSSL::SSL::SSLContext.new("#{m}\0")
+    }
+    assert_raise_with_message(ArgumentError, /\u{ff33 ff33 ff2c}/) {
+      OpenSSL::SSL::SSLContext.new("\u{ff33 ff33 ff2c}")
+    }
+  end
+
+  def test_options_defaults_to_OP_ALL_on
+    ctx = OpenSSL::SSL::SSLContext.new
+    assert_equal(OpenSSL::SSL::OP_ALL, (OpenSSL::SSL::OP_ALL & ctx.options))
+  end
+
+  def test_setting_twice
+    ctx = OpenSSL::SSL::SSLContext.new
+    ctx.options = 4
+    assert_equal 4, (ctx.options & OpenSSL::SSL::OP_ALL)
+    ctx.options = OpenSSL::SSL::OP_ALL
+    assert_equal OpenSSL::SSL::OP_ALL, (ctx.options & OpenSSL::SSL::OP_ALL)
+  end
+
+  def test_options_setting_nil_means_all
+    ctx = OpenSSL::SSL::SSLContext.new
+    ctx.options = nil
+    assert_equal(OpenSSL::SSL::OP_ALL, (OpenSSL::SSL::OP_ALL & ctx.options))
+  end
+
+  def test_setting_options_raises_after_setup
+    ctx = OpenSSL::SSL::SSLContext.new
+    options = ctx.options
+    ctx.setup
+    assert_raise(RuntimeError) do
+      ctx.options = options
+    end
   end
 
   def test_ctx_setup_no_compression
@@ -19,6 +58,13 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
                  ctx.options & OpenSSL::SSL::OP_NO_COMPRESSION)
   end if defined?(OpenSSL::SSL::OP_NO_COMPRESSION)
 
+  def test_ctx_setup_with_extra_chain_cert
+    ctx = OpenSSL::SSL::SSLContext.new
+    ctx.extra_chain_cert = [@ca_cert, @cli_cert]
+    assert_equal(ctx.setup, true)
+    assert_equal(ctx.setup, nil)
+  end
+
   def test_not_started_session
     skip "non socket argument of SSLSocket.new is not supported on this platform" if /mswin|mingw/ =~ RUBY_PLATFORM
     open(__FILE__) do |f|
@@ -27,7 +73,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   end
 
   def test_ssl_gets
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true) { |server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true) { |server, port|
       server_connect(port) { |ssl|
         ssl.write "abc\n"
         IO.select [ssl]
@@ -41,7 +87,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   end
 
   def test_ssl_read_nonblock
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true) { |server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true) { |server, port|
       server_connect(port) { |ssl|
         assert_raise(IO::WaitReadable) { ssl.read_nonblock(100) }
         ssl.write("abc\n")
@@ -53,8 +99,22 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     }
   end
 
+  def test_ssl_sysread_blocking_error
+    start_server(OpenSSL::SSL::VERIFY_NONE, true) { |server, port|
+      server_connect(port) { |ssl|
+        ssl.write("abc\n")
+        assert_raise(TypeError) { ssl.sysread(4, exception: false) }
+        buf = ''
+        assert_raise(ArgumentError) { ssl.sysread(4, buf, exception: false) }
+        assert_equal '', buf
+        assert_equal buf.object_id, ssl.sysread(4, buf).object_id
+        assert_equal "abc\n", buf
+      }
+    }
+  end
+
   def test_connect_and_close
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       sock = TCPSocket.new("127.0.0.1", port)
       ssl = OpenSSL::SSL::SSLSocket.new(sock)
       assert(ssl.connect)
@@ -72,7 +132,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   end
 
   def test_read_and_write
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       server_connect(port) { |ssl|
         # syswrite and sysread
         ITERATIONS.times{|i|
@@ -119,9 +179,23 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     }
   end
 
-  def test_client_auth
+  def test_copy_stream
+    start_server(OpenSSL::SSL::VERIFY_NONE, true) do |server, port|
+      server_connect(port) do |ssl|
+        IO.pipe do |r, w|
+          str = "hello world\n"
+          w.write(str)
+          IO.copy_stream(r, ssl, str.bytesize)
+          IO.copy_stream(ssl, w, str.bytesize)
+          assert_equal str, r.read(str.bytesize)
+        end
+      end
+    end
+  end
+
+  def test_client_auth_failure
     vflag = OpenSSL::SSL::VERIFY_PEER|OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
-    start_server(PORT, vflag, true){|server, port|
+    start_server(vflag, true, :ignore_listener_error => true){|server, port|
       assert_raise(OpenSSL::SSL::SSLError, Errno::ECONNRESET){
         sock = TCPSocket.new("127.0.0.1", port)
         ssl = OpenSSL::SSL::SSLSocket.new(sock)
@@ -132,7 +206,12 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
           ssl.close
         end
       }
+    }
+  end
 
+  def test_client_auth_success
+    vflag = OpenSSL::SSL::VERIFY_PEER|OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
+    start_server(vflag, true){|server, port|
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.key = @cli_key
       ctx.cert = @cli_cert
@@ -163,7 +242,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     end
 
     vflag = OpenSSL::SSL::VERIFY_PEER|OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
-    start_server(PORT, vflag, true, :ctx_proc => ctx_proc){|server, port|
+    start_server(vflag, true, :ctx_proc => ctx_proc){|server, port|
       ctx = OpenSSL::SSL::SSLContext.new
       client_ca_from_server = nil
       ctx.client_cert_cb = Proc.new do |sslconn|
@@ -176,7 +255,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
 
   def test_read_nonblock_without_session
     OpenSSL::TestUtils.silent do
-      start_server(PORT, OpenSSL::SSL::VERIFY_NONE, false){|server, port|
+      start_server(OpenSSL::SSL::VERIFY_NONE, false){|server, port|
         sock = TCPSocket.new("127.0.0.1", port)
         ssl = OpenSSL::SSL::SSLSocket.new(sock)
         ssl.sync_close = true
@@ -194,7 +273,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
 
   def test_starttls
     OpenSSL::TestUtils.silent do
-      start_server(PORT, OpenSSL::SSL::VERIFY_NONE, false){|server, port|
+      start_server(OpenSSL::SSL::VERIFY_NONE, false){|server, port|
         sock = TCPSocket.new("127.0.0.1", port)
         ssl = OpenSSL::SSL::SSLSocket.new(sock)
         ssl.sync_close = true
@@ -218,7 +297,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
 
   def test_parallel
     GC.start
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       ssls = []
       10.times{
         sock = TCPSocket.new("127.0.0.1", port)
@@ -239,7 +318,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   end
 
   def test_verify_result
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true, :ignore_listener_error => true){|server, port|
       sock = TCPSocket.new("127.0.0.1", port)
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.set_params
@@ -253,7 +332,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
       end
     }
 
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       sock = TCPSocket.new("127.0.0.1", port)
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.set_params(
@@ -272,7 +351,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
       end
     }
 
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true, :ignore_listener_error => true){|server, port|
       sock = TCPSocket.new("127.0.0.1", port)
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.set_params(
@@ -293,7 +372,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   end
 
   def test_exception_in_verify_callback_is_ignored
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true, :ignore_listener_error => true){|server, port|
       sock = TCPSocket.new("127.0.0.1", port)
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.set_params(
@@ -317,7 +396,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   end
 
   def test_sslctx_set_params
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true, :ignore_listener_error => true){|server, port|
       sock = TCPSocket.new("127.0.0.1", port)
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.set_params
@@ -339,10 +418,24 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     }
   end
 
+  def test_post_connect_check_with_anon_ciphers
+    sslerr = OpenSSL::SSL::SSLError
+
+    start_server(OpenSSL::SSL::VERIFY_NONE, true, {use_anon_cipher: true}){|server, port|
+      ctx = OpenSSL::SSL::SSLContext.new
+      ctx.ciphers = "aNULL"
+      server_connect(port, ctx) { |ssl|
+        msg = "Peer verification enabled, but no certificate received. Anonymous cipher suite " \
+          "ADH-AES256-GCM-SHA384 was negotiated. Anonymous suites must be disabled to use peer verification."
+        assert_raise_with_message(sslerr,msg){ssl.post_connection_check("localhost.localdomain")}
+      }
+    }
+  end if OpenSSL::ExtConfig::TLS_DH_anon_WITH_AES_256_GCM_SHA384
+
   def test_post_connection_check
     sslerr = OpenSSL::SSL::SSLError
 
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       server_connect(port) { |ssl|
         assert_raise(sslerr){ssl.post_connection_check("localhost.localdomain")}
         assert_raise(sslerr){ssl.post_connection_check("127.0.0.1")}
@@ -365,7 +458,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     ]
     @svr_cert = issue_cert(@svr, @svr_key, 4, now, now+1800, exts,
                            @ca_cert, @ca_key, OpenSSL::Digest::SHA1.new)
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       server_connect(port) { |ssl|
         assert(ssl.post_connection_check("localhost.localdomain"))
         assert(ssl.post_connection_check("127.0.0.1"))
@@ -387,7 +480,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     ]
     @svr_cert = issue_cert(@svr, @svr_key, 5, now, now+1800, exts,
                            @ca_cert, @ca_key, OpenSSL::Digest::SHA1.new)
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       server_connect(port) { |ssl|
         assert(ssl.post_connection_check("localhost.localdomain"))
         assert_raise(sslerr){ssl.post_connection_check("127.0.0.1")}
@@ -414,6 +507,156 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     end
   end
 
+  def test_verify_hostname
+    assert_equal(true,  OpenSSL::SSL.verify_hostname("www.example.com", "*.example.com"))
+    assert_equal(false, OpenSSL::SSL.verify_hostname("www.subdomain.example.com", "*.example.com"))
+  end
+
+  def test_verify_wildcard
+    assert_equal(false, OpenSSL::SSL.verify_wildcard("foo", "x*"))
+    assert_equal(true,  OpenSSL::SSL.verify_wildcard("foo", "foo"))
+    assert_equal(true,  OpenSSL::SSL.verify_wildcard("foo", "f*"))
+    assert_equal(true,  OpenSSL::SSL.verify_wildcard("foo", "*"))
+    assert_equal(false, OpenSSL::SSL.verify_wildcard("abc*bcd", "abcd"))
+    assert_equal(false, OpenSSL::SSL.verify_wildcard("xn--qdk4b9b", "x*"))
+    assert_equal(false, OpenSSL::SSL.verify_wildcard("xn--qdk4b9b", "*--qdk4b9b"))
+    assert_equal(true,  OpenSSL::SSL.verify_wildcard("xn--qdk4b9b", "xn--qdk4b9b"))
+  end
+
+  # Comments in this test is excerpted from http://tools.ietf.org/html/rfc6125#page-27
+  def test_post_connection_check_wildcard_san
+    # case-insensitive ASCII comparison
+    # RFC 6125, section 6.4.1
+    #
+    # "..matching of the reference identifier against the presented identifier
+    # is performed by comparing the set of domain name labels using a
+    # case-insensitive ASCII comparison, as clarified by [DNS-CASE] (e.g.,
+    # "WWW.Example.Com" would be lower-cased to "www.example.com" for
+    # comparison purposes)
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:*.example.com'), 'www.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:*.Example.COM'), 'www.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:*.example.com'), 'WWW.Example.COM'))
+    # 1.  The client SHOULD NOT attempt to match a presented identifier in
+    #     which the wildcard character comprises a label other than the
+    #     left-most label (e.g., do not match bar.*.example.net).
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:www.*.com'), 'www.example.com'))
+    # 2.  If the wildcard character is the only character of the left-most
+    #     label in the presented identifier, the client SHOULD NOT compare
+    #     against anything but the left-most label of the reference
+    #     identifier (e.g., *.example.com would match foo.example.com but
+    #     not bar.foo.example.com or example.com).
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:*.example.com'), 'foo.example.com'))
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:*.example.com'), 'bar.foo.example.com'))
+    # 3.  The client MAY match a presented identifier in which the wildcard
+    #     character is not the only character of the label (e.g.,
+    #     baz*.example.net and *baz.example.net and b*z.example.net would
+    #     be taken to match baz1.example.net and foobaz.example.net and
+    #     buzz.example.net, respectively).  ...
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:baz*.example.com'), 'baz1.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:*baz.example.com'), 'foobaz.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:b*z.example.com'), 'buzz.example.com'))
+    # Section 6.4.3 of RFC6125 states that client should NOT match identifier
+    # where wildcard is other than left-most label.
+    #
+    # Also implicitly mentions the wildcard character only in singular form,
+    # and discourages matching against more than one wildcard.
+    #
+    # See RFC 6125, section 7.2, subitem 2.
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:*b*.example.com'), 'abc.example.com'))
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:*b*.example.com'), 'ab.example.com'))
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:*b*.example.com'), 'bc.example.com'))
+    #                                ...  However, the client SHOULD NOT
+    #   attempt to match a presented identifier where the wildcard
+    #   character is embedded within an A-label or U-label [IDNA-DEFS] of
+    #   an internationalized domain name [IDNA-PROTO].
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:xn*.example.com'), 'xn1ca.example.com'))
+    # part of A-label
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:xn--*.example.com'), 'xn--1ca.example.com'))
+    # part of U-label
+    # dNSName in RFC5280 is an IA5String so U-label should NOT be allowed
+    # regardless of wildcard.
+    #
+    # See Section 7.2 of RFC 5280:
+    #   IA5String is limited to the set of ASCII characters.
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_san('DNS:á*.example.com'), 'á1.example.com'))
+  end
+
+  def test_post_connection_check_wildcard_cn
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('*.example.com'), 'www.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('*.Example.COM'), 'www.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('*.example.com'), 'WWW.Example.COM'))
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('www.*.com'), 'www.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('*.example.com'), 'foo.example.com'))
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('*.example.com'), 'bar.foo.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('baz*.example.com'), 'baz1.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('*baz.example.com'), 'foobaz.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('b*z.example.com'), 'buzz.example.com'))
+    # Section 6.4.3 of RFC6125 states that client should NOT match identifier
+    # where wildcard is other than left-most label.
+    #
+    # Also implicitly mentions the wildcard character only in singular form,
+    # and discourages matching against more than one wildcard.
+    #
+    # See RFC 6125, section 7.2, subitem 2.
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('*b*.example.com'), 'abc.example.com'))
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('*b*.example.com'), 'ab.example.com'))
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('*b*.example.com'), 'bc.example.com'))
+    assert_equal(true, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('xn*.example.com'), 'xn1ca.example.com'))
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('xn--*.example.com'), 'xn--1ca.example.com'))
+    # part of U-label
+    # Subject in RFC5280 states case-insensitive ASCII comparison.
+    #
+    # See Section 7.2 of RFC 5280:
+    #   IA5String is limited to the set of ASCII characters.
+    assert_equal(false, OpenSSL::SSL.verify_certificate_identity(
+      create_cert_with_name('á*.example.com'), 'á1.example.com'))
+  end
+
+  def create_cert_with_san(san)
+    ef = OpenSSL::X509::ExtensionFactory.new
+    cert = OpenSSL::X509::Certificate.new
+    cert.subject = OpenSSL::X509::Name.parse("/DC=some/DC=site/CN=Some Site")
+    ext = ef.create_ext('subjectAltName', san)
+    cert.add_extension(ext)
+    cert
+  end
+
+  def create_cert_with_name(name)
+    cert = OpenSSL::X509::Certificate.new
+    cert.subject = OpenSSL::X509::Name.new([['DC', 'some'], ['DC', 'site'], ['CN', name]])
+    cert
+  end
+
+
   # Create NULL byte SAN certificate
   def create_null_byte_SAN_certificate(critical = false)
     ef = OpenSSL::X509::ExtensionFactory.new
@@ -429,6 +672,176 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     real_ext = OpenSSL::X509::Extension.new ext_asn1
     cert.add_extension(real_ext)
     cert
+  end
+
+  def socketpair
+    if defined? UNIXSocket
+      UNIXSocket.pair
+    else
+      Socket.pair(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+    end
+  end
+
+  def test_servername_cb_sets_context_on_the_socket
+    hostname = 'example.org'
+
+    ctx3 = OpenSSL::SSL::SSLContext.new
+    ctx3.ciphers = "DH"
+
+    ctx2 = OpenSSL::SSL::SSLContext.new
+    ctx2.ciphers = "DH"
+    ctx2.servername_cb = lambda { |args| ctx3 }
+
+    sock1, sock2 = socketpair
+
+    s2 = OpenSSL::SSL::SSLSocket.new(sock2, ctx2)
+
+    ctx1 = OpenSSL::SSL::SSLContext.new
+    ctx1.ciphers = "DH"
+
+    s1 = OpenSSL::SSL::SSLSocket.new(sock1, ctx1)
+    s1.hostname = hostname
+    t = Thread.new { s1.connect }
+
+    assert_equal ctx2, s2.context
+    accepted = s2.accept
+    assert_equal ctx3, s2.context
+    assert t.value
+  ensure
+    s1.close if s1
+    s2.close if s2
+    sock1.close if sock1
+    sock2.close if sock2
+    accepted.close if accepted.respond_to?(:close)
+  end
+
+  def test_servername_cb_raises_an_exception_on_unknown_objects
+    hostname = 'example.org'
+
+    ctx2 = OpenSSL::SSL::SSLContext.new
+    ctx2.ciphers = "DH"
+    ctx2.servername_cb = lambda { |args| Object.new }
+
+    sock1, sock2 = socketpair
+
+    s2 = OpenSSL::SSL::SSLSocket.new(sock2, ctx2)
+
+    ctx1 = OpenSSL::SSL::SSLContext.new
+    ctx1.ciphers = "DH"
+
+    s1 = OpenSSL::SSL::SSLSocket.new(sock1, ctx1)
+    s1.hostname = hostname
+    t = Thread.new {
+      assert_raise(OpenSSL::SSL::SSLError) do
+        s1.connect
+      end
+    }
+
+    assert_raise(ArgumentError) do
+      s2.accept
+    end
+
+    assert t.join
+  ensure
+    sock1.close if sock1
+    sock2.close if sock2
+  end
+
+  def test_servername_cb_calls_setup_on_returned_ctx
+    hostname = 'example.org'
+
+    ctx3 = OpenSSL::SSL::SSLContext.new
+    ctx3.ciphers = "DH"
+    refute_predicate ctx3, :frozen?
+
+    ctx2 = OpenSSL::SSL::SSLContext.new
+    ctx2.ciphers = "DH"
+    ctx2.servername_cb = lambda { |args| ctx3 }
+
+    sock1, sock2 = socketpair
+
+    s2 = OpenSSL::SSL::SSLSocket.new(sock2, ctx2)
+
+    ctx1 = OpenSSL::SSL::SSLContext.new
+    ctx1.ciphers = "DH"
+
+    s1 = OpenSSL::SSL::SSLSocket.new(sock1, ctx1)
+    s1.hostname = hostname
+    t = Thread.new { s1.connect }
+
+    accepted = s2.accept
+    assert t.value
+    assert_predicate ctx3, :frozen?
+  ensure
+    s1.close if s1
+    s2.close if s2
+    sock1.close if sock1
+    sock2.close if sock2
+    accepted.close if accepted.respond_to?(:close)
+  end
+
+  def test_servername_cb_can_return_nil
+    hostname = 'example.org'
+
+    ctx2 = OpenSSL::SSL::SSLContext.new
+    ctx2.ciphers = "DH"
+    ctx2.servername_cb = lambda { |args| nil }
+
+    sock1, sock2 = socketpair
+
+    s2 = OpenSSL::SSL::SSLSocket.new(sock2, ctx2)
+
+    ctx1 = OpenSSL::SSL::SSLContext.new
+    ctx1.ciphers = "DH"
+
+    s1 = OpenSSL::SSL::SSLSocket.new(sock1, ctx1)
+    s1.hostname = hostname
+    t = Thread.new { s1.connect }
+
+    accepted = s2.accept
+    assert t.value
+  ensure
+    s1.close if s1
+    s2.close if s2
+    sock1.close if sock1
+    sock2.close if sock2
+    accepted.close if accepted.respond_to?(:close)
+  end
+
+  def test_servername_cb
+    lambda_called = nil
+    cb_socket = nil
+    hostname = 'example.org'
+
+    ctx2 = OpenSSL::SSL::SSLContext.new
+    ctx2.ciphers = "DH"
+    ctx2.servername_cb = lambda do |args|
+      cb_socket     = args[0]
+      lambda_called = args[1]
+      ctx2
+    end
+
+    sock1, sock2 = socketpair
+
+    s2 = OpenSSL::SSL::SSLSocket.new(sock2, ctx2)
+
+    ctx1 = OpenSSL::SSL::SSLContext.new
+    ctx1.ciphers = "DH"
+
+    s1 = OpenSSL::SSL::SSLSocket.new(sock1, ctx1)
+    s1.hostname = hostname
+    t = Thread.new { s1.connect }
+
+    accepted = s2.accept
+    assert t.value
+    assert_equal hostname, lambda_called
+    assert_equal s2, cb_socket
+  ensure
+    s1.close if s1
+    s2.close if s2
+    sock1.close if sock1
+    sock2.close if sock2
+    accepted.close if accepted.respond_to?(:close)
   end
 
   def test_tlsext_hostname
@@ -453,7 +866,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
       readwrite_loop(ctx, ssl)
     end
 
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true, :ctx_proc => ctx_proc, :server_proc => server_proc) do |server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true, :ctx_proc => ctx_proc, :server_proc => server_proc) do |server, port|
       2.times do |i|
         ctx = OpenSSL::SSL::SSLContext.new
         if defined?(OpenSSL::SSL::OP_NO_TICKET)
@@ -486,7 +899,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
         assert_equal(num_written, raw_size)
         ssl.close
       }
-      start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true, :server_proc => server_proc){|server, port|
+      start_server(OpenSSL::SSL::VERIFY_NONE, true, :server_proc => server_proc){|server, port|
         server_connect(port) { |ssl|
           str = auml * i
           num_written = ssl.write(str)
@@ -502,7 +915,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
       # But it also degrades gracefully, so keep it
       ctx.options = OpenSSL::SSL::OP_ALL
     }
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true, :ctx_proc => ctx_proc){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true, :ctx_proc => ctx_proc){|server, port|
       server_connect(port) { |ssl|
         ssl.puts('hello')
         assert_equal("hello\n", ssl.gets)
@@ -514,7 +927,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
   # that has been marked as forbidden, therefore either of these may be raised
   HANDSHAKE_ERRORS = [OpenSSL::SSL::SSLError, Errno::ECONNRESET]
 
-if OpenSSL::SSL::SSLContext::METHODS.include? :TLSv1
+if OpenSSL::SSL::SSLContext::METHODS.include?(:TLSv1) && OpenSSL::SSL::SSLContext::METHODS.include?(:SSLv3)
 
   def test_forbid_ssl_v3_for_client
     ctx_proc = Proc.new { |ctx| ctx.options = OpenSSL::SSL::OP_ALL | OpenSSL::SSL::OP_NO_SSLv3 }
@@ -619,6 +1032,38 @@ end
     }
   end
 
+if OpenSSL::OPENSSL_VERSION_NUMBER >= 0x10002000
+  def test_alpn_protocol_selection_ary
+    advertised = ["http/1.1", "spdy/2"]
+    ctx_proc = Proc.new { |ctx|
+      ctx.alpn_select_cb = -> (protocols) {
+        protocols.first
+      }
+      ctx.alpn_protocols = advertised
+    }
+    start_server_version(:SSLv23, ctx_proc) { |server, port|
+      ctx = OpenSSL::SSL::SSLContext.new
+      ctx.alpn_protocols = advertised
+      server_connect(port, ctx) { |ssl|
+        assert_equal(advertised.first, ssl.alpn_protocol)
+      }
+    }
+  end
+
+  def test_alpn_protocol_selection_cancel
+    ctx_proc = Proc.new { |ctx|
+      ctx.alpn_select_cb = -> (protocols) { nil }
+    }
+    assert_raise(MiniTest::Assertion) do # minitest/assertion comes from `assert_join_threads`
+      start_server_version(:SSLv23, ctx_proc) { |server, port|
+        ctx = OpenSSL::SSL::SSLContext.new
+        ctx.alpn_protocols = ["http/1.1"]
+        assert_raise(OpenSSL::SSL::SSLError) { server_connect(port, ctx) }
+      }
+    end
+  end
+end
+
 if OpenSSL::OPENSSL_VERSION_NUMBER > 0x10001000
 
   def test_npn_protocol_selection_ary
@@ -688,7 +1133,7 @@ end
 
   def test_invalid_shutdown_by_gc
     assert_nothing_raised {
-      start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+      start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
         10.times {
           sock = TCPSocket.new("127.0.0.1", port)
           ssl = OpenSSL::SSL::SSLSocket.new(sock)
@@ -701,7 +1146,7 @@ end
   end
 
   def test_close_after_socket_close
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
+    start_server(OpenSSL::SSL::VERIFY_NONE, true){|server, port|
       sock = TCPSocket.new("127.0.0.1", port)
       ssl = OpenSSL::SSL::SSLSocket.new(sock)
       ssl.sync_close = true
@@ -730,11 +1175,11 @@ end
       ctx_proc.call(ctx) if ctx_proc
     }
     start_server(
-      PORT,
       OpenSSL::SSL::VERIFY_NONE,
       true,
       :ctx_proc => ctx_wrap,
       :server_proc => server_proc,
+      :ignore_listener_error => true,
       &blk
     )
   end
@@ -744,9 +1189,13 @@ end
     ssl = ctx ? OpenSSL::SSL::SSLSocket.new(sock, ctx) : OpenSSL::SSL::SSLSocket.new(sock)
     ssl.sync_close = true
     ssl.connect
-    yield ssl
+    yield ssl if block_given?
   ensure
-    ssl.close
+    if ssl
+      ssl.close
+    elsif sock
+      sock.close
+    end
   end
 end
 

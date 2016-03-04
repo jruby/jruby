@@ -44,7 +44,7 @@ public class LexicalScope {
     }
 
     @TruffleBoundary
-    public DynamicObject resolveTargetModule() {
+    public DynamicObject resolveTargetModuleForClassVariables() {
         LexicalScope scope = this;
 
         // MRI logic: ignore lexical scopes (cref) referring to singleton classes

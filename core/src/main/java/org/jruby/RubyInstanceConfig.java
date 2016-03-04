@@ -1186,6 +1186,13 @@ public class RubyInstanceConfig {
     }
 
     /**
+     * @see Options#CLI_DID_YOU_MEAN_ENABLE
+     */
+    public boolean isDisableDidYouMean() {
+        return disableDidYouMean;
+    }
+
+    /**
      * @see Options#CLI_RUBYOPT_ENABLE
      */
     public void setDisableRUBYOPT(boolean dr) {
@@ -1197,6 +1204,13 @@ public class RubyInstanceConfig {
      */
     public void setDisableGems(boolean dg) {
         this.disableGems = dg;
+    }
+
+    /**
+     * @see Options#CLI_DID_YOU_MEAN_ENABLE
+     */
+    public void setDisableDidYouMean(boolean ddym) {
+        this.disableDidYouMean = ddym;
     }
 
     /**
@@ -1440,6 +1454,22 @@ public class RubyInstanceConfig {
         this.profilingService = service;
     }
 
+    public boolean isFrozenStringLiteral() {
+        return frozenStringLiteral;
+    }
+
+    public void setFrozenStringLiteral(boolean frozenStringLiteral) {
+        this.frozenStringLiteral = frozenStringLiteral;
+    }
+
+    public boolean isDebuggingFrozenStringLiteral() {
+        return debuggingFrozenStringLiteral;
+    }
+
+    public void setDebuggingFrozenStringLiteral(boolean debuggingFrozenStringLiteral) {
+        this.debuggingFrozenStringLiteral = debuggingFrozenStringLiteral;
+    }
+
     public static ClassLoader defaultClassLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
@@ -1534,12 +1564,14 @@ public class RubyInstanceConfig {
     private String threadDumpSignal = null;
     private boolean hardExit = false;
     private boolean disableGems = !Options.CLI_RUBYGEMS_ENABLE.load();
+    private boolean disableDidYouMean = !Options.CLI_DID_YOU_MEAN_ENABLE.load();
     private boolean disableRUBYOPT = !Options.CLI_RUBYOPT_ENABLE.load();
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
     private boolean preferIPv4 = Options.PREFER_IPV4.load();
-
+    private boolean frozenStringLiteral = false;
+    private boolean debuggingFrozenStringLiteral = false;
     private String jrubyHome;
 
     /**
