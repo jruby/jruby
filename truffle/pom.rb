@@ -21,7 +21,6 @@ project 'JRuby Truffle' do
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
   jar 'com.oracle.truffle:truffle-debug:' + truffle_version
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
-  jar 'com.oracle.truffle:truffle-object-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
   jar 'junit:junit', :scope => 'test'
 
