@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # TODO: $SAFE = 1
 
 begin
@@ -541,7 +542,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   # Enables pretty-print for all tests
 
   def mu_pp(obj)
-    s = ''
+    s = String.new
     s = PP.pp obj, s
     s = s.force_encoding(Encoding.default_external) if defined? Encoding
     s.chomp
@@ -569,7 +570,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   def write_file(path)
     path = File.join @gemhome, path unless Pathname.new(path).absolute?
     dir = File.dirname path
-    FileUtils.mkdir_p dir
+    FileUtils.mkdir_p dir unless File.directory? dir
 
     open path, 'wb' do |io|
       yield io if block_given?
@@ -1306,11 +1307,21 @@ Also, a list:
   def vendor_gem name = 'a', version = 1
     directory = File.join 'vendor', name
 
+    FileUtils.mkdir_p directory
+
+    save_gemspec name, version, directory
+  end
+
+  ##
+  # create_gemspec creates gem specification in given +direcotry+ or '.'
+  # for the given +name+ and +version+.
+  #
+  # Yields the +specification+ to the block, if given
+
+  def save_gemspec name = 'a', version = 1, directory = '.'
     vendor_spec = Gem::Specification.new name, version do |specification|
       yield specification if block_given?
     end
-
-    FileUtils.mkdir_p directory
 
     open File.join(directory, "#{name}.gemspec"), 'w' do |io|
       io.write vendor_spec.to_ruby
@@ -1482,3 +1493,4 @@ tmpdirs << (ENV['GEM_PATH'] = Dir.mktmpdir("path"))
 pid = $$
 END {tmpdirs.each {|dir| Dir.rmdir(dir)} if $$ == pid}
 Gem.clear_paths
+

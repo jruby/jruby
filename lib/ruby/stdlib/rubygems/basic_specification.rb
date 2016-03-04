@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 ##
 # BasicSpecification is an abstract class which implements some common code
 # used by both Specification and StubSpecification.
@@ -94,7 +95,7 @@ class Gem::BasicSpecification
   # Returns path to the extensions directory.
 
   def extensions_dir
-    @extensions_dir ||= Gem.default_ext_dir_for(base_dir) ||
+    Gem.default_ext_dir_for(base_dir) ||
       File.join(base_dir, 'extensions', Gem::Platform.local.to_s,
                 Gem.extension_api_version)
   end
@@ -124,9 +125,9 @@ class Gem::BasicSpecification
 
   def full_name
     if platform == Gem::Platform::RUBY or platform.nil? then
-      "#{name}-#{version}".untaint
+      "#{name}-#{version}".dup.untaint
     else
-      "#{name}-#{version}-#{platform}".untaint
+      "#{name}-#{version}-#{platform}".dup.untaint
     end
   end
 
@@ -195,7 +196,6 @@ class Gem::BasicSpecification
 
   def internal_init # :nodoc:
     @extension_dir = nil
-    @extensions_dir = nil
     @full_gem_path         = nil
     @gem_dir               = nil
     @ignored = nil
@@ -281,7 +281,7 @@ class Gem::BasicSpecification
              self.require_paths.first
            end
 
-    "#{self.full_gem_path}/#{dirs}".untaint
+    "#{self.full_gem_path}/#{dirs}".dup.untaint
   end
 
   ##
@@ -325,4 +325,3 @@ class Gem::BasicSpecification
   end
 
 end
-
