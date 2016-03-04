@@ -100,7 +100,7 @@ public abstract class TrufflePrimitiveNodes {
 
                 @Override
                 public MaterializedFrame visitFrame(FrameInstance frameInstance) {
-                    if (frameCount.get() == 1) {
+                    if (frameCount.get() == 2) {
                         return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
                     } else {
                         frameCount.set(frameCount.get() + 1);
@@ -135,7 +135,7 @@ public abstract class TrufflePrimitiveNodes {
 
                 @Override
                 public String visitFrame(FrameInstance frameInstance) {
-                    if (frameCount.get() == 1) {
+                    if (frameCount.get() == 2) {
                         return frameInstance.getCallNode().getEncapsulatingSourceSection().getSource().getName();
                     } else {
                         frameCount.set(frameCount.get() + 1);

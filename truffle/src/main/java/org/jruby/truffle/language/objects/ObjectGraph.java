@@ -22,6 +22,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.util.Memo;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -46,13 +47,6 @@ public abstract class ObjectGraph {
 
                     if (Thread.currentThread() == stoppingThread) {
                         visitContextRoots(context, stack);
-                    }
-
-                    final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-
-                    if (currentFrame != null) {
-                        stack.addAll(getObjectsInFrame(currentFrame.getFrame(
-                                FrameInstance.FrameAccess.READ_ONLY, true)));
                     }
 
                     Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {

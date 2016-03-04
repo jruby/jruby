@@ -28,6 +28,7 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.util.Memo;
 
 import java.util.ArrayList;
 
@@ -41,9 +42,16 @@ public class CallStackManager {
 
     @TruffleBoundary
     public FrameInstance getCallerFrameIgnoringSend() {
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
+        final Memo<Boolean> firstFrame = new Memo<>(true);
+
+        final FrameInstance fi = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
             @Override
             public FrameInstance visitFrame(FrameInstance frameInstance) {
+                if (firstFrame.get()) {
+                    firstFrame.set(false);
+                    return null;
+                }
+
                 final InternalMethod method = getMethod(frameInstance);
                 assert method != null;
 
@@ -54,6 +62,8 @@ public class CallStackManager {
                 }
             }
         });
+
+        return fi;
     }
 
     @TruffleBoundary
@@ -63,10 +73,17 @@ public class CallStackManager {
 
     @TruffleBoundary
     public Node getTopMostUserCallNode() {
+        final Memo<Boolean> firstFrame = new Memo<>(true);
+
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {
 
             @Override
             public Node visitFrame(FrameInstance frameInstance) {
+                if (firstFrame.get()) {
+                    firstFrame.set(false);
+                    return null;
+                }
+
                 final SourceSection sourceSection = frameInstance.getCallNode().getEncapsulatingSourceSection();
 
                 if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
@@ -138,11 +155,18 @@ public class CallStackManager {
             activations.add(new Activation(currentNode, currentFrame));
         }
 
+        final Memo<Boolean> firstFrame = new Memo<>(true);
+
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
             int depth = 1;
 
             @Override
             public Object visitFrame(FrameInstance frameInstance) {
+                if (firstFrame.get()) {
+                    firstFrame.set(false);
+                    return null;
+                }
+
                 if (depth > limit) {
                     activations.add(Activation.OMITTED_LIMIT);
                     return new Object();
