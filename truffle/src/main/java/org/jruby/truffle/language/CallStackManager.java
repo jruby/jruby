@@ -125,17 +125,11 @@ public class CallStackManager {
 
         final ArrayList<Activation> activations = new ArrayList<>();
 
-            /*
-             * TODO(cs): if this materializing the frames proves really expensive
-             * we might want to make it optional - I think it's only used for some
-             * features beyond what MRI does like printing locals in backtraces.
-             */
-
         if (omit == 0 && currentNode != null && Truffle.getRuntime().getCurrentFrame() != null) {
-            final MaterializedFrame currentFrame = Truffle.getRuntime().getCurrentFrame()
-                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
+            final InternalMethod method = RubyArguments.getMethod(Truffle.getRuntime().getCurrentFrame()
+                    .getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
 
-            activations.add(new Activation(currentNode, currentFrame));
+            activations.add(new Activation(currentNode, method));
         }
 
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
@@ -152,8 +146,10 @@ public class CallStackManager {
                     if (!filterNullSourceSection
                             || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null
                             || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
-                        activations.add(new Activation(frameInstance.getCallNode(),
-                                frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+                        final InternalMethod method = RubyArguments.getMethod(frameInstance
+                                .getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
+
+                        activations.add(new Activation(frameInstance.getCallNode(), method));
                     }
                 }
 

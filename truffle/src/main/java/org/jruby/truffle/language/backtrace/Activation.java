@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.language.backtrace;
 
-import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.language.methods.InternalMethod;
 
 public class Activation {
 
@@ -18,19 +18,19 @@ public class Activation {
     public static final Activation OMITTED_UNUSED = new Activation(null, null);
 
     private final Node callNode;
-    private final MaterializedFrame materializedFrame;
+    private final InternalMethod method;
 
-    public Activation(Node callNode, MaterializedFrame materializedFrame) {
+    public Activation(Node callNode, InternalMethod method) {
         this.callNode = callNode;
-        this.materializedFrame = materializedFrame;
+        this.method = method;
     }
 
     public Node getCallNode() {
         return callNode;
     }
 
-    public MaterializedFrame getMaterializedFrame() {
-        return materializedFrame;
+    public InternalMethod getMethod() {
+        return method;
     }
 
 }
