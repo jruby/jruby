@@ -95,6 +95,7 @@ import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
+import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertDouble;
@@ -887,7 +888,7 @@ public abstract class StringNodes {
                 throw new RaiseException(coreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
-            final POSIX posix = posix();
+            final TrufflePosix posix = posix();
             final byte[] keyBytes = Arrays.copyOfRange(value.getBytes(), 0, value.byteLength());
             final byte[] saltBytes = Arrays.copyOfRange(other.getBytes(), 0, other.byteLength());
 

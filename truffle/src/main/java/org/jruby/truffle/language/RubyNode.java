@@ -28,6 +28,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.platform.posix.Sockets;
+import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)
@@ -179,7 +180,7 @@ public abstract class RubyNode extends Node {
         return getContext().getCoreLibrary();
     }
 
-    protected POSIX posix() {
+    protected TrufflePosix posix() {
         return getContext().getNativePlatform().getPosix();
     }
 
