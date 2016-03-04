@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 ##
 # The Dependency class holds a Gem name and a Gem::Requirement.
 
@@ -164,6 +165,10 @@ class Gem::Dependency
     @type ||= :runtime
   end
 
+  def runtime?
+    @type == :runtime || !@type
+  end
+
   def == other # :nodoc:
     Gem::Dependency === other &&
       self.name        == other.name &&
@@ -270,14 +275,14 @@ class Gem::Dependency
   end
 
   def matching_specs platform_only = false
-    matches = Gem::Specification.stubs.find_all { |spec|
-      self.name === spec.name and # TODO: == instead of ===
-        requirement.satisfied_by? spec.version
+    env_req = Gem.env_requirement(name)
+    matches = Gem::Specification.stubs_for(name).find_all { |spec|
+      requirement.satisfied_by?(spec.version) && env_req.satisfied_by?(spec.version)
     }.map(&:to_spec)
 
     if platform_only
       matches.reject! { |spec|
-        not Gem::Platform.match spec.platform
+        spec.nil? || !Gem::Platform.match(spec.platform)
       }
     end
 
@@ -303,9 +308,9 @@ class Gem::Dependency
 
       if specs.empty?
         total = Gem::Specification.to_a.size
-        msg   = "Could not find '#{name}' (#{requirement}) among #{total} total gem(s)\n"
+        msg   = "Could not find '#{name}' (#{requirement}) among #{total} total gem(s)\n".dup
       else
-        msg   = "Could not find '#{name}' (#{requirement}) - did find: [#{specs.join ','}]\n"
+        msg   = "Could not find '#{name}' (#{requirement}) - did find: [#{specs.join ','}]\n".dup
       end
       msg << "Checked in 'GEM_PATH=#{Gem.path.join(File::PATH_SEPARATOR)}', execute `gem env` for more information"
 
@@ -323,11 +328,11 @@ class Gem::Dependency
   def to_spec
     matches = self.to_specs
 
-    active = matches.find { |spec| spec.activated? }
+    active = matches.find { |spec| spec && spec.activated? }
 
     return active if active
 
-    matches.delete_if { |spec| spec.version.prerelease? } unless prerelease?
+    matches.delete_if { |spec| spec.nil? || spec.version.prerelease? } unless prerelease?
 
     matches.last
   end
