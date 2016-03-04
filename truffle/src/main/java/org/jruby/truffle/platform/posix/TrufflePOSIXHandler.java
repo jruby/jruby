@@ -20,11 +20,11 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
 
-public class TrufflePOSIXHandler implements POSIXHandler {
+public class TrufflePosixHandler implements POSIXHandler {
 
     private RubyContext context;
 
-    public TrufflePOSIXHandler(RubyContext context) {
+    public TrufflePosixHandler(RubyContext context) {
         this.context = context;
     }
 
@@ -79,7 +79,7 @@ public class TrufflePOSIXHandler implements POSIXHandler {
 
     @Override
     public int getPID() {
-        throw new UnsupportedOperationException();
+        return context.hashCode();
     }
 
     @Override

@@ -170,6 +170,8 @@ class RegularFileResource extends AbstractFileResource {
                         throw new ResourceException.NotFound(absolutePath());
                     case ELOOP:
                         throw new ResourceException.TooManySymlinks(absolutePath());
+                    case EISDIR:
+                        throw new ResourceException.FileIsDirectory(absolutePath());
                     default:
                         throw new ResourceException.IOError(new IOException("unhandled errno: " + errno));
 

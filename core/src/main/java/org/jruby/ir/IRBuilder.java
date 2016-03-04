@@ -1023,13 +1023,26 @@ public class IRBuilder {
         Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
         Variable  callResult = createTemporaryVariable();
 
+        ArrayNode argsAry;
+        if (
+                callNode.getName().equals("[]") &&
+                callNode.getArgsNode() instanceof ArrayNode &&
+                (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
+                argsAry.get(0) instanceof StrNode &&
+                !scope.maybeUsingRefinements()) {
+            StrNode keyNode = (StrNode) argsAry.get(0);
+            addInstr(ArrayDerefInstr.create(callResult, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), keyNode.getPosition().getFile(), keyNode.getLine())));
+            return callResult;
+        }
+
+        Operand[] args       = setupCallArgs(callArgsNode);
+
         Label lazyLabel = getNewLabel();
         Label endLabel = getNewLabel();
         if (callNode.isLazy()) {
             addInstr(new BNilInstr(lazyLabel, receiver));
         }
 
-        Operand[] args       = setupCallArgs(callArgsNode);
         Operand block      = setupCallClosure(callNode.getIterNode());
 
         CallInstr callInstr  = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);

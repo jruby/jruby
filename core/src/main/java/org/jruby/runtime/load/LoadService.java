@@ -462,9 +462,7 @@ public class LoadService {
 
             if (lock.isHeldByCurrentThread()) return false;
 
-            lock.lock();
-
-            return true;
+            return lock.tryLock();
         }
 
         /**

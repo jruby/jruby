@@ -13,9 +13,8 @@ import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
-import jnr.posix.LibC;
 import jnr.posix.POSIX;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.platform.posix.JNRPosix;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -26,7 +25,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
+public class TruffleJavaPosix extends JNRPosix {
 
     private static class OpenFile {
 
@@ -51,14 +50,11 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     private static final int STDOUT = 1;
     private static final int STDERR = 2;
 
-    private final RubyContext context;
-
     private final AtomicInteger nextFileHandle = new AtomicInteger(3);
     private final Map<Integer, OpenFile> fileHandles = new ConcurrentHashMap<>();
 
-    public TruffleJavaPOSIX(RubyContext context, POSIX delegateTo) {
+    public TruffleJavaPosix(POSIX delegateTo) {
         super(delegateTo);
-        this.context = context;
     }
 
     @Override
@@ -80,16 +76,6 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
         }
 
         return super.fcntlInt(fd, fcntlConst, arg);
-    }
-
-    @Override
-    public int getpid() {
-        return context.hashCode();
-    }
-
-    @Override
-    public LibC libc() {
-        return JavaLibC.INSTANCE;
     }
 
     @Override
@@ -141,39 +127,6 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     }
 
     @Override
-    public int pread(int fd, byte[] buf, int n, int offset) {
-        if (fd == STDIN) {
-            try {
-                System.in.read(buf, offset, n);
-            } catch (IOException e) {
-                return -1;
-            }
-
-            return n;
-        }
-
-        final OpenFile openFile = fileHandles.get(fd);
-
-        if (openFile != null) {
-            final int read;
-
-            try {
-                read = openFile.getRandomAccessFile().read(buf, offset, n);
-            } catch (IOException e) {
-                return -1;
-            }
-
-            if (read == -1) {
-                errno(Errno.ETIMEDOUT.intValue());
-            }
-
-            return read;
-        }
-
-        return super.pwrite(fd, buf, n, offset);
-    }
-
-    @Override
     public int write(int fd, ByteBuffer buf, int n) {
         return pwrite(fd, buf.array(), n, buf.arrayOffset());
     }
@@ -181,30 +134,6 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
     @Override
     public int write(int fd, byte[] buf, int n) {
         return pwrite(fd, buf, n, 0);
-    }
-
-    @Override
-    public int pwrite(int fd, byte[] buf, int n, int offset) {
-        if (fd == STDOUT || fd == STDERR) {
-            final PrintStream stream;
-
-            switch (fd) {
-                case STDOUT:
-                    stream = System.out;
-                    break;
-                case STDERR:
-                    stream = System.err;
-                    break;
-                default:
-                    throw new UnsupportedOperationException();
-            }
-
-            stream.write(buf, offset, n);
-
-            return n;
-        }
-
-        return super.pwrite(fd, buf, n, offset);
     }
 
     @Override
@@ -233,7 +162,7 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
 
     @Override
     public FileStat allocateStat() {
-        return new TruffleJavaFileStat(this, null);
+        return new TruffleJavaFileStat(getPosix(), null);
     }
 
     @Override
@@ -246,4 +175,65 @@ public class TruffleJavaPOSIX extends POSIXDelegator implements POSIX {
 
         return super.getenv(envName);
     }
+
+    @Override
+    public int isatty(int fd) {
+        return System.console() != null ? 1 : 0;
+    }
+
+    private int pwrite(int fd, byte[] buf, int n, int offset) {
+        if (fd == STDOUT || fd == STDERR) {
+            final PrintStream stream;
+
+            switch (fd) {
+                case STDOUT:
+                    stream = System.out;
+                    break;
+                case STDERR:
+                    stream = System.err;
+                    break;
+                default:
+                    throw new UnsupportedOperationException();
+            }
+
+            stream.write(buf, offset, n);
+
+            return n;
+        }
+
+        throw new UnsupportedOperationException();
+    }
+
+    private int pread(int fd, byte[] buf, int n, int offset) {
+        if (fd == STDIN) {
+            try {
+                System.in.read(buf, offset, n);
+            } catch (IOException e) {
+                return -1;
+            }
+
+            return n;
+        }
+
+        final OpenFile openFile = fileHandles.get(fd);
+
+        if (openFile != null) {
+            final int read;
+
+            try {
+                read = openFile.getRandomAccessFile().read(buf, offset, n);
+            } catch (IOException e) {
+                return -1;
+            }
+
+            if (read == -1) {
+                errno(Errno.ETIMEDOUT.intValue());
+            }
+
+            return read;
+        }
+
+        throw new UnsupportedOperationException();
+    }
+
 }

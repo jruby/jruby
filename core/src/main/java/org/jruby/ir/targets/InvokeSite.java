@@ -132,7 +132,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         MethodHandle mh = getHandle(self, selfClass, method);
 
-        updateInvocationTarget(mh, self, selfClass, entry, switchPoint);
+        updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
 
         return method.call(context, self, selfClass, methodName, args, block);
     }
@@ -230,7 +230,7 @@ public abstract class InvokeSite extends MutableCallSite {
      * guard and argument-juggling logic. Return a handle suitable for invoking
      * with the site's original method type.
      */
-    MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, CacheEntry entry, SwitchPoint switchPoint) {
+    MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, DynamicMethod method, SwitchPoint switchPoint) {
         if (target == null ||
                 clearCount > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
                 (!hasSeenType(testClass.id)
@@ -243,7 +243,7 @@ public abstract class InvokeSite extends MutableCallSite {
             // if we've cached no types, and the site is bound and we haven't seen this new type...
             if (seenTypesCount() > 0 && getTarget() != null && !hasSeenType(testClass.id)) {
                 // stack it up into a PIC
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\tadded to PIC " + logMethod(entry.method));
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\tadded to PIC " + logMethod(method));
                 fallback = getTarget();
             } else {
                 // wipe out site with this new type and method

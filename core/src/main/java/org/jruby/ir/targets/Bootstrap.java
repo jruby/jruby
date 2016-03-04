@@ -652,9 +652,7 @@ public class Bootstrap {
         VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name());
 
         // produce nil if the variable has not been initialize
-        MethodHandle nullToNil = findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        nullToNil = insertArguments(nullToNil, 1, self.getRuntime().getNil());
-        nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
+        MethodHandle nullToNil = self.getRuntime().getNullToNilHandle();
 
         // get variable value and filter with nullToNil
         MethodHandle getValue;

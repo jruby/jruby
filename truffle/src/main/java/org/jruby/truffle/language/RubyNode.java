@@ -19,7 +19,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
-import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
@@ -29,6 +28,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.platform.posix.Sockets;
+import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)
@@ -184,7 +184,7 @@ public abstract class RubyNode extends Node {
         return getContext().getCoreLibrary();
     }
 
-    protected POSIX posix() {
+    protected TrufflePosix posix() {
         return getContext().getNativePlatform().getPosix();
     }
 

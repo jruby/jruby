@@ -15,7 +15,6 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 
 @Layout
 public interface StringLayout extends BasicObjectLayout {

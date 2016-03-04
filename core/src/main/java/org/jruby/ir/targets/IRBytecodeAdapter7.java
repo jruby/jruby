@@ -148,6 +148,11 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
+    @Override
+    public void invokeArrayDeref() {
+        adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP);
+    }
+
     public void invokeOtherOneFixnum(String name, long fixnum) {
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 

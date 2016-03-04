@@ -317,6 +317,30 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         invoke(name, arity, hasClosure, CallType.NORMAL, isPotentiallyRefined);
     }
 
+    public void invokeArrayDeref() {
+        SkinnyMethodAdapter adapter2;
+        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyString.class));
+
+        String methodName = getUniqueSiteName("[]");
+
+        adapter2 = new SkinnyMethodAdapter(
+                adapter.getClassVisitor(),
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                methodName,
+                incomingSig,
+                null,
+                null);
+
+        adapter2.aloadMany(0, 1, 2, 3);
+        cacheCallSite(adapter2, getClassData().clsName, methodName, "[]", CallType.FUNCTIONAL, false);
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "callOptimizedAref", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyString.class, CallSite.class));
+        adapter2.areturn();
+        adapter2.end();
+
+        // now call it
+        adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
+    }
+
     public void invoke(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 

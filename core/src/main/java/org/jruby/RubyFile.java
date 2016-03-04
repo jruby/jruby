@@ -199,6 +199,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 //        /*  Try to minimize cache effects of the I/O to and from this file. */
 //        constants.setConstant("DIRECT", runtime.newFixnum(OpenFlags.O_DIRECT.intValue()));
 //        #endif
+        if (OpenFlags.O_TMPFILE.defined()) {
+            /* Create an unnamed temporary file */
+            constants.setConstant("TMPFILE", runtime.newFixnum(OpenFlags.O_TMPFILE.intValue()));
+        }
 
         // case handling, escaping, path and dot matching
         constants.setConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
