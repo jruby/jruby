@@ -24,9 +24,9 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.encoding.EncodingConverterNodes;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
-import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -93,7 +93,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
             final boolean nonNullSource = source != nil();
-            Rope sourceRope = nonNullSource ? rope(source) : RopeOperations.EMPTY_UTF8_ROPE;
+            Rope sourceRope = nonNullSource ? rope(source) : RopeConstants.EMPTY_UTF8_ROPE;
             final Rope targetRope = rope(target);
             final ByteList outBytes = targetRope.toByteListCopy();
 

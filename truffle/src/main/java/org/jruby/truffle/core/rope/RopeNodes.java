@@ -60,18 +60,18 @@ public abstract class RopeNodes {
                                         @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
                                         @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit) {
             if (isUTF8.profile(base.getEncoding() == UTF8Encoding.INSTANCE)) {
-                return RopeOperations.EMPTY_UTF8_ROPE;
+                return RopeConstants.EMPTY_UTF8_ROPE;
             }
 
             if (isUSAscii.profile(base.getEncoding() == USASCIIEncoding.INSTANCE)) {
-                return RopeOperations.EMPTY_US_ASCII_ROPE;
+                return RopeConstants.EMPTY_US_ASCII_ROPE;
             }
 
             if (isAscii8Bit.profile(base.getEncoding() == ASCIIEncoding.INSTANCE)) {
-                return RopeOperations.EMPTY_ASCII_8BIT_ROPE;
+                return RopeConstants.EMPTY_ASCII_8BIT_ROPE;
             }
 
-            return RopeOperations.withEncoding(RopeOperations.EMPTY_UTF8_ROPE, base.getEncoding());
+            return RopeOperations.withEncoding(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding());
         }
 
         @Specialization(guards = "byteLength == 1")
@@ -390,15 +390,15 @@ public abstract class RopeNodes {
                                                  @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit,
                                                  @Cached("createBinaryProfile()") ConditionProfile isAsciiCompatible) {
             if (isUTF8.profile(encoding == UTF8Encoding.INSTANCE)) {
-                return RopeOperations.EMPTY_UTF8_ROPE;
+                return RopeConstants.EMPTY_UTF8_ROPE;
             }
 
             if (isUSAscii.profile(encoding == USASCIIEncoding.INSTANCE)) {
-                return RopeOperations.EMPTY_US_ASCII_ROPE;
+                return RopeConstants.EMPTY_US_ASCII_ROPE;
             }
 
             if (isAscii8Bit.profile(encoding == ASCIIEncoding.INSTANCE)) {
-                return RopeOperations.EMPTY_ASCII_8BIT_ROPE;
+                return RopeConstants.EMPTY_ASCII_8BIT_ROPE;
             }
 
             if (isAsciiCompatible.profile(encoding.isAsciiCompatible())) {

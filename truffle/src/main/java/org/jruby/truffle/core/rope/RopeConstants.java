@@ -14,13 +14,25 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 
+import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
+
 public class RopeConstants {
-    
+
+    public static final LeafRope EMPTY_ASCII_8BIT_ROPE;
+    public static final LeafRope EMPTY_US_ASCII_ROPE;
+    public static final LeafRope EMPTY_UTF8_ROPE;
+
     public static final LeafRope[] UTF8_SINGLE_BYTE_ROPES = new LeafRope[256];
     public static final LeafRope[] US_ASCII_SINGLE_BYTE_ROPES = new LeafRope[256];
     public static final LeafRope[] ASCII_8BIT_SINGLE_BYTE_ROPES = new LeafRope[256];
 
     static {
+        final byte[] emptyBytes = new byte[] {};
+
+        EMPTY_UTF8_ROPE = new AsciiOnlyLeafRope(emptyBytes, UTF8Encoding.INSTANCE);
+        EMPTY_US_ASCII_ROPE = new AsciiOnlyLeafRope(emptyBytes, USASCIIEncoding.INSTANCE);
+        EMPTY_ASCII_8BIT_ROPE = new AsciiOnlyLeafRope(emptyBytes, ASCIIEncoding.INSTANCE);
+
         for (int i = 0; i < 128; i++) {
             final byte[] bytes = new byte[] { (byte) i };
 
