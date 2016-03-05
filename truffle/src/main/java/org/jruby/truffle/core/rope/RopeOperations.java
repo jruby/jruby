@@ -43,6 +43,22 @@ public class RopeOperations {
     private static final ConcurrentHashMap<Encoding, Charset> encodingToCharsetMap = new ConcurrentHashMap<>();
 
     public static LeafRope create(byte[] bytes, Encoding encoding, CodeRange codeRange) {
+        if (bytes.length == 1) {
+            final int index = bytes[0] & 0xff;
+
+            if (encoding == UTF8Encoding.INSTANCE) {
+                return RopeConstants.UTF8_SINGLE_BYTE_ROPES[index];
+            }
+
+            if (encoding == USASCIIEncoding.INSTANCE) {
+                return RopeConstants.US_ASCII_SINGLE_BYTE_ROPES[index];
+            }
+
+            if (encoding == ASCIIEncoding.INSTANCE) {
+                return RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[index];
+            }
+        }
+
         int characterLength = -1;
 
         if (codeRange == CR_UNKNOWN) {

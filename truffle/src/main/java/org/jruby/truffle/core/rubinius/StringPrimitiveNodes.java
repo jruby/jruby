@@ -68,6 +68,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
@@ -78,8 +79,10 @@ import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -677,8 +680,24 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = {"isRubyEncoding(encoding)", "isSimple(code, encoding)"})
-        public DynamicObject stringFromCodepointSimple(int code, DynamicObject encoding) {
-            return createString(new ByteList(new byte[]{(byte) code}, EncodingOperations.getEncoding(encoding)));
+        public DynamicObject stringFromCodepointSimple(int code, DynamicObject encoding,
+                                                       @Cached("createBinaryProfile()") ConditionProfile isUTF8Profile,
+                                                       @Cached("createBinaryProfile()") ConditionProfile isUSAsciiProfile,
+                                                       @Cached("createBinaryProfile()") ConditionProfile isAscii8BitProfile) {
+            final Encoding realEncoding = EncodingOperations.getEncoding(encoding);
+            final Rope rope;
+
+            if (isUTF8Profile.profile(realEncoding == UTF8Encoding.INSTANCE)) {
+                rope = RopeConstants.UTF8_SINGLE_BYTE_ROPES[code];
+            } else if (isUSAsciiProfile.profile(realEncoding == USASCIIEncoding.INSTANCE)) {
+                rope = RopeConstants.US_ASCII_SINGLE_BYTE_ROPES[code];
+            } else if (isAscii8BitProfile.profile(realEncoding == ASCIIEncoding.INSTANCE)) {
+                rope = RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[code];
+            } else {
+                rope = RopeOperations.create(new byte[] { (byte) code }, realEncoding, CodeRange.CR_UNKNOWN);
+            }
+
+            return createString(rope);
         }
 
         @TruffleBoundary
@@ -711,13 +730,16 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")
-        public DynamicObject stringFromCodepointSimple(long code, DynamicObject encoding) {
+        public DynamicObject stringFromCodepointSimple(long code, DynamicObject encoding,
+                                                       @Cached("createBinaryProfile()") ConditionProfile isUTF8Profile,
+                                                       @Cached("createBinaryProfile()") ConditionProfile isUSAsciiProfile,
+                                                       @Cached("createBinaryProfile()") ConditionProfile isAscii8BitProfile) {
             if (code < Integer.MIN_VALUE || code > Integer.MAX_VALUE) {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
             }
 
-            return stringFromCodepointSimple((int) code, encoding);
+            return stringFromCodepointSimple((int) code, encoding, isUTF8Profile, isUSAsciiProfile, isAscii8BitProfile);
         }
 
         protected boolean isSimple(int code, DynamicObject encoding) {
