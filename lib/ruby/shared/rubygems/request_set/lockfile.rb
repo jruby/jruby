@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # Parses a gem.deps.rb.lock file and constructs a LockSet containing the
 # dependencies found inside.  If the lock file is missing no LockSet is
@@ -130,8 +129,8 @@ class Gem::RequestSet::Lockfile
       [source.repository, source.rev_parse]
     end
 
+    out << "GIT"
     by_repository_revision.each do |(repository, revision), requests|
-      out << "GIT"
       out << "  remote: #{repository}"
       out << "  revision: #{revision}"
       out << "  specs:"
@@ -144,8 +143,9 @@ class Gem::RequestSet::Lockfile
           out << "      #{dep.name}#{dep.requirement.for_lockfile}"
         end
       end
-      out << nil
     end
+
+    out << nil
   end
 
   def relative_path_from dest, base # :nodoc:
@@ -185,7 +185,7 @@ class Gem::RequestSet::Lockfile
 
     platforms = platforms.sort_by { |platform| platform.to_s }
 
-    platforms.each do |platform|
+    platforms.sort.each do |platform|
       out << "  #{platform}"
     end
 

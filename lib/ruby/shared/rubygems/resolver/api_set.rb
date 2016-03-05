@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # The global rubygems pool, available via the rubygems.org API.
 # Returns instances of APISpecification.

@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # A source representing a single .gem file.  This is used for installation of
 # local gems.

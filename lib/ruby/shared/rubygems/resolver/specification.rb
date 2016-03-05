@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # A Resolver::Specification contains a subset of the information
 # contained in a Gem::Specification.  Only the information necessary for
@@ -90,7 +89,7 @@ class Gem::Resolver::Specification
 
     gem = source.download spec, destination
 
-    installer = Gem::Installer.at gem, options
+    installer = Gem::Installer.new gem, options
 
     yield installer if block_given?
 

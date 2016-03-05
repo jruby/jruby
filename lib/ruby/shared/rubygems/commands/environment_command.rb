@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'rubygems/command'
 
 class Gem::Commands::EnvironmentCommand < Gem::Command
@@ -72,7 +71,7 @@ lib/rubygems/defaults/operating_system.rb
   end
 
   def execute
-    out = String.new
+    out = ''
     arg = options[:args][0]
     out <<
       case arg
@@ -104,7 +103,7 @@ lib/rubygems/defaults/operating_system.rb
   end
 
   def show_environment # :nodoc:
-    out = "RubyGems Environment:\n".dup
+    out = "RubyGems Environment:\n"
 
     out << "  - RUBYGEMS VERSION: #{Gem::VERSION}\n"
 
@@ -113,8 +112,6 @@ lib/rubygems/defaults/operating_system.rb
     out << ") [#{RUBY_PLATFORM}]\n"
 
     out << "  - INSTALLATION DIRECTORY: #{Gem.dir}\n"
-
-    out << "  - USER INSTALLATION DIRECTORY: #{Gem.user_dir}\n"
 
     out << "  - RUBYGEMS PREFIX: #{Gem.prefix}\n" unless Gem.prefix.nil?
 
@@ -158,3 +155,4 @@ lib/rubygems/defaults/operating_system.rb
   end
 
 end
+

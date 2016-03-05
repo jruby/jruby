@@ -1,11 +1,7 @@
-# frozen_string_literal: true
 require 'strscan'
 require 'rubygems/request_set/lockfile/parser'
 
 class Gem::RequestSet::Lockfile::Tokenizer
-  Token = Struct.new :type, :value, :column, :line
-  EOF   = Token.new :EOF
-
   def self.from_file file
     new File.read(file), file
   end
@@ -23,11 +19,11 @@ class Gem::RequestSet::Lockfile::Tokenizer
   end
 
   def to_a
-    @tokens.map { |token| [token.type, token.value, token.column, token.line] }
+    @tokens
   end
 
   def skip type
-    @tokens.shift while not @tokens.empty? and peek.type == type
+    @tokens.shift while not @tokens.empty? and peek.first == type
   end
 
   ##
@@ -52,7 +48,7 @@ class Gem::RequestSet::Lockfile::Tokenizer
   alias :shift :next_token
 
   def peek
-    @tokens.first || EOF
+    @tokens.first || [:EOF]
   end
 
   private
@@ -75,7 +71,7 @@ class Gem::RequestSet::Lockfile::Tokenizer
       @tokens <<
         case
         when s.scan(/\r?\n/) then
-          token = Token.new(:newline, nil, *token_pos(pos))
+          token = [:newline, nil, *token_pos(pos)]
           @line_pos = s.pos
           @line += 1
           token
@@ -83,25 +79,25 @@ class Gem::RequestSet::Lockfile::Tokenizer
           if leading_whitespace then
             text = s.matched
             text += s.scan(/[^\s)]*/).to_s # in case of no match
-            Token.new(:text, text, *token_pos(pos))
+            [:text, text, *token_pos(pos)]
           else
-            Token.new(:section, s.matched, *token_pos(pos))
+            [:section, s.matched, *token_pos(pos)]
           end
         when s.scan(/([a-z]+):\s/) then
           s.pos -= 1 # rewind for possible newline
-          Token.new(:entry, s[1], *token_pos(pos))
+          [:entry, s[1], *token_pos(pos)]
         when s.scan(/\(/) then
-          Token.new(:l_paren, nil, *token_pos(pos))
+          [:l_paren, nil, *token_pos(pos)]
         when s.scan(/\)/) then
-          Token.new(:r_paren, nil, *token_pos(pos))
+          [:r_paren, nil, *token_pos(pos)]
         when s.scan(/<=|>=|=|~>|<|>|!=/) then
-          Token.new(:requirement, s.matched, *token_pos(pos))
+          [:requirement, s.matched, *token_pos(pos)]
         when s.scan(/,/) then
-          Token.new(:comma, nil, *token_pos(pos))
+          [:comma, nil, *token_pos(pos)]
         when s.scan(/!/) then
-          Token.new(:bang, nil, *token_pos(pos))
+          [:bang, nil, *token_pos(pos)]
         when s.scan(/[^\s),!]*/) then
-          Token.new(:text, s.matched, *token_pos(pos))
+          [:text, s.matched, *token_pos(pos)]
         else
           raise "BUG: can't create token for: #{s.string[s.pos..-1].inspect}"
         end

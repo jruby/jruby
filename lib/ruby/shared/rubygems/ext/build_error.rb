@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # Raised when there is an error while building extensions.
 

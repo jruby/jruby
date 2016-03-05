@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # Used internally to indicate that a dependency conflicted
 # with a spec that would be activated.
@@ -158,3 +157,4 @@ end
 # TODO: Remove in RubyGems 3
 
 Gem::Resolver::DependencyConflict = Gem::Resolver::Conflict # :nodoc:
+

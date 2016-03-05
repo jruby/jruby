@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'rubygems'
 require 'rubygems/user_interaction'
 require 'fileutils'
@@ -21,7 +20,7 @@ begin
   require 'rdoc/rubygems_hook'
   loaded_hook = true
   module Gem
-    RDoc = ::RDoc::RubygemsHook
+    RDoc = RDoc::RubygemsHook
   end
 rescue LoadError
 end
@@ -333,3 +332,4 @@ class Gem::RDoc # :nodoc: all
 end unless loaded_hook
 
 Gem.done_installing(&Gem::RDoc.method(:generation_hook))
+

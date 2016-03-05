@@ -1,10 +1,9 @@
-# frozen_string_literal: true
 require 'rubygems/command'
 require 'rubygems/commands/query_command'
 
 ##
 # An alternate to Gem::Commands::QueryCommand that searches for gems starting
-# with the supplied argument.
+# with the the supplied argument.
 
 class Gem::Commands::ListCommand < Gem::Commands::QueryCommand
 
@@ -34,7 +33,7 @@ To search for remote gems use the search command.
   end
 
   def usage # :nodoc:
-    "#{program_name} [REGEXP ...]"
+    "#{program_name} [STRING ...]"
   end
 
 end

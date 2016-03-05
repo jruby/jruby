@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # Provides a single method +deprecate+ to be used to declare when
 # something is going away.

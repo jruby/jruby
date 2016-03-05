@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # Specifies a Specification object that should be activated.  Also contains a
 # dependency that was used to introduce this activation.
@@ -50,27 +49,15 @@ class Gem::Resolver::ActivationRequest
   # Downloads a gem at +path+ and returns the file path.
 
   def download path
-    Gem.ensure_gem_subdirectories path
-
-    if @spec.respond_to? :sources
-      exception = nil
-      path = @spec.sources.find{ |source|
-        begin
-          source.download full_spec, path
-        rescue exception
-        end
-      }
-      return path      if path
-      raise  exception if exception
-
-    elsif @spec.respond_to? :source
+    if @spec.respond_to? :source
       source = @spec.source
-      source.download full_spec, path
-
     else
       source = Gem.sources.first
-      source.download full_spec, path
     end
+
+    Gem.ensure_gem_subdirectories path
+
+    source.download full_spec, path
   end
 
   ##
@@ -79,8 +66,6 @@ class Gem::Resolver::ActivationRequest
   def full_name
     @spec.full_name
   end
-
-  alias_method :to_s, :full_name
 
   ##
   # The Gem::Specification for this activation request.
@@ -184,3 +169,4 @@ class Gem::Resolver::ActivationRequest
   end
 
 end
+

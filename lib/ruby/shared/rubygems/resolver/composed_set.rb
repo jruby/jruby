@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # A ComposedSet allows multiple sets to be queried like a single set.
 #

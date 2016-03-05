@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # A GitSpecification represents a gem that is sourced from a git repository
 # and is being loaded through a gem dependencies file through the +git:+
@@ -24,7 +23,8 @@ class Gem::Resolver::GitSpecification < Gem::Resolver::SpecSpecification
   def install options = {}
     require 'rubygems/installer'
 
-    installer = Gem::Installer.for_spec spec, options
+    installer = Gem::Installer.new '', options
+    installer.spec = spec
 
     yield installer if block_given?
 

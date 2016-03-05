@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'rubygems/command'
 
 class Gem::Ext::CmakeBuilder < Gem::Ext::Builder

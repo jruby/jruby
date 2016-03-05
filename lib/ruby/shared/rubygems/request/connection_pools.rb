@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'thread'
 
 class Gem::Request::ConnectionPools # :nodoc:
@@ -62,22 +61,18 @@ class Gem::Request::ConnectionPools # :nodoc:
   end
 
   def net_http_args uri, proxy_uri
-    # URI::Generic#hostname was added in ruby 1.9.3, use it if exists, otherwise
-    # don't support IPv6 literals and use host.
-    hostname = uri.respond_to?(:hostname) ? uri.hostname : uri.host
-    net_http_args = [hostname, uri.port]
+    net_http_args = [uri.host, uri.port]
 
     no_proxy = get_no_proxy_from_env
 
-    if proxy_uri and not no_proxy?(hostname, no_proxy) then
-      proxy_hostname = proxy_uri.respond_to?(:hostname) ? proxy_uri.hostname : proxy_uri.host
+    if proxy_uri and not no_proxy?(uri.host, no_proxy) then
       net_http_args + [
-        proxy_hostname,
+        proxy_uri.host,
         proxy_uri.port,
         Gem::UriFormatter.new(proxy_uri.user).unescape,
         Gem::UriFormatter.new(proxy_uri.password).unescape,
       ]
-    elsif no_proxy? hostname, no_proxy then
+    elsif no_proxy? uri.host, no_proxy then
       net_http_args + [nil, nil]
     else
       net_http_args

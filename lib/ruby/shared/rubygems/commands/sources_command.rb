@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'rubygems/command'
 require 'rubygems/remote_fetcher'
 require 'rubygems/spec_fetcher'
@@ -103,7 +102,7 @@ Do you want to add this insecure source?
 RubyGems fetches gems from the sources you have configured (stored in your
 ~/.gemrc).
 
-The default source is https://rubygems.org, but you may have other sources
+The default source is https://rubygems.org, but you may have older sources
 configured.  This guide will help you update your sources or configure
 yourself to use your own gem server.
 
