@@ -1302,8 +1302,8 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = { "indexAtStartBound(spliceByteIndex)", "isRubyString(other)" })
-        public Object splicePrepend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace) {
+        @Specialization(guards = { "indexAtStartBound(spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)" })
+        public Object splicePrepend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding) {
             if (prependMakeSubstringNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 prependMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(getContext(), getSourceSection(), null, null, null));
@@ -1314,17 +1314,19 @@ public abstract class StringPrimitiveNodes {
                 prependMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
+            final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final Rope original = rope(string);
             final Rope left = rope(other);
             final Rope right = prependMakeSubstringNode.executeMake(original, byteCountToReplace, original.byteLength() - byteCountToReplace);
 
-            StringOperations.setRope(string, prependMakeConcatNode.executeMake(left, right, right.getEncoding()));
+            StringOperations.setRope(string, prependMakeConcatNode.executeMake(left, right, encoding));
 
             return string;
         }
 
-        @Specialization(guards = { "indexAtEndBound(string, spliceByteIndex)", "isRubyString(other)" })
-        public Object spliceAppend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace) {
+        @Specialization(guards = { "indexAtEndBound(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)" })
+        public Object spliceAppend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding) {
+            final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final Rope left = rope(string);
             final Rope right = rope(other);
 
@@ -1333,13 +1335,13 @@ public abstract class StringPrimitiveNodes {
                 appendMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            StringOperations.setRope(string, appendMakeConcatNode.executeMake(left, right, left.getEncoding()));
+            StringOperations.setRope(string, appendMakeConcatNode.executeMake(left, right, encoding));
 
             return string;
         }
 
-        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)" })
-        public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace) {
+        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)" })
+        public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding) {
             if (leftMakeSubstringNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 leftMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(getContext(), getSourceSection(), null, null, null));
@@ -1360,14 +1362,15 @@ public abstract class StringPrimitiveNodes {
                 rightMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
+            final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final Rope source = rope(string);
             final Rope insert = rope(other);
             final int rightSideStartingIndex = spliceByteIndex + byteCountToReplace;
 
             final Rope splitLeft = leftMakeSubstringNode.executeMake(source, 0, spliceByteIndex);
             final Rope splitRight = rightMakeSubstringNode.executeMake(source, rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
-            final Rope joinedLeft = leftMakeConcatNode.executeMake(splitLeft, insert, source.getEncoding());
-            final Rope joinedRight = rightMakeConcatNode.executeMake(joinedLeft, splitRight, source.getEncoding());
+            final Rope joinedLeft = leftMakeConcatNode.executeMake(splitLeft, insert, encoding);
+            final Rope joinedRight = rightMakeConcatNode.executeMake(joinedLeft, splitRight, encoding);
 
             StringOperations.setRope(string, joinedRight);
 
