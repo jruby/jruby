@@ -36,13 +36,25 @@ import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 
 public class RopeOperations {
 
-    public static final LeafRope EMPTY_ASCII_8BIT_ROPE = create(new byte[] {}, ASCIIEncoding.INSTANCE, CR_7BIT);
-    public static final LeafRope EMPTY_US_ASCII_ROPE = create(new byte [] {}, USASCIIEncoding.INSTANCE, CR_7BIT);
-    public static final LeafRope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, CR_7BIT);
-
     private static final ConcurrentHashMap<Encoding, Charset> encodingToCharsetMap = new ConcurrentHashMap<>();
 
     public static LeafRope create(byte[] bytes, Encoding encoding, CodeRange codeRange) {
+        if (bytes.length == 1) {
+            final int index = bytes[0] & 0xff;
+
+            if (encoding == UTF8Encoding.INSTANCE) {
+                return RopeConstants.UTF8_SINGLE_BYTE_ROPES[index];
+            }
+
+            if (encoding == USASCIIEncoding.INSTANCE) {
+                return RopeConstants.US_ASCII_SINGLE_BYTE_ROPES[index];
+            }
+
+            if (encoding == ASCIIEncoding.INSTANCE) {
+                return RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[index];
+            }
+        }
+
         int characterLength = -1;
 
         if (codeRange == CR_UNKNOWN) {

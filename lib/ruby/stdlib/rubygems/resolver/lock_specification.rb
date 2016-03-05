@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # The LockSpecification comes from a lockfile (Gem::RequestSet::Lockfile).
 #
@@ -7,16 +6,13 @@
 
 class Gem::Resolver::LockSpecification < Gem::Resolver::Specification
 
-  attr_reader :sources
-
-  def initialize set, name, version, sources, platform
+  def initialize set, name, version, source, platform
     super()
 
     @name     = name
     @platform = platform
     @set      = set
-    @source   = sources.first
-    @sources  = sources
+    @source   = source
     @version  = version
 
     @dependencies = []

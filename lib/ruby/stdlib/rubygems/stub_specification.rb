@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # Gem::StubSpecification reads the stub: line from the gemspec.  This prevents
 # us having to eval the entire gemspec in order to find out certain

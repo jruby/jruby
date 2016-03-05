@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'rubygems/command'
 require 'rubygems/local_remote_options'
 require 'rubygems/spec_fetcher'
@@ -50,12 +49,6 @@ class Gem::Commands::QueryCommand < Gem::Command
       options[:all] = value
     end
 
-    add_option('-e', '--exact',
-               'Name of gem(s) to query on matches the',
-               'provided STRING') do |value, options|
-      options[:exact] = value
-    end
-
     add_option(      '--[no-]prerelease',
                'Display prerelease versions') do |value, options|
       options[:prerelease] = value
@@ -85,8 +78,7 @@ is too hard to use.
     elsif !options[:name].source.empty?
       name = Array(options[:name])
     else
-      args = options[:args].to_a
-      name = options[:exact] ? args : args.map{|arg| /#{arg}/i }
+      name = options[:args].to_a.map{|arg| /#{arg}/i }
     end
 
     prerelease = options[:prerelease]
@@ -169,7 +161,7 @@ is too hard to use.
                :latest
              end
 
-      if name.respond_to?(:source) && name.source.empty?
+      if name.source.empty?
         spec_tuples = fetcher.detect(type) { true }
       else
         spec_tuples = fetcher.detect(type) do |name_tuple|
@@ -284,7 +276,7 @@ is too hard to use.
   end
 
   def spec_authors entry, spec
-    authors = "Author#{spec.authors.length > 1 ? 's' : ''}: ".dup
+    authors = "Author#{spec.authors.length > 1 ? 's' : ''}: "
     authors << spec.authors.join(', ')
     entry << format_text(authors, 68, 4)
   end
@@ -298,7 +290,7 @@ is too hard to use.
   def spec_license entry, spec
     return if spec.license.nil? or spec.license.empty?
 
-    licenses = "License#{spec.licenses.length > 1 ? 's' : ''}: ".dup
+    licenses = "License#{spec.licenses.length > 1 ? 's' : ''}: "
     licenses << spec.licenses.join(', ')
     entry << "\n" << format_text(licenses, 68, 4)
   end
@@ -348,3 +340,4 @@ is too hard to use.
   end
 
 end
+

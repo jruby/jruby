@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 class Gem::RequestSet::Lockfile::Parser
   ###
   # Parses lockfiles
@@ -325,24 +324,15 @@ class Gem::RequestSet::Lockfile::Parser
     @tokens.peek
   end
 
-  if [].respond_to? :flat_map
-    def pinned_requirement name # :nodoc:
-      requirement = Gem::Dependency.new name
-      specification = @set.sets.flat_map { |set|
-        set.find_all(requirement)
-      }.compact.first
+  def pinned_requirement name # :nodoc:
+    spec = @set.sets.select { |set|
+      Gem::Resolver::GitSet    === set or
+        Gem::Resolver::VendorSet === set
+    }.map { |set|
+      set.specs[name]
+    }.compact.first
 
-      specification && specification.version
-    end
-  else # FIXME: remove when 1.8 is dropped
-    def pinned_requirement name # :nodoc:
-      requirement = Gem::Dependency.new name
-      specification = @set.sets.map { |set|
-        set.find_all(requirement)
-      }.flatten(1).compact.first
-
-      specification && specification.version
-    end
+    spec.version
   end
 
   ##
@@ -352,3 +342,4 @@ class Gem::RequestSet::Lockfile::Parser
     @tokens.unshift token
   end
 end
+

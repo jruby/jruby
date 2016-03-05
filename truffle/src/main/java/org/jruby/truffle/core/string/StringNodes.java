@@ -102,8 +102,8 @@ import org.jruby.util.StringSupport;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-import static org.jruby.truffle.core.rope.RopeOperations.EMPTY_ASCII_8BIT_ROPE;
-import static org.jruby.truffle.core.rope.RopeOperations.EMPTY_UTF8_ROPE;
+import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_UTF8_ROPE;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {

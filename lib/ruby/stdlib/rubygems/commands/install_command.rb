@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'rubygems/command'
 require 'rubygems/install_update_options'
 require 'rubygems/dependency_installer'
@@ -186,7 +185,6 @@ to write the specification by hand.  For example:
   end
 
   def execute
-
     if options.include? :gemdeps then
       install_from_gemdeps
       return # not reached

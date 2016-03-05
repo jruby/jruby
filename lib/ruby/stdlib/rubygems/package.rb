@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# frozen_string_literal: true
 #--
 # Copyright (C) 2004 Mauricio Julio Fernández Pradier
 # See LICENSE.txt for additional licensing information.
@@ -59,7 +58,7 @@ class Gem::Package
       if source
         @path = source.path
 
-        message = message + " in #{path}" if path
+        message << " in #{path}" if path
       end
 
       super message
@@ -383,7 +382,7 @@ EOM
           FileUtils.chmod entry.header.mode, destination
         end if entry.file?
 
-        File.symlink(entry.header.linkname, destination) if entry.symlink?
+        File.symlink(install_location(entry.header.linkname, destination_dir), destination) if entry.symlink?
 
         verbose destination
       end

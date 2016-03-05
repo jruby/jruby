@@ -128,6 +128,10 @@ public class RubyKernel {
         runtime.setSuperMethodMissing(new MethodMissingMethod(module, PUBLIC, CallType.SUPER));
         runtime.setNormalMethodMissing(new MethodMissingMethod(module, PUBLIC, CallType.NORMAL));
 
+        if (runtime.getInstanceConfig().isAssumeLoop()) {
+            module.defineAnnotatedMethods(LoopMethods.class);
+        }
+
         recacheBuiltinMethods(runtime);
 
         return module;
@@ -1734,28 +1738,6 @@ public class RubyKernel {
         throw runtime.newNotImplementedError("fork is not available on this platform");
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
-    public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
-        RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
-
-        if (!str.gsub_bang(context, arg0, block).isNil()) {
-            context.setLastLine(str);
-        }
-
-        return str;
-    }
-
-    @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
-    public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
-
-        if (!str.gsub_bang(context, arg0, arg1, block).isNil()) {
-            context.setLastLine(str);
-        }
-
-        return str;
-    }
-
     @JRubyMethod(module = true)
     public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
         block.yield(context, recv);
@@ -2060,6 +2042,91 @@ public class RubyKernel {
         return ((RubyBasicObject)self).instance_variables19(context);
     }
     /* end delegated bindings */
+
+    public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
+
+        if (!str.gsub_bang(context, arg0, block).isNil()) {
+            context.setLastLine(str);
+        }
+
+        return str;
+    }
+
+    public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
+
+        if (!str.gsub_bang(context, arg0, arg1, block).isNil()) {
+            context.setLastLine(str);
+        }
+
+        return str;
+    }
+
+    public static class LoopMethods {
+        @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
+        public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+            RubyString str = getLastlineString(context, context.runtime);
+
+            context.setLastLine(str.gsub(context, arg0, block));
+
+            return str;
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
+        public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+            RubyString str = getLastlineString(context, context.runtime);
+
+            context.setLastLine(str.gsub(context, arg0, arg1, block));
+
+            return str;
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
+        public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+            RubyString str = getLastlineString(context, context.runtime);
+
+            context.setLastLine(str.sub(context, arg0, block));
+
+            return str;
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
+        public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+            RubyString str = getLastlineString(context, context.runtime);
+
+            context.setLastLine(str.sub(context, arg0, arg1, block));
+
+            return str;
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
+        public static IRubyObject chop(ThreadContext context, IRubyObject recv) {
+            RubyString str = getLastlineString(context, context.runtime);
+
+            context.setLastLine(str.chop(context));
+
+            return str;
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
+        public static IRubyObject chomp(ThreadContext context, IRubyObject recv) {
+            RubyString str = getLastlineString(context, context.runtime);
+
+            context.setLastLine(str.chomp(context));
+
+            return str;
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
+        public static IRubyObject chomp(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+            RubyString str = getLastlineString(context, context.runtime);
+
+            context.setLastLine(str.chomp(context, arg0));
+
+            return str;
+        }
+    }
 
     @Deprecated
     public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {

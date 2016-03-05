@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'rubygems/command'
 require 'rubygems/command_manager'
 require 'rubygems/dependency_installer'
@@ -85,7 +84,6 @@ command to remove old versions.
   end
 
   def execute
-
     if options[:system] then
       update_rubygems
       return

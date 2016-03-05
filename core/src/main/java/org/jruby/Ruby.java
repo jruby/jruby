@@ -702,13 +702,14 @@ public final class Ruby implements Constantizable {
 
         if (processLineEndings) whileBody.add(new CallNode(pos, dollarUnderscore, "chop!", null, null));
         if (split) whileBody.add(new GlobalAsgnNode(pos, "$F", new CallNode(pos, dollarUnderscore, "split", null, null)));
-        if (printing) whileBody.add(new FCallNode(pos, "puts", new ArrayNode(pos, dollarUnderscore), null));
 
         if (oldRoot.getBodyNode() instanceof BlockNode) {   // common case n stmts
-            whileBody.addAll(oldRoot.getBodyNode());
+            whileBody.addAll(((BlockNode) oldRoot.getBodyNode()));
         } else {                                            // single expr script
             whileBody.add(oldRoot.getBodyNode());
         }
+
+        if (printing) whileBody.add(new FCallNode(pos, "puts", new ArrayNode(pos, dollarUnderscore), null));
 
         return new RootNode(pos, oldRoot.getScope(), newBody, oldRoot.getFile());
     }

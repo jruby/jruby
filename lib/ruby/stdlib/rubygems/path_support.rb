@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 #
 # Gem::PathSupport facilitates the GEM_HOME and GEM_PATH environment settings
@@ -22,16 +21,21 @@ class Gem::PathSupport
   # Constructor. Takes a single argument which is to be treated like a
   # hashtable, or defaults to ENV, the system environment.
   #
-  def initialize(env)
-    @home     = env["GEM_HOME"] || Gem.default_dir
+  def initialize(env=ENV)
+    @env = env
+
+    # note 'env' vs 'ENV'...
+    @home     = env["GEM_HOME"] || ENV["GEM_HOME"] || Gem.default_dir
 
     if File::ALT_SEPARATOR then
       @home   = @home.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
     end
 
-    @path = split_gem_path env["GEM_PATH"], @home
+    self.path = env["GEM_PATH"] || ENV["GEM_PATH"]
 
-    @spec_cache_dir = env["GEM_SPEC_CACHE"] || Gem.default_spec_cache_dir
+    @spec_cache_dir =
+      env["GEM_SPEC_CACHE"] || ENV["GEM_SPEC_CACHE"] ||
+        Gem.default_spec_cache_dir
 
     @spec_cache_dir = @spec_cache_dir.dup.untaint
   end
@@ -39,19 +43,21 @@ class Gem::PathSupport
   private
 
   ##
-  # Split the Gem search path (as reported by Gem.path).
+  # Set the Gem search path (as reported by Gem.path).
 
-  def split_gem_path gpaths, home
+  def path=(gpaths)
     # FIX: it should be [home, *path], not [*path, home]
 
     gem_path = []
 
+    # FIX: I can't tell wtf this is doing.
+    gpaths ||= (ENV['GEM_PATH'] || "").empty? ? nil : ENV["GEM_PATH"]
+
     if gpaths
-      gem_path = gpaths.split(Gem.path_separator)
-      # Handle the path_separator being set to a regexp, which will cause
-      # end_with? to error
-      if gpaths =~ /#{Gem.path_separator}\z/
-        gem_path += default_path
+      if gpaths.kind_of?(Array)
+        gem_path = gpaths.dup
+      else
+        gem_path = gpaths.split(Gem.path_separator)
       end
 
       if File::ALT_SEPARATOR then
@@ -60,21 +66,15 @@ class Gem::PathSupport
         end
       end
 
-      gem_path << home
+      gem_path << @home
     else
-      gem_path = default_path
+      gem_path = Gem.default_path + [@home]
+
+      if defined?(APPLE_GEM_HOME)
+        gem_path << APPLE_GEM_HOME
+      end
     end
 
-    gem_path.uniq
-  end
-
-  # Return the default Gem path
-  def default_path
-    gem_path = Gem.default_path + [@home]
-
-    if defined?(APPLE_GEM_HOME)
-      gem_path << APPLE_GEM_HOME
-    end
-    gem_path
+    @path = gem_path.uniq
   end
 end

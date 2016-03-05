@@ -1427,6 +1427,8 @@ class String
   end
 
   def []=(index, count_or_replacement, replacement=undefined)
+    Rubinius.check_frozen
+
     if undefined.equal?(replacement)
       replacement = count_or_replacement
       count = nil
@@ -1468,7 +1470,7 @@ class String
       replacement = StringValue replacement
       enc = Rubinius::Type.compatible_encoding self, replacement
 
-      m.splice bi, bs, replacement
+      m.splice bi, bs, replacement, enc
     when String
       unless start = m.byte_index(index)
         raise IndexError, "string not matched"
@@ -1477,7 +1479,7 @@ class String
       replacement = StringValue replacement
       enc = Rubinius::Type.compatible_encoding self, replacement
 
-      m.splice start, index.bytesize, replacement
+      m.splice start, index.bytesize, replacement, enc
     when Range
       start = Rubinius::Type.coerce_to index.first, Fixnum, :to_int
 
@@ -1506,7 +1508,7 @@ class String
       replacement = StringValue replacement
       enc = Rubinius::Type.compatible_encoding self, replacement
 
-      m.splice bi, bs, replacement
+      m.splice bi, bs, replacement, enc
     when Regexp
       if count
         count = Rubinius::Type.coerce_to count, Fixnum, :to_int
@@ -1535,7 +1537,7 @@ class String
       bi = m.byte_index match.begin(count)
       bs = m.byte_index(match.end(count)) - bi
 
-      m.splice bi, bs, replacement
+      m.splice bi, bs, replacement, enc
     else
       index = Rubinius::Type.coerce_to index, Fixnum, :to_int
 
@@ -1547,7 +1549,6 @@ class String
     end
 
     Rubinius::Type.infect self, replacement
-    force_encoding enc
 
     return replacement
   end
