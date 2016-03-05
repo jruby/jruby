@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # The Dependency class holds a Gem name and a Gem::Requirement.
 
@@ -275,9 +274,8 @@ class Gem::Dependency
   end
 
   def matching_specs platform_only = false
-    env_req = Gem.env_requirement(name)
     matches = Gem::Specification.stubs_for(name).find_all { |spec|
-      requirement.satisfied_by?(spec.version) && env_req.satisfied_by?(spec.version)
+      requirement.satisfied_by? spec.version
     }.map(&:to_spec)
 
     if platform_only
@@ -308,9 +306,9 @@ class Gem::Dependency
 
       if specs.empty?
         total = Gem::Specification.to_a.size
-        msg   = "Could not find '#{name}' (#{requirement}) among #{total} total gem(s)\n".dup
+        msg   = "Could not find '#{name}' (#{requirement}) among #{total} total gem(s)\n"
       else
-        msg   = "Could not find '#{name}' (#{requirement}) - did find: [#{specs.join ','}]\n".dup
+        msg   = "Could not find '#{name}' (#{requirement}) - did find: [#{specs.join ','}]\n"
       end
       msg << "Checked in 'GEM_PATH=#{Gem.path.join(File::PATH_SEPARATOR)}', execute `gem env` for more information"
 

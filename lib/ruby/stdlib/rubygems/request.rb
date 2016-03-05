@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'net/http'
 require 'thread'
 require 'time'
@@ -156,7 +155,7 @@ class Gem::Request
           if Net::HTTPOK === incomplete_response
             reporter.fetch(file_name, incomplete_response.content_length)
             downloaded = 0
-            data = String.new
+            data = ''
 
             incomplete_response.read_body do |segment|
               data << segment
@@ -223,7 +222,7 @@ class Gem::Request
   end
 
   def user_agent
-    ua = "RubyGems/#{Gem::VERSION} #{Gem::Platform.local}".dup
+    ua = "RubyGems/#{Gem::VERSION} #{Gem::Platform.local}"
 
     ruby_version = RUBY_VERSION
     ruby_version += 'dev' if RUBY_PATCHLEVEL == -1

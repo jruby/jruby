@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# frozen_string_literal: true
 #--
 # Copyright (C) 2004 Mauricio Julio Fernández Pradier
 # See LICENSE.txt for additional licensing information.
@@ -121,3 +120,4 @@ class Gem::Package::TarReader
 end
 
 require 'rubygems/package/tar_reader/entry'
+

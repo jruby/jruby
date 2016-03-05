@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 require 'rubygems/command'
 require 'rubygems/remote_fetcher'
 require 'rubygems/spec_fetcher'

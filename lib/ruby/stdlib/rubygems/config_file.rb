@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 #--
 # Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
 # All rights reserved.
@@ -201,12 +200,11 @@ class Gem::ConfigFile
       result.merge load_file file
     end
 
+
     @hash = operating_system_config.merge platform_config
-    unless arg_list.index '--norc'
-      @hash = @hash.merge system_config
-      @hash = @hash.merge user_config
-      @hash = @hash.merge environment_config
-    end
+    @hash = @hash.merge system_config
+    @hash = @hash.merge user_config
+    @hash = @hash.merge environment_config
 
     # HACK these override command-line args, which is bad
     @backtrace                  = @hash[:backtrace]                  if @hash.key? :backtrace
@@ -306,18 +304,9 @@ if you believe they were disclosed to a third party.
   # Sets the RubyGems.org API key to +api_key+
 
   def rubygems_api_key= api_key
-    set_api_key :rubygems_api_key, api_key
-
-    @rubygems_api_key = api_key
-  end
-
-  ##
-  # Set a specific host's API key to +api_key+
-
-  def set_api_key host, api_key
     check_credentials_permissions
 
-    config = load_file(credentials_path).merge(host => api_key)
+    config = load_file(credentials_path).merge(:rubygems_api_key => api_key)
 
     dirname = File.dirname credentials_path
     Dir.mkdir(dirname) unless File.exist? dirname
@@ -329,7 +318,7 @@ if you believe they were disclosed to a third party.
       f.write config.to_yaml
     end
 
-    load_api_keys # reload
+    @rubygems_api_key = api_key
   end
 
   def load_file(filename)

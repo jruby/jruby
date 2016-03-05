@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 ##
 # Used internally to indicate that a dependency conflicted
 # with a spec that would be activated.

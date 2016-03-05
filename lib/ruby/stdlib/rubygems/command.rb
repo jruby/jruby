@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 #--
 # Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
 # All rights reserved.
@@ -154,7 +153,7 @@ class Gem::Command
 
   def show_lookup_failure(gem_name, version, errors, domain)
     if errors and !errors.empty?
-      msg = "Could not find a valid gem '#{gem_name}' (#{version}), here is why:\n".dup
+      msg = "Could not find a valid gem '#{gem_name}' (#{version}), here is why:\n"
       errors.each { |x| msg << "          #{x.wordy}\n" }
       alert_error msg
     else
@@ -299,8 +298,6 @@ class Gem::Command
     handle_options args
 
     options[:build_args] = build_args
-
-    self.ui = Gem::SilentUI.new if options[:silent]
 
     if options[:help] then
       show_help
@@ -522,13 +519,8 @@ class Gem::Command
     end
   end
 
-  add_common_option('-q', '--quiet', 'Silence command progress meter') do |value, options|
+  add_common_option('-q', '--quiet', 'Silence commands') do |value, options|
     Gem.configuration.verbose = false
-  end
-
-  add_common_option("--silent",
-                    "Silence rubygems output") do |value, options|
-    options[:silent] = true
   end
 
   # Backtrace and config-file are added so they show up in the help
@@ -546,11 +538,6 @@ class Gem::Command
   add_common_option('--debug',
                     'Turn on Ruby debugging') do
   end
-
-  add_common_option('--norc',
-                    'Avoid loading any .gemrc file') do
-  end
-
 
   # :stopdoc:
 
@@ -592,3 +579,4 @@ end
 
 module Gem::Commands
 end
+
