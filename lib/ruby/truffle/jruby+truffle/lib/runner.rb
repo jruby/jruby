@@ -419,7 +419,7 @@ class JRubyTruffleRunner
   end
 
   def bundle_cli(argv)
-    ruby = Pathname(RbConfig::CONFIG['bindir']).join('ruby')
+    ruby = Pathname(RbConfig::CONFIG['bindir']).join('jruby')
     execute_cmd [ruby.to_s, "#{Gem.bindir}/bundle", *argv]
   end
 
