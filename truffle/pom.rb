@@ -38,15 +38,9 @@ project 'JRuby Truffle' do
           'target' => [ '${base.javac.version}', '1.7' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
-                   :id => 'anno',
-                   :phase => 'process-resources',
-                   'includes' => [ 'org/jruby/truffle/om/dsl/processor/OMProcessor.java' ],
-                   'compilerArgs' => [ '-XDignore.symbol.file=true',
-                                       '-J-ea' ] )
-    execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
-                   'annotationProcessors' => [ 'org.jruby.truffle.om.dsl.processor.OMProcessor',
+                   'annotationProcessors' => [ 'com.oracle.truffle.object.dsl.processor.LayoutProcessor',
                                                'com.oracle.truffle.dsl.processor.InstrumentableProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',
                                                'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor',
