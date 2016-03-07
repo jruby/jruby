@@ -98,7 +98,6 @@ public interface TrufflePosix {
     int ftruncate(int fd, long offset);
     int rename(CharSequence oldName, CharSequence newName);
     String getcwd();
-    int fcntl(int fd, Fcntl fcntlConst, int... arg);
     int fsync(int fd);
     int isatty(int fd);
 

@@ -406,11 +406,6 @@ public class JNRPosix implements TrufflePosix {
     }
 
     @Override
-    public int fcntl(int fd, Fcntl fcntlConst, int... arg) {
-        return posix.fcntl(fd, fcntlConst, arg);
-    }
-
-    @Override
     public int fsync(int fd) {
         return posix.fsync(fd);
     }
