@@ -1,1 +1,0 @@
-fails:Process.uid= raises Errno::ERPERM if run by a non privileged user trying to set the superuser id from username

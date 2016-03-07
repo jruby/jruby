@@ -1,2 +1,0 @@
-fails:Math.acosh returns NaN given NaN
-fails:Math.acosh accepts any argument that can be coerced with Float()

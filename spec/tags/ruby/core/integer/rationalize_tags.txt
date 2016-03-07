@@ -1,1 +1,0 @@
-fails:Integer#rationalize returns a Rational object
