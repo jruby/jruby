@@ -23,8 +23,8 @@ import org.jruby.truffle.platform.openjdk.OpenJDKArrayBlockingQueueLocksConditio
 import org.jruby.truffle.platform.openjdk.OpenJDKLinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.posix.ClockGetTime;
 import org.jruby.truffle.platform.posix.Sockets;
-import org.jruby.truffle.platform.posix.TrufflePosixHandler;
 import org.jruby.truffle.platform.posix.TrufflePosix;
+import org.jruby.truffle.platform.posix.TrufflePosixHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 
