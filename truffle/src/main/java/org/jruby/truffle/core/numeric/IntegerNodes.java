@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.LoopConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -55,7 +56,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -82,7 +83,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -138,7 +139,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(i);
+                    LoopNode.reportLoopCount(this, i);
                 }
             }
 
@@ -156,7 +157,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(i < Integer.MAX_VALUE ? (int) i : Integer.MAX_VALUE);
+                    LoopNode.reportLoopCount(this, i < Integer.MAX_VALUE ? (int) i : Integer.MAX_VALUE);
                 }
             }
 
@@ -223,7 +224,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -249,7 +250,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 

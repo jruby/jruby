@@ -11,6 +11,7 @@ package org.jruby.truffle.core.format.nodes.control;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.LoopNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.nodes.PackNode;
 
@@ -41,7 +42,7 @@ public class StarNode extends PackNode {
         }
 
         if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(loops);
+            LoopNode.reportLoopCount(this, loops);
         }
 
         return null;
