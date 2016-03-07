@@ -24,9 +24,9 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 public class FeatureLoader {
 

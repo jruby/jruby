@@ -14,7 +14,7 @@ import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.truffle.platform.posix.JNRPosix;
+import org.jruby.truffle.platform.posix.JNRTrufflePosix;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TruffleJavaPosix extends JNRPosix {
+public class JavaTrufflePosix extends JNRTrufflePosix {
 
     private static class OpenFile {
 
@@ -53,7 +53,7 @@ public class TruffleJavaPosix extends JNRPosix {
     private final AtomicInteger nextFileHandle = new AtomicInteger(3);
     private final Map<Integer, OpenFile> fileHandles = new ConcurrentHashMap<>();
 
-    public TruffleJavaPosix(POSIX delegateTo) {
+    public JavaTrufflePosix(POSIX delegateTo) {
         super(delegateTo);
     }
 

@@ -14,8 +14,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 
-import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
-
 public class RopeConstants {
 
     public static final LeafRope EMPTY_ASCII_8BIT_ROPE;

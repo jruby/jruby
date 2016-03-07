@@ -24,11 +24,11 @@ import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-public class JNRPosix implements TrufflePosix {
+public class JNRTrufflePosix implements TrufflePosix {
 
     private final POSIX posix;
 
-    public JNRPosix(POSIX posix) {
+    public JNRTrufflePosix(POSIX posix) {
         this.posix = posix;
     }
 

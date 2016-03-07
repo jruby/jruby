@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 

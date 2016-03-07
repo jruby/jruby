@@ -90,7 +90,11 @@ module Utilities
   end
 
   def self.find_jruby_bin_dir
-    File.dirname(find_jruby)
+    if jruby_eclipse?
+      JRUBY_DIR + "/bin"
+    else
+      File.dirname(find_jruby)
+    end
   end
 
   def self.git_branch
