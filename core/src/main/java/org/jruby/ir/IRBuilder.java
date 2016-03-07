@@ -1923,12 +1923,12 @@ public class IRBuilder {
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 Variable temp = createTemporaryVariable();
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                addInstr(new ReceiveOptArgInstr(temp, signature.required(), signature.pre(), j));
-                addInstr(BNEInstr.create(l, temp, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
+                addInstr(new ReceiveOptArgInstr(av, signature.required(), signature.pre(), j));
+                addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
+                addInstr(new CopyInstr(av, buildNil())); // wipe out undefined value with nil
                 Operand defaultResult = build(n.getValue());
-                addInstr(new CopyInstr(temp, defaultResult));
+                addInstr(new CopyInstr(av, defaultResult));
                 addInstr(new LabelInstr(l));
-                addInstr(new CopyInstr(av, temp));
             }
         }
 
@@ -2024,6 +2024,7 @@ public class IRBuilder {
 
                 // Required kwargs have no value and check_arity will throw if they are not provided.
                 if (!isRequiredKeywordArgumentValue(kasgn)) {
+                    addInstr(new CopyInstr(av, buildNil())); // wipe out undefined value with nil
                     build(kasgn);
                 } else {
                     addInstr(new RaiseRequiredKeywordArgumentError(argName));
