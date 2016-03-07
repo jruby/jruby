@@ -38,8 +38,7 @@ public class RubyRootNode extends RootNode {
         this.body = body;
 
         final SourceSection currentBodySourceSection = body.getEncapsulatingSourceSection();
-        body.clearSourceSection();
-        body.assignSourceSection(currentBodySourceSection.withTags(TraceManager.CALL_TAG));
+        body.unsafeSetSourceSection(currentBodySourceSection.withTags(TraceManager.CALL_TAG));
 
         if (context.getCallGraph() != null) {
             context.getCallGraph().registerRootNode(this);

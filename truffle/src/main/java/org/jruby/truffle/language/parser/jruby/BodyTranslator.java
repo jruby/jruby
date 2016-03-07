@@ -3149,8 +3149,7 @@ public class BodyTranslator extends Translator {
             if (context.getCoverageManager() != null) {
                 context.getCoverageManager().setLineHasCode(current.getLineLocation());
             }
-            node.clearSourceSection();
-            node.assignSourceSection(current.withTags(AttachmentsManager.LINE_TAG, TraceManager.LINE_TAG, CoverageManager.LINE_TAG));
+            node.unsafeSetSourceSection(current.withTags(AttachmentsManager.LINE_TAG, TraceManager.LINE_TAG, CoverageManager.LINE_TAG));
         }
 
         return node;

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language;
 
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -37,11 +38,11 @@ import org.jruby.util.ByteList;
 public abstract class RubyNode extends Node {
 
     private final RubyContext context;
+    @CompilationFinal private SourceSection sourceSection;
 
     public RubyNode(RubyContext context, SourceSection sourceSection) {
-        super(sourceSection);
-        assert context != null;
         this.context = context;
+        this.sourceSection = sourceSection;
     }
 
     public RubyNode(RubyNode node) {
@@ -206,4 +207,14 @@ public abstract class RubyNode extends Node {
         return context;
     }
 
+    // Source section
+    
+    public void unsafeSetSourceSection(SourceSection sourceSection) {
+        this.sourceSection = sourceSection;
+    }
+
+    @Override
+    public SourceSection getSourceSection() {
+        return sourceSection;
+    }
 }
