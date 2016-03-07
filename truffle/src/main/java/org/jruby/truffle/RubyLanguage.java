@@ -83,21 +83,6 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
     }
 
     @Override
-    protected Visualizer getVisualizer() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isInstrumentable(Node node) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected WrapperNode createWrapperNode(Node node) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     protected Object evalInContext(Source source, Node node, MaterializedFrame mFrame) throws IOException {
         return null;
     }
