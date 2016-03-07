@@ -2066,65 +2066,37 @@ public class RubyKernel {
     public static class LoopMethods {
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
-            RubyString str = getLastlineString(context, context.runtime);
-
-            context.setLastLine(str.gsub(context, arg0, block));
-
-            return str;
+            return context.setLastLine(getLastlineString(context, context.runtime).gsub(context, arg0, block));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-            RubyString str = getLastlineString(context, context.runtime);
-
-            context.setLastLine(str.gsub(context, arg0, arg1, block));
-
-            return str;
+            return context.setLastLine(getLastlineString(context, context.runtime).gsub(context, arg0, arg1, block));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
-            RubyString str = getLastlineString(context, context.runtime);
-
-            context.setLastLine(str.sub(context, arg0, block));
-
-            return str;
+            return context.setLastLine(getLastlineString(context, context.runtime).sub(context, arg0, block));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-            RubyString str = getLastlineString(context, context.runtime);
-
-            context.setLastLine(str.sub(context, arg0, arg1, block));
-
-            return str;
+            return context.setLastLine(getLastlineString(context, context.runtime).sub(context, arg0, arg1, block));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject chop(ThreadContext context, IRubyObject recv) {
-            RubyString str = getLastlineString(context, context.runtime);
-
-            context.setLastLine(str.chop(context));
-
-            return str;
+            return context.setLastLine(getLastlineString(context, context.runtime).chop(context));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject chomp(ThreadContext context, IRubyObject recv) {
-            RubyString str = getLastlineString(context, context.runtime);
-
-            context.setLastLine(str.chomp(context));
-
-            return str;
+            return context.setLastLine(getLastlineString(context, context.runtime).chomp(context));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject chomp(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-            RubyString str = getLastlineString(context, context.runtime);
-
-            context.setLastLine(str.chomp(context, arg0));
-
-            return str;
+            return context.setLastLine(getLastlineString(context, context.runtime).chomp(context, arg0));
         }
     }
 
