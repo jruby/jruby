@@ -1914,7 +1914,6 @@ public class IRBuilder {
         // Now for opt args
         if (opt > 0) {
             int optIndex = argsNode.getOptArgIndex();
-            Variable temp = createTemporaryVariable();
             for (int j = 0; j < opt; j++, argIndex++) {
                 // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = getNewLabel();
@@ -1922,6 +1921,7 @@ public class IRBuilder {
                 String argName = n.getName();
                 Variable av = getNewLocalVariable(argName, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
+                Variable temp = createTemporaryVariable();
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 addInstr(new ReceiveOptArgInstr(temp, signature.required(), signature.pre(), j));
                 addInstr(BNEInstr.create(l, temp, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
