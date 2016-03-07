@@ -125,8 +125,8 @@ public class CallStackManager {
         final ArrayList<Activation> activations = new ArrayList<>();
 
         if (omit == 0 && currentNode != null && Truffle.getRuntime().getCurrentFrame() != null) {
-            final InternalMethod method = RubyArguments.getMethod(Truffle.getRuntime().getCurrentFrame()
-                    .getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
+            final InternalMethod method = RubyArguments.tryGetMethod(Truffle.getRuntime().getCurrentFrame()
+                    .getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
 
             activations.add(new Activation(currentNode, method));
         }
