@@ -31,8 +31,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.cext.CExtManager;
-import org.jruby.truffle.cext.CExtSubsystem;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
@@ -51,7 +49,6 @@ import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
@@ -398,64 +395,6 @@ public abstract class TrufflePrimitiveNodes {
             final EventBinding<?> binding = (EventBinding<?>) Layouts.HANDLE.getObject(handle);
             binding.dispose();
             return getContext().getCoreLibrary().getNilObject();
-        }
-
-    }
-
-    @CoreMethod(names = "cext_load", onSingleton = true, needsSelf = false, required = 3)
-    public abstract static class CExtLoadNode extends CoreMethodArrayArgumentsNode {
-
-        public CExtLoadNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = { "isRubyArray(initFunctions)", "isRubyArray(cFlags)", "isRubyArray(files)" })
-        public boolean cExtLoad(DynamicObject initFunctions, DynamicObject cFlags, DynamicObject files) {
-            final CExtSubsystem subsystem = CExtManager.getSubsystem();
-
-            if (subsystem == null) {
-                throw new UnsupportedOperationException();
-            }
-
-            subsystem.load(toStrings(initFunctions), toStrings(cFlags), toStrings(files));
-
-            return true;
-        }
-
-        private String[] toStrings(DynamicObject array) {
-            assert RubyGuards.isRubyArray(array);
-
-            final String[] strings = new String[Layouts.ARRAY.getSize(array)];
-
-            int n = 0;
-
-            for (Object object : ArrayOperations.toIterable(array)) {
-                if (RubyGuards.isRubyString(object) || RubyGuards.isRubySymbol(object)) {
-                    strings[n] = object.toString();
-                    n++;
-                } else {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().typeErrorCantConvertInto(object, "String", this));
-                }
-            }
-
-            return strings;
-        }
-
-    }
-
-    @CoreMethod(names = "cext_supported?", needsSelf = false, onSingleton = true)
-    public abstract static class CExtSupportedNode extends CoreMethodArrayArgumentsNode {
-
-        public CExtSupportedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public boolean cExtSupported() {
-            return CExtManager.getSubsystem() != null;
         }
 
     }
