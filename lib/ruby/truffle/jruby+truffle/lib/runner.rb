@@ -581,6 +581,8 @@ class JRubyTruffleRunner
         catch :cancel_ci! do
           instance_eval File.read(ci_file), ci_file, 1
         end
+
+        return true
       end
     end
 
