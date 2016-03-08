@@ -2,16 +2,18 @@
 
 set -e
 
-ruby -X+T -Xtruffle.instrumentation_server_port=8080 test/truffle/integration/instrumentation-server/subject.rb &
+PORT=14873
+
+ruby -X+T -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb &
 pid=$!
 
-while ! (curl -s http://localhost:8080/stacks > /dev/null);
+while ! (curl -s http://localhost:$PORT/stacks > /dev/null);
 do
   echo -n .
   sleep 1
 done
 
-if [[ $(curl -s http://localhost:8080/stacks) != *"test/truffle/integration/instrumentation-server/subject.rb:1"* ]]
+if [[ $(curl -s http://localhost:$PORT/stacks) != *"test/truffle/integration/instrumentation-server/subject.rb:1"* ]]
 then
   echo Expected line not found in stacks
   exit 1
@@ -21,16 +23,16 @@ kill -9 $pid || true
 wait $pid || true
 
 ( echo backtrace ; echo 20000+1400 ; echo continue ) > in.txt
-ruby -X+T -Xtruffle.instrumentation_server_port=8080 test/truffle/integration/instrumentation-server/subject.rb < in.txt > out.txt &
+ruby -X+T -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb < in.txt > out.txt &
 pid=$!
 
-while ! (curl -s http://localhost:8080/stacks > /dev/null);
+while ! (curl -s http://localhost:$PORT/stacks > /dev/null);
 do
   echo -n .
   sleep 1
 done
 
-curl -s http://localhost:8080/break
+curl -s http://localhost:$PORT/break
 
 sleep 1
 kill -9 $pid || true

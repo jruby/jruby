@@ -1,4 +1,4 @@
-PORT=8080
+PORT=14873
 
 function test_server {
   serverpid=$!
