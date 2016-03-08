@@ -38,10 +38,6 @@ project 'JRuby Lib Setup' do
   repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
               :id => 'gem-staging' )
 
-  # for the gems
-  extension 'org.torquebox.mojo:mavengem-wagon:0.2.0'
-  repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
-
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
                            :includes => [ '*' ] },
