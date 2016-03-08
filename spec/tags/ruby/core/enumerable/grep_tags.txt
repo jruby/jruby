@@ -1,1 +1,0 @@
-fails:Enumerable#grep calls the block with an array when yielded with multiple arguments
