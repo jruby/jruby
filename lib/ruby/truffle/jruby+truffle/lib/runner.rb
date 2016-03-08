@@ -620,15 +620,27 @@ class JRubyTruffleRunner
       @options.fetch(key)
     end
 
-    def git_clone(url, branch: 'master', tag: nil, commit: nil)
-      execute_cmd "git clone -b #{branch} #{url} #{repository_name}", dir: working_dir, print: true
-      execute_cmd "git checkout #{tag || commit}", dir: working_dir, print: true if tag || commit
+    def git_clone(url)
+      execute_cmd %W[git clone #{url} #{repository_name}], dir: working_dir, print: true
     end
 
-    def get_git_tag(version)
-      tag = `git tags -l`.lines.find { |l| l.include? version }
-      raise "fetching tag for #{version} version failed" unless $?.success?
+    def git_checkout(target)
+      return if target.nil?
+      execute_cmd %W[git checkout #{target}], dir: repository_dir, print: true
+    end
+
+    def git_tag(version)
+      return nil if version.nil?
+
+      tag = git_tags.find { |l| l.include? version }
+      raise "tag for #{version} was not found" if tag.nil?
       tag
+    end
+
+    def git_tags
+      tags = Dir.chdir(repository_dir) { `git tag -l`.lines }
+      raise "fetching tags failed" if !$?.success?
+      tags
     end
 
     def setup
