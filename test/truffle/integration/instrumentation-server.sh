@@ -7,6 +7,8 @@ PORT=14873
 ruby -X+T -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb &
 pid=$!
 
+sleep 6
+
 while ! (curl -s http://localhost:$PORT/stacks > /dev/null);
 do
   echo -n .
@@ -25,6 +27,8 @@ wait $pid || true
 ( echo backtrace ; echo 20000+1400 ; echo continue ) > in.txt
 ruby -X+T -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb < in.txt > out.txt &
 pid=$!
+
+sleep 6
 
 while ! (curl -s http://localhost:$PORT/stacks > /dev/null);
 do
