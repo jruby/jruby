@@ -579,7 +579,12 @@ class JRubyTruffleRunner
       else
         puts "Using CI definition: #{ci_file}"
         catch :cancel_ci! do
-          instance_eval File.read(ci_file), ci_file, 1
+          begin
+            instance_eval File.read(ci_file), ci_file, 1
+          rescue => e
+            puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
+            result false
+          end
         end
 
         return true
