@@ -13,7 +13,8 @@ function test_server {
   wait $serverpid || true
   if [[ $response != *"Hello"* ]]
   then
-    echo Response not expected
+    echo Response not expected:
+    echo $response
     exit 1
   fi
 }
