@@ -1823,7 +1823,7 @@ class TestArray < Test::Unit::TestCase
 
   def test_permutation_stack_error
     bug9932 = '[ruby-core:63103] [Bug #9932]'
-    assert_separately([], <<-"end;", timeout: 20) #    do
+    assert_separately([], <<-"end;", timeout: 30) #    do
       assert_nothing_raised(SystemStackError, "#{bug9932}") do
         assert_equal(:ok, Array.new(100_000, nil).permutation {break :ok})
       end
@@ -1856,7 +1856,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_permutation_stack_error
-    assert_separately([], <<-"end;", timeout: 20) #    do
+    assert_separately([], <<-"end;", timeout: 30) #    do
       assert_nothing_raised(SystemStackError) do
         assert_equal(:ok, Array.new(100_000, nil).repeated_permutation(500_000) {break :ok})
       end
@@ -1893,7 +1893,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_combination_stack_error
-    assert_separately([], <<-"end;", timeout: 20) #    do
+    assert_separately([], <<-"end;", timeout: 30) #    do
       assert_nothing_raised(SystemStackError) do
         assert_equal(:ok, Array.new(100_000, nil).repeated_combination(500_000) {break :ok})
       end
