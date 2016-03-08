@@ -2,6 +2,7 @@ package org.jruby.ir.runtime;
 
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 
 // This class is just a thin wrapper around a return value
 // from nonlocal-return and break instructions.
@@ -18,5 +19,14 @@ public class IRWrappedLambdaReturnValue extends RuntimeException implements Unre
 
     public IRWrappedLambdaReturnValue(IRubyObject v) {
         this.returnValue = v;
+    }
+
+    @Override
+    public Throwable fillInStackTrace() {
+        if (Options.JUMP_BACKTRACE.load()) {
+            return super.fillInStackTrace();
+        }
+
+        return this;
     }
 }
