@@ -1020,13 +1020,16 @@ public abstract class IRScope implements ParseResult {
 
         // Invalidate compiler pass state.
         //
-        // SSS FIXME: This is to get around concurrent-modification issues
-        // since CompilerPass.invalidate modifies this, but some passes
-        // cannot be invalidated.
-        int i = 0;
-        while (i < getFullInterpreterContext().getExecutedPasses().size()) {
-            if (!getFullInterpreterContext().getExecutedPasses().get(i).invalidate(this)) {
-                i++;
+        // SSS FIXME: Re-grabbing passes each iter is to get around concurrent-modification issues
+        // since CompilerPass.invalidate modifies this, but some passes cannot be invalidated.  This
+        // should be wrapped in an iterator.
+        FullInterpreterContext fic = getFullInterpreterContext();
+        if (fic != null) {
+            int i = 0;
+            while (i < fic.getExecutedPasses().size()) {
+                if (!fic.getExecutedPasses().get(i).invalidate(this)) {
+                    i++;
+                }
             }
         }
     }
