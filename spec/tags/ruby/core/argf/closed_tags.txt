@@ -1,1 +1,0 @@
-fails:ARGF.closed? returns true if the current stream has been closed

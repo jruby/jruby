@@ -1,2 +1,0 @@
-fails:Math.acos returns NaN given NaN
-fails:Math.acos accepts any argument that can be coerced with Float()

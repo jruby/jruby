@@ -42,6 +42,10 @@ matrix:
       jdk: oraclejdk8
     - env: JT='test mri'
     - env: JTRCI='lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk8
+    - env: PHASE='-Pj2ee'
+      jdk: oraclejdk7
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required

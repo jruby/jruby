@@ -1,7 +1,6 @@
 errors:Kernel.Float for hexadecimal literals with binary exponent interprets the fractional part (on the left side of 'p') in hexadecimal
 errors:Kernel.Float for hexadecimal literals with binary exponent interprets the exponent (on the right of 'p') in decimal
 errors:Kernel.Float for hexadecimal literals with binary exponent returns Infinity for '0x1p10000'
-errors:Kernel.Float for hexadecimal literals with binary exponent interprets the fractional part
 fails:Kernel.Float for hexadecimal literals with binary exponent interprets the fractional part (on the left side of 'p') in hexadecimal
 fails:Kernel.Float for hexadecimal literals with binary exponent interprets the exponent (on the right of 'p') in decimal
 fails:Kernel.Float for hexadecimal literals with binary exponent returns Infinity for '0x1p10000'

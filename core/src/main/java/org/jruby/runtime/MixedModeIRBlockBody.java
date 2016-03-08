@@ -164,8 +164,15 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         if (context.runtime.isBooting()) return; // don't JIT during runtime boot
 
         if (callCount >= 0) {
+            // ensure we've got code ready for JIT
+            ensureInstrsReady();
+            closure.prepareForCompilation();
+
             // if we don't have an explicit protocol, disable JIT
             if (!closure.hasExplicitCallProtocol()) {
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.info("JIT failed; no protocol found in block: " + closure);
+                }
                 callCount = -1;
                 return;
             }

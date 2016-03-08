@@ -1025,6 +1025,7 @@ public class IRBuilder {
 
         ArrayNode argsAry;
         if (
+                !callNode.isLazy() &&
                 callNode.getName().equals("[]") &&
                 callNode.getArgsNode() instanceof ArrayNode &&
                 (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
@@ -1035,14 +1036,13 @@ public class IRBuilder {
             return callResult;
         }
 
-        Operand[] args       = setupCallArgs(callArgsNode);
-
         Label lazyLabel = getNewLabel();
         Label endLabel = getNewLabel();
         if (callNode.isLazy()) {
             addInstr(new BNilInstr(lazyLabel, receiver));
         }
 
+        Operand[] args       = setupCallArgs(callArgsNode);
         Operand block      = setupCallClosure(callNode.getIterNode());
 
         CallInstr callInstr  = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);

@@ -1,2 +1,0 @@
-fails:IO.write uses an :open_args option
-fails:IO#write on a file uses an :open_args option
