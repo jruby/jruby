@@ -82,7 +82,7 @@ matrix:
       jdk: oraclejdk8
     - env: JT='test mri'
     - env: JTRCI='lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
-    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain'
       jdk: oraclejdk8
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk7
