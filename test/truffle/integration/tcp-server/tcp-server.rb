@@ -8,7 +8,7 @@
 
 require 'socket'
 
-server = TCPServer.new('localhost', 8080)
+server = TCPServer.new('localhost', 14873)
 
 loop do
   socket = server.accept
