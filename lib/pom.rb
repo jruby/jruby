@@ -52,6 +52,8 @@ project 'JRuby Lib Setup' do
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
                            :includes => [ '*' ] },
                          { :directory => '${basedir}/ruby/stdlib',
+                           :includes => [ 'org/**/*.jar' ] },
+                         { :directory => '${basedir}/ruby/stdlib-2.2.2',
                            :includes => [ 'org/**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts

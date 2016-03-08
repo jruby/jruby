@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/matrix/eigenvalue_decomposition'
+require_relative '../../../stdlib-2.2.2/matrix/eigenvalue_decomposition'

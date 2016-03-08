@@ -1,1 +1,1 @@
-require_relative '../../stdlib/optparse'
+require_relative '../../stdlib-2.2.2/optparse'

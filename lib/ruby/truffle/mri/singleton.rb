@@ -1,1 +1,1 @@
-require_relative '../../stdlib/singleton'
+require_relative '../../stdlib-2.2.2/singleton'
