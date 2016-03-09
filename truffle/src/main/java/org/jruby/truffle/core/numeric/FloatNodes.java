@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import java.util.Locale;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
@@ -722,17 +723,45 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = { "java_to_s" }, visibility = Visibility.PRIVATE)
-    public abstract static class JavaToSNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = { "to_s", "inspect" })
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        public JavaToSNode(RubyContext context, SourceSection sourceSection) {
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject javaToS(double value) {
-            return create7BitString(String.format("%.15g", value), USASCIIEncoding.INSTANCE);
+        public DynamicObject toS(double value) {
+            if (Double.isInfinite(value) || Double.isNaN(value)) {
+                return create7BitString(Double.toString(value), USASCIIEncoding.INSTANCE);
+            }
+
+            String str = String.format(Locale.ENGLISH, "%.15g", value);
+
+            // If no dot, add one to show it's a floating point number
+            if (str.indexOf('.') == -1) {
+                assert str.indexOf('e') == -1;
+                str += ".0";
+            }
+
+            final int e = str.indexOf('e');
+            final boolean hasE = e != -1;
+
+            // Remove trailing zeroes
+            final int start = hasE ? e : str.length();
+            int i = start;
+            while (i > 0 && str.charAt(i - 1) == '0') {
+                i--;
+            }
+
+            // But keep at least one after the dot
+            if (i > 0 && str.charAt(i - 1) == '.') {
+                i++;
+            }
+
+            final String formatted = str.substring(0, i) + str.substring(start, str.length());
+            return create7BitString(formatted, USASCIIEncoding.INSTANCE);
         }
 
     }
