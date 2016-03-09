@@ -176,7 +176,7 @@ class Gem::InstallerTestCase < Gem::TestCase
       end
     end
 
-    @installer = Gem::Installer.at @gem
+    @installer = Gem::Installer.new @gem
   end
 
   ##
@@ -184,7 +184,7 @@ class Gem::InstallerTestCase < Gem::TestCase
   # +user+ is true a user-install will be performed.
 
   def util_installer(spec, gem_home, user=false)
-    Gem::Installer.at(spec.cache_file,
+    Gem::Installer.new(spec.cache_file,
                        :install_dir => gem_home,
                        :user_install => user)
   end

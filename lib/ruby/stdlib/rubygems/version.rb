@@ -107,7 +107,7 @@
 # Client A needs a stack with basic push/pop capability.  They write to the
 # original interface (no <tt>top</tt>), so their version constraint looks like:
 #
-#   gem 'stack', '>= 0.0'
+#   gem 'stack', '~> 0.0'
 #
 # Essentially, any version is OK with Client A.  An incompatible change to
 # the library will cause them grief, but they are willing to take the chance
@@ -217,14 +217,12 @@ class Gem::Version
   # Pre-release (alpha) parts, e.g, 5.3.1.b.2 => 5.4, are ignored.
 
   def bump
-    @bump ||= begin
-                segments = self.segments.dup
-                segments.pop while segments.any? { |s| String === s }
-                segments.pop if segments.size > 1
+    segments = self.segments.dup
+    segments.pop while segments.any? { |s| String === s }
+    segments.pop if segments.size > 1
 
-                segments[-1] = segments[-1].succ
-                self.class.new segments.join(".")
-              end
+    segments[-1] = segments[-1].succ
+    self.class.new segments.join(".")
   end
 
   ##
@@ -232,11 +230,11 @@ class Gem::Version
   # same precision. Version "1.0" is not the same as version "1".
 
   def eql? other
-    self.class === other and @version == other._version
+    self.class === other and @version == other.version
   end
 
   def hash # :nodoc:
-    @version.hash
+    @hash ||= segments.hash
   end
 
   def init_with coder # :nodoc:
@@ -293,13 +291,11 @@ class Gem::Version
   # Non-prerelease versions return themselves.
 
   def release
-    @release ||= if prerelease?
-                   segments = self.segments.dup
-                   segments.pop while segments.any? { |s| String === s }
-                   self.class.new segments.join('.')
-                 else
-                   self
-                 end
+    return self unless prerelease?
+
+    segments = self.segments.dup
+    segments.pop while segments.any? { |s| String === s }
+    self.class.new segments.join('.')
   end
 
   def segments # :nodoc:
@@ -333,7 +329,7 @@ class Gem::Version
 
   def <=> other
     return unless Gem::Version === other
-    return 0 if @version == other._version
+    return 0 if @version == other.version
 
     lhsegments = segments
     rhsegments = other.segments
@@ -356,11 +352,5 @@ class Gem::Version
     end
 
     return 0
-  end
-
-  protected
-
-  def _version
-    @version
   end
 end

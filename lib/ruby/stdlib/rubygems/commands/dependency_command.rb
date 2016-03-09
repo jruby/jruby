@@ -61,16 +61,10 @@ use with other commands.
     ss.map { |spec, _| spec }
   end
 
-  def fetch_specs name_pattern, dependency # :nodoc:
+  def fetch_specs dependency # :nodoc:
     specs = []
 
-    if local?
-      specs.concat Gem::Specification.stubs.find_all { |spec|
-        name_pattern =~ spec.name and
-          dependency.requirement.satisfied_by? spec.version
-      }.map(&:to_spec)
-    end
-
+    specs.concat dependency.matching_specs     if local?
     specs.concat fetch_remote_specs dependency if remote?
 
     ensure_specs specs
@@ -78,7 +72,16 @@ use with other commands.
     specs.uniq.sort
   end
 
-  def gem_dependency pattern, version, prerelease # :nodoc:
+  def gem_dependency args, version, prerelease # :nodoc:
+    args << '' if args.empty?
+
+    pattern = if args.length == 1 and args.first =~ /\A\/(.*)\/(i)?\z/m then
+                flags = $2 ? Regexp::IGNORECASE : nil
+                Regexp.new $1, flags
+              else
+                /\A#{Regexp.union(*args)}/
+              end
+
     dependency = Gem::Deprecate.skip_during {
       Gem::Dependency.new pattern, version
     }
@@ -118,12 +121,10 @@ use with other commands.
   def execute
     ensure_local_only_reverse_dependencies
 
-    pattern = name_pattern options[:args]
-
     dependency =
-      gem_dependency pattern, options[:version], options[:prerelease]
+      gem_dependency options[:args], options[:version], options[:prerelease]
 
-    specs = fetch_specs pattern, dependency
+    specs = fetch_specs dependency
 
     reverse = reverse_dependencies specs
 
@@ -202,16 +203,5 @@ use with other commands.
     result
   end
 
-  private
-
-  def name_pattern args
-    args << '' if args.empty?
-
-    if args.length == 1 and args.first =~ /\A\/(.*)\/(i)?\z/m then
-      flags = $2 ? Regexp::IGNORECASE : nil
-      Regexp.new $1, flags
-    else
-      /\A#{Regexp.union(*args)}/
-    end
-  end
 end
+

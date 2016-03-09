@@ -174,7 +174,7 @@ class Gem::RequestSet::GemDependencyAPI
   ##
   # A Hash containing gem names and files to require from those gems.
 
-  attr_reader :requires
+  attr_reader :requires # :nodoc:
 
   ##
   # A set of gems that are loaded via the +:path+ option to #gem
@@ -396,7 +396,7 @@ Gem dependencies file #{@path} requires #{name} more than once.
   ##
   # Handles the git: option from +options+ for gem +name+.
   #
-  # Returns +true+ if the gist or git option was handled.
+  # Returns +true+ if the path option was handled.
 
   def gem_git name, options # :nodoc:
     if gist = options.delete(:gist) then
