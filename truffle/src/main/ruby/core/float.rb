@@ -74,22 +74,4 @@ class Float
 
   private :equal_fallback
 
-  # TODO (pitr 27-Nov-2015): needs better implementation
-  def to_s
-    return format('%g', self) if infinite? || nan?
-
-    str = java_to_s
-
-    # remove extra zeroes
-    str.gsub! /^(-?)(\d+\.((\d*[1-9])|0))0+/, '\1\2'
-
-    return str if str =~ /e/
-
-    # add trailing zero if none
-    str << '.0' unless str =~ /\./
-    str
-  end
-
-  alias_method :inspect, :to_s
-
 end
