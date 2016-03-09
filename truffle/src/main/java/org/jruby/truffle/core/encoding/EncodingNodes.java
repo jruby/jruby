@@ -105,7 +105,6 @@ public abstract class EncodingNodes {
 
         @Specialization
         public Object isCompatible(DynamicObject encoding) {
-            CompilerDirectives.transferToInterpreter();
             return EncodingOperations.getEncoding(encoding).isAsciiCompatible();
         }
     }
