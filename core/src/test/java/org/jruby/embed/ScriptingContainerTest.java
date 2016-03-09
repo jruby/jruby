@@ -54,6 +54,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
+import jnr.posix.util.Platform;
 import org.jruby.CompatVersion;
 import org.jruby.Profile;
 import org.jruby.Ruby;
@@ -89,9 +90,28 @@ public class ScriptingContainerTest {
     static OutputStream outStream = null;
     PrintStream pstream = null;
     FileWriter writer = null;
-    String basedir = new File(System.getProperty("user.dir")).getParent();
+    String coredir;
+    String homedir;
+    String savedUserDir;
+    boolean hasPWDAndIsCore;
 
     public ScriptingContainerTest() {
+        calculateDirectories();
+    }
+
+    // This is some pretty weird code but in IDE and from CLI between Windows and other OSes
+    // our ScriptingContainer has inconsistent lookups for FileType.RELATIVE.  When
+    private void calculateDirectories() {
+        String dir = System.getProperty("user.dir");
+        if (Platform.IS_WINDOWS) dir = dir.replace('\\', '/');
+
+        if (dir.contains("/core")) {
+            coredir = dir;
+            homedir = dir.replace("/core", "");
+        } else {
+            coredir = dir + "/core";
+            homedir = dir;
+        }
     }
 
     @BeforeClass
@@ -105,7 +125,11 @@ public class ScriptingContainerTest {
 
     @Before
     public void setUp() throws FileNotFoundException, IOException {
-        outStream = new FileOutputStream(System.getProperty("user.dir") + "/target/run-junit-embed.log", true);
+        savedUserDir = System.getProperty("user.dir");
+        System.setProperty("user.dir", homedir);
+        String pwd = System.getenv("PWD");
+        hasPWDAndIsCore = pwd != null && pwd.contains("core");
+        outStream = new FileOutputStream(coredir + "/target/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -115,13 +139,14 @@ public class ScriptingContainerTest {
         logger1.setLevel(Level.WARNING);
 
         pstream = new PrintStream(outStream, true);
-        writer = new FileWriter(basedir + "/core/target/run-junit-embed.txt", true);
+        writer = new FileWriter(coredir + "/target/run-junit-embed.txt", true);
     }
 
     @After
     public void tearDown() throws IOException {
         pstream.close();
         writer.close();
+        System.setProperty("user.dir", savedUserDir);
     }
 
     /**
@@ -542,7 +567,7 @@ public class ScriptingContainerTest {
         EmbedEvalUnit result = instance.parse(reader, filename, lines);
         assertEquals(expResult, result);
 
-        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
+        filename = coredir + "/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
         reader = new FileReader(filename);
         instance.put("@t", 2);
         result = instance.parse(reader, filename);
@@ -552,7 +577,7 @@ public class ScriptingContainerTest {
         assertEquals(expStringResult, ret.toJava(String.class));
 
         // line number test
-        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = coredir + "/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         reader = new FileReader(filename);
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
@@ -577,7 +602,7 @@ public class ScriptingContainerTest {
         String filename = "";
         int[] lines = null;
 
-        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/1.9"};
+        String[] paths = {homedir + "/lib", homedir + "/lib/ruby/1.9"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -593,7 +618,7 @@ public class ScriptingContainerTest {
             t.printStackTrace(new PrintStream(outStream));
         }
 
-        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
+        filename = coredir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         result = instance.parse(PathType.ABSOLUTE, filename);
         IRubyObject ret = result.run();
         assertEquals(getNextYear(), ret.toJava(Integer.class));
@@ -602,7 +627,7 @@ public class ScriptingContainerTest {
         instance.setWriter(sw);
         String[] planets = {"Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"};
         instance.put("@list", Arrays.asList(planets));
-        filename = "/src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
+        filename = (hasPWDAndIsCore ? "" : "core/") + "src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
         result = instance.parse(PathType.RELATIVE, filename);
         ret = result.run();
         String expResult = "Mercury >> Venus >> Earth >> Mars >> Jupiter >> Saturn >> Uranus >> Neptune: 8 in total";
@@ -657,7 +682,7 @@ public class ScriptingContainerTest {
         EmbedEvalUnit result = instance.parse(istream, filename, lines);
         assertEquals(expResult, result);
 
-        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/law_of_cosines.rb";
+        filename = coredir + "/src/test/ruby/org/jruby/embed/ruby/law_of_cosines.rb";
         istream = new FileInputStream(filename);
         result = instance.parse(istream, filename);
         instance.put("@a", 1);
@@ -671,7 +696,7 @@ public class ScriptingContainerTest {
             assertEquals(60.0, angle, 0.00001);
         }
 
-        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = coredir + "/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
         istream = new FileInputStream(filename);
@@ -746,7 +771,7 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(reader, filename);
         assertEquals(expResult, result);
 
-        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
+        filename = coredir + "/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
         reader = new FileReader(filename);
         instance.put("@t", 3);
         result = instance.runScriptlet(reader, filename);
@@ -800,7 +825,7 @@ public class ScriptingContainerTest {
         logger1.info("runScriptlet(type, filename)");
         PathType type = null;
         String filename = "";
-        String[] paths = {basedir + "/lib/ruby/1.9"};
+        String[] paths = {homedir + "/lib/ruby/1.9"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -818,14 +843,14 @@ public class ScriptingContainerTest {
         }
 
         // absolute path
-        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
+        filename = coredir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         result = instance.runScriptlet(PathType.ABSOLUTE, filename);
         // perhaps, a return type should be in a method argument
         // since implicit cast results in a Long type
         expResult = new Long(getNextYear());
         assertEquals(expResult, result);
 
-        instance.setAttribute(AttributeName.BASE_DIR, basedir + "/core/src/test/ruby/org/jruby/embed");
+        instance.setAttribute(AttributeName.BASE_DIR, coredir + "/src/test/ruby/org/jruby/embed");
         filename = "/ruby/next_year.rb";
         result = instance.runScriptlet(PathType.RELATIVE, filename);
         assertEquals(expResult, result);
@@ -835,7 +860,7 @@ public class ScriptingContainerTest {
         instance.setWriter(sw);
         String[] radioactive_isotopes = {"Uranium", "Plutonium", "Carbon", "Radium", "Einstenium", "Nobelium"};
         instance.put("@list", Arrays.asList(radioactive_isotopes));
-        filename = "/src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
+        filename = (hasPWDAndIsCore ? "" : "core/") + "src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
         result = instance.runScriptlet(PathType.RELATIVE, filename);
         expResult = "Uranium >> Plutonium >> Carbon >> Radium >> Einstenium >> Nobelium: 6 in total";
         assertEquals(expResult, sw.toString().trim());
@@ -911,7 +936,7 @@ public class ScriptingContainerTest {
         Object receiver = null;
         String methodName = "";
         Class<Object> returnType = null;
-        String[] paths = {basedir + "/lib/ruby/1.9"};
+        String[] paths = {homedir + "/lib/ruby/1.9"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -1052,7 +1077,7 @@ public class ScriptingContainerTest {
         Class<Object> returnType = null;
         EmbedEvalUnit unit = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.PERSISTENT);
-        instance.setHomeDirectory(basedir);
+        instance.setHomeDirectory(homedir);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
@@ -1351,7 +1376,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setWriter(writer);
 
-        String filename = System.getProperty("user.dir") + "/src/test/ruby/quiet.rb";
+        String filename = coredir + "/src/test/ruby/quiet.rb";
         sw = new StringWriter();
         Writer esw = new StringWriter();
         instance.setWriter(sw);
@@ -1970,9 +1995,9 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        String expResult = System.getProperty("user.dir");
+        String expResult = homedir;
         String result = instance.getCurrentDirectory();
-        assertEquals(expResult, result);
+        assertEquals(new File(expResult), new File(result));
 
         instance.terminate();
     }
