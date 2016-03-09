@@ -90,12 +90,6 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>jruby-launcher</artifactId>
-      <version>${jruby-launcher.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>minitest</artifactId>
       <version>${minitest.version}</version>
       <type>gem</type>
@@ -205,4 +199,17 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>bootstrap</id>
+      <dependencies>
+	<dependency>
+	  <groupId>rubygems</groupId>
+	  <artifactId>jruby-launcher</artifactId>
+	  <version>${jruby-launcher.version}</version>
+	  <type>gem</type>
+	</dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>
