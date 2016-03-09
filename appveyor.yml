@@ -27,4 +27,4 @@ cache:
   - C:\Users\appveyor\.m2
 
 test_script:
-  - jruby -S rake spec:ruby:fast
+  - mvn -Ptest
