@@ -63,8 +63,10 @@ public class Hash extends Operand {
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<>();
         for (KeyValuePair<Operand, Operand> pair : pairs) {
-            newPairs.add(new KeyValuePair(pair.getKey().getSimplifiedOperand(valueMap, force), pair
-                    .getValue().getSimplifiedOperand(valueMap, force)));
+            newPairs.add(new KeyValuePair(
+                pair.getKey().getSimplifiedOperand(valueMap, force),
+                pair.getValue().getSimplifiedOperand(valueMap, force)
+            ));
         }
 
         return new Hash(newPairs, isKWArgsHash);
