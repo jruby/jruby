@@ -41,6 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
+import jnr.posix.util.Platform;
 import org.apache.bsf.BSFDeclaredBean;
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
@@ -78,6 +79,7 @@ public class JRubyEngineTest {
     @Before
     public void setUp() throws FileNotFoundException {
         basedir = System.getProperty("user.dir");
+        if (Platform.IS_WINDOWS) basedir = basedir.replace('\\', '/');
         System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
         System.setProperty("org.jruby.embed.class.path", basedir + "/test");
 
