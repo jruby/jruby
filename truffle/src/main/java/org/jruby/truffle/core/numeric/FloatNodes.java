@@ -745,22 +745,21 @@ public abstract class FloatNodes {
                 str += ".0";
             }
 
+            final int dot = str.indexOf('.');
+            assert dot != -1;
+
             final int e = str.indexOf('e');
             final boolean hasE = e != -1;
 
-            // Remove trailing zeroes
+            // Remove trailing zeroes, but keep at least one after the dot
             final int start = hasE ? e : str.length();
-            int i = start;
-            while (i > 0 && str.charAt(i - 1) == '0') {
+            int i = start - 1; // last digit we keep, inclusive
+            while (i > dot + 1 && str.charAt(i) == '0') {
                 i--;
             }
 
-            // But keep at least one after the dot
-            if (i > 0 && str.charAt(i - 1) == '.') {
-                i++;
-            }
+            final String formatted = str.substring(0, i + 1) + str.substring(start, str.length());
 
-            final String formatted = str.substring(0, i) + str.substring(start, str.length());
             return create7BitString(formatted, USASCIIEncoding.INSTANCE);
         }
 
