@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/benchmark'
+require_relative '../stdlib/benchmark'

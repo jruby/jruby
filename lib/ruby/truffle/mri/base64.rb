@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/base64'
+require_relative '../stdlib/base64'

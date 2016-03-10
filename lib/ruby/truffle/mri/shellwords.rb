@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/shellwords'
+require_relative '../stdlib/shellwords'

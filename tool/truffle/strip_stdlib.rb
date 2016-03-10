@@ -5,7 +5,7 @@ require 'fileutils'
 require 'pp'
 
 jruby_root     = Pathname(__FILE__).dirname.parent.parent
-stdlib         = jruby_root.join 'lib', 'ruby', 'stdlib-2.2.2'
+stdlib         = jruby_root.join 'lib', 'ruby', 'truffle', 'stdlib'
 truffle_stdlib = jruby_root.join 'lib', 'ruby', 'truffle', 'mri'
 
 stdlib_files = Dir.glob stdlib.join('**', '*')

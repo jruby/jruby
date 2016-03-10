@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/logger'
+require_relative '../stdlib/logger'

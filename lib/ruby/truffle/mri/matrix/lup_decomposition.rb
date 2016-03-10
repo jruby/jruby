@@ -1,1 +1,1 @@
-require_relative '../../../stdlib-2.2.2/matrix/lup_decomposition'
+require_relative '../../stdlib/matrix/lup_decomposition'

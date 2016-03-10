@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/English'
+require_relative '../stdlib/English'

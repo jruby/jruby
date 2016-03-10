@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/ubygems'
+require_relative '../stdlib/ubygems'

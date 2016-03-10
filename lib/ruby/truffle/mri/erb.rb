@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/erb'
+require_relative '../stdlib/erb'

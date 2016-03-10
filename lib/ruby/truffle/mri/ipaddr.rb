@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/ipaddr'
+require_relative '../stdlib/ipaddr'

@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/pstore'
+require_relative '../stdlib/pstore'

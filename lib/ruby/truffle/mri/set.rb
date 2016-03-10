@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/set'
+require_relative '../stdlib/set'

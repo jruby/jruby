@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/csv'
+require_relative '../stdlib/csv'

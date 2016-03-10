@@ -1,1 +1,1 @@
-require_relative '../../stdlib-2.2.2/abbrev'
+require_relative '../stdlib/abbrev'
