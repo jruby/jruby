@@ -234,9 +234,8 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization(guards = {"!isRubySymbol(index)", "!isRubyString(index)", "!isIntegerFixnumRange(index)"})
+        @TruffleBoundary
         public Object getIndex(VirtualFrame frame, DynamicObject matchData, Object index, NotProvided length) {
-            CompilerDirectives.transferToInterpreter();
-
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));

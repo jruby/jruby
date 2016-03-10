@@ -1580,8 +1580,8 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isEmpty(string)")
+        @TruffleBoundary
         public int ordEmpty(DynamicObject string) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreLibrary().argumentError("empty string", this));
         }
 
