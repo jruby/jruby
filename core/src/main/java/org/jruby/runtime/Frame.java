@@ -82,10 +82,10 @@ public final class Frame {
     private Visibility visibility = Visibility.PUBLIC;
     
     /** backref **/
-    private IRubyObject backRef;
+    private final ThreadLocal<IRubyObject> backRef = new ThreadLocal<>();
     
     /** lastline **/
-    private IRubyObject lastLine;
+    private final ThreadLocal<IRubyObject> lastLine = new ThreadLocal<>();
     
     /** whether this frame has been captured into a binding **/
     private boolean captured;
@@ -188,8 +188,8 @@ public final class Frame {
         this.self = null;
         this.klazz = null;
         this.block = Block.NULL_BLOCK;
-        this.backRef = null;
-        this.lastLine = null;
+        this.backRef.remove();
+        this.lastLine.remove();
         
         return this;
     }
@@ -297,21 +297,23 @@ public final class Frame {
     }
     
     public IRubyObject getBackRef(IRubyObject nil) {
-        IRubyObject backRef = this.backRef;
+        IRubyObject backRef = this.backRef.get();
         return backRef == null ? nil : backRef;
     }
     
     public IRubyObject setBackRef(IRubyObject backRef) {
-        return this.backRef = backRef;
+        this.backRef.set(backRef);
+        return backRef;
     }
     
     public IRubyObject getLastLine(IRubyObject nil) {
-        IRubyObject lastLine = this.lastLine;
+        IRubyObject lastLine = this.lastLine.get();
         return lastLine == null ? nil : lastLine;
     }
     
     public IRubyObject setLastLine(IRubyObject lastLine) {
-        return this.lastLine = lastLine;
+        this.lastLine.set(lastLine);
+        return lastLine;
     }
     
     public void setCaptured(boolean captured) {
