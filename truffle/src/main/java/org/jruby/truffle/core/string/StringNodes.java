@@ -2002,31 +2002,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "succ", taintFromSelf = true)
-    public abstract static class SuccNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public SuccNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject succ(DynamicObject string) {
-            final Rope rope = rope(string);
-
-            if (rope.isEmpty()) {
-                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.withEncoding(EMPTY_UTF8_ROPE, rope.getEncoding()), null);
-            } else {
-                final ByteList succByteList = StringSupport.succCommon(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly(string));
-
-                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()), null);
-            }
-        }
-    }
-
     @CoreMethod(names = "succ!", raiseIfFrozenSelf = true)
     public abstract static class SuccBangNode extends CoreMethodArrayArgumentsNode {
 
