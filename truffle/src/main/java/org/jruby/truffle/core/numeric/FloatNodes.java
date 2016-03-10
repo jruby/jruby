@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -146,7 +147,21 @@ public abstract class FloatNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = {
+                "exponent == cachedExponent",
+                "cachedExponent >= 0",
+                "cachedExponent < 10" }, limit = "10")
+        @ExplodeLoop
+        public double powCached(double base, long exponent,
+                @Cached("exponent") long cachedExponent) {
+            double result = 1.0;
+            for (int i = 0; i < cachedExponent; i++) {
+                result *= base;
+            }
+            return result;
+        }
+
+        @Specialization(contains = "powCached")
         public double pow(double a, long b) {
             return Math.pow(a, b);
         }
@@ -745,22 +760,21 @@ public abstract class FloatNodes {
                 str += ".0";
             }
 
+            final int dot = str.indexOf('.');
+            assert dot != -1;
+
             final int e = str.indexOf('e');
             final boolean hasE = e != -1;
 
-            // Remove trailing zeroes
+            // Remove trailing zeroes, but keep at least one after the dot
             final int start = hasE ? e : str.length();
-            int i = start;
-            while (i > 0 && str.charAt(i - 1) == '0') {
+            int i = start - 1; // last digit we keep, inclusive
+            while (i > dot + 1 && str.charAt(i) == '0') {
                 i--;
             }
 
-            // But keep at least one after the dot
-            if (i > 0 && str.charAt(i - 1) == '.') {
-                i++;
-            }
+            final String formatted = str.substring(0, i + 1) + str.substring(start, str.length());
 
-            final String formatted = str.substring(0, i) + str.substring(start, str.length());
             return create7BitString(formatted, USASCIIEncoding.INSTANCE);
         }
 
