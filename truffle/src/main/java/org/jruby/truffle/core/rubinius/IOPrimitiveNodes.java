@@ -50,6 +50,7 @@ import jnr.posix.Timeval;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
@@ -66,6 +67,8 @@ import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
+
+import static org.jruby.truffle.core.string.StringOperations.rope;
 
 public abstract class IOPrimitiveNodes {
 
@@ -205,14 +208,15 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
         public boolean fnmatch(DynamicObject pattern, DynamicObject path, int flags) {
-            final ByteList patternBytes = StringOperations.getByteListReadOnly(pattern);
-            final ByteList pathBytes = StringOperations.getByteListReadOnly(path);
-            return Dir.fnmatch(patternBytes.getUnsafeBytes(),
-                    patternBytes.getBegin(),
-                    patternBytes.getBegin() + patternBytes.getRealSize(),
-                    pathBytes.getUnsafeBytes(),
-                    pathBytes.getBegin(),
-                    pathBytes.getBegin() + pathBytes.getRealSize(),
+            final Rope patternRope = rope(pattern);
+            final Rope pathRope = rope(path);
+
+            return Dir.fnmatch(patternRope.getBytes(),
+                    patternRope.getBegin(),
+                    patternRope.getBegin() + patternRope.getRealSize(),
+                    pathRope.getBytes(),
+                    pathRope.getBegin(),
+                    pathRope.getBegin() + pathRope.getRealSize(),
                     flags) != Dir.FNM_NOMATCH;
         }
 
