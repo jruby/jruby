@@ -408,15 +408,15 @@ public abstract class IOPrimitiveNodes {
         public int write(DynamicObject file, DynamicObject string) {
             final int fd = Layouts.IO.getDescriptor(file);
 
-            final ByteList byteList = StringOperations.getByteListReadOnly(string);
+            final Rope rope = rope(string);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                getContext().getDebugStandardOut().write(byteList.unsafeBytes(), byteList.begin(), byteList.length());
-                return byteList.length();
+                getContext().getDebugStandardOut().write(rope.getBytes(), rope.begin(), rope.byteLength());
+                return rope.byteLength();
             }
 
             // TODO (eregon, 11 May 2015): review consistency under concurrent modification
-            final ByteBuffer buffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
+            final ByteBuffer buffer = ByteBuffer.wrap(rope.getBytes(), rope.begin(), rope.byteLength());
 
             int total = 0;
 
