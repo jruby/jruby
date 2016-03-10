@@ -214,16 +214,15 @@ public abstract class StringPrimitiveNodes {
         public DynamicObject stringAwkSplit(DynamicObject string, int lim) {
             final List<DynamicObject> ret = new ArrayList<>();
             final Rope rope = rope(string);
-            final ByteList value = rope.getUnsafeByteList();
             final boolean limit = lim > 0;
             int i = lim > 0 ? 1 : 0;
 
-            byte[]bytes = value.getUnsafeBytes();
-            int p = value.getBegin();
+            byte[]bytes = rope.getBytes();
+            int p = rope.getBegin();
             int ptr = p;
-            int len = value.getRealSize();
+            int len = rope.getRealSize();
             int end = p + len;
-            Encoding enc = value.getEncoding();
+            Encoding enc = rope.getEncoding();
             boolean skip = true;
 
             int e = 0, b = 0;
