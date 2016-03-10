@@ -76,6 +76,7 @@ import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
@@ -548,7 +549,7 @@ public abstract class StringNodes {
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
                     byteList.setEncoding(encoding(string));
-                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(byteList, CodeRange.CR_UNKNOWN), null);
+                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.withEncoding(RopeConstants.EMPTY_ASCII_8BIT_ROPE, encoding(string)), null);
                 }
 
                 end = StringOperations.normalizeIndex(stringLength, end);

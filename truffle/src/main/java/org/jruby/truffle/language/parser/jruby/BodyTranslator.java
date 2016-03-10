@@ -61,6 +61,7 @@ import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
 import org.jruby.truffle.core.rubinius.RubiniusPrimitiveConstructor;
@@ -1352,7 +1353,7 @@ public class BodyTranslator extends Translator {
 
         if (node.getBody() == null) {
             final SourceSection sourceSection = translate(node.getPosition());
-            ret = new ObjectLiteralNode(context, sourceSection, StringOperations.createString(context, new ByteList()));
+            ret = new ObjectLiteralNode(context, sourceSection, StringOperations.createString(context, RopeConstants.EMPTY_ASCII_8BIT_ROPE));
         } else {
             ret = node.getBody().accept(this);
         }

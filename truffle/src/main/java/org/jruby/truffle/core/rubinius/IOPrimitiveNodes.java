@@ -51,6 +51,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
@@ -260,7 +261,7 @@ public abstract class IOPrimitiveNodes {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
-                return createString(new ByteList());
+                return createString(RopeConstants.EMPTY_ASCII_8BIT_ROPE);
             }
 
             final int fd = Layouts.IO.getDescriptor(file);
