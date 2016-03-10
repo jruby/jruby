@@ -1880,8 +1880,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public abstract int executeInteger(VirtualFrame frame, DynamicObject string);
-
         @Specialization
         public int size(DynamicObject string) {
             return rope(string).characterLength();
