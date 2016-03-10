@@ -183,8 +183,8 @@ public abstract class StringNodes {
         public abstract DynamicObject executeInt(VirtualFrame frame, DynamicObject string, int times);
 
         @Specialization(guards = "times < 0")
+        @TruffleBoundary
         public DynamicObject multiplyTimesNegative(DynamicObject string, int times) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreLibrary().argumentError("negative argument", this));
         }
 
@@ -289,11 +289,9 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isRubyBignum(times)")
+        @TruffleBoundary
         public DynamicObject multiply(DynamicObject string, DynamicObject times) {
-            CompilerDirectives.transferToInterpreter();
-
-            throw new RaiseException(
-                    coreLibrary().rangeError("bignum too big to convert into `long'", this));
+            throw new RaiseException(coreLibrary().rangeError("bignum too big to convert into `long'", this));
         }
 
         @Specialization(guards = { "!isRubyBignum(times)", "!isInteger(times)" })
@@ -378,9 +376,8 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isRubyString(b)")
+        @TruffleBoundary
         public Object compare(VirtualFrame frame, DynamicObject a, Object b) {
-            CompilerDirectives.transferToInterpreter();
-
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
