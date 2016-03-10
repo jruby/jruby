@@ -324,11 +324,13 @@ public enum Operation {
         return name().toLowerCase();
     }
 
+    private static final Operation[] VALUES = values();
+
     public static Operation fromOrdinal(int value) {
-        if (value < 0 || value >= values().length) {
+        if (value < 0 || value >= VALUES.length) {
             throw new RuntimeException("invalid ordinal: " + value);
         } else {
-            return values()[value];
+            return VALUES[value];
         }
     }
 }

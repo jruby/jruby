@@ -7,7 +7,12 @@ package org.jruby.ir.operands;
 public enum TemporaryVariableType {
     LOCAL, BOOLEAN, FLOAT, FIXNUM, CLOSURE, CURRENT_MODULE, CURRENT_SCOPE;
 
-    public static TemporaryVariableType fromOrdinal(int value) {
-        return value < 0 || value >= values().length ? null : values()[value];
+    private static final TemporaryVariableType[] VALUES = values();
+
+    public static TemporaryVariableType fromOrdinal(int ordinal) {
+        if (ordinal < 0 || ordinal >= VALUES.length) {
+            return null;
+        }
+        return VALUES[ordinal];
     }
 }
