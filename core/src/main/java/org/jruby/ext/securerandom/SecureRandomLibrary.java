@@ -1,6 +1,5 @@
 package org.jruby.ext.securerandom;
 
-import org.jruby.CompatVersion;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
@@ -31,7 +30,7 @@ public class SecureRandomLibrary {
         return RubyString.newStringNoCopy(context.runtime, ConvertBytes.twosComplementToHexBytes(nextBytes(context, n), false));
     }
 
-    @JRubyMethod(meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(meta = true)
     public static IRubyObject uuid(ThreadContext context, IRubyObject self) {
         return RubyString.newStringNoCopy(context.runtime, ConvertBytes.bytesToUUIDBytes(nextBytes(context, 16), false));
     }
