@@ -36,6 +36,8 @@ public abstract class Rope {
         this.bytes = bytes;
     }
 
+    public abstract Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange);
+
     public final int characterLength() {
         return characterLength;
     }

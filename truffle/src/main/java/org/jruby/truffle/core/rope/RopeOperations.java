@@ -82,6 +82,14 @@ public class RopeOperations {
             return originalRope;
         }
 
+        if (originalRope.getCodeRange() == newCodeRange) {
+            return originalRope.withEncoding(newEncoding, newCodeRange);
+        }
+
+        if ((originalRope.getCodeRange() == CR_7BIT) && newEncoding.isAsciiCompatible()) {
+            return originalRope.withEncoding(newEncoding, CR_7BIT);
+        }
+
         return create(originalRope.getBytes(), newEncoding, newCodeRange);
     }
 

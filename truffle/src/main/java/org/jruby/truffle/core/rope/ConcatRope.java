@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.rope;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 
@@ -18,6 +19,10 @@ public class ConcatRope extends Rope {
     private final Rope right;
 
     public ConcatRope(Rope left, Rope right, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int depth) {
+        this(left, right, encoding, codeRange, singleByteOptimizable, depth, null);
+    }
+
+    private ConcatRope(Rope left, Rope right, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int depth, byte[] bytes) {
         super(encoding,
                 codeRange,
                 singleByteOptimizable,
@@ -28,6 +33,16 @@ public class ConcatRope extends Rope {
 
         this.left = left;
         this.right = right;
+    }
+
+    @Override
+    public Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange) {
+        if (newCodeRange != getCodeRange()) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException("Cannot fast-path updating encoding with different code range.");
+        }
+
+        return new ConcatRope(getLeft(), getRight(), newEncoding, newCodeRange, isSingleByteOptimizable(), depth(), getRawBytes());
     }
 
     @Override
