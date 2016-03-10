@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/cgi/session'
+require_relative '../../stdlib/cgi/session'

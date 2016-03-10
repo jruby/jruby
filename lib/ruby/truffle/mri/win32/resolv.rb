@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/win32/resolv'
+require_relative '../../stdlib/win32/resolv'
