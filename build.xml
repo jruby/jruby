@@ -344,6 +344,10 @@
         </javadoc>
     </target>
 
+    <target name="test:mri">
+      <rake task="test:mri"/>
+    </target>
+
     <target name="installer">
         <rake task="installer"/>
     </target>

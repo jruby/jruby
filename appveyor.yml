@@ -37,5 +37,5 @@ cache:
   - C:\Users\appveyor\.m2
 
 test_script:
+  - ant test:mri
   - mvn -Ptest
-  - ant test:mri:fast
