@@ -135,21 +135,32 @@ public final class ThreadContext {
 
     IRubyObject lastExitStatus;
 
-    public final SecureRandom secureRandom;
+    /**
+     * This fields is no longer initialized, is null by default!
+     * Use {@link #getSecureRandom()} instead.
+     * @deprecated
+     */
+    @Deprecated
+    public transient SecureRandom secureRandom;
 
     private static boolean trySHA1PRNG = true;
 
-    {
-        SecureRandom sr;
-        try {
-            sr = trySHA1PRNG ?
-                    SecureRandom.getInstance("SHA1PRNG") :
-                    new SecureRandom();
-        } catch (Exception e) {
-            trySHA1PRNG = false;
-            sr = new SecureRandom();
+    public SecureRandom getSecureRandom() {
+        SecureRandom secureRandom = this.secureRandom;
+        if (secureRandom == null) {
+            if (trySHA1PRNG) {
+                try {
+                    secureRandom = SecureRandom.getInstance("SHA1PRNG");
+                } catch (Exception e) {
+                    trySHA1PRNG = false;
+                }
+            }
+            if (secureRandom == null) {
+                secureRandom = new SecureRandom();
+            }
+            this.secureRandom = secureRandom;
         }
-        secureRandom = sr;
+        return secureRandom;
     }
     
     /**

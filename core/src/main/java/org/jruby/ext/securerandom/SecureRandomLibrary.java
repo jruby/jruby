@@ -37,7 +37,7 @@ public class SecureRandomLibrary {
     }
 
     private static byte[] nextBytes(ThreadContext context, IRubyObject n) {
-        int size = n.isNil() ? 16 : (int)n.convertToInteger().getLongValue();
+        int size = n.isNil() ? 16 : (int) n.convertToInteger().getLongValue();
 
         return nextBytes(context, size);
     }
@@ -46,7 +46,7 @@ public class SecureRandomLibrary {
         if (size < 0) throw context.runtime.newArgumentError("negative argument: " + size);
 
         byte[] bytes = new byte[size];
-        context.secureRandom.nextBytes(bytes);
+        context.getSecureRandom().nextBytes(bytes);
 
         return bytes;
     }
