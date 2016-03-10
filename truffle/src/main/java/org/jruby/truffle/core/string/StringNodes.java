@@ -475,7 +475,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isRubyString(other)")
-        public Object concat(VirtualFrame frame, DynamicObject string, Object other) {
+        public Object concat(DynamicObject string, Object other) {
             return ruby("string.concat_internal(other)", "string", string, "other", other);
         }
     }
@@ -586,11 +586,11 @@ public abstract class StringNodes {
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasNotProvided(capture) || isRubiniusUndefined(capture)"})
         public Object slice1(VirtualFrame frame, DynamicObject string, DynamicObject regexp, Object capture) {
-            return sliceCapture(frame, string, regexp, 0);
+            return sliceCapture(string, regexp, 0);
         }
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasProvided(capture)"})
-        public Object sliceCapture(VirtualFrame frame, DynamicObject string, DynamicObject regexp, Object capture) {
+        public Object sliceCapture(DynamicObject string, DynamicObject regexp, Object capture) {
             // Extracted from Rubinius's definition of String#[].
             return ruby("match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
         }
@@ -784,7 +784,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isEmpty(string)")
-        public DynamicObject chopBangEmpty(VirtualFrame frame, DynamicObject string) {
+        public DynamicObject chopBangEmpty(DynamicObject string) {
             return nil();
         }
 
@@ -934,7 +934,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isEmpty(string)")
-        public DynamicObject deleteBangEmpty(VirtualFrame frame, DynamicObject string, Object... args) {
+        public DynamicObject deleteBangEmpty(DynamicObject string, Object... args) {
             return nil();
         }
 
@@ -2080,7 +2080,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isInteger(bits)", "!isLong(bits)", "wasProvided(bits)" })
-        public Object sum(VirtualFrame frame, DynamicObject string, Object bits) {
+        public Object sum(DynamicObject string, Object bits) {
             return ruby("sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
         }
 
@@ -2122,7 +2122,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isStringSubclass(string)")
-        public Object toSOnSubclass(VirtualFrame frame, DynamicObject string) {
+        public Object toSOnSubclass(DynamicObject string) {
             return ruby("''.replace(self)", "self", string);
         }
 
@@ -2238,7 +2238,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isEmpty(self)")
-        public Object trBangEmpty(VirtualFrame frame, DynamicObject self, DynamicObject fromStr, DynamicObject toStr) {
+        public Object trBangEmpty(DynamicObject self, DynamicObject fromStr, DynamicObject toStr) {
             return nil();
         }
 
@@ -2407,27 +2407,27 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object unpack(VirtualFrame frame, DynamicObject array, boolean format) {
+        public Object unpack(DynamicObject array, boolean format) {
             return ruby("raise TypeError");
         }
 
         @Specialization
-        public Object unpack(VirtualFrame frame, DynamicObject array, int format) {
+        public Object unpack(DynamicObject array, int format) {
             return ruby("raise TypeError");
         }
 
         @Specialization
-        public Object unpack(VirtualFrame frame, DynamicObject array, long format) {
+        public Object unpack(DynamicObject array, long format) {
             return ruby("raise TypeError");
         }
 
         @Specialization(guards = "isNil(format)")
-        public Object unpackNil(VirtualFrame frame, DynamicObject array, Object format) {
+        public Object unpackNil(DynamicObject array, Object format) {
             return ruby("raise TypeError");
         }
 
         @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
-        public Object unpack(VirtualFrame frame, DynamicObject array, Object format) {
+        public Object unpack(DynamicObject array, Object format) {
             return ruby("unpack(format.to_str)", "format", format);
         }
 
