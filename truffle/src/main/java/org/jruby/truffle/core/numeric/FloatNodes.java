@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -146,7 +147,21 @@ public abstract class FloatNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = {
+                "exponent == cachedExponent",
+                "cachedExponent >= 0",
+                "cachedExponent < 10" }, limit = "10")
+        @ExplodeLoop
+        public double powCached(double base, long exponent,
+                @Cached("exponent") long cachedExponent) {
+            double result = 1.0;
+            for (int i = 0; i < cachedExponent; i++) {
+                result *= base;
+            }
+            return result;
+        }
+
+        @Specialization(contains = "powCached")
         public double pow(double a, long b) {
             return Math.pow(a, b);
         }
