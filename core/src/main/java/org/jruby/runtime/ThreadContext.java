@@ -741,14 +741,16 @@ public final class ThreadContext {
         eventHooksEnabled = flag;
     }
 
-    /**
-     * Create an Array with backtrace information.
-     * @param level
-     * @param nativeException
-     * @return an Array with the backtrace
-     */
+    @Deprecated
     public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
-        BacktraceElement[] backtrace = this.backtrace;
+        return getBacktrace();
+    }
+
+    /**
+     * Create a snapshot Array with current backtrace information.
+     * @return the backtrace
+     */
+    public BacktraceElement[] getBacktrace() {
         BacktraceElement[] newTrace = new BacktraceElement[backtraceIndex + 1];
         System.arraycopy(backtrace, 0, newTrace, 0, newTrace.length);
         return newTrace;
