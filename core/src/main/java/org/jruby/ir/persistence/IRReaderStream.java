@@ -188,6 +188,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         switch (operation) {
             case ALIAS: return AliasInstr.decode(this);
             case ARG_SCOPE_DEPTH: return ArgScopeDepthInstr.decode(this);
+            case ARRAY_DEREF: return ArrayDerefInstr.decode(this);
             case ATTR_ASSIGN: return AttrAssignInstr.decode(this);
             case B_FALSE: return BFalseInstr.decode(this);
             case B_NIL: return BNilInstr.decode(this);
