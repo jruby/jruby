@@ -344,8 +344,9 @@
         </javadoc>
     </target>
 
-    <target name="test:mri">
+    <target name="test:mri:appveyor">
       <rake task="test:mri"/>
+      <rake task="test:mri19"/>
     </target>
 
     <target name="installer">

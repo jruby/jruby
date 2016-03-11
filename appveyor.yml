@@ -37,4 +37,4 @@ cache:
 
 test_script:
   - mvn -Ptest
-  - ant test:mri
+  - ant test:mri:appveyor
