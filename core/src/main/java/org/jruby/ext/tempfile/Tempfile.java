@@ -51,6 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.OpenFile;
 
 /**
  * An implementation of tempfile.rb in Java.
@@ -116,7 +117,7 @@ public class Tempfile extends RubyFile implements Finalizable {
             
             IRubyObject tmpname = args[0];
             IOOptions ioOptions = newIOOptions(runtime, ModeFlags.RDWR | ModeFlags.EXCL);
-            
+
             if (context.is19) {
                 // check for trailing hash
                 if (args.length > 1) {
@@ -156,11 +157,36 @@ public class Tempfile extends RubyFile implements Finalizable {
         sysopenInternal19(path, ioOptions.getModeFlags().getOpenFileFlags(), 0600);
     }
 
+    // FIXME (enebo): This is from OpenFile but it is unconditionally adding "b" to all modes whether
+    // binary is on the mode or not.  To limit damage (1.7.x is geting long in the tooth maintenance-wise
+    // I am making a copy and fixed it here.
+    private static String getStringFromMode(int mode) {
+        String modString;
+        if ((mode & OpenFile.APPEND) != 0) {
+            if ((mode & OpenFile.READWRITE) != 0) {
+                return (mode & OpenFile.BINMODE) != 0 ? "ab+": "a+";
+            }
+            return (mode & OpenFile.BINMODE) != 0 ? "ab" : "a";
+        }
+        switch (mode & OpenFile.READWRITE) {
+            case OpenFile.READABLE:
+                return (mode & OpenFile.BINMODE) != 0 ? "rb" : "r";
+            case OpenFile.WRITABLE:
+                return (mode & OpenFile.BINMODE) != 0 ? "wb" : "w";
+            case OpenFile.READWRITE:
+                if ((mode & OpenFile.CREATE) != 0) {
+                    return (mode & OpenFile.BINMODE) != 0 ? "wb+" : "w+";
+                }
+                return (mode & OpenFile.BINMODE) != 0 ? "rb+" : "r+";
+        }
+        return null;
+    }
+
     @JRubyMethod(visibility = PUBLIC)
     public IRubyObject open() {
         if (!isClosed()) ioClose(getRuntime());
 
-        openInternal(path, openFile.getModeAsString(getRuntime()));
+        openInternal(path, getStringFromMode(openFile.getMode()));
 
         return this;
     }
