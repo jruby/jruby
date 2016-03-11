@@ -1,3 +1,6 @@
+windows = RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
+
+exclude :test_alive, "needs investigation" if windows
 exclude :test_fiber_transfer_segv, "wonky subprocess launching in test"
 exclude :test_gc_root_fiber, "wonky subprocess launching in test"
 exclude :test_many_fibers, "spins up too many fibers at once (10000)"
