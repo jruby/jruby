@@ -21,11 +21,3 @@ if [[ -v JT ]]
 then
   ruby tool/jt.rb $JT
 fi
-
-if [[ -v JTRCI ]]
-then
-  gem install bundler
-  mkdir gem-testing
-  cd gem-testing
-  jruby+truffle ci --batch ../$JTRCI
-fi
