@@ -376,7 +376,6 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isRubyString(b)")
-        @TruffleBoundary
         public Object compare(VirtualFrame frame, DynamicObject a, Object b) {
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
