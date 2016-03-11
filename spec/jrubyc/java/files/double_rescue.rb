@@ -9,7 +9,7 @@ class DoubleRescue
 
   nil.to_x rescue nil
 
-  def self.re_raise
+  def self.re_raise_return
     begin
       load 'MISSING FILE.TMP'
     rescue LoadError => e
@@ -17,5 +17,15 @@ class DoubleRescue
     end
   rescue ScriptError
     return $!
+  end
+
+  def self.re_raise
+    begin
+      load 'MISSING FILE.TMP'
+    rescue Exception => e
+      raise e
+    end
+  rescue => e
+    return $! || e # no reached
   end
 end

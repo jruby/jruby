@@ -28,7 +28,8 @@ describe "JRuby::Compiler.compile_argv" do
     expect( defined?(DoubleRescue) ).to be_truthy
     DoubleRescue.new._call
 
-    expect( DoubleRescue.re_raise ).to be_a LoadError
+    expect( DoubleRescue.re_raise_return ).to be_a LoadError
+    expect { DoubleRescue.re_raise }.to raise_error LoadError
   end
 
   it "loads sample_block.class" do
