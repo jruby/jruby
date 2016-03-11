@@ -27,6 +27,8 @@ describe "JRuby::Compiler.compile_argv" do
 
     expect( defined?(DoubleRescue) ).to be_truthy
     DoubleRescue.new._call
+
+    expect( DoubleRescue.re_raise ).to be_a LoadError
   end
 
   it "loads sample_block.class" do
