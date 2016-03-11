@@ -243,7 +243,7 @@ public abstract class MatchDataNodes {
             return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(DynamicObject matchData, DynamicObject range, NotProvided len) {
             final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
