@@ -10,12 +10,10 @@
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.RubyGuards;
-
-import java.util.Arrays;
 
 public abstract class ArrayOperations {
 
@@ -45,20 +43,14 @@ public abstract class ArrayOperations {
         }
     }
 
+    @TruffleBoundary
     public static Object[] toObjectArray(DynamicObject array) {
         return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).getBoxedCopy(Layouts.ARRAY.getSize(array));
     }
 
+    @TruffleBoundary
     public static Iterable<Object> toIterable(DynamicObject array) {
         return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).iterableUntil(Layouts.ARRAY.getSize(array));
-    }
-
-    public static void append(DynamicObject array, Object value) {
-        assert RubyGuards.isRubyArray(array);
-        Layouts.ARRAY.setStore(array, Arrays.copyOf(ArrayUtils.box(Layouts.ARRAY.getStore(array)), Layouts.ARRAY.getSize(array) + 1));
-        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
-        ((Object[]) Layouts.ARRAY.getStore(array))[Layouts.ARRAY.getSize(array)] = value;
-        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) + 1);
     }
 
 }

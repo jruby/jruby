@@ -12,14 +12,8 @@ require 'yaml'
 require 'fileutils'
 require 'shellwords'
 require 'pathname'
-
+require 'rbconfig'
 require 'rubygems'
-begin
-  require 'bundler'
-rescue LoadError => e
-  puts "Bundler has to be installed.\n"
-  raise e
-end
 
 class JRubyTruffleRunner
   module Utils
@@ -78,12 +72,17 @@ class JRubyTruffleRunner
   ROOT              = Pathname(__FILE__).dirname.parent.expand_path
   JRUBY_PATH        = ROOT.join('../../../..').expand_path
 
+  module OptionBlocks
+    STORE_NEW_VALUE         = -> (new, old, _) { new }
+    STORE_NEW_NEGATED_VALUE = -> (new, old, _) { !new }
+    ADD_TO_ARRAY            = -> (new, old, _) { old << new }
+    MERGE_TO_HASH           = -> ((k, v), old, _) { old.merge k => v }
+  end
+
+  include OptionBlocks
+
   begin
-    assign_new_value         = -> (new, old, _) { new }
-    assign_new_negated_value = -> (new, old, _) { !new }
-    add_to_array             = -> (new, old, _) { old << new }
-    merge_hash               = -> ((k, v), old, _) { old.merge k => v }
-    apply_pattern            = -> (pattern, old, options) do
+    apply_pattern      = -> (pattern, old, options) do
       Dir.glob(pattern) do |file|
         if options[:exclude_pattern].any? { |p| /#{p}/ =~ file }
           puts "skipped: #{file}" if verbose?
@@ -100,57 +99,57 @@ class JRubyTruffleRunner
     #                                                     -> (new_value, old_value) { result_of_this_block_is_stored },
     #                                                     default_value]
     #   }
-    OPTION_DEFINITIONS       = {
+    OPTION_DEFINITIONS = {
         global: {
-            verbose:             ['-v', '--verbose', 'Run verbosely (prints options)', assign_new_value, false],
-            help:                ['-h', '--help', 'Show this message', assign_new_value, false],
-            debug_port:          ['--debug-port PORT', 'Debug port', assign_new_value, '51819'],
-            debug_option:        ['--debug-option OPTION', 'Debug JVM option', assign_new_value,
+            verbose:             ['-v', '--verbose', 'Run verbosely (prints options)', STORE_NEW_VALUE, false],
+            help:                ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
+            debug_port:          ['--debug-port PORT', 'Debug port', STORE_NEW_VALUE, '51819'],
+            debug_option:        ['--debug-option OPTION', 'Debug JVM option', STORE_NEW_VALUE,
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
-            truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, '.jruby+truffle_bundle'],
-            interpreter_path:    ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", assign_new_value,
-                                  JRUBY_PATH.join('bin', 'jruby')],
-            graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, (JRUBY_PATH + '../GraalVM-0.10/jre/bin/javao').to_s],
+            truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', STORE_NEW_VALUE, '.jruby+truffle_bundle'],
+            graal_path:          ['--graal-path PATH', 'Path to Graal', STORE_NEW_VALUE, (JRUBY_PATH + '../GraalVM-0.10/jre/bin/javao').to_s],
             mock_load_path:      ['--mock-load-path PATH',
                                   'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
-                                  assign_new_value, 'mocks'],
+                                  STORE_NEW_VALUE, 'mocks'],
             use_fs_core:         ['--[no-]use-fs-core', 'Use core from the filesystem rather than the JAR',
-                                  assign_new_value, true],
-            bundle_options:      ['--bundle-options OPTIONS', 'bundle options separated by space', assign_new_value, ''],
-            configuration:       ['--config GEM_NAME', 'Load configuration for specified gem', assign_new_value, nil],
-            dir:                 ['--dir DIRECTORY', 'Set working directory', assign_new_value, Dir.pwd],
+                                  STORE_NEW_VALUE, true],
+            bundle_options:      ['--bundle-options OPTIONS', 'bundle options separated by space', STORE_NEW_VALUE, ''],
+            configuration:       ['--config GEM_NAME', 'Load configuration for specified gem', STORE_NEW_VALUE, nil],
+            dir:                 ['--dir DIRECTORY', 'Set working directory', STORE_NEW_VALUE, nil],
         },
         setup:  {
-            help:    ['-h', '--help', 'Show this message', assign_new_value, false],
-            after:   ['--after SH_CMD', 'Commands to execute after setup', add_to_array, []],
-            file:    ['--file NAME,CONTENT', Array, 'Create file in truffle_bundle_path', merge_hash, {}],
-            without: ['--without GROUP', 'Do not install listed gem group by bundler', add_to_array, []]
+            help:    ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
+            after:   ['--after SH_CMD', 'Commands to execute after setup', ADD_TO_ARRAY, []],
+            file:    ['--file NAME,CONTENT', Array, 'Create file in truffle_bundle_path', MERGE_TO_HASH, {}],
+            without: ['--without GROUP', 'Do not install listed gem group by bundler', ADD_TO_ARRAY, []]
         },
         run:    {
-            help:            ['-h', '--help', 'Show this message', assign_new_value, false],
-            no_truffle:      ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", assign_new_negated_value, false],
-            graal:           ['-g', '--graal', 'Run on graal', assign_new_value, false],
-            build:           ['-b', '--build', 'Run `jt build` using conventional JRuby', assign_new_value, false],
-            rebuild:         ['--rebuild', 'Run `jt rebuild` using conventional JRuby', assign_new_value, false],
-            debug:           ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
-            require:         ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
-            require_pattern: ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', apply_pattern, []],
-            exclude_pattern: ['--exclude-pattern REGEXP', 'Files matching the regexp will not be required by --require-pattern (applies to subsequent --require-pattern options)', add_to_array, []],
-            load_path:       ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
-            executable:      ['-S', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
-            jexception:      ['--jexception', 'print Java exceptions', assign_new_value, false]
+            help:             ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
+            interpreter_path: ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", STORE_NEW_VALUE,
+                               JRUBY_PATH.join('bin', 'jruby')],
+            no_truffle:       ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", STORE_NEW_NEGATED_VALUE, false],
+            graal:            ['-g', '--graal', 'Run on graal', STORE_NEW_VALUE, false],
+            build:            ['-b', '--build', 'Run `jt build` using conventional JRuby', STORE_NEW_VALUE, false],
+            rebuild:          ['--rebuild', 'Run `jt rebuild` using conventional JRuby', STORE_NEW_VALUE, false],
+            debug:            ['-d', '--debug', 'JVM remote debugging', STORE_NEW_VALUE, false],
+            require:          ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', ADD_TO_ARRAY, []],
+            require_pattern:  ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', apply_pattern, []],
+            exclude_pattern:  ['--exclude-pattern REGEXP', 'Files matching the regexp will not be required by --require-pattern (applies to subsequent --require-pattern options)', ADD_TO_ARRAY, []],
+            load_path:        ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', ADD_TO_ARRAY, []],
+            executable:       ['-S', '--executable NAME', 'finds and runs an executable of a gem', STORE_NEW_VALUE, nil],
+            jexception:       ['--jexception', 'print Java exceptions', STORE_NEW_VALUE, false]
         },
         ci:     {
-            git:   ['--git URL', 'Path to the gem\'s repository', assign_new_value, nil],
-            batch: ['--batch FILE', 'Run batch of ci tests supplied in a file. One ci command options per line. If FILE is in or stdin it reads from $stdin.',
-                    assign_new_value, nil],
-            help:  ['-h', '--help', 'Show this message', assign_new_value, false]
+            batch:      ['--batch FILE', 'Run batch of ci tests supplied in a file. One ci command options per line. If FILE is in or stdin it reads from $stdin.',
+                         STORE_NEW_VALUE, nil],
+            definition: ['--definition NAME', 'Specify which definition file to use', STORE_NEW_VALUE, nil],
+            help:       ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false]
         },
         clean:  {
-            help: ['-h', '--help', 'Show this message', assign_new_value, false]
+            help: ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false]
         },
         readme: {
-            help: ['-h', '--help', 'Show this message', assign_new_value, false]
+            help: ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false]
         }
     }
   end
@@ -205,7 +204,7 @@ class JRubyTruffleRunner
 
     ci_help = <<-TXT.gsub(/^ {6}/, '')
 
-      Usage: #{EXECUTABLE} [options] ci [subcommand-options] GEM_NAME
+      Usage: #{EXECUTABLE} [options] ci [subcommand-options] GEM_NAME [options-declared-in-CI-definition]
 
       Runs CI tests for predefined gems or it uses default CI definition. CI Definitions
       are stored in gem_ci directory. The CI definition files are evaluated in CIEnvironment
@@ -216,8 +215,12 @@ class JRubyTruffleRunner
 
       Examples: #{EXECUTABLE} ci activesupport
                     (Runs gem_ci/activesupport.rb CI definition)
-                #{EXECUTABLE} ci --git https://github.com/ruby-concurrency/concurrent-ruby.git concurrent-ruby
-                    (Runs gem_ci/default.rb CI definition which uses git option)
+                #{EXECUTABLE} ci concurrent-ruby --git https://github.com/ruby-concurrency/concurrent-ruby.git
+                    (Runs gem_ci/default.rb CI definition which declared and uses git option)
+                #{EXECUTABLE} ci --help
+                    (Shows options of ci command)
+                #{EXECUTABLE} ci concurrent-ruby --help
+                    (Shows options defined by ci definition for concurrent-ruby)
 
     TXT
 
@@ -226,32 +229,36 @@ class JRubyTruffleRunner
 
 
   def initialize(argv = ARGV)
-    construct_default_options
-    build_option_parsers
+    @options        = construct_default_options
+    @option_parsers = build_option_parsers
 
-    subcommand, *argv_after_global = @option_parsers[:global].order argv
+    @subcommand, *argv_after_global = @option_parsers[:global].order argv
 
-    Dir.chdir @options[:global][:dir] do
+    Dir.chdir dir do
       puts "pwd: #{Dir.pwd}" if verbose?
 
       load_gem_configuration
       load_local_configuration
 
-      if subcommand.nil?
+      if @subcommand.nil?
         print_options
         help :global
       end
       help :global if @options[:global][:help]
 
-      subcommand = subcommand.to_sym
+      @subcommand = @subcommand.to_sym
 
-      subcommand_option_parser = @option_parsers[subcommand] || raise("unknown subcommand: #{subcommand}")
-      argv_after_subcommand    = subcommand_option_parser.order argv_after_global
+      subcommand_option_parser = @option_parsers[@subcommand] || raise("unknown subcommand: #{@subcommand}")
+      @argv_after_subcommand   = subcommand_option_parser.order argv_after_global
 
       print_options
-      help subcommand if @options[subcommand][:help] && subcommand != :readme
+      help @subcommand if @options[@subcommand][:help] && @subcommand != :readme
+    end
+  end
 
-      send "subcommand_#{subcommand}", argv_after_subcommand
+  def run
+    Dir.chdir dir do
+      send "subcommand_#{@subcommand}", @argv_after_subcommand
     end
   end
 
@@ -264,29 +271,37 @@ class JRubyTruffleRunner
 
   private
 
+  def dir
+    @options[:global][:dir] || Dir.pwd
+  end
+
   def verbose?
     @options[:global][:verbose]
   end
 
   def build_option_parsers
-    @option_parsers = OPTION_DEFINITIONS.each_with_object({}) do |(name, parser_options), parsers|
+    option_parsers = OPTION_DEFINITIONS.each_with_object({}) do |(name, parser_options), parsers|
       parsers[name] = build_option_parser(parser_options, @options.fetch(name))
     end
 
-    @option_parsers.each { |key, option_parser| option_parser.banner = HELP[key] }
+    option_parsers.each { |key, option_parser| option_parser.banner = HELP[key] }
+  end
+
+  def self.build_option_parser(parser_options, options_hash, option_parser: OptionParser.new)
+    parser_options.each do |option, data|
+      *args, description, block, default = data
+
+      option_parser.on(*args, description + " (default: #{default.inspect})") do |new_value|
+        old_value            = options_hash[option]
+        options_hash[option] = instance_exec new_value, old_value, options_hash, &block
+      end
+    end
+
+    option_parser
   end
 
   def build_option_parser(parser_options, options_hash)
-    OptionParser.new do |option_parser|
-      parser_options.each do |option, data|
-        *args, description, block, default = data
-
-        option_parser.on(*args, description + " (default: #{default.inspect})") do |new_value|
-          old_value            = options_hash[option]
-          options_hash[option] = instance_exec new_value, old_value, options_hash, &block
-        end
-      end
-    end
+    self.class.build_option_parser(parser_options, options_hash)
   end
 
   def load_gem_configuration
@@ -314,12 +329,20 @@ class JRubyTruffleRunner
   end
 
   def construct_default_options
-    @options = OPTION_DEFINITIONS.each_with_object({}) do |(group, group_options), options|
-      group_options.each_with_object(options[group] = {}) do |(option, data), group_option_defaults|
-        *args, block, default         = data
-        group_option_defaults[option] = default
-      end
+    OPTION_DEFINITIONS.each_with_object({}) do |(group, group_options), options|
+      options[group] = default_option_values(group_options)
     end
+  end
+
+  def self.default_option_values(group_options)
+    group_options.each_with_object({}) do |(option, data), group_option_defaults|
+      *args, block, default         = data
+      group_option_defaults[option] = default
+    end
+  end
+
+  def default_option_values(group_options)
+    self.class.default_option_values(group_options)
   end
 
   def help(key = nil)
@@ -343,26 +366,13 @@ class JRubyTruffleRunner
 
     if Array === a
       if Array === b
-        return a.concat b.map { |v| eval_yaml_strings v }
+        return a.concat b
       else
         return a
       end
     end
 
-    eval_yaml_strings b
-  end
-
-  def eval_yaml_strings(value)
-    if String === value
-      begin
-        eval('"' + value.gsub(/\\#|"|\\/, '\#' => '\#', '"' => '\"', '\\' => '\\\\') + '"')
-      rescue => e
-        p value
-        raise e
-      end
-    else
-      value
-    end
+    b
   end
 
   def subcommand_setup(rest)
@@ -401,18 +411,21 @@ class JRubyTruffleRunner
     @options[:setup][:after].each do |cmd|
       execute_cmd cmd
     end
+
+    true
+  rescue => e
+    puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
+    false
   end
 
   def bundle_cli(argv)
-    require 'bundler/friendly_errors'
-    Bundler.with_friendly_errors do
-      require 'bundler/cli'
-      Bundler::CLI.start(argv, :debug => true)
-    end
+    ruby = Pathname(RbConfig::CONFIG['bindir']).join('jruby')
+    execute_cmd [ruby.to_s, "#{Gem.bindir}/bundle", *argv]
   end
 
   def subcommand_run(rest)
-    jruby_path         = Pathname("#{@options[:global][:interpreter_path]}/../..").expand_path
+    jruby_path = Pathname("#{@options[:run][:interpreter_path]}/../..").expand_path
+    raise unless jruby_path.absolute?
     ruby_options, rest = if rest.include?('--')
                            split = rest.index('--')
                            [rest[0...split], rest[(split+1)..-1]]
@@ -423,8 +436,6 @@ class JRubyTruffleRunner
     unless jruby_path.absolute?
       jruby_path = jruby_path.relative_path_from(Pathname('.'))
     end
-
-    jruby_path = jruby_path.to_s
 
     if @options[:run][:build] || @options[:run][:rebuild]
       Dir.chdir jruby_path do
@@ -438,7 +449,7 @@ class JRubyTruffleRunner
                        raise "no executable with name '#{@options[:run][:executable]}' found"
                  end
 
-    core_load_path = "#{jruby_path}/truffle/src/main/ruby"
+    core_load_path = jruby_path.join 'truffle/src/main/ruby'
 
     truffle_options = [
         ('-X+T'),
@@ -459,22 +470,24 @@ class JRubyTruffleRunner
     env['JAVACMD'] = @options[:global][:graal_path] if @options[:run][:graal]
 
     cmd = [(env unless env.empty?),
-           @options[:global][:interpreter_path].to_s,
+           @options[:run][:interpreter_path].to_s,
            *cmd_options,
            executable,
            *rest
     ].compact
 
     execute_cmd(cmd, raise: false, print_always: true)
-    exit $?.exitstatus
+    $?.success?
   end
 
   def subcommand_clean(rest)
     FileUtils.rm_rf @options[:global][:truffle_bundle_path]
+    true
   end
 
   def subcommand_readme(rest)
     puts File.read(ROOT.join('README.md'))
+    true
   end
 
   def subcommand_ci(rest)
@@ -493,13 +506,14 @@ class JRubyTruffleRunner
         rest          = option_parser.order line.split
 
         gem_name = rest.first
-        CIEnvironment.new(options, self.options[:global][:dir], gem_name).success?
+        CIEnvironment.new(dir, gem_name, rest[1..-1]).success?
       end
 
-      exit results.all? ? 0 : 1
+      results.all?
     else
       gem_name = rest.first
-      CIEnvironment.new options[:ci], options[:global][:dir], gem_name
+      ci       = CIEnvironment.new dir, gem_name, rest[1..-1], definition: options[:ci][:definition]
+      ci.success?
     end
   end
 
@@ -509,6 +523,7 @@ class JRubyTruffleRunner
 
   class CIEnvironment
     include Utils
+    include OptionBlocks
 
     def self.define_dsl_attr(*names, &conversion)
       nothing = Object.new
@@ -531,20 +546,63 @@ class JRubyTruffleRunner
     define_dsl_attr(:working_dir) { |v| Pathname(v) }
     attr_reader :gem_name
 
-    def initialize(options, working_dir, gem_name)
-      @options  = options
+    def initialize(working_dir, gem_name, rest, definition: nil)
+      @options  = {}
       @gem_name = gem_name
-
-      ci_file = Dir.glob(ROOT.join('gem_ci', "{#{@gem_name},default}.rb")).first
-
-      puts "Running #{ci_file}"
+      @rest     = rest
 
       @working_dir     = Pathname(working_dir)
-      @repository_name = gem_name # TODO (pitr-ch 11-Feb-2016): gem name?
+      @repository_name = gem_name
       @subdir          = '.'
       @result          = nil
 
-      instance_eval File.read(ci_file), ci_file, 1
+      option_parser         = @option_parser = OptionParser.new
+      @option_parser.banner = "\nUsage: #{EXECUTABLE} [options] ci [subcommand-options] #{gem_name} [options-declared-in-CI-definition]\n\n"
+      @option_parsed        = false
+
+      declare_options parse_options: false, help: ['-h', '--help', 'Show this message', -> (new, old, _) { puts option_parser; exit }, false]
+      if definition
+        do_definition(definition)
+      else
+        do_definition(gem_name, raise: false) || do_definition('default')
+      end
+    end
+
+    def do_definition(name, raise: true)
+      ci_file = Dir.glob(ROOT.join('gem_ci', "{#{name}}.rb")).first
+      if ci_file.nil?
+        if raise
+          raise "no ci definition with name: #{name}"
+        else
+          return false
+        end
+      else
+        puts "Using CI definition: #{ci_file}"
+        catch :cancel_ci! do
+          begin
+            instance_eval File.read(ci_file), ci_file, 1
+          rescue => e
+            puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
+            result false
+          end
+        end
+
+        return true
+      end
+    end
+
+    def declare_options(parse_options: true, **parser_options)
+      raise 'cannot declare options after they were parsed' if @option_parsed
+
+      JRubyTruffleRunner.build_option_parser(parser_options, @options, option_parser: @option_parser)
+      @options.merge! JRubyTruffleRunner.default_option_values(parser_options)
+
+      if !@option_parsed && parse_options
+        @option_parsed = true
+        @option_parser.order @rest
+      end
+
+      nil
     end
 
     def repository_dir
@@ -567,18 +625,44 @@ class JRubyTruffleRunner
       @options.fetch(key)
     end
 
-    def git_clone(url, branch: 'master')
-      execute_cmd "git clone -b #{branch} #{url} #{repository_name}", dir: working_dir, print: true
+    def git_clone(url)
+      execute_cmd %W[git clone #{url} #{repository_name}], dir: working_dir, print: true
+    end
+
+    def git_checkout(target)
+      return if target.nil?
+      execute_cmd %W[git checkout #{target}], dir: repository_dir, print: true
+    end
+
+    def git_tag(version)
+      return nil if version.nil?
+
+      tag = git_tags.find { |l| l.include? version }
+      raise "tag for #{version} was not found" if tag.nil?
+      tag
+    end
+
+    def git_tags
+      tags = Dir.chdir(repository_dir) { `git tag -l`.lines }
+      raise "fetching tags failed" if !$?.success?
+      tags
     end
 
     def setup
-      execute_cmd [jruby_truffle_path.to_s, 'setup'], dir: testing_dir, print: true
+      Dir.chdir(testing_dir) { JRubyTruffleRunner.new(['setup']).run }
+    end
+
+    def cancel_ci!(result = false)
+      throw cancel_ci!, result
+    end
+
+    def has_to_succeed(result)
+      result or cancel_ci! result
     end
 
     def run(options, raise: true)
-      cmd = [jruby_truffle_path.to_s, 'run', *options]
-      cmd = cmd.join ' ' if options.is_a? String
-      execute_cmd cmd, dir: testing_dir, print: true, raise: raise
+      raise ArgumentError unless options.is_a? Array
+      Dir.chdir(testing_dir) { JRubyTruffleRunner.new(['run', *options]).run }
     end
 
     def execute(cmd, dir: testing_dir, raise: true)
@@ -595,6 +679,20 @@ class JRubyTruffleRunner
 
     def success?
       @result
+    end
+
+    def use_only_https_git_paths!
+      gemfile_path = repository_dir.join('Gemfile')
+      File.write gemfile_path,
+                 File.read(gemfile_path).
+                     gsub(/github: ("|')/, 'git: \1https://github.com/').
+                     gsub(/git:\/\//, 'https://')
+
+    end
+
+    def delete_gemfile_lock!
+      path = repository_dir.join('Gemfile.lock')
+      FileUtils.rm path if File.exists? path
     end
 
   end

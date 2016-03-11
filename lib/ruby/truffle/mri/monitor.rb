@@ -1,1 +1,1 @@
-require_relative '../../stdlib/monitor'
+require_relative '../stdlib/monitor'

@@ -10,6 +10,14 @@
  *
  * Some of the code in this class is modified from org.jruby.runtime.Helpers,
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
+ *
+ * Contains code modified from ByteList's ByteList.java
+ *
+ * Copyright (C) 2007-2010 JRuby Community
+ * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  */
 package org.jruby.truffle.core.rope;
 
@@ -36,13 +44,25 @@ import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 
 public class RopeOperations {
 
-    public static final LeafRope EMPTY_ASCII_8BIT_ROPE = create(new byte[] {}, ASCIIEncoding.INSTANCE, CR_7BIT);
-    public static final LeafRope EMPTY_US_ASCII_ROPE = create(new byte [] {}, USASCIIEncoding.INSTANCE, CR_7BIT);
-    public static final LeafRope EMPTY_UTF8_ROPE = create(new byte[] {}, UTF8Encoding.INSTANCE, CR_7BIT);
-
     private static final ConcurrentHashMap<Encoding, Charset> encodingToCharsetMap = new ConcurrentHashMap<>();
 
     public static LeafRope create(byte[] bytes, Encoding encoding, CodeRange codeRange) {
+        if (bytes.length == 1) {
+            final int index = bytes[0] & 0xff;
+
+            if (encoding == UTF8Encoding.INSTANCE) {
+                return RopeConstants.UTF8_SINGLE_BYTE_ROPES[index];
+            }
+
+            if (encoding == USASCIIEncoding.INSTANCE) {
+                return RopeConstants.US_ASCII_SINGLE_BYTE_ROPES[index];
+            }
+
+            if (encoding == ASCIIEncoding.INSTANCE) {
+                return RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[index];
+            }
+        }
+
         int characterLength = -1;
 
         if (codeRange == CR_UNKNOWN) {
@@ -68,6 +88,14 @@ public class RopeOperations {
     public static Rope withEncoding(Rope originalRope, Encoding newEncoding, CodeRange newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
+        }
+
+        if (originalRope.getCodeRange() == newCodeRange) {
+            return originalRope.withEncoding(newEncoding, newCodeRange);
+        }
+
+        if ((originalRope.getCodeRange() == CR_7BIT) && newEncoding.isAsciiCompatible()) {
+            return originalRope.withEncoding(newEncoding, CR_7BIT);
         }
 
         return create(originalRope.getBytes(), newEncoding, newCodeRange);
@@ -377,4 +405,28 @@ public class RopeOperations {
         }
     }
 
+    @TruffleBoundary
+    public static int cmp(Rope string, Rope other) {
+        // Taken from org.jruby.util.ByteList#cmp.
+
+        if (string == other) return 0;
+        final int size = string.realSize();
+        final int len =  Math.min(size, other.realSize());
+        int offset = -1;
+
+        final byte[] bytes = string.getBytes();
+        final byte[] otherBytes = other.getBytes();
+
+        // a bit of VM/JIT weirdness here: though in most cases
+        // performance is improved if array references are kept in
+        // a local variable (saves an instruction per access, as I
+        // [slightly] understand it), in some cases, when two (or more?)
+        // arrays are being accessed, the member reference is actually
+        // faster.  this is one of those cases...
+        for (  ; ++offset < len && bytes[string.begin() + offset] == otherBytes[other.begin() + offset]; ) ;
+        if (offset < len) {
+            return (bytes[string.begin() + offset]&0xFF) > (otherBytes[other.begin() + offset]&0xFF) ? 1 : -1;
+        }
+        return size == other.realSize() ? 0 : size == len ? -1 : 1;
+    }
 }

@@ -1,0 +1,5 @@
+/alias.rb:19:in `block (2 levels) in <main>'
+/alias.rb:12:in `definition_name'
+/alias.rb:18:in `block in <main>'
+/backtraces.rb:17:in `check'
+/alias.rb:17:in `<main>'

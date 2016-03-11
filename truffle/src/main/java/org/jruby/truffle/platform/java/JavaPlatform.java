@@ -23,8 +23,8 @@ import org.jruby.truffle.platform.openjdk.OpenJDKArrayBlockingQueueLocksConditio
 import org.jruby.truffle.platform.openjdk.OpenJDKLinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.posix.ClockGetTime;
 import org.jruby.truffle.platform.posix.Sockets;
-import org.jruby.truffle.platform.posix.TrufflePosixHandler;
 import org.jruby.truffle.platform.posix.TrufflePosix;
+import org.jruby.truffle.platform.posix.TrufflePosixHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 
@@ -39,7 +39,7 @@ public class JavaPlatform implements NativePlatform {
     private final RubiniusConfiguration rubiniusConfiguration;
 
     public JavaPlatform(RubyContext context) {
-        posix = new TruffleJavaPosix(POSIXFactory.getJavaPOSIX(new TrufflePosixHandler(context)));
+        posix = new JavaTrufflePosix(POSIXFactory.getJavaPOSIX(new TrufflePosixHandler(context)));
         memoryManager = new JavaMemoryManager();
         signalManager = new SunMiscSignalManager();
         processName = new JavaProcessName();

@@ -18,7 +18,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
 
@@ -149,7 +148,7 @@ public class BacktraceFormatter {
 
             if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
                 reportedSourceSection = nextUserSourceSection(activations, 1);
-                reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+                reportedName = activation.getMethod().getName();
             } else {
                 reportedSourceSection = sourceSection;
                 reportedName = reportedSourceSection.getIdentifier();
@@ -224,7 +223,7 @@ public class BacktraceFormatter {
                 reportedSourceSection = nextUserSourceSection(activations, n);
 
                 try {
-                    reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+                    reportedName = activation.getMethod().getName();
                 } catch (Exception e) {
                     reportedName = "???";
                 }

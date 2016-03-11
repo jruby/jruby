@@ -1,4 +1,4 @@
-PORT=8080
+PORT=14873
 
 function test_server {
   serverpid=$!
@@ -13,7 +13,8 @@ function test_server {
   wait $serverpid || true
   if [[ $response != *"Hello"* ]]
   then
-    echo Response not expected
+    echo Response not expected:
+    echo $response
     exit 1
   fi
 }

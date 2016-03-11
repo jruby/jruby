@@ -389,6 +389,12 @@ public abstract class ArrayUtils {
         System.arraycopy(src, srcPos, dest, destPos, length);
     }
 
+    public static Object[] copyOf(Object[] array, int newLength) {
+        final Object[] copy = new Object[newLength];
+        System.arraycopy(array, 0, copy, 0, Math.min(array.length, newLength));
+        return copy;
+    }
+
     public static Object[] grow(Object[] array, int newLength) {
         assert newLength >= array.length;
         final Object[] copy = new Object[newLength];

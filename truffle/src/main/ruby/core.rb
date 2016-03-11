@@ -283,10 +283,5 @@ require_relative 'core/truffle/interop'
 require_relative 'core/config'
 require_relative 'core/main'
 
-# JRuby+Truffle C extension support
-require_relative 'core/truffle/cext/cext'
-require_relative 'core/truffle/cext/mkmf'
-require_relative 'core/truffle/cext/require'
-
 require_relative 'core/post'
 

@@ -215,6 +215,20 @@ public final class RubyArguments {
         }
     }
 
+    public static InternalMethod tryGetMethod(Object[] arguments) {
+        if (ArgumentIndicies.METHOD.ordinal() >= arguments.length) {
+            return null;
+        }
+
+        final Object method = arguments[ArgumentIndicies.METHOD.ordinal()];
+
+        if (method instanceof InternalMethod) {
+            return (InternalMethod) method;
+        }
+
+        return null;
+    }
+
     // Setters
 
     public static void setDeclarationFrame(Object[] arguments, MaterializedFrame declarationFrame) {

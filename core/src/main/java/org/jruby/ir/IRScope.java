@@ -482,7 +482,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     public List<CompilerPass> getExecutedPasses() {
-        // FIXME: Super annoying...because OptimizeTempVars is a pre-CFG pass we have no full build info yet
         return fullInterpreterContext == null ? new ArrayList<CompilerPass>(1) : fullInterpreterContext.getExecutedPasses();
     }
 
@@ -550,15 +549,9 @@ public abstract class IRScope implements ParseResult {
 
         // Clone instrs from startup interpreter so we do not swap out instrs out from under the
         // startup interpreter as we are building the full interpreter.
-        Instr[] instrs = cloneInstrs();
-
-        // This is a complicating pseudo-pass which needs to be run before CFG is generated.  This
-        // necessitates us needing a clonedInstrs field on IRScope.  If we can rewrite this to a full
-        // CFG using pass we can eliminate this intermediate save and field.
-        instrs = getManager().optimizeTemporaryVariablesIfEnabled(this, instrs);
-
-        fullInterpreterContext = new FullInterpreterContext(this, instrs);
+        fullInterpreterContext = new FullInterpreterContext(this, cloneInstrs());
     }
+
     /**
      * This initializes a more complete(full) InterpreterContext which if used in mixed mode will be
      * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
@@ -1020,13 +1013,16 @@ public abstract class IRScope implements ParseResult {
 
         // Invalidate compiler pass state.
         //
-        // SSS FIXME: This is to get around concurrent-modification issues
-        // since CompilerPass.invalidate modifies this, but some passes
-        // cannot be invalidated.
-        int i = 0;
-        while (i < getFullInterpreterContext().getExecutedPasses().size()) {
-            if (!getFullInterpreterContext().getExecutedPasses().get(i).invalidate(this)) {
-                i++;
+        // SSS FIXME: Re-grabbing passes each iter is to get around concurrent-modification issues
+        // since CompilerPass.invalidate modifies this, but some passes cannot be invalidated.  This
+        // should be wrapped in an iterator.
+        FullInterpreterContext fic = getFullInterpreterContext();
+        if (fic != null) {
+            int i = 0;
+            while (i < fic.getExecutedPasses().size()) {
+                if (!fic.getExecutedPasses().get(i).invalidate(this)) {
+                    i++;
+                }
             }
         }
     }

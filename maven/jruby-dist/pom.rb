@@ -9,29 +9,6 @@ project 'JRuby Dist' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'pom'
 
-  properties( 'main.basedir' => '${project.parent.parent.basedir}',
-              'ruby.maven.version' => '3.3.3',
-              'ruby.maven.libs.version' => '3.3.3' )
-
-  # pre-installed gems - not default gems !
-  gem 'ruby-maven', '${ruby.maven.version}', :scope => 'provided'
-
-  # HACK: add torquebox repo only when building from filesystem
-  # not when using the pom as "dependency" in some other projects
-  profile 'gem proxy' do
-
-    activation do
-      file( :exists => '../jruby' )
-    end
-
-    repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-                :id => 'rubygems-releases' )
-  end
-
-  jruby_plugin :gem do
-    execute_goal :initialize
-  end
-
   phase 'prepare-package' do
 
     plugin :dependency do

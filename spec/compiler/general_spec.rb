@@ -1080,6 +1080,30 @@ modes.each do |mode|
         run('def foo; yield; end; foo {|a = a, b = b, c = c|; [a.inspect, b.inspect, c.inspect]}') do |x|
           expect(x).to eq(["nil", "nil", "nil"])
         end
+
+        run('def foo(a: a, b: b, c: c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
+          expect(x).to eq(["nil", "nil", "nil"])
+        end
+        run('def foo; yield; end; foo {|a: a, b: b, c: c|; [a.inspect, b.inspect, c.inspect]}') do |x|
+          expect(x).to eq(["nil", "nil", "nil"])
+        end
+      ensure
+        $VERBOSE = verbose
+      end
+    end
+
+    it "combines optional args and zsuper properly" do
+      begin
+        verbose = $VERBOSE
+        $VERBOSE = nil
+
+        run('class OptZSuperA; def foo(a, b); [a, b]; end; end; class OptZSuperB < OptZSuperA; def foo(a = "", b = nil); super; end; end; OptZSuperB.new.foo') do |x|
+          expect(x).to eq(["", nil])
+        end
+
+        run('class OptZSuperA; def foo(a:, b:); [a, b]; end; end; class OptZSuperB < OptZSuperA; def foo(a: "", b: nil); super; end; end; OptZSuperB.new.foo') do |x|
+          expect(x).to eq(["", nil])
+        end
       ensure
         $VERBOSE = verbose
       end

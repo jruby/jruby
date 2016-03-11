@@ -22,6 +22,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.ffi.PointerGuards;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
@@ -357,7 +358,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "isNullPointer(pointer)")
         public DynamicObject readNullPointer(DynamicObject pointer) {
-            return createString(new ByteList());
+            return createString(RopeConstants.EMPTY_ASCII_8BIT_ROPE);
         }
 
         @TruffleBoundary

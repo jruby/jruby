@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/test/' + File.basename(__FILE__)
+require_relative '../../stdlib/test/' + File.basename(__FILE__)

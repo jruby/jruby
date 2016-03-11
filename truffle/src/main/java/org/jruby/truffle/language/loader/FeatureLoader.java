@@ -167,8 +167,17 @@ public class FeatureLoader {
 
     private void addToLoadedFeatures(DynamicObject feature) {
         final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
+        final int size = Layouts.ARRAY.getSize(loadedFeatures);
+        final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
 
-        ArrayOperations.append(loadedFeatures, feature);
+        if (size < store.length) {
+            store[size] = feature;
+        } else {
+            final Object[] newStore = ArrayUtils.grow(store, ArrayUtils.capacityForOneMore(store.length));
+            newStore[size] = feature;
+            Layouts.ARRAY.setStore(loadedFeatures, newStore);
+        }
+        Layouts.ARRAY.setSize(loadedFeatures, size + 1);
     }
 
     private void removeFromLoadedFeatures(DynamicObject feature) {

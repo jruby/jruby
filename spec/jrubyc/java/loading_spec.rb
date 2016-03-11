@@ -27,6 +27,9 @@ describe "JRuby::Compiler.compile_argv" do
 
     expect( defined?(DoubleRescue) ).to be_truthy
     DoubleRescue.new._call
+
+    expect( DoubleRescue.re_raise_return ).to be_a LoadError
+    expect { DoubleRescue.re_raise }.to raise_error LoadError
   end
 
   it "loads sample_block.class" do
@@ -34,6 +37,13 @@ describe "JRuby::Compiler.compile_argv" do
 
     expect( defined?(SampleBlock) ).to be_truthy
     expect( SampleBlock.class_variable_get :@@func ).to eql '11'
+  end
+
+  it "deserializes symbol_proc.class" do
+    load File.join(FILES_DIR, 'symbol_proc.class')
+
+    expect( $symbol_proc_result ).to be_truthy
+    expect( $symbol_proc_result ).to eql [ 1, 2, 3 ]
   end
 
 end

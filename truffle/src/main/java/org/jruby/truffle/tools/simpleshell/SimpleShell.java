@@ -96,13 +96,9 @@ public class SimpleShell {
                 } break;
 
                 case "frame": {
-                    currentFrameIndex = Integer.parseInt(tokenizer.nextToken());
-
-                    currentFrame = context.getCallStack()
-                            .getBacktrace(currentNode)
-                            .getActivations()
-                            .get(currentFrameIndex).getMaterializedFrame();
-                } break;
+                    // TODO CS 4-Mar-2015
+                    throw new UnsupportedOperationException();
+                }
 
                 default: {
                     try {

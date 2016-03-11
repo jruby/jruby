@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/drb/ssl'
+require_relative '../../stdlib/drb/ssl'

@@ -1,1 +1,1 @@
-require_relative '../../stdlib/expect'
+require_relative '../stdlib/expect'

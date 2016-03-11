@@ -50,6 +50,8 @@ import jnr.posix.Timeval;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
@@ -66,6 +68,8 @@ import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
+
+import static org.jruby.truffle.core.string.StringOperations.rope;
 
 public abstract class IOPrimitiveNodes {
 
@@ -205,14 +209,15 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
         public boolean fnmatch(DynamicObject pattern, DynamicObject path, int flags) {
-            final ByteList patternBytes = StringOperations.getByteListReadOnly(pattern);
-            final ByteList pathBytes = StringOperations.getByteListReadOnly(path);
-            return Dir.fnmatch(patternBytes.getUnsafeBytes(),
-                    patternBytes.getBegin(),
-                    patternBytes.getBegin() + patternBytes.getRealSize(),
-                    pathBytes.getUnsafeBytes(),
-                    pathBytes.getBegin(),
-                    pathBytes.getBegin() + pathBytes.getRealSize(),
+            final Rope patternRope = rope(pattern);
+            final Rope pathRope = rope(path);
+
+            return Dir.fnmatch(patternRope.getBytes(),
+                    patternRope.getBegin(),
+                    patternRope.getBegin() + patternRope.getRealSize(),
+                    pathRope.getBytes(),
+                    pathRope.getBegin(),
+                    pathRope.getBegin() + pathRope.getRealSize(),
                     flags) != Dir.FNM_NOMATCH;
         }
 
@@ -256,7 +261,7 @@ public abstract class IOPrimitiveNodes {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
-                return createString(new ByteList());
+                return createString(RopeConstants.EMPTY_ASCII_8BIT_ROPE);
             }
 
             final int fd = Layouts.IO.getDescriptor(file);
@@ -404,15 +409,15 @@ public abstract class IOPrimitiveNodes {
         public int write(DynamicObject file, DynamicObject string) {
             final int fd = Layouts.IO.getDescriptor(file);
 
-            final ByteList byteList = StringOperations.getByteListReadOnly(string);
+            final Rope rope = rope(string);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                getContext().getDebugStandardOut().write(byteList.unsafeBytes(), byteList.begin(), byteList.length());
-                return byteList.length();
+                getContext().getDebugStandardOut().write(rope.getBytes(), rope.begin(), rope.byteLength());
+                return rope.byteLength();
             }
 
             // TODO (eregon, 11 May 2015): review consistency under concurrent modification
-            final ByteBuffer buffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
+            final ByteBuffer buffer = ByteBuffer.wrap(rope.getBytes(), rope.begin(), rope.byteLength());
 
             int total = 0;
 

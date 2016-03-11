@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/uri/https'
+require_relative '../../stdlib/uri/https'

@@ -24,10 +24,10 @@ import org.jruby.truffle.platform.java.JavaClockGetTime;
 import org.jruby.truffle.platform.openjdk.OpenJDKArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.openjdk.OpenJDKLinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.posix.ClockGetTime;
-import org.jruby.truffle.platform.posix.JNRPosix;
+import org.jruby.truffle.platform.posix.JNRTrufflePosix;
 import org.jruby.truffle.platform.posix.Sockets;
-import org.jruby.truffle.platform.posix.TrufflePosixHandler;
 import org.jruby.truffle.platform.posix.TrufflePosix;
+import org.jruby.truffle.platform.posix.TrufflePosixHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 
@@ -42,7 +42,7 @@ public class DarwinPlatform implements NativePlatform {
     private final RubiniusConfiguration rubiniusConfiguration;
 
     public DarwinPlatform(RubyContext context) {
-        posix = new JNRPosix(POSIXFactory.getNativePOSIX(new TrufflePosixHandler(context)));
+        posix = new JNRTrufflePosix(POSIXFactory.getNativePOSIX(new TrufflePosixHandler(context)));
         memoryManager = Runtime.getSystemRuntime().getMemoryManager();
         signalManager = new SunMiscSignalManager();
         processName = new DarwinProcessName();
