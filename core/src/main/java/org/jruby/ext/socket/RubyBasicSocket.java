@@ -336,11 +336,11 @@ public abstract class RubyBasicSocket extends RubyIO {
 
         InetSocketAddress sock = getInetRemoteSocket();
 
-        if (sock != null) return runtime.newString(sock.getHostName());
+        if (sock != null) return Sockaddr.pack_sockaddr_in(context, sock);
 
         UnixSocketAddress unix = getUnixRemoteSocket();
 
-        return runtime.newString(unix.path());
+        return Sockaddr.pack_sockaddr_un(context, unix.path());
     }
 
     @JRubyMethod(name = "getpeereid", notImplemented = true)
@@ -576,7 +576,11 @@ public abstract class RubyBasicSocket extends RubyIO {
     protected SocketAddress getRemoteSocket() {
         Channel channel = getOpenChannel();
 
-        return SocketType.forChannel(channel).getRemoteSocketAddress(channel);
+        SocketAddress address = SocketType.forChannel(channel).getRemoteSocketAddress(channel);
+
+        if (address == null) throw getRuntime().newErrnoENOTCONNError();
+
+        return address;
     }
 
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
