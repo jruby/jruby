@@ -132,21 +132,32 @@ public final class ThreadContext {
     private Block.Type currentBlockType; // See prepareBlockArgs code in IRRuntimeHelpers
     private Throwable savedExcInLambda;  // See handleBreakAndReturnsInLambda in IRRuntimeHelpers
 
-    public final SecureRandom secureRandom = getSecureRandom();
+    /**
+     * This fields is no longer initialized, is null by default!
+     * Use {@link #getSecureRandom()} instead.
+     * @deprecated
+     */
+    @Deprecated
+    public transient SecureRandom secureRandom;
 
     private static boolean trySHA1PRNG = true;
 
-    private static SecureRandom getSecureRandom() {
-        SecureRandom sr;
-        try {
-            sr = trySHA1PRNG ?
-                    SecureRandom.getInstance("SHA1PRNG") :
-                    new SecureRandom();
-        } catch (Exception e) {
-            trySHA1PRNG = false;
-            sr = new SecureRandom();
+    public SecureRandom getSecureRandom() {
+        SecureRandom secureRandom = this.secureRandom;
+        if (secureRandom == null) {
+            if (trySHA1PRNG) {
+                try {
+                    secureRandom = SecureRandom.getInstance("SHA1PRNG");
+                } catch (Exception e) {
+                    trySHA1PRNG = false;
+                }
+            }
+            if (secureRandom == null) {
+                secureRandom = new SecureRandom();
+            }
+            this.secureRandom = secureRandom;
         }
-        return sr;
+        return secureRandom;
     }
 
     /**
