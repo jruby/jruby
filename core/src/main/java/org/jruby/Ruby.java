@@ -40,6 +40,7 @@
 package org.jruby;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.anno.TypePopulator;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.CallNode;
@@ -5266,4 +5267,11 @@ public final class Ruby implements Constantizable {
      * The nullToNil filter for this runtime.
      */
     private MethodHandle nullToNil;
+
+    public final ClassValue<TypePopulator> POPULATORS = new ClassValue<TypePopulator>() {
+        @Override
+        protected TypePopulator computeValue(Class<?> type) {
+            return RubyModule.loadPopulatorFor(type);
+        }
+    };
 }
