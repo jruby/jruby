@@ -233,8 +233,10 @@ class JRubyTruffleRunner
     @option_parsers = build_option_parsers
 
     @subcommand, *argv_after_global = @option_parsers[:global].order argv
+    @called_from_dir                = Dir.pwd
+    @options[:global][:dir]         = File.expand_path(@options[:global][:dir] || @called_from_dir)
 
-    Dir.chdir dir do
+    Dir.chdir @options[:global][:dir] do
       puts "pwd: #{Dir.pwd}" if verbose?
 
       load_gem_configuration
@@ -257,7 +259,7 @@ class JRubyTruffleRunner
   end
 
   def run
-    Dir.chdir dir do
+    Dir.chdir @options[:global][:dir] do
       send "subcommand_#{@subcommand}", @argv_after_subcommand
     end
   end
@@ -270,10 +272,6 @@ class JRubyTruffleRunner
   end
 
   private
-
-  def dir
-    @options[:global][:dir] || Dir.pwd
-  end
 
   def verbose?
     @options[:global][:verbose]
@@ -495,7 +493,12 @@ class JRubyTruffleRunner
       batch = if path =~ /^in|stdin$/
                 $stdin.read
               else
-                File.read(path)
+                path = Pathname(path)
+                if path.absolute?
+                  File.read(path)
+                else
+                  File.read(Pathname(@called_from_dir).join(path))
+                end
               end
 
       results = batch.each_line.map do |line|
@@ -506,13 +509,13 @@ class JRubyTruffleRunner
         rest          = option_parser.order line.split
 
         gem_name = rest.first
-        CIEnvironment.new(dir, gem_name, rest[1..-1]).success?
+        CIEnvironment.new(@options[:global][:dir], gem_name, rest[1..-1]).success?
       end
 
       results.all?
     else
       gem_name = rest.first
-      ci       = CIEnvironment.new dir, gem_name, rest[1..-1], definition: options[:ci][:definition]
+      ci       = CIEnvironment.new @options[:global][:dir], gem_name, rest[1..-1], definition: options[:ci][:definition]
       ci.success?
     end
   end
@@ -631,7 +634,7 @@ class JRubyTruffleRunner
 
     def git_checkout(target)
       return if target.nil?
-      execute_cmd %W[git checkout #{target}], dir: repository_dir, print: true
+      execute_cmd %W[git checkout --force #{target}], dir: repository_dir, print: true
     end
 
     def git_tag(version)

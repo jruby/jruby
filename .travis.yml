@@ -25,7 +25,6 @@ env:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
     - MALLOC_ARENA_MAX=2
   matrix:
-    - JTRCI='lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
     - PHASE='-Prake -Dtask=test:jruby:fullint'
@@ -81,7 +80,6 @@ matrix:
     - env: JT=check_ambiguous_arguments
       jdk: oraclejdk8
     - env: JT='test mri'
-    - env: JTRCI='lib/ruby/truffle/jruby+truffle/gem_ci/travis.txt'
     - env: PHASE='-Pmain'
       jdk: oraclejdk8
     - env: PHASE='-Pj2ee'
