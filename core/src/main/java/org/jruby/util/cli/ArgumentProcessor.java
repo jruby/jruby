@@ -508,16 +508,26 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--disable-gems")) {
                         config.setDisableGems(true);
                         break FOR;
-                    } else if (argument.equals("--disable")) {
-                        errorMissingEquals("disable");
+                    } else if (argument.equals("--disable-did_you_mean")) {
+                        config.setDisableDidYouMean(true);
+                        break FOR;
                     } else if (argument.equals("--disable-frozen-string-literal")) {
                         config.setFrozenStringLiteral(false);
                         break FOR;
-                    } else if (argument.startsWith("--disable=")) {
+                    } else if (argument.startsWith("--disable")) {
+                        if (argument.equals("--disable")) {
+                            characterIndex = argument.length();
+                            String feature = grabValue(getArgumentError("missing argument for --disable"), false);
+                            argument = "--disable=" + feature;
+                        }
                         for (String disable : valueListFor(argument, "disable")) {
                             boolean all = disable.equals("all");
                             if (disable.equals("gems") || all) {
                                 config.setDisableGems(true);
+                                continue;
+                            }
+                            if (disable.equals("did_you_mean") || all) {
+                                config.setDisableDidYouMean(true);
                                 continue;
                             }
                             if (disable.equals("rubyopt") || all) {
@@ -722,6 +732,10 @@ public class ArgumentProcessor {
     }
 
     private String grabValue(String errorMessage) {
+        return grabValue(errorMessage, true);
+    }
+
+    private String grabValue(String errorMessage, boolean usageError) {
         String optValue = grabOptionalValue();
         if (optValue != null) {
             return optValue;
@@ -731,7 +745,7 @@ public class ArgumentProcessor {
             return arguments.get(argumentIndex).originalValue;
         }
         MainExitException mee = new MainExitException(1, errorMessage);
-        mee.setUsageError(true);
+        if (usageError) mee.setUsageError(true);
         throw mee;
     }
 
