@@ -24,12 +24,15 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
+import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)
@@ -39,6 +42,8 @@ public abstract class RubyNode extends Node {
 
     private final RubyContext context;
     @CompilationFinal private SourceSection sourceSection;
+    @CompilationFinal private boolean isCall;
+    @CompilationFinal private boolean isNewLine;
 
     public RubyNode(RubyContext context, SourceSection sourceSection) {
         this.context = context;
@@ -208,13 +213,33 @@ public abstract class RubyNode extends Node {
     }
 
     // Source section
-    
-    public void unsafeSetSourceSection(SourceSection sourceSection) {
-        this.sourceSection = sourceSection;
-    }
 
     @Override
     public SourceSection getSourceSection() {
         return sourceSection;
     }
+
+    // Tags
+
+    public void unsafeSetIsNewLine() {
+        isNewLine = true;
+    }
+
+    public void unsafeSetIsCall() {
+        isCall = true;
+    }
+
+    @Override
+    protected boolean isTaggedWith(String tag) {
+        if (tag == TraceManager.CALL_TAG) {
+            return isCall;
+        }
+
+        if (tag == AttachmentsManager.LINE_TAG || tag == TraceManager.LINE_TAG || tag == CoverageManager.LINE_TAG) {
+            return isNewLine;
+        }
+
+        return false;
+    }
+
 }
