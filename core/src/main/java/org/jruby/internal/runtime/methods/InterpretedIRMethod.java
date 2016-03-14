@@ -250,7 +250,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     protected void promoteToFullBuild(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        if (runtime.isBooting()) return;   // don't Promote to full build during runtime boot
+        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return;   // don't Promote to full build during runtime boot
 
         if (callCount++ >= Options.JIT_THRESHOLD.load()) runtime.getJITCompiler().buildThresholdReached(context, this);
     }

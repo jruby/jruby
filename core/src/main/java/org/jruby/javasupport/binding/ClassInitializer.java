@@ -120,18 +120,20 @@ public class ClassInitializer extends Initializer {
 
     private void setupClassMethods(Class<?> javaClass, State state) {
         // TODO: protected methods.  this is going to require a rework of some of the mechanism.
-        final List<Method> methods = getMethods(javaClass);
+        final Map<String, List<Method>> nameMethods = getMethods(javaClass);
 
-        for ( int i = methods.size(); --i >= 0; ) {
-            // we need to collect all methods, though we'll only
-            // install the ones that are named in this class
-            Method method = methods.get(i);
-            String name = method.getName();
+        for (List<Method> methods : nameMethods.values()) {
+            for (int i = methods.size(); --i >= 0; ) {
+                // we need to collect all methods, though we'll only
+                // install the ones that are named in this class
+                Method method = methods.get(i);
+                String name = method.getName();
 
-            if ( Modifier.isStatic( method.getModifiers() ) ) {
-                prepareStaticMethod(javaClass, state, method, name);
-            } else {
-                prepareInstanceMethod(javaClass, state, method, name);
+                if (Modifier.isStatic(method.getModifiers())) {
+                    prepareStaticMethod(javaClass, state, method, name);
+                } else {
+                    prepareInstanceMethod(javaClass, state, method, name);
+                }
             }
         }
 
