@@ -447,6 +447,7 @@ module Commands
 
   def test_compiler(*args)
     env_vars = {}
+    env_vars["JRUBY_OPTS"] = '-Xtruffle.graal.warn_unless=false'
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
@@ -459,6 +460,7 @@ module Commands
     no_gems = args.delete('--no-gems')
     fast = args.delete('fast')
     env_vars = {}
+    env_vars["JRUBY_OPTS"] = '-Xtruffle.graal.warn_unless=false'
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
 
     test_names = if args.empty?
