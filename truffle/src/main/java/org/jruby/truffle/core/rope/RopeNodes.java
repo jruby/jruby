@@ -287,7 +287,7 @@ public abstract class RopeNodes {
             return concat(left, right, encoding, sameCodeRangeProfile, brokenCodeRangeProfile, isLeftSingleByteOptimizableProfile);
         }
 
-        @Specialization(guards = { "!isMutableRope(left)" })
+        @Specialization(guards = { "!left.isEmpty()", "!right.isEmpty()", "!isMutableRope(left)" })
         public Rope concat(Rope left, Rope right, Encoding encoding,
                            @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
