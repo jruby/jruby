@@ -1016,12 +1016,10 @@ public class IRBuilder {
             return new FrozenString(asString.getValue(), asString.getCodeRange(), asString.getPosition().getFile(), asString.getPosition().getLine());
         }
 
-        // Though you might be tempted to move this build into the CallInstr as:
-        //    new Callinstr( ... , build(receiverNode, s), ...)
-        // that is incorrect IR because the receiver has to be built *before* call arguments are built
+        // The receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
         Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
-        Variable  callResult = createTemporaryVariable();
+        Variable callResult = createTemporaryVariable();
 
         ArrayNode argsAry;
         if (
@@ -1042,10 +1040,10 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, receiver));
         }
 
-        Operand[] args       = setupCallArgs(callArgsNode);
-        Operand block      = setupCallClosure(callNode.getIterNode());
+        Operand[] args = setupCallArgs(callArgsNode);
+        Operand block = setupCallClosure(callNode.getIterNode());
 
-        CallInstr callInstr  = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
+        CallInstr callInstr = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if ( callNode.getName().equals("new") &&
