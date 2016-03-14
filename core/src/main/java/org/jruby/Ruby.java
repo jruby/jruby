@@ -174,6 +174,7 @@ import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.ClosedChannelException;
+import java.nio.charset.Charset;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -491,7 +492,7 @@ public final class Ruby implements Constantizable {
      * @return The last value of the script
      */
     public IRubyObject executeScript(String script, String filename) {
-        byte[] bytes = script.getBytes();
+        byte[] bytes = encodeToBytes(script);
 
         RootNode root = (RootNode) parseInline(new ByteArrayInputStream(bytes), filename, null);
         ThreadContext context = getCurrentContext();
@@ -692,7 +693,7 @@ public final class Ruby implements Constantizable {
     private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
         ISourcePosition pos = oldRoot.getPosition();
         BlockNode newBody = new BlockNode(pos);
-        newBody.add(new GlobalAsgnNode(pos, "$/", new StrNode(pos, new ByteList(getInstanceConfig().getRecordSeparator().getBytes()))));
+        newBody.add(new GlobalAsgnNode(pos, "$/", new StrNode(pos, ((RubyString) globalVariables.get("$/")).getByteList())));
 
         if (processLineEndings) newBody.add(new GlobalAsgnNode(pos, "$\\", new GlobalVarNode(pos, "$/")));
 
@@ -2786,7 +2787,16 @@ public final class Ruby implements Constantizable {
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
         addEvalParseToStats();
-        return parser.parse(file, content.getBytes(), scope, new ParserConfiguration(this, lineNumber, false, false, config));
+
+        return parser.parse(file, encodeToBytes(content), scope, new ParserConfiguration(this, lineNumber, false, false, config));
+    }
+
+    private byte[] encodeToBytes(String string) {
+        Charset charset = getDefaultCharset();
+
+        byte[] bytes = charset == null ? string.getBytes() : string.getBytes(charset);
+
+        return bytes;
     }
 
     @Deprecated
@@ -2846,6 +2856,20 @@ public final class Ruby implements Constantizable {
 
     public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
         this.defaultExternalEncoding = defaultExternalEncoding;
+    }
+
+    /**
+     * Get the default java.nio.charset.Charset for the current default internal encoding.
+     */
+    public Charset getDefaultCharset() {
+        Encoding enc = getDefaultInternalEncoding();
+        if (enc == null) {
+            enc = UTF8Encoding.INSTANCE;
+        }
+
+        Charset charset = enc.getCharset();
+
+        return charset;
     }
 
     public EncodingService getEncodingService() {
