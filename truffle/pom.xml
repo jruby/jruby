@@ -41,23 +41,23 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-api</artifactId>
-      <version>5304979e236e5b9cc743c9c22757eab75cfb7447-SNAPSHOT</version>
+      <version>0.12-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-debug</artifactId>
-      <version>5304979e236e5b9cc743c9c22757eab75cfb7447-SNAPSHOT</version>
+      <version>0.12-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>5304979e236e5b9cc743c9c22757eab75cfb7447-SNAPSHOT</version>
+      <version>0.12-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-tck</artifactId>
-      <version>5304979e236e5b9cc743c9c22757eab75cfb7447-SNAPSHOT</version>
+      <version>0.12-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -66,12 +66,6 @@ DO NOT MODIFIY - GENERATED CODE
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <repositories>
-    <repository>
-      <id>truffle</id>
-      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/</url>
-    </repository>
-  </repositories>
   <build>
     <defaultGoal>package</defaultGoal>
     <resources>
