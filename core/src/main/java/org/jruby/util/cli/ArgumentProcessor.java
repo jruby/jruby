@@ -36,13 +36,16 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.FileResource;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.func.Function2;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.regex.Pattern;
@@ -505,15 +508,6 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--debug-frozen-string-literal")) {
                         config.setDebuggingFrozenStringLiteral(true);
                         break FOR;
-                    } else if (argument.equals("--disable-gems")) {
-                        config.setDisableGems(true);
-                        break FOR;
-                    } else if (argument.equals("--disable-did_you_mean")) {
-                        config.setDisableDidYouMean(true);
-                        break FOR;
-                    } else if (argument.equals("--disable-frozen-string-literal")) {
-                        config.setFrozenStringLiteral(false);
-                        break FOR;
                     } else if (argument.startsWith("--disable")) {
                         if (argument.equals("--disable")) {
                             characterIndex = argument.length();
@@ -521,41 +515,17 @@ public class ArgumentProcessor {
                             argument = "--disable=" + feature;
                         }
                         for (String disable : valueListFor(argument, "disable")) {
-                            boolean all = disable.equals("all");
-                            if (disable.equals("gems") || all) {
-                                config.setDisableGems(true);
-                                continue;
-                            }
-                            if (disable.equals("did_you_mean") || all) {
-                                config.setDisableDidYouMean(true);
-                                continue;
-                            }
-                            if (disable.equals("rubyopt") || all) {
-                                config.setDisableRUBYOPT(true);
-                                continue;
-                            }
-                            if (disable.equals("frozen-string-literal") || disable.equals("frozen_string_literal") || all) {
-                                config.setFrozenStringLiteral(false);
-                                continue;
-                            }
-
-                            config.getError().println("warning: unknown argument for --disable: `" + disable + "'");
+                            enableDisableFeature(disable, false);
                         }
                         break FOR;
-                    } else if (argument.equals("--enable")) {
-                        errorMissingEquals("enable");
-                    } else if (argument.equals("--enable-frozen-string-literal")) {
-                        config.setFrozenStringLiteral(true);
-                        break FOR;
-                    } else if (argument.startsWith("--enable=")) {
+                    } else if (argument.startsWith("--enable")) {
+                        if (argument.equals("--enable")) {
+                            characterIndex = argument.length();
+                            String feature = grabValue(getArgumentError("missing argument for --enable"), false);
+                            argument = "--enable=" + feature;
+                        }
                         for (String enable : valueListFor(argument, "enable")) {
-                            boolean all = enable.equals("all");
-                            if (enable.equals("frozen-string-literal") || enable.equals("frozen_string_literal") || all) {
-                                config.setFrozenStringLiteral(true);
-                                continue;
-                            }
-
-                            config.getError().println("warning: unknown argument for --enable: `" + enable + "'");
+                            enableDisableFeature(enable, true);
                         }
                         break FOR;
                     } else if (argument.equals("--gemfile")) {
@@ -618,6 +588,16 @@ public class ArgumentProcessor {
                 default:
                     throw new MainExitException(1, "jruby: unknown option " + argument);
             }
+        }
+    }
+
+    private void enableDisableFeature(String name, boolean enable) {
+        Function2<Boolean, ArgumentProcessor, Boolean> feature = FEATURES.get(name);
+
+        if (feature == null) {
+            config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": `" + name + "'");
+        } else {
+            feature.apply(this, enable);
         }
     }
 
@@ -817,4 +797,46 @@ public class ArgumentProcessor {
         return false;
     }
 
+    private static final Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> FEATURES;
+
+    static {
+        Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> features = new HashMap<>();
+
+        features.put("all", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                // disable all features
+                for (Map.Entry<String, Function2<Boolean, ArgumentProcessor, Boolean>> entry : FEATURES.entrySet()) {
+                    if (entry.getKey().equals("all")) continue; // skip self
+                    entry.getValue().apply(processor, enable);
+                }
+                return true;
+            }
+        });
+        features.put("gems", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableGems(!enable);
+                return true;
+            }
+        });
+        features.put("did_you_mean", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableDidYouMean(!enable);
+                return true;
+            }
+        });
+        features.put("rubyopt", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableRUBYOPT(!enable);
+                return true;
+            }
+        });
+        features.put("frozen-string-literal", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setFrozenStringLiteral(enable);
+                return true;
+            }
+        });
+
+        FEATURES = features;
+    }
 }
