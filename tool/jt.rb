@@ -352,7 +352,7 @@ module Commands
 
     if args.delete('--graal')
       env_vars["JAVACMD"] = Utilities.find_graal
-      jruby_args << '-J-server'
+      jruby_args << '-J-Djvmci.Compiler=graal'
     end
 
     if args.delete('--js')
@@ -448,6 +448,7 @@ module Commands
   def test_compiler(*args)
     env_vars = {}
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
+    env_vars["JRUBY_OPTS"] = '-J-Djvmci.Compiler=graal'
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
