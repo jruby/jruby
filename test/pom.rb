@@ -76,7 +76,8 @@ project 'JRuby Integration Tests' do
           'showWarnings' =>  'true',
           'showDeprecation' =>  'true',
           'source' =>  '${base.java.version}',
-          'target' =>  '${base.java.version}' )
+          'target' =>  '${base.java.version}',
+          'testExcludes' => ['truffle/**/*.java'] )
   plugin :dependency do
     execute_goals( 'copy',
                    :id => 'copy jars for testing',

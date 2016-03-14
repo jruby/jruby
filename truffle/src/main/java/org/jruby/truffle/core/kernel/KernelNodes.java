@@ -605,7 +605,7 @@ public abstract class KernelNodes {
             final DynamicObject binding = getCallerBinding(frame);
             final MaterializedFrame topFrame = Layouts.BINDING.getFrame(binding);
             RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame));
-            final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", true);
+            final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", 1, true);
             return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
 
         }
@@ -626,7 +626,7 @@ public abstract class KernelNodes {
         })
         public Object evalBinding(VirtualFrame frame, DynamicObject source, DynamicObject binding, NotProvided filename,
                                   NotProvided lineNumber, @Cached("create()") IndirectCallNode callNode) {
-            final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", false);
+            final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", 1, false);
             return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         }
 
@@ -665,7 +665,7 @@ public abstract class KernelNodes {
                 "isRubyString(filename)" })
         public Object evalBindingFilenameLine(VirtualFrame frame, DynamicObject source, DynamicObject binding, DynamicObject filename,
                                               int lineNumber, @Cached("create()") IndirectCallNode callNode) {
-            final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, filename.toString(), false);
+            final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, filename.toString(), lineNumber, false);
             return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
         }
 
@@ -679,13 +679,23 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        private CodeLoader.DeferredCall doEvalX(DynamicObject source, DynamicObject binding, String filename, boolean ownScopeForAssignments) {
-            ByteList code = StringOperations.getByteListReadOnly(source);
-            final Source source1 = Source.fromText(code, filename);
+        private CodeLoader.DeferredCall doEvalX(DynamicObject rubySource,
+                                                DynamicObject binding,
+                                                String filename,
+                                                int line,
+                                                boolean ownScopeForAssignments) {
+            ByteList code = StringOperations.getByteListReadOnly(rubySource);
+
+            // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
+            final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
+            final Source source = Source.fromText(space + code, filename);
+
             final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
             final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame);
-            final RubyRootNode rootNode = getContext().getCodeLoader().parse(source1, code.getEncoding(), ParserContext.EVAL, frame, ownScopeForAssignments, this);
-            return getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, declarationContext, rootNode, frame, RubyArguments.getSelf(frame));
+            final RubyRootNode rootNode = getContext().getCodeLoader().parse(
+                    source, code.getEncoding(), ParserContext.EVAL, frame, ownScopeForAssignments, this);
+            return getContext().getCodeLoader().prepareExecute(
+                    ParserContext.EVAL, declarationContext, rootNode, frame, RubyArguments.getSelf(frame));
         }
 
         protected RootNodeWrapper compileSource(VirtualFrame frame, DynamicObject sourceText) {

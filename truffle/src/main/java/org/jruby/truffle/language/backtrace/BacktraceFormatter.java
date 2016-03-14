@@ -282,11 +282,17 @@ public class BacktraceFormatter {
 
         final String path = source.getPath();
 
-        if (path == null) {
-            return true;
+        if (path != null) {
+            return path.startsWith(SourceLoader.TRUFFLE_SCHEME);
         }
 
-        return path.startsWith(SourceLoader.TRUFFLE_SCHEME);
+        final String name = source.getName();
+
+        if (name != null) {
+            return name.startsWith(SourceLoader.TRUFFLE_SCHEME);
+        }
+
+        return true;
     }
 
     private String formatForeign(Node callNode) {

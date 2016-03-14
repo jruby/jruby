@@ -93,6 +93,7 @@ import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
@@ -666,17 +667,17 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        private CodeLoader.DeferredCall classEvalSource(DynamicObject module, DynamicObject code, String file, int line) {
-            assert RubyGuards.isRubyString(code);
+        private CodeLoader.DeferredCall classEvalSource(DynamicObject module, DynamicObject rubySource, String file, int line) {
+            assert RubyGuards.isRubyString(rubySource);
+            ByteList code = StringOperations.getByteListReadOnly(rubySource);
 
             final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
-            Encoding encoding = Layouts.STRING.getRope(code).getEncoding();
+            Encoding encoding = Layouts.STRING.getRope(rubySource).getEncoding();
 
-            CompilerDirectives.transferToInterpreter();
-            // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS
+            // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
             final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
-            Source source = Source.fromText(space + code.toString(), file);
+            Source source = Source.fromText(space + code, file);
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, encoding, ParserContext.MODULE, callerFrame, true, this);
             return getContext().getCodeLoader().prepareExecute(ParserContext.MODULE, DeclarationContext.CLASS_EVAL, rootNode, callerFrame, module);
