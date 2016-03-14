@@ -40,10 +40,12 @@ import org.jruby.util.ByteList;
 @Instrumentable(factory = RubyNodeWrapper.class)
 public abstract class RubyNode extends Node {
 
+    private static final int FLAG_NEWLINE = 0;
+    private static final int FLAG_CALL = 1;
+
     private final RubyContext context;
     @CompilationFinal private SourceSection sourceSection;
-    @CompilationFinal private boolean isCall;
-    @CompilationFinal private boolean isNewLine;
+    @CompilationFinal private int flags;
 
     public RubyNode(RubyContext context, SourceSection sourceSection) {
         this.context = context;
@@ -222,21 +224,29 @@ public abstract class RubyNode extends Node {
     // Tags
 
     public void unsafeSetIsNewLine() {
-        isNewLine = true;
+        flags |= 1 << FLAG_NEWLINE;
     }
 
     public void unsafeSetIsCall() {
-        isCall = true;
+        flags |= 1 << FLAG_CALL;
+    }
+
+    private boolean isNewLine() {
+        return ((flags >> FLAG_NEWLINE) & 1) == 1;
+    }
+
+    private boolean isCall() {
+        return ((flags >> FLAG_CALL) & 1) == 1;
     }
 
     @Override
     protected boolean isTaggedWith(String tag) {
         if (tag == TraceManager.CALL_TAG) {
-            return isCall;
+            return isCall();
         }
 
         if (tag == AttachmentsManager.LINE_TAG || tag == TraceManager.LINE_TAG || tag == CoverageManager.LINE_TAG) {
-            return isNewLine;
+            return isNewLine();
         }
 
         return false;
