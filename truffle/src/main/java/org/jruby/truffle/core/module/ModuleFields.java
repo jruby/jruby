@@ -43,6 +43,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
@@ -75,7 +76,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     private String name = null;
 
     private final Map<String, InternalMethod> methods = new ConcurrentHashMap<>();
-    private final Map<String, RubyConstant> constants = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, RubyConstant> constants = new ConcurrentHashMap<>();
     private final Map<String, Object> classVariables = new ConcurrentHashMap<>();
 
     private final CyclicAssumption unmodifiedAssumption;
@@ -295,12 +296,16 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         // TODO(CS): warn when redefining a constant
         // TODO (nirvdrum 18-Feb-15): But don't warn when redefining an autoloaded constant.
 
-        final RubyConstant previous = constants.get(name);
-        final boolean isPrivate = previous != null && previous.isPrivate();
+        while (true) {
+            final RubyConstant previous = constants.get(name);
+            final boolean isPrivate = previous != null && previous.isPrivate();
+            final RubyConstant newValue = new RubyConstant(rubyModuleObject, value, isPrivate, autoload);
 
-        constants.put(name, new RubyConstant(rubyModuleObject, value, isPrivate, autoload));
-
-        newLexicalVersion();
+            if ((previous == null) ? (constants.putIfAbsent(name, newValue) == null) : constants.replace(name, previous, newValue)) {
+                newLexicalVersion();
+                break;
+            }
+        }
     }
 
     @TruffleBoundary
@@ -417,13 +422,18 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     @TruffleBoundary
     public void changeConstantVisibility(RubyContext context, Node currentNode, String name, boolean isPrivate) {
         checkFrozen(context, currentNode);
-        RubyConstant rubyConstant = constants.get(name);
 
-        if (rubyConstant != null) {
-            rubyConstant.setPrivate(isPrivate);
-            newLexicalVersion();
-        } else {
-            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(rubyModuleObject, name, currentNode));
+        while (true) {
+            final RubyConstant previous = constants.get(name);
+
+            if (previous == null) {
+                throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(rubyModuleObject, name, currentNode));
+            }
+
+            if (constants.replace(name, previous, previous.withPrivate(isPrivate))) {
+                newLexicalVersion();
+                break;
+            }
         }
     }
 
