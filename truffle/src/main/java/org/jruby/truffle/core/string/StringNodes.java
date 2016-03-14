@@ -75,6 +75,7 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.MutableRope;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
@@ -1210,18 +1211,25 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(encodingName)")
         public DynamicObject forceEncodingString(DynamicObject string, DynamicObject encodingName,
-                                                 @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
+                                                 @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile,
+                                                 @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             final DynamicObject encoding = EncodingNodes.getEncoding(encodingName.toString());
-            return forceEncodingEncoding(string, encoding, differentEncodingProfile);
+            return forceEncodingEncoding(string, encoding, differentEncodingProfile, mutableRopeProfile);
         }
 
         @Specialization(guards = "isRubyEncoding(rubyEncoding)")
         public DynamicObject forceEncodingEncoding(DynamicObject string, DynamicObject rubyEncoding,
-                                                   @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
+                                                   @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile,
+                                                   @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
+            final Rope rope = rope(string);
 
-            if (differentEncodingProfile.profile(encoding(string) != encoding)) {
-                StringOperations.forceEncoding(string, encoding);
+            if (differentEncodingProfile.profile(rope.getEncoding() != encoding)) {
+                if (mutableRopeProfile.profile(rope instanceof MutableRope)) {
+                    ((MutableRope) rope).getByteList().setEncoding(encoding);
+                } else {
+                    StringOperations.forceEncoding(string, encoding);
+                }
             }
 
             return string;
@@ -1229,13 +1237,14 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isRubyString(encoding)", "!isRubyEncoding(encoding)" })
         public DynamicObject forceEncoding(VirtualFrame frame, DynamicObject string, Object encoding,
-                                           @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
+                                           @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile,
+                                           @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return forceEncodingString(string, toStrNode.executeToStr(frame, encoding), differentEncodingProfile);
+            return forceEncodingString(string, toStrNode.executeToStr(frame, encoding), differentEncodingProfile, mutableRopeProfile);
         }
 
     }
@@ -1877,8 +1886,16 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int size(DynamicObject string) {
-            return rope(string).characterLength();
+        public int size(DynamicObject string,
+                        @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
+            final Rope rope = rope(string);
+
+            if (mutableRopeProfile.profile(rope instanceof MutableRope)) {
+                // TODO (nirvdrum 11-Mar-16): This response is only correct for CR_7BIT. Mutable ropes have not been updated for multi-byte characters.
+                return ((MutableRope) rope).getByteList().realSize();
+            } else {
+                return rope.characterLength();
+            }
         }
 
     }
