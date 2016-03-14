@@ -357,23 +357,44 @@ public abstract class ModuleOperations {
     @TruffleBoundary
     public static void setClassVariable(final RubyContext context, DynamicObject module, final String name, final Object value, final Node currentNode) {
         assert RubyGuards.isRubyModule(module);
+        ModuleFields moduleFields = Layouts.MODULE.getFields(module);
+        moduleFields.checkFrozen(context, currentNode);
 
-        DynamicObject found = classVariableLookup(module, new Function1<DynamicObject, DynamicObject>() {
+        // if the cvar is not already defined we need to take lock and ensure there is only one
+        // defined in the class tree
+        if (trySetClassVariable(module, name, value) == null) {
+            synchronized (context.getClassVariableDefinitionLock()) {
+                if (trySetClassVariable(module, name, value) == null) {
+                    moduleFields.getClassVariables().put(name, value);
+                }
+            }
+        }
+    }
+
+    private static DynamicObject trySetClassVariable(DynamicObject module, final String name, final Object value) {
+        final ModuleFields moduleFields = Layouts.MODULE.getFields(module);
+        return classVariableLookup(module, new Function1<DynamicObject, DynamicObject>() {
             @Override
             public DynamicObject apply(DynamicObject module) {
-                if (Layouts.MODULE.getFields(module).getClassVariables().containsKey(name)) {
-                    Layouts.MODULE.getFields(module).setClassVariable(context, currentNode, name, value);
+                if (moduleFields.getClassVariables().putIfAbsent(name, value) == null) {
                     return module;
                 } else {
                     return null;
                 }
             }
         });
+    }
 
+    @TruffleBoundary
+    public static Object removeClassVariable(ModuleFields moduleFields, RubyContext context, Node currentNode, String name) {
+        moduleFields.checkFrozen(context, currentNode);
+
+        final Object found = moduleFields.getClassVariables().remove(name);
         if (found == null) {
-            // Not existing class variable - set in the current module
-            Layouts.MODULE.getFields(module).setClassVariable(context, currentNode, name, value);
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().nameErrorClassVariableNotDefined(name, moduleFields.rubyModuleObject, currentNode));
         }
+        return found;
     }
 
     private static <R> R classVariableLookup(DynamicObject module, Function1<R, DynamicObject> action) {

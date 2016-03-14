@@ -77,7 +77,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     private final Map<String, InternalMethod> methods = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, RubyConstant> constants = new ConcurrentHashMap<>();
-    private final Map<String, Object> classVariables = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Object> classVariables = new ConcurrentHashMap<>();
 
     private final CyclicAssumption unmodifiedAssumption;
 
@@ -317,25 +317,6 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @TruffleBoundary
-    public void setClassVariable(RubyContext context, Node currentNode, String variableName, Object value) {
-        checkFrozen(context, currentNode);
-
-        classVariables.put(variableName, value);
-    }
-
-    @TruffleBoundary
-    public Object removeClassVariable(RubyContext context, Node currentNode, String name) {
-        checkFrozen(context, currentNode);
-
-        final Object found = classVariables.remove(name);
-        if (found == null) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameErrorClassVariableNotDefined(name, rubyModuleObject, currentNode));
-        }
-        return found;
-    }
-
-    @TruffleBoundary
     public void addMethod(RubyContext context, Node currentNode, InternalMethod method) {
         assert ModuleOperations.canBindMethodTo(method.getDeclaringModule(), rubyModuleObject) ||
                 ModuleOperations.assignableTo(context.getCoreLibrary().getObjectClass(), method.getDeclaringModule());
@@ -537,7 +518,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return methods;
     }
 
-    public Map<String, Object> getClassVariables() {
+    public ConcurrentMap<String, Object> getClassVariables() {
         return classVariables;
     }
 

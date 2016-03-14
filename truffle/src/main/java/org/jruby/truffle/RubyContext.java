@@ -53,6 +53,8 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class RubyContext extends ExecutionContext {
 
@@ -88,6 +90,8 @@ public class RubyContext extends ExecutionContext {
     private final AttachmentsManager attachmentsManager;
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
+
+    private final Object classVariableDefinitionLock = new Object();
 
     private org.jruby.ast.RootNode initialJRubyRootNode;
 
@@ -321,5 +325,9 @@ public class RubyContext extends ExecutionContext {
 
     public CoreStrings getCoreStrings() {
         return coreStrings;
+    }
+
+    public Object getClassVariableDefinitionLock() {
+        return classVariableDefinitionLock;
     }
 }
