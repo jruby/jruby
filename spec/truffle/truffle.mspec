@@ -49,6 +49,15 @@ class MSpecScript
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
     "^spec/ruby/library/delegate/delegator/protected_methods_spec.rb",
+
+    # Openssl not yet supported
+    "^spec/ruby/library/openssl/cipher_spec.rb",
+    "^spec/ruby/library/openssl/config/freeze_spec.rb",
+    "^spec/ruby/library/openssl/hmac/digest_spec.rb",
+    "^spec/ruby/library/openssl/hmac/hexdigest_spec.rb",
+    "^spec/ruby/library/openssl/random/pseudo_bytes_spec.rb",
+    "^spec/ruby/library/openssl/random/random_bytes_spec.rb",
+    "^spec/ruby/library/openssl/x509/name/parse_spec.rb"
   ]
 
   set :truffle, [

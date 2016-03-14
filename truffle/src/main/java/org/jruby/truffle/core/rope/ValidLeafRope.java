@@ -10,6 +10,7 @@
 
 package org.jruby.truffle.core.rope;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 
 public class ValidLeafRope extends LeafRope {
@@ -18,4 +19,14 @@ public class ValidLeafRope extends LeafRope {
         super(bytes, encoding, CodeRange.CR_VALID, encoding.isSingleByte(), characterLength);
     }
 
+    @Override
+    public Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange) {
+        if (newCodeRange != getCodeRange()) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException("Cannot fast-path updating encoding with different code range.");
+        }
+
+        // TODO (nirvdrum 08-Mar-16): This should recalculate the character length since the new encoding may treat the bytes differently.
+        return new ValidLeafRope(getRawBytes(), newEncoding, characterLength());
+    }
 }

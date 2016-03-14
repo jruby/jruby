@@ -132,21 +132,32 @@ public final class ThreadContext {
     private Block.Type currentBlockType; // See prepareBlockArgs code in IRRuntimeHelpers
     private Throwable savedExcInLambda;  // See handleBreakAndReturnsInLambda in IRRuntimeHelpers
 
-    public final SecureRandom secureRandom = getSecureRandom();
+    /**
+     * This fields is no longer initialized, is null by default!
+     * Use {@link #getSecureRandom()} instead.
+     * @deprecated
+     */
+    @Deprecated
+    public transient SecureRandom secureRandom;
 
     private static boolean trySHA1PRNG = true;
 
-    private static SecureRandom getSecureRandom() {
-        SecureRandom sr;
-        try {
-            sr = trySHA1PRNG ?
-                    SecureRandom.getInstance("SHA1PRNG") :
-                    new SecureRandom();
-        } catch (Exception e) {
-            trySHA1PRNG = false;
-            sr = new SecureRandom();
+    public SecureRandom getSecureRandom() {
+        SecureRandom secureRandom = this.secureRandom;
+        if (secureRandom == null) {
+            if (trySHA1PRNG) {
+                try {
+                    secureRandom = SecureRandom.getInstance("SHA1PRNG");
+                } catch (Exception e) {
+                    trySHA1PRNG = false;
+                }
+            }
+            if (secureRandom == null) {
+                secureRandom = new SecureRandom();
+            }
+            this.secureRandom = secureRandom;
         }
-        return sr;
+        return secureRandom;
     }
 
     /**
@@ -683,6 +694,8 @@ public final class ThreadContext {
      * @return an Array with the backtrace locations
      */
     public IRubyObject createCallerLocations(int level, Integer length, StackTraceElement[] stacktrace) {
+        runtime.incrementCallerCount();
+
         RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
 
         if (trace == null) return nil;
@@ -691,7 +704,6 @@ public final class ThreadContext {
     }
 
     private RubyStackTraceElement[] getTraceSubset(int level, Integer length, StackTraceElement[] stacktrace) {
-        runtime.incrementCallerCount();
 
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
 
@@ -741,16 +753,24 @@ public final class ThreadContext {
         eventHooksEnabled = flag;
     }
 
-    /**
-     * Create an Array with backtrace information.
-     * @param level
-     * @param nativeException
-     * @return an Array with the backtrace
-     */
+    @Deprecated
     public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
-        BacktraceElement[] backtrace = this.backtrace;
-        BacktraceElement[] newTrace = new BacktraceElement[backtraceIndex + 1];
-        System.arraycopy(backtrace, 0, newTrace, 0, newTrace.length);
+        return getBacktrace();
+    }
+
+    /**
+     * Create a snapshot Array with current backtrace information.
+     * @return the backtrace
+     */
+    public BacktraceElement[] getBacktrace() {
+        return getBacktrace(0);
+    }
+
+    public final BacktraceElement[] getBacktrace(int level) {
+        final int len = backtraceIndex + 1;
+        if ( level < 0 ) level = len + level;
+        BacktraceElement[] newTrace = new BacktraceElement[len - level];
+        System.arraycopy(backtrace, level, newTrace, 0, newTrace.length);
         return newTrace;
     }
 

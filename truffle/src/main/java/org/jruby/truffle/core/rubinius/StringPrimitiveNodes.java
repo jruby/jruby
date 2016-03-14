@@ -22,6 +22,15 @@
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  *
+ * Some of the code in this class is transposed from org.jruby.util.ByteList,
+ * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
+ *
+ * Copyright (C) 2007-2010 JRuby Community
+ * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
+ *
  * Some of the code in this class is transliterated from C++ code in Rubinius.
  * 
  * Copyright (c) 2007-2014, Evan Phoenix and contributors
@@ -205,16 +214,15 @@ public abstract class StringPrimitiveNodes {
         public DynamicObject stringAwkSplit(DynamicObject string, int lim) {
             final List<DynamicObject> ret = new ArrayList<>();
             final Rope rope = rope(string);
-            final ByteList value = rope.getUnsafeByteList();
             final boolean limit = lim > 0;
             int i = lim > 0 ? 1 : 0;
 
-            byte[]bytes = value.getUnsafeBytes();
-            int p = value.getBegin();
+            byte[]bytes = rope.getBytes();
+            int p = rope.getBegin();
             int ptr = p;
-            int len = value.getRealSize();
+            int len = rope.getRealSize();
             int end = p + len;
-            Encoding enc = value.getEncoding();
+            Encoding enc = rope.getEncoding();
             boolean skip = true;
 
             int e = 0, b = 0;
@@ -768,16 +776,22 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_index", lowerFixnumParameters = 1)
+    @ImportStatic(StringGuards.class)
     public static abstract class StringIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child StringByteCharacterIndexNode byteIndexToCharIndexNode;
 
         public StringIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyString(pattern)")
+        @Specialization(guards = { "isRubyString(pattern)", "isBrokenCodeRange(pattern)" })
+        public DynamicObject stringIndexBrokenCodeRange(DynamicObject string, DynamicObject pattern, int start) {
+            return nil();
+        }
+
+
+        @Specialization(guards = { "isRubyString(pattern)", "!isBrokenCodeRange(pattern)" })
         public Object stringIndex(VirtualFrame frame, DynamicObject string, DynamicObject pattern, int start) {
             if (byteIndexToCharIndexNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -787,9 +801,7 @@ public abstract class StringPrimitiveNodes {
             // Rubinius will pass in a byte index for the `start` value, but StringSupport.index requires a character index.
             final int charIndex = byteIndexToCharIndexNode.executeStringBytCharacterIndex(frame, string, start, 0);
 
-            final int index = StringSupport.index(StringOperations.getCodeRangeableReadOnly(string),
-                    StringOperations.getCodeRangeableReadOnly(pattern),
-                    charIndex, Layouts.STRING.getRope(string).getEncoding());
+            final int index = index(rope(string), rope(pattern), charIndex, encoding(string));
 
             if (index == -1) {
                 return nil();
@@ -798,6 +810,71 @@ public abstract class StringPrimitiveNodes {
             return index;
         }
 
+        @TruffleBoundary
+        private int index(Rope source, Rope other, int offset, Encoding enc) {
+            // Taken from org.jruby.util.StringSupport.index.
+
+            int sourceLen = source.characterLength();
+            int otherLen = other.characterLength();
+
+            if (offset < 0) {
+                offset += sourceLen;
+                if (offset < 0) return -1;
+            }
+
+            if (sourceLen - offset < otherLen) return -1;
+            byte[]bytes = source.getBytes();
+            int p = source.getBegin();
+            int end = p + source.getRealSize();
+            if (offset != 0) {
+                offset = source.isSingleByteOptimizable() ? offset : StringSupport.offset(enc, bytes, p, end, offset);
+                p += offset;
+            }
+            if (otherLen == 0) return offset;
+
+            while (true) {
+                int pos = indexOf(source, other, p - source.getBegin());
+                if (pos < 0) return pos;
+                pos -= (p - source.getBegin());
+                int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
+                if (t == p + pos) return pos + offset;
+                if ((sourceLen -= t - p) <= 0) return -1;
+                offset += t - p;
+                p = t;
+            }
+        }
+
+        @TruffleBoundary
+        private int indexOf(Rope sourceRope, Rope otherRope, int fromIndex) {
+            // Taken from org.jruby.util.ByteList.indexOf.
+
+            final byte[] source = sourceRope.getBytes();
+            final int sourceOffset = sourceRope.begin();
+            final int sourceCount = sourceRope.realSize();
+            final byte[] target = otherRope.getBytes();
+            final int targetOffset = otherRope.begin();
+            final int targetCount = otherRope.realSize();
+
+            if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
+            if (fromIndex < 0) fromIndex = 0;
+            if (targetCount == 0) return fromIndex;
+
+            byte first  = target[targetOffset];
+            int max = sourceOffset + (sourceCount - targetCount);
+
+            for (int i = sourceOffset + fromIndex; i <= max; i++) {
+                if (source[i] != first) while (++i <= max && source[i] != first);
+
+                if (i <= max) {
+                    int j = i + 1;
+                    int end = j + targetCount - 1;
+                    for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
+
+                    if (j == end) return i - sourceOffset;
+                }
+            }
+            return -1;
+        }
     }
 
     @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })

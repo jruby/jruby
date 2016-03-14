@@ -1,1 +1,1 @@
-require_relative '../../stdlib/scanf'
+require_relative '../stdlib/scanf'

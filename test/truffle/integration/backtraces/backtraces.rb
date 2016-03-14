@@ -29,14 +29,18 @@ def check(file)
   
   success = true
   
+  print = []
   expected.zip(actual).each do |e, a|
     unless a.end_with?(e)
-      puts "Expected #{e}, actually #{a}"
+      print << "E #{a} Expected: #{e}"
       success = false
+    else
+      print << ". #{a}"
     end
   end
   
   unless success
+    puts print.join("\n")
     exit 1
   end
 end

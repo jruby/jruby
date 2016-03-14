@@ -6,8 +6,9 @@ if defined?(Gem)
     warn 'RubyGems not found; disabling gems' if $VERBOSE
   else
     begin
+      gem 'did_you_mean'
       require 'did_you_mean'
-    rescue LoadError
+    rescue Gem::LoadError, LoadError
     end if defined?(DidYouMean)
   end
 end

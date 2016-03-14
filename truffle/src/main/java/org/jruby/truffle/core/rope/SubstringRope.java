@@ -10,6 +10,9 @@
 
 package org.jruby.truffle.core.rope;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jcodings.Encoding;
+
 public class SubstringRope extends Rope {
 
     private final Rope child;
@@ -17,9 +20,24 @@ public class SubstringRope extends Rope {
 
     public SubstringRope(Rope child, int offset, int byteLength, int characterLength, CodeRange codeRange) {
         // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
-        super(child.getEncoding(), codeRange, child.isSingleByteOptimizable(), byteLength, characterLength, child.depth() + 1, null);
+        this(child, child.getEncoding(), offset, byteLength, characterLength, codeRange);
+    }
+
+    private SubstringRope(Rope child, Encoding encoding, int offset, int byteLength, int characterLength, CodeRange codeRange) {
+        // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
+        super(encoding, codeRange, child.isSingleByteOptimizable(), byteLength, characterLength, child.depth() + 1, null);
         this.child = child;
         this.offset = offset;
+    }
+
+    @Override
+    public Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange) {
+        if (newCodeRange != getCodeRange()) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException("Cannot fast-path updating encoding with different code range.");
+        }
+
+        return new SubstringRope(getChild(), newEncoding, getOffset(), byteLength(), characterLength(), newCodeRange);
     }
 
     @Override

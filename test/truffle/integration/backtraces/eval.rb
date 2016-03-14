@@ -15,6 +15,10 @@ def m1
 end
 
 def m2
+  eval 'm3', binding, 'a_m3_calling_source.rb', 42
+end
+
+def m3
   eval "raise 'message'"
 end
 

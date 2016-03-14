@@ -1,1 +1,1 @@
-require_relative '../../stdlib/e2mmap'
+require_relative '../stdlib/e2mmap'

@@ -10,6 +10,14 @@
  *
  * Some of the code in this class is modified from org.jruby.runtime.Helpers,
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
+ *
+ * Contains code modified from ByteList's ByteList.java
+ *
+ * Copyright (C) 2007-2010 JRuby Community
+ * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  */
 package org.jruby.truffle.core.rope;
 
@@ -80,6 +88,14 @@ public class RopeOperations {
     public static Rope withEncoding(Rope originalRope, Encoding newEncoding, CodeRange newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
+        }
+
+        if (originalRope.getCodeRange() == newCodeRange) {
+            return originalRope.withEncoding(newEncoding, newCodeRange);
+        }
+
+        if ((originalRope.getCodeRange() == CR_7BIT) && newEncoding.isAsciiCompatible()) {
+            return originalRope.withEncoding(newEncoding, CR_7BIT);
         }
 
         return create(originalRope.getBytes(), newEncoding, newCodeRange);
@@ -389,4 +405,28 @@ public class RopeOperations {
         }
     }
 
+    @TruffleBoundary
+    public static int cmp(Rope string, Rope other) {
+        // Taken from org.jruby.util.ByteList#cmp.
+
+        if (string == other) return 0;
+        final int size = string.realSize();
+        final int len =  Math.min(size, other.realSize());
+        int offset = -1;
+
+        final byte[] bytes = string.getBytes();
+        final byte[] otherBytes = other.getBytes();
+
+        // a bit of VM/JIT weirdness here: though in most cases
+        // performance is improved if array references are kept in
+        // a local variable (saves an instruction per access, as I
+        // [slightly] understand it), in some cases, when two (or more?)
+        // arrays are being accessed, the member reference is actually
+        // faster.  this is one of those cases...
+        for (  ; ++offset < len && bytes[string.begin() + offset] == otherBytes[other.begin() + offset]; ) ;
+        if (offset < len) {
+            return (bytes[string.begin() + offset]&0xFF) > (otherBytes[other.begin() + offset]&0xFF) ? 1 : -1;
+        }
+        return size == other.realSize() ? 0 : size == len ? -1 : 1;
+    }
 }

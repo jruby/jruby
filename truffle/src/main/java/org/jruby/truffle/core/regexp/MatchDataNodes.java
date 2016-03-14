@@ -235,8 +235,6 @@ public abstract class MatchDataNodes {
 
         @Specialization(guards = {"!isRubySymbol(index)", "!isRubyString(index)", "!isIntegerFixnumRange(index)"})
         public Object getIndex(VirtualFrame frame, DynamicObject matchData, Object index, NotProvided length) {
-            CompilerDirectives.transferToInterpreter();
-
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
@@ -245,7 +243,7 @@ public abstract class MatchDataNodes {
             return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(DynamicObject matchData, DynamicObject range, NotProvided len) {
             final Object[] values = Layouts.MATCH_DATA.getValues(matchData);

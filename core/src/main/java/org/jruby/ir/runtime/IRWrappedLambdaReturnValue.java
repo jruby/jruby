@@ -14,19 +14,10 @@ import org.jruby.util.cli.Options;
 // through an exception object (just like IRReturnJump and IRBreakJump)
 // and let it go through exception handlers which ensure that frame/scope
 // are updated properly and ruby-level ensure code is run.
-public class IRWrappedLambdaReturnValue extends RuntimeException implements Unrescuable {
+public class IRWrappedLambdaReturnValue extends IRJump implements Unrescuable {
     public final IRubyObject returnValue;
 
     public IRWrappedLambdaReturnValue(IRubyObject v) {
         this.returnValue = v;
-    }
-
-    @Override
-    public Throwable fillInStackTrace() {
-        if (Options.JUMP_BACKTRACE.load()) {
-            return super.fillInStackTrace();
-        }
-
-        return this;
     }
 }
