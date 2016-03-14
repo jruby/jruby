@@ -32,6 +32,8 @@ package org.jruby.embed.jsr223;
 import javax.script.Invocable;
 import javax.script.Compilable;
 import java.io.*;
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
