@@ -335,6 +335,9 @@ class JRubyTruffleRunner
   def self.default_option_values(group_options)
     group_options.each_with_object({}) do |(option, data), group_option_defaults|
       *args, block, default         = data
+      unless [TrueClass, FalseClass, NilClass, Fixnum].any? { |v| v === default }
+        default = default.clone
+      end
       group_option_defaults[option] = default
     end
   end
