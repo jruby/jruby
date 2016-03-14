@@ -659,7 +659,7 @@ class JRubyTruffleRunner
     end
 
     def setup
-      Dir.chdir(testing_dir) { JRubyTruffleRunner.new([('-v' if @verbose),'setup'].compact).run }
+      Dir.chdir(testing_dir) { JRubyTruffleRunner.new([('-v' if @verbose), 'setup'].compact).run }
     end
 
     def cancel_ci!(result = false)
