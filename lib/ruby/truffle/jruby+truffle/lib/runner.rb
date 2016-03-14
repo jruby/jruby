@@ -228,7 +228,7 @@ class JRubyTruffleRunner
   end
 
 
-  def initialize(argv = ARGV)
+  def initialize(argv)
     @options        = construct_default_options
     @option_parsers = build_option_parsers
 
