@@ -449,9 +449,12 @@ class JRubyTruffleRunner
 
     core_load_path = jruby_path.join 'truffle/src/main/ruby'
 
+    missing_core_load_path = !File.exists?(core_load_path)
+    puts "Core load path: #{core_load_path} does not exist, fallbacking to --no-use-fs-core" if missing_core_load_path
+
     truffle_options = [
         ('-X+T'),
-        ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core]),
+        ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core] && !missing_core_load_path),
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
     ]
 
