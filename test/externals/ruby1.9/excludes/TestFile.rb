@@ -1,3 +1,5 @@
+windows = RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
+
 exclude :test_bom_16be, "needs investigation"
 exclude :test_bom_16le, "needs investigation"
 exclude :test_bom_32be, "needs investigation"
@@ -18,3 +20,4 @@ exclude :test_realpath , "needs investigation"
 exclude :test_s_chown , "needs investigation"
 exclude :test_truncate_wbuf, "fails on Linux"
 exclude :test_uninitialized , "needs investigation"
+exclude :test_unlink_before_close, "needs investigation" if windows

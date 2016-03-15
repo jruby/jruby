@@ -1,6 +1,9 @@
+windows = RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
+
 exclude :test_cbuf, "needs investigation"
 exclude :test_cr_decorator_on_stdout, "needs investigation"
 exclude :test_crlf_decorator_on_stdout, "needs investigation"
+exclude :test_default_mode_on_unix, "needs investigation" if windows
 exclude :test_dup, "needs investigation"
 exclude :test_dup_undef, "needs investigation"
 exclude :test_error_nonascii, "needs investigation"
@@ -19,6 +22,7 @@ exclude :test_open_pipe_r_enc2, "needs investigation"
 exclude :test_pipe, "needs investigation"
 exclude :test_puts_widechar, "needs investigation"
 exclude :test_read_all_invalid, "needs investigation"
+exclude :test_read_encoding, "needs investigation" if windows
 exclude :test_read_mode, "needs investigation"
 exclude :test_s_pipe_invalid, "needs investigation"
 exclude :test_stdin_external_encoding_with_reopen, "needs investigation"
@@ -41,3 +45,4 @@ exclude :test_write_conversion_anyenc_stateful, "needs investigation"
 exclude :test_write_conversion_anyenc_stateful_nosync, "needs investigation"
 exclude :test_write_conversion_fixenc, "needs investigation"
 exclude :test_write_mode, "needs investigation"
+exclude :test_write_mode_fail, "needs investigation" if windows
