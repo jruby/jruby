@@ -362,27 +362,28 @@ public abstract class ModuleOperations {
 
         // if the cvar is not already defined we need to take lock and ensure there is only one
         // defined in the class tree
-        if (trySetClassVariable(module, name, value) == null) {
+        if (!trySetClassVariable(module, name, value)) {
             synchronized (context.getClassVariableDefinitionLock()) {
-                if (trySetClassVariable(module, name, value) == null) {
+                if (!trySetClassVariable(module, name, value)) {
                     moduleFields.getClassVariables().put(name, value);
                 }
             }
         }
     }
 
-    private static DynamicObject trySetClassVariable(DynamicObject module, final String name, final Object value) {
-        final ModuleFields moduleFields = Layouts.MODULE.getFields(module);
-        return classVariableLookup(module, new Function1<DynamicObject, DynamicObject>() {
+    private static boolean trySetClassVariable(DynamicObject topModule, final String name, final Object value) {
+        final DynamicObject found = classVariableLookup(topModule, new Function1<DynamicObject, DynamicObject>() {
             @Override
             public DynamicObject apply(DynamicObject module) {
-                if (moduleFields.getClassVariables().putIfAbsent(name, value) == null) {
+                final ModuleFields moduleFields = Layouts.MODULE.getFields(module);
+                if (moduleFields.getClassVariables().replace(name, value) != null) {
                     return module;
                 } else {
                     return null;
                 }
             }
         });
+        return found != null;
     }
 
     @TruffleBoundary
