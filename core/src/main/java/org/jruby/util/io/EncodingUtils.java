@@ -64,6 +64,28 @@ public class EncodingUtils {
     
     private static final byte[] NULL_BYTE_ARRAY = new byte[0];
 
+    public static String printECFlags(int flags) {
+        StringBuilder builder = new StringBuilder();
+
+        if ((flags & ECONV_ERROR_HANDLER_MASK) != 0) builder.append("ERROR_HANDLING ");
+        if ((flags & ECONV_INVALID_MASK) != 0) builder.append("INVALID_HANDLING ");
+        if ((flags & ECONV_DECORATOR_MASK) != 0) {
+            builder.append("DECORATOR_HANDLING ");
+
+            if ((flags & ECONV_UNIVERSAL_NEWLINE_DECORATOR) != 0) builder.append("UNIVERSAL NEWLINE  ");
+            if ((flags & ECONV_CRLF_NEWLINE_DECORATOR) != 0) builder.append("CRLF NEWLINE ");
+            if ((flags & ECONV_CR_NEWLINE_DECORATOR) != 0) builder.append("CR NEWLINE ");
+            if ((flags & ECONV_XML_TEXT_DECORATOR) != 0) builder.append("XMLTEXT ");
+            if ((flags & ECONV_XML_ATTR_CONTENT_DECORATOR) != 0) builder.append("XMLATTRCONTENT ");
+
+        }
+        if ((flags & ECONV_STATEFUL_DECORATOR_MASK) != 0) builder.append("ERROR_HANDLING ");
+        if ((flags & ECONV_PARTIAL_INPUT) != 0) builder.append("PARTIAL INPUT ");
+        if ((flags & ECONV_AFTER_OUTPUT) != 0) builder.append("AFTER OUTPUT ");
+
+        return builder.toString();
+    }
+
     // rb_to_encoding
     public static Encoding rbToEncoding(ThreadContext context, IRubyObject enc) {
         if (enc instanceof RubyEncoding) return ((RubyEncoding) enc).getEncoding();

@@ -33,6 +33,10 @@ public class CRLFStreamWrapper implements Stream {
         return stream.getDescriptor();
     }
 
+    public Stream getOriginalStream() {
+        return stream;
+    }
+
     public void clearerr() {
         stream.clearerr();
     }

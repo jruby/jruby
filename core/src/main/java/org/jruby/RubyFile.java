@@ -1332,7 +1332,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
-        openFile.setMainStream(fdopen(descriptor, modes));
+        openFile.setMainStream(reprocessStreamInCaseECOptsWantsCRLF(fdopen(descriptor, modes), modes));
     }
 
     protected void openInternal(String path, String modeString) {

@@ -38,6 +38,7 @@ package org.jruby;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ResourceException;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.CRLFStreamWrapper;
 import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.FileExistsException;
@@ -316,6 +317,23 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @Deprecated
     public Stream getHandler() throws BadDescriptorException {
         return getOpenFileChecked().getMainStreamSafe();
+    }
+
+    // FIXME: This is a bit wonky.  1.9 uses this special stream wrapper on windows but at the
+    // location it is created we do not have access to ecflags and their newline processing
+    // preferences.  So this check was added to strip off crlf conversion if one of the IO
+    // options from ECONV says not to.
+    protected Stream reprocessStreamInCaseECOptsWantsCRLF(Stream fd, ModeFlags modes) {
+        // FIXME: I do not understand how a 1.8 path hits this since this is only called
+        // from open methods that end in 19?
+        if (getRuntime().is1_9() && Platform.IS_WINDOWS && !modes.isBinary() &&
+                (ecflags & EncodingUtils.ECONV_UNIVERSAL_NEWLINE_DECORATOR) == 0 &&
+                (ecflags & EncodingUtils.ECONV_CRLF_NEWLINE_DECORATOR) == 0 &&
+                fd instanceof CRLFStreamWrapper) {
+            return ((CRLFStreamWrapper) fd).getOriginalStream();
+        }
+
+        return fd;
     }
 
     protected void reopenPath(Ruby runtime, IRubyObject[] args) {
@@ -896,7 +914,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
 
             openFile.setMode(fmode_p[0]);
-            openFile.setMainStream(fdopen(descriptor, modes));
+            openFile.setMainStream(reprocessStreamInCaseECOptsWantsCRLF(fdopen(descriptor, modes), modes));
             clearCodeConversion();
 
 //            io_check_tty(fp);
