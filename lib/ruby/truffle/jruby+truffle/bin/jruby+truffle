@@ -2,5 +2,5 @@
 
 require_relative '../lib/runner.rb'
 
-runner = JRubyTruffleRunner.new
+runner = JRubyTruffleRunner.new ARGV
 exit runner.run

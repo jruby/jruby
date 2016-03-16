@@ -112,7 +112,6 @@ public class RubyZlib {
         cGzFile.defineOrGetClassUnder("Error", cZlibError, cZlibError.getAllocator());
         RubyClass cGzError = cGzFile.defineOrGetClassUnder("Error", cZlibError, cZlibError.getAllocator());
         cGzError.addReadAttribute(runtime.getCurrentContext(), "input");
-        cGzError.defineAnnotatedMethods(RubyGzipFile.Error.class);
         cGzFile.defineOrGetClassUnder("CRCError", cGzError, cGzError.getAllocator());
         cGzFile.defineOrGetClassUnder("NoFooter", cGzError, cGzError.getAllocator());
         cGzFile.defineOrGetClassUnder("LengthError", cGzError, cGzError.getAllocator());

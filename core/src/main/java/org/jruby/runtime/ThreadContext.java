@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -142,6 +143,7 @@ public final class ThreadContext {
 
     private static boolean trySHA1PRNG = true;
 
+    @SuppressWarnings("deprecated")
     public SecureRandom getSecureRandom() {
         SecureRandom secureRandom = this.secureRandom;
         if (secureRandom == null) {
@@ -159,6 +161,8 @@ public final class ThreadContext {
         }
         return secureRandom;
     }
+
+    private Encoding[] encodingHolder;
 
     /**
      * Constructor for Context.
@@ -1112,17 +1116,22 @@ public final class ThreadContext {
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
     }
 
-    @Deprecated
-    public void setFile(String file) {
-        backtrace[backtraceIndex].filename = file;
-    }
-
     private Set<RecursiveComparator.Pair> recursiveSet;
 
     // Do we have to generate a backtrace when we generate an exception on this thread or can we
     // MAYBE omit creating the backtrace for the exception (only some rescue forms and only for
     // descendents of StandardError are eligible).
     public boolean exceptionRequiresBacktrace = true;
+
+    public Encoding[] encodingHolder() {
+        if (encodingHolder == null) encodingHolder = new Encoding[1];
+        return encodingHolder;
+    }
+
+    @Deprecated
+    public void setFile(String file) {
+        backtrace[backtraceIndex].filename = file;
+    }
 
     @Deprecated
     private org.jruby.util.RubyDateFormat dateFormat;

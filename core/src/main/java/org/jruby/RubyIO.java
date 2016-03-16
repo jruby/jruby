@@ -1952,7 +1952,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (isClosed()) {
             return runtime.getNil();
         }
-        openFile.checkClosed();
         return rbIoClose(runtime);
     }
 
@@ -3734,7 +3733,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
             ChannelFD main = new ChannelFD(inChannel, runtime.getPosix(), runtime.getFilenoUtil());
 
             openFile.setFD(main);
-            openFile.setMode(OpenFile.READABLE);
         }
 
         if (openFile.isWritable() && process.hasOutput()) {
@@ -3748,11 +3746,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             ChannelFD pipe = new ChannelFD(outChannel, runtime.getPosix(), runtime.getFilenoUtil());
 
-            RubyIO writeIO = new RubyIO(runtime, runtime.getIO());
-            writeIO.initializeCommon(runtime.getCurrentContext(), pipe, runtime.newFixnum(OpenFlags.O_WRONLY), runtime.getNil());
+            // if also readable, attach as tied IO; otherwise, primary IO
+            if (openFile.isReadable()) {
+                RubyIO writeIO = new RubyIO(runtime, runtime.getIO());
+                writeIO.initializeCommon(runtime.getCurrentContext(), pipe, runtime.newFixnum(OpenFlags.O_WRONLY), runtime.getNil());
 
-            openFile.tiedIOForWriting = writeIO;
-            setInstanceVariable("@tied_io_for_writing", writeIO);
+                openFile.tiedIOForWriting = writeIO;
+                setInstanceVariable("@tied_io_for_writing", writeIO);
+            } else {
+                openFile.setFD(pipe);
+            }
         }
     }
 
@@ -3884,15 +3887,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
             io.setupPopen(modes, process);
 
             if (block.isGiven()) {
-                try {
-                    return block.yield(context, io);
-                } finally {
-                    if (io.openFile.isOpen()) {
-                        io.close();
-                    }
-                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor() << 8, ShellLauncher.getPidFromProcess(process)));
-                }
+                ensureYieldClose(context, io, block);
+
+                // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor() << 8, ShellLauncher.getPidFromProcess(process)));
             }
             return io;
         } catch (IOException e) {

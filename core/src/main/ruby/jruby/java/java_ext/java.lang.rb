@@ -1,10 +1,12 @@
-module java::lang::Runnable
+lang = java::lang
+
+module lang::Runnable
   def to_proc
     proc { self.run }
   end
 end
 
-module java::lang::Iterable
+module lang::Iterable
   include Enumerable
 
   def each
@@ -22,7 +24,7 @@ module java::lang::Iterable
   end
 end
 
-module java::lang::Comparable
+module lang::Comparable
   include Comparable
   def <=>(a)
     return nil if a.nil?
@@ -30,7 +32,7 @@ module java::lang::Comparable
   end
 end
 
-class java::lang::Throwable
+class lang::Throwable
   def backtrace
     stack_trace.map(&:to_s)
   end
@@ -93,7 +95,7 @@ module JavaUtilities::ModifierShortcuts
   end
 end
 
-class java::lang::ClassLoader
+class lang::ClassLoader
   alias resource_as_stream get_resource_as_stream
   alias resource_as_url get_resource
   
@@ -102,7 +104,7 @@ class java::lang::ClassLoader
   end
 end
 
-class java::lang::Class
+class lang::Class
   include Comparable
   include JavaUtilities::ModifierShortcuts
 
@@ -157,13 +159,15 @@ class java::lang::Class
   end
 end
 
-class java::lang::reflect::AccessibleObject
+reflect = lang::reflect
+
+class reflect::AccessibleObject
   include JavaUtilities::ModifierShortcuts
   
   alias inspect to_s
 end
 
-class java::lang::reflect::Constructor
+class reflect::Constructor
   def return_type
     nil
   end
@@ -171,7 +175,7 @@ class java::lang::reflect::Constructor
   alias argument_types parameter_types
 end
 
-class java::lang::reflect::Method
+class reflect::Method
   def invoke_static(*args)
     invoke(nil, *args)
   end
@@ -179,7 +183,7 @@ class java::lang::reflect::Method
   alias argument_types parameter_types
 end
 
-class java::lang::reflect::Field
+class reflect::Field
   alias value_type name
   alias value get
   alias set_value set
@@ -206,7 +210,7 @@ Java::byte[].class_eval do
   end
 end
 
-class java::lang::Character
+class lang::Character
   java_alias :isJavaIdentifierStart_char, :isJavaIdentifierStart, [Java::char]
   java_alias :isJavaIdentifierPart_char, :isJavaIdentifierPart, [Java::char]
 

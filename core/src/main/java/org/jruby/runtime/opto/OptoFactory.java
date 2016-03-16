@@ -49,17 +49,7 @@ public class OptoFactory {
     }
 
     public static Invalidator newConstantInvalidator() {
-        if (indyEnabled() && indyConstants()) {
-            try {
-                return new SwitchPointInvalidator();
-            } catch (Error e) {
-                disableIndy();
-                throw e;
-            } catch (Throwable t) {
-                disableIndy();
-            }
-        }
-        return new ObjectIdentityInvalidator();
+        return new SwitchPointInvalidator();
     }
 
     private static Boolean indyEnabled() {

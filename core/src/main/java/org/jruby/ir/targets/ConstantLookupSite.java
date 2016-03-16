@@ -7,16 +7,23 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
 
+import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 
 import static java.lang.invoke.MethodHandles.guardWithTest;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.sig;
 
 /**
  * Created by headius on 1/31/16.
@@ -25,12 +32,29 @@ public class ConstantLookupSite extends MutableCallSite {
     private static final Logger LOG = LoggerFactory.getLogger("ConstantLookupSite");
     private final String name;
     private final boolean publicOnly;
+    private final MethodHandles.Lookup lookup;
 
-    public ConstantLookupSite(MethodType type, String name, boolean publicOnly) {
+    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(ConstantLookupSite.class), "constLookup", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class));
+
+    public ConstantLookupSite(MethodHandles.Lookup lookup, MethodType type, String name, boolean publicOnly) {
         super(type);
 
         this.name = name;
         this.publicOnly = publicOnly;
+        this.lookup = lookup;
+    }
+
+    public static CallSite constLookup(MethodHandles.Lookup lookup, String searchType, MethodType type, String constName, int publicOnly) {
+        ConstantLookupSite site = new ConstantLookupSite(lookup, type, constName, publicOnly == 0 ? false : true);
+
+        MethodHandle handle = Binder
+                .from(lookup, type)
+                .insert(0, site)
+                .invokeVirtualQuiet(lookup, searchType);
+
+        site.setTarget(handle);
+
+        return site;
     }
 
     public IRubyObject searchConst(ThreadContext context, StaticScope staticScope) {

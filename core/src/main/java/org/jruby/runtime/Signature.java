@@ -18,7 +18,18 @@ import org.jruby.util.TypeConverter;
  * A representation of a Ruby method signature (argument layout, min/max, keyword layout, rest args).
  */
 public class Signature {
-    public static enum Rest { NONE, NORM, ANON, STAR }
+    public enum Rest {
+        NONE, NORM, ANON, STAR;
+
+        private static final Rest[] VALUES = values();
+
+        public static Rest fromOrdinal(int ordinal) {
+            if (ordinal < 0 || ordinal >= VALUES.length) {
+                throw new RuntimeException("invalid Rest: " + ordinal);
+            }
+            return VALUES[ordinal];
+        }
+    }
 
     public static final Signature NO_ARGUMENTS = new Signature(0, 0, 0, Rest.NONE, 0, 0, false);
     public static final Signature ONE_ARGUMENT = new Signature(1, 0, 0, Rest.NONE, 0, 0, false);
@@ -243,7 +254,7 @@ public class Signature {
                 (int)(l >> ENCODE_POST_SHIFT) & MAX_ENCODED_ARGS_MASK,
                 (int)(l >> ENCODE_KWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK,
                 (int)(l >> ENCODE_REQKWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK,
-                Rest.values()[(int)((l >> ENCODE_REST_SHIFT) & MAX_ENCODED_ARGS_MASK)],
+                Rest.fromOrdinal((int)((l >> ENCODE_REST_SHIFT) & MAX_ENCODED_ARGS_MASK)),
                 ((int)(l >> ENCODE_RESTKWARGS_SHIFT) & 0x1)==1 ? true : false
 
         );

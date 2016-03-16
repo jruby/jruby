@@ -399,7 +399,7 @@ public class Main {
 
     private Status handleMainExit(MainExitException mee) {
         if (!mee.isAborted()) {
-            config.getOutput().println(mee.getMessage());
+            config.getError().println(mee.getMessage());
             if (mee.isUsageError()) {
                 doPrintUsage(true);
             }

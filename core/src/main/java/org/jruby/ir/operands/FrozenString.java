@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Represents a frozen string value.
  */
-public class FrozenString extends ImmutableLiteral {
+public class FrozenString extends ImmutableLiteral implements Stringable {
     // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 
     public final ByteList bytelist;
