@@ -220,6 +220,10 @@ public abstract class RubyGuards {
         return Layouts.HANDLE.isHandle(object);
     }
 
+    public static boolean isTracePoint(DynamicObject object) {
+        return Layouts.TRACE_POINT.isTracePoint(object);
+    }
+
     // Internal types
 
     public static boolean isThreadLocal(Object value) {

@@ -319,4 +319,9 @@ public class RubyContext extends ExecutionContext {
     public Object getClassVariableDefinitionLock() {
         return classVariableDefinitionLock;
     }
+
+    public Instrumenter getInstrumenter() {
+        return env.lookup(Instrumenter.class);
+    }
+
 }
