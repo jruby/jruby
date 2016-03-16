@@ -13,8 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.EventBinding;
 import com.oracle.truffle.api.instrumentation.EventContext;
@@ -30,7 +28,6 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.ArrayList;
@@ -113,26 +110,26 @@ public class TraceManager {
 
         @Override
         protected void onEnter(VirtualFrame frame) {
-            if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize());
+            if (inTraceFuncProfile.profile(isInTraceFunc)) {
+                return;
+            }
 
-                isInTraceFunc = true;
+            isInTraceFunc = true;
 
-                try {
-                    getYieldNode().dispatch(frame, traceFunc,
-                            event,
-                            getFile(),
-                            getLine(),
-                            context.getCoreLibrary().getNilObject(),
-                            binding,
-                            context.getCoreLibrary().getNilObject());
-                } finally {
-                   isInTraceFunc = false;
-                }
+            try {
+                getYieldNode().dispatch(frame, traceFunc,
+                        event,
+                        getFile(),
+                        getLine(),
+                        context.getCoreLibrary().getNilObject(),
+                        Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize()),
+                        context.getCoreLibrary().getNilObject());
+            } finally {
+                isInTraceFunc = false;
             }
         }
 
-        protected DynamicObject getFile() {
+        private DynamicObject getFile() {
             if (file == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 file = StringOperations.createString(context, context.getRopeTable().getRopeUTF8(getEncapsulatingSourceSection().getSource().getName()));
@@ -141,7 +138,7 @@ public class TraceManager {
             return file;
         }
 
-        protected int getLine() {
+        private int getLine() {
             if (line == 0) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 line = getEncapsulatingSourceSection().getStartLine();
@@ -163,55 +160,47 @@ public class TraceManager {
 
     private class CallEventEventNode extends BaseEventEventNode {
 
-        private final static String callTraceFuncCode = "traceFunc.call(event, file, line, id, binding, classname)";
-
         public CallEventEventNode(RubyContext context, DynamicObject traceFunc, Object event) {
             super(context, traceFunc, event);
         }
 
         @Override
         protected void onEnter(VirtualFrame frame) {
-            if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                callSetTraceFunc(frame.materialize());
+            if (inTraceFuncProfile.profile(isInTraceFunc)) {
+                return;
+            }
+
+            final SourceSection sourceSection = getCallerSourceSection();
+
+            final String file;
+            final int line;
+
+            if (sourceSection.getSource() != null) {
+                file = sourceSection.getSource().getName();
+                line = sourceSection.getStartLine();
+            } else {
+                file = "<internal>";
+                line = -1;
+            }
+
+            isInTraceFunc = true;
+
+            try {
+                getYieldNode().dispatch(frame, traceFunc,
+                        event,
+                        file,
+                        line,
+                        context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame).getName()),
+                        Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize()),
+                        context.getCoreLibrary().getLogicalClass(RubyArguments.getSelf(frame)));
+            } finally {
+                isInTraceFunc = false;
             }
         }
 
         @TruffleBoundary
-        private void callSetTraceFunc(MaterializedFrame frame) {
-            // set_trace_func reports the file and line of the call site.
-            final String filename;
-            final int line;
-            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
-
-            if (sourceSection.getSource() != null) {
-                // Skip over any lines that are a result of the trace function call being made.
-                if (sourceSection.getSource().getCode().equals(callTraceFuncCode)) {
-                    return;
-                }
-
-                filename = sourceSection.getSource().getName();
-                line = sourceSection.getStartLine();
-            } else {
-                filename = "<internal>";
-                line = -1;
-            }
-
-            if (!context.getOptions().INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
-                return;
-            }
-
-            final Object self = RubyArguments.getSelf(frame);
-            final Object classname = context.getCoreLibrary().getLogicalClass(self);
-            final Object id = context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame).getName());
-
-            final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize());
-
-            isInTraceFunc = true;
-            try {
-                context.getCodeLoader().inline(this, frame, callTraceFuncCode, "traceFunc", traceFunc, "event", event, "file", filename, "line", line, "id", id, "binding", binding, "classname", classname);
-            } finally {
-                isInTraceFunc = false;
-            }
+        private SourceSection getCallerSourceSection() {
+            return Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
         }
 
     }

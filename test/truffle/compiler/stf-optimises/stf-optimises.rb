@@ -11,9 +11,11 @@ def foo
   foo * 2
 end
 
-Truffle::Attachments.attach __FILE__, 11 do |binding|
-  binding.local_variable_set(:foo, 100)
-end
+set_trace_func proc { |event, file, line, id, binding, classname|
+  if event == 'line' && file == __FILE__ && line == 11
+    binding.local_variable_set(:foo, 100)
+  end
+}
 
 begin
   loop do
@@ -24,10 +26,10 @@ begin
   end
 rescue RubyTruffleError => e
   if e.message.include? 'Truffle::Primitive.assert_not_compiled'
-    puts 'attachments optimising'
+    puts 'STF optimising'
     exit 0
   elsif e.message.include? 'Truffle::Primitive.assert_constant'
-    puts 'attachments not optimising'
+    puts 'STF not optimising'
     exit 1
   else
     puts 'some other error'
