@@ -96,7 +96,8 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             adapter.pop();
         }
 
-        // call synthetic method if we still need to build dregexp
+        // We may evaluate these operands multiple times or the upstream instrs that created them, which is a bug (jruby/jruby#2798).
+        // However, only one dregexp will ever come out of the indy call.
         callback.run();
         adapter.invokedynamic("dregexp", sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity)), DRegexpObjectSite.BOOTSTRAP, options.toEmbeddedOptions());
 

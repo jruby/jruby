@@ -818,7 +818,12 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) {
         final IRBytecodeAdapter m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
+
+        if (instr.getRegexp() != null) {
+            visit(new Regexp(instr.getRegexp().source().convertToString().getByteList(), instr.getOptions()));
+            jvmStoreLocal(instr.getResult());
+            return;
+        }
 
         RegexpOptions options = instr.getOptions();
         final Operand[] operands = instr.getPieces();
