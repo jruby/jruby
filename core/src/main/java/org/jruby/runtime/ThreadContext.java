@@ -143,6 +143,7 @@ public final class ThreadContext {
 
     private static boolean trySHA1PRNG = true;
 
+    @SuppressWarnings("deprecated")
     public SecureRandom getSecureRandom() {
         SecureRandom secureRandom = this.secureRandom;
         if (secureRandom == null) {
