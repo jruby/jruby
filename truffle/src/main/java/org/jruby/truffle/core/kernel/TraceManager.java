@@ -26,7 +26,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -71,24 +70,21 @@ public class TraceManager {
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LINE_TAG).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
-                final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("line", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
-                return new BaseEventEventNode(context, traceFunc, event);
+                return new BaseEventEventNode(context, traceFunc, context.getCoreStrings().LINE.createInstance());
             }
         }));
 
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CALL_TAG).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
-                final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("call", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
-                return new CallEventEventNode(context, traceFunc, event);
+                return new CallEventEventNode(context, traceFunc, context.getCoreStrings().CALL.createInstance());
             }
         }));
 
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CLASS_TAG).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
-                final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("class", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
-                return new BaseEventEventNode(context, traceFunc, event);
+                return new BaseEventEventNode(context, traceFunc, context.getCoreStrings().CLASS.createInstance());
             }
         }));
 
