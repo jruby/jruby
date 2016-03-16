@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.core.kernel;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -98,6 +100,9 @@ public class TraceManager {
         protected final DynamicObject traceFunc;
         protected final Object event;
 
+        @CompilationFinal private DynamicObject file;
+        @CompilationFinal private int line;
+
         public BaseEventEventNode(RubyContext context, DynamicObject traceFunc, Object event) {
             this.context = context;
             this.traceFunc = traceFunc;
@@ -113,22 +118,33 @@ public class TraceManager {
 
         @TruffleBoundary
         private void callSetTraceFunc(MaterializedFrame frame) {
-            final SourceSection sourceSection = getEncapsulatingSourceSection();
-
-            final DynamicObject file = StringOperations.createString(context, StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
-            final int line = sourceSection.getStartLine();
-
-            final Object classname = context.getCoreLibrary().getNilObject();
-            final Object id = context.getCoreLibrary().getNilObject();
-
             final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame);
 
             isInTraceFunc = true;
+
             try {
-                context.getCodeLoader().inline(this, frame, "traceFunc.call(event, file, line, id, binding, classname)", "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
+                context.getCodeLoader().inline(this, frame, "traceFunc.call(event, file, line, id, binding, classname)", "traceFunc", traceFunc, "event", event, "file", getFile(), "line", getLine(), "id", context.getCoreLibrary().getNilObject(), "binding", binding, "classname", context.getCoreLibrary().getNilObject());
             } finally {
                isInTraceFunc = false;
             }
+        }
+
+        protected DynamicObject getFile() {
+            if (file == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                file = StringOperations.createString(context, StringOperations.encodeRope(getEncapsulatingSourceSection().getSource().getName(), UTF8Encoding.INSTANCE));;
+            }
+
+            return file;
+        }
+
+        protected int getLine() {
+            if (line == 0) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                line = getEncapsulatingSourceSection().getStartLine();
+            }
+
+            return line;
         }
 
     }
@@ -168,8 +184,6 @@ public class TraceManager {
                 line = -1;
             }
 
-            final DynamicObject file = StringOperations.createString(context, StringOperations.encodeRope(filename, UTF8Encoding.INSTANCE));
-
             if (!context.getOptions().INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
                 return;
             }
@@ -182,7 +196,7 @@ public class TraceManager {
 
             isInTraceFunc = true;
             try {
-                context.getCodeLoader().inline(this, frame, callTraceFuncCode, "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
+                context.getCodeLoader().inline(this, frame, callTraceFuncCode, "traceFunc", traceFunc, "event", event, "file", filename, "line", line, "id", id, "binding", binding, "classname", classname);
             } finally {
                 isInTraceFunc = false;
             }
