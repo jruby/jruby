@@ -90,13 +90,13 @@ public class TraceManager {
 
     }
 
-    private final class BaseEventEventNode extends ExecutionEventNode {
+    private class BaseEventEventNode extends ExecutionEventNode {
 
-        private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
+        protected final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
 
-        private final RubyContext context;
-        private final DynamicObject traceFunc;
-        private final Object event;
+        protected final RubyContext context;
+        protected final DynamicObject traceFunc;
+        protected final Object event;
 
         public BaseEventEventNode(RubyContext context, DynamicObject traceFunc, Object event) {
             this.context = context;
@@ -133,20 +133,12 @@ public class TraceManager {
 
     }
 
-    private final class CallEventEventNode extends ExecutionEventNode {
-
-        private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
+    private class CallEventEventNode extends BaseEventEventNode {
 
         private final static String callTraceFuncCode = "traceFunc.call(event, file, line, id, binding, classname)";
 
-        private final RubyContext context;
-        private final DynamicObject traceFunc;
-        private final Object event;
-
         public CallEventEventNode(RubyContext context, DynamicObject traceFunc, Object event) {
-            this.context = context;
-            this.traceFunc = traceFunc;
-            this.event = event;
+            super(context, traceFunc, event);
         }
 
         @Override
