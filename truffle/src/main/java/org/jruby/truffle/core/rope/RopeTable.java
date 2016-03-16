@@ -12,8 +12,11 @@ package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 
 import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -23,6 +26,14 @@ public class RopeTable {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final WeakHashMap<Key, WeakReference<Rope>> ropesTable = new WeakHashMap<>();
+
+    @CompilerDirectives.TruffleBoundary
+    public Rope getRopeUTF8(String string) {
+        return getRope(
+                string.getBytes(StandardCharsets.UTF_8),
+                UTF8Encoding.INSTANCE,
+                CodeRange.CR_VALID);
+    }
 
     @CompilerDirectives.TruffleBoundary
     public Rope getRope(byte[] bytes, Encoding encoding, CodeRange codeRange) {

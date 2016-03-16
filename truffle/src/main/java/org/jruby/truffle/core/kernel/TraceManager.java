@@ -25,7 +25,6 @@ import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
@@ -136,7 +135,7 @@ public class TraceManager {
         protected DynamicObject getFile() {
             if (file == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                file = StringOperations.createString(context, StringOperations.encodeRope(getEncapsulatingSourceSection().getSource().getName(), UTF8Encoding.INSTANCE));
+                file = StringOperations.createString(context, context.getRopeTable().getRopeUTF8(getEncapsulatingSourceSection().getSource().getName()));
             }
 
             return file;
