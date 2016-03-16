@@ -93,7 +93,7 @@ public abstract class SharedObjects {
     }
 
     public static boolean isShared(Shape shape) {
-        return Options.SHARED_OBJECTS && shape.hasProperty(SHARED);
+        return Options.SHARED_OBJECTS && (Options.SHARED_OBJECTS_SHARE_ALL || shape.hasProperty(SHARED));
     }
 
     public static void writeBarrier(Object value) {
