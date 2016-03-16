@@ -32,6 +32,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -100,6 +101,8 @@ public class TraceManager {
         protected final DynamicObject traceFunc;
         protected final Object event;
 
+        @Child private YieldNode yieldNode;
+
         @CompilationFinal private DynamicObject file;
         @CompilationFinal private int line;
 
@@ -112,27 +115,28 @@ public class TraceManager {
         @Override
         protected void onEnter(VirtualFrame frame) {
             if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                callSetTraceFunc(frame.materialize());
-            }
-        }
+                final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize());
 
-        @TruffleBoundary
-        private void callSetTraceFunc(MaterializedFrame frame) {
-            final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame);
+                isInTraceFunc = true;
 
-            isInTraceFunc = true;
-
-            try {
-                context.getCodeLoader().inline(this, frame, "traceFunc.call(event, file, line, id, binding, classname)", "traceFunc", traceFunc, "event", event, "file", getFile(), "line", getLine(), "id", context.getCoreLibrary().getNilObject(), "binding", binding, "classname", context.getCoreLibrary().getNilObject());
-            } finally {
-               isInTraceFunc = false;
+                try {
+                    getYieldNode().dispatch(frame, traceFunc,
+                            event,
+                            getFile(),
+                            getLine(),
+                            context.getCoreLibrary().getNilObject(),
+                            binding,
+                            context.getCoreLibrary().getNilObject());
+                } finally {
+                   isInTraceFunc = false;
+                }
             }
         }
 
         protected DynamicObject getFile() {
             if (file == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                file = StringOperations.createString(context, StringOperations.encodeRope(getEncapsulatingSourceSection().getSource().getName(), UTF8Encoding.INSTANCE));;
+                file = StringOperations.createString(context, StringOperations.encodeRope(getEncapsulatingSourceSection().getSource().getName(), UTF8Encoding.INSTANCE));
             }
 
             return file;
@@ -145,6 +149,15 @@ public class TraceManager {
             }
 
             return line;
+        }
+
+        protected YieldNode getYieldNode() {
+            if (yieldNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                yieldNode = insert(new YieldNode(context));
+            }
+
+            return yieldNode;
         }
 
     }
