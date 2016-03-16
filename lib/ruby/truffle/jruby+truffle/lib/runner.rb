@@ -151,7 +151,7 @@ class JRubyTruffleRunner
         readme: {
             help: ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false]
         }
-    }
+    }.each { |group, options| options.each { |name, definition| definition.last.freeze } }
   end
 
   begin
@@ -334,7 +334,7 @@ class JRubyTruffleRunner
 
   def self.default_option_values(group_options)
     group_options.each_with_object({}) do |(option, data), group_option_defaults|
-      *args, block, default         = data
+      *args, block, default = data
       unless [TrueClass, FalseClass, NilClass, Fixnum].any? { |v| v === default }
         default = default.clone
       end
