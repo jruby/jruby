@@ -95,19 +95,9 @@ public class BacktraceFormatter {
         final List<Activation> activations = backtrace.getActivations();
         final ArrayList<String> lines = new ArrayList<>();
 
-        try {
-            lines.add(formatInLine(activations, exception));
-        } catch (Exception e) {
-            if (context.getOptions().EXCEPTIONS_PRINT_JAVA) {
-                e.printStackTrace();
-            }
-
-            lines.add(String.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
-        }
-
-        for (int n = 1; n < activations.size(); n++) {
+        for (int n = 0; n < activations.size(); n++) {
             try {
-                lines.add(formatFromLine(activations, n));
+                lines.add(formatLine(activations, n, exception));
             } catch (Exception e) {
                 if (context.getOptions().EXCEPTIONS_PRINT_JAVA) {
                     e.printStackTrace();
@@ -124,84 +114,7 @@ public class BacktraceFormatter {
         return lines;
     }
 
-    private String formatInLine(List<Activation> activations, DynamicObject exception) {
-        final StringBuilder builder = new StringBuilder();
-
-        if (activations.isEmpty()) {
-            throw new UnsupportedOperationException("At least one activation is required.");
-        }
-
-        final Activation activation = activations.get(0);
-
-        if (activation == Activation.OMITTED_LIMIT) {
-            return OMITTED_LIMIT;
-        }
-
-        if (activation == Activation.OMITTED_UNUSED) {
-            return OMITTED_UNUSED;
-        }
-
-        if (activation.getCallNode().getRootNode() instanceof RubyRootNode) {
-            final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
-            final SourceSection reportedSourceSection;
-            final String reportedName;
-
-            if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
-                reportedSourceSection = nextUserSourceSection(activations, 1);
-                reportedName = activation.getMethod().getName();
-            } else {
-                reportedSourceSection = sourceSection;
-                reportedName = reportedSourceSection.getIdentifier();
-            }
-
-            if (reportedSourceSection == null || reportedSourceSection.getSource() == null) {
-                builder.append("???");
-            } else {
-                builder.append(reportedSourceSection.getSource().getName());
-                builder.append(":");
-                builder.append(reportedSourceSection.getStartLine());
-                builder.append(":in `");
-                builder.append(reportedName);
-                builder.append("'");
-            }
-        } else {
-            builder.append(formatForeign(activation.getCallNode()));
-        }
-
-        if (!flags.contains(FormattingFlags.OMIT_EXCEPTION) && exception != null) {
-            String message;
-            try {
-                Object messageObject = context.send(exception, "message", null);
-                if (RubyGuards.isRubyString(messageObject)) {
-                    message = messageObject.toString();
-                } else {
-                    message = Layouts.EXCEPTION.getMessage(exception).toString();
-                }
-            } catch (RaiseException e) {
-                message = Layouts.EXCEPTION.getMessage(exception).toString();
-            }
-
-            builder.append(": ");
-            builder.append(message);
-            builder.append(" (");
-            builder.append(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName());
-            builder.append(")");
-        }
-
-        return builder.toString();
-    }
-
-    private String formatFromLine(List<Activation> activations, int n) {
-        final String formattedLine = formatLine(activations, n);
-
-        if (flags.contains(FormattingFlags.OMIT_FROM_PREFIX)) {
-            return formattedLine;
-        } else {
-            return "\tfrom " + formattedLine;
-        }
-    }
-
-    public String formatLine(List<Activation> activations, int n) {
+    public String formatLine(List<Activation> activations, int n, DynamicObject exception) {
         final Activation activation = activations.get(n);
 
         if (activation == Activation.OMITTED_LIMIT) {
@@ -213,6 +126,10 @@ public class BacktraceFormatter {
         }
 
         final StringBuilder builder = new StringBuilder();
+
+        if (!flags.contains(FormattingFlags.OMIT_FROM_PREFIX) && n > 0) {
+            builder.append("\tfrom ");
+        }
 
         if (activation.getCallNode().getRootNode() instanceof RubyRootNode) {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -247,6 +164,26 @@ public class BacktraceFormatter {
             builder.append("'");
         } else {
             builder.append(formatForeign(activation.getCallNode()));
+        }
+
+        if (!flags.contains(FormattingFlags.OMIT_EXCEPTION) && exception != null && n == 0) {
+            String message;
+            try {
+                Object messageObject = context.send(exception, "message", null);
+                if (RubyGuards.isRubyString(messageObject)) {
+                    message = messageObject.toString();
+                } else {
+                    message = Layouts.EXCEPTION.getMessage(exception).toString();
+                }
+            } catch (RaiseException e) {
+                message = Layouts.EXCEPTION.getMessage(exception).toString();
+            }
+
+            builder.append(": ");
+            builder.append(message);
+            builder.append(" (");
+            builder.append(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName());
+            builder.append(")");
         }
 
         return builder.toString();
