@@ -18,7 +18,7 @@ import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
-class InteropGetSizeProperty extends RubyNode {
+public class InteropGetSizeProperty extends RubyNode {
 
     @Child private DispatchHeadNode head;
     public InteropGetSizeProperty(RubyContext context, SourceSection sourceSection) {

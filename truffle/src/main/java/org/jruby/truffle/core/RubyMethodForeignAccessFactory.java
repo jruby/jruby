@@ -11,11 +11,11 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
-import org.jruby.truffle.interop.InteropNode;
+import org.jruby.truffle.interop.InteropExecute;
 import org.jruby.truffle.interop.RubyInteropRootNode;
+import org.jruby.truffle.language.literal.BooleanLiteralNode;
 
 public class RubyMethodForeignAccessFactory extends BasicObjectForeignAccessFactory {
 
@@ -25,12 +25,12 @@ public class RubyMethodForeignAccessFactory extends BasicObjectForeignAccessFact
 
     @Override
     public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNullFalse(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new BooleanLiteralNode(context, null, false)));
     }
 
     @Override
     public CallTarget accessIsExecutable() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutableTrue(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new BooleanLiteralNode(context, null, true)));
     }
 
     @Override
@@ -45,7 +45,7 @@ public class RubyMethodForeignAccessFactory extends BasicObjectForeignAccessFact
 
     @Override
     public CallTarget accessExecute(int i) {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecute(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropExecute(context, null)));
     }
 
     @Override

@@ -20,7 +20,7 @@ public class RubyInteropRootNode extends RootNode implements InternalRootNode {
     @Child private RubyNode node;
 
     public RubyInteropRootNode(RubyNode node) {
-        super(RubyLanguage.class, node.getSourceSection(), null);
+        super(RubyLanguage.class, null, null);
         this.node = node;
     }
 

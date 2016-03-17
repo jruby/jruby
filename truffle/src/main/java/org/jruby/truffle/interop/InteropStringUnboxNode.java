@@ -17,7 +17,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 
-class InteropStringUnboxNode extends RubyNode {
+public class InteropStringUnboxNode extends RubyNode {
 
     public InteropStringUnboxNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

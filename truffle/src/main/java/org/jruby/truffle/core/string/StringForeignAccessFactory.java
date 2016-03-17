@@ -11,12 +11,14 @@ package org.jruby.truffle.core.string;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.interop.Message;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
-import org.jruby.truffle.interop.InteropNode;
+import org.jruby.truffle.interop.InteropGetSizeProperty;
+import org.jruby.truffle.interop.InteropStringIsBoxed;
+import org.jruby.truffle.interop.InteropStringUnboxNode;
 import org.jruby.truffle.interop.RubyInteropRootNode;
+import org.jruby.truffle.interop.UnresolvedInteropStringReadNode;
+import org.jruby.truffle.language.literal.BooleanLiteralNode;
 
 public class StringForeignAccessFactory extends BasicObjectForeignAccessFactory {
 
@@ -26,32 +28,32 @@ public class StringForeignAccessFactory extends BasicObjectForeignAccessFactory 
 
     @Override
     public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNullFalse(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new BooleanLiteralNode(context, null, false)));
     }
 
     @Override
     public CallTarget accessIsBoxed() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringIsBoxed(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropStringIsBoxed(context, null)));
     }
 
     @Override
     public CallTarget accessHasSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyTrue(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new BooleanLiteralNode(context, null, true)));
     }
 
     @Override
     public CallTarget accessGetSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createGetSize(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropGetSizeProperty(context, null)));
     }
 
     @Override
     public CallTarget accessUnbox() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringUnbox(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropStringUnboxNode(context, null)));
     }
 
     @Override
     public CallTarget accessRead() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringRead(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new UnresolvedInteropStringReadNode(context, null)));
     }
 
 }

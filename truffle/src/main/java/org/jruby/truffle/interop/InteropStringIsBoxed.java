@@ -18,7 +18,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
-class InteropStringIsBoxed extends RubyNode {
+public class InteropStringIsBoxed extends RubyNode {
 
     public InteropStringIsBoxed(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

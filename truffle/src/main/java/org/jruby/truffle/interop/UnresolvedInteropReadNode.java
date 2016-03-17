@@ -20,7 +20,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 
-class UnresolvedInteropReadNode extends RubyNode {
+public class UnresolvedInteropReadNode extends RubyNode {
 
     private final int labelIndex;
 

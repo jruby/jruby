@@ -11,20 +11,15 @@ package org.jruby.truffle.core.basicobject;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
-import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.interop.InteropNode;
+import org.jruby.truffle.interop.InteropIsNull;
 import org.jruby.truffle.interop.RubyInteropRootNode;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.backtrace.InternalRootNode;
+import org.jruby.truffle.interop.UnresolvedInteropExecuteAfterReadNode;
+import org.jruby.truffle.interop.UnresolvedInteropReadNode;
+import org.jruby.truffle.interop.UnresolvedInteropWriteNode;
+import org.jruby.truffle.language.literal.BooleanLiteralNode;
 
 public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 {
 
@@ -36,22 +31,22 @@ public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 
 
     @Override
     public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNull(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropIsNull(context, null)));
     }
 
     @Override
     public CallTarget accessIsExecutable() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutableFalse(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new BooleanLiteralNode(context, null, false)));
     }
 
     @Override
     public CallTarget accessIsBoxed() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsBoxedPrimitive(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new BooleanLiteralNode(context, null, false)));
     }
 
     @Override
     public CallTarget accessHasSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyFalse(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new BooleanLiteralNode(context, null, false)));
     }
 
     @Override
@@ -66,12 +61,12 @@ public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 
 
     @Override
     public CallTarget accessRead() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createRead(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new UnresolvedInteropReadNode(context, null)));
     }
 
     @Override
     public CallTarget accessWrite() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createWrite(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new UnresolvedInteropWriteNode(context, null)));
     }
 
     @Override
@@ -81,7 +76,7 @@ public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 
 
     @Override
     public CallTarget accessInvoke(int arity) {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, SourceSection.createUnavailable("", ""), arity)));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new UnresolvedInteropExecuteAfterReadNode(context, null, arity)));
     }
 
     @Override
