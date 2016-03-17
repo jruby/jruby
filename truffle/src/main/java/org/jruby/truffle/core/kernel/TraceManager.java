@@ -28,6 +28,8 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.objects.LogicalClassNode;
+import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.ArrayList;
@@ -160,6 +162,8 @@ public class TraceManager {
 
     private class CallEventEventNode extends BaseEventEventNode {
 
+        @Child private LogicalClassNode logicalClassNode;
+
         public CallEventEventNode(RubyContext context, DynamicObject traceFunc, Object event) {
             super(context, traceFunc, event);
         }
@@ -192,7 +196,7 @@ public class TraceManager {
                         line,
                         context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame).getName()),
                         Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize()),
-                        context.getCoreLibrary().getLogicalClass(RubyArguments.getSelf(frame)));
+                        getLogicalClass(RubyArguments.getSelf(frame)));
             } finally {
                 isInTraceFunc = false;
             }
@@ -206,6 +210,15 @@ public class TraceManager {
         @TruffleBoundary
         private DynamicObject getFile(String file) {
             return StringOperations.createString(context, context.getRopeTable().getRopeUTF8(file));
+        }
+
+        private DynamicObject getLogicalClass(Object object) {
+            if (logicalClassNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                logicalClassNode = insert(LogicalClassNodeGen.create(context, null, null));
+            }
+
+            return logicalClassNode.executeLogicalClass(object);
         }
 
     }
