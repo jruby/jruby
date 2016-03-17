@@ -37,12 +37,13 @@ public abstract class ExceptionNodes {
 
     @TruffleBoundary
     public static DynamicObject backtraceAsRubyStringArray(RubyContext context, DynamicObject exception, Backtrace backtrace) {
-        final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX, BacktraceFormatter.FormattingFlags.OMIT_EXCEPTION))
-                .formatBacktrace(context, exception, backtrace);
+        final List<String> lines = new BacktraceFormatter(context,
+                EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX,
+                        BacktraceFormatter.FormattingFlags.OMIT_EXCEPTION)).formatBacktrace(context, exception, backtrace);
 
         final Object[] array = new Object[lines.size()];
 
-        for (int n = 0;n < lines.size(); n++) {
+        for (int n = 0; n < lines.size(); n++) {
             array[n] = StringOperations.createString(context, StringOperations.encodeRope(lines.get(n), UTF8Encoding.INSTANCE));
         }
 
