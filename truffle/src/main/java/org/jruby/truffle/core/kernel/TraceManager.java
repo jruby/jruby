@@ -188,7 +188,7 @@ public class TraceManager {
             try {
                 getYieldNode().dispatch(frame, traceFunc,
                         event,
-                        file,
+                        getFile(file),
                         line,
                         context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame).getName()),
                         Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize()),
@@ -201,6 +201,11 @@ public class TraceManager {
         @TruffleBoundary
         private SourceSection getCallerSourceSection() {
             return Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+        }
+
+        @TruffleBoundary
+        private DynamicObject getFile(String file) {
+            return StringOperations.createString(context, context.getRopeTable().getRopeUTF8(file));
         }
 
     }
