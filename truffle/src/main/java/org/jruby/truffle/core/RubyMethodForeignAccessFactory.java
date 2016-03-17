@@ -24,36 +24,6 @@ public class RubyMethodForeignAccessFactory extends BasicObjectForeignAccessFact
     }
 
     @Override
-    public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNull(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessIsExecutable() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessIsBoxed() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsBoxedPrimitive(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessHasSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyFalse(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessGetSize() {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessUnbox() {
-        return null;
-    }
-
-    @Override
     public CallTarget accessRead() {
         return null;
     }
@@ -70,16 +40,6 @@ public class RubyMethodForeignAccessFactory extends BasicObjectForeignAccessFact
 
     @Override
     public CallTarget accessInvoke(int i) {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessNew(int argumentsLength) {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessMessage(com.oracle.truffle.api.interop.Message msg) {
         return null;
     }
 

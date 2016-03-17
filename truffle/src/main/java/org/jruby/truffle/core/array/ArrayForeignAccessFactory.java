@@ -25,21 +25,6 @@ public class ArrayForeignAccessFactory extends BasicObjectForeignAccessFactory {
     }
 
     @Override
-    public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNull(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessIsExecutable() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessIsBoxed() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsBoxedPrimitive(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
     public CallTarget accessHasSize() {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyTrue(context, SourceSection.createUnavailable("", ""))));
     }
@@ -47,41 +32,6 @@ public class ArrayForeignAccessFactory extends BasicObjectForeignAccessFactory {
     @Override
     public CallTarget accessGetSize() {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createGetSize(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessUnbox() {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessRead() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createRead(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessWrite() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createWrite(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessExecute(int i) {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessInvoke(int arity) {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, SourceSection.createUnavailable("", ""), arity)));
-    }
-
-    @Override
-    public CallTarget accessNew(int argumentsLength) {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessMessage(Message msg) {
-        return null;
     }
 
 }

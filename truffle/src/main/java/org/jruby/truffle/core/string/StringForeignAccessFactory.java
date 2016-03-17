@@ -25,16 +25,6 @@ public class StringForeignAccessFactory extends BasicObjectForeignAccessFactory 
     }
 
     @Override
-    public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNull(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessIsExecutable() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
     public CallTarget accessIsBoxed() {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringIsBoxed(context, SourceSection.createUnavailable("", ""))));
     }
@@ -57,31 +47,6 @@ public class StringForeignAccessFactory extends BasicObjectForeignAccessFactory 
     @Override
     public CallTarget accessRead() {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringRead(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessWrite() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createWrite(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessExecute(int arity) {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessInvoke(int arity) {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, SourceSection.createUnavailable("", ""), arity)));
-    }
-
-    @Override
-    public CallTarget accessNew(int argumentsLength) {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessMessage(Message msg) {
-        return null;
     }
 
 }
