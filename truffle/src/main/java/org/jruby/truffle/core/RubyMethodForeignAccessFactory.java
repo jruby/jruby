@@ -38,9 +38,4 @@ public class RubyMethodForeignAccessFactory extends BasicObjectForeignAccessFact
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropExecute(context, null)));
     }
 
-    @Override
-    public CallTarget accessInvoke(int i) {
-        return null;
-    }
-
 }
