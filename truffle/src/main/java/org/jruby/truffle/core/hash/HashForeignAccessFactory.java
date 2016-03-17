@@ -16,22 +16,15 @@ import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.basicobject.BasicForeignAccessFactory;
 import org.jruby.truffle.interop.InteropNode;
 import org.jruby.truffle.interop.RubyInteropRootNode;
 import org.jruby.truffle.language.RubyGuards;
 
-public class HashForeignAccessFactory implements ForeignAccess.Factory10, ForeignAccess.Factory {
-
-    private final RubyContext context;
+public class HashForeignAccessFactory extends BasicForeignAccessFactory {
 
     public HashForeignAccessFactory(RubyContext context) {
-        this.context = context;
-    }
-
-
-    @Override
-    public boolean canHandle(TruffleObject to) {
-        return RubyGuards.isRubyHash(to);
+        super(context);
     }
 
     @Override
@@ -82,16 +75,6 @@ public class HashForeignAccessFactory implements ForeignAccess.Factory10, Foreig
     @Override
     public CallTarget accessInvoke(int arity) {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, SourceSection.createUnavailable("", ""), arity)));
-    }
-
-    @Override
-    public CallTarget accessNew(int argumentsLength) {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessMessage(Message msg) {
-        return null;
     }
 
 }

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -21,12 +22,13 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.interop.InteropNode;
 import org.jruby.truffle.interop.RubyInteropRootNode;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 
 public class BasicForeignAccessFactory implements ForeignAccess.Factory10 {
 
-    private final RubyContext context;
+    protected final RubyContext context;
 
     public BasicForeignAccessFactory(RubyContext context) {
         this.context = context;
