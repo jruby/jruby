@@ -12,6 +12,7 @@ package org.jruby.truffle.interop;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.literal.BooleanLiteralNode;
 
 public abstract class InteropNode extends RubyNode {
 
@@ -31,8 +32,12 @@ public abstract class InteropNode extends RubyNode {
         return new UnresolvedInteropExecuteAfterReadNode(context, sourceSection, arity);
     }
 
-    public static RubyNode createIsExecutable(final RubyContext context, final SourceSection sourceSection) {
-        return new InteropIsExecutable(context, sourceSection);
+    public static RubyNode createIsExecutableTrue(final RubyContext context, final SourceSection sourceSection) {
+        return new BooleanLiteralNode(context, sourceSection, true);
+    }
+
+    public static RubyNode createIsExecutableFalse(final RubyContext context, final SourceSection sourceSection) {
+        return new BooleanLiteralNode(context, sourceSection, false);
     }
     
     public static RubyNode createExecute(final RubyContext context, final SourceSection sourceSection) {
@@ -40,19 +45,23 @@ public abstract class InteropNode extends RubyNode {
     }
 
     public static RubyNode createIsBoxedPrimitive(final RubyContext context, final SourceSection sourceSection) {
-        return new InteropIsBoxedPrimitive(context, sourceSection);
+        return new BooleanLiteralNode(context, sourceSection, false);
     }
 
     public static RubyNode createIsNull(final RubyContext context, final SourceSection sourceSection) {
         return new InteropIsNull(context, sourceSection);
     }
 
+    public static RubyNode createIsNullFalse(final RubyContext context, final SourceSection sourceSection) {
+        return new BooleanLiteralNode(context, sourceSection, false);
+    }
+
     public static RubyNode createHasSizePropertyFalse(final RubyContext context, final SourceSection sourceSection) {
-        return new InteropHasSizePropertyFalse(context, sourceSection);
+        return new BooleanLiteralNode(context, sourceSection, false);
     }
 
     public static RubyNode createHasSizePropertyTrue(final RubyContext context, final SourceSection sourceSection) {
-        return new InteropHasSizePropertyTrue(context, sourceSection);
+        return new BooleanLiteralNode(context, sourceSection, true);
     }
 
     public static RubyNode createGetSize(RubyContext context, final SourceSection sourceSection) {

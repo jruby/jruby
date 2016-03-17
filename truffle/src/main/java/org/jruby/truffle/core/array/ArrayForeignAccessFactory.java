@@ -25,6 +25,11 @@ public class ArrayForeignAccessFactory extends BasicObjectForeignAccessFactory {
     }
 
     @Override
+    public CallTarget accessIsNull() {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNullFalse(context, SourceSection.createUnavailable("", ""))));
+    }
+
+    @Override
     public CallTarget accessHasSize() {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyTrue(context, SourceSection.createUnavailable("", ""))));
     }

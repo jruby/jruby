@@ -41,7 +41,7 @@ public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 
 
     @Override
     public CallTarget accessIsExecutable() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutableFalse(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
