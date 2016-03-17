@@ -17,7 +17,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RubyMethodForeignAccessFactory;
 import org.jruby.truffle.core.array.ArrayForeignAccessFactory;
-import org.jruby.truffle.core.basicobject.BasicForeignAccessFactory;
+import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
 import org.jruby.truffle.core.hash.HashForeignAccessFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringForeignAccessFactory;
@@ -47,19 +47,21 @@ public class RubyObjectType extends ObjectType {
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (Layouts.METHOD.isMethod(object)) {
-            return RubyMethodForeignAccessFactory.create(getContext());
-        } else if (Layouts.PROC.isProc(object)) {
-            return RubyMethodForeignAccessFactory.create(getContext());
+        final ForeignAccess.Factory10 factory;
+
+        if (Layouts.METHOD.isMethod(object) || Layouts.PROC.isProc(object)) {
+            factory = new RubyMethodForeignAccessFactory(getContext());
         } else if (Layouts.ARRAY.isArray(object)) {
-            return ArrayForeignAccessFactory.create(getContext());
+            factory = new ArrayForeignAccessFactory(getContext());
         } else if (Layouts.HASH.isHash(object)) {
-            return HashForeignAccessFactory.create(getContext());
+            factory = new HashForeignAccessFactory(getContext());
         } else if (Layouts.STRING.isString(object)) {
-            return StringForeignAccessFactory.create(getContext());
+            factory = new StringForeignAccessFactory(getContext());
         } else {
-            return BasicForeignAccessFactory.create(getContext());
+            factory = new BasicObjectForeignAccessFactory(getContext());
         }
+
+        return ForeignAccess.create(DynamicObject.class, factory);
     }
 
     private RubyContext getContext() {

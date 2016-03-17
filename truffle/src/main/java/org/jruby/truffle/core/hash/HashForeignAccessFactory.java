@@ -11,115 +11,31 @@ package org.jruby.truffle.core.hash;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.interop.ForeignAccess;
-import com.oracle.truffle.api.interop.Message;
-import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.interop.InteropNode;
-import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.backtrace.InternalRootNode;
+import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
+import org.jruby.truffle.interop.InteropGetSizeProperty;
+import org.jruby.truffle.interop.RubyInteropRootNode;
+import org.jruby.truffle.language.literal.BooleanLiteralNode;
 
-public class HashForeignAccessFactory implements ForeignAccess.Factory10, ForeignAccess.Factory {
+public class HashForeignAccessFactory extends BasicObjectForeignAccessFactory {
 
-    private final RubyContext context;
-
-    private HashForeignAccessFactory(RubyContext context) {
-        this.context = context;
-    }
-
-    public static ForeignAccess create(RubyContext context) {
-        final HashForeignAccessFactory hashFactory = new HashForeignAccessFactory(context);
-        return ForeignAccess.create(null, hashFactory);
-    }
-
-
-    @Override
-    public boolean canHandle(TruffleObject to) {
-        return RubyGuards.isRubyHash(to);
+    public HashForeignAccessFactory(RubyContext context) {
+        super(context);
     }
 
     @Override
     public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNull(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessIsExecutable() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessIsBoxed() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsBoxedPrimitive(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new BooleanLiteralNode(context, null, false)));
     }
 
     @Override
     public CallTarget accessHasSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyTrue(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new BooleanLiteralNode(context, null, true)));
     }
 
     @Override
     public CallTarget accessGetSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createGetSize(context, SourceSection.createUnavailable("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropGetSizeProperty(context, null)));
     }
 
-    @Override
-    public CallTarget accessUnbox() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsBoxedPrimitive(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessRead() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createRead(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessWrite() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createWrite(context, SourceSection.createUnavailable("", ""))));
-    }
-
-    @Override
-    public CallTarget accessExecute(int i) {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessInvoke(int arity) {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, SourceSection.createUnavailable("", ""), arity)));
-    }
-
-    @Override
-    public CallTarget accessNew(int argumentsLength) {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessMessage(Message msg) {
-        return null;
-    }
-
-    protected static final class RubyInteropRootNode extends RootNode implements InternalRootNode {
-
-        @Child private RubyNode node;
-
-        public RubyInteropRootNode(RubyNode node) {
-            super(RubyLanguage.class, node.getSourceSection(), null);
-            this.node = node;
-        }
-
-        @Override
-        public Object execute(VirtualFrame virtualFrame) {
-            return node.execute(virtualFrame);
-        }
-
-        @Override
-        public String toString() {
-            return "Root of: " + node.toString();
-        }
-    }
 }

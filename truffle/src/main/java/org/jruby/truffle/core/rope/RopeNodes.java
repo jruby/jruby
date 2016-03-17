@@ -30,7 +30,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.util.ByteList;
-import org.jruby.util.ByteListHolder;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
