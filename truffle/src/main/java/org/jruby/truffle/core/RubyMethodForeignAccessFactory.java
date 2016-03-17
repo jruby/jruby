@@ -34,16 +34,6 @@ public class RubyMethodForeignAccessFactory extends BasicObjectForeignAccessFact
     }
 
     @Override
-    public CallTarget accessRead() {
-        return null;
-    }
-
-    @Override
-    public CallTarget accessWrite() {
-        return null;
-    }
-
-    @Override
     public CallTarget accessExecute(int i) {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropExecute(context, null)));
     }
