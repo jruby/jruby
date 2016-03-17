@@ -28,12 +28,8 @@ public class BasicForeignAccessFactory implements ForeignAccess.Factory10 {
 
     private final RubyContext context;
 
-    private BasicForeignAccessFactory(RubyContext context) {
+    public BasicForeignAccessFactory(RubyContext context) {
         this.context = context;
-    }
-
-    public static ForeignAccess create(RubyContext context) {
-        return ForeignAccess.create(DynamicObject.class, new BasicForeignAccessFactory(context));
     }
 
     @Override

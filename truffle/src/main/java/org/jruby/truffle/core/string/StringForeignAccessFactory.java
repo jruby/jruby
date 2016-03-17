@@ -28,12 +28,8 @@ public class StringForeignAccessFactory implements ForeignAccess.Factory10 {
 
     private final RubyContext context;
 
-    private StringForeignAccessFactory(RubyContext context) {
+    public StringForeignAccessFactory(RubyContext context) {
         this.context = context;
-    }
-
-    public static ForeignAccess create(RubyContext context) {
-        return ForeignAccess.create(DynamicObject.class, new StringForeignAccessFactory(context));
     }
 
     @Override

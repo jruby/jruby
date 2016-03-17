@@ -24,13 +24,8 @@ public class HashForeignAccessFactory implements ForeignAccess.Factory10, Foreig
 
     private final RubyContext context;
 
-    private HashForeignAccessFactory(RubyContext context) {
+    public HashForeignAccessFactory(RubyContext context) {
         this.context = context;
-    }
-
-    public static ForeignAccess create(RubyContext context) {
-        final HashForeignAccessFactory hashFactory = new HashForeignAccessFactory(context);
-        return ForeignAccess.create(null, hashFactory);
     }
 
 

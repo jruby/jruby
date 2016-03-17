@@ -26,12 +26,8 @@ import org.jruby.truffle.language.backtrace.InternalRootNode;
 public class RubyMethodForeignAccessFactory implements ForeignAccess.Factory10 {
     private final RubyContext context;
 
-    private RubyMethodForeignAccessFactory(RubyContext context) {
+    public RubyMethodForeignAccessFactory(RubyContext context) {
         this.context = context;
-    }
-
-    public static ForeignAccess create(RubyContext context) {
-        return ForeignAccess.create(DynamicObject.class, new RubyMethodForeignAccessFactory(context));
     }
 
     @Override
