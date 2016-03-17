@@ -5198,10 +5198,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
     private boolean needsWriteConversion(ThreadContext context) {
-        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+        boolean notAscii8bit = enc != null && enc != context.runtime.getEncodingService().getAscii8bitEncoding();
 
-        return (enc != null && enc != ascii8bit) || openFile.isTextMode() ||
-                (ecflags & ((EncodingUtils.ECONV_DECORATOR_MASK & ~EncodingUtils.ECONV_CRLF_NEWLINE_DECORATOR)|EncodingUtils.ECONV_STATEFUL_DECORATOR_MASK)) != 0;
+        if (Platform.IS_WINDOWS) {
+            return notAscii8bit || (ecflags & ((EncodingUtils.ECONV_DECORATOR_MASK & ~EncodingUtils.ECONV_CRLF_NEWLINE_DECORATOR)|EncodingUtils.ECONV_STATEFUL_DECORATOR_MASK)) != 0;
+        } else {
+            return notAscii8bit || openFile.isTextMode() || (ecflags & (EncodingUtils.ECONV_DECORATOR_MASK|EncodingUtils.ECONV_STATEFUL_DECORATOR_MASK)) != 0;
+        }
     }
 
     // MRI: make_readconv
