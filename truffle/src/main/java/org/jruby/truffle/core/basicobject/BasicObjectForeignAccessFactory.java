@@ -26,11 +26,11 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 
-public class BasicForeignAccessFactory implements ForeignAccess.Factory10 {
+public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 {
 
     protected final RubyContext context;
 
-    public BasicForeignAccessFactory(RubyContext context) {
+    public BasicObjectForeignAccessFactory(RubyContext context) {
         this.context = context;
     }
 

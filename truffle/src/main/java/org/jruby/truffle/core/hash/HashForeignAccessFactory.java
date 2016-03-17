@@ -11,17 +11,13 @@ package org.jruby.truffle.core.hash;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.interop.ForeignAccess;
-import com.oracle.truffle.api.interop.Message;
-import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.basicobject.BasicForeignAccessFactory;
+import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
 import org.jruby.truffle.interop.InteropNode;
 import org.jruby.truffle.interop.RubyInteropRootNode;
-import org.jruby.truffle.language.RubyGuards;
 
-public class HashForeignAccessFactory extends BasicForeignAccessFactory {
+public class HashForeignAccessFactory extends BasicObjectForeignAccessFactory {
 
     public HashForeignAccessFactory(RubyContext context) {
         super(context);

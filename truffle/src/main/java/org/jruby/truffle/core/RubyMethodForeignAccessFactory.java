@@ -11,20 +11,13 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.interop.ForeignAccess;
-import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.core.basicobject.BasicForeignAccessFactory;
+import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
 import org.jruby.truffle.interop.InteropNode;
 import org.jruby.truffle.interop.RubyInteropRootNode;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.backtrace.InternalRootNode;
 
-public class RubyMethodForeignAccessFactory extends BasicForeignAccessFactory {
+public class RubyMethodForeignAccessFactory extends BasicObjectForeignAccessFactory {
 
     public RubyMethodForeignAccessFactory(RubyContext context) {
         super(context);
