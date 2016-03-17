@@ -12,8 +12,9 @@ package org.jruby.truffle.interop;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 
-class InteropHasSizePropertyFalse extends InteropNode {
+class InteropHasSizePropertyFalse extends RubyNode {
     public InteropHasSizePropertyFalse(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

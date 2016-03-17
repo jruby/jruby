@@ -14,8 +14,9 @@ import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
 
-class InteropIsExecutable extends InteropNode {
+class InteropIsExecutable extends RubyNode {
     public InteropIsExecutable(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

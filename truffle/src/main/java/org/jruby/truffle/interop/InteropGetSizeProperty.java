@@ -13,11 +13,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
-class InteropGetSizeProperty extends InteropNode {
+class InteropGetSizeProperty extends RubyNode {
 
     @Child private DispatchHeadNode head;
     public InteropGetSizeProperty(RubyContext context, SourceSection sourceSection) {

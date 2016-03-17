@@ -16,11 +16,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
-class ResolvedInteropWriteToSymbolNode extends InteropNode {
+class ResolvedInteropWriteToSymbolNode extends RubyNode {
 
     @Child private DispatchHeadNode head;
     private final DynamicObject name;

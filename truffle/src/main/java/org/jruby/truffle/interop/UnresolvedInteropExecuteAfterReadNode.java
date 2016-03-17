@@ -14,8 +14,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 
-class UnresolvedInteropExecuteAfterReadNode extends InteropNode {
+class UnresolvedInteropExecuteAfterReadNode extends RubyNode {
 
     private final int arity;
     private final int labelIndex;

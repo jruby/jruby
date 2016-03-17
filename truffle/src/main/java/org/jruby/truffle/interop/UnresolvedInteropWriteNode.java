@@ -17,9 +17,10 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 
-class UnresolvedInteropWriteNode extends InteropNode {
+class UnresolvedInteropWriteNode extends RubyNode {
 
     private final int labelIndex;
     private final int valueIndex;

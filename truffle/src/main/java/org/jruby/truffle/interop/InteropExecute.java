@@ -13,8 +13,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 
-class InteropExecute extends InteropNode {
+class InteropExecute extends RubyNode {
     @Child private ExecuteMethodNode execute;
 
     public InteropExecute(RubyContext context, SourceSection sourceSection) {

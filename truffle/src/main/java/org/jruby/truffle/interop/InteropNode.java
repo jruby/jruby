@@ -19,39 +19,39 @@ public abstract class InteropNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public static InteropNode createRead(RubyContext context, SourceSection sourceSection) {
+    public static RubyNode createRead(RubyContext context, SourceSection sourceSection) {
         return new UnresolvedInteropReadNode(context, sourceSection);
     }
 
-    public static InteropNode createWrite(RubyContext context, SourceSection sourceSection) {
+    public static RubyNode createWrite(RubyContext context, SourceSection sourceSection) {
         return new UnresolvedInteropWriteNode(context, sourceSection);
     }
 
-    public static InteropNode createExecuteAfterRead(RubyContext context, SourceSection sourceSection, int arity) {
+    public static RubyNode createExecuteAfterRead(RubyContext context, SourceSection sourceSection, int arity) {
         return new UnresolvedInteropExecuteAfterReadNode(context, sourceSection, arity);
     }
 
-    public static InteropNode createIsExecutable(final RubyContext context, final SourceSection sourceSection) {
+    public static RubyNode createIsExecutable(final RubyContext context, final SourceSection sourceSection) {
         return new InteropIsExecutable(context, sourceSection);
     }
     
-    public static InteropNode createExecute(final RubyContext context, final SourceSection sourceSection) {
+    public static RubyNode createExecute(final RubyContext context, final SourceSection sourceSection) {
         return new InteropExecute(context, sourceSection);
     }
 
-    public static InteropNode createIsBoxedPrimitive(final RubyContext context, final SourceSection sourceSection) {
+    public static RubyNode createIsBoxedPrimitive(final RubyContext context, final SourceSection sourceSection) {
         return new InteropIsBoxedPrimitive(context, sourceSection);
     }
 
-    public static InteropNode createIsNull(final RubyContext context, final SourceSection sourceSection) {
+    public static RubyNode createIsNull(final RubyContext context, final SourceSection sourceSection) {
         return new InteropIsNull(context, sourceSection);
     }
 
-    public static InteropNode createHasSizePropertyFalse(final RubyContext context, final SourceSection sourceSection) {
+    public static RubyNode createHasSizePropertyFalse(final RubyContext context, final SourceSection sourceSection) {
         return new InteropHasSizePropertyFalse(context, sourceSection);
     }
 
-    public static InteropNode createHasSizePropertyTrue(final RubyContext context, final SourceSection sourceSection) {
+    public static RubyNode createHasSizePropertyTrue(final RubyContext context, final SourceSection sourceSection) {
         return new InteropHasSizePropertyTrue(context, sourceSection);
     }
 

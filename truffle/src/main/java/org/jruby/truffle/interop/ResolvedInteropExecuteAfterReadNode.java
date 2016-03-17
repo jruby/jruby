@@ -13,11 +13,12 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
-class ResolvedInteropExecuteAfterReadNode extends InteropNode {
+class ResolvedInteropExecuteAfterReadNode extends RubyNode {
 
     @Child private DispatchHeadNode head;
     @Child private InteropArgumentsNode arguments;

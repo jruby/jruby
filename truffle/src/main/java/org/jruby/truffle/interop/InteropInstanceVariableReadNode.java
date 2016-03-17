@@ -14,9 +14,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
 
-class InteropInstanceVariableReadNode extends InteropNode {
+class InteropInstanceVariableReadNode extends RubyNode {
 
     @Child private ReadInstanceVariableNode read;
     private final String name;

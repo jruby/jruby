@@ -13,8 +13,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 
-class InteropIsNull extends InteropNode {
+class InteropIsNull extends RubyNode {
     public InteropIsNull(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

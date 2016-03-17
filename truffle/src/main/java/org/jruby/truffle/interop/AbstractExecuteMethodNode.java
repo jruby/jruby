@@ -12,8 +12,9 @@ package org.jruby.truffle.interop;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyNode;
 
-abstract class AbstractExecuteMethodNode extends InteropNode {
+abstract class AbstractExecuteMethodNode extends RubyNode {
     public AbstractExecuteMethodNode(RubyContext context,
                                      SourceSection sourceSection) {
         super(context, sourceSection);
