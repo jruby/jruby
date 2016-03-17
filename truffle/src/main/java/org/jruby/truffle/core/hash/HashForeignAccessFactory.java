@@ -11,18 +11,14 @@ package org.jruby.truffle.core.hash;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.interop.InteropNode;
+import org.jruby.truffle.interop.RubyInteropRootNode;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.backtrace.InternalRootNode;
 
 public class HashForeignAccessFactory implements ForeignAccess.Factory10, ForeignAccess.Factory {
 
@@ -103,23 +99,4 @@ public class HashForeignAccessFactory implements ForeignAccess.Factory10, Foreig
         return null;
     }
 
-    protected static final class RubyInteropRootNode extends RootNode implements InternalRootNode {
-
-        @Child private RubyNode node;
-
-        public RubyInteropRootNode(RubyNode node) {
-            super(RubyLanguage.class, node.getSourceSection(), null);
-            this.node = node;
-        }
-
-        @Override
-        public Object execute(VirtualFrame virtualFrame) {
-            return node.execute(virtualFrame);
-        }
-
-        @Override
-        public String toString() {
-            return "Root of: " + node.toString();
-        }
-    }
 }
