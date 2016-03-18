@@ -892,7 +892,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     @JRubyMethod(rest = true, meta = true)
     public static RubyString join(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return join(context, recv, RubyArray.newArrayNoCopyLight(context.runtime, args));
+        return doJoin(context, recv, args);
     }
 
     @JRubyMethod(name = "lstat", required = 1, meta = true)
@@ -1936,69 +1936,111 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         RubyHash env = runtime.getENV();
         String home = (String) env.get(runtime.newString("HOME"));
-        if (home == null || home.equals("")) {
+        if (home == null || home.length() == 0) {
             throw runtime.newArgumentError("couldn't find HOME environment -- expanding `~'");
         }
     }
 
-    private static String inspectJoin(ThreadContext context, IRubyObject recv, RubyArray parent, RubyArray array) {
-        Ruby runtime = context.runtime;
+    private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
+        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
 
-        // If already inspecting, there is no need to register/unregister again.
-        if (runtime.isInspecting(parent)) return join(context, recv, array).toString();
+        final RubyArray argsAry = RubyArray.newArrayNoCopyLight(runtime, args);
 
-        try {
-            runtime.registerInspecting(parent);
-            return join(context, recv, array).toString();
-        } finally {
-            runtime.unregisterInspecting(parent);
-        }
+        final StringBuilder buffer = new StringBuilder(24);
+        boolean isTainted = joinImpl(buffer, separator, context, recv, argsAry);
+
+        RubyString fixedStr = new RubyString(runtime, runtime.getString(), buffer);
+        fixedStr.setTaint(isTainted);
+        return fixedStr;
     }
 
-    private static RubyString join(ThreadContext context, IRubyObject recv, RubyArray ary) {
-        IRubyObject[] args = ary.toJavaArray();
-        boolean isTainted = false;
-        StringBuilder buffer = new StringBuilder();
-        Ruby runtime = context.runtime;
-        String separator = context.getRuntime().getClass("File").getConstant("SEPARATOR").toString();
+    private static boolean joinImpl(final StringBuilder buffer, final String separator,
+        ThreadContext context, IRubyObject recv, RubyArray args) {
 
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].isTaint()) {
-                isTainted = true;
-            }
-            String element;
-            if (args[i] instanceof RubyString) {
-                element = args[i].convertToString().getUnicodeValue();
-            } else if (args[i] instanceof RubyArray) {
-                if (runtime.isInspecting(args[i])) {
-                    throw runtime.newArgumentError("recursive array");
+        boolean isTainted = false;
+
+        for (int i = 0; i < args.size(); i++) {
+            final IRubyObject arg = args.eltInternal(i);
+            if (arg.isTaint()) isTainted = true;
+
+            final CharSequence element;
+            if (arg instanceof RubyString) {
+                element = arg.convertToString().getUnicodeValue();
+            } else if (arg instanceof RubyArray) {
+                if (context.runtime.isInspecting(arg)) {
+                    throw context.runtime.newArgumentError("recursive array");
                 } else {
-                    element = inspectJoin(context, recv, ary, ((RubyArray)args[i]));
+                    element = joinImplInspecting(separator, context, recv, args, ((RubyArray) arg));
                 }
             } else {
-                RubyString path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
+                RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg));
                 element = path.getUnicodeValue();
             }
 
             chomp(buffer);
-            if (i > 0 && !element.startsWith(separator)) {
+            if (i > 0 && !startsWith(element, separator)) {
                 buffer.append(separator);
             }
             buffer.append(element);
         }
 
-        RubyString fixedStr = RubyString.newString(runtime, buffer.toString());
-        fixedStr.setTaint(isTainted);
-        return fixedStr;
+        return isTainted;
     }
 
-    private static void chomp(StringBuilder buffer) {
+    private static StringBuilder joinImplInspecting(final String separator,
+        ThreadContext context, IRubyObject recv, RubyArray parent, RubyArray array) {
+        final Ruby runtime = context.runtime;
+
+        final StringBuilder buffer = new StringBuilder(24);
+        // If already inspecting, there is no need to register/unregister again.
+        if (runtime.isInspecting(parent)) {
+            joinImpl(buffer, separator, context, recv, array);
+            return buffer;
+        }
+
+        try {
+            runtime.registerInspecting(parent);
+            joinImpl(buffer, separator, context, recv, array);
+            return buffer;
+        }
+        finally {
+            runtime.unregisterInspecting(parent);
+        }
+    }
+
+    private static void chomp(final StringBuilder buffer) {
         int lastIndex = buffer.length() - 1;
 
-        while (lastIndex >= 0 && (buffer.lastIndexOf("/") == lastIndex || buffer.lastIndexOf("\\") == lastIndex)) {
-            buffer.setLength(lastIndex);
-            lastIndex--;
+        while ( lastIndex >= 0 ) {
+            char c = buffer.charAt(lastIndex);
+            if ( c == '/' || c == '\\' ) {
+                buffer.setLength(lastIndex--);
+                continue;
+            }
+            break;
         }
+    }
+
+    // String.startsWith for a CharSequence
+    private static boolean startsWith(final CharSequence str, final String prefix) {
+        int p = prefix.length();
+        if ( p > str.length() ) return false;
+        int i = 0;
+        while ( --p >= 0 ) {
+            if (str.charAt(i) != prefix.charAt(i)) return false;
+            i++;
+        }
+        return true;
+    }
+
+    // without any char[] array copying, also StringBuilder only has lastIndexOf(String)
+    private static int lastIndexOf(final CharSequence str, final char c, int index) {
+        while ( index >= 0 ) {
+            if ( str.charAt(index) == c ) return index;
+            index--;
+        }
+        return -1;
     }
 
     private static IRubyObject truncateCommon(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
