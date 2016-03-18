@@ -30,6 +30,7 @@ package org.jruby.test;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import org.jruby.RubyArray;
 import org.jruby.RubyRuntimeAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -161,7 +162,32 @@ public class TestRaiseException extends TestRubyBase {
         //    at org.jruby.test.TestRaiseException.testRubyExceptionTraceIncludesJavaPart(org/jruby/test/TestRaiseException.java:73)
         //    at java.lang.reflect.Method.invoke(java/lang/reflect/Method.java:498)
         //    at junit.framework.TestCase.runTest(junit/framework/TestCase.java:176)
+    }
 
+    public void testRubyExceptionBacktraceIncludesJavaOrigin() throws Exception {
+        String script =
+        "require 'java'\n" +
+        "hash = Hash.new { org.jruby.test.TestRaiseException::ThrowFromJava.new.throwIt }\n" +
+        "begin; hash['missing']; rescue java.lang.Exception => e; $ex_trace = e.backtrace end \n" +
+        "$ex_trace" ;
+
+        RubyArray trace = (RubyArray) runtime.evalScriptlet(script);
+
+        String fullTrace = trace.join(runtime.getCurrentContext(), runtime.newString("\n")).toString();
+        // System.out.println(fullTrace);
+
+        // NOTE: 'unknown' JRuby packages e.g. "org.jruby.test" should not be filtered
+        //  ... if they are that hurts stack-traces from extensions such as jruby-rack and jruby-openssl
+        assertTrue(trace.get(0).toString(), trace.get(0).toString().startsWith("org.jruby.test.TestRaiseException$ThrowFromJava.throwIt"));
+
+        boolean hash_default = false;
+        for ( Object element : trace ) {
+            if ( element.toString().contains("org.jruby.RubyHash.default")) {
+                if ( hash_default ) fail("duplicate " + element + " in : \n" + fullTrace);
+                hash_default = true;
+            }
+        }
+        assertTrue("missing org.jruby.RubyHash.default ... in : \n" + fullTrace, hash_default);
     }
 
     public void testRubyExceptionWithoutCause() throws Exception {
