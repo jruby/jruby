@@ -171,7 +171,7 @@ public class RaiseException extends JumpException {
 
         sb.append("Native Exception: '").append(exception.getClass()).append("'; ");
         sb.append("Message: ").append(exception.getMessage()).append("; ");
-        sb.append("StackTrace: ").append(stackTrace.getBuffer().toString());
+        sb.append("StackTrace: ").append(stackTrace.getBuffer());
 
         return sb.toString();
     }
