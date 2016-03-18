@@ -247,8 +247,8 @@ public abstract class RopeNodes {
             }
 
             final byte[] bytes = new byte[left.byteLength() + right.byteLength()];
-            System.arraycopy(left.getBytes(), 0, bytes, 0, left.byteLength());
-            System.arraycopy(right.getBytes(), 0, bytes, left.byteLength(), right.byteLength());
+            System.arraycopy(left.getRawBytes(), 0, bytes, 0, left.byteLength());
+            System.arraycopy(right.getRawBytes(), 0, bytes, left.byteLength(), right.byteLength());
 
             final CodeRange codeRange = commonCodeRange(left.getCodeRange(), right.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile);
 
