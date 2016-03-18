@@ -66,14 +66,17 @@ public class RubyStackTraceElement {
     }
 
     @Deprecated
-    public StackTraceElement getElement() { return asStackTraceElement(); } 
+    public StackTraceElement getElement() { return asStackTraceElement(); }
 
     public String toString() {
         return asStackTraceElement().toString();
     }
 
-    public String mriStyleString() {
-        return fileName + ':' + lineNumber + ":in `" + methodName + '\'';
+    public final CharSequence mriStyleString() {
+        // return fileName + ':' + lineNumber + ":in `" + methodName + '\'';
+        return new StringBuilder(fileName.length() + methodName.length() + 12).
+                append(fileName).append(':').append(lineNumber).
+                append(":in `").append(methodName).append('\'');
     }
 
 }
