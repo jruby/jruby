@@ -73,8 +73,7 @@ public final class ThreadContext {
     private static final Logger LOG = LoggerFactory.getLogger("ThreadContext");
 
     public static ThreadContext newContext(Ruby runtime) {
-        ThreadContext context = new ThreadContext(runtime);
-        return context;
+        return new ThreadContext(runtime);
     }
 
     private final static int INITIAL_SIZE = 10;
