@@ -1,6 +1,6 @@
 package org.jruby.runtime.backtrace;
 
-public class RubyStackTraceElement {
+public class RubyStackTraceElement implements java.io.Serializable {
     public static final RubyStackTraceElement[] EMPTY_ARRAY = new RubyStackTraceElement[0];
 
     private final String className;
