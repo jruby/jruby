@@ -43,6 +43,7 @@ import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.NonblockWritingStream;
 import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
 import java.io.EOFException;
@@ -1381,7 +1382,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 runtime.getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "write_nonblock for buffered IO");
             }
 
-            ChannelStream stream = (ChannelStream)myOpenFile.getWriteStream();
+            NonblockWritingStream stream = (NonblockWritingStream)myOpenFile.getWriteStream();
 
             int written = stream.writenonblock(str.getByteList());
             if (written == 0) {

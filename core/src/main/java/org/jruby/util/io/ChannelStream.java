@@ -60,7 +60,7 @@ import org.jruby.util.log.LoggerFactory;
 /**
  * This file implements a seekable IO file.
  */
-public class ChannelStream implements Stream, Finalizable {
+public class ChannelStream implements Stream, Finalizable, NonblockWritingStream {
 
     private static final Logger LOG = LoggerFactory.getLogger("ChannelStream");
 

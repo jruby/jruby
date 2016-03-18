@@ -16,7 +16,7 @@ import org.jruby.util.ByteList;
  * Wrapper around Stream that packs and unpacks LF <=> CRLF.
  * @author nicksieger
  */
-public class CRLFStreamWrapper implements Stream {
+public class CRLFStreamWrapper implements Stream, NonblockWritingStream {
     private final Stream stream;
     private final boolean isWindows;
     private boolean binmode = false;
@@ -126,6 +126,12 @@ public class CRLFStreamWrapper implements Stream {
             return null;
         }
         return bl;
+    }
+
+    public synchronized int writenonblock(ByteList buf) throws IOException, BadDescriptorException {
+        if (!(stream instanceof ChannelStream)) throw new IOException("write_nonblock from a stream which does not support it");
+
+        return ((ChannelStream) stream).writenonblock(convertLFToCRLF(buf));
     }
 
     public int fwrite(ByteList string) throws IOException, BadDescriptorException {
