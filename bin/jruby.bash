@@ -91,10 +91,6 @@ if [ -z "$JAVACMD" ] ; then
   fi
 fi
 
-if [ -z "$JAVA_MEM" ] ; then
-  JAVA_MEM=-Xmx500m
-fi
-
 if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss2048k
 fi
