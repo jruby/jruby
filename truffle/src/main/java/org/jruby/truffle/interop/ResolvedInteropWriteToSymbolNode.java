@@ -21,7 +21,7 @@ import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
-class ResolvedInteropWriteToSymbolNode extends RubyNode {
+public class ResolvedInteropWriteToSymbolNode extends RubyNode {
 
     @Child private DispatchHeadNode head;
     private final DynamicObject name;

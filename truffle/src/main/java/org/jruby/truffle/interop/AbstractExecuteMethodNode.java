@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-abstract class AbstractExecuteMethodNode extends RubyNode {
+public abstract class AbstractExecuteMethodNode extends RubyNode {
     public AbstractExecuteMethodNode(RubyContext context,
                                      SourceSection sourceSection) {
         super(context, sourceSection);

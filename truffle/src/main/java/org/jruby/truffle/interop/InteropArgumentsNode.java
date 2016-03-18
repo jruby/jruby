@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-class InteropArgumentsNode extends RubyNode {
+public class InteropArgumentsNode extends RubyNode {
 
     @Children private final InteropArgumentNode[] arguments;
 

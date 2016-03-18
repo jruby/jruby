@@ -30,7 +30,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import java.util.List;
 
 @NodeChild(value="method", type = RubyNode.class)
-abstract class ExecuteMethodNode extends AbstractExecuteMethodNode {
+public abstract class ExecuteMethodNode extends AbstractExecuteMethodNode {
     @Child private IndirectCallNode callNode;
     public ExecuteMethodNode(RubyContext context,
                              SourceSection sourceSection) {

@@ -20,7 +20,7 @@ import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
-class ResolvedInteropReadFromSymbolNode extends RubyNode {
+public class ResolvedInteropReadFromSymbolNode extends RubyNode {
 
     @Child private DispatchHeadNode head;
     private final DynamicObject name;
