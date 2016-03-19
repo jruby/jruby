@@ -1792,7 +1792,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // FIXME: The variations of expand* and need for each to have a boolean discriminator makes
     // this code ripe for refactoring...
-    public static String expandUserPath(ThreadContext context, String path, boolean raiseOnRelativePath) {
+    public static String expandUserPath(ThreadContext context, String path, final boolean raiseOnRelativePath) {
         int pathLength = path.length();
 
         if (pathLength >= 1 && path.charAt(0) == '~') {
@@ -1802,10 +1802,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (userEnd == -1) {
                 if (pathLength == 1) {
                     // Single '~' as whole path to expand
-                    checkHome(context);
-                    path = RubyDir.getHomeDirectoryPath(context).toString();
+                    path = RubyDir.getHomeDirectoryPath(context, checkHome(context)).toString();
 
-                    if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home");
+                    if (raiseOnRelativePath && !isAbsolutePath(path)) {
+                        throw context.runtime.newArgumentError("non-absolute home");
+                    }
                 } else {
                     // No directory delimeter.  Rest of string is username
                     userEnd = pathLength;
@@ -1814,11 +1815,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             if (userEnd == 1) {
                 // '~/...' as path to expand
-                checkHome(context);
-                path = RubyDir.getHomeDirectoryPath(context).toString() +
-                        path.substring(1);
+                path = RubyDir.getHomeDirectoryPath(context, checkHome(context)).toString() + path.substring(1);
 
-                if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home");
+                if (raiseOnRelativePath && !isAbsolutePath(path)) {
+                    throw context.runtime.newArgumentError("non-absolute home");
+                }
             } else if (userEnd > 1){
                 // '~user/...' as path to expand
                 String user = path.substring(1, userEnd);
@@ -1831,7 +1832,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 path = dir + (pathLength == userEnd ? "" : path.substring(userEnd));
 
                 // getpwd (or /etc/passwd fallback) returns a home which is not absolute!!! [mecha-unlikely]
-                if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home of " + user);
+                if (raiseOnRelativePath && !isAbsolutePath(path)) {
+                    throw context.runtime.newArgumentError("non-absolute home of " + user);
+                }
             }
         }
         return path;
@@ -1930,13 +1933,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * Check if HOME environment variable is not nil nor empty
      * @param context
      */
-    private static void checkHome(ThreadContext context) {
+    private static RubyString checkHome(ThreadContext context) {
         Ruby runtime = context.runtime;
-        RubyHash env = runtime.getENV();
-        String home = (String) env.get(runtime.newString("HOME"));
-        if (home == null || home.length() == 0) {
+        IRubyObject home = runtime.getENV().fastARef(RubyString.newStringShared(runtime, RubyDir.HOME));
+        if (home == null || home == context.nil || ((RubyString) home).size() == 0) {
             throw runtime.newArgumentError("couldn't find HOME environment -- expanding `~'");
         }
+        return (RubyString) home;
     }
 
     private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
