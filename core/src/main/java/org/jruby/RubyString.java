@@ -2313,8 +2313,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     /* RubyString aka rb_string_value */
     public static RubyString stringValue(IRubyObject object) {
-        return (RubyString) (object instanceof RubyString ? object :
-            object.convertToString());
+        return (RubyString) (object instanceof RubyString ? object : object.convertToString());
     }
 
     /** rb_str_sub / rb_str_sub_bang
