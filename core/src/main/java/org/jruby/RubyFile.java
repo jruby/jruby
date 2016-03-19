@@ -1606,7 +1606,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 // this is basically for classpath:/ and uri:classloader:/
                 relativePath = relativePath.substring(2).replace('\\', '/');
             }
-            return runtime.newString(preFix + extra + relativePath);
+            return concatStrings(runtime, preFix, extra, relativePath);
         }
 
         String[] uriParts = splitURI(relativePath);
@@ -1620,9 +1620,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (uriParts != null) {
             //If the path was an absolute classpath path, return it as-is.
             if (uriParts[0].equals("classpath:")) {
-                return runtime.newString(preFix + relativePath + postFix);
+                return concatStrings(runtime, preFix, relativePath, postFix);
             }
-
             relativePath = uriParts[1];
         }
 
@@ -1739,7 +1738,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
             }
         }
-        return runtime.newString(preFix + realPath + postFix);
+        return concatStrings(runtime, preFix, realPath, postFix);
+    }
+
+    private static RubyString concatStrings(final Ruby runtime, String s1, String s2, String s3) {
+        return RubyString.newString(runtime,
+                new StringBuilder(s1.length() + s2.length() + s3.length()).
+                        append(s1).append(s2).append(s3)
+        );
     }
 
     private static String canonicalizePath(String path) {
