@@ -8,7 +8,7 @@ sudo: false
 
 before_script:
   - export MAVEN_SKIP_RC=true
-  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=512m"
+  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=256m"
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
@@ -22,7 +22,7 @@ os:
 
 env:
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmx512M"
     - MALLOC_ARENA_MAX=2
   matrix:
     - PHASE='-Ptest'
