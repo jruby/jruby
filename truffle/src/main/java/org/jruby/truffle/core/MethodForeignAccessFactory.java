@@ -18,9 +18,9 @@ import org.jruby.truffle.interop.InteropExecute;
 import org.jruby.truffle.interop.RubyInteropRootNode;
 import org.jruby.truffle.language.literal.BooleanLiteralNode;
 
-public class RubyMethodForeignAccessFactory extends BasicObjectForeignAccessFactory {
+public class MethodForeignAccessFactory extends BasicObjectForeignAccessFactory {
 
-    public RubyMethodForeignAccessFactory(RubyContext context) {
+    public MethodForeignAccessFactory(RubyContext context) {
         super(context);
     }
 
