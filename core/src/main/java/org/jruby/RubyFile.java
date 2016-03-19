@@ -1553,7 +1553,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.checkClosed();
     }
 
-    private static Pattern PROTOCOL_PREFIX_PATTERN = Pattern.compile(URI_PREFIX_STRING);
+    private static final Pattern PROTOCOL_PREFIX_PATTERN = Pattern.compile(URI_PREFIX_STRING);
+
     private static IRubyObject expandPathInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean expandUser, boolean canonicalize) {
         Ruby runtime = context.runtime;
 
@@ -1591,14 +1592,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             preFix = protocol.group();
             int offset = protocol.end();
             String extra = "";
-            if (relativePath.contains("file://")) {
-                if (relativePath.contains("file:///")) {
-                    offset += 2;
-                    extra = "//";
+            int index = relativePath.indexOf("file://");
+            if (index >= 0) {
+                index += 7; // "file://".length == 7
+                // chck if its "file:///"
+                if (relativePath.length() > index && relativePath.charAt(index) == '/') {
+                    offset += 2; extra = "//";
                 }
                 else {
-                    offset += 1;
-                    extra = "/";
+                    offset += 1; extra = "/";
                 }
             }
             relativePath = canonicalizePath(relativePath.substring(offset));
