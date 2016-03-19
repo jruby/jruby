@@ -496,8 +496,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return getRuntime().newString(val.toString());
     }
 
-    private static String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
-    private static Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
+    private static final String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
+    private static final Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
 
     /* File class methods */
     @JRubyMethod(required = 1, optional = 1, meta = true)
@@ -607,7 +607,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
 
-            if (0 != runtime.getPosix().chmod(filename.getAbsolutePath(), (int)mode.getLongValue())) {
+            if (0 != runtime.getPosix().chmod(filename.getAbsolutePath(), (int) mode.getLongValue())) {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
@@ -719,11 +719,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 index++;
             }
 
-            if (jfilename.startsWith("\\\\")) {
+            if (startsWith(jfilename, '\\', '\\')) {
                 index = jfilename.length();
-                String[] splitted = jfilename.split(Pattern.quote("\\"));
-                int last = splitted.length-1;
-                if (splitted[last].contains(".")) {
+                String[] split = jfilename.split(Pattern.quote("\\"));
+                if (split[ split.length - 1 ].indexOf('.') > -1) {
                     index = jfilename.lastIndexOf('\\');
                 }
 
@@ -938,7 +937,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyInteger mode = args[0].convertToInteger();
         for (int i = 1; i < args.length; i++) {
             JRubyFile file = file(args[i]);
-            if (0 != runtime.getPosix().lchmod(file.toString(), (int)mode.getLongValue())) {
+            if (0 != runtime.getPosix().lchmod(file.toString(), (int) mode.getLongValue())) {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
@@ -1473,6 +1472,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 startsWithDriveLetterOnWindows(path);
     }
 
+    private static boolean isWindowsDriveLetter(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
     public static boolean startsWithDriveLetterOnWindows(String path) {
         return (path != null)
                 && Platform.IS_WINDOWS &&
@@ -1497,7 +1500,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // Basically, '/path' is treated as a *RELATIVE* path,
         // relative to the current drive. '//path' is treated
         // as absolute one.
-        if ((path.startsWith("/") && !(path.length() > 2 && path.charAt(2) == ':')) || path.startsWith("\\")) {
+        if ((startsWith(path, '/') && !(path.length() > 2 && path.charAt(2) == ':')) || startsWith(path, '\\')) {
             if (path.length() > 1 && (path.charAt(1) == '/' || path.charAt(1) == '\\')) {
                 return path;
             }
@@ -1548,10 +1551,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private void checkClosed(ThreadContext context) {
         openFile.checkClosed();
-    }
-
-    private static boolean isWindowsDriveLetter(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
 
     private static Pattern PROTOCOL_PREFIX_PATTERN = Pattern.compile(URI_PREFIX_STRING);
@@ -1605,7 +1604,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             relativePath = canonicalizePath(relativePath.substring(offset));
             if (Platform.IS_WINDOWS && !preFix.contains("file:") && startsWithDriveLetterOnWindows(relativePath)) {
                 // this is basically for classpath:/ and uri:classloader:/
-                relativePath = relativePath.substring(2).replace("\\", "/");
+                relativePath = relativePath.substring(2).replace('\\', '/');
             }
             return runtime.newString(preFix + extra + relativePath);
         }
@@ -1662,7 +1661,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 // If the path isn't absolute, then prepend the current working
                 // directory to the path.
                 if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
-                    if ("".equals(cwd)) cwd = ".";
+                    if (cwd.length() == 0) cwd = ".";
                     cwd = JRubyFile.create(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
                 }
             }
@@ -1732,11 +1731,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
         if (postFix.contains("..")) {
-            postFix = "!" + canonicalizePath(postFix.substring(1));
+            postFix = '!' + canonicalizePath(postFix.substring(1));
             if (Platform.IS_WINDOWS && postFix.startsWith("!")) {
-                postFix = postFix.replace("\\", "/");
+                postFix = postFix.replace('\\', '/');
                 if (startsWithDriveLetterOnWindows(postFix.substring(1))) {
-                    postFix = "!" + postFix.substring(3);
+                    postFix = '!' + postFix.substring(3);
                 }
             }
         }
@@ -1746,9 +1745,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static String canonicalizePath(String path) {
         try {
             return new File(path).getCanonicalPath();
-        } catch (IOException ignore) {
-            return path;
         }
+        catch (IOException ignore) { return path; }
     }
 
     public static String[] splitURI(String path) {
@@ -1881,7 +1879,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private static String canonicalize(String canonicalPath, String remaining) {
         if (remaining == null) {
-            if ("".equals(canonicalPath)) return "/";
+            if (canonicalPath.length() == 0) return "/";
             // compensate for missing slash after drive letter on windows
             if (startsWithDriveLetterOnWindows(canonicalPath) && canonicalPath.length() == 2) {
                 canonicalPath += '/';
@@ -2032,6 +2030,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             i++;
         }
         return true;
+    }
+
+    private static boolean startsWith(final CharSequence str, final char c) {
+        return ( str.length() < 1 ) ? false : str.charAt(0) == c;
+    }
+
+    private static boolean startsWith(final CharSequence str, final char c1, final char c2) {
+        return ( str.length() < 2 ) ? false : str.charAt(0) == c1 && str.charAt(1) == c2;
     }
 
     // without any char[] array copying, also StringBuilder only has lastIndexOf(String)
