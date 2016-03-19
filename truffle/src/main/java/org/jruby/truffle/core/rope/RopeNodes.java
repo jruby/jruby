@@ -153,13 +153,21 @@ public abstract class RopeNodes {
 
         private Rope makeSubstring(Rope base, int offset, int byteLength, ConditionProfile is7BitProfile, ConditionProfile isBinaryStringProfile) {
             if (is7BitProfile.profile(base.getCodeRange() == CR_7BIT)) {
-                return new SubstringRope(base, offset, byteLength, byteLength, CR_7BIT);
+                if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
+                    return new SubstringRope(base, offset, byteLength, byteLength, CR_7BIT);
+                } else {
+                    return new AsciiOnlyLeafRope(base.extractRange(offset, byteLength), base.getEncoding());
+                }
             }
 
             // We short-circuit here to avoid the costly process of recalculating information we already know, such as
             // whether the string has a valid code range.
             if (isBinaryStringProfile.profile(base.getEncoding() == ASCIIEncoding.INSTANCE)) {
-                return new SubstringRope(base, offset, byteLength, byteLength, CR_VALID);
+                if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
+                    return new SubstringRope(base, offset, byteLength, byteLength, CR_VALID);
+                } else {
+                    return new ValidLeafRope(base.extractRange(offset, byteLength), base.getEncoding(), byteLength);
+                }
             }
 
             return makeSubstringNon7Bit(base, offset, byteLength);
@@ -177,7 +185,29 @@ public abstract class RopeNodes {
             }
             */
 
-            return new SubstringRope(base, offset, byteLength, characterLength, codeRange);
+            if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
+                return new SubstringRope(base, offset, byteLength, characterLength, codeRange);
+            } else {
+                final byte[] bytes = base.extractRange(offset, byteLength);
+
+                switch (codeRange) {
+                    case CR_VALID: {
+                        return new ValidLeafRope(bytes, base.getEncoding(), characterLength);
+                    }
+
+                    case CR_BROKEN: {
+                        return new InvalidLeafRope(bytes, base.getEncoding());
+                    }
+
+                    case CR_7BIT: {
+                        return new AsciiOnlyLeafRope(bytes, base.getEncoding());
+                    }
+
+                    default: {
+                        throw new UnsupportedOperationException("Don't know how to make leaf rope for code range: " + codeRange);
+                    }
+                }
+            }
         }
 
         protected static boolean sameAsBase(Rope base, int offset, int byteLength) {
@@ -391,7 +421,14 @@ public abstract class RopeNodes {
                     characterLength += q - p;
                     p = q;
                 }
-                p += StringSupport.encFastMBCLen(bytes, p, e, encoding);
+                int delta = StringSupport.encFastMBCLen(bytes, p, e, encoding);
+
+                if (delta < 0) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new UnsupportedOperationException("Code rang is reported as valid, but is invalid for the given encoding: " + encoding.toString());
+                }
+
+                p += delta;
                 characterLength++;
             }
 
