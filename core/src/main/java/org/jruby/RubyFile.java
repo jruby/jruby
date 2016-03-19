@@ -1603,6 +1603,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     offset += 1; extra = "/";
                 }
             }
+            else if ( ( preFix.equals("uri:classloader:") || preFix.equals("classpath:") )
+                    && relativePath.startsWith("//", offset) ) {
+                // on Windows "uri:classloader://home" ends up as "//home" - trying a network drive!
+                offset += 1; // skip one '/'
+            }
             relativePath = canonicalizePath(relativePath.substring(offset));
             if (Platform.IS_WINDOWS && !preFix.contains("file:") && startsWithDriveLetterOnWindows(relativePath)) {
                 // this is basically for classpath:/ and uri:classloader:/
