@@ -1733,7 +1733,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         if (postFix.contains("..")) {
             postFix = '!' + canonicalizePath(postFix.substring(1));
-            if (Platform.IS_WINDOWS && postFix.startsWith("!")) {
+            if (Platform.IS_WINDOWS /* && startsWith(postFix, '!') */) {
                 postFix = postFix.replace('\\', '/');
                 if (startsWithDriveLetterOnWindows(postFix.substring(1))) {
                     postFix = '!' + postFix.substring(3);
