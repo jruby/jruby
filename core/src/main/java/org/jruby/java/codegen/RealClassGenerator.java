@@ -187,14 +187,7 @@ public abstract class RealClassGenerator {
                         implementedNames.add(fullName);
 
                         // indices for temp values
-                        int baseIndex = 1;
-                        for (Class paramType : paramTypes) {
-                            if (paramType == double.class || paramType == long.class) {
-                                baseIndex += 2;
-                            } else {
-                                baseIndex += 1;
-                            }
-                        }
+                        final int baseIndex = calcBaseIndex(paramTypes, 1);
 
                         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
                                 cw, ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null);
@@ -414,14 +407,7 @@ public abstract class RealClassGenerator {
                 implementedNames.add(fullName);
 
                 // indices for temp values
-                int baseIndex = 1;
-                for (Class paramType : paramTypes) {
-                    if (paramType == double.class || paramType == long.class) {
-                        baseIndex += 2;
-                    } else {
-                        baseIndex += 1;
-                    }
-                }
+                final int baseIndex = calcBaseIndex(paramTypes, 1);
 
                 SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
                         cw, ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null);
@@ -782,4 +768,16 @@ public abstract class RealClassGenerator {
     public static boolean isCacheOk(CacheEntry entry, IRubyObject self) {
         return CacheEntry.typeOk(entry, self.getMetaClass()) && entry.method != UndefinedMethod.INSTANCE;
     }
+
+    public static int calcBaseIndex(final Class[] params, int baseIndex) {
+        for (Class paramType : params) {
+            if (paramType == double.class || paramType == long.class) {
+                baseIndex += 2;
+            } else {
+                baseIndex += 1;
+            }
+        }
+        return baseIndex;
+    }
+
 }

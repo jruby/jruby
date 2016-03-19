@@ -810,23 +810,22 @@ public class RubyClass extends RubyModule {
 
     private void dumpReifiedClass(String dumpDir, String javaPath, byte[] classBytes) {
         if (dumpDir != null) {
-            if (dumpDir.equals("")) {
-                dumpDir = ".";
-            }
+            if (dumpDir.length() == 0) dumpDir = ".";
+
             java.io.FileOutputStream classStream = null;
             try {
                 java.io.File classFile = new java.io.File(dumpDir, javaPath + ".class");
                 classFile.getParentFile().mkdirs();
                 classStream = new java.io.FileOutputStream(classFile);
                 classStream.write(classBytes);
-            } catch (IOException io) {
+            }
+            catch (IOException io) {
                 getRuntime().getWarnings().warn("unable to dump class file: " + io.getMessage());
-            } finally {
+            }
+            finally {
                 if (classStream != null) {
-                    try {
-                        classStream.close();
-                    } catch (IOException ignored) {
-                    }
+                    try { classStream.close(); }
+                    catch (IOException ignored) { /* no-op */ }
                 }
             }
         }
@@ -1289,44 +1288,27 @@ public class RubyClass extends RubyModule {
         // re-check reifiable in case another reify call has jumped in ahead of us
         if (!isReifiable()) return;
 
-        Class reifiedParent = RubyObject.class;
-
         // calculate an appropriate name, using "Anonymous####" if none is present
-        String name;
-        if (getBaseName() == null) {
-            name = "AnonymousRubyClass__" + id;
-        } else {
-            name = getName();
-        }
+        final String name = getBaseName() != null ? getName() : ("AnonymousRubyClass__" + id);
 
-        String javaName = "rubyobj." + name.replaceAll("::", ".");
-        String javaPath = "rubyobj/" + name.replaceAll("::", "/");
-        ClassDefiningClassLoader parentCL;
-        Class parentReified = superClass.getRealClass().getReifiedClass();
+        final String javaName = "rubyobj." + name.replaceAll("::", ".");
+        final String javaPath = "rubyobj/" + name.replaceAll("::", "/");
+
+        final Class parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {
             throw getClassRuntime().newTypeError("class " + getName() + " parent class is not yet reified");
         }
 
-        if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
-            parentCL = (OneShotClassLoader)superClass.getRealClass().getReifiedClass().getClassLoader();
-        } else {
-            if (useChildLoader) {
-                parentCL = new OneShotClassLoader(runtime.getJRubyClassLoader());
-            } else {
-                parentCL = runtime.getJRubyClassLoader();
-            }
-        }
+        Class reifiedParent = RubyObject.class;
 
         if (superClass.reifiedClass != null) {
             reifiedParent = superClass.reifiedClass;
         }
 
-        Class[] interfaces = Java.getInterfacesFromRubyClass(this);
-        String[] interfaceNames = new String[interfaces.length + 1];
-
+        final Class[] interfaces = Java.getInterfacesFromRubyClass(this);
+        final String[] interfaceNames = new String[interfaces.length + 1];
         // mark this as a Reified class
         interfaceNames[0] = p(Reified.class);
-
         // add the other user-specified interfaces
         for (int i = 0; i < interfaces.length; i++) {
             interfaceNames[i + 1] = p(interfaces[i]);
@@ -1387,9 +1369,7 @@ public class RubyClass extends RubyModule {
 
             FieldVisitor fieldVisitor = cw.visitField(ACC_PUBLIC, fieldName, ci(type), null, null);
 
-            if (fieldAnnos == null) {
-              continue;
-            }
+            if (fieldAnnos == null) continue;
 
             for (Map.Entry<Class, Map<String, Object>> fieldAnno : fieldAnnos.entrySet()) {
                 Class annoType = fieldAnno.getKey();
@@ -1400,11 +1380,11 @@ public class RubyClass extends RubyModule {
         }
 
         // gather a list of instance methods, so we don't accidentally make static ones that conflict
-        Set<String> instanceMethods = new HashSet<String>();
+        final Set<String> instanceMethods = new HashSet<String>(getMethods().size());
 
         // define instance methods
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
-            String methodName = methodEntry.getKey();
+            final String methodName = methodEntry.getKey();
 
             if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
 
@@ -1444,14 +1424,8 @@ public class RubyClass extends RubyModule {
                 // indices for temp values
                 Class[] params = new Class[methodSignature.length - 1];
                 System.arraycopy(methodSignature, 1, params, 0, params.length);
-                int baseIndex = 1;
-                for (Class paramType : params) {
-                    if (paramType == double.class || paramType == long.class) {
-                        baseIndex += 2;
-                    } else {
-                        baseIndex += 1;
-                    }
-                }
+                final int baseIndex = RealClassGenerator.calcBaseIndex(params, 1);
+
                 int rubyIndex = baseIndex;
 
                 signature = sig(methodSignature[0], params);
@@ -1521,14 +1495,7 @@ public class RubyClass extends RubyModule {
                 // indices for temp values
                 Class[] params = new Class[methodSignature.length - 1];
                 System.arraycopy(methodSignature, 1, params, 0, params.length);
-                int baseIndex = 0;
-                for (Class paramType : params) {
-                    if (paramType == double.class || paramType == long.class) {
-                        baseIndex += 2;
-                    } else {
-                        baseIndex += 1;
-                    }
-                }
+                final int baseIndex = RealClassGenerator.calcBaseIndex(params, 0);
                 int rubyIndex = baseIndex;
 
                 signature = sig(methodSignature[0], params);
@@ -1555,16 +1522,24 @@ public class RubyClass extends RubyModule {
 
 
         cw.visitEnd();
-        byte[] classBytes = cw.toByteArray();
 
-
-
+        final ClassDefiningClassLoader parentCL;
+        if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
+            parentCL = (OneShotClassLoader) parentReified.getClassLoader();
+        } else {
+            if (useChildLoader) {
+                parentCL = new OneShotClassLoader(runtime.getJRubyClassLoader());
+            } else {
+                parentCL = runtime.getJRubyClassLoader();
+            }
+        }
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
-        Throwable failure = null;
         try {
+            final byte[] classBytes = cw.toByteArray();
             Class result = parentCL.defineClass(javaName, classBytes);
             dumpReifiedClass(classDumpDir, javaPath, classBytes);
 
+            @SuppressWarnings("unchecked")
             java.lang.reflect.Method clinit = result.getDeclaredMethod("clinit", Ruby.class, RubyClass.class);
             clinit.invoke(null, runtime, this);
 
@@ -1572,19 +1547,22 @@ public class RubyClass extends RubyModule {
             reifiedClass = result;
 
             return; // success
-        } catch (LinkageError le) {
-            // fall through to failure path
-            failure = le;
-        } catch (Exception e) {
-            failure = e;
+        }
+        catch (LinkageError error) { // fall through to failure path
+            final String msg = error.getMessage();
+            if ( msg != null && msg.contains("duplicate class definition for name") ) {
+                logReifyException(error, false);
+            }
+            else {
+                logReifyException(error, true);
+            }
+        }
+        catch (Exception ex) {
+            logReifyException(ex, true);
         }
 
         // If we get here, there's some other class in this classloader hierarchy with the same name. In order to
         // avoid a naming conflict, we set reified class to parent and skip reification.
-        if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
-            LOG.error("failed to reify class " + getName() + " due to:");
-            LOG.error(failure);
-        }
 
         if (superClass.reifiedClass != null) {
             reifiedClass = superClass.reifiedClass;
@@ -1592,8 +1570,16 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    public void setReifiedClass(Class<? extends IRubyObject> newReifiedClass) {
-        this.reifiedClass = newReifiedClass;
+    private void logReifyException(final Throwable failure, final boolean error) {
+        if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
+            final String msg = "failed to reify class " + getName() + " due to: ";
+            if ( error ) LOG.error(msg, failure);
+            else LOG.info(msg, failure);
+        }
+    }
+
+    public void setReifiedClass(Class<? extends IRubyObject> reifiedClass) {
+        this.reifiedClass = reifiedClass;
     }
 
     public Class<? extends IRubyObject> getReifiedClass() {
