@@ -1352,7 +1352,7 @@ public abstract class StringPrimitiveNodes {
         public StringPatternPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
         }
 
         @Specialization(guards = "value == 0")
@@ -1381,7 +1381,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             // TODO (nirvdrum 21-Jan-16): Verify the encoding and code range are correct.
-            return allocateObjectNode.allocate(stringClass, makeLeafRopeNode.executeMake(bytes, encoding(string), CodeRange.CR_UNKNOWN), null);
+            return allocateObjectNode.allocate(stringClass, makeLeafRopeNode.executeMake(bytes, encoding(string), CodeRange.CR_UNKNOWN, NotProvided.INSTANCE), null);
         }
 
     }
@@ -1543,7 +1543,7 @@ public abstract class StringPrimitiveNodes {
         public StringByteAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(context, sourceSection, null, null, null);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
         }
 
         @Specialization(guards = "isRubyString(other)")
@@ -1560,7 +1560,7 @@ public abstract class StringPrimitiveNodes {
             // this, StringIO ceases to work -- the resulting string must retain the original CR_7BIT code range. It's
             // ugly, but seems to be due to a difference in how Rubinius keeps track of byte optimizable strings.
 
-            final Rope rightConverted = makeLeafRopeNode.executeMake(right.getBytes(), left.getEncoding(), left.getCodeRange());
+            final Rope rightConverted = makeLeafRopeNode.executeMake(right.getBytes(), left.getEncoding(), left.getCodeRange(), NotProvided.INSTANCE);
 
             StringOperations.setRope(string, makeConcatNode.executeMake(left, rightConverted, left.getEncoding()));
 

@@ -17,6 +17,7 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -28,6 +29,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -44,6 +46,8 @@ public abstract class RopeNodes {
             @NodeChild(type = RubyNode.class, value = "byteLength")
     })
     public abstract static class MakeSubstringNode extends RubyNode {
+
+        @Child private MakeLeafRopeNode makeLeafRopeNode;
 
         public static MakeSubstringNode create(RubyContext context, SourceSection sourceSection) {
             return RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
@@ -188,25 +192,14 @@ public abstract class RopeNodes {
             if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
                 return new SubstringRope(base, offset, byteLength, characterLength, codeRange);
             } else {
+                if (makeLeafRopeNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), getSourceSection(), null, null, null, null));
+                }
+
                 final byte[] bytes = base.extractRange(offset, byteLength);
 
-                switch (codeRange) {
-                    case CR_VALID: {
-                        return new ValidLeafRope(bytes, base.getEncoding(), characterLength);
-                    }
-
-                    case CR_BROKEN: {
-                        return new InvalidLeafRope(bytes, base.getEncoding());
-                    }
-
-                    case CR_7BIT: {
-                        return new AsciiOnlyLeafRope(bytes, base.getEncoding());
-                    }
-
-                    default: {
-                        throw new UnsupportedOperationException("Don't know how to make leaf rope for code range: " + codeRange);
-                    }
-                }
+                return makeLeafRopeNode.executeMake(bytes, base.getEncoding(), codeRange, characterLength);
             }
         }
 
@@ -273,7 +266,7 @@ public abstract class RopeNodes {
                                  @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
             if (makeLeafRopeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), getSourceSection(), null, null, null, null));
             }
 
             final byte[] bytes = new byte[left.byteLength() + right.byteLength()];
@@ -282,7 +275,7 @@ public abstract class RopeNodes {
 
             final CodeRange codeRange = commonCodeRange(left.getCodeRange(), right.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile);
 
-            return makeLeafRopeNode.executeMake(bytes, encoding, codeRange);
+            return makeLeafRopeNode.executeMake(bytes, encoding, codeRange, left.characterLength() +  right.characterLength());
         }
 
         @Specialization(guards = { "!right.isEmpty()", "!isMutableRope(left)", "left.byteLength() >= SHORT_LEAF_BYTESIZE_THRESHOLD", "right.byteLength() < SHORT_LEAF_BYTESIZE_THRESHOLD" })
@@ -381,7 +374,8 @@ public abstract class RopeNodes {
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "bytes"),
             @NodeChild(type = RubyNode.class, value = "encoding"),
-            @NodeChild(type = RubyNode.class, value = "codeRange")
+            @NodeChild(type = RubyNode.class, value = "codeRange"),
+            @NodeChild(type = RubyNode.class, value = "characterLength")
     })
     public abstract static class MakeLeafRopeNode extends RubyNode {
 
@@ -389,25 +383,30 @@ public abstract class RopeNodes {
             super(context, sourceSection);
         }
 
-        public abstract LeafRope executeMake(byte[] bytes, Encoding encoding, CodeRange codeRange);
+        public abstract LeafRope executeMake(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength);
 
         @Specialization(guards = "is7Bit(codeRange)")
-        public LeafRope makeAsciiOnlyLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange) {
+        public LeafRope makeAsciiOnlyLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength) {
             return new AsciiOnlyLeafRope(bytes, encoding);
         }
 
-        @Specialization(guards = { "isValid(codeRange)", "isFixedWidth(encoding)" })
-        public LeafRope makeValidLeafRopeFixedWidthEncoding(byte[] bytes, Encoding encoding, CodeRange codeRange) {
-            final int characterLength = bytes.length / encoding.minLength();
-
+        @Specialization(guards = { "isValid(codeRange)", "wasProvided(characterLength)" })
+        public LeafRope makeValidLeafRopeWithCharacterLength(byte[] bytes, Encoding encoding, CodeRange codeRange, int characterLength) {
             return new ValidLeafRope(bytes, encoding, characterLength);
         }
 
-        @Specialization(guards = { "isValid(codeRange)", "!isFixedWidth(encoding)" })
-        public LeafRope makeValidLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange) {
+        @Specialization(guards = { "isValid(codeRange)", "isFixedWidth(encoding)", "wasNotProvided(characterLength)" })
+        public LeafRope makeValidLeafRopeFixedWidthEncoding(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength) {
+            final int calculatedCharacterLength = bytes.length / encoding.minLength();
+
+            return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
+        }
+
+        @Specialization(guards = { "isValid(codeRange)", "!isFixedWidth(encoding)", "wasNotProvided(characterLength)" })
+        public LeafRope makeValidLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength) {
             // Exctracted from StringSupport.strLength.
 
-            int characterLength = 0;
+            int calculatedCharacterLength = 0;
             int p = 0;
             int e = bytes.length;
 
@@ -415,10 +414,10 @@ public abstract class RopeNodes {
                 if (Encoding.isAscii(bytes[p])) {
                     int q = StringSupport.searchNonAscii(bytes, p, e);
                     if (q == -1) {
-                        characterLength += (e - p);
+                        calculatedCharacterLength += (e - p);
                         break;
                     }
-                    characterLength += q - p;
+                    calculatedCharacterLength += q - p;
                     p = q;
                 }
                 int delta = StringSupport.encFastMBCLen(bytes, p, e, encoding);
@@ -429,19 +428,19 @@ public abstract class RopeNodes {
                 }
 
                 p += delta;
-                characterLength++;
+                calculatedCharacterLength++;
             }
 
-            return new ValidLeafRope(bytes, encoding, characterLength);
+            return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
         }
 
         @Specialization(guards = "isBroken(codeRange)")
-        public LeafRope makeInvalidLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange) {
+        public LeafRope makeInvalidLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength) {
             return new InvalidLeafRope(bytes, encoding);
         }
 
         @Specialization(guards = { "isUnknown(codeRange)", "isEmpty(bytes)" })
-        public LeafRope makeUnknownLeafRopeEmpty(byte[] bytes, Encoding encoding, CodeRange codeRange,
+        public LeafRope makeUnknownLeafRopeEmpty(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength,
                                                  @Cached("createBinaryProfile()") ConditionProfile isUTF8,
                                                  @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
                                                  @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit,
@@ -466,7 +465,7 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = { "isUnknown(codeRange)", "!isEmpty(bytes)", "isBinaryString(encoding)" })
-        public LeafRope makeUnknownLeafRopeBinary(byte[] bytes, Encoding encoding, CodeRange codeRange,
+        public LeafRope makeUnknownLeafRopeBinary(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength,
                                             @Cached("createBinaryProfile()") ConditionProfile discovered7BitProfile) {
             CodeRange newCodeRange = CR_7BIT;
             for (int i = 0; i < bytes.length; i++) {
@@ -484,38 +483,38 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = { "isUnknown(codeRange)", "!isEmpty(bytes)", "!isBinaryString(encoding)", "isAsciiCompatible(encoding)" })
-        public LeafRope makeUnknownLeafRopeAsciiCompatible(byte[] bytes, Encoding encoding, CodeRange codeRange,
+        public LeafRope makeUnknownLeafRopeAsciiCompatible(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength,
                                             @Cached("createBinaryProfile()") ConditionProfile discovered7BitProfile,
                                             @Cached("createBinaryProfile()") ConditionProfile discoveredValidProfile) {
             final long packedLengthAndCodeRange = StringSupport.strLengthWithCodeRangeAsciiCompatible(encoding, bytes, 0, bytes.length);
             final CodeRange newCodeRange = CodeRange.fromInt(StringSupport.unpackArg(packedLengthAndCodeRange));
-            final int characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
+            final int calculatedCharacterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
 
             if (discovered7BitProfile.profile(newCodeRange == CR_7BIT)) {
                 return new AsciiOnlyLeafRope(bytes, encoding);
             }
 
             if (discoveredValidProfile.profile(newCodeRange == CR_VALID)) {
-                return new ValidLeafRope(bytes, encoding, characterLength);
+                return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
             }
 
             return new InvalidLeafRope(bytes, encoding);
         }
 
         @Specialization(guards = { "isUnknown(codeRange)", "!isEmpty(bytes)", "!isBinaryString(encoding)", "!isAsciiCompatible(encoding)" })
-        public LeafRope makeUnknownLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange,
+        public LeafRope makeUnknownLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength,
                                             @Cached("createBinaryProfile()") ConditionProfile discovered7BitProfile,
                                             @Cached("createBinaryProfile()") ConditionProfile discoveredValidProfile) {
             final long packedLengthAndCodeRange = StringSupport.strLengthWithCodeRangeNonAsciiCompatible(encoding, bytes, 0, bytes.length);
             final CodeRange newCodeRange = CodeRange.fromInt(StringSupport.unpackArg(packedLengthAndCodeRange));
-            final int characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
+            final int calculatedCharacterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
 
             if (discovered7BitProfile.profile(newCodeRange == CR_7BIT)) {
                 return new AsciiOnlyLeafRope(bytes, encoding);
             }
 
             if (discoveredValidProfile.profile(newCodeRange == CR_VALID)) {
-                return new ValidLeafRope(bytes, encoding, characterLength);
+                return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
             }
 
             return new InvalidLeafRope(bytes, encoding);
