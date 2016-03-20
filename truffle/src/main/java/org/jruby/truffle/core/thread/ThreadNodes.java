@@ -193,7 +193,12 @@ public abstract class ThreadNodes {
                 }
             });
 
-            return result[0];
+            // if the thread id dead or aborting the SafepointAction will not run
+            if (result[0] != null) {
+                return result[0];
+            } else {
+                return nil();
+            }
         }
 
     }
