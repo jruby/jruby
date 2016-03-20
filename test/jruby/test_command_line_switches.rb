@@ -151,7 +151,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_big_C_error
-    out = jruby('-CaeAEUAOEUAeu_NOT_EXIST_xxx -e "puts Dir.pwd"').rstrip
+    out = jruby('-CaeAEUAOEUAeu_NOT_EXIST_xxx -e "puts Dir.pwd" 2>&1').rstrip
     assert_equal 1, $?.exitstatus
     assert_match /chdir.*fatal/, out
   end
