@@ -20,6 +20,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -27,10 +28,13 @@ import org.jruby.truffle.language.parser.ParserContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class FeatureLoader {
 
     private final RubyContext context;
+    private final ConcurrentHashMap<String, ReentrantLock> fileLocks = new ConcurrentHashMap<>();
 
     public FeatureLoader(RubyContext context) {
         this.context = context;
@@ -54,7 +58,7 @@ public class FeatureLoader {
         } else if (feature.startsWith("../")) {
             feature = currentDirectory.substring(0, currentDirectory.lastIndexOf('/')) + "/" + feature.substring(3);
         }
-        
+
         if (feature.startsWith(SourceLoader.TRUFFLE_SCHEME)
                 || feature.startsWith(SourceLoader.JRUBY_SCHEME)
                 || new File(feature).isAbsolute()) {
@@ -111,25 +115,52 @@ public class FeatureLoader {
         }
     }
 
-    private boolean doRequire(VirtualFrame frame, String expandedPath, IndirectCallNode calNode) {
+    private boolean doRequire(final VirtualFrame frame, final String expandedPath, final IndirectCallNode calNode) {
         if (isFeatureLoaded(expandedPath)) {
             return false;
         }
 
-        final DynamicObject pathString = StringOperations.createString(context,
-                StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
+        final ReentrantLock currentLock = fileLocks.get(expandedPath);
+        final ReentrantLock lock;
 
-        final Source source;
+        if (currentLock == null) {
+            ReentrantLock newLock = new ReentrantLock();
+            final ReentrantLock wasLock = fileLocks.putIfAbsent(expandedPath, newLock);
+            lock = (wasLock == null) ? newLock : wasLock;
+        } else {
+            lock = currentLock;
+        }
 
-        try {
-            source = context.getSourceCache().getSource(expandedPath);
-        } catch (IOException e) {
+        if (lock.isHeldByCurrentThread()) {
+            // circular require
+            // TODO (pitr-ch 20-Mar-2016): warn user
             return false;
         }
 
-        addToLoadedFeatures(pathString);
+        context.getThreadManager().runUntilResult(calNode, new ThreadManager.BlockingAction<Boolean>() {
+            @Override
+            public Boolean block() throws InterruptedException {
+                lock.lockInterruptibly();
+                return SUCCESS;
+            }
+        });
 
         try {
+            if (isFeatureLoaded(expandedPath)) {
+                return false;
+            }
+
+            final Source source;
+
+            try {
+                source = context.getSourceCache().getSource(expandedPath);
+            } catch (IOException e) {
+                return false;
+            }
+
+            final DynamicObject pathString = StringOperations.createString(context,
+                    StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
+
             final RubyRootNode rootNode = context.getCodeLoader().parse(
                     source,
                     UTF8Encoding.INSTANCE,
@@ -145,52 +176,49 @@ public class FeatureLoader {
                     context.getCoreLibrary().getMainObject());
 
             calNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
-        } catch (RaiseException e) {
-            removeFromLoadedFeatures(pathString);
-            throw e;
+
+            addToLoadedFeatures(pathString);
+
+            return true;
+        } finally {
+            lock.unlock();
         }
 
-        return true;
     }
 
+    // TODO (pitr-ch 16-Mar-2016): this protects the $LOADED_FEATURES only in this class,
+    // it can still be accessed and modified (rare) by Ruby code which may cause issues
+    private final Object loadedFeaturesLock = new Object();
+
     private boolean isFeatureLoaded(String feature) {
-        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
+        synchronized (loadedFeaturesLock) {
+            final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
 
-        for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
-            if (loaded.toString().equals(feature)) {
-                return true;
+            for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
+                if (loaded.toString().equals(feature)) {
+                    return true;
+                }
             }
-        }
 
-        return false;
+            return false;
+        }
     }
 
     private void addToLoadedFeatures(DynamicObject feature) {
-        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
-        final int size = Layouts.ARRAY.getSize(loadedFeatures);
-        final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
+        synchronized (loadedFeaturesLock) {
 
-        if (size < store.length) {
-            store[size] = feature;
-        } else {
-            final Object[] newStore = ArrayUtils.grow(store, ArrayUtils.capacityForOneMore(store.length));
-            newStore[size] = feature;
-            Layouts.ARRAY.setStore(loadedFeatures, newStore);
-        }
-        Layouts.ARRAY.setSize(loadedFeatures, size + 1);
-    }
+            final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
+            final int size = Layouts.ARRAY.getSize(loadedFeatures);
+            final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
 
-    private void removeFromLoadedFeatures(DynamicObject feature) {
-        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
-        final Object[] store = (Object[]) Layouts.ARRAY.getStore(loadedFeatures);
-        final int length = Layouts.ARRAY.getSize(loadedFeatures);
-
-        for (int i = length - 1; i >= 0; i--) {
-            if (store[i] == feature) {
-                ArrayUtils.arraycopy(store, i + 1, store, i, length - i - 1);
-                Layouts.ARRAY.setSize(loadedFeatures, length - 1);
-                break;
+            if (size < store.length) {
+                store[size] = feature;
+            } else {
+                final Object[] newStore = ArrayUtils.grow(store, ArrayUtils.capacityForOneMore(store.length));
+                newStore[size] = feature;
+                Layouts.ARRAY.setStore(loadedFeatures, newStore);
             }
+            Layouts.ARRAY.setSize(loadedFeatures, size + 1);
         }
     }
 
