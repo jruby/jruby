@@ -137,7 +137,9 @@ public class BacktraceFormatter {
             String reportedName;
 
             if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
-                reportedSourceSection = nextUserSourceSection(activations, n);
+                final SourceSection nextUserSourceSection = nextUserSourceSection(activations, n);
+                // if there is no next source section use a core one to avoid ???
+                reportedSourceSection = nextUserSourceSection != null ? nextUserSourceSection : sourceSection;
 
                 try {
                     reportedName = activation.getMethod().getName();
