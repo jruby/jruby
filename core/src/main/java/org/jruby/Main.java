@@ -419,7 +419,6 @@ public class Main {
     }
 
     private Status doRunFromMain(Ruby runtime, InputStream in, String filename) {
-        long now = -1;
         try {
             doCheckSecurityManager();
 
@@ -483,10 +482,6 @@ public class Main {
                 config.getError().println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
             }
         }
-    }
-
-    private void doProcessArguments(InputStream in) {
-        config.processArguments(config.parseShebangOptions(in));
     }
 
     private void doPrintProperties() {
