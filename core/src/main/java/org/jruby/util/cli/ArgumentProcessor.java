@@ -213,12 +213,10 @@ public class ArgumentProcessor {
                             config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                         }
                         if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
-                            MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
-                            throw mee;
+                            throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
                         }
                     } catch (IOException e) {
-                        MainExitException mee = new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
-                        throw mee;
+                        throw new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
                     }
                     break FOR;
                 case 'd':
@@ -359,14 +357,12 @@ public class ArgumentProcessor {
                                 config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                             }
                             if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
-                                MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
-                                throw mee;
+                                throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
                             }
                         }
                         config.setXFlag(true);
                     } catch (IOException e) {
-                        MainExitException mee = new MainExitException(1, getArgumentError(" -x must be followed by a valid directory"));
-                        throw mee;
+                        throw new MainExitException(1, getArgumentError(" -x must be followed by a valid directory"));
                     }
                     break FOR;
                 case 'X':
