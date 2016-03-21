@@ -145,6 +145,10 @@ public class DefaultRubyParser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
+
+    public RubyYaccLexer getLexer() {
+        return lexer;
+    }
 %}
 
 %token <Token> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF

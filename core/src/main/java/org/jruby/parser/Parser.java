@@ -160,7 +160,7 @@ public class Parser {
 
         // set coverage baseline into coverage data
         if (runtime.getCoverageData().isCoverageEnabled()) {
-            configuration.growCoverageLines(parser.lexer.lineno());
+            configuration.growCoverageLines(parser.getLexer().getPosition().getStartLine()-1);
             runtime.getCoverageData().prepareCoverage(file, configuration.getCoverage());
         }
 

@@ -134,6 +134,10 @@ public class Ruby19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
+
+    public RubyYaccLexer getLexer() {
+        return lexer;
+    }
 %}
 
 // We need to make sure we have same tokens in the same order and up

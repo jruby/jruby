@@ -137,7 +137,11 @@ public class Ruby19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 141 "-"
+
+    public RubyYaccLexer getLexer() {
+        return lexer;
+    }
+					// line 145 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -4269,7 +4273,7 @@ states[556] = new ParserState() {
   }
 };
 }
-					// line 2023 "Ruby19Parser.y"
+					// line 2027 "Ruby19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4288,4 +4292,4 @@ states[556] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8253 "-"
+					// line 8257 "-"
