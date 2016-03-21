@@ -58,6 +58,15 @@ public class ConcatRope extends Rope {
     @Override
     @TruffleBoundary
     public byte[] extractRange(int offset, int length) {
+        assert length <= this.byteLength();
+
+        if (getRawBytes() != null) {
+            final byte[] ret = new byte[length];
+            System.arraycopy(getRawBytes(), offset, ret, 0, length);
+
+            return ret;
+        }
+
         byte[] leftBytes;
         byte[] rightBytes;
         final int leftLength = left.byteLength();
@@ -79,7 +88,7 @@ public class ConcatRope extends Rope {
                 System.arraycopy(rightBytes, 0, ret, leftBytes.length, rightBytes.length);
 
                 return ret;
-            }  else {
+            } else {
                 return leftBytes;
             }
         }
