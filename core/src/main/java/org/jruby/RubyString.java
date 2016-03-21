@@ -4491,9 +4491,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return left.isNil() && right.isNil() ? context.runtime.getNil() : this;
     }
 
-    /** rb_str_count
-     *
-     */
     public IRubyObject count(ThreadContext context) {
         return count19(context);
     }
@@ -4542,7 +4539,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         final boolean[] table = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(countValue, runtime, table, null, true, enc);
-        return runtime.newFixnum(StringSupport.countCommon19(value, runtime, table, tables, enc));
+        return runtime.newFixnum(StringSupport.strCount(value, runtime, table, tables, enc));
     }
 
     // MRI: rb_str_count for arity > 1, first half
@@ -4563,7 +4560,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             tables = StringSupport.trSetupTable(countStr.value, runtime, table, tables, false, enc);
         }
 
-        return runtime.newFixnum(StringSupport.countCommon19(value, runtime, table, tables, enc));
+        return runtime.newFixnum(StringSupport.strCount(value, runtime, table, tables, enc));
     }
 
     /** rb_str_delete / rb_str_delete_bang
