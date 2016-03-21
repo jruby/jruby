@@ -18,7 +18,7 @@ import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
-class ResolvedInteropExecuteAfterReadNode extends RubyNode {
+public class ResolvedInteropExecuteAfterReadNode extends RubyNode {
 
     @Child private DispatchHeadNode head;
     @Child private InteropArgumentsNode arguments;

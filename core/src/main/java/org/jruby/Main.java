@@ -358,21 +358,32 @@ public class Main {
         System.gc(); // try to clean up a bit of space, hopefully, so we can report this error
 
         String oomeMessage = oome.getMessage();
+        boolean heapError = false;
 
-        if (oomeMessage != null && oomeMessage.contains("PermGen")) { // report permgen memory error
-            config.getError().println("Error: Your application exhausted PermGen area of the heap.");
-            config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
+        if (oomeMessage != null) {
+            if (oomeMessage.contains("PermGen")) {
+                // report permgen memory error
+                config.getError().println("Error: Your application exhausted PermGen area of the heap.");
+                config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
+            } else if (oomeMessage.contains("unable to create new native thread")) {
+                // report thread exhaustion error
+                config.getError().println("Error: Your application demanded too many live threads, perhaps for Fiber or Enumerator.");
+                config.getError().println("Ensure your old Fibers and Enumerators are being cleaned up.");
+            } else {
+                heapError = true;
+            }
+        }
 
-        } else { // report heap memory error
+        if (heapError) { // report heap memory error
 
             String memoryMax = getRuntimeFlagValue("-Xmx");
 
             if (memoryMax != null) {
                 config.getError().println("Error: Your application used more memory than the safety cap of " + memoryMax + ".");
             } else {
-                config.getError().println("Error: Your application used more memory than the default safety cap.");
+                config.getError().println("Error: Your application used more memory than the automatic cap of " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "MB.");
             }
-            config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
+            config.getError().println("Specify -J-Xmx####M to increase it (#### = cap size in MB).");
         }
 
         if (config.isVerbose()) {
@@ -408,7 +419,6 @@ public class Main {
     }
 
     private Status doRunFromMain(Ruby runtime, InputStream in, String filename) {
-        long now = -1;
         try {
             doCheckSecurityManager();
 
@@ -472,10 +482,6 @@ public class Main {
                 config.getError().println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
             }
         }
-    }
-
-    private void doProcessArguments(InputStream in) {
-        config.processArguments(config.parseShebangOptions(in));
     }
 
     private void doPrintProperties() {

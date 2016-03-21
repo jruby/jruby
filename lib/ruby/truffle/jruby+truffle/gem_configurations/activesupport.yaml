@@ -66,7 +66,7 @@
                                    TimeWithZoneTest:         [:test_no_method_error_has_proper_context] }
 
 
-                      undefine = if ENV['TRAVIS']
+                      undefine = if ENV['CI']
                                    crashes.merge(failures)
                                  else
                                    crashes

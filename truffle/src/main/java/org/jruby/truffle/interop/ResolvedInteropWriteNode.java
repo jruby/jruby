@@ -19,7 +19,7 @@ import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
-class ResolvedInteropWriteNode extends RubyNode {
+public class ResolvedInteropWriteNode extends RubyNode {
 
     @Child private DispatchHeadNode head;
     private final String name;

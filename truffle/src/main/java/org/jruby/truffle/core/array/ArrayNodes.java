@@ -2394,7 +2394,7 @@ public abstract class ArrayNodes {
 
         public PackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null);
+            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
         }
 
         @Specialization(guards = {"isRubyString(format)", "ropesEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
@@ -2480,14 +2480,7 @@ public abstract class ArrayNodes {
             }
 
 
-            final Rope rope;
-            if (result.getStringCodeRange() == CodeRange.CR_VALID) {
-                // TODO (nirvdrum 01-Feb-16): We probably should have a node for creating ropes with a known character length.
-                rope = new ValidLeafRope(bytes, encoding, result.getStringLength());
-            } else {
-                rope = makeLeafRopeNode.executeMake(bytes, encoding, result.getStringCodeRange());
-            }
-
+            final Rope rope = makeLeafRopeNode.executeMake(bytes, encoding, result.getStringCodeRange(), result.getStringLength());
             final DynamicObject string = createString(rope);
 
             if (result.isTainted()) {

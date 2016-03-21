@@ -15,7 +15,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubyMethodForeignAccessFactory;
+import org.jruby.truffle.core.MethodForeignAccessFactory;
 import org.jruby.truffle.core.array.ArrayForeignAccessFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
 import org.jruby.truffle.core.hash.HashForeignAccessFactory;
@@ -50,7 +50,7 @@ public class RubyObjectType extends ObjectType {
         final ForeignAccess.Factory10 factory;
 
         if (Layouts.METHOD.isMethod(object) || Layouts.PROC.isProc(object)) {
-            factory = new RubyMethodForeignAccessFactory(getContext());
+            factory = new MethodForeignAccessFactory(getContext());
         } else if (Layouts.ARRAY.isArray(object)) {
             factory = new ArrayForeignAccessFactory(getContext());
         } else if (Layouts.HASH.isHash(object)) {

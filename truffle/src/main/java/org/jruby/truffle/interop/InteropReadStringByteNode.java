@@ -20,7 +20,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
-class InteropReadStringByteNode extends RubyNode {
+public class InteropReadStringByteNode extends RubyNode {
 
     private final int labelIndex;
 

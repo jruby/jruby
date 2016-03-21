@@ -17,7 +17,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
 
-class InteropInstanceVariableReadNode extends RubyNode {
+public class InteropInstanceVariableReadNode extends RubyNode {
 
     @Child private ReadInstanceVariableNode read;
     private final String name;

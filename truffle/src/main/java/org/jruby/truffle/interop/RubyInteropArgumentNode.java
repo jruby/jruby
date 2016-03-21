@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-class RubyInteropArgumentNode extends RubyNode {
+public class RubyInteropArgumentNode extends RubyNode {
 
     private final int index;
 

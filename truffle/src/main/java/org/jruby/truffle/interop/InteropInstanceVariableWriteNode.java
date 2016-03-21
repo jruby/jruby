@@ -17,7 +17,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 
-class InteropInstanceVariableWriteNode extends RubyNode {
+public class InteropInstanceVariableWriteNode extends RubyNode {
 
     @Child private WriteInstanceVariableNode write;
     private final String name;
