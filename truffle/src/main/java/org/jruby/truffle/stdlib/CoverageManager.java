@@ -30,8 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 public class CoverageManager {
-
-    public static final String LINE_TAG = "org.jruby.truffle.coverage.line";
+    public @interface LineTag {
+    }
 
     public static final long NO_CODE = -1;
 
@@ -66,7 +66,7 @@ public class CoverageManager {
             throw new UnsupportedOperationException();
         }
 
-        instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LINE_TAG).build(), new ExecutionEventNodeFactory() {
+        instrumenter.attachFactory(SourceSectionFilter.newBuilder().annotatedBy(LineTag.class).build(), new ExecutionEventNodeFactory() {
 
             @Override
             public ExecutionEventNode create(EventContext eventContext) {

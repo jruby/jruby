@@ -36,11 +36,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class TraceManager {
-
-    public static final String LINE_TAG = "org.jruby.truffle.trace.line";
-    public static final String CLASS_TAG = "org.jruby.truffle.trace.class";
-    public static final String CALL_TAG = "org.jruby.truffle.trace.call";
-
+    public static @interface LineTag {
+    }
+    public static @interface CallTag {
+    }
+    public static @interface ClassTag {
+    }
+    
     private final RubyContext context;
     private final Instrumenter instrumenter;
 
@@ -68,7 +70,7 @@ public class TraceManager {
 
         instruments = new ArrayList<>();
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LINE_TAG).build(), new ExecutionEventNodeFactory() {
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().annotatedBy(LineTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
                 final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("line", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
@@ -76,7 +78,7 @@ public class TraceManager {
             }
         }));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CALL_TAG).build(), new ExecutionEventNodeFactory() {
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().annotatedBy(CallTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
                 final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("call", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
@@ -84,7 +86,7 @@ public class TraceManager {
             }
         }));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CLASS_TAG).build(), new ExecutionEventNodeFactory() {
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().annotatedBy(ClassTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
                 final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("class", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));

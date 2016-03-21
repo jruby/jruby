@@ -19,6 +19,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+import java.lang.annotation.Annotation;
 import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
@@ -38,6 +39,10 @@ import org.jruby.util.ByteList;
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
 @Instrumentable(factory = RubyNodeWrapper.class)
+@TraceManager.CallTag
+@AttachmentsManager.LineTag
+@TraceManager.LineTag
+@CoverageManager.LineTag
 public abstract class RubyNode extends Node {
 
     private static final int FLAG_NEWLINE = 0;
@@ -240,15 +245,13 @@ public abstract class RubyNode extends Node {
     }
 
     @Override
-    protected boolean isTaggedWith(String tag) {
-        if (tag == TraceManager.CALL_TAG) {
+    protected boolean isAnnotationPresent(Class<? extends Annotation> tag) {
+        if (tag == TraceManager.CallTag.class) {
             return isCall();
         }
-
-        if (tag == AttachmentsManager.LINE_TAG || tag == TraceManager.LINE_TAG || tag == CoverageManager.LINE_TAG) {
+        if (tag == AttachmentsManager.LineTag.class || tag == TraceManager.LineTag.class || tag == CoverageManager.LineTag.class) {
             return isNewLine();
         }
-
         return false;
     }
 
