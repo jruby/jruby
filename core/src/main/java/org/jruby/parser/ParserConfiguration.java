@@ -186,17 +186,24 @@ public class ParserConfiguration {
         if (i < 0) return; // JRUBY-6868: why would there be negative line numbers?
 
         if (runtime.getCoverageData().isCoverageEnabled()) {
-            if (coverage == null) {
-                coverage = new int[i + 1];
-            } else if (coverage.length <= i) {
-                int[] newCoverage = new int[i + 1];
-                Arrays.fill(newCoverage, -1);
-                System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
-                coverage = newCoverage;
-            }
-
-            // zero means coverable, but not yet covered
+            growCoverageLines(i);
             coverage[i] = 0;
+        }
+    }
+
+    /**
+     *  Called by coverLine to grow it large enough to add new covered line.
+     *  Also called at end up parse to pick up any extra non-code lines which
+     *  should be marked -1 for not valid code lines.
+     */
+    public void growCoverageLines(int i) {
+        if (coverage == null) {
+            coverage = new int[i + 1];
+        } else if (coverage.length <= i) {
+            int[] newCoverage = new int[i + 1];
+            Arrays.fill(newCoverage, -1);
+            System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
+            coverage = newCoverage;
         }
     }
 
