@@ -80,8 +80,8 @@ public class CoverageModule {
             for (int i = 0; i < entry.getValue().length; i++) {
                 int integer = entry.getValue()[i];
                 ary.store(i, integer == -1 ? context.nil : runtime.newFixnum(integer));
-                covHash.fastASetCheckString(runtime, RubyString.newString(runtime, entry.getKey()), ary);
             }
+            covHash.fastASetCheckString(runtime, RubyString.newString(runtime, entry.getKey()), ary);
         }
         
         return covHash;
