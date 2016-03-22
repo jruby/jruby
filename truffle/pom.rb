@@ -45,6 +45,7 @@ project 'JRuby Truffle' do
                    :phase => 'compile',
                    'annotationProcessors' => [ 'org.jruby.truffle.om.dsl.processor.OMProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',
+                                               'com.oracle.truffle.dsl.processor.InteropProcessor',
                                                'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor',
                                                'com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
