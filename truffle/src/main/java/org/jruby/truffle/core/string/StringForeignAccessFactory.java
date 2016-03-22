@@ -27,9 +27,4 @@ public class StringForeignAccessFactory extends BasicObjectForeignAccessFactory 
         super(context);
     }
 
-    @Override
-    public CallTarget accessRead() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new UnresolvedInteropStringReadNode(context, null)));
-    }
-
 }

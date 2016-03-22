@@ -40,6 +40,12 @@ public class UnresolvedInteropReadNode extends RubyNode {
                 }
             }
             DynamicObject receiver = (DynamicObject) ForeignAccess.getReceiver(frame);
+
+            if (RubyGuards.isRubyString(receiver)) {
+                // TODO CS 22-Mar-16 monomorphic, what happens if it fails for other objects?
+                return this.replace(new UnresolvedInteropStringReadNode(getContext(), getSourceSection())).execute(frame);
+            }
+
             InternalMethod labelMethod = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(receiver), label.toString());
             InternalMethod indexedSetter = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(receiver), "[]=");
             if (labelMethod == null && indexedSetter != null) {
