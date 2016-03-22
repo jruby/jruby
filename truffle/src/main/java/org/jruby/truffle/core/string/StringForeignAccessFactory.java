@@ -28,16 +28,6 @@ public class StringForeignAccessFactory extends BasicObjectForeignAccessFactory 
     }
 
     @Override
-    public CallTarget accessIsBoxed() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropStringIsBoxed(context, null)));
-    }
-
-    @Override
-    public CallTarget accessUnbox() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropStringUnboxNode(context, null)));
-    }
-
-    @Override
     public CallTarget accessRead() {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new UnresolvedInteropStringReadNode(context, null)));
     }

@@ -20,6 +20,8 @@ import org.jruby.truffle.interop.InteropGetSizeProperty;
 import org.jruby.truffle.interop.InteropHasSize;
 import org.jruby.truffle.interop.InteropIsExecutable;
 import org.jruby.truffle.interop.InteropIsNull;
+import org.jruby.truffle.interop.InteropStringIsBoxed;
+import org.jruby.truffle.interop.InteropStringUnboxNode;
 import org.jruby.truffle.interop.RubyInteropRootNode;
 import org.jruby.truffle.interop.UnresolvedInteropExecuteAfterReadNode;
 import org.jruby.truffle.interop.UnresolvedInteropReadNode;
@@ -46,7 +48,7 @@ public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 
 
     @Override
     public CallTarget accessIsBoxed() {
-        return Truffle.getRuntime().createCallTarget(RootNode.createConstantNode(false));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropStringIsBoxed(context, null)));
     }
 
     @Override
@@ -61,7 +63,7 @@ public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 
 
     @Override
     public CallTarget accessUnbox() {
-        return null;
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropStringUnboxNode(context, null)));
     }
 
     @Override
