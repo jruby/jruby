@@ -15,7 +15,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
+import org.jruby.truffle.interop.RubyForeignAccessFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 
@@ -42,7 +42,7 @@ public class RubyObjectType extends ObjectType {
     @Override
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
         CompilerAsserts.neverPartOfCompilation();
-        return ForeignAccess.create(DynamicObject.class, new BasicObjectForeignAccessFactory(getContext()));
+        return ForeignAccess.create(DynamicObject.class, new RubyForeignAccessFactory(getContext()));
     }
 
     private RubyContext getContext() {

@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.basicobject;
+package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
@@ -28,11 +28,11 @@ import org.jruby.truffle.interop.UnresolvedInteropReadNode;
 import org.jruby.truffle.interop.UnresolvedInteropWriteNode;
 import org.jruby.truffle.language.literal.BooleanLiteralNode;
 
-public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 {
+public class RubyForeignAccessFactory implements ForeignAccess.Factory10 {
 
     protected final RubyContext context;
 
-    public BasicObjectForeignAccessFactory(RubyContext context) {
+    public RubyForeignAccessFactory(RubyContext context) {
         this.context = context;
     }
 
