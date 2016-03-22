@@ -16,7 +16,6 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.MethodForeignAccessFactory;
-import org.jruby.truffle.core.array.ArrayForeignAccessFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringForeignAccessFactory;
@@ -50,8 +49,6 @@ public class RubyObjectType extends ObjectType {
 
         if (Layouts.METHOD.isMethod(object) || Layouts.PROC.isProc(object)) {
             factory = new MethodForeignAccessFactory(getContext());
-        } else if (Layouts.ARRAY.isArray(object)) {
-            factory = new ArrayForeignAccessFactory(getContext());
         } else if (Layouts.STRING.isString(object)) {
             factory = new StringForeignAccessFactory(getContext());
         } else {
