@@ -185,7 +185,7 @@ public class ParserConfiguration {
     public void coverLine(int i) {
         if (i < 0) return; // JRUBY-6868: why would there be negative line numbers?
 
-        if (runtime.getCoverageData().isCoverageEnabled()) {
+        if (!isEvalParse() && runtime.getCoverageData().isCoverageEnabled()) {
             growCoverageLines(i);
             coverage[i] = 0;
         }
