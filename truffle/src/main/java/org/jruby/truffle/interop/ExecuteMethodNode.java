@@ -30,7 +30,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import java.util.List;
 
 @NodeChild(value="method", type = RubyNode.class)
-public abstract class ExecuteMethodNode extends AbstractExecuteMethodNode {
+public abstract class ExecuteMethodNode extends RubyNode {
     @Child private IndirectCallNode callNode;
     public ExecuteMethodNode(RubyContext context,
                              SourceSection sourceSection) {
@@ -74,10 +74,6 @@ public abstract class ExecuteMethodNode extends AbstractExecuteMethodNode {
         return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(method), null, args));
     }
 
-    protected InternalMethod getMethodFromProc(DynamicObject proc) {
-        return Layouts.PROC.getMethod(proc);
-    }
-
     protected CallTarget getCallTarget(DynamicObject proc) {
         return Layouts.PROC.getCallTargetForType(proc);
     }
@@ -86,4 +82,5 @@ public abstract class ExecuteMethodNode extends AbstractExecuteMethodNode {
         return Layouts.METHOD.getMethod(method);
     }
 
+    public abstract Object executeWithTarget(VirtualFrame frame, Object method);
 }
