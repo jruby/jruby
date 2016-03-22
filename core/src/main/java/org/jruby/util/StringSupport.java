@@ -419,7 +419,6 @@ public final class StringSupport {
     }
 
     @SuppressWarnings("deprecation")
-    @SuppressWarnings("deprecation")
     public static int utf8Nth(byte[]bytes, int p, int e, int nth) {
         // FIXME: Missing our UNSAFE impl because it was doing the wrong thing: See GH #1986
         while (p < e) {
