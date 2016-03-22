@@ -24,9 +24,4 @@ public class HashForeignAccessFactory extends BasicObjectForeignAccessFactory {
         super(context);
     }
 
-    @Override
-    public CallTarget accessGetSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropGetSizeProperty(context, null)));
-    }
-
 }

@@ -33,11 +33,6 @@ public class StringForeignAccessFactory extends BasicObjectForeignAccessFactory 
     }
 
     @Override
-    public CallTarget accessGetSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropGetSizeProperty(context, null)));
-    }
-
-    @Override
     public CallTarget accessUnbox() {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropStringUnboxNode(context, null)));
     }
