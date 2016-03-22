@@ -15,6 +15,7 @@ import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.interop.InteropExecute;
 import org.jruby.truffle.interop.InteropGetSizeProperty;
 import org.jruby.truffle.interop.InteropHasSize;
 import org.jruby.truffle.interop.InteropIsExecutable;
@@ -75,7 +76,7 @@ public class BasicObjectForeignAccessFactory implements ForeignAccess.Factory10 
 
     @Override
     public CallTarget accessExecute(int i) {
-        return null;
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropExecute(context, null)));
     }
 
     @Override

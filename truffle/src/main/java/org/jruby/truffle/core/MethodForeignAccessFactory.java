@@ -24,9 +24,4 @@ public class MethodForeignAccessFactory extends BasicObjectForeignAccessFactory 
         super(context);
     }
 
-    @Override
-    public CallTarget accessExecute(int i) {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(new InteropExecute(context, null)));
-    }
-
 }
