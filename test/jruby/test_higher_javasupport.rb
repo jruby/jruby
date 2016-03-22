@@ -446,7 +446,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
       Java::void[1].new
       fail "expected to raise"
     rescue ArgumentError => e
-      assert_equal "Java package `void' does not have a method `[]'", e.message
+      assert_equal "Java package 'void' does not have a method `[]' with 1 argument", e.message
+    end
+    assert Java::Void == Java::void
+    assert Java::void.equal? Java::Void
+    quiet do
+      p Java
+      p Java::void
     end
   end
 
