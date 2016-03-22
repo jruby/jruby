@@ -57,14 +57,17 @@ public class CoverageModule {
         if (!runtime.getCoverageData().isCoverageEnabled()) {
             throw runtime.newRuntimeError("coverage measurement is not enabled");
         }
-        
-        return convertCoverageToRuby(context, runtime, runtime.getCoverageData().resetCoverage(runtime));
+
+        IRubyObject result = convertCoverageToRuby(context, runtime, runtime.getCoverageData().getCoverage());
+        runtime.getCoverageData().resetCoverage(runtime);
+        return result;
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject peek_result(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
 
+        System.out.println("CE: " + runtime.getCoverageData().isCoverageEnabled());
         if (!runtime.getCoverageData().isCoverageEnabled()) {
             throw runtime.newRuntimeError("coverage measurement is not enabled");
         }
@@ -76,6 +79,8 @@ public class CoverageModule {
         // populate a Ruby Hash with coverage data
         RubyHash covHash = RubyHash.newHash(runtime);
         for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
+            if (entry.getKey().equals(CoverageData.STARTED)) continue; // ignore our hidden marker
+
             RubyArray ary = RubyArray.newArray(runtime, entry.getValue().length);
             for (int i = 0; i < entry.getValue().length; i++) {
                 int integer = entry.getValue()[i];
