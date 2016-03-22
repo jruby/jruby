@@ -876,6 +876,22 @@ class TestHigherJavasupport < Test::Unit::TestCase
     # Java::OrgJrubyJavasupportTestApp::lowerClass
   end if ALLOW_UPPERCASE_PACKAGE_NAMES
 
+  def test_package_name_colliding_with_name_method
+    assert_equal 'Java::OrgJrubyJavasupport', org.jruby.javasupport.name
+    assert_equal true, org.jruby.javasupport.respond_to?(:name)
+    assert org.jruby.javasupport.test.is_a?(Java::JavaPackage)
+
+    assert_equal 'Java::OrgJrubyJavasupportTest', org.jruby.javasupport.test.name
+    # we can use :: to access the name package :
+    assert Java::OrgJrubyJavasupportTestName.is_a?(Java::JavaPackage)
+    assert Java::OrgJrubyJavasupportTestName::Sample
+  end
+
+  def test_package_object_id
+    assert org.jruby.object_id.is_a?(Fixnum)
+    assert Java::java::lang.object_id.is_a?(Fixnum)
+  end
+
   @@include_proc = Proc.new do
     Thread.stop
     java_import "java.lang.System"
