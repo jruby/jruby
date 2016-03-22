@@ -24,7 +24,6 @@ import java.util.List;
 public class ResolvedInteropExecuteAfterReadNode extends RubyNode {
 
     @Child private DispatchHeadNode head;
-    @Child private InteropArgumentsNode arguments;
     private final String name;
     private final int labelIndex;
     private final int receiverIndex;
@@ -33,7 +32,6 @@ public class ResolvedInteropExecuteAfterReadNode extends RubyNode {
         super(context, sourceSection);
         this.name = name;
         this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
-        this.arguments = new InteropArgumentsNode(context, sourceSection, arity); // [0] is receiver, [1] is the label
         this.labelIndex = 1;
         this.receiverIndex = 0;
     }
@@ -41,8 +39,6 @@ public class ResolvedInteropExecuteAfterReadNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (name.equals(frame.getArguments()[labelIndex])) {
-            //Object[] args = new Object[arguments.getCount(frame)];
-            //arguments.executeFillObjectArray(frame, args);
             final List<Object> arguments = ForeignAccess.getArguments(frame);
             return head.dispatch(frame, frame.getArguments()[receiverIndex], frame.getArguments()[labelIndex], null, arguments.subList(1, arguments.size()).toArray());
         } else {
