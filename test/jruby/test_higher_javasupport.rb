@@ -876,6 +876,16 @@ class TestHigherJavasupport < Test::Unit::TestCase
     # Java::OrgJrubyJavasupportTestApp::lowerClass
   end if ALLOW_UPPERCASE_PACKAGE_NAMES
 
+  def test_package_class
+    assert org.jruby.class.is_a?(Class)
+    assert_equal org.jruby.class, Java::JavaPackage
+    assert_equal Java::OrgJrubyJavasupport.class, Java::JavaPackage
+
+    assert org.jruby.singleton_class.is_a?(Class)
+    assert_not_equal org.jruby.singleton_class, org.jruby.class
+    assert_not_equal org.jruby.singleton_class, org.jruby.javasupport.singleton_class
+  end
+
   def test_package_name_colliding_with_name_method
     assert_equal 'Java::OrgJrubyJavasupport', org.jruby.javasupport.name
     assert_equal true, org.jruby.javasupport.respond_to?(:name)
