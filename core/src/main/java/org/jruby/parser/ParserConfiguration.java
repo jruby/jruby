@@ -34,6 +34,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -84,7 +85,6 @@ public class ParserConfiguration {
         this.isDebug = config.isParserDebug();
         this.frozenStringLiteral = config.isFrozenStringLiteral();
     }
-
 
     public void setFrozenStringLiteral(boolean frozenStringLiteral) {
         this.frozenStringLiteral = frozenStringLiteral;
@@ -162,7 +162,11 @@ public class ParserConfiguration {
         // any of the specific-size scopes.
         return new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newLocalScope(null, file), existingScope);
     }
-    
+
+    public boolean isCoverageEnabled() {
+        return !isEvalParse() && runtime.getCoverageData().isCoverageEnabled();
+    }
+
     /**
      * Get whether we are saving the DATA contents of the file.
      */
@@ -185,7 +189,7 @@ public class ParserConfiguration {
     public void coverLine(int i) {
         if (i < 0) return; // JRUBY-6868: why would there be negative line numbers?
 
-        if (!isEvalParse() && runtime.getCoverageData().isCoverageEnabled()) {
+        if (!isCoverageEnabled()) {
             growCoverageLines(i);
             coverage[i] = 0;
         }
@@ -208,8 +212,23 @@ public class ParserConfiguration {
     }
 
     /**
+     * At end of a parse if coverage is enabled we will do final processing
+     * of the primitive coverage array and make sure runtimes coverage data
+     * has been updated with this new data.
+     */
+    public CoverageData finishCoverage(String file, int lines) {
+        if (!isCoverageEnabled()) return null;
+
+        growCoverageLines(lines);
+        CoverageData data = runtime.getCoverageData();
+        data.prepareCoverage(file, coverage);
+        return data;
+    }
+
+    /**
      * Get the coverage array, indicating all coverable lines
      */
+    @Deprecated
     public int[] getCoverage() {
         return coverage;
     }
