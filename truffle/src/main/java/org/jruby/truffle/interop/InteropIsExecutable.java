@@ -14,24 +14,16 @@ import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
-public class InteropStringUnboxNode extends RubyNode {
-
-    public InteropStringUnboxNode(RubyContext context, SourceSection sourceSection) {
+public class InteropIsExecutable extends RubyNode {
+    public InteropIsExecutable(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final DynamicObject receiver = (DynamicObject) ForeignAccess.getReceiver(frame);
-
-        if (RubyGuards.isRubyString(receiver)) {
-            return StringOperations.getByteListReadOnly(receiver).get(0);
-        } else {
-            return receiver;
-        }
+        return RubyGuards.isRubyMethod(ForeignAccess.getReceiver(frame));
     }
 }

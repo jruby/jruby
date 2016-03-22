@@ -11,6 +11,7 @@
 package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 
 public class SubstringRope extends Rope {
@@ -46,8 +47,16 @@ public class SubstringRope extends Rope {
     }
 
     @Override
+    @TruffleBoundary
     public byte[] extractRange(int offset, int length) {
         assert length <= this.byteLength();
+
+        if (getRawBytes() != null) {
+            final byte[] ret = new byte[length];
+            System.arraycopy(getRawBytes(), offset, ret, 0, length);
+
+            return ret;
+        }
 
         return child.extractRange(this.offset + offset, length);
     }

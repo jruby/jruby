@@ -12,26 +12,26 @@ package org.jruby.truffle.interop;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.core.array.ArrayLayoutImpl;
+import org.jruby.truffle.core.hash.HashLayoutImpl;
+import org.jruby.truffle.core.string.StringLayoutImpl;
 import org.jruby.truffle.language.RubyNode;
 
-public class InteropStringUnboxNode extends RubyNode {
+public class InteropHasSize extends RubyNode {
 
-    public InteropStringUnboxNode(RubyContext context, SourceSection sourceSection) {
+    public InteropHasSize(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final DynamicObject receiver = (DynamicObject) ForeignAccess.getReceiver(frame);
+        final ObjectType type = ((DynamicObject) ForeignAccess.getReceiver(frame)).getShape().getObjectType();
 
-        if (RubyGuards.isRubyString(receiver)) {
-            return StringOperations.getByteListReadOnly(receiver).get(0);
-        } else {
-            return receiver;
-        }
+        return type instanceof ArrayLayoutImpl.ArrayType
+                || type instanceof HashLayoutImpl.HashType
+                || type instanceof StringLayoutImpl.StringType;
     }
 }

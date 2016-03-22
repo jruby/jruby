@@ -29,7 +29,8 @@ env:
     - JT='test specs :core'
     - JT='test specs :library'
     - JT='test specs :truffle'
-    - JT='test integration'
+    - JT='test integration fast'
+    - JT='test integration long' JAVA_OPTS="$JAVA_OPTS -Xmx512m"
 
 matrix:
   include:
@@ -46,7 +47,6 @@ matrix:
       jdk: oraclejdk8
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk7
-    - env: JT='test integration'
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required

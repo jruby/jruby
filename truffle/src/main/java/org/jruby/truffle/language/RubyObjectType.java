@@ -11,16 +11,13 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.MethodForeignAccessFactory;
-import org.jruby.truffle.core.array.ArrayForeignAccessFactory;
-import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
-import org.jruby.truffle.core.hash.HashForeignAccessFactory;
+import org.jruby.truffle.interop.RubyForeignAccessFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.string.StringForeignAccessFactory;
 import org.jruby.truffle.core.string.StringOperations;
 
 public class RubyObjectType extends ObjectType {
@@ -45,23 +42,11 @@ public class RubyObjectType extends ObjectType {
 
     @Override
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
-        CompilerAsserts.neverPartOfCompilation();
+        return RubyObjectTypeForeign.ACCESS;
+    }
 
-        final ForeignAccess.Factory10 factory;
-
-        if (Layouts.METHOD.isMethod(object) || Layouts.PROC.isProc(object)) {
-            factory = new MethodForeignAccessFactory(getContext());
-        } else if (Layouts.ARRAY.isArray(object)) {
-            factory = new ArrayForeignAccessFactory(getContext());
-        } else if (Layouts.HASH.isHash(object)) {
-            factory = new HashForeignAccessFactory(getContext());
-        } else if (Layouts.STRING.isString(object)) {
-            factory = new StringForeignAccessFactory(getContext());
-        } else {
-            factory = new BasicObjectForeignAccessFactory(getContext());
-        }
-
-        return ForeignAccess.create(DynamicObject.class, factory);
+    public static boolean isInstance(TruffleObject object) {
+        return RubyGuards.isRubyBasicObject(object);
     }
 
     private RubyContext getContext() {

@@ -166,7 +166,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean alive(DynamicObject thread) {
-            return Layouts.THREAD.getStatus(thread) != Status.ABORTING && Layouts.THREAD.getStatus(thread) != Status.DEAD;
+            final Status status = Layouts.THREAD.getStatus(thread);
+            return status != Status.ABORTING && status != Status.DEAD;
         }
 
     }
@@ -192,7 +193,12 @@ public abstract class ThreadNodes {
                 }
             });
 
-            return result[0];
+            // if the thread id dead or aborting the SafepointAction will not run
+            if (result[0] != null) {
+                return result[0];
+            } else {
+                return nil();
+            }
         }
 
     }
@@ -411,7 +417,8 @@ public abstract class ThreadNodes {
         @Specialization
         public Object status(DynamicObject self) {
             // TODO: slightly hackish
-            if (Layouts.THREAD.getStatus(self) == Status.DEAD) {
+            final Status status = Layouts.THREAD.getStatus(self);
+            if (status == Status.DEAD) {
                 if (Layouts.THREAD.getException(self) != null) {
                     return nil();
                 } else {
@@ -419,7 +426,7 @@ public abstract class ThreadNodes {
                 }
             }
 
-            return createString(Layouts.THREAD.getStatus(self).bytes);
+            return createString(status.bytes);
         }
 
     }
@@ -433,7 +440,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean stop(DynamicObject self) {
-            return Layouts.THREAD.getStatus(self) == Status.DEAD || Layouts.THREAD.getStatus(self) == Status.SLEEP;
+            final Status status = Layouts.THREAD.getStatus(self);
+            return status == Status.DEAD || status == Status.SLEEP;
         }
 
     }

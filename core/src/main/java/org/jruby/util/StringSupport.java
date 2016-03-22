@@ -868,16 +868,16 @@ public final class StringSupport {
     /**
      * rb_str_count
      */
-
-    public static int countCommon19(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
+    public static int strCount(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
         final byte[] bytes = str.getUnsafeBytes();
         int p = str.getBegin();
         final int end = p + str.getRealSize();
+        final boolean asciiCompat = enc.isAsciiCompatible();
 
         int count = 0;
         while (p < end) {
             int c;
-            if (enc.isAsciiCompatible() && (c = bytes[p] & 0xff) < 0x80) {
+            if (asciiCompat && (c = bytes[p] & 0xff) < 0x80) {
                 if (table[c]) count++;
                 p++;
             } else {
@@ -889,6 +889,13 @@ public final class StringSupport {
         }
 
         return count;
+    }
+
+    /**
+     * @deprecated renamed to {@link #strCount(ByteList, Ruby, boolean[], TrTables, Encoding)}
+     */
+    public static int countCommon19(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
+        return strCount(str, runtime, table, tables, enc);
     }
 
     // MRI: rb_str_rindex
