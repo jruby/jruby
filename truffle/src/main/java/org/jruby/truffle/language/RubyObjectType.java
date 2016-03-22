@@ -18,7 +18,6 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.MethodForeignAccessFactory;
 import org.jruby.truffle.core.array.ArrayForeignAccessFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectForeignAccessFactory;
-import org.jruby.truffle.core.hash.HashForeignAccessFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringForeignAccessFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -53,8 +52,6 @@ public class RubyObjectType extends ObjectType {
             factory = new MethodForeignAccessFactory(getContext());
         } else if (Layouts.ARRAY.isArray(object)) {
             factory = new ArrayForeignAccessFactory(getContext());
-        } else if (Layouts.HASH.isHash(object)) {
-            factory = new HashForeignAccessFactory(getContext());
         } else if (Layouts.STRING.isString(object)) {
             factory = new StringForeignAccessFactory(getContext());
         } else {
