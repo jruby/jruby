@@ -1,6 +1,6 @@
 windows = RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
 
-exclude :test_create_with_chain, 'needs investigation' if windows
+exclude :test_create_with_chain, 'needs investigation'
 exclude :test_create_with_chain_decode, 'unimplemented'
 exclude :test_create_with_bad_nid, 'unimplemented'
 exclude :test_create_with_itr, 'unimplemented'
