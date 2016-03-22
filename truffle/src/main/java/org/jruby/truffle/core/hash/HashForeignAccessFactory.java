@@ -25,11 +25,6 @@ public class HashForeignAccessFactory extends BasicObjectForeignAccessFactory {
     }
 
     @Override
-    public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(RootNode.createConstantNode(false));
-    }
-
-    @Override
     public CallTarget accessHasSize() {
         return Truffle.getRuntime().createCallTarget(RootNode.createConstantNode(true));
     }

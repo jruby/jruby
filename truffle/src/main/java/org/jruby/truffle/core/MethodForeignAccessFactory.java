@@ -25,11 +25,6 @@ public class MethodForeignAccessFactory extends BasicObjectForeignAccessFactory 
     }
 
     @Override
-    public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(RootNode.createConstantNode(false));
-    }
-
-    @Override
     public CallTarget accessIsExecutable() {
         return Truffle.getRuntime().createCallTarget(RootNode.createConstantNode(true));
     }
