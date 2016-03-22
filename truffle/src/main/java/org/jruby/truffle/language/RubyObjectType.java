@@ -11,6 +11,7 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.RubyContext;
@@ -41,8 +42,11 @@ public class RubyObjectType extends ObjectType {
 
     @Override
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ForeignAccess.create(DynamicObject.class, new RubyForeignAccessFactory(getContext()));
+        return RubyObjectTypeForeign.ACCESS;
+    }
+
+    public static boolean isInstance(TruffleObject object) {
+        return RubyGuards.isRubyBasicObject(object);
     }
 
     private RubyContext getContext() {

@@ -11,12 +11,15 @@ package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
+
+import java.util.List;
 
 public class ResolvedInteropExecuteAfterReadNode extends RubyNode {
 
@@ -38,9 +41,10 @@ public class ResolvedInteropExecuteAfterReadNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (name.equals(frame.getArguments()[labelIndex])) {
-            Object[] args = new Object[arguments.getCount(frame)];
-            arguments.executeFillObjectArray(frame, args);
-            return head.dispatch(frame, frame.getArguments()[receiverIndex], frame.getArguments()[labelIndex], null, args);
+            //Object[] args = new Object[arguments.getCount(frame)];
+            //arguments.executeFillObjectArray(frame, args);
+            final List<Object> arguments = ForeignAccess.getArguments(frame);
+            return head.dispatch(frame, frame.getArguments()[receiverIndex], frame.getArguments()[labelIndex], null, arguments.subList(1, arguments.size()).toArray());
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new IllegalStateException("Name changed");
