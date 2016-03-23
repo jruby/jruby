@@ -30,6 +30,7 @@ package org.jruby.javasupport;
 import org.jruby.IncludedModuleWrapper;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -38,11 +39,14 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.NullMethod;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassProvider;
+
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
  * A "thin" Java package wrapper (for the runtime to see them as Ruby objects).
@@ -173,13 +177,70 @@ public class JavaPackage extends RubyModule {
         return Java.getProxyClass(runtime, javaClass);
     }
 
+    @JRubyMethod(name = "respond_to?")
+    public IRubyObject respond_to_p(final ThreadContext context, IRubyObject name) {
+        return respond_to(context, name, false);
+    }
+
+    @JRubyMethod(name = "respond_to?")
+    public IRubyObject respond_to_p(final ThreadContext context, IRubyObject name, IRubyObject includePrivate) {
+        return respond_to(context, name, includePrivate.isTrue());
+    }
+
+    private IRubyObject respond_to(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
+        String name = mname.asJavaString();
+        if ( getMetaClass().isMethodBound(name, !includePrivate, true) ) {
+            return context.runtime.getTrue();
+        }
+        /*
+        if ( ( name = BlankSlateWrapper.handlesMethod(name) ) != null ) {
+            RubyBoolean bound = checkMetaClassBoundMethod(context, name, includePrivate);
+            if ( bound != null ) return bound;
+            return context.runtime.getFalse(); // un-bound (removed) method
+        }
+        */
+
+        //if ( ! (mname instanceof RubySymbol) ) mname = context.runtime.newSymbol(name);
+        //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, context.runtime.newBoolean(includePrivate));
+        //return context.runtime.newBoolean(respond.isTrue());
+
+        return context.nil; // NOTE: this is wrong - should be true but compatibility first, for now
+    }
+
+    private RubyBoolean checkMetaClassBoundMethod(final ThreadContext context, final String name, final boolean includePrivate) {
+        // getMetaClass().isMethodBound(name, !includePrivate, true)
+        DynamicMethod method = getMetaClass().searchMethod(name);
+        if ( ! method.isUndefined() && ! method.isNotImplemented() ) {
+            if ( ! includePrivate && method.getVisibility() == PRIVATE ) {
+                return context.runtime.getFalse();
+            }
+            return context.runtime.getTrue();
+        }
+        return null;
+    }
+
+    @JRubyMethod(name = "respond_to_missing?")
+    public IRubyObject respond_to_missing_p(final ThreadContext context, IRubyObject name) {
+        return respond_to_missing(context, name, false);
+    }
+
+    @JRubyMethod(name = "respond_to_missing?")
+    public IRubyObject respond_to_missing_p(final ThreadContext context, IRubyObject name, IRubyObject includePrivate) {
+        return respond_to_missing(context, name, includePrivate.isTrue());
+    }
+
+    private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
+        final String name = mname.asJavaString();
+        if ( BlankSlateWrapper.handlesMethod(name) != null ) {
+            return context.runtime.getFalse(); // not missing!
+        }
+        return context.runtime.getTrue();
+    }
+
     @JRubyMethod(name = "method_missing", visibility = Visibility.PRIVATE)
     public IRubyObject method_missing(ThreadContext context, final IRubyObject name) {
-        final RubyModule result = Java.getProxyOrPackageUnderPackage(context, this, name.toString(), true);
         // NOTE: getProxyOrPackageUnderPackage binds the (cached) method for us
-
-        if ( result == null ) return context.nil; // TODO this is wrong
-        return result;
+        return Java.getProxyOrPackageUnderPackage(context, this, name.toString(), true);
     }
 
     @JRubyMethod(name = "method_missing", rest = true, visibility = Visibility.PRIVATE)
@@ -251,46 +312,55 @@ public class JavaPackage extends RubyModule {
         }
 
         @Override
-        protected DynamicMethod searchMethodCommon(final String name) {
+        protected DynamicMethod searchMethodCommon(String name) {
             // this module is special and only searches itself;
 
             // TODO implement a switch to allow for 'more-aligned' behavior
 
-            // do not go to superclasses except for special methods :
+            return (name = handlesMethod(name)) != null ? superClass.searchMethodInner(name) : NullMethod.INSTANCE;
+        }
+
+        private static String handlesMethod(final String name) {
             switch (name) {
-                case "class" : case "singleton_class" :
-                case "object_id" : case "name" :
+                case "class" : case "singleton_class" : return name;
+                case "object_id" : case "name" : return name;
                 // these are handled already at the JavaPackage.class :
                 // case "const_get" : case "const_missing" : case "method_missing" :
-                case "const_set" :
-                case "inspect" : case "to_s" :
+                case "const_set" : return name;
+                case "inspect" : case "to_s" : return name;
                 // these are handled bellow in switch (name.charAt(0))
                 // case "__method__" : case "__send__" : case "__id__" :
 
                 //case "require" : case "load" :
                 case "throw" : case "catch" : //case "fail" : case "raise" :
                 //case "exit" : case "at_exit" :
-                    return superClass.searchMethodInner(name);
+                    return name;
 
-                case "__constants__" : // @Deprecated compatibility with 1.7
-                    return superClass.searchMethodInner("constants");
-                case "__methods__" : // @Deprecated compatibility with 1.7
-                    return superClass.searchMethodInner("methods");
+                case "singleton_method_added" :
+                // JavaPackageModuleTemplate handled "singleton_method_added"
+                case "singleton_method_undefined" :
+                case "singleton_method_removed" :
+                case "define_singleton_method" :
+                    return name;
+
+                // NOTE: these should maybe get re-thought and deprecated (for now due compatibility)
+                case "__constants__" : return "constants";
+                case "__methods__" : return "methods";
             }
 
             final int last = name.length() - 1;
             if ( last >= 0 ) {
-                switch (name.charAt(0)) {
-                    case '<' : case '>' : case '=' : // e.g. ==
-                        return superClass.searchMethodInner(name);
-                    case '_' : // e.g. __send__
-                        if ( last > 0 && name.charAt(1) == '_' ) {
-                            return superClass.searchMethodInner(name);
-                        }
-                }
                 switch (name.charAt(last)) {
                     case '?' : case '!' : case '=' :
-                        return superClass.searchMethodInner(name);
+                        return name;
+                }
+                switch (name.charAt(0)) {
+                    case '<' : case '>' : case '=' : // e.g. ==
+                        return name;
+                    case '_' : // e.g. __send__
+                        if ( last > 0 && name.charAt(1) == '_' ) {
+                            return name;
+                        }
                 }
             }
 
@@ -298,10 +368,10 @@ public class JavaPackage extends RubyModule {
             //       name.indexOf("method") >= 0 || // method, instance_methods, singleton_methods ...
             //       name.indexOf("variable") >= 0 || // class_variables, class_variable_get, instance_variables ...
             //       name.indexOf("constant") >= 0 ) ) { // constants, :public_constant, :private_constant
-            //    return superClass.searchMethodInner(name);
+            //    return true;
             //}
 
-            return NullMethod.INSTANCE;
+            return null;
         }
 
         @Override
