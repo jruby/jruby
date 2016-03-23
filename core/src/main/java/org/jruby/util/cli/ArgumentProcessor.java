@@ -814,6 +814,12 @@ public class ArgumentProcessor {
                 return true;
             }
         });
+        features.put("did-you-mean", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableDidYouMean(!enable);
+                return true;
+            }
+        });
         features.put("did_you_mean", new Function2<Boolean, ArgumentProcessor, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 processor.config.setDisableDidYouMean(!enable);
@@ -827,6 +833,12 @@ public class ArgumentProcessor {
             }
         });
         features.put("frozen-string-literal", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setFrozenStringLiteral(enable);
+                return true;
+            }
+        });
+        features.put("frozen_string_literal", new Function2<Boolean, ArgumentProcessor, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 processor.config.setFrozenStringLiteral(enable);
                 return true;
