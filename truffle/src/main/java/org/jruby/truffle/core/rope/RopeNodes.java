@@ -216,35 +216,11 @@ public abstract class RopeNodes {
     })
     public abstract static class MakeConcatNode extends RubyNode {
 
-        protected static final int SHORT_LEAF_BYTESIZE_THRESHOLD = 128;
-
-        @Child private MakeLeafRopeNode makeLeafRopeNode;
-
         public MakeConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public abstract Rope executeMake(Rope left, Rope right, Encoding encoding);
-
-        @Specialization(guards = { "left.isEmpty()", "!isMutableRope(left)", "right.getEncoding() == encoding" })
-        public Rope concatEmptyLeftSameEncoding(Rope left, Rope right, Encoding encoding) {
-            return right;
-        }
-
-        @Specialization(guards = { "left.isEmpty()", "!isMutableRope(left)", "right.getEncoding() != encoding" })
-        public Rope concatEmptyLeftDifferentEncoding(Rope left, Rope right, Encoding encoding) {
-            return RopeOperations.withEncoding(right, encoding);
-        }
-
-        @Specialization(guards = { "right.isEmpty()", "left.getEncoding() == encoding" })
-        public Rope concatEmptyRightSameEncoding(Rope left, Rope right, Encoding encoding) {
-            return left;
-        }
-
-        @Specialization(guards = { "right.isEmpty()", "left.getEncoding() != encoding" })
-        public Rope concatEmptyRightDifferentEncoding(Rope left, Rope right, Encoding encoding) {
-            return RopeOperations.withEncoding(left, encoding);
-        }
 
         @Specialization(guards = "isMutableRope(left)")
         public Rope concatMutableRope(MutableRope left, Rope right, Encoding encoding,
@@ -260,56 +236,7 @@ public abstract class RopeNodes {
             return left;
         }
 
-        @Specialization(guards = { "!left.isEmpty()", "!right.isEmpty()", "!isMutableRope(left)", "left.byteLength() < SHORT_LEAF_BYTESIZE_THRESHOLD", "right.byteLength() < SHORT_LEAF_BYTESIZE_THRESHOLD" })
-        public Rope concatLeaves(LeafRope left, LeafRope right, Encoding encoding,
-                                 @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
-                                 @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
-            if (makeLeafRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), getSourceSection(), null, null, null, null));
-            }
-
-            final byte[] bytes = new byte[left.byteLength() + right.byteLength()];
-            System.arraycopy(left.getRawBytes(), 0, bytes, 0, left.byteLength());
-            System.arraycopy(right.getRawBytes(), 0, bytes, left.byteLength(), right.byteLength());
-
-            final CodeRange codeRange = commonCodeRange(left.getCodeRange(), right.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile);
-
-            return makeLeafRopeNode.executeMake(bytes, encoding, codeRange, left.characterLength() +  right.characterLength());
-        }
-
-        @Specialization(guards = { "!right.isEmpty()", "!isMutableRope(left)", "left.byteLength() >= SHORT_LEAF_BYTESIZE_THRESHOLD", "right.byteLength() < SHORT_LEAF_BYTESIZE_THRESHOLD" })
-        public Rope concatLeavesGeneral(LeafRope left, LeafRope right, Encoding encoding,
-                                 @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
-                                 @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
-                                 @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile) {
-            return concat(left, right, encoding, sameCodeRangeProfile, brokenCodeRangeProfile, isLeftSingleByteOptimizableProfile);
-        }
-
-        @Specialization(guards = { "!left.isEmpty()", "!right.isEmpty()", "right.byteLength() < SHORT_LEAF_BYTESIZE_THRESHOLD" })
-        public Rope concatWithReduce(ConcatRope left, LeafRope right, Encoding encoding,
-                                     @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
-                                     @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
-                                     @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile,
-                                     @Cached("createBinaryProfile()") ConditionProfile shouldCompactProfile) {
-
-            if (shouldCompactProfile.profile((left.getRight().byteLength() < SHORT_LEAF_BYTESIZE_THRESHOLD) && (left.getRight() instanceof LeafRope))) {
-                final Rope compacted = concatLeaves((LeafRope) left.getRight(), right, encoding, sameCodeRangeProfile, brokenCodeRangeProfile);
-                return concat(left.getLeft(), compacted, encoding, sameCodeRangeProfile, brokenCodeRangeProfile, isLeftSingleByteOptimizableProfile);
-            }
-
-            return concat(left, right, encoding, sameCodeRangeProfile, brokenCodeRangeProfile, isLeftSingleByteOptimizableProfile);
-        }
-
-        @Specialization(guards = { "!left.isEmpty()", "!right.isEmpty()", "right.byteLength() < SHORT_LEAF_BYTESIZE_THRESHOLD" })
-        public Rope concatSubstringLeaf(SubstringRope left, LeafRope right, Encoding encoding,
-                                     @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
-                                     @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
-                                     @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile) {
-            return concat(left, right, encoding, sameCodeRangeProfile, brokenCodeRangeProfile, isLeftSingleByteOptimizableProfile);
-        }
-
-        @Specialization(guards = { "!left.isEmpty()", "!right.isEmpty()", "!isMutableRope(left)" })
+        @Specialization(guards = { "!isMutableRope(left)" })
         public Rope concat(Rope left, Rope right, Encoding encoding,
                            @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
@@ -355,14 +282,6 @@ public abstract class RopeNodes {
         private int max(int x, int y) {
             // This approach is adapted from http://graphics.stanford.edu/~seander/bithacks.html?1=1#IntegerMinOrMax
             return x - ((x - y) & ((x - y) >> (Integer.SIZE - 1)));
-        }
-
-        protected static boolean isShortLeafRope(Rope rope) {
-            return (rope.byteLength() < SHORT_LEAF_BYTESIZE_THRESHOLD) && isLeafRope(rope);
-        }
-
-        protected static boolean isLeafRope(Rope rope) {
-            return rope instanceof LeafRope;
         }
 
         protected static boolean isMutableRope(Rope rope) {

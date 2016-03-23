@@ -150,9 +150,9 @@ public class IRReader implements IRPersistenceValues {
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
         case INSTANCE_METHOD:
-            return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope, false);
         case CLASS_METHOD:
-            return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope, false);
         case MODULE_BODY:
             return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
         case SCRIPT_BODY:

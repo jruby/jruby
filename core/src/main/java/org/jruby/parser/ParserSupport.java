@@ -47,6 +47,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.RubyLexer;
@@ -85,7 +86,7 @@ public class ParserSupport {
         inSingleton = 0;
         inDefinition = false;
     }
-    
+
     public StaticScope getCurrentScope() {
         return currentScope;
     }
@@ -188,7 +189,8 @@ public class ParserSupport {
 
         return node;
     }
-    
+
+    // This is the last node made in the AST unintuitively so so post-processing can occur here.
     public Node addRootNode(Node topOfAST) {
         final int endPosition;
 
@@ -198,28 +200,28 @@ public class ParserSupport {
             endPosition = -1;
         }
 
+        ISourcePosition position;
+        CoverageData coverageData = configuration.finishCoverage(lexer.getFile(), lexer.lineno());
         if (result.getBeginNodes().isEmpty()) {
-            ISourcePosition position;
             if (topOfAST == null) {
                 topOfAST = NilImplicitNode.NIL;
                 position = lexer.getPosition();
             } else {
                 position = topOfAST.getPosition();
             }
-            
-            return new RootNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition);
-        }
+        } else {
+            position = topOfAST != null ? topOfAST.getPosition() : result.getBeginNodes().get(0).getPosition();
+            BlockNode newTopOfAST = new BlockNode(position);
+            for (Node beginNode : result.getBeginNodes()) {
+                appendToBlock(newTopOfAST, beginNode);
+            }
 
-        ISourcePosition position = topOfAST != null ? topOfAST.getPosition() : result.getBeginNodes().get(0).getPosition();
-        BlockNode newTopOfAST = new BlockNode(position);
-        for (Node beginNode: result.getBeginNodes()) {
-            appendToBlock(newTopOfAST, beginNode);
+            // Add real top to new top (unless this top is empty [only begin/end nodes or truly empty])
+            if (topOfAST != null) newTopOfAST.add(topOfAST);
+            topOfAST = newTopOfAST;
         }
         
-        // Add real top to new top (unless this top is empty [only begin/end nodes or truly empty])
-        if (topOfAST != null) newTopOfAST.add(topOfAST);
-        
-        return new RootNode(position, result.getScope(), newTopOfAST, lexer.getFile(), endPosition);
+        return new RootNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, coverageData != null);
     }
     
     /* MRI: block_append */
