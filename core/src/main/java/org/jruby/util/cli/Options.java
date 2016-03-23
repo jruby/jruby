@@ -111,6 +111,7 @@ public class Options {
     public static final Option<String> JIT_EXCLUDE = string(JIT, "jit.exclude", "", "Exclude methods from JIT. <ModClsName or '-'>::<method_name>, comma-delimited.");
     public static final Option<Boolean> JIT_DEBUG = bool(JIT, "jit.debug", false, "Log loading of JITed bytecode.");
     public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", JIT_THRESHOLD.load() != 0, "Run the JIT compiler in a background thread. Off if jit.threshold=0.");
+    public static final Option<Boolean> JIT_KERNEL = bool(JIT, "jit.kernel", false, "Run the JIT compiler while the pure-Ruby kernel is booting.");
 
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
@@ -229,6 +230,7 @@ public class Options {
     public static final Option<Integer> TRUFFLE_ARRAY_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.array.uninitialized_size", 32, "How large an Array to allocate when we have no other information to go on.");
     public static final Option<Integer> TRUFFLE_ARRAY_SMALL = integer(TRUFFLE, "truffle.array.small", 3, "Maximum size of an Array to consider small for optimisations.");
     public static final Option<Integer> TRUFFLE_HASH_PACKED_ARRAY_MAX = integer(TRUFFLE, "truffle.hash.packed_array.max", 3, "Maximum size of a Hash to consider using the packed array storage strategy for.");
+    public static final Option<Boolean> TRUFFLE_ROPE_LAZY_SUBSTRINGS = bool(TRUFFLE, "truffle.rope.lazy_substrings", true, "Indicates whether a substring operation on a rope should be performed lazily.");
 
     public static final Option<Integer> TRUFFLE_DEFAULT_CACHE = integer(TRUFFLE, "truffle.default_cache", 8, "Default size for caches.");
 
@@ -270,7 +272,6 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_BACKTRACES_INTERLEAVE_JAVA = bool(TRUFFLE, "truffle.backtraces.interleave_java", false, "Interleave Java stacktraces into the Ruby backtrace.");
     public static final Option<Integer> TRUFFLE_BACKTRACES_LIMIT = integer(TRUFFLE, "truffle.backtraces.limit", 9999, "Limit the size of Ruby backtraces.");
     public static final Option<Boolean> TRUFFLE_BACKTRACES_OMIT_UNUSED = bool(TRUFFLE, "truffle.backtraces.omit_unused", true, "Omit backtraces that should be unused as they have pure rescue expressions.");
-    public static final Option<Boolean> TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = bool(TRUFFLE, "truffle.set_trace_func.include_core_file_callers", false, "Include internal core library calls in set_trace_func output.");
 
     public static final Option<Boolean> TRUFFLE_METRICS_TIME = bool(TRUFFLE, "truffle.metrics.time", false, "Print the time at various stages of VM operation.");
     public static final Option<Boolean> TRUFFLE_METRICS_MEMORY_USED_ON_EXIT = bool(TRUFFLE, "truffle.metrics.memory_used_on_exit", false, "Print the size of heap memory in use on exit.");

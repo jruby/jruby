@@ -882,7 +882,7 @@ public class Java implements Library {
             String type = ex.getClass().getName();
             String msg = ex.getLocalizedMessage();
             if ( msg != null ) {
-                final String unMajorMinorVersion = "nsupported major.minor version";
+                final String unMajorMinorVersion = "unsupported major.minor version";
                 // e.g. "com/sample/FooBar : Unsupported major.minor version 52.0"
                 int idx = msg.indexOf(unMajorMinorVersion);
                 if (idx > 0) {

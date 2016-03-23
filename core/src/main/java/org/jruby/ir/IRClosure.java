@@ -77,16 +77,27 @@ public class IRClosure extends IRScope {
         this.signature = c.signature;
     }
 
-    // Used by iter + lambda by IRBuilder
+    // Used by persistence.  Knowledge of coverage not needed here since it is already instrumented into the instrs
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_");
+        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_", false);
     }
+
+    // Used by iter + lambda by IRBuilder
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, boolean needsCoverage) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_", false, needsCoverage);
+    }
+
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix) {
         this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, false);
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix, boolean isBeginEndBlock) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, isBeginEndBlock, false);
+    }
+
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope,
+                     Signature signature, String prefix, boolean isBeginEndBlock, boolean needsCoverage) {
         this(manager, lexicalParent, lineNumber, staticScope, prefix);
         this.signature = signature;
         lexicalParent.addClosure(this);
@@ -101,7 +112,10 @@ public class IRClosure extends IRScope {
                 staticScope.setScopeType(this.getScopeType());
             }
         }
+
+        if (needsCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
     }
+
 
     @Override
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
@@ -205,7 +219,7 @@ public class IRClosure extends IRScope {
         DefNode def = source;
         source = null;
 
-        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLineNumber(), getStaticScope());
+        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLineNumber(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
     }
 
     public void setSource(IterNode iter) {

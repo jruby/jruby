@@ -14,11 +14,14 @@ import org.jruby.truffle.RubyContext;
 public class CoreStrings {
 
     public final CoreString ASSIGNMENT;
+    public final CoreString CALL;
+    public final CoreString CLASS;
     public final CoreString CLASS_VARIABLE;
     public final CoreString EXPRESSION;
     public final CoreString FALSE;
     public final CoreString GLOBAL_VARIABLE;
     public final CoreString INSTANCE_VARIABLE;
+    public final CoreString LINE;
     public final CoreString LOCAL_VARIABLE;
     public final CoreString NIL;
     public final CoreString SELF;
@@ -27,11 +30,14 @@ public class CoreStrings {
 
     public CoreStrings(RubyContext context) {
         ASSIGNMENT = new CoreString(context, "assignment");
+        CALL = new CoreString(context, "call");
+        CLASS = new CoreString(context, "class");
         CLASS_VARIABLE = new CoreString(context, "class variable");
         EXPRESSION = new CoreString(context, "expression");
         FALSE = new CoreString(context, "false");
         GLOBAL_VARIABLE = new CoreString(context, "global-variable");
         INSTANCE_VARIABLE = new CoreString(context, "instance-variable");
+        LINE = new CoreString(context, "line");
         LOCAL_VARIABLE = new CoreString(context, "local-variable");
         NIL = new CoreString(context, "nil");
         SELF = new CoreString(context, "self");

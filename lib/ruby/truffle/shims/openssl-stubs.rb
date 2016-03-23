@@ -52,6 +52,9 @@ module OpenSSL
           iv_byte = @iv[(iv_i*2)..(iv_i*2+1)].to_i(16)
           (byte ^ iv_byte).chr
         end.join
+      rescue => e
+        # puts format "%s (%s)\n%s", e.message, e.class, e.backtrace.join("\n")
+        raise CipherError
       end
 
       def final

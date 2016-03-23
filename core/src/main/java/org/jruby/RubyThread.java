@@ -478,14 +478,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject to_s(ThreadContext context) {
-            return context.runtime.newString(element.mriStyleString());
+            return RubyString.newString(context.runtime, element.mriStyleString());
         }
 
-        public static IRubyObject newLocationArray(Ruby runtime, RubyStackTraceElement[] elements) {
-            RubyArray ary = runtime.newArray(elements.length);
+        public static RubyArray newLocationArray(Ruby runtime, RubyStackTraceElement[] elements) {
+            return newLocationArray(runtime, elements, 0, elements.length);
+        }
 
-            for (RubyStackTraceElement element : elements) {
-                ary.append(new RubyThread.Location(runtime, runtime.getLocation(), element));
+        public static RubyArray newLocationArray(Ruby runtime, RubyStackTraceElement[] elements,
+            final int offset, final int length) {
+            final RubyClass locationClass = runtime.getLocation();
+
+            RubyArray ary = runtime.newArray(length);
+            for ( int i = offset; i < offset + length; i++ ) {
+                ary.append(new RubyThread.Location(runtime, locationClass, elements[i]));
             }
 
             return ary;

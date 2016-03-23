@@ -151,7 +151,7 @@ class JRubyTruffleRunner
         readme: {
             help: ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false]
         }
-    }
+    }.each { |group, options| options.each { |name, definition| definition.last.freeze } }
   end
 
   begin
@@ -228,7 +228,7 @@ class JRubyTruffleRunner
   end
 
 
-  def initialize(argv = ARGV)
+  def initialize(argv)
     @options        = construct_default_options
     @option_parsers = build_option_parsers
 
@@ -334,7 +334,10 @@ class JRubyTruffleRunner
 
   def self.default_option_values(group_options)
     group_options.each_with_object({}) do |(option, data), group_option_defaults|
-      *args, block, default         = data
+      *args, block, default = data
+      unless [TrueClass, FalseClass, NilClass, Fixnum].any? { |v| v === default }
+        default = default.dup
+      end
       group_option_defaults[option] = default
     end
   end
@@ -449,9 +452,12 @@ class JRubyTruffleRunner
 
     core_load_path = jruby_path.join 'truffle/src/main/ruby'
 
+    missing_core_load_path = !File.exists?(core_load_path)
+    puts "Core load path: #{core_load_path} does not exist, fallbacking to --no-use-fs-core" if missing_core_load_path
+
     truffle_options = [
         ('-X+T'),
-        ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core]),
+        ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core] && !missing_core_load_path),
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
     ]
 
@@ -509,13 +515,13 @@ class JRubyTruffleRunner
         rest          = option_parser.order line.split
 
         gem_name = rest.first
-        CIEnvironment.new(@options[:global][:dir], gem_name, rest[1..-1]).success?
+        CIEnvironment.new(@options[:global][:dir], gem_name, rest[1..-1], verbose: verbose?).success?
       end
 
       results.all?
     else
       gem_name = rest.first
-      ci       = CIEnvironment.new @options[:global][:dir], gem_name, rest[1..-1], definition: options[:ci][:definition]
+      ci       = CIEnvironment.new @options[:global][:dir], gem_name, rest[1..-1], definition: options[:ci][:definition], verbose: verbose?
       ci.success?
     end
   end
@@ -549,10 +555,11 @@ class JRubyTruffleRunner
     define_dsl_attr(:working_dir) { |v| Pathname(v) }
     attr_reader :gem_name
 
-    def initialize(working_dir, gem_name, rest, definition: nil)
+    def initialize(working_dir, gem_name, rest, definition: nil, verbose: false)
       @options  = {}
       @gem_name = gem_name
       @rest     = rest
+      @verbose  = verbose
 
       @working_dir     = Pathname(working_dir)
       @repository_name = gem_name
@@ -652,7 +659,7 @@ class JRubyTruffleRunner
     end
 
     def setup
-      Dir.chdir(testing_dir) { JRubyTruffleRunner.new(['setup']).run }
+      Dir.chdir(testing_dir) { JRubyTruffleRunner.new([('-v' if @verbose), 'setup'].compact).run }
     end
 
     def cancel_ci!(result = false)
@@ -665,7 +672,7 @@ class JRubyTruffleRunner
 
     def run(options, raise: true)
       raise ArgumentError unless options.is_a? Array
-      Dir.chdir(testing_dir) { JRubyTruffleRunner.new(['run', *options]).run }
+      Dir.chdir(testing_dir) { JRubyTruffleRunner.new([('-v' if @verbose), 'run', *options].compact).run }
     end
 
     def execute(cmd, dir: testing_dir, raise: true)

@@ -32,7 +32,6 @@ import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_STORE_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_HASH_PACKED_ARRAY_MAX;
-import static org.jruby.util.cli.Options.TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC;
 import static org.jruby.util.cli.Options.TRUFFLE_INLINE_NEEDS_CALLER_FRAME;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTANCE_VARIABLE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT;
@@ -45,6 +44,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_PACK_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_RECOVER_LOOP_MIN;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_UNROLL_LIMIT;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_USE_JAVA;
+import static org.jruby.util.cli.Options.TRUFFLE_ROPE_LAZY_SUBSTRINGS;
 import static org.jruby.util.cli.Options.TRUFFLE_SYMBOL_TO_PROC_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_THREAD_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_UNPACK_CACHE;
@@ -69,6 +69,8 @@ public class Options {
     public final int ARRAY_SMALL = TRUFFLE_ARRAY_SMALL.load();
 
     public final int HASH_PACKED_ARRAY_MAX = TRUFFLE_HASH_PACKED_ARRAY_MAX.load();
+
+    public final boolean ROPE_LAZY_SUBSTRINGS = TRUFFLE_ROPE_LAZY_SUBSTRINGS.load();
 
     // Caches
 
@@ -114,7 +116,6 @@ public class Options {
     public final boolean BACKTRACES_INTERLEAVE_JAVA = TRUFFLE_BACKTRACES_INTERLEAVE_JAVA.load();
     public final int BACKTRACES_LIMIT = TRUFFLE_BACKTRACES_LIMIT.load();
     public final boolean BACKTRACES_OMIT_UNUSED = TRUFFLE_BACKTRACES_OMIT_UNUSED.load();
-    public final boolean INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC.load();
 
     // Call graph
 

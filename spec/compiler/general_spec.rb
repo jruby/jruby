@@ -348,7 +348,11 @@ modes.each do |mode|
     end
 
     it "compiles dynamic regexp" do
-      run('"foo" =~ /#{"foo"}/') {|result| expect(result).to eq 0 }
+      # test different arities since we optimize smaller ones
+      1.upto(10) do |i|
+        run('x = "foo"; i = ' + i.to_s + '; x * i =~ /' + '#{x}' * i + '/') {|result| expect(result).to eq 0 }
+      end
+
       run('ary = []; 2.times {|i| ary << ("foo0" =~ /#{"foo" + i.to_s}/o)}; ary') {|result| expect(result).to eq([0, 0]) }
     end
 

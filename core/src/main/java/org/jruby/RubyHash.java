@@ -1664,7 +1664,11 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
 
-    private static class Mismatch extends RuntimeException {}
+    private static class Mismatch extends RuntimeException {
+        public Throwable fillInStackTrace() {
+            return this;
+        }
+    }
     private static final Mismatch MISMATCH = new Mismatch();
 
     /** rb_hash_shift

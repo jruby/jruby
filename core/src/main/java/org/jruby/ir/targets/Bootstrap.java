@@ -797,26 +797,6 @@ public class Bootstrap {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    // constant lookup
-
-    public static Handle searchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
-    }
-
-    public static CallSite searchConst(Lookup lookup, String searchType, MethodType type, String constName, int publicOnly) {
-        ConstantLookupSite site = new ConstantLookupSite(type, constName, publicOnly == 0 ? false : true);
-
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .insert(0, site)
-                .invokeVirtualQuiet(LOOKUP, searchType);
-
-        site.setTarget(handle);
-
-        return site;
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
     // Fixnum binding
 
     public static IRubyObject instVarNullToNil(IRubyObject value, IRubyObject nil, String name) {

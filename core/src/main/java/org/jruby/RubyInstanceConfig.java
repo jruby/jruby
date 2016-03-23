@@ -169,10 +169,10 @@ public class RubyInstanceConfig {
             Object rubyoptObj = environment.get("RUBYOPT");
             String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
 
-            if (rubyopt == null || "".equals(rubyopt)) return;
+            if (rubyopt == null || rubyopt.length() == 0) return;
 
-            if (rubyopt.split("\\s").length != 0) {
-                String[] rubyoptArgs = rubyopt.split("\\s+");
+            String[] rubyoptArgs = rubyopt.split("\\s+");
+            if (rubyoptArgs.length != 0) {
                 new ArgumentProcessor(rubyoptArgs, false, true, true, this).processArguments();
             }
         } catch (SecurityException se) {

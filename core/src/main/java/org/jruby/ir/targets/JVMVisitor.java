@@ -818,7 +818,12 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) {
         final IRBytecodeAdapter m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
+
+        if (instr.getOptions().isOnce() && instr.getRegexp() != null) {
+            visit(new Regexp(instr.getRegexp().source().convertToString().getByteList(), instr.getOptions()));
+            jvmStoreLocal(instr.getResult());
+            return;
+        }
 
         RegexpOptions options = instr.getOptions();
         final Operand[] operands = instr.getPieces();
@@ -1807,7 +1812,7 @@ public class JVMVisitor extends IRVisitor {
             case IS_DEFINED_CONSTANT_OR_METHOD:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
@@ -1819,14 +1824,14 @@ public class JVMVisitor extends IRVisitor {
                 break;
             case IS_DEFINED_GLOBAL:
                 jvmMethod().loadContext();
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[0]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[0]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedGlobal", sig(IRubyObject.class, ThreadContext.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_INSTANCE_VAR:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedInstanceVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
@@ -1834,21 +1839,21 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().checkcast(p(RubyModule.class));
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedClassVar", sig(IRubyObject.class, ThreadContext.class, RubyModule.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_SUPER:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedSuper", sig(IRubyObject.class, ThreadContext.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_METHOD:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((StringLiteral) runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable) runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().ldc(((Boolean)runtimehelpercall.getArgs()[2]).isTrue());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class));
                 jvmStoreLocal(runtimehelpercall.getResult());

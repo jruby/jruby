@@ -18,9 +18,7 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import java.util.Locale;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
@@ -30,6 +28,8 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+
+import java.util.Locale;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {

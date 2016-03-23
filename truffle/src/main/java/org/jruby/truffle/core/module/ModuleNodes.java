@@ -1847,7 +1847,7 @@ public abstract class ModuleNodes {
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {
             SymbolTable.checkClassVariableName(getContext(), name, this);
-            return Layouts.MODULE.getFields(module).removeClassVariable(getContext(), this, name);
+            return ModuleOperations.removeClassVariable(Layouts.MODULE.getFields(module), getContext(), this, name);
         }
 
     }

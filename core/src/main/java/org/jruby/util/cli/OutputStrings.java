@@ -4,6 +4,7 @@ import com.headius.options.Option;
 import jnr.posix.util.Platform;
 import org.jruby.CompatVersion;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 /**
@@ -122,8 +123,8 @@ public class OutputStrings {
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
                 Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : "",
                 Options.COMPILE_MODE.load().shouldJIT() ? " +jit" : "",
-                Platform.getOSName(),
-                SafePropertyAccessor.getProperty("os.arch", "Unknown arch")
+                RbConfigLibrary.getOSName(),
+                RbConfigLibrary.getArchitecture()
                 );
 
         return fullVersion;

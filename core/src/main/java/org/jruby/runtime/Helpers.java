@@ -2636,20 +2636,20 @@ public class Helpers {
         Encoding encoding = value.getEncoding();
 
         if (encoding == UTF8Encoding.INSTANCE) {
-                return RubyEncoding.decodeUTF8(unsafeBytes, begin, length);
+            return RubyEncoding.decodeUTF8(unsafeBytes, begin, length);
+        }
+
+        Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
+
+        if (charset == null) {
+            try {
+                return new String(unsafeBytes, begin, length, encoding.toString());
+            } catch (UnsupportedEncodingException uee) {
+                return value.toString();
             }
+        }
 
-            Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
-
-            if (charset == null) {
-                try {
-                    return new String(unsafeBytes, begin, length, encoding.toString());
-                } catch (UnsupportedEncodingException uee) {
-                    return value.toString();
-                }
-            }
-
-            return RubyEncoding.decode(unsafeBytes, begin, length, charset);
+        return RubyEncoding.decode(unsafeBytes, begin, length, charset);
         }
 
     /**

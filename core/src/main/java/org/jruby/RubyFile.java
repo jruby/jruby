@@ -496,8 +496,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return getRuntime().newString(val.toString());
     }
 
-    private static String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
-    private static Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
+    private static final String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
+    private static final Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
 
     /* File class methods */
     @JRubyMethod(required = 1, optional = 1, meta = true)
@@ -607,7 +607,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
 
-            if (0 != runtime.getPosix().chmod(filename.getAbsolutePath(), (int)mode.getLongValue())) {
+            if (0 != runtime.getPosix().chmod(filename.getAbsolutePath(), (int) mode.getLongValue())) {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
@@ -719,11 +719,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 index++;
             }
 
-            if (jfilename.startsWith("\\\\")) {
+            if (startsWith(jfilename, '\\', '\\')) {
                 index = jfilename.length();
-                String[] splitted = jfilename.split(Pattern.quote("\\"));
-                int last = splitted.length-1;
-                if (splitted[last].contains(".")) {
+                String[] split = jfilename.split(Pattern.quote("\\"));
+                if (split[ split.length - 1 ].indexOf('.') > -1) {
                     index = jfilename.lastIndexOf('\\');
                 }
 
@@ -892,7 +891,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     @JRubyMethod(rest = true, meta = true)
     public static RubyString join(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return join(context, recv, RubyArray.newArrayNoCopyLight(context.runtime, args));
+        return doJoin(context, recv, args);
     }
 
     @JRubyMethod(name = "lstat", required = 1, meta = true)
@@ -938,7 +937,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyInteger mode = args[0].convertToInteger();
         for (int i = 1; i < args.length; i++) {
             JRubyFile file = file(args[i]);
-            if (0 != runtime.getPosix().lchmod(file.toString(), (int)mode.getLongValue())) {
+            if (0 != runtime.getPosix().lchmod(file.toString(), (int) mode.getLongValue())) {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
@@ -1473,6 +1472,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 startsWithDriveLetterOnWindows(path);
     }
 
+    private static boolean isWindowsDriveLetter(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
     public static boolean startsWithDriveLetterOnWindows(String path) {
         return (path != null)
                 && Platform.IS_WINDOWS &&
@@ -1497,7 +1500,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // Basically, '/path' is treated as a *RELATIVE* path,
         // relative to the current drive. '//path' is treated
         // as absolute one.
-        if ((path.startsWith("/") && !(path.length() > 2 && path.charAt(2) == ':')) || path.startsWith("\\")) {
+        if ((startsWith(path, '/') && !(path.length() > 2 && path.charAt(2) == ':')) || startsWith(path, '\\')) {
             if (path.length() > 1 && (path.charAt(1) == '/' || path.charAt(1) == '\\')) {
                 return path;
             }
@@ -1550,11 +1553,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.checkClosed();
     }
 
-    private static boolean isWindowsDriveLetter(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-    }
+    private static final Pattern PROTOCOL_PREFIX_PATTERN = Pattern.compile(URI_PREFIX_STRING);
 
-    private static Pattern PROTOCOL_PREFIX_PATTERN = Pattern.compile(URI_PREFIX_STRING);
     private static IRubyObject expandPathInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean expandUser, boolean canonicalize) {
         Ruby runtime = context.runtime;
 
@@ -1592,22 +1592,28 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             preFix = protocol.group();
             int offset = protocol.end();
             String extra = "";
-            if (relativePath.contains("file://")) {
-                if (relativePath.contains("file:///")) {
-                    offset += 2;
-                    extra = "//";
+            int index = relativePath.indexOf("file://");
+            if (index >= 0) {
+                index += 7; // "file://".length == 7
+                // chck if its "file:///"
+                if (relativePath.length() > index && relativePath.charAt(index) == '/') {
+                    offset += 2; extra = "//";
                 }
                 else {
-                    offset += 1;
-                    extra = "/";
+                    offset += 1; extra = "/";
                 }
+            }
+            else if ( ( preFix.equals("uri:classloader:") || preFix.equals("classpath:") )
+                    && relativePath.startsWith("//", offset) ) {
+                // on Windows "uri:classloader://home" ends up as "//home" - trying a network drive!
+                offset += 1; // skip one '/'
             }
             relativePath = canonicalizePath(relativePath.substring(offset));
             if (Platform.IS_WINDOWS && !preFix.contains("file:") && startsWithDriveLetterOnWindows(relativePath)) {
                 // this is basically for classpath:/ and uri:classloader:/
-                relativePath = relativePath.substring(2).replace("\\", "/");
+                relativePath = relativePath.substring(2).replace('\\', '/');
             }
-            return runtime.newString(preFix + extra + relativePath);
+            return concatStrings(runtime, preFix, extra, relativePath);
         }
 
         String[] uriParts = splitURI(relativePath);
@@ -1621,9 +1627,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (uriParts != null) {
             //If the path was an absolute classpath path, return it as-is.
             if (uriParts[0].equals("classpath:")) {
-                return runtime.newString(preFix + relativePath + postFix);
+                return concatStrings(runtime, preFix, relativePath, postFix);
             }
-
             relativePath = uriParts[1];
         }
 
@@ -1662,7 +1667,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 // If the path isn't absolute, then prepend the current working
                 // directory to the path.
                 if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
-                    if ("".equals(cwd)) cwd = ".";
+                    if (cwd.length() == 0) cwd = ".";
                     cwd = JRubyFile.create(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
                 }
             }
@@ -1732,23 +1737,29 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
         if (postFix.contains("..")) {
-            postFix = "!" + canonicalizePath(postFix.substring(1));
-            if (Platform.IS_WINDOWS && postFix.startsWith("!")) {
-                postFix = postFix.replace("\\", "/");
+            postFix = '!' + canonicalizePath(postFix.substring(1));
+            if (Platform.IS_WINDOWS /* && startsWith(postFix, '!') */) {
+                postFix = postFix.replace('\\', '/');
                 if (startsWithDriveLetterOnWindows(postFix.substring(1))) {
-                    postFix = "!" + postFix.substring(3);
+                    postFix = '!' + postFix.substring(3);
                 }
             }
         }
-        return runtime.newString(preFix + realPath + postFix);
+        return concatStrings(runtime, preFix, realPath, postFix);
+    }
+
+    private static RubyString concatStrings(final Ruby runtime, String s1, String s2, String s3) {
+        return RubyString.newString(runtime,
+                new StringBuilder(s1.length() + s2.length() + s3.length()).
+                        append(s1).append(s2).append(s3)
+        );
     }
 
     private static String canonicalizePath(String path) {
         try {
             return new File(path).getCanonicalPath();
-        } catch (IOException ignore) {
-            return path;
         }
+        catch (IOException ignore) { return path; }
     }
 
     public static String[] splitURI(String path) {
@@ -1794,7 +1805,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // FIXME: The variations of expand* and need for each to have a boolean discriminator makes
     // this code ripe for refactoring...
-    public static String expandUserPath(ThreadContext context, String path, boolean raiseOnRelativePath) {
+    public static String expandUserPath(ThreadContext context, String path, final boolean raiseOnRelativePath) {
         int pathLength = path.length();
 
         if (pathLength >= 1 && path.charAt(0) == '~') {
@@ -1804,10 +1815,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (userEnd == -1) {
                 if (pathLength == 1) {
                     // Single '~' as whole path to expand
-                    checkHome(context);
-                    path = RubyDir.getHomeDirectoryPath(context).toString();
+                    path = RubyDir.getHomeDirectoryPath(context, checkHome(context)).toString();
 
-                    if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home");
+                    if (raiseOnRelativePath && !isAbsolutePath(path)) {
+                        throw context.runtime.newArgumentError("non-absolute home");
+                    }
                 } else {
                     // No directory delimeter.  Rest of string is username
                     userEnd = pathLength;
@@ -1816,11 +1828,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             if (userEnd == 1) {
                 // '~/...' as path to expand
-                checkHome(context);
-                path = RubyDir.getHomeDirectoryPath(context).toString() +
-                        path.substring(1);
+                path = RubyDir.getHomeDirectoryPath(context, checkHome(context)).toString() + path.substring(1);
 
-                if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home");
+                if (raiseOnRelativePath && !isAbsolutePath(path)) {
+                    throw context.runtime.newArgumentError("non-absolute home");
+                }
             } else if (userEnd > 1){
                 // '~user/...' as path to expand
                 String user = path.substring(1, userEnd);
@@ -1833,7 +1845,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 path = dir + (pathLength == userEnd ? "" : path.substring(userEnd));
 
                 // getpwd (or /etc/passwd fallback) returns a home which is not absolute!!! [mecha-unlikely]
-                if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home of " + user);
+                if (raiseOnRelativePath && !isAbsolutePath(path)) {
+                    throw context.runtime.newArgumentError("non-absolute home of " + user);
+                }
             }
         }
         return path;
@@ -1881,7 +1895,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private static String canonicalize(String canonicalPath, String remaining) {
         if (remaining == null) {
-            if ("".equals(canonicalPath)) return "/";
+            if (canonicalPath.length() == 0) return "/";
             // compensate for missing slash after drive letter on windows
             if (startsWithDriveLetterOnWindows(canonicalPath) && canonicalPath.length() == 2) {
                 canonicalPath += '/';
@@ -1932,73 +1946,123 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * Check if HOME environment variable is not nil nor empty
      * @param context
      */
-    private static void checkHome(ThreadContext context) {
+    private static RubyString checkHome(ThreadContext context) {
         Ruby runtime = context.runtime;
-        RubyHash env = runtime.getENV();
-        String home = (String) env.get(runtime.newString("HOME"));
-        if (home == null || home.equals("")) {
+        IRubyObject home = runtime.getENV().fastARef(RubyString.newStringShared(runtime, RubyDir.HOME));
+        if (home == null || home == context.nil || ((RubyString) home).size() == 0) {
             throw runtime.newArgumentError("couldn't find HOME environment -- expanding `~'");
         }
+        return (RubyString) home;
     }
 
-    private static String inspectJoin(ThreadContext context, IRubyObject recv, RubyArray parent, RubyArray array) {
-        Ruby runtime = context.runtime;
+    private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
+        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
 
-        // If already inspecting, there is no need to register/unregister again.
-        if (runtime.isInspecting(parent)) return join(context, recv, array).toString();
+        final RubyArray argsAry = RubyArray.newArrayNoCopyLight(runtime, args);
 
-        try {
-            runtime.registerInspecting(parent);
-            return join(context, recv, array).toString();
-        } finally {
-            runtime.unregisterInspecting(parent);
-        }
+        final StringBuilder buffer = new StringBuilder(24);
+        boolean isTainted = joinImpl(buffer, separator, context, recv, argsAry);
+
+        RubyString fixedStr = new RubyString(runtime, runtime.getString(), buffer);
+        fixedStr.setTaint(isTainted);
+        return fixedStr;
     }
 
-    private static RubyString join(ThreadContext context, IRubyObject recv, RubyArray ary) {
-        IRubyObject[] args = ary.toJavaArray();
+    private static boolean joinImpl(final StringBuilder buffer, final String separator,
+        ThreadContext context, IRubyObject recv, RubyArray args) {
+
         boolean isTainted = false;
-        StringBuilder buffer = new StringBuilder();
-        Ruby runtime = context.runtime;
-        String separator = context.getRuntime().getClass("File").getConstant("SEPARATOR").toString();
 
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].isTaint()) {
-                isTainted = true;
-            }
-            String element;
-            if (args[i] instanceof RubyString) {
-                element = args[i].convertToString().getUnicodeValue();
-            } else if (args[i] instanceof RubyArray) {
-                if (runtime.isInspecting(args[i])) {
-                    throw runtime.newArgumentError("recursive array");
+        for (int i = 0; i < args.size(); i++) {
+            final IRubyObject arg = args.eltInternal(i);
+            if (arg.isTaint()) isTainted = true;
+
+            final CharSequence element;
+            if (arg instanceof RubyString) {
+                element = arg.convertToString().getUnicodeValue();
+            } else if (arg instanceof RubyArray) {
+                if (context.runtime.isInspecting(arg)) {
+                    throw context.runtime.newArgumentError("recursive array");
                 } else {
-                    element = inspectJoin(context, recv, ary, ((RubyArray)args[i]));
+                    element = joinImplInspecting(separator, context, recv, args, ((RubyArray) arg));
                 }
             } else {
-                RubyString path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
+                RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg));
                 element = path.getUnicodeValue();
             }
 
             chomp(buffer);
-            if (i > 0 && !element.startsWith(separator)) {
+            if (i > 0 && !startsWith(element, separator)) {
                 buffer.append(separator);
             }
             buffer.append(element);
         }
 
-        RubyString fixedStr = RubyString.newString(runtime, buffer.toString());
-        fixedStr.setTaint(isTainted);
-        return fixedStr;
+        return isTainted;
     }
 
-    private static void chomp(StringBuilder buffer) {
+    private static StringBuilder joinImplInspecting(final String separator,
+        ThreadContext context, IRubyObject recv, RubyArray parent, RubyArray array) {
+        final Ruby runtime = context.runtime;
+
+        final StringBuilder buffer = new StringBuilder(24);
+        // If already inspecting, there is no need to register/unregister again.
+        if (runtime.isInspecting(parent)) {
+            joinImpl(buffer, separator, context, recv, array);
+            return buffer;
+        }
+
+        try {
+            runtime.registerInspecting(parent);
+            joinImpl(buffer, separator, context, recv, array);
+            return buffer;
+        }
+        finally {
+            runtime.unregisterInspecting(parent);
+        }
+    }
+
+    private static void chomp(final StringBuilder buffer) {
         int lastIndex = buffer.length() - 1;
 
-        while (lastIndex >= 0 && (buffer.lastIndexOf("/") == lastIndex || buffer.lastIndexOf("\\") == lastIndex)) {
-            buffer.setLength(lastIndex);
-            lastIndex--;
+        while ( lastIndex >= 0 ) {
+            char c = buffer.charAt(lastIndex);
+            if ( c == '/' || c == '\\' ) {
+                buffer.setLength(lastIndex--);
+                continue;
+            }
+            break;
         }
+    }
+
+    // String.startsWith for a CharSequence
+    private static boolean startsWith(final CharSequence str, final String prefix) {
+        int p = prefix.length();
+        if ( p > str.length() ) return false;
+        int i = 0;
+        while ( --p >= 0 ) {
+            if (str.charAt(i) != prefix.charAt(i)) return false;
+            i++;
+        }
+        return true;
+    }
+
+    private static boolean startsWith(final CharSequence str, final char c) {
+        return ( str.length() < 1 ) ? false : str.charAt(0) == c;
+    }
+
+    private static boolean startsWith(final CharSequence str, final char c1, final char c2) {
+        return ( str.length() < 2 ) ? false : str.charAt(0) == c1 && str.charAt(1) == c2;
+    }
+
+    // without any char[] array copying, also StringBuilder only has lastIndexOf(String)
+    private static int lastIndexOf(final CharSequence str, final char c, int index) {
+        while ( index >= 0 ) {
+            if ( str.charAt(index) == c ) return index;
+            index--;
+        }
+        return -1;
     }
 
     private static IRubyObject truncateCommon(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {

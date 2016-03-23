@@ -1388,6 +1388,56 @@ public class IRRuntimeHelpers {
         return re;
     }
 
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, arg4, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
     public static RubyRegexp newLiteralRegexp(ThreadContext context, ByteList source, RegexpOptions options) {
         RubyRegexp re = RubyRegexp.newRegexp(context.runtime, source, options);
         re.setLiteral();

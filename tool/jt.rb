@@ -275,7 +275,7 @@ module Commands
     puts 'jt test spec/ruby/language/while_spec.rb       run specs in this file'
     puts 'jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)'
     puts '    --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already'
-    puts 'jt test integration [fast]                     runs bigger integration tests'
+    puts 'jt test integration [fast|long|all]            runs bigger integration tests (fast is default)'
     puts '    --no-gems       don\'t run tests that install gems'
     puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
@@ -447,6 +447,7 @@ module Commands
 
   def test_compiler(*args)
     env_vars = {}
+    env_vars["JRUBY_OPTS"] = '-Xtruffle.graal.warn_unless=false'
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
     env_vars["JRUBY_OPTS"] = '-J-Djvmci.Compiler=graal'
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
@@ -458,21 +459,27 @@ module Commands
 
   def test_integration(*args)
     no_gems = args.delete('--no-gems')
-    fast = args.delete('fast')
-    env_vars = {}
-    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
 
-    test_names = if args.empty?
-                   '*'
-                 else
-                   '{' + args.join(',') + '}'
-                 end
-    
-    Dir["#{JRUBY_DIR}/test/truffle/integration/#{test_names}.sh"].each do |test_script|
+    all  = args.delete('all')
+    long = args.delete('long') || all
+    fast = args.delete('fast') || all ||
+        !long # fast is the default
+
+    env_vars = {}
+    env_vars["JRUBY_OPTS"] = '-Xtruffle.graal.warn_unless=false'
+    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
+    integration_path = "#{JRUBY_DIR}/test/truffle/integration"
+    long_tests = File.read(File.join(integration_path, 'long-tests.txt')).lines.map(&:chomp)
+    test_names = args.empty? ? '*' : '{' + args.join(',') + '}'
+
+    Dir["#{integration_path}/#{test_names}.sh"].each do |test_script|
       next if no_gems && File.read(test_script).include?('gem install')
-      next if fast && test_script.end_with?('integration/gem-testing.sh')
-      next if fast && test_script.end_with?('integration/rails.sh')
-      sh env_vars, test_script
+
+      is_long = long_tests.include?(File.basename(test_script))
+
+      if (is_long && long) || (!is_long && fast)
+        sh env_vars, test_script
+      end
     end
   end
   private :test_integration

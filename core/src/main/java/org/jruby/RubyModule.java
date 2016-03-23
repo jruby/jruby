@@ -82,6 +82,7 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
+import org.jruby.javasupport.binding.Initializer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -936,7 +937,7 @@ public class RubyModule extends RubyObject {
         Map<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
 
         public void clump(Class cls) {
-            Method[] declaredMethods = cls.getDeclaredMethods();
+            Method[] declaredMethods = Initializer.DECLARED_METHODS.get(cls);
             for (Method method: declaredMethods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
 
@@ -1005,28 +1006,34 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public void defineAnnotatedMethodsIndividually(Class clazz) {
-        TypePopulator populator;
-
-        if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load() || Options.INVOKEDYNAMIC_HANDLES.load()) {
+    public static TypePopulator loadPopulatorFor(Class<?> type) {
+        if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load()) {
             // we want non-generated invokers or need full traces, use default (slow) populator
             if (DEBUG) LOG.info("trace mode, using default populator");
-            populator = TypePopulator.DEFAULT;
         } else {
             try {
-                String qualifiedName = "org.jruby.gen." + clazz.getCanonicalName().replace('.', '$');
+                String qualifiedName = "org.jruby.gen." + type.getCanonicalName().replace('.', '$');
+                String fullName = qualifiedName + AnnotationBinder.POPULATOR_SUFFIX;
+                String fullPath = fullName.replace('.', '/') + ".class";
 
-                if (DEBUG) LOG.info("looking for " + qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
+                if (DEBUG) LOG.info("looking for " + fullName);
 
-                Class populatorClass = Class.forName(qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
-                populator = (TypePopulator)populatorClass.newInstance();
+                if (Ruby.getClassLoader().getResource(fullPath) == null) {
+                    if (DEBUG) LOG.info("Could not find it, using default populator");
+                } else {
+                    Class populatorClass = Class.forName(qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
+                    return (TypePopulator) populatorClass.newInstance();
+                }
             } catch (Throwable t) {
                 if (DEBUG) LOG.info("Could not find it, using default populator");
-                populator = TypePopulator.DEFAULT;
             }
         }
 
-        populator.populate(this, clazz);
+        return new TypePopulator.ReflectiveTypePopulator(type);
+    }
+
+    public void defineAnnotatedMethodsIndividually(Class clazz) {
+        getRuntime().POPULATORS.get(clazz).populate(this, clazz);
     }
 
     public boolean defineAnnotatedMethod(String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {

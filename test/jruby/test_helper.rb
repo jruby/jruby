@@ -66,7 +66,7 @@ module TestHelper
       args = args[0..-2]
     end
     options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
-    with_jruby_shell_spawning { `#{interpreter(options)} #{args.join(' ')}` }
+    with_jruby_shell_spawning { sh "#{interpreter(options)} #{args.join(' ')}" }
   end
 
   def jruby_with_pipe(pipe, *args)
@@ -76,8 +76,14 @@ module TestHelper
       args = args[0..-2]
     end
     options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
-    with_jruby_shell_spawning { `#{pipe} | #{interpreter(options)} #{args.join(' ')}` }
+    with_jruby_shell_spawning { sh "#{pipe} | #{interpreter(options)} #{args.join(' ')}" }
   end
+
+  def sh(cmd)
+    puts cmd if $VERBOSE
+    return `#{cmd}`
+  end
+  private :sh
 
   def with_temp_script(script, filename="test-script")
     Tempfile.open([filename, ".rb"]) do |f|

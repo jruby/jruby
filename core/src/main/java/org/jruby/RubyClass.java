@@ -1968,12 +1968,22 @@ public class RubyClass extends RubyModule {
             this.id = id;
         }
 
+        private static final CS_NAMES[] VALUES = values();
+        public static final int length = VALUES.length;
+
+        public static CS_NAMES fromOrdinal(int ordinal) {
+            if (ordinal < 0 || ordinal >= VALUES.length) {
+                throw new RuntimeException("invalid rest: " + ordinal);
+            }
+            return VALUES[ordinal];
+        }
+
         public final String id;
     };
-    private final CallSite[] baseCallSites = new CallSite[CS_NAMES.values().length];
+    private final CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
     {
         for(int i = 0; i < baseCallSites.length; i++) {
-            baseCallSites[i] = MethodIndex.getFunctionalCallSite(CS_NAMES.values()[i].id);
+            baseCallSites[i] = MethodIndex.getFunctionalCallSite(CS_NAMES.fromOrdinal(i).id);
         }
     }
 

@@ -9,10 +9,10 @@
  */
 package org.jruby.truffle.core.kernel;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.EventBinding;
 import com.oracle.truffle.api.instrumentation.EventContext;
@@ -23,14 +23,14 @@ import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.language.objects.LogicalClassNode;
+import org.jruby.truffle.language.objects.LogicalClassNodeGen;
+import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,36 +73,38 @@ public class TraceManager {
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
-                final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("line", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
-                return new BaseEventEventNode(context, traceFunc, event);
+                return new BaseEventEventNode(context, traceFunc, context.getCoreStrings().LINE.createInstance());
             }
         }));
 
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
-                final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("call", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
-                return new CallEventEventNode(context, traceFunc, event);
+                return new CallEventEventNode(context, traceFunc, context.getCoreStrings().CALL.createInstance());
             }
         }));
 
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
-                final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("class", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
-                return new BaseEventEventNode(context, traceFunc, event);
+                return new BaseEventEventNode(context, traceFunc, context.getCoreStrings().CLASS.createInstance());
             }
         }));
 
     }
 
-    private final class BaseEventEventNode extends ExecutionEventNode {
+    private class BaseEventEventNode extends ExecutionEventNode {
 
-        private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
+        protected final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
 
-        private final RubyContext context;
-        private final DynamicObject traceFunc;
-        private final Object event;
+        protected final RubyContext context;
+        protected final DynamicObject traceFunc;
+        protected final Object event;
+
+        @Child private YieldNode yieldNode;
+
+        @CompilationFinal private DynamicObject file;
+        @CompilationFinal private int line;
 
         public BaseEventEventNode(RubyContext context, DynamicObject traceFunc, Object event) {
             this.context = context;
@@ -112,94 +114,113 @@ public class TraceManager {
 
         @Override
         protected void onEnter(VirtualFrame frame) {
-            if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                callSetTraceFunc(frame.materialize());
+            if (inTraceFuncProfile.profile(isInTraceFunc)) {
+                return;
+            }
+
+            isInTraceFunc = true;
+
+            try {
+                getYieldNode().dispatch(frame, traceFunc,
+                        event,
+                        getFile(),
+                        getLine(),
+                        context.getCoreLibrary().getNilObject(),
+                        Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize()),
+                        context.getCoreLibrary().getNilObject());
+            } finally {
+                isInTraceFunc = false;
             }
         }
 
-        @TruffleBoundary
-        private void callSetTraceFunc(MaterializedFrame frame) {
-            final SourceSection sourceSection = getEncapsulatingSourceSection();
-
-            final DynamicObject file = StringOperations.createString(context, StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
-            final int line = sourceSection.getStartLine();
-
-            final Object classname = context.getCoreLibrary().getNilObject();
-            final Object id = context.getCoreLibrary().getNilObject();
-
-            final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame);
-
-            isInTraceFunc = true;
-            try {
-                context.getCodeLoader().inline(this, frame, "traceFunc.call(event, file, line, id, binding, classname)", "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
-            } finally {
-               isInTraceFunc = false;
+        private DynamicObject getFile() {
+            if (file == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                file = StringOperations.createString(context, context.getRopeTable().getRopeUTF8(getEncapsulatingSourceSection().getSource().getName()));
             }
+
+            return file;
+        }
+
+        private int getLine() {
+            if (line == 0) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                line = getEncapsulatingSourceSection().getStartLine();
+            }
+
+            return line;
+        }
+
+        protected YieldNode getYieldNode() {
+            if (yieldNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                yieldNode = insert(new YieldNode(context));
+            }
+
+            return yieldNode;
         }
 
     }
 
-    private final class CallEventEventNode extends ExecutionEventNode {
+    private class CallEventEventNode extends BaseEventEventNode {
 
-        private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
-
-        private final static String callTraceFuncCode = "traceFunc.call(event, file, line, id, binding, classname)";
-
-        private final RubyContext context;
-        private final DynamicObject traceFunc;
-        private final Object event;
+        @Child private LogicalClassNode logicalClassNode;
 
         public CallEventEventNode(RubyContext context, DynamicObject traceFunc, Object event) {
-            this.context = context;
-            this.traceFunc = traceFunc;
-            this.event = event;
+            super(context, traceFunc, event);
         }
 
         @Override
         protected void onEnter(VirtualFrame frame) {
-            if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                callSetTraceFunc(frame.materialize());
+            if (inTraceFuncProfile.profile(isInTraceFunc)) {
+                return;
+            }
+
+            final SourceSection sourceSection = getCallerSourceSection();
+
+            final String file;
+            final int line;
+
+            if (sourceSection.getSource() != null) {
+                file = sourceSection.getSource().getName();
+                line = sourceSection.getStartLine();
+            } else {
+                file = "<internal>";
+                line = -1;
+            }
+
+            isInTraceFunc = true;
+
+            try {
+                getYieldNode().dispatch(frame, traceFunc,
+                        event,
+                        getFile(file),
+                        line,
+                        context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame).getName()),
+                        Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize()),
+                        getLogicalClass(RubyArguments.getSelf(frame)));
+            } finally {
+                isInTraceFunc = false;
             }
         }
 
         @TruffleBoundary
-        private void callSetTraceFunc(MaterializedFrame frame) {
-            // set_trace_func reports the file and line of the call site.
-            final String filename;
-            final int line;
-            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+        private SourceSection getCallerSourceSection() {
+            return Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+        }
 
-            if (sourceSection.getSource() != null) {
-                // Skip over any lines that are a result of the trace function call being made.
-                if (sourceSection.getSource().getCode().equals(callTraceFuncCode)) {
-                    return;
-                }
+        @TruffleBoundary
+        private DynamicObject getFile(String file) {
+            return StringOperations.createString(context, context.getRopeTable().getRopeUTF8(file));
+        }
 
-                filename = sourceSection.getSource().getName();
-                line = sourceSection.getStartLine();
-            } else {
-                filename = "<internal>";
-                line = -1;
+        private DynamicObject getLogicalClass(Object object) {
+            if (logicalClassNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                logicalClassNode = insert(LogicalClassNodeGen.create(context, null, null));
             }
 
-            final DynamicObject file = StringOperations.createString(context, StringOperations.encodeRope(filename, UTF8Encoding.INSTANCE));
-
-            if (!context.getOptions().INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
-                return;
-            }
-
-            final Object self = RubyArguments.getSelf(frame);
-            final Object classname = context.getCoreLibrary().getLogicalClass(self);
-            final Object id = context.getSymbolTable().getSymbol(RubyArguments.getMethod(frame).getName());
-
-            final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize());
-
-            isInTraceFunc = true;
-            try {
-                context.getCodeLoader().inline(this, frame, callTraceFuncCode, "traceFunc", traceFunc, "event", event, "file", file, "line", line, "id", id, "binding", binding, "classname", classname);
-            } finally {
-                isInTraceFunc = false;
-            }
+            return logicalClassNode.executeLogicalClass(object);
         }
 
     }

@@ -88,6 +88,8 @@ public class RubyContext extends ExecutionContext {
     private final PrintStream debugStandardOut;
     private final CoverageManager coverageManager;
 
+    private final Object classVariableDefinitionLock = new Object();
+
     private org.jruby.ast.RootNode initialJRubyRootNode;
     private final AttachmentsManager attachmentsManager;
 
@@ -311,4 +313,13 @@ public class RubyContext extends ExecutionContext {
     public CoreStrings getCoreStrings() {
         return coreStrings;
     }
+
+    public Object getClassVariableDefinitionLock() {
+        return classVariableDefinitionLock;
+    }
+
+    public Instrumenter getInstrumenter() {
+        return env.lookup(Instrumenter.class);
+    }
+
 }

@@ -15,7 +15,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class TargetableRubyNode extends RubyNode {
 
@@ -24,5 +23,5 @@ public abstract class TargetableRubyNode extends RubyNode {
     }
 
     public abstract Object executeWithTarget(VirtualFrame frame, Object obj);
-}
 
+}

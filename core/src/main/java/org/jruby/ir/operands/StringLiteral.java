@@ -23,7 +23,7 @@ import java.util.List;
  * for example, and modify the contents of the string.
  * This is not like a Java string.
  */
-public class StringLiteral extends Operand {
+public class StringLiteral extends Operand implements Stringable {
     public static final StringLiteral EMPTY_STRING = new StringLiteral("");
 
     public final FrozenString frozenString;

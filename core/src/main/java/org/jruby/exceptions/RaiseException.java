@@ -171,7 +171,7 @@ public class RaiseException extends JumpException {
 
         sb.append("Native Exception: '").append(exception.getClass()).append("'; ");
         sb.append("Message: ").append(exception.getMessage()).append("; ");
-        sb.append("StackTrace: ").append(stackTrace.getBuffer().toString());
+        sb.append("StackTrace: ").append(stackTrace.getBuffer());
 
         return sb.toString();
     }
@@ -265,7 +265,7 @@ public class RaiseException extends JumpException {
     public static StackTraceElement[] javaTraceFromRubyTrace(RubyStackTraceElement[] trace) {
         StackTraceElement[] newTrace = new StackTraceElement[trace.length];
         for (int i = 0; i < newTrace.length; i++) {
-            newTrace[i] = trace[i].getElement();
+            newTrace[i] = trace[i].asStackTraceElement();
         }
         return newTrace;
     }

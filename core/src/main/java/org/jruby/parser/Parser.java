@@ -158,11 +158,6 @@ public class Parser {
         totalTime += System.nanoTime() - startTime;
         totalBytes += lexerSource.getOffset();
 
-        // set coverage baseline into coverage data
-        if (runtime.getCoverageData().isCoverageEnabled()) {
-            runtime.getCoverageData().prepareCoverage(file, configuration.getCoverage());
-        }
-
         return ast;
     }
 

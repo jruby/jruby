@@ -161,7 +161,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     protected void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting()) return; // don't JIT during runtime boot
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
         if (callCount >= 0) {
             // ensure we've got code ready for JIT

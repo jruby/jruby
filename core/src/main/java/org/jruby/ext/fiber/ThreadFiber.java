@@ -238,61 +238,76 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     static RubyThread createThread(final Ruby runtime, final FiberData data, final FiberQueue queue, final Block block) {
         final AtomicReference<RubyThread> fiberThread = new AtomicReference();
-        runtime.getFiberExecutor().execute(new Runnable() {
-            public void run() {
-                ThreadContext context = runtime.getCurrentContext();
-                context.setFiber(data.fiber.get());
-                fiberThread.set(context.getThread());
-                context.getThread().setFiberCurrentThread(data.parent);
 
-                try {
-                    IRubyObject init = data.queue.pop(context);
-                    
+        // retry with GC once
+        boolean retried = true;
+
+        try {
+            runtime.getFiberExecutor().execute(new Runnable() {
+                public void run() {
+                    ThreadContext context = runtime.getCurrentContext();
+                    context.setFiber(data.fiber.get());
+                    fiberThread.set(context.getThread());
+                    context.getThread().setFiberCurrentThread(data.parent);
+
                     try {
-                        IRubyObject result;
+                        IRubyObject init = data.queue.pop(context);
 
-                        if (init == NEVER) {
-                            result = block.yieldSpecific(context);
-                        } else {
-                            result = block.yieldArray(context, init, null);
+                        try {
+                            IRubyObject result;
+
+                            if (init == NEVER) {
+                                result = block.yieldSpecific(context);
+                            } else {
+                                result = block.yieldArray(context, init, null);
+                            }
+
+                            data.prev.data.queue.push(context, new IRubyObject[]{result});
+                        } finally {
+                            data.queue.shutdown();
+                            runtime.getThreadService().disposeCurrentThread();
                         }
-
-                        data.prev.data.queue.push(context, new IRubyObject[] { result });
+                    } catch (JumpException.FlowControlException fce) {
+                        if (data.prev != null) {
+                            data.prev.thread.raise(fce.buildException(runtime).getException());
+                        }
+                    } catch (IRBreakJump bj) {
+                        // This is one of the rare cases where IR flow-control jumps
+                        // leaks into the runtime impl.
+                        if (data.prev != null) {
+                            data.prev.thread.raise(((RaiseException) IRException.BREAK_LocalJumpError.getException(runtime)).getException());
+                        }
+                    } catch (IRReturnJump rj) {
+                        // This is one of the rare cases where IR flow-control jumps
+                        // leaks into the runtime impl.
+                        if (data.prev != null) {
+                            data.prev.thread.raise(((RaiseException) IRException.RETURN_LocalJumpError.getException(runtime)).getException());
+                        }
+                    } catch (RaiseException re) {
+                        if (data.prev != null) {
+                            data.prev.thread.raise(re.getException());
+                        }
+                    } catch (Throwable t) {
+                        if (data.prev != null) {
+                            data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
+                        }
                     } finally {
-                        data.queue.shutdown();
-                        runtime.getThreadService().disposeCurrentThread();
+                        // clear reference to the fiber's thread
+                        ThreadFiber tf = data.fiber.get();
+                        if (tf != null) tf.thread = null;
                     }
-                } catch (JumpException.FlowControlException fce) {
-                    if (data.prev != null) {
-                        data.prev.thread.raise(fce.buildException(runtime).getException());
-                    }
-                } catch (IRBreakJump bj) {
-                    // This is one of the rare cases where IR flow-control jumps
-                    // leaks into the runtime impl.
-                    if (data.prev != null) {
-                        data.prev.thread.raise(((RaiseException)IRException.BREAK_LocalJumpError.getException(runtime)).getException());
-                    }
-                } catch (IRReturnJump rj) {
-                    // This is one of the rare cases where IR flow-control jumps
-                    // leaks into the runtime impl.
-                    if (data.prev != null) {
-                        data.prev.thread.raise(((RaiseException)IRException.RETURN_LocalJumpError.getException(runtime)).getException());
-                    }
-                } catch (RaiseException re) {
-                    if (data.prev != null) {
-                        data.prev.thread.raise(re.getException());
-                    }
-                } catch (Throwable t) {
-                    if (data.prev != null) {
-                        data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
-                    }
-                } finally {
-                    // clear reference to the fiber's thread
-                    ThreadFiber tf = data.fiber.get();
-                    if (tf != null) tf.thread = null;
                 }
+            });
+        } catch (OutOfMemoryError oome) {
+            String oomeMessage = oome.getMessage();
+            if (!retried && oomeMessage != null && oomeMessage.contains("unable to create new native thread")) {
+                // try to clean out stale enumerator threads by forcing GC
+                System.gc();
+                retried = true;
+            } else {
+                throw oome;
             }
-        });
+        }
         
         while (fiberThread.get() == null) {Thread.yield();}
         

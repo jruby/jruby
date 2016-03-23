@@ -81,7 +81,7 @@ public class SimpleShell {
                         }
 
                         shellInterface.getWriter().println(
-                                formatter.formatLine(Collections.singletonList(activation), 0));
+                                formatter.formatLine(Collections.singletonList(activation), 0, null));
 
                         n++;
                     }
