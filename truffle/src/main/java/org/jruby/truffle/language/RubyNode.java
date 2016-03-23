@@ -249,9 +249,13 @@ public abstract class RubyNode extends Node {
         if (tag == TraceManager.CallTag.class) {
             return isCall();
         }
-        if (tag == AttachmentsManager.LineTag.class || tag == TraceManager.LineTag.class || tag == CoverageManager.LineTag.class) {
+
+        if (tag == AttachmentsManager.LineTag.class
+                || tag == TraceManager.LineTag.class
+                || tag == CoverageManager.LineTag.class) {
             return isNewLine();
         }
+        
         return false;
     }
 

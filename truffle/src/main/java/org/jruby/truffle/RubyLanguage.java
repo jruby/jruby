@@ -34,7 +34,13 @@ import java.io.IOException;
         name = "Ruby",
         version = Constants.RUBY_VERSION,
         mimeType = RubyLanguage.MIME_TYPE)
-@ProvidedTags({CoverageManager.LineTag.class, AttachmentsManager.LineTag.class, TraceManager.CallTag.class, TraceManager.ClassTag.class, TraceManager.LineTag.class})
+@ProvidedTags({
+        CoverageManager.LineTag.class,
+        AttachmentsManager.LineTag.class,
+        TraceManager.CallTag.class,
+        TraceManager.ClassTag.class,
+        TraceManager.LineTag.class
+})
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     public static final String MIME_TYPE = "application/x-ruby";
