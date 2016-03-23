@@ -16,11 +16,13 @@ public class IRMethod extends IRScope {
     private DefNode defn;
 
     public IRMethod(IRManager manager, IRScope lexicalParent, DefNode defn, String name,
-            boolean isInstanceMethod, int lineNumber, StaticScope staticScope) {
+            boolean isInstanceMethod, int lineNumber, StaticScope staticScope, boolean needsCodeCoverage) {
         super(manager, lexicalParent, name, lineNumber, staticScope);
 
         this.defn = defn;
         this.isInstanceMethod = isInstanceMethod;
+
+        if (needsCodeCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
 
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
@@ -34,7 +36,7 @@ public class IRMethod extends IRScope {
 
     public synchronized InterpreterContext lazilyAcquireInterpreterContext() {
         if (!hasBeenBuilt()) {
-            IRBuilder.topIRBuilder(getManager(), this).defineMethodInner(defn, getLexicalParent());
+            IRBuilder.topIRBuilder(getManager(), this).defineMethodInner(defn, getLexicalParent(), getFlags().contains(IRFlags.CODE_COVERAGE));
 
             defn = null;
         }

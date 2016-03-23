@@ -187,9 +187,7 @@ public class ParserConfiguration {
      * Zero out coverable lines as they're encountered
      */
     public void coverLine(int i) {
-        if (i < 0) return; // JRUBY-6868: why would there be negative line numbers?
-
-        if (!isCoverageEnabled()) {
+        if (isCoverageEnabled()) {
             growCoverageLines(i);
             coverage[i] = 0;
         }

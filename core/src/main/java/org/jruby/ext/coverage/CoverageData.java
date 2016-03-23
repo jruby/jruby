@@ -45,7 +45,7 @@ public class CoverageData {
     }
 
     public Map<String, int[]> getCoverage() {
-      return this.coverage;
+      return coverage;
     }
 
     public synchronized void setCoverageEnabled(Ruby runtime, boolean enabled) {
@@ -104,36 +104,18 @@ public class CoverageData {
     private final EventHook COVERAGE_HOOK = new EventHook() {
         @Override
         public synchronized void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
-            if (coverage == null || line <= 0) {
-                return;
-            }
-            
-            // make sure we have a lines array of acceptable length for the given file
+            if (coverage == null || line <= 0) return; // Should not be needed but I predict serialization of IR might hit this.
+
             int[] lines = coverage.get(file);
-            if (lines == null) {
-                // loaded before coverage; skip
-                return;
-            } else if (lines.length < line) {
-                // can this happen? shouldn't all coverable lines be here already (from parse time)?
-                int[] newLines = new int[line];
-                Arrays.fill(newLines, lines.length, line, -1); // mark unknown lines as -1
-                System.arraycopy(lines, 0, newLines, 0, lines.length);
-                lines = newLines;
-                coverage.put(file, lines);
-            }
-            
-            // increment the line's count or set it to 1
-            int count = lines[line - 1];
-            if (count == -1) {
-                lines[line - 1] = 1;
-            } else {
-                lines[line - 1] = count + 1;
-            }
+            if (lines == null) return;           // no coverage lines for this record.  bail out (should never happen)
+            if (lines.length == 0) return;       // coverage is dead for this record.  result() has been called once
+                                                 // and we marked it as such as an empty list.
+            lines[line - 1] += 1;                // increment usage count by one.
         }
 
         @Override
         public boolean isInterestedInEvent(RubyEvent event) {
-            return event == RubyEvent.LINE;
+            return event == RubyEvent.COVERAGE;
         }
     };
     

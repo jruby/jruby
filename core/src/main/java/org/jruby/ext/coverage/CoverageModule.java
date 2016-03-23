@@ -67,7 +67,6 @@ public class CoverageModule {
     public static IRubyObject peek_result(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
 
-        System.out.println("CE: " + runtime.getCoverageData().isCoverageEnabled());
         if (!runtime.getCoverageData().isCoverageEnabled()) {
             throw runtime.newRuntimeError("coverage measurement is not enabled");
         }
