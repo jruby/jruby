@@ -15,14 +15,18 @@ import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.instrument.Visualizer;
 import com.oracle.truffle.api.instrument.WrapperNode;
+import com.oracle.truffle.api.instrumentation.ProvidedTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
+import org.jruby.truffle.core.kernel.TraceManager;
+import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.stdlib.CoverageManager;
 
 import java.io.IOException;
 
@@ -30,6 +34,7 @@ import java.io.IOException;
         name = "Ruby",
         version = Constants.RUBY_VERSION,
         mimeType = RubyLanguage.MIME_TYPE)
+@ProvidedTags({CoverageManager.LineTag.class, AttachmentsManager.LineTag.class, TraceManager.CallTag.class, TraceManager.ClassTag.class, TraceManager.LineTag.class})
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     public static final String MIME_TYPE = "application/x-ruby";
