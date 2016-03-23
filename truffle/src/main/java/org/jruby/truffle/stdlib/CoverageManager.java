@@ -66,7 +66,7 @@ public class CoverageManager {
             throw new UnsupportedOperationException();
         }
 
-        instrumenter.attachFactory(SourceSectionFilter.newBuilder().annotatedBy(LineTag.class).build(), new ExecutionEventNodeFactory() {
+        instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(), new ExecutionEventNodeFactory() {
 
             @Override
             public ExecutionEventNode create(EventContext eventContext) {

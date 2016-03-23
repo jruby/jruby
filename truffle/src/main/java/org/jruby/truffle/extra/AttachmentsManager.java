@@ -44,7 +44,7 @@ public class AttachmentsManager {
         assert RubyGuards.isRubyProc(block);
 
         final Source source = context.getSourceCache().getBestSourceFuzzily(file);
-        SourceSectionFilter filter = SourceSectionFilter.newBuilder().sourceIs(source).lineIs(line).annotatedBy(LineTag.class).build();
+        SourceSectionFilter filter = SourceSectionFilter.newBuilder().sourceIs(source).lineIs(line).tagIs(LineTag.class).build();
         return instrumenter.attachFactory(filter, new ExecutionEventNodeFactory() {
             public ExecutionEventNode create(EventContext eventContext) {
                 return new AttachmentEventNode(context, block);

@@ -245,7 +245,7 @@ public abstract class RubyNode extends Node {
     }
 
     @Override
-    protected boolean isAnnotationPresent(Class<? extends Annotation> tag) {
+    protected boolean isTaggedWith(Class<?> tag) {
         if (tag == TraceManager.CallTag.class) {
             return isCall();
         }

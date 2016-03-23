@@ -70,7 +70,7 @@ public class TraceManager {
 
         instruments = new ArrayList<>();
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().annotatedBy(LineTag.class).build(), new ExecutionEventNodeFactory() {
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
                 final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("line", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
@@ -78,7 +78,7 @@ public class TraceManager {
             }
         }));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().annotatedBy(CallTag.class).build(), new ExecutionEventNodeFactory() {
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
                 final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("call", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
@@ -86,7 +86,7 @@ public class TraceManager {
             }
         }));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().annotatedBy(ClassTag.class).build(), new ExecutionEventNodeFactory() {
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
                 final DynamicObject event = StringOperations.createString(context, StringOperations.encodeRope("class", UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
