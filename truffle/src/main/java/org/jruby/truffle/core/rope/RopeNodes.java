@@ -216,10 +216,6 @@ public abstract class RopeNodes {
     })
     public abstract static class MakeConcatNode extends RubyNode {
 
-        protected static final int SHORT_LEAF_BYTESIZE_THRESHOLD = 128;
-
-        @Child private MakeLeafRopeNode makeLeafRopeNode;
-
         public MakeConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -286,14 +282,6 @@ public abstract class RopeNodes {
         private int max(int x, int y) {
             // This approach is adapted from http://graphics.stanford.edu/~seander/bithacks.html?1=1#IntegerMinOrMax
             return x - ((x - y) & ((x - y) >> (Integer.SIZE - 1)));
-        }
-
-        protected static boolean isShortLeafRope(Rope rope) {
-            return (rope.byteLength() < SHORT_LEAF_BYTESIZE_THRESHOLD) && isLeafRope(rope);
-        }
-
-        protected static boolean isLeafRope(Rope rope) {
-            return rope instanceof LeafRope;
         }
 
         protected static boolean isMutableRope(Rope rope) {
