@@ -851,7 +851,7 @@ public abstract class StringNodes {
                 tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getJRubyRuntime(), table, tables, false, enc);
             }
 
-            return StringSupport.countCommon19(StringOperations.getByteListReadOnly(string), getContext().getJRubyRuntime(), table, tables, enc);
+            return StringSupport.strCount(StringOperations.getByteListReadOnly(string), getContext().getJRubyRuntime(), table, tables, enc);
         }
     }
 
