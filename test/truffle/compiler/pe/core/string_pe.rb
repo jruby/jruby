@@ -28,6 +28,8 @@ example "'A' == 65.chr", true
 
 example "'aba'[0] == 'aca'[-1]", true
 
+example "x = 'abc'; x == x.b", true
+
 example "'abc'.ascii_only?", true
 example "'こにちわ'.ascii_only?", false
 

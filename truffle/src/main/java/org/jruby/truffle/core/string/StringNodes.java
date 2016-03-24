@@ -667,13 +667,18 @@ public abstract class StringNodes {
     @CoreMethod(names = "b", taintFromSelf = true)
     public abstract static class BNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.WithEncodingNode withEncodingNode;
+
         public BNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            withEncodingNode = RopeNodesFactory.WithEncodingNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization
         public DynamicObject b(DynamicObject string) {
-            return createString(RopeOperations.withEncoding(rope(string), ASCIIEncoding.INSTANCE));
+            final Rope newRope = withEncodingNode.executeWithEncoding(rope(string), ASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN);
+
+            return createString(newRope);
         }
 
     }
