@@ -10,7 +10,7 @@
 lexer grammar PrintfLexer;
 
 FORMAT  : '%' -> mode(FORMAT_MODE);
-LITERAL : (~'%')* ;
+LITERAL : (~'%')+ ;
 
 mode FORMAT_MODE;
 
