@@ -295,7 +295,7 @@ public abstract class RegexpNodes {
             //if (regexpOptions.isEncodingNone()) setEncodingNone();
 
             Regex ret = new Regex(unescaped.getUnsafeBytes(), unescaped.getBegin(), unescaped.getBegin() + unescaped.getRealSize(), options.toJoniOptions(), enc, Syntax.RUBY);
-            ret.setUserObject(RopeOperations.withEncoding(bytes, enc));
+            ret.setUserObject(RopeOperations.withEncodingVerySlow(bytes, enc));
 
             return ret;
         } catch (ValueException e) {

@@ -2003,17 +2003,17 @@ public abstract class KernelNodes {
             final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
 
             if (formatLength == 0) {
-                StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
+                StringOperations.forceEncodingVerySlow(string, USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {
                     case DEFAULT:
                     case ASCII_8BIT:
                         break;
                     case US_ASCII:
-                        StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
+                        StringOperations.forceEncodingVerySlow(string, USASCIIEncoding.INSTANCE);
                         break;
                     case UTF_8:
-                        StringOperations.forceEncoding(string, UTF8Encoding.INSTANCE);
+                        StringOperations.forceEncodingVerySlow(string, UTF8Encoding.INSTANCE);
                         break;
                     default:
                         throw new UnsupportedOperationException();

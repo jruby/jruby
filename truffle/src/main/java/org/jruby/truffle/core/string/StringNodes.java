@@ -546,7 +546,7 @@ public abstract class StringNodes {
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
                     byteList.setEncoding(encoding(string));
-                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.withEncoding(RopeConstants.EMPTY_ASCII_8BIT_ROPE, encoding(string)), null);
+                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.withEncodingVerySlow(RopeConstants.EMPTY_ASCII_8BIT_ROPE, encoding(string)), null);
                 }
 
                 end = StringOperations.normalizeIndex(stringLength, end);
@@ -2678,7 +2678,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject clear(DynamicObject string) {
-            StringOperations.setRope(string, RopeOperations.withEncoding(EMPTY_UTF8_ROPE, encoding(string)));
+            StringOperations.setRope(string, RopeOperations.withEncodingVerySlow(EMPTY_UTF8_ROPE, encoding(string)));
 
             return string;
         }

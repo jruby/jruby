@@ -32,7 +32,6 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import sun.misc.Unsafe;
 
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
@@ -76,7 +75,7 @@ public abstract class RopeNodes {
                 return RopeConstants.EMPTY_ASCII_8BIT_ROPE;
             }
 
-            return RopeOperations.withEncoding(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding());
+            return RopeOperations.withEncodingVerySlow(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding());
         }
 
         @Specialization(guards = "byteLength == 1")
@@ -98,7 +97,7 @@ public abstract class RopeNodes {
                 return RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[index];
             }
 
-            return RopeOperations.withEncoding(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[index], base.getEncoding());
+            return RopeOperations.withEncodingVerySlow(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[index], base.getEncoding());
         }
 
         @Specialization(guards = { "byteLength > 1", "sameAsBase(base, offset, byteLength)" })

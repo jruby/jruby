@@ -56,9 +56,9 @@ public class InterpolatedRegexpNode extends RubyNode {
             final Rope source = Layouts.REGEXP.getSource(regexp);
 
             if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
-                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncoding(source, getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding()));
+                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncodingVerySlow(source, getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding()));
             } else {
-                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncoding(source, getContext().getJRubyRuntime().getEncodingService().getUSAsciiEncoding()));
+                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncodingVerySlow(source, getContext().getJRubyRuntime().getEncodingService().getUSAsciiEncoding()));
             }
         }
 
