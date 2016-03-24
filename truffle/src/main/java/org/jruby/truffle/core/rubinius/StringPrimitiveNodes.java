@@ -497,6 +497,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_equal", needsSelf = true)
+    @ImportStatic(StringGuards.class)
     public static abstract class StringEqualPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {

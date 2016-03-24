@@ -43,3 +43,5 @@ example "'こにちわ'.valid_encoding?", true
 example "''.empty?", true
 example "'abc'.empty?", false
 example "'こにちわ'.empty?", false
+
+example "x = 'abc'; y = 'xyz'; x.replace(y) == y", true
