@@ -25,6 +25,7 @@ example "x = 'abc'; 'abc' == x.dup", true
 
 example "'A' == String.from_codepoint(65, Encoding::US_ASCII)", true
 example "'A' == 65.chr", true
+example "'A'.ord == 65", true
 
 example "'aba'[0] == 'aca'[-1]", true
 
