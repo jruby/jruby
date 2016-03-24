@@ -10,7 +10,7 @@
 
 package org.jruby.truffle.core.rope;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 
 import java.lang.ref.WeakReference;
@@ -24,7 +24,7 @@ public class RopeTable {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final WeakHashMap<Key, WeakReference<Rope>> ropesTable = new WeakHashMap<>();
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Rope getRope(byte[] bytes, Encoding encoding, CodeRange codeRange) {
         final Key key = new Key(bytes, encoding);
 

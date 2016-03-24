@@ -505,14 +505,24 @@ public abstract class StringPrimitiveNodes {
 
         public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
 
-        @Specialization(guards = "ropeEqual(string, other)")
+        @Specialization(guards = "ropeReferenceEqual(string, other)")
         public boolean stringEqualsRopeEquals(DynamicObject string, DynamicObject other) {
             return true;
         }
 
         @Specialization(guards = {
                 "isRubyString(other)",
-                "!ropeEqual(string, other)",
+                "!ropeReferenceEqual(string, other)",
+                "bytesReferenceEqual(string, other)"
+        })
+        public boolean stringEqualsBytesEquals(DynamicObject string, DynamicObject other) {
+            return true;
+        }
+
+        @Specialization(guards = {
+                "isRubyString(other)",
+                "!ropeReferenceEqual(string, other)",
+                "!bytesReferenceEqual(string, other)",
                 "!areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
         })
         public boolean stringEqualNotComparable(DynamicObject string, DynamicObject other,
@@ -528,7 +538,8 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = {
                 "isRubyString(other)",
-                "!ropeEqual(string, other)",
+                "!ropeReferenceEqual(string, other)",
+                "!bytesReferenceEqual(string, other)",
                 "areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
         })
         public boolean equal(DynamicObject string, DynamicObject other,
@@ -599,11 +610,24 @@ public abstract class StringPrimitiveNodes {
             return false;
         }
 
-        protected static boolean ropeEqual(DynamicObject first, DynamicObject second) {
+        protected static boolean ropeReferenceEqual(DynamicObject first, DynamicObject second) {
             assert RubyGuards.isRubyString(first);
             assert RubyGuards.isRubyString(second);
 
             return rope(first) == rope(second);
+        }
+
+        protected static boolean bytesReferenceEqual(DynamicObject first, DynamicObject second) {
+            assert RubyGuards.isRubyString(first);
+            assert RubyGuards.isRubyString(second);
+
+            final Rope firstRope = rope(first);
+            final Rope secondRope = rope(second);
+
+            return firstRope.getCodeRange() == CodeRange.CR_7BIT &&
+                    secondRope.getCodeRange() == CodeRange.CR_7BIT &&
+                    firstRope.getRawBytes() != null &&
+                    firstRope.getRawBytes() == secondRope.getRawBytes();
         }
     }
 
