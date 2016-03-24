@@ -1207,10 +1207,12 @@ public abstract class StringNodes {
     @CoreMethod(names = "force_encoding", required = 1, raiseIfFrozenSelf = true)
     public abstract static class ForceEncodingNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.WithEncodingNode withEncodingNode;
         @Child private ToStrNode toStrNode;
 
         public ForceEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            withEncodingNode = RopeNodesFactory.WithEncodingNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @TruffleBoundary
@@ -1233,7 +1235,8 @@ public abstract class StringNodes {
                 if (mutableRopeProfile.profile(rope instanceof MutableRope)) {
                     ((MutableRope) rope).getByteList().setEncoding(encoding);
                 } else {
-                    StringOperations.forceEncoding(string, encoding);
+                    final Rope newRope = withEncodingNode.executeWithEncoding(rope, encoding, CodeRange.CR_UNKNOWN);
+                    StringOperations.setRope(string, newRope);
                 }
             }
 
