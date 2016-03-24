@@ -45,3 +45,7 @@ example "'abc'.empty?", false
 example "'こにちわ'.empty?", false
 
 example "x = 'abc'; y = 'xyz'; x.replace(y) == y", true
+
+example "'abc'.getbyte(0) == 97", true
+example "'abc'.getbyte(-1) == 99", true
+example "'abc'.getbyte(10_000) == nil", true
