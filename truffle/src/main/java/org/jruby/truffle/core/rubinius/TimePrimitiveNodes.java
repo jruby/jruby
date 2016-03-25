@@ -301,11 +301,11 @@ public abstract class TimePrimitiveNodes {
             DateTime dt = new DateTime(year, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC);
 
             dt = dt.plusMonths(month - 1)
-                .plusDays(mday - 1)
-                .plusHours(hour)
-                .plusMinutes(min)
-                .plusSeconds(sec)
-                .plusMillis( nsec / 1_000_000 );
+                    .plusDays(mday - 1)
+                    .plusHours(hour)
+                    .plusMinutes(min)
+                    .plusSeconds(sec)
+                    .plusMillis(nsec / 1_000_000);
 
             final DateTimeZone zone;
             final boolean relativeOffset;
@@ -317,7 +317,7 @@ public abstract class TimePrimitiveNodes {
             } else if (utcoffset == nil()) {
                 zone = TimeZoneParser.parse(this, StringOperations.getString(getContext(), envZon));
                 // TODO BJF 16-Feb-2016 verify which zone the following date time should be in
-                final String zoneName = TimeZoneParser.getShortZoneName( dt.withZoneRetainFields(zone), zone);
+                final String zoneName = TimeZoneParser.getShortZoneName(dt.withZoneRetainFields(zone), zone);
                 zoneToStore = createString(StringOperations.encodeRope(zoneName, UTF8Encoding.INSTANCE));
                 relativeOffset = false;
             } else if (utcoffset instanceof Integer) {
