@@ -339,25 +339,15 @@ public abstract class TimePrimitiveNodes {
 
             dt = dt.withZoneRetainFields(zone);
 
-            // Following if block copied over from RubyTime.java createTime method
-            // If we're at a DST boundary, we need to choose the correct side of the boundary
-            if (isdst != -1) {
-                final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
-                final DateTime afterDstBoundary = dt.withLaterOffsetAtOverlap();
-
-                final int offsetBeforeBoundary = zone.getOffset(beforeDstBoundary);
-                final int offsetAfterBoundary = zone.getOffset(afterDstBoundary);
-
-                // If the time is during DST, we need to pick the time with the highest offset
-                dt = offsetBeforeBoundary > offsetAfterBoundary ? beforeDstBoundary : afterDstBoundary;
+            if (isdst == 0) {
+                dt = dt.withLaterOffsetAtOverlap();
             }
 
-            if (isdst == -1) {
-                return allocateObjectNode.allocate(timeClass, dt, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
-            } else {
-                // TODO (pitr 26-Nov-2015): is this correct to create the DateTime without isdst application?
-                return allocateObjectNode.allocate(timeClass, dt, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
+            if (isdst == 1) {
+                dt = dt.withEarlierOffsetAtOverlap();
             }
+
+            return allocateObjectNode.allocate(timeClass, dt, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
         }
 
         private static int cast(Object value) {
