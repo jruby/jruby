@@ -471,11 +471,15 @@ module Marshal
 
       parts = String(name).split '::'
       parts.each do |part|
-        unless Rubinius::Type.const_exists?(mod, part)
-          raise ArgumentError, "undefined class/module #{name}"
-        end
-
-        mod = Rubinius::Type.const_get(mod, part, false)
+        mod = if Rubinius::Type.const_exists?(mod, part)
+                Rubinius::Type.const_get(mod, part, false)
+              else
+                begin
+                  mod.const_missing(part)
+                rescue NameError
+                  raise ArgumentError, "undefined class/module #{name}"
+                end
+              end
       end
 
       if type and not mod.instance_of? type

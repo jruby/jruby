@@ -43,7 +43,6 @@
     method_source.rb: nil
     exclude_tests.rb: |
                       crashes = {
-                          FileStoreTest: :test_two_classes_autoloading,
                           KernelTest:    [:test_silence_stream,
                                           :test_quietly,
                                           :test_capture] }
