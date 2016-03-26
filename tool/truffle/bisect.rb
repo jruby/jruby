@@ -13,7 +13,7 @@ $ jt bench compare BENCH
 
 Then choose a THRESHOLD (between the number from the compare and 100%) and
 $ git bisect start BADCOMMIT GOODCOMMIT
-$ git bisect run ruby tool/truffle-bisect.rb BENCH THRESHOLD
+$ git bisect run ruby tool/truffle/bisect.rb BENCH THRESHOLD
 =end
 
 def jt(cmd)
