@@ -1258,12 +1258,13 @@ public class CoreLibrary {
 
     public DynamicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        DynamicObject logicalClass = getLogicalClass(receiver);
-        String repr = Layouts.MODULE.getFields(logicalClass).getName();
-        if (RubyGuards.isRubyModule(receiver)) {
-            repr = Layouts.MODULE.getFields(((DynamicObject) receiver)).getName() + ":" + repr;
-        }
-        return noMethodError(String.format("undefined method `%s' for %s", name, repr), name, currentNode);
+        final DynamicObject logicalClass = getLogicalClass(receiver);
+        final String moduleName = Layouts.MODULE.getFields(logicalClass).getName();
+
+        // Do not call to_s on BasicObject
+        final Object to_s = getContext().getCodeLoader().inline(currentNode, "o.to_s if c.instance_methods.include?(:to_s)", "o", receiver, "c", logicalClass);
+
+        return noMethodError(String.format("undefined method `%s' for %s:%s", name, to_s, moduleName), name, currentNode);
     }
 
     public DynamicObject privateMethodError(String name, Object self, Node currentNode) {
