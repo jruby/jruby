@@ -59,8 +59,7 @@
                                    StringInflectionsTest:    [:test_string_parameterized_no_separator,
                                                               :test_string_parameterized_normal,
                                                               :test_string_parameterized_underscore,
-                                                              :test_titleize],
-                                   TimeWithZoneTest:         [:test_no_method_error_has_proper_context] }
+                                                              :test_titleize] }
 
 
                       undefine = if ENV['CI']
