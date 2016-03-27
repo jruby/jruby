@@ -729,7 +729,7 @@ public class CoreLibrary {
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalManager.SIGNALS_LIST.entrySet()) {
             DynamicObject signalName = StringOperations.createString(context, StringOperations.encodeRope(signal.getKey(), UTF8Encoding.INSTANCE));
-            Object[] objects = new Object[]{signalName, signal.getValue()};
+            Object[] objects = new Object[]{ signalName, signal.getValue() };
             signals[i++] = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), objects, objects.length);
         }
 
@@ -1464,7 +1464,9 @@ public class CoreLibrary {
         return hashClass;
     }
 
-    public DynamicObject getStandardErrorClass() { return standardErrorClass; }
+    public DynamicObject getStandardErrorClass() {
+        return standardErrorClass;
+    }
 
     public DynamicObject getLoadErrorClass() {
         return loadErrorClass;
@@ -1538,7 +1540,9 @@ public class CoreLibrary {
         return timeClass;
     }
 
-    public DynamicObject getTypeErrorClass() { return typeErrorClass; }
+    public DynamicObject getTypeErrorClass() {
+        return typeErrorClass;
+    }
 
     public DynamicObject getTrueClass() {
         return trueClass;
