@@ -34,6 +34,9 @@ import org.jruby.util.ByteList;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.truffle.core.format.printf.PrintfParserBaseListener;
+import org.jruby.truffle.core.format.printf.PrintfParser;
+
 public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
     public static final int PADDING_FROM_ARGUMENT = -2;
