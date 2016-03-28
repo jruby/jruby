@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import org.jruby.truffle.RubyContext;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -356,17 +357,15 @@ public abstract class ArrayUtils {
         return longs;
     }
 
-    private static final int INITIAL_CAPACITY = 16;
-
-    public static int capacity(int current, int needed) {
+    public static int capacity(RubyContext context, int current, int needed) {
         if (needed == 0) {
             return 0;
         }
 
         assert current < needed;
 
-        if (needed < INITIAL_CAPACITY) {
-            return INITIAL_CAPACITY;
+        if (needed < context.getOptions().ARRAY_UNINITIALIZED_SIZE) {
+            return context.getOptions().ARRAY_UNINITIALIZED_SIZE;
         } else {
             final int newCapacity = current << 1;
             if (newCapacity >= needed) {
@@ -377,9 +376,9 @@ public abstract class ArrayUtils {
         }
     }
 
-    public static int capacityForOneMore(int current) {
-        if (current < INITIAL_CAPACITY) {
-            return INITIAL_CAPACITY;
+    public static int capacityForOneMore(RubyContext context, int current) {
+        if (current < context.getOptions().ARRAY_UNINITIALIZED_SIZE) {
+            return context.getOptions().ARRAY_UNINITIALIZED_SIZE;
         } else {
             return current << 1;
         }

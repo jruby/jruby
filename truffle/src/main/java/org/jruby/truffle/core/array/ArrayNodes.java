@@ -2928,7 +2928,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                store = Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, newSize));
             }
 
             store[oldSize] = value;
@@ -2946,7 +2946,7 @@ public abstract class ArrayNodes {
 
             if (oldStore.length < newSize) {
                 extendBranch.enter();
-                store = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
+                store = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(getContext(), oldStore.length, newSize) - oldStore.length);
             } else {
                 store = ArrayUtils.box(oldStore);
             }
@@ -2968,7 +2968,7 @@ public abstract class ArrayNodes {
 
             if (oldStore.length < newSize) {
                 extendBranch.enter();
-                store = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
+                store = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(getContext(), oldStore.length, newSize) - oldStore.length);
             } else {
                 store = ArrayUtils.box(oldStore);
             }
@@ -2990,7 +2990,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                store = Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, newSize));
             }
 
             store[oldSize] = (long) value;
@@ -3007,7 +3007,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                store = Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, newSize));
             }
 
             store[oldSize] = value;
@@ -3038,7 +3038,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                store = ArrayUtils.grow(store, ArrayUtils.capacity(store.length, newSize));
+                store = ArrayUtils.grow(store, ArrayUtils.capacity(getContext(), store.length, newSize));
             }
             ;
             for (int n = 0; n < values.length; n++) {
@@ -3076,7 +3076,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                Object store1 = store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                Object store1 = store = Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, newSize));
                 setStoreAndSize(array, store1, getSize(array));
             }
 
@@ -3095,7 +3095,7 @@ public abstract class ArrayNodes {
 
             if (oldStore.length < newSize) {
                 extendBranch.enter();
-                newStore = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
+                newStore = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(getContext(), oldStore.length, newSize) - oldStore.length);
             } else {
                 newStore = ArrayUtils.box(oldStore);
             }
@@ -3114,7 +3114,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                Object store1 = store = ArrayUtils.grow(store, ArrayUtils.capacity(store.length, newSize));
+                Object store1 = store = ArrayUtils.grow(store, ArrayUtils.capacity(getContext(), store.length, newSize));
                 setStoreAndSize(array, store1, getSize(array));
             }
 

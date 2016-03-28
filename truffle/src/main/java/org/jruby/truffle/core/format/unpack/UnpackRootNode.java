@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.format.FormatEncoding;
@@ -26,18 +27,22 @@ import org.jruby.truffle.language.backtrace.InternalRootNode;
 
 public class UnpackRootNode extends RootNode implements InternalRootNode {
 
+    private final RubyContext context;
+
     private final String description;
     private final FormatEncoding encoding;
 
     @Child private FormatNode child;
 
-    @CompilationFinal private int expectedLength = ArrayUtils.capacity(0, 0);
+    @CompilationFinal private int expectedLength;
 
-    public UnpackRootNode(String description, FormatEncoding encoding, FormatNode child) {
+    public UnpackRootNode(RubyContext context, String description, FormatEncoding encoding, FormatNode child) {
         super(RubyLanguage.class, SourceSection.createUnavailable("unpack", description), FormatFrameDescriptor.FRAME_DESCRIPTOR);
+        this.context = context;
         this.description = description;
         this.encoding = encoding;
         this.child = child;
+        expectedLength = context.getOptions().ARRAY_UNINITIALIZED_SIZE;
     }
 
     @Override
@@ -61,7 +66,7 @@ public class UnpackRootNode extends RootNode implements InternalRootNode {
 
         if (outputLength > expectedLength) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            expectedLength = ArrayUtils.capacity(expectedLength, outputLength);
+            expectedLength = ArrayUtils.capacity(context, expectedLength, outputLength);
         }
 
         final Object[] output;

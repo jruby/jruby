@@ -246,7 +246,7 @@ public abstract class FormatNode extends Node {
             // If we ran out of output byte[], deoptimize and next time we'll allocate more
 
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            output = Arrays.copyOf(output, ArrayUtils.capacity(output.length, outputPosition + length));
+            output = Arrays.copyOf(output, ArrayUtils.capacity(getContext(), output.length, outputPosition + length));
             setOutput(frame, output);
         }
 
