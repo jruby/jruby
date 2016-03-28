@@ -1260,26 +1260,30 @@ public abstract class StringNodes {
     @CoreMethod(names = "getbyte", required = 1, lowerFixnumParameters = 0)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.GetByteNode ropeGetByteNode;
+
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            ropeGetByteNode = RopeNodesFactory.GetByteNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public Object getByte(DynamicObject string, int index,
                               @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
                               @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
-            final byte[] bytes = rope(string).getBytes();
+            final Rope rope = rope(string);
 
             if (negativeIndexProfile.profile(index < 0)) {
-                index += bytes.length;
+                index += rope.byteLength();
             }
 
-            if (indexOutOfBoundsProfile.profile((index < 0) || (index >= bytes.length))) {
+            if (indexOutOfBoundsProfile.profile((index < 0) || (index >= rope.byteLength()))) {
                 return nil();
             }
 
-            return bytes[index] & 0xff;
+            return ropeGetByteNode.executeGetByte(rope, index);
         }
+
     }
 
     @CoreMethod(names = "hash")

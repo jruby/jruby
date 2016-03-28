@@ -627,4 +627,30 @@ public abstract class RopeNodes {
         }
 
     }
+
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "rope"),
+            @NodeChild(type = RubyNode.class, value = "index")
+    })
+    public abstract static class GetByteNode extends RubyNode {
+
+        public GetByteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract int executeGetByte(Rope rope, int index);
+
+        @Specialization(guards = "rope.getRawBytes() != null")
+        public int getByte(Rope rope, int index) {
+            return rope.getRawBytes()[index] & 0xff;
+        }
+
+        @Specialization(guards = "rope.getRawBytes() == null")
+        @TruffleBoundary
+        public int getByteSlow(Rope rope, int index) {
+            return rope.getBytes()[index] & 0xff;
+        }
+
+    }
+
 }
