@@ -56,7 +56,6 @@ public class UnpackTreeBuilder extends PackBaseListener {
     private final RubyContext context;
     private final Node currentNode;
 
-    private FormatEncoding encoding = FormatEncoding.DEFAULT;
     private final Deque<List<FormatNode>> sequenceStack = new ArrayDeque<>();
 
     public UnpackTreeBuilder(RubyContext context, Node currentNode) {
@@ -370,10 +369,6 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     public FormatNode getNode() {
         return sequenceStack.peek().get(0);
-    }
-
-    public FormatEncoding getEncoding() {
-        return encoding;
     }
 
     private void pushSequence() {
