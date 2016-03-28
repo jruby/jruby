@@ -6,3 +6,5 @@ fails:IO#close_read closes the stream if it is neither writable nor duplexed
 fails:IO#close_read raises IOError on closed stream
 fails:IO#close_read doesn't raise an IOError on subsequent invocations
 fails:IO#close_read doesn't raise IOError on closed stream
+fails:IO#close_read does nothing on subsequent invocations
+fails:IO#close_read does nothing on closed stream

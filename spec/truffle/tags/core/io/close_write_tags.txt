@@ -7,3 +7,5 @@ fails:IO#close_write flushes and closes the write stream
 fails:IO#close_write raises IOError on closed stream
 fails:IO#close_write doesn't raise an IOError on subsequent invocations
 fails:IO#close_write doesn't raise IOError on closed stream
+fails:IO#close_write does nothing on subsequent invocations
+fails:IO#close_write does nothing on closed stream

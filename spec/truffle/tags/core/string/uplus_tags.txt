@@ -1,0 +1,2 @@
+fails:String#+@ returns an unfrozen copy of a frozen String
+fails:String#+@ returns self if the String is not frozen

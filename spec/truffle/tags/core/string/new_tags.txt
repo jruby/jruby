@@ -1,0 +1,1 @@
+fails:String.new accepts an encoding argument

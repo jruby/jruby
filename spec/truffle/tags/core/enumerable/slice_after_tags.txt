@@ -4,3 +4,4 @@ fails:Enumerable#slice_after when given an argument and no block doesn't yield a
 fails:Enumerable#slice_after when given an argument and no block uses standard boolean as a test
 fails:Enumerable#slice_after when given a block and no argument calls the block to determine when to yield
 fails:Enumerable#slice_after when given a block and an argument raises an ArgumentError
+fails:when an iterator method yields more than one value processes all yielded values

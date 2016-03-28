@@ -1,0 +1,15 @@
+slow:ARGF.readpartial reads a number of bytes from stdin
+slow:ARGF.readpartial raises an EOFError if the exception was raised while reading STDIN
+fails:ARGF.readpartial treats second nil argument as no output buffer
+fails:ARGF.readpartial treats second argument as an output buffer
+fails:ARGF.readpartial clears output buffer before appending to it
+fails:ARGF.readpartial reads a number of bytes from the first file
+fails:ARGF.readpartial reads from a single file consecutively
+fails:ARGF.readpartial reads a number of bytes from stdin
+fails:ARGF.readpartial reads the contents of a special device file
+fails:ARGF.readpartial raises an ArgumentError if called without a maximum read length
+fails:ARGF.readpartial reads maximum number of bytes from one file at a time
+fails:ARGF.readpartial clears output buffer even if EOFError is raised because @argf is at end
+fails:ARGF.readpartial returns an empty string if EOFError is raised while reading any but the last file
+fails:ARGF.readpartial raises an EOFError if the exception was raised while reading the last file
+fails:ARGF.readpartial raises an EOFError if the exception was raised while reading STDIN

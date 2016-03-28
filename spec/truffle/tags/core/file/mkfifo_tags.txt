@@ -1,0 +1,7 @@
+fails:File.mkfifo creates a FIFO file at the passed path
+fails:File.mkfifo creates a FIFO file with passed mode & ~umask
+fails:File.mkfifo creates a FIFO file with a default mode of 0666 & ~umask
+fails:File.mkfifo returns 0 after creating the FIFO file
+fails:File.mkfifo when path passed responds to :to_path creates a FIFO file at the path specified
+fails:File.mkfifo when path passed is not a String value raises a TypeError
+fails:File.mkfifo when path does not exist raises an Errno::ENOENT exception
