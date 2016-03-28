@@ -1,2 +1,1 @@
-windows(JRUBY-4520):ARGF.binmode puts alls subsequent stream reading through ARGF into binmode
 fails:ARGF.binmode sets the file's encoding to ASCII-8BIT
