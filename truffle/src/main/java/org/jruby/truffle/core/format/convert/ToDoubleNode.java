@@ -16,9 +16,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 
-/**
- * Convert a value to a {@code double}.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
@@ -31,17 +28,32 @@ public abstract class ToDoubleNode extends FormatNode {
     public abstract double executeToDouble(VirtualFrame frame, Object object);
 
     @Specialization
-    public double toDouble(VirtualFrame frame, int value) {
+    public double toDouble(byte value) {
         return value;
     }
 
     @Specialization
-    public double toDouble(VirtualFrame frame, long value) {
+    public double toDouble(int value) {
         return value;
     }
 
     @Specialization
-    public double toDouble(VirtualFrame frame, double value) {
+    public double toDouble(short value) {
+        return value;
+    }
+
+    @Specialization
+    public double toDouble(long value) {
+        return value;
+    }
+
+    @Specialization
+    public double toDouble(float value) {
+        return value;
+    }
+
+    @Specialization
+    public double toDouble(double value) {
         return value;
     }
 
