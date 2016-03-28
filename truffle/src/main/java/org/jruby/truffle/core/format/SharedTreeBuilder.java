@@ -11,8 +11,12 @@ package org.jruby.truffle.core.format;
 
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.control.NNode;
+import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.control.StarNode;
 import org.jruby.truffle.core.format.pack.PackParser;
+
+import java.util.Deque;
+import java.util.List;
 
 public class SharedTreeBuilder {
 
@@ -20,6 +24,17 @@ public class SharedTreeBuilder {
 
     public SharedTreeBuilder(RubyContext context) {
         this.context = context;
+    }
+
+    public FormatNode finishSubSequence(Deque<List<FormatNode>> sequenceStack, PackParser.SubSequenceContext ctx) {
+        final List<FormatNode> sequence = sequenceStack.pop();
+        final SequenceNode sequenceNode = new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()]));
+
+        if (ctx.INT() == null) {
+            return sequenceNode;
+        } else {
+            return new NNode(context, Integer.parseInt(ctx.INT().getText()), sequenceNode);
+        }
     }
 
     public FormatNode applyCount(PackParser.CountContext count, FormatNode node) {

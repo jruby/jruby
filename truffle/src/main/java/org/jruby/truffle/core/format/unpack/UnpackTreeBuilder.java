@@ -362,18 +362,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitSubSequence(PackParser.SubSequenceContext ctx) {
-        final List<FormatNode> sequence = sequenceStack.pop();
-        final SequenceNode sequenceNode = new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()]));
-
-        final FormatNode resultingNode;
-
-        if (ctx.INT() == null) {
-            resultingNode = sequenceNode;
-        } else {
-            resultingNode = new NNode(context, Integer.parseInt(ctx.INT().getText()), sequenceNode);
-        }
-
-        appendNode(resultingNode);
+        appendNode(sharedTreeBuilder.finishSubSequence(sequenceStack, ctx));
     }
 
     @Override
