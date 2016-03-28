@@ -33,7 +33,10 @@ public class UnpackRootNode extends RootNode implements InternalRootNode {
     @CompilationFinal private int expectedLength;
 
     public UnpackRootNode(RubyContext context, String description, FormatNode child) {
-        super(RubyLanguage.class, SourceSection.createUnavailable("unpack", description), FormatFrameDescriptor.FRAME_DESCRIPTOR);
+        super(RubyLanguage.class,
+                SourceSection.createUnavailable("unpack", description),
+                FormatFrameDescriptor.FRAME_DESCRIPTOR);
+        
         this.context = context;
         this.description = description;
         this.child = child;
