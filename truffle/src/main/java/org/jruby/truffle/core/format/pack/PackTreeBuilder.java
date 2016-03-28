@@ -13,7 +13,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
-import org.jruby.truffle.core.format.convert.NarrowFloatPrecisionNodeGen;
+import org.jruby.truffle.core.format.convert.ToFloatNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.AtNode;
 import org.jruby.truffle.core.format.control.BackNode;
@@ -385,7 +385,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
         switch (size) {
             case 32:
-                typeNode = NarrowFloatPrecisionNodeGen.create(context, readNode);
+                typeNode = ToFloatNodeGen.create(context, readNode);
                 break;
             case 64:
                 typeNode = readNode;

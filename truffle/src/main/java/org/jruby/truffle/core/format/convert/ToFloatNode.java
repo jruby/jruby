@@ -18,14 +18,14 @@ import org.jruby.truffle.core.format.FormatNode;
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class NarrowFloatPrecisionNode extends FormatNode {
+public abstract class ToFloatNode extends FormatNode {
 
-    public NarrowFloatPrecisionNode(RubyContext context) {
+    public ToFloatNode(RubyContext context) {
         super(context);
     }
 
     @Specialization
-    public float asFloat(double object) {
+    public float toFloat(double object) {
         return (float) object;
     }
 
