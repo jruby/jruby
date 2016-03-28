@@ -1,2 +1,4 @@
 fails:Enumerator::Lazy#drop_while sets nil to size
 fails:Enumerator::Lazy#drop_while on a nested Lazy sets nil to size
+fails:Enumerator::Lazy#drop_while sets #size to nil
+fails:Enumerator::Lazy#drop_while on a nested Lazy sets #size to nil
