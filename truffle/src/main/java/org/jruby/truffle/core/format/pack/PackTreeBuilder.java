@@ -16,7 +16,6 @@ import org.jruby.truffle.core.format.SharedTreeBuilder;
 import org.jruby.truffle.core.format.SourceNode;
 import org.jruby.truffle.core.format.control.AtNode;
 import org.jruby.truffle.core.format.control.BackNode;
-import org.jruby.truffle.core.format.control.NNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.read.ReadDoubleNodeGen;
 import org.jruby.truffle.core.format.read.ReadLongOrBigIntegerNodeGen;

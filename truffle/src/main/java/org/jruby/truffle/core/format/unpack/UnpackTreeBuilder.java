@@ -17,7 +17,6 @@ import org.jruby.truffle.core.format.SourceNode;
 import org.jruby.truffle.core.format.control.AtUnpackNode;
 import org.jruby.truffle.core.format.control.BackUnpackNode;
 import org.jruby.truffle.core.format.control.ForwardUnpackNode;
-import org.jruby.truffle.core.format.control.NNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.decode.DecodeByteNodeGen;
 import org.jruby.truffle.core.format.decode.DecodeFloat32NodeGen;
