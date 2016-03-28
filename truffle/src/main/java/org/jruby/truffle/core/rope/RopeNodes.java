@@ -653,7 +653,7 @@ public abstract class RopeNodes {
         @Specialization(guards = "rope.getRawBytes() == null")
         @TruffleBoundary
         public int getByteSlow(Rope rope, int index) {
-            return rope.getBytes()[index] & 0xff;
+            return rope.get(index) & 0xff;
         }
 
     }
