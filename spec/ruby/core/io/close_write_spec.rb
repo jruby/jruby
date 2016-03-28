@@ -27,10 +27,10 @@ describe "IO#close_write" do
   end
 
   ruby_version_is '2.3' do
-    it "doesn't raise an IOError on subsequent invocations" do
+    it "does nothing on subsequent invocations" do
       @io.close_write
 
-      lambda { @io.close_write }.should_not raise_error(IOError)
+      @io.close_write.should be_nil
     end
   end
 
@@ -75,10 +75,10 @@ describe "IO#close_write" do
   end
 
   ruby_version_is '2.3' do
-    it "doesn't raise IOError on closed stream" do
+    it "does nothing on closed stream" do
       @io.close
 
-      lambda { @io.close_write }.should_not raise_error(IOError)
+      @io.close_write.should be_nil
     end
   end
 end

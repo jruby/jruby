@@ -1,9 +1,9 @@
 sudo: false
 language: ruby
 rvm:
-  - 2.0.0-p648
   - 2.1.8
   - 2.2.4
+  - 2.3.0
   - ruby-head
 install:
   - git clone https://github.com/ruby/mspec.git ../mspec
@@ -12,3 +12,4 @@ script:
 branches:
   only:
     - master
+    - /^try/

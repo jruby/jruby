@@ -18,6 +18,8 @@ describe "Process.setsid" do
       write.close
       klass = read.gets
       read.close
+      Process.wait pid
+
       klass.should == "Fixnum"
     end
   end

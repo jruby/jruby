@@ -25,10 +25,13 @@ describe "Process.setpgrp and Process.getpgrp" do
       pgid = read1.read # wait for child to change process groups
       read1.close
 
-      Process.getpgid(pid).should == pgid.to_i
-
-      write2 << "!"
-      write2.close
+      begin
+        Process.getpgid(pid).should == pgid.to_i
+      ensure
+        write2 << "!"
+        write2.close
+        Process.wait pid
+      end
     end
 
   end

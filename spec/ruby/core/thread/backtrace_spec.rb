@@ -1,10 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Thread#backtrace" do
-  it "needs to be reviewed for spec completeness"
-
-  it "returns current backtrace of a thread" do
-
+  it "returns the current backtrace of a thread" do
     t = Thread.new do
       begin
         sleep
@@ -12,7 +9,7 @@ describe "Thread#backtrace" do
       end
     end
 
-    Thread.pass while t.status != 'sleep'
+    Thread.pass while t.status && t.status != 'sleep'
 
     backtrace = t.backtrace
     backtrace.should be_kind_of(Array)

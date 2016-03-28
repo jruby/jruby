@@ -20,13 +20,11 @@ describe "Errno::EINVAL.new" do
     exc.message.should == "Invalid argument - custom message"
   end
 
-  ruby_version_is "2.1" do
-    it "accepts an optional custom message and location" do
-      exc = Errno::EINVAL.new('custom message', 'location')
-      exc.should be_an_instance_of(Errno::EINVAL)
-      exc.errno.should == Errno::EINVAL::Errno
-      exc.message.should == "Invalid argument @ location - custom message"
-    end
+  it "accepts an optional custom message and location" do
+    exc = Errno::EINVAL.new('custom message', 'location')
+    exc.should be_an_instance_of(Errno::EINVAL)
+    exc.errno.should == Errno::EINVAL::Errno
+    exc.message.should == "Invalid argument @ location - custom message"
   end
 end
 

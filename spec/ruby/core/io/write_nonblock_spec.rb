@@ -56,13 +56,21 @@ describe 'IO#write_nonblock' do
     }.should raise_error(IO::WaitWritable)
   end
 
-  ruby_version_is "2.1" do
-    it 'raises IO::EAGAINWaitWritable when the operation would block' do
-      lambda {
-        loop { @write.write_nonblock('a' * 10_000) }
-      }.should raise_error(IO::EAGAINWaitWritable)
+  it 'raises IO::EAGAINWaitWritable when the operation would block' do
+    lambda {
+      loop { @write.write_nonblock('a' * 10_000) }
+    }.should raise_error(IO::EAGAINWaitWritable)
+  end
+
+  ruby_version_is "2.3" do
+    context "when exception option is set to false" do
+      it "returns :wait_writable when the operation would block" do
+        loop { break if @write.write_nonblock("a" * 10_000, exception: false) == :wait_writable }
+        1.should == 1
+      end
     end
   end
+
 end
 
 describe "IO#write_nonblock" do

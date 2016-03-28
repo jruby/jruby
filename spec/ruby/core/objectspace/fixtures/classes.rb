@@ -52,14 +52,6 @@ module ObjectSpaceFixtures
     end
   end
 
-  def self.wait_for_weakref_cleared(weakref)
-    started = Time.now
-
-    while weakref.weakref_alive? && Time.now - started < 3
-      GC.start
-    end
-  end
-
   o = ObjectToBeFound.new(:captured_by_define_method)
   define_method :capturing_method do
     o

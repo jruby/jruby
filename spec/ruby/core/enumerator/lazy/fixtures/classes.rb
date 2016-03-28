@@ -12,6 +12,10 @@ module EnumeratorLazySpecs
       [nil, 0, [0, 1], [0, 1, 2], [0, 1, 2], nil, :default_arg, [], [], [0], [0, 1], [0, 1, 2]]
     end
 
+    def self.gathered_non_array_yields
+      [nil, 0, nil, :default_arg]
+    end
+
     def self.gathered_yields_with_args(arg, *args)
       [nil, 0, [0, 1], [0, 1, 2], [0, 1, 2], nil, arg, args, [], [0], [0, 1], [0, 1, 2]]
     end

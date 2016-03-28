@@ -5,6 +5,10 @@ describe "Process.waitpid" do
 
   it "returns nil when the process has not yet completed and WNOHANG is specified" do
     pid = spawn("sleep 5")
-    Process.waitpid(pid, Process::WNOHANG).should == nil
+    begin
+      Process.waitpid(pid, Process::WNOHANG).should == nil
+    ensure
+      Process.wait(pid)
+    end
   end
 end

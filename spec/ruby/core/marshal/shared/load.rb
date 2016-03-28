@@ -2,16 +2,8 @@ require File.expand_path('../../fixtures/marshal_data', __FILE__)
 require 'stringio'
 
 describe :marshal_load, shared: true do
-  ruby_version_is ""..."2.1" do
-    before :all do
-      @num_self_class = 0
-    end
-  end
-
-  ruby_version_is "2.1" do
-    before :all do
-      @num_self_class = 1
-    end
+  before :all do
+    @num_self_class = 1
   end
 
   it "raises an ArgumentError when the dumped data is truncated" do
@@ -773,7 +765,12 @@ describe :marshal_load, shared: true do
 
       data = "\x04\bd:\x10DumpableDirI\"\x06.\x06:\x06ET"
 
-      Marshal.send(@method, data).path.should == '.'
+      dir = Marshal.send(@method, data)
+      begin
+        dir.path.should == '.'
+      ensure
+        dir.close
+      end
     end
 
     it "raises TypeError when the local class is missing _load_data" do

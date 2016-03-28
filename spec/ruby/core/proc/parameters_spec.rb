@@ -38,10 +38,8 @@ describe "Proc#parameters" do
     lambda {|x| }.parameters.first.first.should == :req
   end
 
-  ruby_version_is "2.1" do
-    it "regards keyword parameters in lambdas as required" do
-      eval("lambda {|x:| }").parameters.first.first.should == :keyreq
-    end
+  it "regards keyword parameters in lambdas as required" do
+    eval("lambda {|x:| }").parameters.first.first.should == :keyreq
   end
 
   it "sets the first element of each sub-Array to :rest for parameters prefixed with asterisks" do

@@ -52,4 +52,12 @@ ruby_version_is "2.2" do
       lambda { @enum.slice_after }.should raise_error(ArgumentError)
     end
   end
+
+  describe "when an iterator method yields more than one value" do
+    it "processes all yielded values" do
+      enum = EnumerableSpecs::YieldsMulti.new
+      result = enum.slice_after { |i| i == [3, 4, 5] }.to_a
+      result.should == [[[1, 2], [3, 4, 5]], [[6, 7, 8, 9]]]
+    end
+  end
 end
