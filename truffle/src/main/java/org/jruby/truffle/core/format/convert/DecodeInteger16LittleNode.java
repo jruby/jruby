@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.decode;
+package org.jruby.truffle.core.format.convert;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -18,12 +18,15 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.MissingValue;
 
-@NodeChildren({
-        @NodeChild(value = "value", type = FormatNode.class),
-})
-public abstract class DecodeFloat32Node extends FormatNode {
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
-    public DecodeFloat32Node(RubyContext context) {
+@NodeChildren({
+        @NodeChild(value = "bytes", type = FormatNode.class),
+})
+public abstract class DecodeInteger16LittleNode extends FormatNode {
+
+    public DecodeInteger16LittleNode(RubyContext context) {
         super(context);
     }
 
@@ -38,8 +41,10 @@ public abstract class DecodeFloat32Node extends FormatNode {
     }
 
     @Specialization
-    public float decode(VirtualFrame frame, int value) {
-        return Float.intBitsToFloat(value);
+    public short decode(VirtualFrame frame, byte[] bytes) {
+        final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        return buffer.getShort();
     }
 
 }

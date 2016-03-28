@@ -7,42 +7,39 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.type;
+package org.jruby.truffle.core.format.convert;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
+import org.jruby.truffle.core.format.MissingValue;
 
-/**
- * Convert a value to a {@code double}.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class ToDoubleNode extends FormatNode {
+public abstract class DecodeFloat32Node extends FormatNode {
 
-    public ToDoubleNode(RubyContext context) {
+    public DecodeFloat32Node(RubyContext context) {
         super(context);
     }
 
-    public abstract double executeToDouble(VirtualFrame frame, Object object);
-
     @Specialization
-    public double toDouble(VirtualFrame frame, int value) {
-        return value;
+    public MissingValue decode(VirtualFrame frame, MissingValue missingValue) {
+        return missingValue;
+    }
+
+    @Specialization(guards = "isNil(nil)")
+    public DynamicObject decode(VirtualFrame frame, DynamicObject nil) {
+        return nil;
     }
 
     @Specialization
-    public double toDouble(VirtualFrame frame, long value) {
-        return value;
-    }
-
-    @Specialization
-    public double toDouble(VirtualFrame frame, double value) {
-        return value;
+    public float decode(VirtualFrame frame, int value) {
+        return Float.intBitsToFloat(value);
     }
 
 }

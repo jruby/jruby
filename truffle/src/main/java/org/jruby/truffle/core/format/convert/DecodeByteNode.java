@@ -7,35 +7,40 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.type;
+package org.jruby.truffle.core.format.convert;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 
-/**
- * Re-interpret a value as a {@code long}. In other words, get the raw bytes
- * as a long.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class ReinterpretLongNode extends FormatNode {
+public abstract class DecodeByteNode extends FormatNode {
 
-    public ReinterpretLongNode(RubyContext context) {
+    public boolean signed;
+
+    public DecodeByteNode(RubyContext context, boolean signed) {
         super(context);
+        this.signed = signed;
+    }
+
+    @Specialization(guards = "isNil(nil)")
+    public DynamicObject decode(VirtualFrame frame, DynamicObject nil) {
+        return nil;
     }
 
     @Specialization
-    public long asLong(float object) {
-        return (long) Float.floatToIntBits(object);
-    }
-
-    @Specialization
-    public long asLong(double object) {
-        return Double.doubleToLongBits(object);
+    public int decode(VirtualFrame frame, byte value) {
+        if (signed) {
+            return value;
+        } else {
+            return value & 0xff;
+        }
     }
 
 }

@@ -19,8 +19,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatGuards;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
-import org.jruby.truffle.core.format.type.ToLongNode;
-import org.jruby.truffle.core.format.type.ToLongNodeGen;
+import org.jruby.truffle.core.format.convert.ToLongNode;
+import org.jruby.truffle.core.format.convert.ToLongNodeGen;
 
 import java.math.BigInteger;
 

@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.decode;
+package org.jruby.truffle.core.format.convert;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -16,17 +16,20 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
+import org.jruby.truffle.core.format.MissingValue;
 
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class DecodeByteNode extends FormatNode {
+public abstract class DecodeFloat64Node extends FormatNode {
 
-    public boolean signed;
-
-    public DecodeByteNode(RubyContext context, boolean signed) {
+    public DecodeFloat64Node(RubyContext context) {
         super(context);
-        this.signed = signed;
+    }
+
+    @Specialization
+    public MissingValue decode(VirtualFrame frame, MissingValue missingValue) {
+        return missingValue;
     }
 
     @Specialization(guards = "isNil(nil)")
@@ -35,12 +38,8 @@ public abstract class DecodeByteNode extends FormatNode {
     }
 
     @Specialization
-    public int decode(VirtualFrame frame, byte value) {
-        if (signed) {
-            return value;
-        } else {
-            return value & 0xff;
-        }
+    public double decode(VirtualFrame frame, long value) {
+        return Double.longBitsToDouble(value);
     }
 
 }

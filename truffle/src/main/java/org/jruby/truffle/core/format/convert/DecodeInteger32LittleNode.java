@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.decode;
+package org.jruby.truffle.core.format.convert;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -24,9 +24,9 @@ import java.nio.ByteOrder;
 @NodeChildren({
         @NodeChild(value = "bytes", type = FormatNode.class),
 })
-public abstract class DecodeInteger32BigNode extends FormatNode {
+public abstract class DecodeInteger32LittleNode extends FormatNode {
 
-    public DecodeInteger32BigNode(RubyContext context) {
+    public DecodeInteger32LittleNode(RubyContext context) {
         super(context);
     }
 
@@ -43,7 +43,7 @@ public abstract class DecodeInteger32BigNode extends FormatNode {
     @Specialization
     public int decode(VirtualFrame frame, byte[] bytes) {
         final ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        buffer.order(ByteOrder.BIG_ENDIAN);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
         return buffer.getInt();
     }
 
