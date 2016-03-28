@@ -233,38 +233,53 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitBinaryStringSpacePadded(PackParser.BinaryStringSpacePaddedContext ctx) {
+        final SourceNode source = new SourceNode();
+        final FormatNode readNode;
+
         if (ctx.count() == null) {
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, 1, true, true, false, new SourceNode())));
+            readNode = ReadBinaryStringNodeGen.create(context, false, false, 1, true, true, false, source);
         } else if (ctx.count().INT() == null) {
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, false, -1, true, true, false, new SourceNode())));
+            readNode = ReadBinaryStringNodeGen.create(context, true, false, -1, true, true, false, source);
         } else {
             final int count = Integer.parseInt(ctx.count().INT().getSymbol().getText());
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, count, true, true, false, new SourceNode())));
+            readNode = ReadBinaryStringNodeGen.create(context, false, false, count, true, true, false, source);
         }
+
+        appendNode(WriteValueNodeGen.create(context, readNode));
     }
 
     @Override
     public void exitBinaryStringNullPadded(PackParser.BinaryStringNullPaddedContext ctx) {
+        final SourceNode source = new SourceNode();
+        final FormatNode readNode;
+
         if (ctx.count() == null) {
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, 1, false, false, false, new SourceNode())));
+            readNode = ReadBinaryStringNodeGen.create(context, false, false, 1, false, false, false, source);
         } else if (ctx.count().INT() == null) {
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, false, -1, false, false, false, new SourceNode())));
+            readNode = ReadBinaryStringNodeGen.create(context, true, false, -1, false, false, false, source);
         } else {
             final int count = Integer.parseInt(ctx.count().INT().getSymbol().getText());
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, count, false, false, false, new SourceNode())));
+            readNode = ReadBinaryStringNodeGen.create(context, false, false, count, false, false, false, source);
         }
+
+        appendNode(WriteValueNodeGen.create(context, readNode));
     }
 
     @Override
     public void exitBinaryStringNullStar(PackParser.BinaryStringNullStarContext ctx) {
+        final SourceNode source = new SourceNode();
+        final FormatNode readNode;
+
         if (ctx.count() == null) {
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, true, 1, false, true, true, new SourceNode())));
+            readNode = ReadBinaryStringNodeGen.create(context, false, true, 1, false, true, true, source);
         } else if (ctx.count().INT() == null) {
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, true, true, -1, false, true, true, new SourceNode())));
+            readNode = ReadBinaryStringNodeGen.create(context, true, true, -1, false, true, true, source);
         } else {
             final int count = Integer.parseInt(ctx.count().INT().getSymbol().getText());
-            appendNode(WriteValueNodeGen.create(context, ReadBinaryStringNodeGen.create(context, false, false, count, false, true, true, new SourceNode())));
+            readNode = ReadBinaryStringNodeGen.create(context, false, false, count, false, true, true, source);
         }
+
+        appendNode(WriteValueNodeGen.create(context, readNode));
     }
 
     @Override
