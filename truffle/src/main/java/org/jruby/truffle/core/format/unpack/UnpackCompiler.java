@@ -14,6 +14,7 @@ import com.oracle.truffle.api.Truffle;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.format.pack.LoopRecovery;
 import org.jruby.truffle.core.format.pack.PackCompiler;
 import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.pack.PackLexer;
@@ -32,7 +33,7 @@ public class UnpackCompiler {
 
     public CallTarget compile(String format) {
         if (format.length() > context.getOptions().PACK_RECOVER_LOOP_MIN) {
-            format = PackCompiler.recoverLoop(format);
+            format = LoopRecovery.recoverLoop(format);
         }
 
         final FormatErrorListener errorListener = new FormatErrorListener(context, currentNode);
