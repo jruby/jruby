@@ -1,0 +1,2 @@
+windows:Socket.getnameinfo gets the name information and resolve the host
+windows:Socket.getnameinfo gets the name information and resolves the service
