@@ -45,24 +45,22 @@ import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.coerce.ToAryNodeGen;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
-import org.jruby.truffle.core.format.parser.PackCompiler;
-import org.jruby.truffle.core.format.runtime.PackResult;
-import org.jruby.truffle.core.format.runtime.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.core.format.runtime.exceptions.CantConvertException;
-import org.jruby.truffle.core.format.runtime.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.core.format.runtime.exceptions.OutsideOfStringException;
-import org.jruby.truffle.core.format.runtime.exceptions.PackException;
-import org.jruby.truffle.core.format.runtime.exceptions.RangeException;
-import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
+import org.jruby.truffle.core.format.pack.PackCompiler;
+import org.jruby.truffle.core.format.FormatResult;
+import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
+import org.jruby.truffle.core.format.exceptions.CantConvertException;
+import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
+import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
+import org.jruby.truffle.core.format.exceptions.PackException;
+import org.jruby.truffle.core.format.exceptions.RangeException;
+import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.proc.ProcNodes;
-import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
-import org.jruby.truffle.core.rope.ValidLeafRope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -2404,10 +2402,10 @@ public abstract class ArrayNodes {
                 @Cached("privatizeRope(format)") Rope cachedFormat,
                 @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
-            final PackResult result;
+            final FormatResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, new Object[] { getStore(array), getSize(array) });
+                result = (FormatResult) callPackNode.call(frame, new Object[] { getStore(array), getSize(array) });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2422,10 +2420,10 @@ public abstract class ArrayNodes {
                 DynamicObject array,
                 DynamicObject format,
                 @Cached("create()") IndirectCallNode callPackNode) {
-            final PackResult result;
+            final FormatResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[] { getStore(array), getSize(array) });
+                result = (FormatResult) callPackNode.call(frame, compileFormat(format), new Object[] { getStore(array), getSize(array) });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2452,7 +2450,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        private DynamicObject finishPack(int formatLength, PackResult result) {
+        private DynamicObject finishPack(int formatLength, FormatResult result) {
             byte[] bytes = (byte[]) result.getOutput();
             if (bytes.length != result.getOutputLength()) {
                 bytes = Arrays.copyOf(bytes, result.getOutputLength());

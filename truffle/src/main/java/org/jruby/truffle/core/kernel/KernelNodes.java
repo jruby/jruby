@@ -61,16 +61,16 @@ import org.jruby.truffle.core.coerce.ToPathNodeGen;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
-import org.jruby.truffle.core.format.parser.PrintfCompiler;
-import org.jruby.truffle.core.format.runtime.PackResult;
-import org.jruby.truffle.core.format.runtime.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.core.format.runtime.exceptions.CantConvertException;
-import org.jruby.truffle.core.format.runtime.exceptions.FormatException;
-import org.jruby.truffle.core.format.runtime.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.core.format.runtime.exceptions.OutsideOfStringException;
-import org.jruby.truffle.core.format.runtime.exceptions.PackException;
-import org.jruby.truffle.core.format.runtime.exceptions.RangeException;
-import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
+import org.jruby.truffle.core.format.printf.PrintfCompiler;
+import org.jruby.truffle.core.format.FormatResult;
+import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
+import org.jruby.truffle.core.format.exceptions.CantConvertException;
+import org.jruby.truffle.core.format.exceptions.FormatException;
+import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
+import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
+import org.jruby.truffle.core.format.exceptions.PackException;
+import org.jruby.truffle.core.format.exceptions.RangeException;
+import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
@@ -1959,10 +1959,10 @@ public abstract class KernelNodes {
                 @Cached("privatizeRope(format)") Rope cachedFormat,
                 @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
-            final PackResult result;
+            final FormatResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
+                result = (FormatResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -1977,10 +1977,10 @@ public abstract class KernelNodes {
                 DynamicObject format,
                 Object[] arguments,
                 @Cached("create()") IndirectCallNode callPackNode) {
-            final PackResult result;
+            final FormatResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
+                result = (FormatResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2007,7 +2007,7 @@ public abstract class KernelNodes {
             }
         }
 
-        private DynamicObject finishFormat(int formatLength, PackResult result) {
+        private DynamicObject finishFormat(int formatLength, FormatResult result) {
             final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
 
             if (formatLength == 0) {

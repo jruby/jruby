@@ -61,16 +61,16 @@ import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
-import org.jruby.truffle.core.format.parser.UnpackCompiler;
-import org.jruby.truffle.core.format.runtime.PackResult;
-import org.jruby.truffle.core.format.runtime.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.core.format.runtime.exceptions.CantConvertException;
-import org.jruby.truffle.core.format.runtime.exceptions.FormatException;
-import org.jruby.truffle.core.format.runtime.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.core.format.runtime.exceptions.OutsideOfStringException;
-import org.jruby.truffle.core.format.runtime.exceptions.PackException;
-import org.jruby.truffle.core.format.runtime.exceptions.RangeException;
-import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
+import org.jruby.truffle.core.format.unpack.UnpackCompiler;
+import org.jruby.truffle.core.format.FormatResult;
+import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
+import org.jruby.truffle.core.format.exceptions.CantConvertException;
+import org.jruby.truffle.core.format.exceptions.FormatException;
+import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
+import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
+import org.jruby.truffle.core.format.exceptions.PackException;
+import org.jruby.truffle.core.format.exceptions.RangeException;
+import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
@@ -2351,11 +2351,11 @@ public abstract class StringNodes {
                 @Cached("create(compileFormat(format))") DirectCallNode callUnpackNode) {
             final Rope rope = rope(string);
 
-            final PackResult result;
+            final FormatResult result;
 
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (PackResult) callUnpackNode.call(frame, new Object[]{rope.getBytes(), rope.byteLength()});
+                result = (FormatResult) callUnpackNode.call(frame, new Object[]{rope.getBytes(), rope.byteLength()});
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2372,11 +2372,11 @@ public abstract class StringNodes {
                 @Cached("create()") IndirectCallNode callUnpackNode) {
             final Rope rope = rope(string);
 
-            final PackResult result;
+            final FormatResult result;
 
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (PackResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{rope.getBytes(), rope.byteLength()});
+                result = (FormatResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{rope.getBytes(), rope.byteLength()});
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2405,7 +2405,7 @@ public abstract class StringNodes {
             }
         }
 
-        private DynamicObject finishUnpack(Rope format, PackResult result) {
+        private DynamicObject finishUnpack(Rope format, FormatResult result) {
             final DynamicObject array = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
 
             if (format.isEmpty()) {
