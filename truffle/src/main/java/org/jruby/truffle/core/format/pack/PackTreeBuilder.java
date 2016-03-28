@@ -24,7 +24,7 @@ import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
 import org.jruby.truffle.core.format.type.AsSinglePrecisionNodeGen;
 import org.jruby.truffle.core.format.type.ReinterpretLongNodeGen;
 import org.jruby.truffle.core.format.type.ToLongNodeGen;
-import org.jruby.truffle.core.format.write.PNode;
+import org.jruby.truffle.core.format.read.array.PNode;
 import org.jruby.truffle.core.format.write.Write16BigNodeGen;
 import org.jruby.truffle.core.format.write.Write16LittleNodeGen;
 import org.jruby.truffle.core.format.write.Write32BigNodeGen;
