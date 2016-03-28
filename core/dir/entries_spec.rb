@@ -46,7 +46,9 @@ describe "Dir.entries" do
     entries = Dir.entries(File.join(DirSpecs.mock_dir, 'special')).sort
     encoding = Encoding.find("filesystem")
     encoding = Encoding::ASCII_8BIT if encoding == Encoding::US_ASCII
-    entries.should include("こんにちは.txt".force_encoding(encoding))
+    platform_is_not :windows do
+      entries.should include("こんにちは.txt".force_encoding(encoding))
+    end
     entries.first.encoding.should equal(Encoding.find("filesystem"))
   end
 

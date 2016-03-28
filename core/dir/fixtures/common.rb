@@ -9,7 +9,7 @@ module DirSpecs
   def self.nonexistent
     name = File.join mock_dir, "nonexistent00"
     name = name.next while File.exist? name
-    File.join mock_dir, name
+    name
   end
 
   # TODO: make these relative to the mock_dir
@@ -84,8 +84,6 @@ module DirSpecs
         special/}
 
         special/test{1}/file[1]
-
-        special/こんにちは.txt
       ]
 
       platform_is_not :windows do
@@ -94,6 +92,8 @@ module DirSpecs
           special/?
 
           special/|
+
+          special/こんにちは.txt
         ]
       end
     end
@@ -110,7 +110,12 @@ module DirSpecs
   end
 
   def self.delete_mock_dirs
-    rm_r SPEC_TEMP_DIR
+    begin
+      rm_r mock_dir
+    rescue Errno::ENOTEMPTY => e
+      puts Dir["#{mock_dir}/**/*"]
+      raise e
+    end
   end
 
   def self.mock_rmdir(*dirs)

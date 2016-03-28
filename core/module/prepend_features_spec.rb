@@ -57,7 +57,7 @@ describe "Module#prepend_features" do
     child.new.foo
     child.new.bar
 
-    child.send(:prepend, mod)
+    child.prepend(mod)
 
     child.new.bar.should == :bar
   end

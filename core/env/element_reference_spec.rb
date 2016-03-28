@@ -18,6 +18,13 @@ describe "ENV.[]" do
     ENV[@variable] = "a non-frozen string"
     ENV[@variable].frozen?.should == true
   end
+
+  platform_is :windows do
+    it "looks up values case-insensitively" do
+      ENV[@variable] = "bar"
+      ENV[@variable.upcase].should == "bar"
+    end
+  end
 end
 
 with_feature :encoding do

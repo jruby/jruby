@@ -270,8 +270,10 @@ describe :dir_glob, shared: true do
     Dir.send(@method, "deeply/notthere/blah/").should == []
   end
 
-  it "matches UTF-8 paths" do
-    Dir.send(@method, "special/こんにちは{,.txt}").should == ["special/こんにちは.txt"]
+  platform_is_not :windows do
+    it "matches UTF-8 paths" do
+      Dir.send(@method, "special/こんにちは{,.txt}").should == ["special/こんにちは.txt"]
+    end
   end
 end
 

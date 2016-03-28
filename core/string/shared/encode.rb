@@ -101,12 +101,10 @@ describe :string_encode, shared: true do
       end.should raise_error(Encoding::ConverterNotFoundError)
     end
 
-    ruby_version_is "2.1" do
-      it "replaces invalid characters when replacing Emacs-Mule encoded strings" do
-        got = "\x80".force_encoding('Emacs-Mule').send(@method, invalid: :replace)
+    it "replaces invalid characters when replacing Emacs-Mule encoded strings" do
+      got = "\x80".force_encoding('Emacs-Mule').send(@method, invalid: :replace)
 
-        got.should == "?".encode('Emacs-Mule')
-      end
+      got.should == "?".encode('Emacs-Mule')
     end
   end
 

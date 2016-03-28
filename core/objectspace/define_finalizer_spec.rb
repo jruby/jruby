@@ -23,14 +23,6 @@ describe "ObjectSpace.define_finalizer" do
     ObjectSpace.define_finalizer("garbage", handler).should == [0, handler]
   end
 
-  ruby_version_is ""..."2.1" do
-    it "raises ArgumentError trying to define a finalizer on a non-reference" do
-      lambda {
-        ObjectSpace.define_finalizer(:blah) { 1 }
-      }.should raise_error(ArgumentError)
-    end
-  end
-
   ruby_version_is "2.1"..."2.2" do
     it "raises RuntimeError trying to define a finalizer on a non-reference" do
       lambda {
@@ -51,31 +43,39 @@ describe "ObjectSpace.define_finalizer" do
   with_feature :fork do
     it "calls finalizer on process termination" do
       rd, wr = IO.pipe
-      if Kernel.fork then
-        wr.close
-        rd.read.should == "finalized"
-        rd.close
-      else
+      pid = Process.fork do
         rd.close
         handler = ObjectSpaceFixtures.scoped(wr)
         obj = "Test"
         ObjectSpace.define_finalizer(obj, handler)
         exit 0
       end
+
+      wr.close
+      begin
+        rd.read.should == "finalized"
+      ensure
+        rd.close
+        Process.wait pid
+      end
     end
 
     it "calls finalizer at exit even if it is self-referencing" do
       rd, wr = IO.pipe
-      if Kernel.fork then
-        wr.close
-        rd.read.should == "finalized"
-        rd.close
-      else
+      pid = Process.fork do
         rd.close
         obj = "Test"
         handler = Proc.new { wr.write "finalized"; wr.close }
         ObjectSpace.define_finalizer(obj, handler)
         exit 0
+      end
+
+      wr.close
+      begin
+        rd.read.should == "finalized"
+      ensure
+        rd.close
+        Process.wait pid
       end
     end
   end

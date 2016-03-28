@@ -70,6 +70,15 @@ describe :io_each, shared: true do
     end
   end
 
+  describe "with limit" do
+    describe "when limit is 0" do
+      it "raises an ArgumentError" do
+        # must pass block so Enumerator is evaluated and raises
+        lambda { @io.send(@method, 0){} }.should raise_error(ArgumentError)
+      end
+    end
+  end
+
   describe "when passed a String containing one space as a separator" do
     it "uses the passed argument as the line separator" do
       @io.send(@method, " ") { |s| ScratchPad << s }

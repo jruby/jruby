@@ -3,7 +3,8 @@ require File.expand_path('../../../spec_helper', __FILE__)
 describe "Process.wait" do
   before :all do
     begin
-      Process.waitall
+      leaked = Process.waitall
+      puts "leaked before wait specs: #{leaked}" unless leaked.empty?
     rescue NotImplementedError
     end
   end
@@ -90,6 +91,7 @@ describe "Process.wait" do
       # wait for the child to setup its TERM handler
       write.close
       read.read(1)
+      read.close
 
       Process.kill("TERM", pid)
       Process.wait.should == pid

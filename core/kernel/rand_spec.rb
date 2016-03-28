@@ -49,8 +49,72 @@ describe "Kernel.rand" do
     rand l
   end
 
-  it "returns a float for an range argument where max is < 1" do
-    rand(0.25..0.75).should be_kind_of(Float)
+  context "given an exclusive range" do
+    it "returns an Integer between the two Integers" do
+      1000.times do
+        x = rand(4...6)
+        x.should be_kind_of(Integer)
+        (4...6).should include(x)
+      end
+    end
+
+    it "returns a Float between the given Integer and Float" do
+      1000.times do
+        x = rand(4...6.5)
+        x.should be_kind_of(Float)
+        (4...6.5).should include(x)
+      end
+    end
+
+    it "returns a Float between the given Float and Integer" do
+      1000.times do
+        x = rand(3.5...6)
+        x.should be_kind_of(Float)
+        (3.5...6).should include(x)
+      end
+    end
+
+    it "returns a Float between the two given Floats" do
+      1000.times do
+        x = rand(3.5...6.5)
+        x.should be_kind_of(Float)
+        (3.5...6.5).should include(x)
+      end
+    end
+  end
+
+  context "given an inclusive range" do
+    it "returns an Integer between the two Integers" do
+      1000.times do
+        x = rand(4..6)
+        x.should be_kind_of(Integer)
+        (4..6).should include(x)
+      end
+    end
+
+    it "returns a Float between the given Integer and Float" do
+      1000.times do
+        x = rand(4..6.5)
+        x.should be_kind_of(Float)
+        (4..6.5).should include(x)
+      end
+    end
+
+    it "returns a Float between the given Float and Integer" do
+      1000.times do
+        x = rand(3.5..6)
+        x.should be_kind_of(Float)
+        (3.5..6).should include(x)
+      end
+    end
+
+    it "returns a Float between the two given Floats" do
+      1000.times do
+        x = rand(3.5..6.5)
+        x.should be_kind_of(Float)
+        (3.5..6.5).should include(x)
+      end
+    end
   end
 end
 

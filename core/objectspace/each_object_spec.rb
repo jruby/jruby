@@ -129,14 +129,6 @@ describe "ObjectSpace.each_object" do
     ObjectSpaceFixtures.to_be_found_symbols.should include(:instance_variable)
   end
 
-  it "doesn't find an object stored in a WeakRef that should have been cleared" do
-    require 'weakref'
-
-    weak_ref = WeakRef.new(ObjectSpaceFixtures::ObjectToBeFound.new(:weakref))
-    ObjectSpaceFixtures.wait_for_weakref_cleared(weak_ref)
-    ObjectSpaceFixtures.to_be_found_symbols.should_not include(:weakref)
-  end
-
   it "finds an object stored in a thread local" do
     Thread.current.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
     ObjectSpaceFixtures.to_be_found_symbols.should include(:thread_local)

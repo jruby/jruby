@@ -27,5 +27,10 @@ describe "Enumerable#sort_by" do
     multi.sort_by {|e| e.size}.should == [[1, 2], [3, 4, 5], [6, 7, 8, 9]]
   end
 
+  it "returns an array of elements when a block is supplied and #map returns an enumerable" do
+    b = EnumerableSpecs::MapReturnsEnumerable.new
+    b.sort_by{ |x| -x }.should == [3, 2, 1]
+  end
+
   it_behaves_like :enumerable_enumeratorized_with_origin_size, :sort_by
 end
