@@ -13,6 +13,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
+import org.jruby.truffle.core.format.convert.ReinterpretAsLongNodeGen;
 import org.jruby.truffle.core.format.convert.ToFloatNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.AtNode;
@@ -22,7 +23,6 @@ import org.jruby.truffle.core.format.read.array.ReadDoubleNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadLongOrBigIntegerNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
-import org.jruby.truffle.core.format.convert.ReinterpretLongNodeGen;
 import org.jruby.truffle.core.format.convert.ToLongNodeGen;
 import org.jruby.truffle.core.format.read.array.PNode;
 import org.jruby.truffle.core.format.write.bytes.Write16BigNodeGen;
@@ -396,7 +396,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
         appendNode(sharedTreeBuilder.applyCount(count,
                 writeInteger(size, byteOrder,
-                        ReinterpretLongNodeGen.create(context,
+                        ReinterpretAsLongNodeGen.create(context,
                                 typeNode))));
     }
 

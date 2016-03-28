@@ -15,16 +15,12 @@ import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 
-/**
- * Re-interpret a value as a {@code long}. In other words, get the raw bytes
- * as a long.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class ReinterpretLongNode extends FormatNode {
+public abstract class ReinterpretAsLongNode extends FormatNode {
 
-    public ReinterpretLongNode(RubyContext context) {
+    public ReinterpretAsLongNode(RubyContext context) {
         super(context);
     }
 
