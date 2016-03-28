@@ -185,14 +185,17 @@ public class PackTreeBuilder extends PackBaseListener {
     public void exitUtf8Character(PackParser.Utf8CharacterContext ctx) {
         unify(FormatEncoding.UTF_8);
 
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteUTF8CharacterNodeGen.create(context,
-                ToLongNodeGen.create(context,
-                        ReadValueNodeGen.create(context, new SourceNode())))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(),
+                WriteUTF8CharacterNodeGen.create(context,
+                        ToLongNodeGen.create(context,
+                                ReadValueNodeGen.create(context, new SourceNode())))));
     }
 
     @Override
     public void exitBerInteger(PackParser.BerIntegerContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteBERNodeGen.create(context, ReadLongOrBigIntegerNodeGen.create(context, new SourceNode()))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(),
+                WriteBERNodeGen.create(context,
+                        ReadLongOrBigIntegerNodeGen.create(context, new SourceNode()))));
 
     }
 
@@ -269,7 +272,8 @@ public class PackTreeBuilder extends PackBaseListener {
 
         appendNode(WriteUUStringNodeGen.create(context, starLength.getLength(), starLength.isStar(),
                 ReadStringNodeGen.create(context, false, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+                        false, context.getCoreLibrary().getNilObject(),
+                        new SourceNode())));
     }
 
     @Override
@@ -290,7 +294,8 @@ public class PackTreeBuilder extends PackBaseListener {
 
         appendNode(WriteMIMEStringNodeGen.create(context, length,
                 ReadStringNodeGen.create(context, true, "to_s",
-                        true, context.getCoreLibrary().getNilObject(), new SourceNode())));
+                        true, context.getCoreLibrary().getNilObject(),
+                        new SourceNode())));
 
     }
 
@@ -302,7 +307,8 @@ public class PackTreeBuilder extends PackBaseListener {
 
         appendNode(WriteBase64StringNodeGen.create(context, starLength.getLength(), starLength.isStar(),
                 ReadStringNodeGen.create(context, false, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+                        false, context.getCoreLibrary().getNilObject(),
+                        new SourceNode())));
     }
 
     @Override
@@ -351,7 +357,8 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitErrorDisallowedNative(PackParser.ErrorDisallowedNativeContext ctx) {
-        throw new RaiseException(context.getCoreLibrary().argumentError("'" + ctx.NATIVE().getText() + "' allowed only after types sSiIlLqQ", currentNode));
+        throw new RaiseException(context.getCoreLibrary().argumentError(
+                "'" + ctx.NATIVE().getText() + "' allowed only after types sSiIlLqQ", currentNode));
     }
 
     public FormatNode getNode() {
@@ -399,6 +406,7 @@ public class PackTreeBuilder extends PackBaseListener {
     private FormatNode writeInteger(int size, ByteOrder byteOrder) {
         final FormatNode readNode = ToLongNodeGen.create(context,
                 ReadValueNodeGen.create(context, new SourceNode()));
+
         return writeInteger(size, byteOrder, readNode);
     }
 
@@ -459,7 +467,8 @@ public class PackTreeBuilder extends PackBaseListener {
         appendNode(WriteBinaryStringNodeGen.create(context, pad, padOnNull,
                 width, padding, takeAll, appendNull,
                 ReadStringNodeGen.create(context, true, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+                        false, context.getCoreLibrary().getNilObject(),
+                                new SourceNode())));
 
     }
 
@@ -468,7 +477,8 @@ public class PackTreeBuilder extends PackBaseListener {
 
         appendNode(WriteBitStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(),
                 ReadStringNodeGen.create(context, true, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+                        false, context.getCoreLibrary().getNilObject(),
+                                new SourceNode())));
     }
 
     private void hexString(ByteOrder byteOrder, PackParser.CountContext ctx) {
@@ -484,7 +494,8 @@ public class PackTreeBuilder extends PackBaseListener {
 
         appendNode(WriteHexStringNodeGen.create(context, byteOrder, length,
                 ReadStringNodeGen.create(context, true, "to_str",
-                        false, context.getCoreLibrary().getNilObject(), new SourceNode())));
+                        false, context.getCoreLibrary().getNilObject(),
+                                new SourceNode())));
 
     }
 
