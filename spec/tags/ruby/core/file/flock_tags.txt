@@ -3,3 +3,4 @@ critical(hangs):File#flock blocks if trying to lock an exclusively locked file
 fails:File#flock fails with EBADF acquiring exclusive lock on read-only File
 fails:File#flock fails with EBADF acquiring shared lock on read-only File
 fails:File#flock blocks if trying to lock an exclusively locked file
+windows:File#flock returns false if trying to lock an exclusively locked file

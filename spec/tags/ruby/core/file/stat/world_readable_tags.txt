@@ -1,0 +1,3 @@
+windows:File::Stat.world_readable? returns nil if the file is chmod 600
+windows:File::Stat.world_readable? returns nil if the file is chmod 000
+windows:File::Stat.world_readable? returns nil if the file is chmod 700

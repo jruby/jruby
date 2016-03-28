@@ -28,3 +28,4 @@ fails:Process.daemon when the second argument is false redirects stdout to /dev/
 fails:Process.daemon when the second argument is false redirects stderr to /dev/null
 fails:Process.daemon when the second argument is nil redirects stdout to /dev/null
 fails:Process.daemon when the second argument is nil redirects stderr to /dev/null
+windows:Process.daemon raises a NotImplementedError

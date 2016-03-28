@@ -1,0 +1,2 @@
+windows:File.open opens a file when use File::WRONLY|File::APPEND mode
+windows:File.open opens directories

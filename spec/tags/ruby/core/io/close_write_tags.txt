@@ -1,0 +1,2 @@
+windows:IO#close_write closes the write end of a duplex I/O stream
+windows:IO#close_write does nothing on subsequent invocations

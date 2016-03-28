@@ -4,3 +4,18 @@ fails:IO.popen with a leading Array argument accepts a trailing Hash of Process.
 fails:IO.popen with a leading Array argument accepts an IO mode argument following the Array
 fails:IO.popen with a leading ENV Hash accepts a single String command with a trailing Hash of Process.exec options, and an IO mode
 fails:IO.popen with a leading ENV Hash accepts an Array command with a separate trailing Hash of Process.exec options, and an IO mode
+windows:IO.popen reads a read-only pipe
+windows:IO.popen does not throw an exception if child exited and has been waited for
+windows:IO.popen has the given internal encoding
+windows:IO.popen sets the internal encoding to nil if it's the same as the external encoding
+windows:IO.popen with a block returns the value of the block
+windows:IO.popen with a leading ENV Hash accepts a single String command
+windows:IO.popen with a leading ENV Hash accepts a single String command, and an IO mode
+windows:IO.popen with a leading ENV Hash accepts a single String command with a trailing Hash of Process.exec options
+windows:IO.popen with a leading ENV Hash accepts an Array of command and arguments
+windows:IO.popen with a leading ENV Hash accepts an Array of command and arguments, and an IO mode
+windows:IO.popen with a leading ENV Hash accepts an Array command with a separate trailing Hash of Process.exec options
+windows:IO.popen with a leading Array argument accepts [env, command, arg1, arg2, ..., exec options]
+windows:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode'
+windows:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode, IO options'
+windows:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ...], mode, IO + exec options'

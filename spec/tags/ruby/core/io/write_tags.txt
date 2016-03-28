@@ -1,0 +1,3 @@
+windows:IO.write doesn't truncate the file and writes the given string if an offset is given
+windows:IO.write doesn't truncate and writes at the given offset after passing empty opts
+windows:IO#write on Windows normalizes line endings in text mode

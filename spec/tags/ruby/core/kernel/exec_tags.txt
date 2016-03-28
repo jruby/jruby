@@ -10,3 +10,17 @@ fails:Kernel#exec (environment variables) unsets other environment variables whe
 fails:Kernel.exec (environment variables) unsets other environment variables when given a true :unsetenv_others option
 fails:Kernel#exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
 fails:Kernel.exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+windows:Kernel#exec runs the specified command, replacing current process
+windows:Kernel#exec with a single argument subjects the specified command to shell expansion
+windows:Kernel#exec with a single argument creates an argument array with shell parsing semantics for whitespace
+windows:Kernel#exec with multiple arguments does not subject the arguments to shell expansion
+windows:Kernel#exec (environment variables) sets environment variables in the child environment
+windows:Kernel#exec (environment variables) unsets environment variables whose value is nil
+windows:Kernel#exec (environment variables) coerces environment argument using to_hash
+windows:Kernel.exec runs the specified command, replacing current process
+windows:Kernel.exec with a single argument subjects the specified command to shell expansion
+windows:Kernel.exec with a single argument creates an argument array with shell parsing semantics for whitespace
+windows:Kernel.exec with multiple arguments does not subject the arguments to shell expansion
+windows:Kernel.exec (environment variables) sets environment variables in the child environment
+windows:Kernel.exec (environment variables) unsets environment variables whose value is nil
+windows:Kernel.exec (environment variables) coerces environment argument using to_hash

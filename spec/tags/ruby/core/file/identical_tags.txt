@@ -1,1 +1,3 @@
 windows(JRUBY-4445):File.identical? returns true if both named files are identical
+windows:File.identical? returns true for a file and its link
+windows:File.identical? accepts an object that has a #to_path method

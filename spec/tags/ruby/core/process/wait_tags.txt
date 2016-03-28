@@ -6,3 +6,4 @@ fails:Process.wait waits for a child whose process group ID is that of the calli
 fails:Process.wait doesn't block if no child is available when WNOHANG is used
 fails:Process.wait always accepts flags=0
 fails:Process.wait coerces the pid to an Integer
+windows:Process.wait raises an Errno::ECHILD if there are no child processes

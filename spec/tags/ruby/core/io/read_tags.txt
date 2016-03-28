@@ -1,2 +1,19 @@
 fails:IO.read from a pipe opens a pipe to a fork if the rest is -
 fails:IO.read from a pipe raises Errno::ESPIPE if passed an offset
+windows:IO.read uses the external encoding specified via the :external_encoding option
+windows:IO.read uses the external encoding specified via the :encoding option
+windows:IO.read from a pipe runs the rest as a subprocess and returns the standard output
+windows:IO.read from a pipe reads only the specified number of bytes requested
+windows:IO#read expands the buffer when too small
+windows:IO#read overwrites the buffer
+windows:IO#read truncates the buffer when too big
+windows:IO#read on Windows normalizes line endings in text mode
+windows:IO#read on Windows does not normalize line endings in binary mode
+windows:IO.read with BOM reads a file without a bom
+windows:IO.read with BOM reads a file with a utf-8 bom
+windows:IO.read with BOM reads a file with a utf-16le bom
+windows:IO.read with BOM reads a file with a utf-16be bom
+windows:IO.read with BOM reads a file with a utf-32le bom
+windows:IO.read with BOM reads a file with a utf-32be bom
+windows:IO#read with internal encoding not specified does not transcode the String
+windows:IO#read with internal encoding not specified sets the String encoding to the external encoding

@@ -1,0 +1,2 @@
+windows:IO.binwrite doesn't truncate the file and writes the given string if an offset is given
+windows:IO.binwrite doesn't truncate and writes at the given offset after passing empty opts
