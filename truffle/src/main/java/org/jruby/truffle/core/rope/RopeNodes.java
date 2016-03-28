@@ -82,8 +82,9 @@ public abstract class RopeNodes {
         public Rope substringOneByte(Rope base, int offset, int byteLength,
                                         @Cached("createBinaryProfile()") ConditionProfile isUTF8,
                                         @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
-                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit) {
-            final int index = base.get(offset) & 0xff;
+                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit,
+                                        @Cached("create(getContext(), getSourceSection())") GetByteNode getByteNode) {
+            final int index = getByteNode.executeGetByte(base, offset);
 
             if (isUTF8.profile(base.getEncoding() == UTF8Encoding.INSTANCE)) {
                 return RopeConstants.UTF8_SINGLE_BYTE_ROPES[index];
@@ -633,6 +634,10 @@ public abstract class RopeNodes {
             @NodeChild(type = RubyNode.class, value = "index")
     })
     public abstract static class GetByteNode extends RubyNode {
+
+        public static GetByteNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.GetByteNodeGen.create(context, sourceSection, null, null);
+        }
 
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
