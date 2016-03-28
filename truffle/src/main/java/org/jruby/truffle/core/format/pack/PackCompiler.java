@@ -7,10 +7,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.core.format.FormatErrorListener;
+import org.jruby.truffle.core.format.LoopRecovery;
 import org.jruby.truffle.language.RubyNode;
-
-import org.jruby.truffle.core.format.pack.PackLexer;
-import org.jruby.truffle.core.format.pack.PackParser;
 
 public class PackCompiler {
 
