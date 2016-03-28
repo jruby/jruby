@@ -38,7 +38,6 @@ import org.jruby.truffle.core.format.read.ReadMIMEStringNodeGen;
 import org.jruby.truffle.core.format.read.ReadUTF8CharacterNodeGen;
 import org.jruby.truffle.core.format.read.ReadUUStringNodeGen;
 import org.jruby.truffle.core.format.type.AsUnsignedNodeGen;
-import org.jruby.truffle.core.format.write.WriteValueNodeGen;
 import org.jruby.truffle.core.format.pack.PackBaseListener;
 import org.jruby.truffle.core.format.pack.PackParser;
 import org.jruby.truffle.language.control.RaiseException;

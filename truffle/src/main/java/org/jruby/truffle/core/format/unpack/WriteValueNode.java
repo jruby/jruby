@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.write;
+package org.jruby.truffle.core.format.unpack;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.MissingValue;
 
@@ -30,13 +31,13 @@ public abstract class WriteValueNode extends FormatNode {
     }
 
     @Specialization
-    public Object doWrite(VirtualFrame frame, MissingValue value) {
+    public Object doWrite(MissingValue value) {
         return null;
     }
 
     @Specialization(guards = "!isMissingValue(value)")
     public Object doWrite(VirtualFrame frame, Object value) {
-        Object[] output = ensureCapacity(frame, 1);
+        final Object[] output = ensureCapacity(frame, 1);
         final int outputPosition = getOutputPosition(frame);
         output[outputPosition] = value;
         setOutputPosition(frame, outputPosition + 1);
@@ -44,18 +45,18 @@ public abstract class WriteValueNode extends FormatNode {
     }
 
     private Object[] ensureCapacity(VirtualFrame frame, int length) {
-        Object[] output = (Object[]) getOutput(frame);
+        final Object[] output = (Object[]) getOutput(frame);
         final int outputPosition = getOutputPosition(frame);
+        final int neededLength = outputPosition + length;
 
-        if (outputPosition + length > output.length) {
-            // If we ran out of output byte[], deoptimize and next time we'll allocate more
-
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            output = Arrays.copyOf(output, (output.length + length) * 2);
-            setOutput(frame, output);
+        if (neededLength <= output.length) {
+            return output;
         }
 
-        return output;
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+        final Object[] newOutput = Arrays.copyOf(output, ArrayUtils.capacity(getContext(), output.length, neededLength));
+        setOutput(frame, newOutput);
+        return newOutput;
     }
 
     protected boolean isMissingValue(Object object) {
