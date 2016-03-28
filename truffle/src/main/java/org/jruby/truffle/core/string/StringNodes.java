@@ -1595,6 +1595,8 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class OrdNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.GetByteNode ropeGetByteNode;
+
         public OrdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1608,7 +1610,12 @@ public abstract class StringNodes {
         // TODO (nirvdrum 03-Feb-16): Is it possible to have a single-byte optimizable string that isn't ASCII-compatible?
         @Specialization(guards = { "!isEmpty(string)", "isSingleByteOptimizable(string)" })
         public int ordAsciiOnly(DynamicObject string) {
-            return rope(string).get(0) & 0xff;
+            if (ropeGetByteNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                ropeGetByteNode = insert(RopeNodes.GetByteNode.create(getContext(), getSourceSection()));
+            }
+
+            return ropeGetByteNode.executeGetByte(rope(string), 0);
         }
 
         @Specialization(guards = { "!isEmpty(string)", "!isSingleByteOptimizable(string)" })
