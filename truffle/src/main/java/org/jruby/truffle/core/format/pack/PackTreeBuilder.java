@@ -265,21 +265,9 @@ public class PackTreeBuilder extends PackBaseListener {
     public void exitUuString(PackParser.UuStringContext ctx) {
         unify(FormatEncoding.US_ASCII);
 
-        final int length;
-        final boolean ignoreStar;
+        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx.count());
 
-        if (ctx.count() == null) {
-            length = 1;
-            ignoreStar = false;
-        } else if (ctx.count().INT() == null) {
-            length = 0;
-            ignoreStar = true;
-        } else {
-            length = Integer.parseInt(ctx.count().INT().getText());
-            ignoreStar = false;
-        }
-
-        appendNode(WriteUUStringNodeGen.create(context, length, ignoreStar,
+        appendNode(WriteUUStringNodeGen.create(context, starLength.getLength(), starLength.isStar(),
                 ReadStringNodeGen.create(context, false, "to_str",
                         false, context.getCoreLibrary().getNilObject(), new SourceNode())));
     }
@@ -310,21 +298,9 @@ public class PackTreeBuilder extends PackBaseListener {
     public void exitBase64String(PackParser.Base64StringContext ctx) {
         unify(FormatEncoding.US_ASCII);
 
-        final int length;
-        final boolean ignoreStar;
+        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx.count());
 
-        if (ctx.count() == null) {
-            length = 1;
-            ignoreStar = false;
-        } else if (ctx.count().INT() == null) {
-            length = 0;
-            ignoreStar = true;
-        } else {
-            length = Integer.parseInt(ctx.count().INT().getText());
-            ignoreStar = false;
-        }
-
-        appendNode(WriteBase64StringNodeGen.create(context, length, ignoreStar,
+        appendNode(WriteBase64StringNodeGen.create(context, starLength.getLength(), starLength.isStar(),
                 ReadStringNodeGen.create(context, false, "to_str",
                         false, context.getCoreLibrary().getNilObject(), new SourceNode())));
     }
