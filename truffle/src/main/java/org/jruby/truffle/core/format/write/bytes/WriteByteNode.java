@@ -7,27 +7,27 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.write;
+package org.jruby.truffle.core.format.write.bytes;
 
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 
-@NodeChildren({
-        @NodeChild(value = "value", type = FormatNode.class),
-})
-public abstract class Write8Node extends FormatNode {
+/**
+ * Simply write a single bytes.
+ */
+public class WriteByteNode extends FormatNode {
 
-    public Write8Node(RubyContext context) {
+    private final byte value;
+
+    public WriteByteNode(RubyContext context, byte value) {
         super(context);
+        this.value = value;
     }
 
-    @Specialization
-    public Object doWrite(VirtualFrame frame, long value) {
-        writeByte(frame, (byte) value);
+    @Override
+    public Object execute(VirtualFrame frame) {
+        writeByte(frame, value);
         return null;
     }
 

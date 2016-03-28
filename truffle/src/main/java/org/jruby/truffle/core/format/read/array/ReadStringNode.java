@@ -19,7 +19,7 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.type.ToStringNode;
 import org.jruby.truffle.core.format.type.ToStringNodeGen;
-import org.jruby.truffle.core.format.write.WriteByteNode;
+import org.jruby.truffle.core.format.write.bytes.WriteByteNode;
 
 /**
  * Read a string from the source, converting if needed.

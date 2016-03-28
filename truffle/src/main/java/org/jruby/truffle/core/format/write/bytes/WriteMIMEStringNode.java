@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.write;
+package org.jruby.truffle.core.format.write.bytes;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -16,31 +16,28 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.util.ByteList;
-import org.jruby.util.Pack;
+import org.jruby.util.PackUtils;
 
 /**
- * Read a string that contains base64-encoded data and write as actual binary
+ * Read a string that contains MIME encoded data and write as actual binary
  * data.
  */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class WriteBase64StringNode extends FormatNode {
+public abstract class WriteMIMEStringNode extends FormatNode {
 
     private final int length;
-    private final boolean ignoreStar;
 
-    public WriteBase64StringNode(RubyContext context, int length, boolean ignoreStar) {
+    public WriteMIMEStringNode(RubyContext context, int length) {
         super(context);
         this.length = length;
-        this.ignoreStar = ignoreStar;
     }
 
-    @Specialization
-    public Object write(long bytes) {
-        throw new NoImplicitConversionException(bytes, "String");
+    @Specialization(guards = "isNil(nil)")
+    public Object write(Object nil) {
+        return null;
     }
 
     @Specialization
@@ -50,12 +47,11 @@ public abstract class WriteBase64StringNode extends FormatNode {
     }
 
     @TruffleBoundary
-    private byte[] encode(ByteList bytes) {
-        // TODO CS 30-Mar-15 should write our own optimisable version of Base64
-
+    private ByteList encode(ByteList bytes) {
+        // TODO CS 30-Mar-15 should write our own optimizable version of MIME
         final ByteList output = new ByteList();
-        Pack.encodeUM(null, bytes, length, ignoreStar, 'm', output);
-        return output.bytes();
+        PackUtils.qpencode(output, bytes, length);
+        return output;
     }
 
 }

@@ -40,6 +40,7 @@ import org.jruby.truffle.core.format.read.bytes.ReadUUStringNodeGen;
 import org.jruby.truffle.core.format.type.AsUnsignedNodeGen;
 import org.jruby.truffle.core.format.pack.PackBaseListener;
 import org.jruby.truffle.core.format.pack.PackParser;
+import org.jruby.truffle.core.format.write.array.WriteValueNodeGen;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.nio.ByteOrder;

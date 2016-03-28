@@ -26,9 +26,9 @@ import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
 import org.jruby.truffle.core.format.type.ToDoubleWithCoercionNodeGen;
 import org.jruby.truffle.core.format.type.ToIntegerNodeGen;
 import org.jruby.truffle.core.format.type.ToStringNodeGen;
-import org.jruby.truffle.core.format.write.WriteByteNode;
-import org.jruby.truffle.core.format.write.WriteBytesNodeGen;
-import org.jruby.truffle.core.format.write.WritePaddedBytesNodeGen;
+import org.jruby.truffle.core.format.write.bytes.WriteByteNode;
+import org.jruby.truffle.core.format.write.bytes.WriteBytesNodeGen;
+import org.jruby.truffle.core.format.write.bytes.WritePaddedBytesNodeGen;
 import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
