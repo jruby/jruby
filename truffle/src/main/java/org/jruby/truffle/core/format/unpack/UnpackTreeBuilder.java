@@ -190,8 +190,6 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitUtf8Character(PackParser.Utf8CharacterContext ctx) {
-        //unify(PackEncoding.UTF_8);
-
         appendNode(applyCount(ctx.count(),
                 WriteValueNodeGen.create(context,
                         ReadUTF8CharacterNodeGen.create(context,
@@ -293,8 +291,6 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitUuString(PackParser.UuStringContext ctx) {
-        //unify(PackEncoding.US_ASCII);
-
         appendNode(
                 WriteValueNodeGen.create(context,
                         ReadUUStringNodeGen.create(context,
@@ -303,16 +299,12 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitMimeString(PackParser.MimeStringContext ctx) {
-        //unify(PackEncoding.US_ASCII);
-
         appendNode(WriteValueNodeGen.create(context,
                 ReadMIMEStringNodeGen.create(context, new SourceNode())));
     }
 
     @Override
     public void exitBase64String(PackParser.Base64StringContext ctx) {
-        //unify(PackEncoding.US_ASCII);
-
         appendNode(WriteValueNodeGen.create(context,
                 ReadBase64StringNodeGen.create(context, new SourceNode())));
     }
