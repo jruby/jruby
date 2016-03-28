@@ -62,7 +62,7 @@ import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.printf.PrintfCompiler;
-import org.jruby.truffle.core.format.FormatResult;
+import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.core.format.exceptions.CantConvertException;
 import org.jruby.truffle.core.format.exceptions.FormatException;
@@ -1959,10 +1959,10 @@ public abstract class KernelNodes {
                 @Cached("privatizeRope(format)") Rope cachedFormat,
                 @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
-            final FormatResult result;
+            final BytesResult result;
 
             try {
-                result = (FormatResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
+                result = (BytesResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -1977,10 +1977,10 @@ public abstract class KernelNodes {
                 DynamicObject format,
                 Object[] arguments,
                 @Cached("create()") IndirectCallNode callPackNode) {
-            final FormatResult result;
+            final BytesResult result;
 
             try {
-                result = (FormatResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
+                result = (BytesResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2007,7 +2007,7 @@ public abstract class KernelNodes {
             }
         }
 
-        private DynamicObject finishFormat(int formatLength, FormatResult result) {
+        private DynamicObject finishFormat(int formatLength, BytesResult result) {
             final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
 
             if (formatLength == 0) {

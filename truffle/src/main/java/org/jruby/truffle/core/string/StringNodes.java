@@ -61,8 +61,9 @@ import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
+import org.jruby.truffle.core.format.unpack.ArrayResult;
 import org.jruby.truffle.core.format.unpack.UnpackCompiler;
-import org.jruby.truffle.core.format.FormatResult;
+import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.core.format.exceptions.CantConvertException;
 import org.jruby.truffle.core.format.exceptions.FormatException;
@@ -2351,17 +2352,17 @@ public abstract class StringNodes {
                 @Cached("create(compileFormat(format))") DirectCallNode callUnpackNode) {
             final Rope rope = rope(string);
 
-            final FormatResult result;
+            final ArrayResult result;
 
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (FormatResult) callUnpackNode.call(frame, new Object[]{rope.getBytes(), rope.byteLength()});
+                result = (ArrayResult) callUnpackNode.call(frame, new Object[]{rope.getBytes(), rope.byteLength()});
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
 
-            return finishUnpack(cachedFormat, result);
+            return finishUnpack(result);
         }
 
         @Specialization(contains = "unpackCached", guards = "isRubyString(format)")
@@ -2372,17 +2373,17 @@ public abstract class StringNodes {
                 @Cached("create()") IndirectCallNode callUnpackNode) {
             final Rope rope = rope(string);
 
-            final FormatResult result;
+            final ArrayResult result;
 
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (FormatResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{rope.getBytes(), rope.byteLength()});
+                result = (ArrayResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{rope.getBytes(), rope.byteLength()});
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
 
-            return finishUnpack(rope, result);
+            return finishUnpack(result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2405,26 +2406,8 @@ public abstract class StringNodes {
             }
         }
 
-        private DynamicObject finishUnpack(Rope format, FormatResult result) {
+        private DynamicObject finishUnpack(ArrayResult result) {
             final DynamicObject array = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
-
-            if (format.isEmpty()) {
-                //StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
-            } else {
-                switch (result.getEncoding()) {
-                    case DEFAULT:
-                    case ASCII_8BIT:
-                        break;
-                    case US_ASCII:
-                        //StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
-                        break;
-                    case UTF_8:
-                        //StringOperations.forceEncoding(string, UTF8Encoding.INSTANCE);
-                        break;
-                    default:
-                        throw new UnsupportedOperationException();
-                }
-            }
 
             if (result.isTainted()) {
                 if (taintNode == null) {

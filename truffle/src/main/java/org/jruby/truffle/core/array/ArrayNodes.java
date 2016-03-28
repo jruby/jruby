@@ -46,7 +46,7 @@ import org.jruby.truffle.core.coerce.ToAryNodeGen;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
 import org.jruby.truffle.core.format.pack.PackCompiler;
-import org.jruby.truffle.core.format.FormatResult;
+import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.core.format.exceptions.CantConvertException;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
@@ -2402,10 +2402,10 @@ public abstract class ArrayNodes {
                 @Cached("privatizeRope(format)") Rope cachedFormat,
                 @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
-            final FormatResult result;
+            final BytesResult result;
 
             try {
-                result = (FormatResult) callPackNode.call(frame, new Object[] { getStore(array), getSize(array) });
+                result = (BytesResult) callPackNode.call(frame, new Object[] { getStore(array), getSize(array) });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2420,10 +2420,10 @@ public abstract class ArrayNodes {
                 DynamicObject array,
                 DynamicObject format,
                 @Cached("create()") IndirectCallNode callPackNode) {
-            final FormatResult result;
+            final BytesResult result;
 
             try {
-                result = (FormatResult) callPackNode.call(frame, compileFormat(format), new Object[] { getStore(array), getSize(array) });
+                result = (BytesResult) callPackNode.call(frame, compileFormat(format), new Object[] { getStore(array), getSize(array) });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2450,7 +2450,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        private DynamicObject finishPack(int formatLength, FormatResult result) {
+        private DynamicObject finishPack(int formatLength, BytesResult result) {
             byte[] bytes = (byte[]) result.getOutput();
             if (bytes.length != result.getOutputLength()) {
                 bytes = Arrays.copyOf(bytes, result.getOutputLength());

@@ -18,11 +18,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.core.format.FormatEncoding;
 import org.jruby.truffle.core.format.FormatFrameDescriptor;
-import org.jruby.truffle.core.format.FormatResult;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 
 public class UnpackRootNode extends RootNode implements InternalRootNode {
@@ -30,17 +27,15 @@ public class UnpackRootNode extends RootNode implements InternalRootNode {
     private final RubyContext context;
 
     private final String description;
-    private final FormatEncoding encoding;
 
     @Child private FormatNode child;
 
     @CompilationFinal private int expectedLength;
 
-    public UnpackRootNode(RubyContext context, String description, FormatEncoding encoding, FormatNode child) {
+    public UnpackRootNode(RubyContext context, String description, FormatNode child) {
         super(RubyLanguage.class, SourceSection.createUnavailable("unpack", description), FormatFrameDescriptor.FRAME_DESCRIPTOR);
         this.context = context;
         this.description = description;
-        this.encoding = encoding;
         this.child = child;
         expectedLength = context.getOptions().ARRAY_UNINITIALIZED_SIZE;
     }
@@ -85,7 +80,7 @@ public class UnpackRootNode extends RootNode implements InternalRootNode {
             throw new IllegalStateException(e);
         }
 
-        return new FormatResult(output, outputLength, -1, CodeRange.CR_BROKEN, taint, encoding);
+        return new ArrayResult(output, outputLength, taint);
     }
 
     @Override

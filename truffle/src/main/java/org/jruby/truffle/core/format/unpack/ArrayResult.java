@@ -7,26 +7,18 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format;
+package org.jruby.truffle.core.format.unpack;
 
-import org.jruby.truffle.core.rope.CodeRange;
-
-public class FormatResult {
+public class ArrayResult {
 
     private final Object output;
     private final int outputLength;
-    private final int stringLength;
-    private final CodeRange stringCodeRange;
     private final boolean tainted;
-    private final FormatEncoding encoding;
 
-    public FormatResult(Object output, int outputLength, int stringLength, CodeRange stringCodeRange, boolean tainted, FormatEncoding encoding) {
+    public ArrayResult(Object output, int outputLength, boolean tainted) {
         this.output = output;
         this.outputLength = outputLength;
-        this.stringLength = stringLength;
-        this.stringCodeRange = stringCodeRange;
         this.tainted = tainted;
-        this.encoding = encoding;
     }
 
     public Object getOutput() {
@@ -37,19 +29,8 @@ public class FormatResult {
         return outputLength;
     }
 
-    public int getStringLength() {
-        return stringLength;
-    }
-
-    public CodeRange getStringCodeRange() {
-        return stringCodeRange;
-    }
-
     public boolean isTainted() {
         return tainted;
     }
 
-    public FormatEncoding getEncoding() {
-        return encoding;
-    }
 }

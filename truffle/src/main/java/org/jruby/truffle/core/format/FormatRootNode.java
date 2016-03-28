@@ -101,7 +101,7 @@ public class FormatRootNode extends RootNode implements InternalRootNode {
             throw new IllegalStateException(e);
         }
 
-        return new FormatResult(output, outputLength, stringLength, stringCodeRange, taint, encoding);
+        return new BytesResult(output, outputLength, stringLength, stringCodeRange, taint, encoding);
     }
 
     @Override
