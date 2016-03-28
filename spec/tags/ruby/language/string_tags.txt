@@ -1,0 +1,2 @@
+windows:Ruby character strings allows HEREDOC with <<'identifier', no interpolation
+windows:Ruby character strings allows HEREDOC with <<-'identifier', allowing to indent identifier, no interpolation
